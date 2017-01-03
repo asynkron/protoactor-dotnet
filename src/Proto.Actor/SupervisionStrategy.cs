@@ -4,7 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-namespace GAM
+namespace Proto
 {
     public class SupervisionStrategy
     {

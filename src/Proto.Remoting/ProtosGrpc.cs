@@ -10,22 +10,22 @@ using System;
 using System.Threading;
 using Grpc.Core;
 
-namespace GAM.Remoting
+namespace Proto.Remoting
 {
     public static class Remoting
     {
         static readonly string __ServiceName = "remoting.Remoting";
 
-        static readonly Marshaller<global::GAM.Remoting.MessageBatch> __Marshaller_MessageBatch =
+        static readonly Marshaller<global::Proto.Remoting.MessageBatch> __Marshaller_MessageBatch =
             Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg),
-                global::GAM.Remoting.MessageBatch.Parser.ParseFrom);
+                global::Proto.Remoting.MessageBatch.Parser.ParseFrom);
 
-        static readonly Marshaller<global::GAM.Remoting.Unit> __Marshaller_Unit =
+        static readonly Marshaller<global::Proto.Remoting.Unit> __Marshaller_Unit =
             Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg),
-                global::GAM.Remoting.Unit.Parser.ParseFrom);
+                global::Proto.Remoting.Unit.Parser.ParseFrom);
 
-        static readonly Method<global::GAM.Remoting.MessageBatch, global::GAM.Remoting.Unit> __Method_Receive = new Method
-            <global::GAM.Remoting.MessageBatch, global::GAM.Remoting.Unit>(
+        static readonly Method<global::Proto.Remoting.MessageBatch, global::Proto.Remoting.Unit> __Method_Receive = new Method
+            <global::Proto.Remoting.MessageBatch, global::Proto.Remoting.Unit>(
             MethodType.ClientStreaming,
             __ServiceName,
             "Receive",
@@ -35,7 +35,7 @@ namespace GAM.Remoting
         /// <summary>Service descriptor</summary>
         public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
         {
-            get { return global::GAM.Remoting.ProtosReflection.Descriptor.Services[0]; }
+            get { return global::Proto.Remoting.ProtosReflection.Descriptor.Services[0]; }
         }
 
         /// <summary>Creates service definition that can be registered with a server</summary>
@@ -48,8 +48,8 @@ namespace GAM.Remoting
         /// <summary>Base class for server-side implementations of Remoting</summary>
         public abstract class RemotingBase
         {
-            public virtual global::System.Threading.Tasks.Task<global::GAM.Remoting.Unit> Receive(
-                IAsyncStreamReader<global::GAM.Remoting.MessageBatch> requestStream, ServerCallContext context)
+            public virtual global::System.Threading.Tasks.Task<global::Proto.Remoting.Unit> Receive(
+                IAsyncStreamReader<global::Proto.Remoting.MessageBatch> requestStream, ServerCallContext context)
             {
                 throw new RpcException(new Status(StatusCode.Unimplemented, ""));
             }
@@ -81,14 +81,14 @@ namespace GAM.Remoting
             {
             }
 
-            public virtual AsyncClientStreamingCall<global::GAM.Remoting.MessageBatch, global::GAM.Remoting.Unit>
+            public virtual AsyncClientStreamingCall<global::Proto.Remoting.MessageBatch, global::Proto.Remoting.Unit>
                 Receive(Metadata headers = null, DateTime? deadline = null,
                     CancellationToken cancellationToken = default(CancellationToken))
             {
                 return Receive(new CallOptions(headers, deadline, cancellationToken));
             }
 
-            public virtual AsyncClientStreamingCall<global::GAM.Remoting.MessageBatch, global::GAM.Remoting.Unit>
+            public virtual AsyncClientStreamingCall<global::Proto.Remoting.MessageBatch, global::Proto.Remoting.Unit>
                 Receive(CallOptions options)
             {
                 return CallInvoker.AsyncClientStreamingCall(__Method_Receive, null, options);

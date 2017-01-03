@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace GAM
+namespace Proto
 {
     public class ProcessRegistry
     {

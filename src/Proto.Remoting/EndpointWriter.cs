@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Grpc.Core;
 
-namespace GAM.Remoting
+namespace Proto.Remoting
 {
     public class EndpointWriter : IActor
     {

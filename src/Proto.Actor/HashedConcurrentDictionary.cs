@@ -7,7 +7,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace GAM
+namespace Proto
 {
     public class HashedConcurrentDictionary
     {

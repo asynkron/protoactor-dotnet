@@ -27,7 +27,7 @@ namespace Messages {
             "BwoFU3RhcnQiKQoLU3RhcnRSZW1vdGUSGgoGU2VuZGVyGAEgASgLMgouYWN0",
             "b3IuUElEIgYKBFBpbmciBgoEUG9uZ0ILqgIITWVzc2FnZXNiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::GAM.ProtosReflection.Descriptor, },
+          new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Messages.Start), global::Messages.Start.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Messages.StartRemote), global::Messages.StartRemote.Parser, new[]{ "Sender" }, null, null, null),
@@ -162,9 +162,9 @@ namespace Messages {
 
     /// <summary>Field number for the "Sender" field.</summary>
     public const int SenderFieldNumber = 1;
-    private global::GAM.PID sender_;
+    private global::Proto.PID sender_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::GAM.PID Sender {
+    public global::Proto.PID Sender {
       get { return sender_; }
       set {
         sender_ = value;
@@ -224,7 +224,7 @@ namespace Messages {
       }
       if (other.sender_ != null) {
         if (sender_ == null) {
-          sender_ = new global::GAM.PID();
+          sender_ = new global::Proto.PID();
         }
         Sender.MergeFrom(other.Sender);
       }
@@ -240,7 +240,7 @@ namespace Messages {
             break;
           case 10: {
             if (sender_ == null) {
-              sender_ = new global::GAM.PID();
+              sender_ = new global::Proto.PID();
             }
             input.ReadMessage(sender_);
             break;

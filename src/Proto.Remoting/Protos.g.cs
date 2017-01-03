@@ -7,7 +7,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace GAM.Remoting {
+namespace Proto.Remoting {
 
   /// <summary>Holder for reflection information generated from Protos.proto</summary>
   public static partial class ProtosReflection {
@@ -34,13 +34,13 @@ namespace GAM.Remoting {
             "c2FnZUJhdGNoGg4ucmVtb3RpbmcuVW5pdCIAKAFCD6oCDEdBTS5SZW1vdGlu",
             "Z2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::GAM.ProtosReflection.Descriptor, },
+          new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::GAM.Remoting.MessageEnvelope), global::GAM.Remoting.MessageEnvelope.Parser, new[]{ "TypeName", "MessageData", "Target", "Sender" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::GAM.Remoting.ActorPidRequest), global::GAM.Remoting.ActorPidRequest.Parser, new[]{ "Name", "Kind" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::GAM.Remoting.ActorPidResponse), global::GAM.Remoting.ActorPidResponse.Parser, new[]{ "Pid" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::GAM.Remoting.MessageBatch), global::GAM.Remoting.MessageBatch.Parser, new[]{ "Envelopes" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::GAM.Remoting.Unit), global::GAM.Remoting.Unit.Parser, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remoting.MessageEnvelope), global::Proto.Remoting.MessageEnvelope.Parser, new[]{ "TypeName", "MessageData", "Target", "Sender" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remoting.ActorPidRequest), global::Proto.Remoting.ActorPidRequest.Parser, new[]{ "Name", "Kind" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remoting.ActorPidResponse), global::Proto.Remoting.ActorPidResponse.Parser, new[]{ "Pid" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remoting.MessageBatch), global::Proto.Remoting.MessageBatch.Parser, new[]{ "Envelopes" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remoting.Unit), global::Proto.Remoting.Unit.Parser, null, null, null, null)
           }));
     }
     #endregion
@@ -54,7 +54,7 @@ namespace GAM.Remoting {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::GAM.Remoting.ProtosReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Proto.Remoting.ProtosReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -106,9 +106,9 @@ namespace GAM.Remoting {
 
     /// <summary>Field number for the "target" field.</summary>
     public const int TargetFieldNumber = 3;
-    private global::GAM.PID target_;
+    private global::Proto.PID target_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::GAM.PID Target {
+    public global::Proto.PID Target {
       get { return target_; }
       set {
         target_ = value;
@@ -117,9 +117,9 @@ namespace GAM.Remoting {
 
     /// <summary>Field number for the "sender" field.</summary>
     public const int SenderFieldNumber = 4;
-    private global::GAM.PID sender_;
+    private global::Proto.PID sender_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::GAM.PID Sender {
+    public global::Proto.PID Sender {
       get { return sender_; }
       set {
         sender_ = value;
@@ -212,13 +212,13 @@ namespace GAM.Remoting {
       }
       if (other.target_ != null) {
         if (target_ == null) {
-          target_ = new global::GAM.PID();
+          target_ = new global::Proto.PID();
         }
         Target.MergeFrom(other.Target);
       }
       if (other.sender_ != null) {
         if (sender_ == null) {
-          sender_ = new global::GAM.PID();
+          sender_ = new global::Proto.PID();
         }
         Sender.MergeFrom(other.Sender);
       }
@@ -242,14 +242,14 @@ namespace GAM.Remoting {
           }
           case 26: {
             if (target_ == null) {
-              target_ = new global::GAM.PID();
+              target_ = new global::Proto.PID();
             }
             input.ReadMessage(target_);
             break;
           }
           case 34: {
             if (sender_ == null) {
-              sender_ = new global::GAM.PID();
+              sender_ = new global::Proto.PID();
             }
             input.ReadMessage(sender_);
             break;
@@ -267,7 +267,7 @@ namespace GAM.Remoting {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::GAM.Remoting.ProtosReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Proto.Remoting.ProtosReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -412,7 +412,7 @@ namespace GAM.Remoting {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::GAM.Remoting.ProtosReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Proto.Remoting.ProtosReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -439,9 +439,9 @@ namespace GAM.Remoting {
 
     /// <summary>Field number for the "pid" field.</summary>
     public const int PidFieldNumber = 1;
-    private global::GAM.PID pid_;
+    private global::Proto.PID pid_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::GAM.PID Pid {
+    public global::Proto.PID Pid {
       get { return pid_; }
       set {
         pid_ = value;
@@ -501,7 +501,7 @@ namespace GAM.Remoting {
       }
       if (other.pid_ != null) {
         if (pid_ == null) {
-          pid_ = new global::GAM.PID();
+          pid_ = new global::Proto.PID();
         }
         Pid.MergeFrom(other.Pid);
       }
@@ -517,7 +517,7 @@ namespace GAM.Remoting {
             break;
           case 10: {
             if (pid_ == null) {
-              pid_ = new global::GAM.PID();
+              pid_ = new global::Proto.PID();
             }
             input.ReadMessage(pid_);
             break;
@@ -535,7 +535,7 @@ namespace GAM.Remoting {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::GAM.Remoting.ProtosReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Proto.Remoting.ProtosReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -562,11 +562,11 @@ namespace GAM.Remoting {
 
     /// <summary>Field number for the "envelopes" field.</summary>
     public const int EnvelopesFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::GAM.Remoting.MessageEnvelope> _repeated_envelopes_codec
-        = pb::FieldCodec.ForMessage(10, global::GAM.Remoting.MessageEnvelope.Parser);
-    private readonly pbc::RepeatedField<global::GAM.Remoting.MessageEnvelope> envelopes_ = new pbc::RepeatedField<global::GAM.Remoting.MessageEnvelope>();
+    private static readonly pb::FieldCodec<global::Proto.Remoting.MessageEnvelope> _repeated_envelopes_codec
+        = pb::FieldCodec.ForMessage(10, global::Proto.Remoting.MessageEnvelope.Parser);
+    private readonly pbc::RepeatedField<global::Proto.Remoting.MessageEnvelope> envelopes_ = new pbc::RepeatedField<global::Proto.Remoting.MessageEnvelope>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::GAM.Remoting.MessageEnvelope> Envelopes {
+    public pbc::RepeatedField<global::Proto.Remoting.MessageEnvelope> Envelopes {
       get { return envelopes_; }
     }
 
@@ -644,7 +644,7 @@ namespace GAM.Remoting {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::GAM.Remoting.ProtosReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Proto.Remoting.ProtosReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

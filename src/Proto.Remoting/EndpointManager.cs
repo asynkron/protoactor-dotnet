@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace GAM.Remoting
+namespace Proto.Remoting
 {
     public class EndpointManager : IActor
     {

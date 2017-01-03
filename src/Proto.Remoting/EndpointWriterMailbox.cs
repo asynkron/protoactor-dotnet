@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace GAM.Remoting
+namespace Proto.Remoting
 {
     internal static class MailboxStatus
     {

@@ -6,8 +6,8 @@
 
 using System;
 using System.Threading.Tasks;
-using GAM;
-using GAM.Remoting;
+using Proto;
+using Proto.Remoting;
 using Messages;
 using ProtosReflection = Messages.ProtosReflection;
 

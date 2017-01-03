@@ -6,7 +6,7 @@
 
 using System.Threading.Tasks;
 
-namespace GAM
+namespace Proto
 {
     public delegate Task ReceiveAsync(IContext ctx);
 }

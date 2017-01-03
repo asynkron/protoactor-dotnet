@@ -7,7 +7,7 @@
 using System;
 using System.Collections.Concurrent;
 
-namespace GAM
+namespace Proto
 {
     public class EventStream
     {

@@ -6,7 +6,7 @@
 
 using System;
 
-namespace GAM
+namespace Proto
 {
     public sealed class Props
     {

@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace GAM
+namespace Proto
 {
     public interface IMessageInvoker
     {
@@ -217,7 +217,7 @@ namespace GAM
         {
             ProcessRegistry.Instance.Remove(Self);
             //This is intentional
-            InvokeUserMessageAsync(GAM.Stopped.Instance).Wait();
+            InvokeUserMessageAsync(Proto.Stopped.Instance).Wait();
             //Notify watchers
         }
 

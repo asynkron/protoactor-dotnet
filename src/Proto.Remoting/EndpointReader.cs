@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
 
-namespace GAM.Remoting
+namespace Proto.Remoting
 {
     public class EndpointReader : Remoting.RemotingBase
     {

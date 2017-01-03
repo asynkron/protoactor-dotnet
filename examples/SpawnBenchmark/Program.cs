@@ -7,7 +7,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using GAM;
+using Proto;
 
 namespace SpawnBenchmark
 {

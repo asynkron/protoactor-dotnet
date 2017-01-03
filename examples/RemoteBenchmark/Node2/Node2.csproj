@@ -16,8 +16,8 @@
     <PackageReference Include="System.ValueTuple" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\GAM.Remoting\GAM.Remoting.csproj" />
-    <ProjectReference Include="..\..\..\src\GAM\GAM.csproj" />
+    <ProjectReference Include="..\..\..\src\Proto.Actor\Proto.Actor.csproj" />
+    <ProjectReference Include="..\..\..\src\Proto.Remoting\Proto.Remoting.csproj" />
     <ProjectReference Include="..\Messages\Messages.csproj" />
   </ItemGroup>
   <ItemGroup>

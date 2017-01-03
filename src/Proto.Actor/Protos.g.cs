@@ -7,7 +7,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace GAM {
+namespace Proto {
 
   /// <summary>Holder for reflection information generated from Protos.proto</summary>
   public static partial class ProtosReflection {
@@ -31,15 +31,15 @@ namespace GAM {
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::GAM.PID), global::GAM.PID.Parser, new[]{ "Host", "Id" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::GAM.Restarting), global::GAM.Restarting.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::GAM.Stopping), global::GAM.Stopping.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::GAM.Stopped), global::GAM.Stopped.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::GAM.PoisonPill), global::GAM.PoisonPill.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::GAM.Started), global::GAM.Started.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::GAM.Watch), global::GAM.Watch.Parser, new[]{ "Watcher" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::GAM.Unwatch), global::GAM.Unwatch.Parser, new[]{ "Watcher" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::GAM.Terminated), global::GAM.Terminated.Parser, new[]{ "Who" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.PID), global::Proto.PID.Parser, new[]{ "Host", "Id" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Restarting), global::Proto.Restarting.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Stopping), global::Proto.Stopping.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Stopped), global::Proto.Stopped.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.PoisonPill), global::Proto.PoisonPill.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Started), global::Proto.Started.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Watch), global::Proto.Watch.Parser, new[]{ "Watcher" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Unwatch), global::Proto.Unwatch.Parser, new[]{ "Watcher" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Terminated), global::Proto.Terminated.Parser, new[]{ "Who" }, null, null, null)
           }));
     }
     #endregion
@@ -53,7 +53,7 @@ namespace GAM {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::GAM.ProtosReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -201,7 +201,7 @@ namespace GAM {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::GAM.ProtosReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -290,7 +290,7 @@ namespace GAM {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::GAM.ProtosReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -379,7 +379,7 @@ namespace GAM {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::GAM.ProtosReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -468,7 +468,7 @@ namespace GAM {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::GAM.ProtosReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -557,7 +557,7 @@ namespace GAM {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::GAM.ProtosReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -649,7 +649,7 @@ namespace GAM {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::GAM.ProtosReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -676,9 +676,9 @@ namespace GAM {
 
     /// <summary>Field number for the "watcher" field.</summary>
     public const int WatcherFieldNumber = 1;
-    private global::GAM.PID watcher_;
+    private global::Proto.PID watcher_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::GAM.PID Watcher {
+    public global::Proto.PID Watcher {
       get { return watcher_; }
       set {
         watcher_ = value;
@@ -738,7 +738,7 @@ namespace GAM {
       }
       if (other.watcher_ != null) {
         if (watcher_ == null) {
-          watcher_ = new global::GAM.PID();
+          watcher_ = new global::Proto.PID();
         }
         Watcher.MergeFrom(other.Watcher);
       }
@@ -754,7 +754,7 @@ namespace GAM {
             break;
           case 10: {
             if (watcher_ == null) {
-              watcher_ = new global::GAM.PID();
+              watcher_ = new global::Proto.PID();
             }
             input.ReadMessage(watcher_);
             break;
@@ -772,7 +772,7 @@ namespace GAM {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::GAM.ProtosReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -799,9 +799,9 @@ namespace GAM {
 
     /// <summary>Field number for the "watcher" field.</summary>
     public const int WatcherFieldNumber = 1;
-    private global::GAM.PID watcher_;
+    private global::Proto.PID watcher_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::GAM.PID Watcher {
+    public global::Proto.PID Watcher {
       get { return watcher_; }
       set {
         watcher_ = value;
@@ -861,7 +861,7 @@ namespace GAM {
       }
       if (other.watcher_ != null) {
         if (watcher_ == null) {
-          watcher_ = new global::GAM.PID();
+          watcher_ = new global::Proto.PID();
         }
         Watcher.MergeFrom(other.Watcher);
       }
@@ -877,7 +877,7 @@ namespace GAM {
             break;
           case 10: {
             if (watcher_ == null) {
-              watcher_ = new global::GAM.PID();
+              watcher_ = new global::Proto.PID();
             }
             input.ReadMessage(watcher_);
             break;
@@ -895,7 +895,7 @@ namespace GAM {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::GAM.ProtosReflection.Descriptor.MessageTypes[8]; }
+      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[8]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -922,9 +922,9 @@ namespace GAM {
 
     /// <summary>Field number for the "who" field.</summary>
     public const int WhoFieldNumber = 1;
-    private global::GAM.PID who_;
+    private global::Proto.PID who_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::GAM.PID Who {
+    public global::Proto.PID Who {
       get { return who_; }
       set {
         who_ = value;
@@ -984,7 +984,7 @@ namespace GAM {
       }
       if (other.who_ != null) {
         if (who_ == null) {
-          who_ = new global::GAM.PID();
+          who_ = new global::Proto.PID();
         }
         Who.MergeFrom(other.Who);
       }
@@ -1000,7 +1000,7 @@ namespace GAM {
             break;
           case 10: {
             if (who_ == null) {
-              who_ = new global::GAM.PID();
+              who_ = new global::Proto.PID();
             }
             input.ReadMessage(who_);
             break;

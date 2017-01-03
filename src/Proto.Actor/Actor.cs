@@ -7,7 +7,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace GAM
+namespace Proto
 {
     public static class Actor
     {

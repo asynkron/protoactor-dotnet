@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
 
-namespace GAM.Remoting
+namespace Proto.Remoting
 {
     public static class Serialization
     {
@@ -16,7 +16,7 @@ namespace GAM.Remoting
 
         static Serialization()
         {
-            RegisterFileDescriptor(GAM.ProtosReflection.Descriptor);
+            RegisterFileDescriptor(Proto.ProtosReflection.Descriptor);
             RegisterFileDescriptor(ProtosReflection.Descriptor);
         }
 

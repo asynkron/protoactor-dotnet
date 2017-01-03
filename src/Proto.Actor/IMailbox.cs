@@ -8,7 +8,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace GAM
+namespace Proto
 {
     internal static class MailboxStatus
     {
