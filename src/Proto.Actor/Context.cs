@@ -164,15 +164,22 @@ namespace Proto
             }
             catch (Exception x)
             {
+                var failure = new Failure(Self, x);
                 if (Parent == null)
                 {
+                    HandleRootFailure(failure);
                 }
                 else
                 {
                     Self.SendSystemMessage(new SuspendMailbox());
+                    Parent.SendSystemMessage(failure);
                 }
-                //handle supervision
             }
+        }
+
+        private void HandleRootFailure(Failure failure)
+        {
+            Supervision.DefaultStrategy.HandleFailure(this, failure.Who, failure.Reason);
         }
 
         private void HandleStop()

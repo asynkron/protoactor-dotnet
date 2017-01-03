@@ -3,7 +3,7 @@
 //      Copyright (C) 2015-2016 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
-
+using System;
 namespace Proto
 {
     public abstract class SystemMessage
@@ -20,6 +20,19 @@ namespace Proto
 
     public sealed partial class ResumeMailbox : SystemMessage
     {
+    }
+
+    public class Failure : SystemMessage
+    {
+
+        public Failure(PID who, Exception reason)
+        {
+            this.Who = who;
+            this.Reason = reason;
+        }
+
+        public Exception Reason { get; }
+        public PID Who { get; }
     }
 
     public sealed partial class Watch : SystemMessage

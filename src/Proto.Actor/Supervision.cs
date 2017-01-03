@@ -18,8 +18,14 @@ namespace Proto
         void EscalateFailure(PID who, Exception reason);
     }
 
+    public static class Supervision
+    {
+        public static ISupervisorStrategy DefaultStrategy { get; } = new OneForOneStrategy((who,reason) => SupervisorDirective.Restart);
+    }
+
     public interface ISupervisorStrategy
     {
+        
         void HandleFailure(ISupervisor supervisor, PID child, Exception cause);
     }
 
