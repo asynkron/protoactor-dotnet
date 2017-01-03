@@ -38,7 +38,7 @@ namespace Proto
         void UnbecomeStacked();
     }
 
-    public class Context : IMessageInvoker, IContext
+    public class Context : IMessageInvoker, IContext , ISupervisor
     {
         private IActor _actor;
         private HashSet<PID> _children;
@@ -256,6 +256,12 @@ namespace Proto
         private void Watch(PID who)
         {
             who.SendSystemMessage(new Watch(Self));
+        }
+
+        public void EscalateFailure(PID who, Exception reason)
+        {
+            Self.SendSystemMessage(new SuspendMailbox());
+            Parent.SendSystemMessage(new Failure(who, reason));
         }
     }
 }
