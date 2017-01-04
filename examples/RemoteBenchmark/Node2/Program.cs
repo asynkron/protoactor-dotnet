@@ -19,22 +19,19 @@ namespace Node2
 
         public Task ReceiveAsync(IContext context)
         {
-            var msg = context.Message;
-            if (msg is StartRemote)
+            switch (context.Message)
             {
-                var sr = (StartRemote) msg;
-                Console.WriteLine("Starting");
-                _sender = sr.Sender;
-                context.Respond(new Start());
-                return Actor.Done;
-            }
-
-            if (msg is Ping)
-            {
-                _sender.Tell(new Pong());
-                return Actor.Done;
-            }
-            return Actor.Done;
+                case StartRemote sr:
+                    Console.WriteLine("Starting");
+                    _sender = sr.Sender;
+                    context.Respond(new Start());
+                    return Actor.Done;
+                case Ping _:
+                    _sender.Tell(new Pong());
+                    return Actor.Done;
+                default:
+                    return Actor.Done;
+            }            
         }
     }
 

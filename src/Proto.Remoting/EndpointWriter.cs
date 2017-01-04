@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Grpc.Core;
+using System;
 
 namespace Proto.Remoting
 {
@@ -25,24 +26,24 @@ namespace Proto.Remoting
 
         public async Task ReceiveAsync(IContext context)
         {
-            var msg = context.Message;
-            if (msg is Started)
+            switch (context.Message)
             {
-                await StartedAsync();
-            }
-            if (msg is Stopped)
-            {
-                await StoppedAsync();
-            }
-            if (msg is Restarting)
-            {
-                await RestartingAsync();
-            }
-            if (msg is IEnumerable<MessageEnvelope>)
-            {
-                var envelopes = msg as IEnumerable<MessageEnvelope>;
-                await SendEnvelopesAsync(envelopes);
-            }
+                case Started m:
+                    Console.WriteLine("EndpointWriter Started");
+                    await StartedAsync();
+                    break;
+                case Stopped m:
+                    await StoppedAsync();
+                    break;
+                case Restarting m:
+                    Console.WriteLine("EndpointWriter Restarting");
+                    await RestartingAsync();
+                    break;
+                case IEnumerable<MessageEnvelope> m:
+                    var envelopes = m as IEnumerable<MessageEnvelope>;
+                    await SendEnvelopesAsync(envelopes);
+                    break;
+            }           
         }
 
         private async Task SendEnvelopesAsync(IEnumerable<MessageEnvelope> envelopes)
