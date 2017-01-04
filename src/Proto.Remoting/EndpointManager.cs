@@ -17,6 +17,7 @@ namespace Proto.Remoting
         public Task ReceiveAsync(IContext context)
         {
             var msg = context.Message;
+            //TODO: convert to switch later, currently doesnt work, switching on type throws null ref error
             if (msg is Started)
             {
                 Console.WriteLine("[REMOTING] Started EndpointManager");
@@ -24,10 +25,11 @@ namespace Proto.Remoting
             }
             if (msg is MessageEnvelope)
             {
-                var env = (MessageEnvelope) msg;
+                var env = (MessageEnvelope)msg;
                 PID pid;
                 if (!_connections.TryGetValue(env.Target.Host, out pid))
                 {
+                    Console.WriteLine("Resolving EndpointWriter for {0}", env.Target.Host);
                     var props =
                         Actor.FromProducer(() => new EndpointWriter(env.Target.Host))
                             .WithMailbox(() => new EndpointWriterMailbox());
