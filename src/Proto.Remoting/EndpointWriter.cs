@@ -51,7 +51,15 @@ namespace Proto.Remoting
             var batch = new MessageBatch();
             batch.Envelopes.AddRange(envelopes);
 
-            await _streamWriter.WriteAsync(batch);
+            try
+            {
+                await _streamWriter.WriteAsync(batch);
+            }
+            catch(Exception x)
+            {
+                Console.WriteLine("[REMOTING] gRPC Failed to send to host {0}", _host);
+                throw;
+            }            
         }
 
         private async Task RestartingAsync()

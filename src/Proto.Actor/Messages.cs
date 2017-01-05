@@ -14,6 +14,9 @@ namespace Proto
     {
     }
 
+    public sealed partial class Terminated : SystemMessage
+    {
+    }
     public sealed partial class SuspendMailbox : SystemMessage
     {
     }
@@ -41,6 +44,10 @@ namespace Proto
         {
             Watcher = watcher;
         }
+    }
+
+    public sealed partial class Unwatch : SystemMessage
+    {
     }
 
     public sealed partial class Restart : SystemMessage

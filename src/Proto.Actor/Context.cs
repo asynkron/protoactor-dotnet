@@ -38,19 +38,16 @@ namespace Proto
         void UnbecomeStacked();
     }
 
-    public class Context : IMessageInvoker, IContext , ISupervisor
+    public class Context : IMessageInvoker, IContext, ISupervisor
     {
         private IActor _actor;
         private HashSet<PID> _children;
-        private bool _isRestarting;
-        private bool _isStopping;
         private object _message;
         private int _receiveIndex;
         private ReceiveAsync[] _receivePlugins;
         private bool _restarting;
         private Stack<object> _stash;
         private bool _stopping;
-        private SupervisionStrategy _supervisionStrategy;
         private HashSet<PID> _watchers;
         private HashSet<PID> _watching;
         private Stack<ReceiveAsync> _behavior;
@@ -59,14 +56,19 @@ namespace Proto
         {
             Parent = parent;
             Props = props;
-            _receivePlugins = new ReceiveAsync[] {};
-            _watchers = null;
-            _watching = null;
-            Message = null;
-            _actor = props.Producer();
             _behavior = new Stack<ReceiveAsync>();
             _behavior.Push(ActorReceiveAsync);
+
+            IncarnateActor();
         }
+
+        private void IncarnateActor()
+        {
+            _restarting = false;
+            _stopping = false;
+            _actor = Props.Producer();
+            Become(ActorReceiveAsync);
+        } 
 
         public PID[] Children()
         {
@@ -101,7 +103,7 @@ namespace Proto
         public Task NextAsync()
         {
             ReceiveAsync receive;
-            if (_receiveIndex < _receivePlugins.Length)
+            if (_receiveIndex < _receivePlugins?.Length)
             {
                 receive = _receivePlugins[_receiveIndex];
                 _receiveIndex++;
@@ -147,10 +149,84 @@ namespace Proto
 
         public void InvokeSystemMessage(SystemMessage msg)
         {
-            if (msg is Stop)
+            try
             {
-                HandleStop();
+                switch (msg)
+                {
+                    case Stop _:
+                        HandleStop();
+                        break;
+                    case Terminated t:
+                        HandleTerminated(t);
+                        break;
+                    case Watch w:
+                        HandleWatch(w);
+                        break;
+                    case Unwatch uw:
+                        HandleUnwatch(uw);
+                        break;
+                    case Failure f:
+                        HandleFailure(f);
+                        break;
+                    case Restart r:
+                        HandleRestart(r);
+                        break;
+                    default:
+                        Console.WriteLine("Unknown system message {0}", msg);
+                        break;
+                }
             }
+            catch (Exception x)
+            {
+                Console.WriteLine("Error handling SystemMessage {0}", x);
+
+            }
+        }
+
+        private void HandleRestart(Restart r)
+        {
+            _stopping = false;
+            _restarting = true;
+
+            InvokeUserMessageAsync(new Restarting()).Wait();
+            if (_children != null)
+            {
+                foreach(var child in _children)
+                {
+                    child.Stop();
+                }
+            }
+            TryRestartOrTerminate();
+        }
+
+        private void HandleUnwatch(Unwatch uw)
+        {
+            if (_watchers != null)
+            {
+                _watchers.Remove(uw.Watcher);
+            }
+        }
+
+        private void HandleWatch(Watch w)
+        {
+            if (_watchers == null)
+            {
+                _watchers = new HashSet<PID>();
+            }
+            _watchers.Add(w.Watcher);
+        }
+
+        private void HandleFailure(Failure msg)
+        {
+            Props.Supervisor.HandleFailure(this, msg.Who, msg.Reason);
+        }
+
+        private void HandleTerminated(Terminated msg)
+        {
+            _children.Remove(msg.Who);
+            _watching.Remove(msg.Who);
+            InvokeUserMessageAsync(msg).Wait();
+            TryRestartOrTerminate();
         }
 
         public async Task InvokeUserMessageAsync(object msg)
@@ -184,8 +260,8 @@ namespace Proto
 
         private void HandleStop()
         {
-            _isRestarting = false;
-            _isStopping = true;
+            _restarting = false;
+            _stopping = true;
             //this is intentional
             InvokeUserMessageAsync(Stopping.Instance).Wait();
             if (_children != null)
@@ -230,7 +306,17 @@ namespace Proto
 
         private void Restart()
         {
-            throw new NotImplementedException();
+            IncarnateActor();
+            Self.SendSystemMessage(new ResumeMailbox());
+
+            InvokeUserMessageAsync(Started.Instance).Wait();
+            if (_stash != null) {
+                while (_stash.Any())
+                {
+                    var msg = _stash.Pop();
+                    InvokeUserMessageAsync(msg).Wait();
+                }
+            }
         }
 
         private Task ActorReceiveAsync(IContext ctx)
