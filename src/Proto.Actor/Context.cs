@@ -41,6 +41,7 @@ namespace Proto
     public class Context : IMessageInvoker, IContext, ISupervisor
     {
         private IActor _actor;
+        private Stack<ReceiveAsync> _behavior;
         private HashSet<PID> _children;
         private object _message;
         private int _receiveIndex;
@@ -50,7 +51,6 @@ namespace Proto
         private bool _stopping;
         private HashSet<PID> _watchers;
         private HashSet<PID> _watching;
-        private Stack<ReceiveAsync> _behavior;
 
         public Context(Props props, PID parent)
         {
@@ -61,14 +61,6 @@ namespace Proto
 
             IncarnateActor();
         }
-
-        private void IncarnateActor()
-        {
-            _restarting = false;
-            _stopping = false;
-            _actor = Props.Producer();
-            Become(ActorReceiveAsync);
-        } 
 
         public PID[] Children()
         {
@@ -142,7 +134,7 @@ namespace Proto
 
         public void UnbecomeStacked()
         {
-            if(_behavior.Count <= 1)
+            if (_behavior.Count <= 1)
                 throw new Exception("Can not unbecome actor base behaviour");
             _behavior.Pop();
         }
@@ -179,54 +171,7 @@ namespace Proto
             catch (Exception x)
             {
                 Console.WriteLine("Error handling SystemMessage {0}", x);
-
             }
-        }
-
-        private void HandleRestart(Restart r)
-        {
-            _stopping = false;
-            _restarting = true;
-
-            InvokeUserMessageAsync(new Restarting()).Wait();
-            if (_children != null)
-            {
-                foreach(var child in _children)
-                {
-                    child.Stop();
-                }
-            }
-            TryRestartOrTerminate();
-        }
-
-        private void HandleUnwatch(Unwatch uw)
-        {
-            if (_watchers != null)
-            {
-                _watchers.Remove(uw.Watcher);
-            }
-        }
-
-        private void HandleWatch(Watch w)
-        {
-            if (_watchers == null)
-            {
-                _watchers = new HashSet<PID>();
-            }
-            _watchers.Add(w.Watcher);
-        }
-
-        private void HandleFailure(Failure msg)
-        {
-            Props.Supervisor.HandleFailure(this, msg.Who, msg.Reason);
-        }
-
-        private void HandleTerminated(Terminated msg)
-        {
-            _children.Remove(msg.Who);
-            _watching.Remove(msg.Who);
-            InvokeUserMessageAsync(msg).Wait();
-            TryRestartOrTerminate();
         }
 
         public async Task InvokeUserMessageAsync(object msg)
@@ -253,6 +198,58 @@ namespace Proto
             }
         }
 
+        public void EscalateFailure(PID who, Exception reason)
+        {
+            Self.SendSystemMessage(new SuspendMailbox());
+            Parent.SendSystemMessage(new Failure(who, reason));
+        }
+
+        private void IncarnateActor()
+        {
+            _restarting = false;
+            _stopping = false;
+            _actor = Props.Producer();
+            Become(ActorReceiveAsync);
+        }
+
+        private void HandleRestart(Restart r)
+        {
+            _stopping = false;
+            _restarting = true;
+
+            InvokeUserMessageAsync(new Restarting()).Wait();
+            if (_children != null)
+                foreach (var child in _children)
+                    child.Stop();
+            TryRestartOrTerminate();
+        }
+
+        private void HandleUnwatch(Unwatch uw)
+        {
+            if (_watchers != null)
+                _watchers.Remove(uw.Watcher);
+        }
+
+        private void HandleWatch(Watch w)
+        {
+            if (_watchers == null)
+                _watchers = new HashSet<PID>();
+            _watchers.Add(w.Watcher);
+        }
+
+        private void HandleFailure(Failure msg)
+        {
+            Props.Supervisor.HandleFailure(this, msg.Who, msg.Reason);
+        }
+
+        private void HandleTerminated(Terminated msg)
+        {
+            _children.Remove(msg.Who);
+            _watching.Remove(msg.Who);
+            InvokeUserMessageAsync(msg).Wait();
+            TryRestartOrTerminate();
+        }
+
         private void HandleRootFailure(Failure failure)
         {
             Supervision.DefaultStrategy.HandleFailure(this, failure.Who, failure.Reason);
@@ -265,24 +262,16 @@ namespace Proto
             //this is intentional
             InvokeUserMessageAsync(Stopping.Instance).Wait();
             if (_children != null)
-            {
                 foreach (var child in _children)
-                {
                     child.Stop();
-                }
-            }
             TryRestartOrTerminate();
         }
 
         private void TryRestartOrTerminate()
         {
             if (_children != null)
-            {
                 if (_children.Count > 0)
-                {
                     return;
-                }
-            }
 
             if (_restarting)
             {
@@ -291,9 +280,7 @@ namespace Proto
             }
 
             if (_stopping)
-            {
                 Stopped();
-            }
         }
 
         private void Stopped()
@@ -310,13 +297,12 @@ namespace Proto
             Self.SendSystemMessage(new ResumeMailbox());
 
             InvokeUserMessageAsync(Started.Instance).Wait();
-            if (_stash != null) {
+            if (_stash != null)
                 while (_stash.Any())
                 {
                     var msg = _stash.Pop();
                     InvokeUserMessageAsync(msg).Wait();
                 }
-            }
         }
 
         private Task ActorReceiveAsync(IContext ctx)
@@ -328,19 +314,13 @@ namespace Proto
         {
             string fullname;
             if (Parent != null)
-            {
                 fullname = Parent.Id + "/" + name;
-            }
             else
-            {
                 fullname = name;
-            }
 
             var pid = Actor.InternalSpawn(props, fullname, Self);
             if (_children == null)
-            {
                 _children = new HashSet<PID>();
-            }
             _children.Add(pid);
             Watch(pid);
             return pid;
@@ -349,12 +329,6 @@ namespace Proto
         private void Watch(PID who)
         {
             who.SendSystemMessage(new Watch(Self));
-        }
-
-        public void EscalateFailure(PID who, Exception reason)
-        {
-            Self.SendSystemMessage(new SuspendMailbox());
-            Parent.SendSystemMessage(new Failure(who, reason));
         }
     }
 }
