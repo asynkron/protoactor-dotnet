@@ -86,7 +86,9 @@ namespace Proto
         public void Stash()
         {
             if (_stash == null)
+            {
                 _stash = new Stack<object>();
+            }
             _stash.Push(Message);
         }
 
@@ -133,7 +135,9 @@ namespace Proto
         public void UnbecomeStacked()
         {
             if (_behavior.Count <= 1)
+            {
                 throw new Exception("Can not unbecome actor base behaviour");
+            }
             _behavior.Pop();
         }
 
@@ -217,8 +221,12 @@ namespace Proto
 
             InvokeUserMessageAsync(new Restarting()).Wait();
             if (_children != null)
+            {
                 foreach (var child in _children)
+                {
                     child.Stop();
+                }
+            }
             TryRestartOrTerminate();
         }
 
@@ -230,7 +238,9 @@ namespace Proto
         private void HandleWatch(Watch w)
         {
             if (_watchers == null)
+            {
                 _watchers = new HashSet<PID>();
+            }
             _watchers.Add(w.Watcher);
         }
 
@@ -264,15 +274,21 @@ namespace Proto
             //this is intentional
             InvokeUserMessageAsync(Stopping.Instance).Wait();
             if (_children != null)
+            {
                 foreach (var child in _children)
+                {
                     child.Stop();
+                }
+            }
             TryRestartOrTerminate();
         }
 
         private void TryRestartOrTerminate()
         {
             if (_children?.Count > 0)
+            {
                 return;
+            }
 
             if (_restarting)
             {
@@ -281,7 +297,9 @@ namespace Proto
             }
 
             if (_stopping)
+            {
                 Stopped();
+            }
         }
 
         private void Stopped()
@@ -299,11 +317,13 @@ namespace Proto
 
             InvokeUserMessageAsync(Started.Instance).Wait();
             if (_stash != null)
+            {
                 while (_stash.Any())
                 {
                     var msg = _stash.Pop();
                     InvokeUserMessageAsync(msg).Wait();
                 }
+            }
         }
 
         private Task ActorReceiveAsync(IContext ctx)
@@ -315,13 +335,19 @@ namespace Proto
         {
             string fullname;
             if (Parent != null)
+            {
                 fullname = Parent.Id + "/" + name;
+            }
             else
+            {
                 fullname = name;
+            }
 
             var pid = Actor.InternalSpawn(props, fullname, Self);
             if (_children == null)
+            {
                 _children = new HashSet<PID>();
+            }
             _children.Add(pid);
             Watch(pid);
             return pid;

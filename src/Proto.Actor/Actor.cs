@@ -61,7 +61,9 @@ namespace Proto
             var pid = res.Item1;
             var ok = res.Item2;
             if (!ok)
+            {
                 return pid;
+            }
 
             mailbox.RegisterHandlers(ctx, dispatcher);
             ctx.Self = pid;

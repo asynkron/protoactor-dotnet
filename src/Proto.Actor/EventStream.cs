@@ -22,7 +22,9 @@ namespace Proto
             {
                 var letter = msg as DeadLetter;
                 if (letter != null)
+                {
                     Console.WriteLine("[DeadLetter] {0} got {1}", letter.Pid, letter.Message);
+                }
             });
         }
 
@@ -35,7 +37,9 @@ namespace Proto
         public void Publish(object msg)
         {
             foreach (var sub in _subscriptions)
+            {
                 sub.Value(msg);
+            }
         }
     }
 }
