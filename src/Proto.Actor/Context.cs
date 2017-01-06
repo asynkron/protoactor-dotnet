@@ -36,6 +36,7 @@ namespace Proto
         void Become(ReceiveAsync receive);
         void BecomeStacked(ReceiveAsync receive);
         void UnbecomeStacked();
+        void Watch(PID pid);
     }
 
     public class Context : IMessageInvoker, IContext, ISupervisor
@@ -353,7 +354,7 @@ namespace Proto
             return pid;
         }
 
-        private void Watch(PID who)
+        public void Watch(PID who)
         {
             who.SendSystemMessage(new Watch(Self));
         }

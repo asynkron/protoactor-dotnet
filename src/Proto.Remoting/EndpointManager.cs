@@ -25,7 +25,7 @@ namespace Proto.Remoting
             }
             if (msg is MessageEnvelope)
             {
-                var env = (MessageEnvelope) msg;
+                var env = (MessageEnvelope)msg;
                 PID pid;
                 if (!_connections.TryGetValue(env.Target.Host, out pid))
                 {
@@ -40,6 +40,34 @@ namespace Proto.Remoting
                 return Actor.Done;
             }
             return Actor.Done;
+
+
+            //    switch (context.Message)
+            //    {
+            //        case null:
+            //            Console.WriteLine("null");
+            //            return Actor.Done;
+            //        case Started _:
+            //            Console.WriteLine("[REMOTING] Started EndpointManager");
+            //            return Actor.Done;
+            //        case MessageEnvelope env:
+            //            PID pid;
+            //            if (!_connections.TryGetValue(env.Target.Host, out pid))
+            //            {
+            //                Console.WriteLine("Resolving EndpointWriter for {0}", env.Target.Host);
+            //                var props =
+            //                    Actor.FromProducer(() => new EndpointWriter(env.Target.Host))
+            //                        .WithMailbox(() => new EndpointWriterMailbox());
+            //                pid = context.Spawn(props);
+            //                _connections.Add(env.Target.Host, pid);
+            //            }
+            //            pid.Tell(env);
+            //            return Actor.Done;
+            //        default:
+            //            return Actor.Done;
+            //    }
+            //}
+
         }
     }
 }
