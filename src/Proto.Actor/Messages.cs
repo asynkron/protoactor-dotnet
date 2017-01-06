@@ -3,7 +3,9 @@
 //      Copyright (C) 2015-2016 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
+
 using System;
+
 namespace Proto
 {
     public abstract class SystemMessage
@@ -17,17 +19,21 @@ namespace Proto
     public sealed partial class Terminated : SystemMessage
     {
     }
-    public sealed partial class SuspendMailbox : SystemMessage
+
+    public sealed class SuspendMailbox : SystemMessage
     {
+        private SuspendMailbox() { }
+        public static readonly SuspendMailbox Instance = new SuspendMailbox();
     }
 
-    public sealed partial class ResumeMailbox : SystemMessage
+    public sealed class ResumeMailbox : SystemMessage
     {
+        private ResumeMailbox() { }
+        public static readonly ResumeMailbox Instance = new ResumeMailbox();
     }
 
     public class Failure : SystemMessage
     {
-
         public Failure(PID who, Exception reason)
         {
             this.Who = who;
@@ -50,12 +56,12 @@ namespace Proto
     {
     }
 
-    public sealed partial class Restart : SystemMessage
+    public sealed class Restart : SystemMessage
     {
         public static readonly Restart Instance = new Restart();
     }
 
-    public sealed partial class Stop : SystemMessage
+    public sealed class Stop : SystemMessage
     {
         public static readonly Stop Instance = new Stop();
     }

@@ -21,12 +21,12 @@ namespace Proto
 
         public IDispatcher Dispatcher => _dispatcher ?? new ThreadPoolDispatcher();
 
+        public ISupervisorStrategy Supervisor => _supervisor ?? Supervision.DefaultStrategy;
+
         public Props WithDispatcher(IDispatcher dispatcher)
         {
             return Copy(dispatcher: dispatcher);
         }
-
-        public ISupervisorStrategy Supervisor => _supervisor ?? Supervision.DefaultStrategy;
 
         public Props Copy(Func<IActor> producer = null, IDispatcher dispatcher = null,
             Func<IMailbox> mailboxProducer = null, ISupervisorStrategy supervisor = null)

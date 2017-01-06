@@ -86,9 +86,7 @@ namespace Proto
         public void Stash()
         {
             if (_stash == null)
-            {
                 _stash = new Stack<object>();
-            }
             _stash.Push(Message);
         }
 
@@ -192,7 +190,7 @@ namespace Proto
                 }
                 else
                 {
-                    Self.SendSystemMessage(new SuspendMailbox());
+                    Self.SendSystemMessage(SuspendMailbox.Instance);
                     Parent.SendSystemMessage(failure);
                 }
             }
@@ -200,7 +198,7 @@ namespace Proto
 
         public void EscalateFailure(PID who, Exception reason)
         {
-            Self.SendSystemMessage(new SuspendMailbox());
+            Self.SendSystemMessage(SuspendMailbox.Instance);
             Parent.SendSystemMessage(new Failure(who, reason));
         }
 
@@ -294,7 +292,7 @@ namespace Proto
         private void Restart()
         {
             IncarnateActor();
-            Self.SendSystemMessage(new ResumeMailbox());
+            Self.SendSystemMessage(ResumeMailbox.Instance);
 
             InvokeUserMessageAsync(Started.Instance).Wait();
             if (_stash != null)

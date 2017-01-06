@@ -47,9 +47,7 @@ namespace Proto
 
             ActorRef aref;
             if (_localActorRefs.TryGetValue(pid.Id, out aref))
-            {
                 return aref;
-            }
             return DeadLetterActorRef.Instance;
         }
 

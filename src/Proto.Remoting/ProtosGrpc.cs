@@ -26,11 +26,11 @@ namespace Proto.Remoting
 
         static readonly Method<global::Proto.Remoting.MessageBatch, global::Proto.Remoting.Unit> __Method_Receive = new Method
             <global::Proto.Remoting.MessageBatch, global::Proto.Remoting.Unit>(
-            MethodType.ClientStreaming,
-            __ServiceName,
-            "Receive",
-            __Marshaller_MessageBatch,
-            __Marshaller_Unit);
+                MethodType.ClientStreaming,
+                __ServiceName,
+                "Receive",
+                __Marshaller_MessageBatch,
+                __Marshaller_Unit);
 
         /// <summary>Service descriptor</summary>
         public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor

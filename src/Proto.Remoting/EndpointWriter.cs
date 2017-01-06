@@ -4,10 +4,10 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Grpc.Core;
-using System;
 
 namespace Proto.Remoting
 {
@@ -41,9 +41,9 @@ namespace Proto.Remoting
                     break;
                 case IEnumerable<MessageEnvelope> m:
                     var envelopes = m as IEnumerable<MessageEnvelope>;
-                    await SendEnvelopesAsync(envelopes,context);
+                    await SendEnvelopesAsync(envelopes, context);
                     break;
-            }           
+            }
         }
 
         private async Task SendEnvelopesAsync(IEnumerable<MessageEnvelope> envelopes, IContext context)
@@ -55,12 +55,12 @@ namespace Proto.Remoting
             {
                 await _streamWriter.WriteAsync(batch);
             }
-            catch(Exception x)
+            catch (Exception x)
             {
                 context.Stash();
                 Console.WriteLine("[REMOTING] gRPC Failed to send to host {0}", _host);
                 throw;
-            }            
+            }
         }
 
         private async Task RestartingAsync()

@@ -1,6 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="Supervision.cs" company="Asynkron HB">
+//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 
 namespace Proto
 {
@@ -20,12 +24,12 @@ namespace Proto
 
     public static class Supervision
     {
-        public static ISupervisorStrategy DefaultStrategy { get; } = new OneForOneStrategy((who,reason) => SupervisorDirective.Restart);
+        public static ISupervisorStrategy DefaultStrategy { get; } =
+            new OneForOneStrategy((who, reason) => SupervisorDirective.Restart);
     }
 
     public interface ISupervisorStrategy
     {
-        
         void HandleFailure(ISupervisor supervisor, PID child, Exception cause);
     }
 
@@ -33,21 +37,23 @@ namespace Proto
 
     public class OneForOneStrategy : ISupervisorStrategy
     {
-        private Decider _decider;
+        private readonly Decider _decider;
 
         public OneForOneStrategy(Decider decider)
         {
             _decider = decider;
         }
+
         public void HandleFailure(ISupervisor supervisor, PID child, Exception reason)
         {
             var directive = _decider(child, reason);
-            switch (directive) {
+            switch (directive)
+            {
                 case SupervisorDirective.Resume:
                     //resume the failing child
-                    child.SendSystemMessage(new ResumeMailbox());
+                    child.SendSystemMessage(ResumeMailbox.Instance);
                     break;
-	            case SupervisorDirective.Restart:
+                case SupervisorDirective.Restart:
                     //restart the failing child
                     child.SendSystemMessage(new Restart());
                     break;
@@ -58,6 +64,8 @@ namespace Proto
                 case SupervisorDirective.Escalate:
                     supervisor.EscalateFailure(child, reason);
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
     }

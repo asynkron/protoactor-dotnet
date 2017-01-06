@@ -61,45 +61,31 @@ namespace Proto
                 if (_systemMessages.TryDequeue(out sys))
                 {
                     if (sys is SuspendMailbox)
-                    {
                         _suspended = true;
-                    }
                     if (sys is ResumeMailbox)
-                    {
                         _suspended = false;
-                    }
                     _invoker.InvokeSystemMessage(sys);
                     continue;
                 }
                 if (_suspended)
-                {
                     break;
-                }
                 object msg;
                 if (_userMessages.TryDequeue(out msg))
-                {
                     await _invoker.InvokeUserMessageAsync(msg);
-                }
                 else
-                {
                     break;
-                }
             }
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
             if (_userMessages.Count > 0 || _systemMessages.Count > 0)
-            {
                 Schedule();
-            }
         }
 
         protected void Schedule()
         {
             if (Interlocked.Exchange(ref _status, MailboxStatus.Busy) == MailboxStatus.Idle)
-            {
                 _dispatcher.Schedule(RunAsync);
-            }
         }
     }
 }

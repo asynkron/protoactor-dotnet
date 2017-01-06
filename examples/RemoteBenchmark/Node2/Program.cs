@@ -6,9 +6,9 @@
 
 using System;
 using System.Threading.Tasks;
+using Messages;
 using Proto;
 using Proto.Remoting;
-using Messages;
 using ProtosReflection = Messages.ProtosReflection;
 
 namespace Node2
@@ -31,7 +31,7 @@ namespace Node2
                     return Actor.Done;
                 default:
                     return Actor.Done;
-            }            
+            }
         }
     }
 

@@ -17,9 +17,7 @@ namespace Proto
         public HashedConcurrentDictionary()
         {
             for (var i = 0; i < _partitions.Length; i++)
-            {
                 _partitions[i] = new Partition();
-            }
         }
 
         static UInt64 CalculateHash(string read)
@@ -35,7 +33,7 @@ namespace Proto
 
         private Partition GetPartition(string key)
         {
-            var hash = Math.Abs(key.GetHashCode())%HashSize;
+            var hash = Math.Abs(key.GetHashCode()) % HashSize;
             var p = _partitions[hash];
             return p;
         }

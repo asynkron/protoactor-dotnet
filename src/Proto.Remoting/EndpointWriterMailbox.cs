@@ -56,13 +56,9 @@ namespace Proto.Remoting
             if (_systemMessages.TryDequeue(out sys))
             {
                 if (sys is SuspendMailbox)
-                {
                     _suspended = true;
-                }
                 if (sys is ResumeMailbox)
-                {
                     _suspended = false;
-                }
                 _invoker.InvokeSystemMessage(sys);
             }
             if (!_suspended)
@@ -73,9 +69,7 @@ namespace Proto.Remoting
                 {
                     batch.Add((MessageEnvelope) msg);
                     if (batch.Count > 1000)
-                    {
                         break;
-                    }
                 }
 
 
@@ -90,18 +84,14 @@ namespace Proto.Remoting
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
             if (_userMessages.Count > 0 || _systemMessages.Count > 0)
-            {
                 Schedule();
-            }
         }
 
         protected void Schedule()
         {
             _hasMoreMessages = true;
             if (Interlocked.Exchange(ref _status, MailboxStatus.Busy) == MailboxStatus.Idle)
-            {
                 _dispatcher.Schedule(RunAsync);
-            }
         }
     }
 }

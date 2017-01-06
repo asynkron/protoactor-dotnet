@@ -44,8 +44,8 @@ namespace SpawnBenchmark
                     var child = Actor.Spawn(props);
                     child.Request(new Request
                     {
-                        Num = r.Num + i*(r.Size/r.Div),
-                        Size = r.Size/r.Div,
+                        Num = r.Num + i * (r.Size / r.Div),
+                        Size = r.Size / r.Div,
                         Div = r.Div
                     }, context.Self);
                 }
@@ -57,9 +57,7 @@ namespace SpawnBenchmark
                 Sum += (Int64) msg;
                 Replies--;
                 if (Replies == 0)
-                {
                     ReplyTo.Tell(Sum);
-                }
                 return Actor.Done;
             }
             return Actor.Done;

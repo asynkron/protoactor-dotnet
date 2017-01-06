@@ -25,7 +25,7 @@ namespace Proto.Remoting
             }
             else if (msg is MessageEnvelope)
             {
-                var env = (MessageEnvelope)msg;
+                var env = (MessageEnvelope) msg;
                 PID pid;
                 if (!_connections.TryGetValue(env.Target.Host, out pid))
                 {
@@ -43,7 +43,6 @@ namespace Proto.Remoting
             {
                 return Actor.Done;
             }
-            
         }
     }
 }
