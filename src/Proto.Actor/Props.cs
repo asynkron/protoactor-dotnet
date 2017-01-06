@@ -10,13 +10,12 @@ namespace Proto
 {
     public sealed class Props
     {
-        private Func<IActor> _actorProducer;
-
         private IDispatcher _dispatcher;
         private Func<IMailbox> _mailboxProducer;
         private ISupervisorStrategy _supervisor;
 
-        public Func<IActor> Producer => _actorProducer;
+        public Func<IActor> Producer { get; private set; }
+
         public Func<IMailbox> MailboxProducer => _mailboxProducer ?? (() => new DefaultMailbox());
 
         public IDispatcher Dispatcher => _dispatcher ?? new ThreadPoolDispatcher();
@@ -31,12 +30,12 @@ namespace Proto
         public Props Copy(Func<IActor> producer = null, IDispatcher dispatcher = null,
             Func<IMailbox> mailboxProducer = null, ISupervisorStrategy supervisor = null)
         {
-            return new Props()
+            return new Props
             {
-                _actorProducer = producer ?? _actorProducer,
+                Producer = producer ?? Producer,
                 _dispatcher = dispatcher ?? Dispatcher,
                 _mailboxProducer = mailboxProducer ?? _mailboxProducer,
-                _supervisor = supervisor,
+                _supervisor = supervisor
             };
         }
 

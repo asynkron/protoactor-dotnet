@@ -23,7 +23,7 @@ namespace Proto.Remoting
                 Console.WriteLine("[REMOTING] Started EndpointManager");
                 return Actor.Done;
             }
-            else if (msg is MessageEnvelope)
+            if (msg is MessageEnvelope)
             {
                 var env = (MessageEnvelope) msg;
                 PID pid;
@@ -39,10 +39,7 @@ namespace Proto.Remoting
                 pid.Tell(msg);
                 return Actor.Done;
             }
-            else
-            {
-                return Actor.Done;
-            }
+            return Actor.Done;
         }
     }
 }

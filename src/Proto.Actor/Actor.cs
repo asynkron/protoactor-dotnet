@@ -9,6 +9,23 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
+    public delegate Task Receive(IContext context);
+
+    public class EmptyActor : IActor
+    {
+        private readonly Receive _receive;
+
+        public EmptyActor(Receive receive)
+        {
+            _receive = receive;
+        }
+
+        public Task ReceiveAsync(IContext context)
+        {
+            return _receive(context);
+        }
+    }
+
     public static class Actor
     {
         public static readonly Task Done = Task.FromResult(0);
@@ -16,6 +33,11 @@ namespace Proto
         public static Props FromProducer(Func<IActor> producer)
         {
             return new Props().Copy(producer);
+        }
+
+        public static Props FromFunc(Receive receive)
+        {
+            return FromProducer(() => new EmptyActor(receive));
         }
 
         public static PID Spawn(Props props)
@@ -38,13 +60,13 @@ namespace Proto
             var res = ProcessRegistry.Instance.TryAdd(name, reff);
             var pid = res.Item1;
             var ok = res.Item2;
-            if (ok)
-            {
-                mailbox.RegisterHandlers(ctx, dispatcher);
-                ctx.Self = pid;
-                //this is on purpose, Started is synchronous to its parent
-                ctx.InvokeUserMessageAsync(Started.Instance).Wait();
-            }
+            if (!ok)
+                return pid;
+
+            mailbox.RegisterHandlers(ctx, dispatcher);
+            ctx.Self = pid;
+            //this is on purpose, Started is synchronous to its parent
+            ctx.InvokeUserMessageAsync(Started.Instance).Wait();
             return pid;
         }
     }

@@ -40,8 +40,8 @@ namespace Proto
 
     public class Context : IMessageInvoker, IContext, ISupervisor
     {
+        private readonly Stack<ReceiveAsync> _behavior;
         private IActor _actor;
-        private Stack<ReceiveAsync> _behavior;
         private HashSet<PID> _children;
         private object _message;
         private int _receiveIndex;
@@ -159,7 +159,7 @@ namespace Proto
                         HandleFailure(f);
                         break;
                     case Restart r:
-                        HandleRestart(r);
+                        HandleRestart();
                         break;
                     default:
                         Console.WriteLine("Unknown system message {0}", msg);
@@ -210,7 +210,7 @@ namespace Proto
             Become(ActorReceiveAsync);
         }
 
-        private void HandleRestart(Restart r)
+        private void HandleRestart()
         {
             _stopping = false;
             _restarting = true;
@@ -224,8 +224,7 @@ namespace Proto
 
         private void HandleUnwatch(Unwatch uw)
         {
-            if (_watchers != null)
-                _watchers.Remove(uw.Watcher);
+            _watchers?.Remove(uw.Watcher);
         }
 
         private void HandleWatch(Watch w)
@@ -237,6 +236,11 @@ namespace Proto
 
         private void HandleFailure(Failure msg)
         {
+            if (_actor is ISupervisorStrategy supervisor)
+            {
+                supervisor.HandleFailure(this, msg.Who, msg.Reason);
+                return;
+            }
             Props.Supervisor.HandleFailure(this, msg.Who, msg.Reason);
         }
 
@@ -267,9 +271,8 @@ namespace Proto
 
         private void TryRestartOrTerminate()
         {
-            if (_children != null)
-                if (_children.Count > 0)
-                    return;
+            if (_children?.Count > 0)
+                return;
 
             if (_restarting)
             {

@@ -22,22 +22,28 @@ namespace Proto
 
     public sealed class SuspendMailbox : SystemMessage
     {
-        private SuspendMailbox() { }
         public static readonly SuspendMailbox Instance = new SuspendMailbox();
+
+        private SuspendMailbox()
+        {
+        }
     }
 
     public sealed class ResumeMailbox : SystemMessage
     {
-        private ResumeMailbox() { }
         public static readonly ResumeMailbox Instance = new ResumeMailbox();
+
+        private ResumeMailbox()
+        {
+        }
     }
 
     public class Failure : SystemMessage
     {
         public Failure(PID who, Exception reason)
         {
-            this.Who = who;
-            this.Reason = reason;
+            Who = who;
+            Reason = reason;
         }
 
         public Exception Reason { get; }

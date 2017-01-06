@@ -40,7 +40,7 @@ namespace Proto.Remoting
                     await RestartingAsync();
                     break;
                 case IEnumerable<MessageEnvelope> m:
-                    var envelopes = m as IEnumerable<MessageEnvelope>;
+                    var envelopes = m;
                     await SendEnvelopesAsync(envelopes, context);
                     break;
             }

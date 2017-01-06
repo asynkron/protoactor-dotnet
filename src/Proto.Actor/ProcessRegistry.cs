@@ -53,7 +53,7 @@ namespace Proto
 
         public ValueTuple<PID, bool> TryAdd(string id, ActorRef aref)
         {
-            var pid = new PID()
+            var pid = new PID
             {
                 Id = id,
                 Ref = aref, //cache aref lookup
