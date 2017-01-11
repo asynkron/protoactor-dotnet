@@ -60,6 +60,10 @@ namespace Proto
 
     public sealed partial class Unwatch : SystemMessage
     {
+        public Unwatch(PID watcher)
+        {
+            Watcher = watcher;
+        }
     }
 
     public sealed class Restart : SystemMessage

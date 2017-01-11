@@ -13,6 +13,7 @@ namespace Proto
         private IDispatcher _dispatcher;
         private Func<IMailbox> _mailboxProducer;
         private ISupervisorStrategy _supervisor;
+        private IRouterConfig _routerConfig;
 
         public Func<IActor> Producer { get; private set; }
 
@@ -22,20 +23,24 @@ namespace Proto
 
         public ISupervisorStrategy Supervisor => _supervisor ?? Supervision.DefaultStrategy;
 
+        public IRouterConfig RouterConfig => _routerConfig;
+
         public Props WithDispatcher(IDispatcher dispatcher)
         {
             return Copy(dispatcher: dispatcher);
         }
 
         public Props Copy(Func<IActor> producer = null, IDispatcher dispatcher = null,
-            Func<IMailbox> mailboxProducer = null, ISupervisorStrategy supervisor = null)
+            Func<IMailbox> mailboxProducer = null, ISupervisorStrategy supervisor = null,
+            IRouterConfig routerConfig = null)
         {
             return new Props
             {
                 Producer = producer ?? Producer,
                 _dispatcher = dispatcher ?? Dispatcher,
                 _mailboxProducer = mailboxProducer ?? _mailboxProducer,
-                _supervisor = supervisor
+                _routerConfig = routerConfig,
+                _supervisor = supervisor,
             };
         }
 
@@ -47,6 +52,11 @@ namespace Proto
         public Props WithSupervisor(ISupervisorStrategy supervisor)
         {
             return Copy(supervisor: supervisor);
+        }
+
+        public Props WithPoolRouter(IPoolRouterConfig routerConfig)
+        {
+            return Copy(routerConfig: routerConfig);
         }
     }
 }
