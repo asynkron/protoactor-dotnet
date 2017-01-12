@@ -40,6 +40,11 @@ namespace Proto
             return FromProducer(() => new EmptyActor(receive));
         }
 
+        public static Props FromGroupRouter(IGroupRouterConfig routerConfig)
+        {
+            return new Props().Copy(routerConfig: routerConfig);
+        }
+
         public static PID Spawn(Props props)
         {
             var name = ProcessRegistry.Instance.GetAutoId();
@@ -51,16 +56,38 @@ namespace Proto
             return InternalSpawn(props, name, null);
         }
 
+
+        private static PID SpawnRouter(string name, Props props, PID parent)
+        {
+            var routeeProps = props.Copy(routerConfig: null);
+            var config = props.RouterConfig;
+            var routerState = config.CreateRouterState();
+
+            var routerProps = FromProducer(() => new RouterActor(routeeProps, config, routerState));
+            var routerId = ProcessRegistry.Instance.GetAutoId();
+            var router = InternalSpawn(routerProps, routerId, parent);
+
+            var reff = new RouterActorRef(router, routerState);
+            var res = ProcessRegistry.Instance.TryAdd(name, reff);
+            var pid = res.Item1;
+            return pid;
+        }
+
         internal static PID InternalSpawn(Props props, string name, PID parent)
         {
+            if (props.RouterConfig != null)
+            {
+                return SpawnRouter(name, props, parent);
+            }
+
             var ctx = new Context(props, parent);
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
             var reff = new LocalActorRef(mailbox);
             var res = ProcessRegistry.Instance.TryAdd(name, reff);
             var pid = res.Item1;
-            var ok = res.Item2;
-            if (!ok)
+            var @new = res.Item2;
+            if (!@new)
             {
                 return pid;
             }
