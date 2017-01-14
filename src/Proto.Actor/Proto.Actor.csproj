@@ -13,6 +13,10 @@
     <EmbeddedResource Include="**\*.resx" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="MPMCQueue\**" />
+    <EmbeddedResource Remove="MPMCQueue\**" />
+  </ItemGroup>
+  <ItemGroup>
     <None Include="build.bat" />
     <None Include="Protos.proto" />
   </ItemGroup>

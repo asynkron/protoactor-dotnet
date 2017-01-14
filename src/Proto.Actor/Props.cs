@@ -17,7 +17,8 @@ namespace Proto
 
         public Func<IActor> Producer { get; private set; }
 
-        public Func<IMailbox> MailboxProducer => _mailboxProducer ?? (() => new DefaultMailbox());
+        public Func<IMailbox> MailboxProducer => _mailboxProducer ?? (() => new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue()));
+        //public Func<IMailbox> MailboxProducer => _mailboxProducer ?? (() => new DefaultMailbox(new BoundedMailboxQueue(4), new BoundedMailboxQueue(4)));
 
         public IDispatcher Dispatcher => _dispatcher ?? new ThreadPoolDispatcher();
 
