@@ -32,7 +32,7 @@ namespace Proto
 
         public static Props FromProducer(Func<IActor> producer)
         {
-            return new Props().Copy(producer);
+            return new Props().WithProducer(producer);
         }
 
         public static Props FromFunc(Receive receive)
@@ -42,7 +42,7 @@ namespace Proto
 
         public static Props FromGroupRouter(IGroupRouterConfig routerConfig)
         {
-            return new Props().Copy(routerConfig: routerConfig);
+            return new Props().WithRouter(routerConfig);
         }
 
         public static PID Spawn(Props props)
@@ -59,7 +59,7 @@ namespace Proto
 
         private static PID SpawnRouter(string name, Props props, PID parent)
         {
-            var routeeProps = props.Copy(routerConfig: null);
+            var routeeProps = props.WithRouter(null);
             var config = props.RouterConfig;
             var routerState = config.CreateRouterState();
 
