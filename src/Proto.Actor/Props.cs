@@ -10,54 +10,58 @@ namespace Proto
 {
     public sealed class Props
     {
-        private IDispatcher _dispatcher;
-        private Func<IMailbox> _mailboxProducer;
-        private ISupervisorStrategy _supervisor;
-        private IRouterConfig _routerConfig;
-
         public Func<IActor> Producer { get; private set; }
 
-        public Func<IMailbox> MailboxProducer => _mailboxProducer ?? (() => new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue()));
-        //public Func<IMailbox> MailboxProducer => _mailboxProducer ?? (() => new DefaultMailbox(new BoundedMailboxQueue(4), new BoundedMailboxQueue(4)));
+        public Func<IMailbox> MailboxProducer { get; private set; } = () => new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue());
+        
+        public IDispatcher Dispatcher { get; private set; } = new ThreadPoolDispatcher();
 
-        public IDispatcher Dispatcher => _dispatcher ?? new ThreadPoolDispatcher();
+        public ISupervisorStrategy Supervisor { get; private set; } = Supervision.DefaultStrategy;
 
-        public ISupervisorStrategy Supervisor => _supervisor ?? Supervision.DefaultStrategy;
+        public IRouterConfig RouterConfig { get; private set; }
 
-        public IRouterConfig RouterConfig => _routerConfig;
+        public Props WithProducer(Func<IActor> producer)
+        {
+            return Copy(props => props.Producer = producer);
+        }
 
         public Props WithDispatcher(IDispatcher dispatcher)
         {
-            return Copy(dispatcher: dispatcher);
-        }
-
-        public Props Copy(Func<IActor> producer = null, IDispatcher dispatcher = null,
-            Func<IMailbox> mailboxProducer = null, ISupervisorStrategy supervisor = null,
-            IRouterConfig routerConfig = null)
-        {
-            return new Props
-            {
-                Producer = producer ?? Producer,
-                _dispatcher = dispatcher ?? Dispatcher,
-                _mailboxProducer = mailboxProducer ?? _mailboxProducer,
-                _routerConfig = routerConfig,
-                _supervisor = supervisor,
-            };
+            return Copy(props => props.Dispatcher = dispatcher);
         }
 
         public Props WithMailbox(Func<IMailbox> mailboxProducer)
         {
-            return Copy(mailboxProducer: mailboxProducer);
+            return Copy(props => props.MailboxProducer = mailboxProducer);
         }
 
         public Props WithSupervisor(ISupervisorStrategy supervisor)
         {
-            return Copy(supervisor: supervisor);
+            return Copy(props => props.Supervisor = supervisor);
         }
 
         public Props WithPoolRouter(IPoolRouterConfig routerConfig)
         {
-            return Copy(routerConfig: routerConfig);
+            return Copy(props => props.RouterConfig = routerConfig);
+        }
+
+        internal Props WithRouter(IRouterConfig routerConfig)
+        {
+            return Copy(props => props.RouterConfig = routerConfig);
+        }
+
+        private Props Copy(Action<Props> mutator)
+        {
+            var props = new Props
+            {
+                Producer = Producer,
+                Dispatcher = Dispatcher,
+                MailboxProducer = MailboxProducer,
+                RouterConfig = RouterConfig,
+                Supervisor = Supervisor,
+            };
+            mutator(props);
+            return props;
         }
     }
 }
