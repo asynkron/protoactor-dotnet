@@ -6,7 +6,7 @@
 
 using Xunit;
 
-namespace Proto.Actor.Tests
+namespace Proto.Tests
 {
     public class MQMCQueueTests
     {
