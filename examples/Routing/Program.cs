@@ -44,37 +44,37 @@ namespace SpawnBenchmark
 
         private static void Main()
         {
-            TestPoolRouter(new RandomPoolRouter(5), 10);
-            TestGroupRouter(new RandomGroupRouter(
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps)
-            ), 10);
-
-            TestPoolRouter(new RoundRobinPoolRouter(5), 10);
+            //TestPoolRouter(new RandomPoolRouter(5), 10);
+            //TestGroupRouter(new RandomGroupRouter(
+            //    Actor.Spawn(MyActorProps),
+            //    Actor.Spawn(MyActorProps),
+            //    Actor.Spawn(MyActorProps),
+            //    Actor.Spawn(MyActorProps)
+            //), 10);
+            
+            //TestPoolRouter(new RoundRobinPoolRouter(5), 10);
             TestGroupRouter(new RoundRobinGroupRouter(
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
                 Actor.Spawn(MyActorProps)
+                //Actor.Spawn(MyActorProps),
+                //Actor.Spawn(MyActorProps),
+                //Actor.Spawn(MyActorProps)
             ), 10);
 
-            TestPoolRouter(new ConsistentHashPoolRouter(5), 20, 8);
-            TestGroupRouter(new ConsistentHashGroupRouter(
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps)
-            ), 20, 8);
+            //TestPoolRouter(new ConsistentHashPoolRouter(5), 20, 8);
+            //TestGroupRouter(new ConsistentHashGroupRouter(
+            //    Actor.Spawn(MyActorProps),
+            //    Actor.Spawn(MyActorProps),
+            //    Actor.Spawn(MyActorProps),
+            //    Actor.Spawn(MyActorProps)
+            //), 20, 8);
 
-            TestPoolRouter(new BroadcastPoolRouter(5), 5);
-            TestGroupRouter(new BroadcastGroupRouter(
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps)
-            ), 5);
+            //TestPoolRouter(new BroadcastPoolRouter(5), 5);
+            //TestGroupRouter(new BroadcastGroupRouter(
+            //    Actor.Spawn(MyActorProps),
+            //    Actor.Spawn(MyActorProps),
+            //    Actor.Spawn(MyActorProps),
+            //    Actor.Spawn(MyActorProps)
+            //), 5);
             Console.ReadLine();
         }
         

@@ -23,25 +23,81 @@ namespace Proto
         void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher);
     }
 
+    public interface IMailboxQueue
+    {
+        void Push(object message);
+        object Pop();
+        bool HasMessages { get; }
+    }
+
+    public class BoundedMailboxQueue : IMailboxQueue
+    {
+        private readonly MPMCQueue _messages;
+
+        public BoundedMailboxQueue(int size)
+        {
+            _messages=new MPMCQueue(size);
+        }
+
+        public void Push(object message)
+        {
+            _messages.Enqueue(message);
+        }
+
+        public object Pop()
+        {
+            object message;
+            return _messages.TryDequeue(out message)
+                ? message
+                : null;
+        }
+
+        public bool HasMessages => _messages.Count > 0;
+    }
+
+    public class UnboundedMailboxQueue:IMailboxQueue
+    {
+        private readonly ConcurrentQueue<object> _messages = new ConcurrentQueue<object>();
+
+        public void Push(object message)
+        {
+            _messages.Enqueue(message);
+        }
+
+        public object Pop()
+        {
+            object message;
+            return _messages.TryDequeue(out message) ? message : null;
+        }
+
+        public bool HasMessages => _messages.Count > 0;
+    }
+
     public class DefaultMailbox : IMailbox
     {
-        private readonly ConcurrentQueue<SystemMessage> _systemMessages = new ConcurrentQueue<SystemMessage>();
-        private readonly ConcurrentQueue<object> _userMessages = new ConcurrentQueue<object>();
+        private readonly IMailboxQueue _systemMessages;
+        private readonly IMailboxQueue _userMailbox;
         private IDispatcher _dispatcher;
         private IMessageInvoker _invoker;
 
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
 
+        public DefaultMailbox(IMailboxQueue systemMessages, IMailboxQueue userMailbox)
+        {
+            _systemMessages = systemMessages;
+            _userMailbox = userMailbox;
+        }
+
         public void PostUserMessage(object msg)
         {
-            _userMessages.Enqueue(msg);
+            _userMailbox.Push(msg);
             Schedule();
         }
 
         public void PostSystemMessage(SystemMessage sys)
         {
-            _systemMessages.Enqueue(sys);
+            _systemMessages.Push(sys);
             Schedule();
         }
 
@@ -57,8 +113,8 @@ namespace Proto
 
             for (var i = 0; i < t; i++)
             {
-                SystemMessage sys;
-                if (_systemMessages.TryDequeue(out sys))
+                var sys = (SystemMessage)_systemMessages.Pop();
+                if(sys != null)
                 {
                     if (sys is SuspendMailbox)
                     {
@@ -75,8 +131,8 @@ namespace Proto
                 {
                     break;
                 }
-                object msg;
-                if (_userMessages.TryDequeue(out msg))
+                var msg = _userMailbox.Pop();
+                if (msg != null)
                 {
                     await _invoker.InvokeUserMessageAsync(msg);
                 }
@@ -88,7 +144,7 @@ namespace Proto
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
-            if (_userMessages.Count > 0 || _systemMessages.Count > 0)
+            if (_userMailbox.HasMessages || _systemMessages.HasMessages)
             {
                 Schedule();
             }
