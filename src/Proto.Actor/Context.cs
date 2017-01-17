@@ -33,8 +33,8 @@ namespace Proto
         Task NextAsync();
         PID Spawn(Props props);
 
-        void Become(ReceiveAsync receive);
-        void BecomeStacked(ReceiveAsync receive);
+        void Become(Receive receive);
+        void BecomeStacked(Receive receive);
         void UnbecomeStacked();
         void Watch(PID pid);
         void Unwatch(PID who);
@@ -42,12 +42,11 @@ namespace Proto
 
     public class Context : IMessageInvoker, IContext, ISupervisor
     {
-        private readonly Stack<ReceiveAsync> _behavior;
+        private readonly Stack<Receive> _behavior;
         private IActor _actor;
         private HashSet<PID> _children;
         private object _message;
         private int _receiveIndex;
-        private ReceiveAsync[] _receivePlugins;
         private bool _restarting;
         private Stack<object> _stash;
         private bool _stopping;
@@ -58,8 +57,8 @@ namespace Proto
         {
             Parent = parent;
             Props = props;
-            _behavior = new Stack<ReceiveAsync>();
-            _behavior.Push(ActorReceiveAsync);
+            _behavior = new Stack<Receive>();
+            _behavior.Push(ActorReceive);
 
             IncarnateActor();
         }
@@ -96,10 +95,10 @@ namespace Proto
 
         public Task NextAsync()
         {
-            ReceiveAsync receive;
-            if (_receiveIndex < _receivePlugins?.Length)
+            Receive receive;
+            if (_receiveIndex < Props.ReceivePlugins?.Length)
             {
-                receive = _receivePlugins[_receiveIndex];
+                receive = Props.ReceivePlugins[_receiveIndex];
                 _receiveIndex++;
             }
             else
@@ -123,13 +122,13 @@ namespace Proto
             return SpawnNamed(props, id);
         }
 
-        public void Become(ReceiveAsync receive)
+        public void Become(Receive receive)
         {
             _behavior.Clear();
             _behavior.Push(receive);
         }
 
-        public void BecomeStacked(ReceiveAsync receive)
+        public void BecomeStacked(Receive receive)
         {
             _behavior.Push(receive);
         }
@@ -223,7 +222,7 @@ namespace Proto
             _restarting = false;
             _stopping = false;
             _actor = Props.Producer();
-            Become(ActorReceiveAsync);
+            Become(ActorReceive);
         }
 
         private void HandleRestart()
@@ -338,7 +337,7 @@ namespace Proto
             }
         }
 
-        private Task ActorReceiveAsync(IContext ctx)
+        private Task ActorReceive(IContext ctx)
         {
             return _actor.ReceiveAsync(ctx);
         }

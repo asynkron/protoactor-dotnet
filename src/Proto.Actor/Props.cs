@@ -21,6 +21,8 @@ namespace Proto
 
         public IRouterConfig RouterConfig { get; private set; }
 
+        public Receive[] ReceivePlugins { get; private set; }
+
         public Props WithProducer(Func<IActor> producer)
         {
             return Copy(props => props.Producer = producer);
@@ -46,6 +48,11 @@ namespace Proto
             return Copy(props => props.RouterConfig = routerConfig);
         }
 
+        public Props WithReceivers(params Receive[] plugins)
+        {
+            return Copy(props => props.ReceivePlugins = plugins);
+        }
+		
         internal Props WithRouter(IRouterConfig routerConfig)
         {
             return Copy(props => props.RouterConfig = routerConfig);
@@ -55,9 +62,10 @@ namespace Proto
         {
             var props = new Props
             {
-                Producer = Producer,
                 Dispatcher = Dispatcher,
                 MailboxProducer = MailboxProducer,
+                Producer = Producer,
+                ReceivePlugins = ReceivePlugins,
                 RouterConfig = RouterConfig,
                 Supervisor = Supervisor
             };
