@@ -58,7 +58,7 @@ namespace Proto.Remoting
             catch (Exception x)
             {
                 context.Stash();
-                Console.WriteLine("[REMOTING] gRPC Failed to send to host {0}", _host);
+                Console.WriteLine($"[REMOTING] gRPC Failed to send to host {_host}");
                 throw;
             }
         }
@@ -77,7 +77,25 @@ namespace Proto.Remoting
         {
             _channel = new Channel(_host, ChannelCredentials.Insecure);
             _client = new Remoting.RemotingClient(_channel);
-             _stream = _client.Receive();
+            _stream = _client.Receive();
+
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var tmp = _stream.ResponseStream.Current;
+                }
+                catch
+                {
+                    Console.WriteLine($"[REMOTING] EndpointWriter lost connection to address {_host}");
+                    var terminated = new EndpointTerminated
+                    {
+                        Address = _host
+                    };
+                    Actor.EventStream.Publish(terminated);
+                }
+            });
+
             _streamWriter = _stream.RequestStream;
             return Actor.Done;
         }
