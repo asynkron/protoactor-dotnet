@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Proto;
 
@@ -14,12 +13,13 @@ namespace SpawnBenchmark
     internal class Message : IHashable
     {
         public string Text;
-        public override string ToString()
+
+        public string HashBy()
         {
             return Text;
         }
 
-        public string HashBy()
+        public override string ToString()
         {
             return Text;
         }
@@ -51,7 +51,7 @@ namespace SpawnBenchmark
             //    Actor.Spawn(MyActorProps),
             //    Actor.Spawn(MyActorProps)
             //), 10);
-            
+
             //TestPoolRouter(new RoundRobinPoolRouter(5), 10);
             TestGroupRouter(new RoundRobinGroupRouter(
                 Actor.Spawn(MyActorProps)
@@ -77,13 +77,15 @@ namespace SpawnBenchmark
             //), 5);
             Console.ReadLine();
         }
-        
+
         private static void TestGroupRouter(IGroupRouterConfig groupRouter, int count, int? unique = null)
         {
             var props = Actor.FromGroupRouter(groupRouter);
             var pid = Actor.Spawn(props);
             for (var i = 0; i < count; i++)
-                pid.Tell(new Message {Text = $"{i%(unique??count)} {groupRouter.GetType().Name}"});
+            {
+                pid.Tell(new Message {Text = $"{i % (unique ?? count)} {groupRouter.GetType().Name}"});
+            }
         }
 
         private static void TestPoolRouter(IPoolRouterConfig poolRouter, int count, int? unique = null)
@@ -91,7 +93,9 @@ namespace SpawnBenchmark
             var props = MyActorProps.WithPoolRouter(poolRouter);
             var pid = Actor.Spawn(props);
             for (var i = 0; i < count; i++)
-                pid.Tell(new Message {Text = $"{i%(unique??count)} {poolRouter.GetType().Name}"});
+            {
+                pid.Tell(new Message {Text = $"{i % (unique ?? count)} {poolRouter.GetType().Name}"});
+            }
         }
     }
 }

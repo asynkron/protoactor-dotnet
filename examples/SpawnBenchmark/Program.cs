@@ -57,7 +57,9 @@ namespace SpawnBenchmark
                 Sum += (Int64) msg;
                 Replies--;
                 if (Replies == 0)
+                {
                     ReplyTo.Tell(Sum);
+                }
                 return Actor.Done;
             }
             return Actor.Done;

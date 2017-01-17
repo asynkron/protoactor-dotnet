@@ -21,7 +21,7 @@ namespace Proto
         private int _sequenceId;
         public static ProcessRegistry Instance { get; } = new ProcessRegistry();
 
-        public string Host { get; set; } = NoHost;
+        public string Address { get; set; } = NoHost;
 
         public void RegisterHostResolver(Func<PID, ActorRef> resolver)
         {
@@ -30,7 +30,7 @@ namespace Proto
 
         public ActorRef Get(PID pid)
         {
-            if (pid.Host != "nonhost" && pid.Host != Host)
+            if (pid.Address != "nonhost" && pid.Address != Address)
             {
                 foreach (var resolver in _hostResolvers)
                 {
@@ -59,7 +59,7 @@ namespace Proto
             {
                 Id = id,
                 Ref = aref, //cache aref lookup
-                Host = Host // local
+                Address = Address // local
             };
             var ok = _localActorRefs.TryAdd(pid.Id, aref);
             return ValueTuple.Create(pid, ok);

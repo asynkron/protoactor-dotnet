@@ -20,6 +20,11 @@ namespace Proto
     {
     }
 
+    public sealed class Restarting
+    {
+        public static readonly Restarting Instance = new Restarting();
+    }
+
     public sealed class SuspendMailbox : SystemMessage
     {
         public static readonly SuspendMailbox Instance = new SuspendMailbox();
@@ -76,17 +81,17 @@ namespace Proto
         public static readonly Stop Instance = new Stop();
     }
 
-    public sealed partial class Stopping : AutoReceiveMessage
+    public sealed class Stopping : AutoReceiveMessage
     {
         public static readonly Stopping Instance = new Stopping();
     }
 
-    public sealed partial class Started : AutoReceiveMessage
+    public sealed class Started : AutoReceiveMessage
     {
         public static readonly Started Instance = new Started();
     }
 
-    public sealed partial class Stopped : AutoReceiveMessage
+    public sealed class Stopped : AutoReceiveMessage
     {
         public static readonly Stopped Instance = new Stopped();
     }

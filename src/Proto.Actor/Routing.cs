@@ -107,8 +107,8 @@ namespace Proto
 
     public class RouterActor : IActor
     {
-        private readonly Props _routeeProps;
         private readonly IRouterConfig _config;
+        private readonly Props _routeeProps;
         private readonly RouterState _routerState;
 
         public RouterActor(Props routeeProps, IRouterConfig config, RouterState routerState)
@@ -128,7 +128,10 @@ namespace Proto
             if (context.Message is RouterAddRoutee addRoutee)
             {
                 var r = _routerState.GetRoutees();
-                if (r.Contains(addRoutee.PID)) return Actor.Done;
+                if (r.Contains(addRoutee.PID))
+                {
+                    return Actor.Done;
+                }
                 context.Watch(addRoutee.PID);
                 r.Add(addRoutee.PID);
                 _routerState.SetRoutees(r);
@@ -137,7 +140,10 @@ namespace Proto
             if (context.Message is RouterRemoveRoutee removeRoutee)
             {
                 var r = _routerState.GetRoutees();
-                if (!r.Contains(removeRoutee.PID)) return Actor.Done;
+                if (!r.Contains(removeRoutee.PID))
+                {
+                    return Actor.Done;
+                }
                 context.Unwatch(removeRoutee.PID);
                 r.Remove(removeRoutee.PID);
                 _routerState.SetRoutees(r);
@@ -162,12 +168,12 @@ namespace Proto
 
     public class RouterRoutees
     {
-        public List<PID> PIDs { get; }
-
         public RouterRoutees(List<PID> pids)
         {
             PIDs = pids;
         }
+
+        public List<PID> PIDs { get; }
     }
 
     public class RouterGetRoutees : RouterManagementMessage
@@ -285,7 +291,7 @@ namespace Proto
 
         public override void RouteMessage(object message, PID sender)
         {
-            var i = _currentIndex%_values.Count;
+            var i = _currentIndex % _values.Count;
             var pid = _values[i];
             Interlocked.Add(ref _currentIndex, 1);
             pid.Request(message, sender);
@@ -320,8 +326,8 @@ namespace Proto
 
     public class ConsistentHashRouterState : RouterState
     {
-        private Dictionary<string, PID> _routeeMap;
         private HashRing _hashRing;
+        private Dictionary<string, PID> _routeeMap;
 
 
         public override HashSet<PID> GetRoutees()
@@ -335,7 +341,7 @@ namespace Proto
             var nodes = new List<string>();
             foreach (var pid in routees)
             {
-                var nodeName = pid.Host + "@" + pid.Id;
+                var nodeName = pid.Address + "@" + pid.Id;
                 nodes.Add(nodeName);
                 _routeeMap[nodeName] = pid;
             }
@@ -361,18 +367,18 @@ namespace Proto
 
     public class HashRing
     {
-        private readonly List<Tuple<uint, string>> _ring;
-        private static readonly HashAlgorithm HashAlgorithm = MD5.Create();
         private const int ReplicaCount = 100;
+        private static readonly HashAlgorithm HashAlgorithm = MD5.Create();
+        private readonly List<Tuple<uint, string>> _ring;
 
         public HashRing(IEnumerable<string> nodes)
         {
             _ring = nodes
                 .SelectMany(n => Enumerable.Range(0, ReplicaCount).Select(i => new
-                    {
-                        hashKey = i+n,
-                        node = n
-                    }))
+                {
+                    hashKey = i + n,
+                    node = n
+                }))
                 .Select(a => Tuple.Create(Hash(a.hashKey), a.node))
                 .OrderBy(t => t.Item1)
                 .ToList();

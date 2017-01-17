@@ -25,16 +25,16 @@ namespace Proto.Remoting
             }
             if (msg is MessageEnvelope)
             {
-                var env = (MessageEnvelope)msg;
+                var env = (MessageEnvelope) msg;
                 PID pid;
-                if (!_connections.TryGetValue(env.Target.Host, out pid))
+                if (!_connections.TryGetValue(env.Target.Address, out pid))
                 {
-                    Console.WriteLine("Resolving EndpointWriter for {0}", env.Target.Host);
+                    Console.WriteLine("Resolving EndpointWriter for {0}", env.Target.Address);
                     var props =
-                        Actor.FromProducer(() => new EndpointWriter(env.Target.Host))
+                        Actor.FromProducer(() => new EndpointWriter(env.Target.Address))
                             .WithMailbox(() => new EndpointWriterMailbox());
                     pid = context.Spawn(props);
-                    _connections.Add(env.Target.Host, pid);
+                    _connections.Add(env.Target.Address, pid);
                 }
                 pid.Tell(msg);
                 return Actor.Done;
@@ -52,14 +52,14 @@ namespace Proto.Remoting
             //            return Actor.Done;
             //        case MessageEnvelope env:
             //            PID pid;
-            //            if (!_connections.TryGetValue(env.Target.Host, out pid))
+            //            if (!_connections.TryGetValue(env.Target.Address, out pid))
             //            {
-            //                Console.WriteLine("Resolving EndpointWriter for {0}", env.Target.Host);
+            //                Console.WriteLine("Resolving EndpointWriter for {0}", env.Target.Address);
             //                var props =
-            //                    Actor.FromProducer(() => new EndpointWriter(env.Target.Host))
+            //                    Actor.FromProducer(() => new EndpointWriter(env.Target.Address))
             //                        .WithMailbox(() => new EndpointWriterMailbox());
             //                pid = context.Spawn(props);
-            //                _connections.Add(env.Target.Host, pid);
+            //                _connections.Add(env.Target.Address, pid);
             //            }
             //            pid.Tell(env);
             //            return Actor.Done;
@@ -67,7 +67,6 @@ namespace Proto.Remoting
             //            return Actor.Done;
             //    }
             //}
-
         }
     }
 }

@@ -17,7 +17,7 @@ namespace Proto.Remoting
         public static void Start(string host, int port)
         {
             var addr = host + ":" + port;
-            ProcessRegistry.Instance.Host = addr;
+            ProcessRegistry.Instance.Address = addr;
             ProcessRegistry.Instance.RegisterHostResolver(pid => new RemoteActorRef(pid));
 
             server = new Server

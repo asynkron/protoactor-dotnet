@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+//  <copyright file="MQMCQueueTests.cs" company="Asynkron HB">
+//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
+//  </copyright>
+// -----------------------------------------------------------------------
+
 using Xunit;
 
 namespace Proto.Actor.Tests

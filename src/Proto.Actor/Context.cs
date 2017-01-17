@@ -143,6 +143,16 @@ namespace Proto
             _behavior.Pop();
         }
 
+        public void Watch(PID who)
+        {
+            who.SendSystemMessage(new Watch(Self));
+        }
+
+        public void Unwatch(PID who)
+        {
+            who.SendSystemMessage(new Unwatch(Self));
+        }
+
         public void InvokeSystemMessage(SystemMessage msg)
         {
             try
@@ -353,16 +363,6 @@ namespace Proto
             _children.Add(pid);
             Watch(pid);
             return pid;
-        }
-
-        public void Watch(PID who)
-        {
-            who.SendSystemMessage(new Watch(Self));
-        }
-
-        public void Unwatch(PID who)
-        {
-            who.SendSystemMessage(new Unwatch(Self));
         }
     }
 }

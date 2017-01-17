@@ -12,7 +12,8 @@ namespace Proto
     {
         public Func<IActor> Producer { get; private set; }
 
-        public Func<IMailbox> MailboxProducer { get; private set; } = () => new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue());
+        public Func<IMailbox> MailboxProducer { get; private set; } =
+            () => new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue());
 
         public IDispatcher Dispatcher { get; private set; } = Dispatchers.DefaultDispatcher;
 
@@ -58,7 +59,7 @@ namespace Proto
                 Dispatcher = Dispatcher,
                 MailboxProducer = MailboxProducer,
                 RouterConfig = RouterConfig,
-                Supervisor = Supervisor,
+                Supervisor = Supervisor
             };
             mutator(props);
             return props;

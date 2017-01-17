@@ -1,14 +1,21 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="Program.cs" company="Asynkron HB">
+//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using Proto;
 
 class Program
 {
     static void Main(string[] args)
     {
-        Func<IMailbox> unboundedMailbox = () => new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue());
-        Func<IMailbox> boundedMailbox = () => new DefaultMailbox(new BoundedMailboxQueue(1024*1024), new BoundedMailboxQueue(1024*1024));
+        Func<IMailbox> unboundedMailbox =
+            () => new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue());
+        Func<IMailbox> boundedMailbox =
+            () => new DefaultMailbox(new BoundedMailboxQueue(1024 * 1024), new BoundedMailboxQueue(1024 * 1024));
 
         RunTest(boundedMailbox, "Bounded mailbox");
         RunTest(unboundedMailbox, "Unbounded mailbox");
@@ -38,7 +45,7 @@ class Program
         var pid = Actor.Spawn(props);
         sendSw.Start();
         recvSw.Start();
-        for (int i = 1; i <= n; i++)
+        for (var i = 1; i <= n; i++)
         {
             pid.Tell(i);
         }

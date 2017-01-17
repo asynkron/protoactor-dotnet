@@ -22,21 +22,16 @@ namespace Proto {
     static ProtosReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgxQcm90b3MucHJvdG8SBWFjdG9yIh8KA1BJRBIMCgRIb3N0GAEgASgJEgoK",
-            "AklkGAIgASgJIgwKClJlc3RhcnRpbmciCgoIU3RvcHBpbmciCQoHU3RvcHBl",
-            "ZCIMCgpQb2lzb25QaWxsIgkKB1N0YXJ0ZWQiJAoFV2F0Y2gSGwoHd2F0Y2hl",
+            "CgxQcm90b3MucHJvdG8SBWFjdG9yIiIKA1BJRBIPCgdBZGRyZXNzGAEgASgJ",
+            "EgoKAklkGAIgASgJIgwKClBvaXNvblBpbGwiJAoFV2F0Y2gSGwoHd2F0Y2hl",
             "chgBIAEoCzIKLmFjdG9yLlBJRCImCgdVbndhdGNoEhsKB3dhdGNoZXIYASAB",
             "KAsyCi5hY3Rvci5QSUQiJQoKVGVybWluYXRlZBIXCgN3aG8YASABKAsyCi5h",
-            "Y3Rvci5QSURCBqoCA0dBTWIGcHJvdG8z"));
+            "Y3Rvci5QSURCCKoCBVByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.PID), global::Proto.PID.Parser, new[]{ "Host", "Id" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Restarting), global::Proto.Restarting.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Stopping), global::Proto.Stopping.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Stopped), global::Proto.Stopped.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.PID), global::Proto.PID.Parser, new[]{ "Address", "Id" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.PoisonPill), global::Proto.PoisonPill.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Started), global::Proto.Started.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Watch), global::Proto.Watch.Parser, new[]{ "Watcher" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Unwatch), global::Proto.Unwatch.Parser, new[]{ "Watcher" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Terminated), global::Proto.Terminated.Parser, new[]{ "Who" }, null, null, null)
@@ -70,7 +65,7 @@ namespace Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public PID(PID other) : this() {
-      host_ = other.host_;
+      address_ = other.address_;
       id_ = other.id_;
     }
 
@@ -79,14 +74,14 @@ namespace Proto {
       return new PID(this);
     }
 
-    /// <summary>Field number for the "Host" field.</summary>
-    public const int HostFieldNumber = 1;
-    private string host_ = "";
+    /// <summary>Field number for the "Address" field.</summary>
+    public const int AddressFieldNumber = 1;
+    private string address_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public string Host {
-      get { return host_; }
+    public string Address {
+      get { return address_; }
       set {
-        host_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        address_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -114,7 +109,7 @@ namespace Proto {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (Host != other.Host) return false;
+      if (Address != other.Address) return false;
       if (Id != other.Id) return false;
       return true;
     }
@@ -122,7 +117,7 @@ namespace Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (Host.Length != 0) hash ^= Host.GetHashCode();
+      if (Address.Length != 0) hash ^= Address.GetHashCode();
       if (Id.Length != 0) hash ^= Id.GetHashCode();
       return hash;
     }
@@ -134,9 +129,9 @@ namespace Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (Host.Length != 0) {
+      if (Address.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteString(Host);
+        output.WriteString(Address);
       }
       if (Id.Length != 0) {
         output.WriteRawTag(18);
@@ -147,8 +142,8 @@ namespace Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (Host.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(Host);
+      if (Address.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Address);
       }
       if (Id.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Id);
@@ -161,8 +156,8 @@ namespace Proto {
       if (other == null) {
         return;
       }
-      if (other.Host.Length != 0) {
-        Host = other.Host;
+      if (other.Address.Length != 0) {
+        Address = other.Address;
       }
       if (other.Id.Length != 0) {
         Id = other.Id;
@@ -178,7 +173,7 @@ namespace Proto {
             input.SkipLastField();
             break;
           case 10: {
-            Host = input.ReadString();
+            Address = input.ReadString();
             break;
           }
           case 18: {
@@ -194,273 +189,6 @@ namespace Proto {
   /// <summary>
   /// user messages
   /// </summary>
-  public sealed partial class Restarting : pb::IMessage<Restarting> {
-    private static readonly pb::MessageParser<Restarting> _parser = new pb::MessageParser<Restarting>(() => new Restarting());
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<Restarting> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[1]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Restarting() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Restarting(Restarting other) : this() {
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Restarting Clone() {
-      return new Restarting(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as Restarting);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(Restarting other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      return true;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(Restarting other) {
-      if (other == null) {
-        return;
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            input.SkipLastField();
-            break;
-        }
-      }
-    }
-
-  }
-
-  public sealed partial class Stopping : pb::IMessage<Stopping> {
-    private static readonly pb::MessageParser<Stopping> _parser = new pb::MessageParser<Stopping>(() => new Stopping());
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<Stopping> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[2]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Stopping() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Stopping(Stopping other) : this() {
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Stopping Clone() {
-      return new Stopping(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as Stopping);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(Stopping other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      return true;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(Stopping other) {
-      if (other == null) {
-        return;
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            input.SkipLastField();
-            break;
-        }
-      }
-    }
-
-  }
-
-  public sealed partial class Stopped : pb::IMessage<Stopped> {
-    private static readonly pb::MessageParser<Stopped> _parser = new pb::MessageParser<Stopped>(() => new Stopped());
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<Stopped> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[3]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Stopped() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Stopped(Stopped other) : this() {
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Stopped Clone() {
-      return new Stopped(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as Stopped);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(Stopped other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      return true;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(Stopped other) {
-      if (other == null) {
-        return;
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            input.SkipLastField();
-            break;
-        }
-      }
-    }
-
-  }
-
   public sealed partial class PoisonPill : pb::IMessage<PoisonPill> {
     private static readonly pb::MessageParser<PoisonPill> _parser = new pb::MessageParser<PoisonPill>(() => new PoisonPill());
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -468,7 +196,7 @@ namespace Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -550,95 +278,6 @@ namespace Proto {
 
   }
 
-  public sealed partial class Started : pb::IMessage<Started> {
-    private static readonly pb::MessageParser<Started> _parser = new pb::MessageParser<Started>(() => new Started());
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<Started> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[5]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Started() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Started(Started other) : this() {
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Started Clone() {
-      return new Started(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as Started);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(Started other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      return true;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(Started other) {
-      if (other == null) {
-        return;
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            input.SkipLastField();
-            break;
-        }
-      }
-    }
-
-  }
-
   /// <summary>
   /// system messages
   /// </summary>
@@ -649,7 +288,7 @@ namespace Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -772,7 +411,7 @@ namespace Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -895,7 +534,7 @@ namespace Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[8]; }
+      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
