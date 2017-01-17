@@ -1,9 +1,9 @@
 ﻿syntax = "proto3";
 package actor;
-option csharp_namespace = "GAM";
+option csharp_namespace = "Proto";
 
 message PID {
-  string Host = 1;
+  string Address = 1;
   string Id = 2;
 }
 

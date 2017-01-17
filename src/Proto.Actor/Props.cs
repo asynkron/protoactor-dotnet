@@ -13,8 +13,8 @@ namespace Proto
         public Func<IActor> Producer { get; private set; }
 
         public Func<IMailbox> MailboxProducer { get; private set; } = () => new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue());
-        
-        public IDispatcher Dispatcher { get; private set; } = new ThreadPoolDispatcher();
+
+        public IDispatcher Dispatcher { get; private set; } = Dispatchers.DefaultDispatcher;
 
         public ISupervisorStrategy Supervisor { get; private set; } = Supervision.DefaultStrategy;
 

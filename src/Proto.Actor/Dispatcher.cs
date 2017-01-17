@@ -15,8 +15,14 @@ namespace Proto
         void Schedule(Func<Task> runner);
     }
 
+    public static class Dispatchers
+    {
+        public static ThreadPoolDispatcher DefaultDispatcher { get; } = new ThreadPoolDispatcher();
+    }
     public sealed class ThreadPoolDispatcher : IDispatcher
     {
+        
+
         public ThreadPoolDispatcher()
         {
             Throughput = 300;
