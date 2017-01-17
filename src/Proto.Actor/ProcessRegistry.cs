@@ -35,12 +35,13 @@ namespace Proto
                 foreach (var resolver in _hostResolvers)
                 {
                     var reff = resolver(pid);
-                    if (reff != null)
+                    if (reff == null)
                     {
-                        //this is racy but it doesnt matter
-                        pid.Ref = reff;
-                        return reff;
+                        continue;
                     }
+                    //this is racy but it doesnt matter
+                    pid.Ref = reff;
+                    return reff;
                 }
                 throw new NotSupportedException("Unknown host");
             }

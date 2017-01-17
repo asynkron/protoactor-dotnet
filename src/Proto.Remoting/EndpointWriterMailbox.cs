@@ -22,7 +22,6 @@ namespace Proto.Remoting
         private readonly ConcurrentQueue<SystemMessage> _systemMessages = new ConcurrentQueue<SystemMessage>();
         private readonly ConcurrentQueue<object> _userMessages = new ConcurrentQueue<object>();
         private IDispatcher _dispatcher;
-        private volatile bool _hasMoreMessages;
         private IMessageInvoker _invoker;
 
         private int _status = MailboxStatus.Idle;
@@ -48,7 +47,6 @@ namespace Proto.Remoting
 
         private async Task RunAsync()
         {
-            _hasMoreMessages = false;
             var t = _dispatcher.Throughput;
             var batch = new List<MessageEnvelope>();
 
@@ -78,10 +76,8 @@ namespace Proto.Remoting
                     }
                 }
 
-
                 if (batch.Count > 0)
                 {
-                    _hasMoreMessages = true;
                     await _invoker.InvokeUserMessageAsync(batch);
                 }
             }
@@ -97,7 +93,6 @@ namespace Proto.Remoting
 
         protected void Schedule()
         {
-            _hasMoreMessages = true;
             if (Interlocked.Exchange(ref _status, MailboxStatus.Busy) == MailboxStatus.Idle)
             {
                 _dispatcher.Schedule(RunAsync);

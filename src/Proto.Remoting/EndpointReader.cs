@@ -12,8 +12,7 @@ namespace Proto.Remoting
 {
     public class EndpointReader : Remoting.RemotingBase
     {
-        public override async Task<Unit> Receive(IAsyncStreamReader<MessageBatch> requestStream,
-            ServerCallContext context)
+        public override async Task Receive(IAsyncStreamReader<MessageBatch> requestStream, IServerStreamWriter<Unit> responseStream, ServerCallContext context)
         {
             await requestStream.ForEachAsync(batch =>
             {
@@ -27,7 +26,6 @@ namespace Proto.Remoting
 
                 return Actor.Done;
             });
-            return new Unit();
         }
     }
 }

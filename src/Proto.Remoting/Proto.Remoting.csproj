@@ -10,6 +10,9 @@
     <EmbeddedResource Include="**\*.resx" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Protos.proto" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Grpc" Version="1.0.1" />
     <PackageReference Include="NETStandard.Library" Version="1.6" />
   </ItemGroup>

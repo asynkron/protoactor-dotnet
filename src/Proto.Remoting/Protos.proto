@@ -1,9 +1,9 @@
-﻿syntax = "proto3";
+﻿
+syntax = "proto3";
 package remoting;
-option csharp_namespace = "GAM.Remoting";
+option csharp_namespace = "Proto.Remoting";
 
-import "github.com/AsynkronIT/gam/languages/csharp/src/GAM/Protos.proto";
-
+import "Proto.Actor/protos.proto";
 
 message MessageEnvelope {
   string type_name = 1;
@@ -28,5 +28,5 @@ message MessageBatch {
 message Unit {}
 
 service Remoting {
-  rpc Receive (stream MessageBatch) returns (Unit) {}
+  rpc Receive (stream MessageBatch) returns (stream Unit) {}
 }

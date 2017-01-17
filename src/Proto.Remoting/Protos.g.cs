@@ -22,17 +22,16 @@ namespace Proto.Remoting {
     static ProtosReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgxQcm90b3MucHJvdG8SCHJlbW90aW5nGj9naXRodWIuY29tL0FzeW5rcm9u",
-            "SVQvZ2FtL2xhbmd1YWdlcy9jc2hhcnAvc3JjL0dBTS9Qcm90b3MucHJvdG8i",
-            "cgoPTWVzc2FnZUVudmVsb3BlEhEKCXR5cGVfbmFtZRgBIAEoCRIUCgxtZXNz",
-            "YWdlX2RhdGEYAiABKAwSGgoGdGFyZ2V0GAMgASgLMgouYWN0b3IuUElEEhoK",
-            "BnNlbmRlchgEIAEoCzIKLmFjdG9yLlBJRCItCg9BY3RvclBpZFJlcXVlc3QS",
-            "DAoEbmFtZRgBIAEoCRIMCgRraW5kGAIgASgJIisKEEFjdG9yUGlkUmVzcG9u",
-            "c2USFwoDcGlkGAEgASgLMgouYWN0b3IuUElEIjwKDE1lc3NhZ2VCYXRjaBIs",
-            "CgllbnZlbG9wZXMYASADKAsyGS5yZW1vdGluZy5NZXNzYWdlRW52ZWxvcGUi",
-            "BgoEVW5pdDJBCghSZW1vdGluZxI1CgdSZWNlaXZlEhYucmVtb3RpbmcuTWVz",
-            "c2FnZUJhdGNoGg4ucmVtb3RpbmcuVW5pdCIAKAFCD6oCDEdBTS5SZW1vdGlu",
-            "Z2IGcHJvdG8z"));
+            "CgxQcm90b3MucHJvdG8SCHJlbW90aW5nGhhQcm90by5BY3Rvci9wcm90b3Mu",
+            "cHJvdG8icgoPTWVzc2FnZUVudmVsb3BlEhEKCXR5cGVfbmFtZRgBIAEoCRIU",
+            "CgxtZXNzYWdlX2RhdGEYAiABKAwSGgoGdGFyZ2V0GAMgASgLMgouYWN0b3Iu",
+            "UElEEhoKBnNlbmRlchgEIAEoCzIKLmFjdG9yLlBJRCItCg9BY3RvclBpZFJl",
+            "cXVlc3QSDAoEbmFtZRgBIAEoCRIMCgRraW5kGAIgASgJIisKEEFjdG9yUGlk",
+            "UmVzcG9uc2USFwoDcGlkGAEgASgLMgouYWN0b3IuUElEIjwKDE1lc3NhZ2VC",
+            "YXRjaBIsCgllbnZlbG9wZXMYASADKAsyGS5yZW1vdGluZy5NZXNzYWdlRW52",
+            "ZWxvcGUiBgoEVW5pdDJDCghSZW1vdGluZxI3CgdSZWNlaXZlEhYucmVtb3Rp",
+            "bmcuTWVzc2FnZUJhdGNoGg4ucmVtb3RpbmcuVW5pdCIAKAEwAUIRqgIOUHJv",
+            "dG8uUmVtb3RpbmdiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {

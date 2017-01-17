@@ -16,7 +16,7 @@ namespace Proto.Remoting
         private readonly string _host;
         private Channel _channel;
         private Remoting.RemotingClient _client;
-        private AsyncClientStreamingCall<MessageBatch, Unit> _stream;
+        private AsyncDuplexStreamingCall<MessageBatch, Unit> _stream;
         private IClientStreamWriter<MessageBatch> _streamWriter;
 
         public EndpointWriter(string host)
@@ -77,7 +77,7 @@ namespace Proto.Remoting
         {
             _channel = new Channel(_host, ChannelCredentials.Insecure);
             _client = new Remoting.RemotingClient(_channel);
-            _stream = _client.Receive();
+             _stream = _client.Receive();
             _streamWriter = _stream.RequestStream;
             return Actor.Done;
         }
