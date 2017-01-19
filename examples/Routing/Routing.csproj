@@ -12,5 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Routing\Proto.Routing.csproj" />
   </ItemGroup>
 </Project>

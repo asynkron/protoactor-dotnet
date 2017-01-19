@@ -7,8 +7,9 @@
 using System;
 using System.Threading.Tasks;
 using Proto;
+using Proto.Routing;
 
-namespace SpawnBenchmark
+namespace RoutingExample
 {
     internal class Message : IHashable
     {
@@ -44,57 +45,121 @@ namespace SpawnBenchmark
 
         private static void Main()
         {
-            //TestPoolRouter(new RandomPoolRouter(5), 10);
-            //TestGroupRouter(new RandomGroupRouter(
-            //    Actor.Spawn(MyActorProps),
-            //    Actor.Spawn(MyActorProps),
-            //    Actor.Spawn(MyActorProps),
-            //    Actor.Spawn(MyActorProps)
-            //), 10);
+            TestRandomPool();
+            TestRandomGroup();
 
-            //TestPoolRouter(new RoundRobinPoolRouter(5), 10);
-            TestGroupRouter(new RoundRobinGroupRouter(
-                Actor.Spawn(MyActorProps)
-                //Actor.Spawn(MyActorProps),
-                //Actor.Spawn(MyActorProps),
-                //Actor.Spawn(MyActorProps)
-            ), 10);
+            TestRoundRobinPool();
+            TestRoundRobinGroup();
 
-            //TestPoolRouter(new ConsistentHashPoolRouter(5), 20, 8);
-            //TestGroupRouter(new ConsistentHashGroupRouter(
-            //    Actor.Spawn(MyActorProps),
-            //    Actor.Spawn(MyActorProps),
-            //    Actor.Spawn(MyActorProps),
-            //    Actor.Spawn(MyActorProps)
-            //), 20, 8);
+            TestConsistentHashPool();
+            TestConsistentHashGroup();
 
-            //TestPoolRouter(new BroadcastPoolRouter(5), 5);
-            //TestGroupRouter(new BroadcastGroupRouter(
-            //    Actor.Spawn(MyActorProps),
-            //    Actor.Spawn(MyActorProps),
-            //    Actor.Spawn(MyActorProps),
-            //    Actor.Spawn(MyActorProps)
-            //), 5);
+            TestBroadcastPool();
+            TestBroadcastGroup();
             Console.ReadLine();
         }
 
-        private static void TestGroupRouter(IGroupRouterConfig groupRouter, int count, int? unique = null)
+        private static void TestBroadcastGroup()
         {
-            var props = Actor.FromGroupRouter(groupRouter);
-            var pid = Actor.Spawn(props);
-            for (var i = 0; i < count; i++)
+            for (var i = 0; i < 20; i++)
             {
-                pid.Tell(new Message {Text = $"{i % (unique ?? count)} {groupRouter.GetType().Name}"});
+                var props = Routing.NewBroadcastGroup(
+                    MyActorProps,
+                    Actor.Spawn(MyActorProps),
+                    Actor.Spawn(MyActorProps),
+                    Actor.Spawn(MyActorProps),
+                    Actor.Spawn(MyActorProps)
+                );
+                var pid = Actor.Spawn(props);
+                pid.Tell(new Message {Text = $"{i % 4}"});
             }
         }
 
-        private static void TestPoolRouter(IPoolRouterConfig poolRouter, int count, int? unique = null)
+        private static void TestBroadcastPool()
         {
-            var props = MyActorProps.WithPoolRouter(poolRouter);
-            var pid = Actor.Spawn(props);
-            for (var i = 0; i < count; i++)
+            for (var i = 0; i < 20; i++)
             {
-                pid.Tell(new Message {Text = $"{i % (unique ?? count)} {poolRouter.GetType().Name}"});
+                var props = Routing.NewBroadcastPool(MyActorProps, 5);
+                var pid = Actor.Spawn(props);
+                pid.Tell(new Message {Text = $"{i % 4}"});
+            }
+        }
+
+        private static void TestConsistentHashGroup()
+        {
+            for (var i = 0; i < 20; i++)
+            {
+                var props = Routing.NewConsistentHashGroup(
+                    MyActorProps,
+                    Actor.Spawn(MyActorProps),
+                    Actor.Spawn(MyActorProps),
+                    Actor.Spawn(MyActorProps),
+                    Actor.Spawn(MyActorProps)
+                );
+                var pid = Actor.Spawn(props);
+                pid.Tell(new Message {Text = $"{i % 4}"});
+            }
+        }
+
+        private static void TestConsistentHashPool()
+        {
+            for (var i = 0; i < 20; i++)
+            {
+                var props = Routing.NewConsistentHashPool(MyActorProps, 5);
+                var pid = Actor.Spawn(props);
+                pid.Tell(new Message {Text = $"{i % 4}"});
+            }
+        }
+
+        private static void TestRoundRobinGroup()
+        {
+            for (var i = 0; i < 20; i++)
+            {
+                var props = Routing.NewRoundRobinGroup(
+                    MyActorProps,
+                    Actor.Spawn(MyActorProps),
+                    Actor.Spawn(MyActorProps),
+                    Actor.Spawn(MyActorProps),
+                    Actor.Spawn(MyActorProps)
+                );
+                var pid = Actor.Spawn(props);
+                pid.Tell(new Message {Text = $"{i % 4}"});
+            }
+        }
+
+        private static void TestRoundRobinPool()
+        {
+            for (var i = 0; i < 20; i++)
+            {
+                var props = Routing.NewRoundRobinPool(MyActorProps, 5);
+                var pid = Actor.Spawn(props);
+                pid.Tell(new Message {Text = $"{i % 4}"});
+            }
+        }
+
+        private static void TestRandomGroup()
+        {
+            for (var i = 0; i < 20; i++)
+            {
+                var props = Routing.NewRandomGroup(
+                    MyActorProps,
+                    Actor.Spawn(MyActorProps),
+                    Actor.Spawn(MyActorProps),
+                    Actor.Spawn(MyActorProps),
+                    Actor.Spawn(MyActorProps)
+                );
+                var pid = Actor.Spawn(props);
+                pid.Tell(new Message {Text = $"{i % 4}"});
+            }
+        }
+
+        private static void TestRandomPool()
+        {
+            for (var i = 0; i < 20; i++)
+            {
+                var props = Routing.NewRandomPool(MyActorProps, 5);
+                var pid = Actor.Spawn(props);
+                pid.Tell(new Message {Text = $"{i % 4}"});
             }
         }
     }

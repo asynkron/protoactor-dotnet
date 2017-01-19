@@ -71,7 +71,7 @@ namespace Proto
             _localActorRefs.Remove(pid.Id);
         }
 
-        internal string GetAutoId()
+        public string NextId()
         {
             var counter = Interlocked.Increment(ref _sequenceId);
             return "$" + counter;

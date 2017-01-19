@@ -19,9 +19,8 @@ namespace Proto
 
         public ISupervisorStrategy Supervisor { get; private set; } = Supervision.DefaultStrategy;
 
-        public IRouterConfig RouterConfig { get; private set; }
-
         public Receive[] ReceivePlugins { get; private set; }
+        public Spawner Spawner { get; private set; }
 
         public Props WithProducer(Func<IActor> producer)
         {
@@ -43,19 +42,9 @@ namespace Proto
             return Copy(props => props.Supervisor = supervisor);
         }
 
-        public Props WithPoolRouter(IPoolRouterConfig routerConfig)
-        {
-            return Copy(props => props.RouterConfig = routerConfig);
-        }
-
         public Props WithReceivers(params Receive[] plugins)
         {
             return Copy(props => props.ReceivePlugins = plugins);
-        }
-		
-        internal Props WithRouter(IRouterConfig routerConfig)
-        {
-            return Copy(props => props.RouterConfig = routerConfig);
         }
 
         private Props Copy(Action<Props> mutator)
@@ -66,11 +55,18 @@ namespace Proto
                 MailboxProducer = MailboxProducer,
                 Producer = Producer,
                 ReceivePlugins = ReceivePlugins,
-                RouterConfig = RouterConfig,
+                Spawner = Spawner,
                 Supervisor = Supervisor
             };
             mutator(props);
             return props;
         }
+
+        public Props WithSpawner(Spawner spawner)
+        {
+            return Copy(props => props.Spawner = spawner);
+        }
     }
+
+    public delegate PID Spawner(string id, Props props, PID parent);
 }
