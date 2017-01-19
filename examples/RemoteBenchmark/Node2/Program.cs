@@ -8,7 +8,7 @@ using System;
 using System.Threading.Tasks;
 using Messages;
 using Proto;
-using Proto.Remoting;
+using Proto.Remote;
 using ProtosReflection = Messages.ProtosReflection;
 
 namespace Node2
