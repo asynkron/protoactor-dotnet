@@ -6,8 +6,8 @@
 using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
-using scg = global::System.Collections.Generic;
-namespace Proto.Remoting {
+
+namespace Proto.Remote {
 
   /// <summary>Holder for reflection information generated from Protos.proto</summary>
   public static partial class ProtosReflection {
@@ -35,11 +35,11 @@ namespace Proto.Remoting {
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remoting.MessageEnvelope), global::Proto.Remoting.MessageEnvelope.Parser, new[]{ "TypeName", "MessageData", "Target", "Sender" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remoting.ActorPidRequest), global::Proto.Remoting.ActorPidRequest.Parser, new[]{ "Name", "Kind" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remoting.ActorPidResponse), global::Proto.Remoting.ActorPidResponse.Parser, new[]{ "Pid" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remoting.MessageBatch), global::Proto.Remoting.MessageBatch.Parser, new[]{ "Envelopes" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remoting.Unit), global::Proto.Remoting.Unit.Parser, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageEnvelope), global::Proto.Remote.MessageEnvelope.Parser, new[]{ "TypeName", "MessageData", "Target", "Sender" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ActorPidRequest), global::Proto.Remote.ActorPidRequest.Parser, new[]{ "Name", "Kind" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ActorPidResponse), global::Proto.Remote.ActorPidResponse.Parser, new[]{ "Pid" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageBatch), global::Proto.Remote.MessageBatch.Parser, new[]{ "Envelopes" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.Unit), global::Proto.Remote.Unit.Parser, null, null, null, null)
           }));
     }
     #endregion
@@ -53,7 +53,7 @@ namespace Proto.Remoting {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Remoting.ProtosReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -266,7 +266,7 @@ namespace Proto.Remoting {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Remoting.ProtosReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -411,7 +411,7 @@ namespace Proto.Remoting {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Remoting.ProtosReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -534,7 +534,7 @@ namespace Proto.Remoting {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Remoting.ProtosReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -561,11 +561,11 @@ namespace Proto.Remoting {
 
     /// <summary>Field number for the "envelopes" field.</summary>
     public const int EnvelopesFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Proto.Remoting.MessageEnvelope> _repeated_envelopes_codec
-        = pb::FieldCodec.ForMessage(10, global::Proto.Remoting.MessageEnvelope.Parser);
-    private readonly pbc::RepeatedField<global::Proto.Remoting.MessageEnvelope> envelopes_ = new pbc::RepeatedField<global::Proto.Remoting.MessageEnvelope>();
+    private static readonly pb::FieldCodec<global::Proto.Remote.MessageEnvelope> _repeated_envelopes_codec
+        = pb::FieldCodec.ForMessage(10, global::Proto.Remote.MessageEnvelope.Parser);
+    private readonly pbc::RepeatedField<global::Proto.Remote.MessageEnvelope> envelopes_ = new pbc::RepeatedField<global::Proto.Remote.MessageEnvelope>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Proto.Remoting.MessageEnvelope> Envelopes {
+    public pbc::RepeatedField<global::Proto.Remote.MessageEnvelope> Envelopes {
       get { return envelopes_; }
     }
 
@@ -643,7 +643,7 @@ namespace Proto.Remoting {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Remoting.ProtosReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

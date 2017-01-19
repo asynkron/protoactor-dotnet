@@ -7,7 +7,7 @@
 using System;
 using Google.Protobuf;
 
-namespace Proto.Remoting
+namespace Proto.Remote
 {
     public class RemoteActorRef : ActorRef
     {

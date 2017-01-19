@@ -43,64 +43,37 @@ namespace Proto
             return FromProducer(() => new EmptyActor(receive));
         }
 
-        public static Props FromGroupRouter(IGroupRouterConfig routerConfig)
-        {
-            return new Props().WithRouter(routerConfig);
-        }
-
         public static PID Spawn(Props props)
         {
-            var name = ProcessRegistry.Instance.GetAutoId();
-            return InternalSpawn(props, name, null);
+            var name = ProcessRegistry.Instance.NextId();
+            return DefaultSpawner(name, props, null);
         }
 
         public static PID SpawnNamed(Props props, string name)
         {
-            return InternalSpawn(props, name, null);
+            return DefaultSpawner(name, props, null);
         }
 
-
-        private static PID SpawnRouter(string name, Props props, PID parent)
+        public static Spawner DefaultSpawner = (name, props, parent) =>
         {
-            var routeeProps = props.WithRouter(null);
-            var config = props.RouterConfig;
-            var routerState = config.CreateRouterState();
-
-            var routerProps = FromProducer(() => new RouterActor(routeeProps, config, routerState));
-            var routerId = ProcessRegistry.Instance.GetAutoId();
-            var router = InternalSpawn(routerProps, routerId, parent);
-
-            var reff = new RouterActorRef(router, routerState);
-            var res = ProcessRegistry.Instance.TryAdd(name, reff);
-            var pid = res.Item1;
-            return pid;
-        }
-
-        internal static PID InternalSpawn(Props props, string name, PID parent)
-        {
-            if (props.RouterConfig != null)
-            {
-                return SpawnRouter(name, props, parent);
-            }
-
             var ctx = new Context(props, parent);
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
             var reff = new LocalActorRef(mailbox);
             var res = ProcessRegistry.Instance.TryAdd(name, reff);
             var pid = res.Item1;
-            var @new = res.Item2;
-            if (!@new)
+            var absent = res.Item2;
+            if (absent)
             {
+                mailbox.RegisterHandlers(ctx, dispatcher);
+                ctx.Self = pid;
+                //this is on purpose, Started is synchronous to its parent
+                ctx.InvokeUserMessageAsync(Started.Instance).Wait();
                 return pid;
             }
 
-            mailbox.RegisterHandlers(ctx, dispatcher);
-            ctx.Self = pid;
-            //this is on purpose, Started is synchronous to its parent
-            ctx.InvokeUserMessageAsync(Started.Instance).Wait();
             return pid;
-        }
+        };
     }
 
     public interface IActor

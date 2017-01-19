@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
 
-namespace Proto.Remoting
+namespace Proto.Remote
 {
     public static class Serialization
     {

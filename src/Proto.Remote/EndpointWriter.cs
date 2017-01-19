@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Grpc.Core;
 
-namespace Proto.Remoting
+namespace Proto.Remote
 {
     public class EndpointWriter : IActor
     {

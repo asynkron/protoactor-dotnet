@@ -117,7 +117,7 @@ namespace Proto
 
         public PID Spawn(Props props)
         {
-            var id = ProcessRegistry.Instance.GetAutoId();
+            var id = ProcessRegistry.Instance.NextId();
 
             return SpawnNamed(props, id);
         }
@@ -354,7 +354,7 @@ namespace Proto
                 fullname = name;
             }
 
-            var pid = Actor.InternalSpawn(props, fullname, Self);
+            var pid = Actor.DefaultSpawner(fullname, props, Self);
             if (_children == null)
             {
                 _children = new HashSet<PID>();

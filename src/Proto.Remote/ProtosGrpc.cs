@@ -4,18 +4,17 @@
 
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Core;
 
-namespace Proto.Remoting {
+namespace Proto.Remote {
   public static class Remoting
   {
     static readonly string __ServiceName = "remoting.Remoting";
 
-    static readonly Marshaller<global::Proto.Remoting.MessageBatch> __Marshaller_MessageBatch = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Proto.Remoting.MessageBatch.Parser.ParseFrom);
-    static readonly Marshaller<global::Proto.Remoting.Unit> __Marshaller_Unit = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Proto.Remoting.Unit.Parser.ParseFrom);
+    static readonly Marshaller<global::Proto.Remote.MessageBatch> __Marshaller_MessageBatch = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Proto.Remote.MessageBatch.Parser.ParseFrom);
+    static readonly Marshaller<global::Proto.Remote.Unit> __Marshaller_Unit = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Proto.Remote.Unit.Parser.ParseFrom);
 
-    static readonly Method<global::Proto.Remoting.MessageBatch, global::Proto.Remoting.Unit> __Method_Receive = new Method<global::Proto.Remoting.MessageBatch, global::Proto.Remoting.Unit>(
+    static readonly Method<global::Proto.Remote.MessageBatch, global::Proto.Remote.Unit> __Method_Receive = new Method<global::Proto.Remote.MessageBatch, global::Proto.Remote.Unit>(
         MethodType.DuplexStreaming,
         __ServiceName,
         "Receive",
@@ -25,13 +24,13 @@ namespace Proto.Remoting {
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
-      get { return global::Proto.Remoting.ProtosReflection.Descriptor.Services[0]; }
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.Services[0]; }
     }
 
     /// <summary>Base class for server-side implementations of Remoting</summary>
     public abstract class RemotingBase
     {
-      public virtual global::System.Threading.Tasks.Task Receive(IAsyncStreamReader<global::Proto.Remoting.MessageBatch> requestStream, IServerStreamWriter<global::Proto.Remoting.Unit> responseStream, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task Receive(IAsyncStreamReader<global::Proto.Remote.MessageBatch> requestStream, IServerStreamWriter<global::Proto.Remote.Unit> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -61,11 +60,11 @@ namespace Proto.Remoting {
       {
       }
 
-      public virtual AsyncDuplexStreamingCall<global::Proto.Remoting.MessageBatch, global::Proto.Remoting.Unit> Receive(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual AsyncDuplexStreamingCall<global::Proto.Remote.MessageBatch, global::Proto.Remote.Unit> Receive(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return Receive(new CallOptions(headers, deadline, cancellationToken));
       }
-      public virtual AsyncDuplexStreamingCall<global::Proto.Remoting.MessageBatch, global::Proto.Remoting.Unit> Receive(CallOptions options)
+      public virtual AsyncDuplexStreamingCall<global::Proto.Remote.MessageBatch, global::Proto.Remote.Unit> Receive(CallOptions options)
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_Receive, null, options);
       }

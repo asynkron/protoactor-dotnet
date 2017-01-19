@@ -7,7 +7,7 @@
 using System;
 using Grpc.Core;
 
-namespace Proto.Remoting
+namespace Proto.Remote
 {
     public static class RemotingSystem
     {

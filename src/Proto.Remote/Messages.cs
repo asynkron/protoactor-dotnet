@@ -4,7 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-namespace Proto.Remoting
+namespace Proto.Remote
 {
     public sealed class EndpointTerminated
     {
