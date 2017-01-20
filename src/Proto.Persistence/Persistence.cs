@@ -49,11 +49,13 @@ namespace Proto.Persistence
 
         public static Receive Using(IProvider provider)
         {
-            return context =>
+            return async context =>
             {
                 switch (context.Message)
                 {
                     case Started started:
+                        await context.NextAsync();
+                        context.Self.Tell(new Replay());
                         break;
                     case Replay replay:
                         var p = context.Actor as IPersistentActor;
@@ -63,8 +65,10 @@ namespace Proto.Persistence
                             p.Persistence.Init(provider, context);
                         }
                         break;
+                    default:
+                        await context.NextAsync();
+                        break;
                 }
-                return Actor.Done;
             };
         }
     }

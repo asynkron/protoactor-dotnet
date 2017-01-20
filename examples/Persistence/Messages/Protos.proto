@@ -2,9 +2,12 @@
 package messages;
 option csharp_namespace = "Messages";
 
-message Add {
-    int32 Number = 1;
+message RenameCommand {
+    string name = 1;
+}
+message RenameEvent {
+    string name = 1;
 }
 message State {
-	int32 Sum = 1;
+	string Name = 1;
 }

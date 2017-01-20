@@ -192,6 +192,10 @@ namespace Proto
                     case Restart r:
                         HandleRestart();
                         break;
+                    case SuspendMailbox sm:
+                        break;
+                    case ResumeMailbox rm:
+                        break;
                     default:
                         Console.WriteLine("Unknown system message {0}", msg);
                         break;
