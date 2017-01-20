@@ -25,26 +25,30 @@ namespace Proto
     public static class Supervision
     {
         public static ISupervisorStrategy DefaultStrategy { get; } =
-            new OneForOneStrategy((who, reason) => SupervisorDirective.Restart);
+            new OneForOneStrategy((who, reason) => SupervisorDirective.Restart,10, TimeSpan.FromSeconds(10));
     }
 
     public interface ISupervisorStrategy
     {
-        void HandleFailure(ISupervisor supervisor, PID child, Exception cause);
+        void HandleFailure(ISupervisor supervisor, PID child, ChildRestartStats crs, Exception cause);
     }
 
     public delegate SupervisorDirective Decider(PID pid, Exception reason);
 
     public class OneForOneStrategy : ISupervisorStrategy
     {
+        private readonly int _maxNrOfRetries;
+        private readonly TimeSpan? _withinTimeSpan;
         private readonly Decider _decider;
 
-        public OneForOneStrategy(Decider decider)
+        public OneForOneStrategy(Decider decider, int maxNrOfRetries, TimeSpan? withinTimeSpan)
         {
             _decider = decider;
+            _maxNrOfRetries = maxNrOfRetries;
+            _withinTimeSpan = withinTimeSpan;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, Exception reason)
+        public void HandleFailure(ISupervisor supervisor, PID child, ChildRestartStats crs, Exception reason)
         {
             var directive = _decider(child, reason);
             switch (directive)
@@ -55,7 +59,14 @@ namespace Proto
                     break;
                 case SupervisorDirective.Restart:
                     //restart the failing child
-                    child.SendSystemMessage(new Restart());
+                    if (crs.RequestRestartPermission(_maxNrOfRetries, _withinTimeSpan))
+                    {
+                        child.SendSystemMessage(new Restart());
+                    }
+                    else
+                    {
+                        child.Stop();
+                    }
                     break;
                 case SupervisorDirective.Stop:
                     //stop the failing child

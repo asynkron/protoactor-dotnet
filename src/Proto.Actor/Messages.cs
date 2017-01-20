@@ -45,14 +45,16 @@ namespace Proto
 
     public class Failure : SystemMessage
     {
-        public Failure(PID who, Exception reason)
+        public Failure(PID who, Exception reason, ChildRestartStats crs)
         {
             Who = who;
             Reason = reason;
+            ChildRestartStats = crs;
         }
 
         public Exception Reason { get; }
         public PID Who { get; }
+        public ChildRestartStats ChildRestartStats { get; }
     }
 
     public sealed partial class Watch : SystemMessage

@@ -52,6 +52,7 @@ namespace Proto
         private bool _stopping;
         private HashSet<PID> _watchers;
         private HashSet<PID> _watching;
+        private ChildRestartStats _childRestartStats;
 
         public Context(Props props, PID parent)
         {
@@ -198,7 +199,11 @@ namespace Proto
             }
             catch (Exception x)
             {
-                var failure = new Failure(Self, x);
+                if (_childRestartStats == null)
+                {
+                    _childRestartStats = new ChildRestartStats(1, null);
+                }
+                var failure = new Failure(Self, x, _childRestartStats);
                 if (Parent == null)
                 {
                     HandleRootFailure(failure);
@@ -214,7 +219,7 @@ namespace Proto
         public void EscalateFailure(PID who, Exception reason)
         {
             Self.SendSystemMessage(SuspendMailbox.Instance);
-            Parent.SendSystemMessage(new Failure(who, reason));
+            Parent.SendSystemMessage(new Failure(who, reason, _childRestartStats));
         }
 
         private void IncarnateActor()
@@ -259,10 +264,10 @@ namespace Proto
         {
             if (_actor is ISupervisorStrategy supervisor)
             {
-                supervisor.HandleFailure(this, msg.Who, msg.Reason);
+                supervisor.HandleFailure(this, msg.Who, msg.ChildRestartStats, msg.Reason);
                 return;
             }
-            Props.Supervisor.HandleFailure(this, msg.Who, msg.Reason);
+            Props.Supervisor.HandleFailure(this, msg.Who, msg.ChildRestartStats, msg.Reason);
         }
 
         private void HandleTerminated(Terminated msg)
@@ -275,7 +280,7 @@ namespace Proto
 
         private void HandleRootFailure(Failure failure)
         {
-            Supervision.DefaultStrategy.HandleFailure(this, failure.Who, failure.Reason);
+            Supervision.DefaultStrategy.HandleFailure(this, failure.Who, failure.ChildRestartStats, failure.Reason);
         }
 
         private void HandleStop()
