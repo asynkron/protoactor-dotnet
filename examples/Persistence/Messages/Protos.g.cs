@@ -22,23 +22,25 @@ namespace Messages {
     static ProtosReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgxQcm90b3MucHJvdG8SCG1lc3NhZ2VzIhUKA0FkZBIOCgZOdW1iZXIYASAB",
-            "KAUiFAoFU3RhdGUSCwoDU3VtGAEgASgFQguqAghNZXNzYWdlc2IGcHJvdG8z"));
+            "CgxQcm90b3MucHJvdG8SCG1lc3NhZ2VzIh0KDVJlbmFtZUNvbW1hbmQSDAoE",
+            "bmFtZRgBIAEoCSIbCgtSZW5hbWVFdmVudBIMCgRuYW1lGAEgASgJIhUKBVN0",
+            "YXRlEgwKBE5hbWUYASABKAlCC6oCCE1lc3NhZ2VzYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Messages.Add), global::Messages.Add.Parser, new[]{ "Number" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Messages.State), global::Messages.State.Parser, new[]{ "Sum" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Messages.RenameCommand), global::Messages.RenameCommand.Parser, new[]{ "Name" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Messages.RenameEvent), global::Messages.RenameEvent.Parser, new[]{ "Name" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Messages.State), global::Messages.State.Parser, new[]{ "Name" }, null, null, null)
           }));
     }
     #endregion
 
   }
   #region Messages
-  public sealed partial class Add : pb::IMessage<Add> {
-    private static readonly pb::MessageParser<Add> _parser = new pb::MessageParser<Add>(() => new Add());
+  public sealed partial class RenameCommand : pb::IMessage<RenameCommand> {
+    private static readonly pb::MessageParser<RenameCommand> _parser = new pb::MessageParser<RenameCommand>(() => new RenameCommand());
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<Add> Parser { get { return _parser; } }
+    public static pb::MessageParser<RenameCommand> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
@@ -51,54 +53,54 @@ namespace Messages {
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Add() {
+    public RenameCommand() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Add(Add other) : this() {
-      number_ = other.number_;
+    public RenameCommand(RenameCommand other) : this() {
+      name_ = other.name_;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public Add Clone() {
-      return new Add(this);
+    public RenameCommand Clone() {
+      return new RenameCommand(this);
     }
 
-    /// <summary>Field number for the "Number" field.</summary>
-    public const int NumberFieldNumber = 1;
-    private int number_;
+    /// <summary>Field number for the "name" field.</summary>
+    public const int NameFieldNumber = 1;
+    private string name_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int Number {
-      get { return number_; }
+    public string Name {
+      get { return name_; }
       set {
-        number_ = value;
+        name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
-      return Equals(other as Add);
+      return Equals(other as RenameCommand);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(Add other) {
+    public bool Equals(RenameCommand other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (Number != other.Number) return false;
+      if (Name != other.Name) return false;
       return true;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (Number != 0) hash ^= Number.GetHashCode();
+      if (Name.Length != 0) hash ^= Name.GetHashCode();
       return hash;
     }
 
@@ -109,28 +111,28 @@ namespace Messages {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (Number != 0) {
-        output.WriteRawTag(8);
-        output.WriteInt32(Number);
+      if (Name.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Name);
       }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (Number != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Number);
+      if (Name.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
       }
       return size;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(Add other) {
+    public void MergeFrom(RenameCommand other) {
       if (other == null) {
         return;
       }
-      if (other.Number != 0) {
-        Number = other.Number;
+      if (other.Name.Length != 0) {
+        Name = other.Name;
       }
     }
 
@@ -142,8 +144,125 @@ namespace Messages {
           default:
             input.SkipLastField();
             break;
-          case 8: {
-            Number = input.ReadInt32();
+          case 10: {
+            Name = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class RenameEvent : pb::IMessage<RenameEvent> {
+    private static readonly pb::MessageParser<RenameEvent> _parser = new pb::MessageParser<RenameEvent>(() => new RenameEvent());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<RenameEvent> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Messages.ProtosReflection.Descriptor.MessageTypes[1]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public RenameEvent() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public RenameEvent(RenameEvent other) : this() {
+      name_ = other.name_;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public RenameEvent Clone() {
+      return new RenameEvent(this);
+    }
+
+    /// <summary>Field number for the "name" field.</summary>
+    public const int NameFieldNumber = 1;
+    private string name_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string Name {
+      get { return name_; }
+      set {
+        name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as RenameEvent);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(RenameEvent other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Name != other.Name) return false;
+      return true;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Name.Length != 0) hash ^= Name.GetHashCode();
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Name.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Name);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (Name.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(RenameEvent other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Name.Length != 0) {
+        Name = other.Name;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 10: {
+            Name = input.ReadString();
             break;
           }
         }
@@ -159,7 +278,7 @@ namespace Messages {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Messages.ProtosReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Messages.ProtosReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -176,7 +295,7 @@ namespace Messages {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public State(State other) : this() {
-      sum_ = other.sum_;
+      name_ = other.name_;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -184,14 +303,14 @@ namespace Messages {
       return new State(this);
     }
 
-    /// <summary>Field number for the "Sum" field.</summary>
-    public const int SumFieldNumber = 1;
-    private int sum_;
+    /// <summary>Field number for the "Name" field.</summary>
+    public const int NameFieldNumber = 1;
+    private string name_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int Sum {
-      get { return sum_; }
+    public string Name {
+      get { return name_; }
       set {
-        sum_ = value;
+        name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -208,14 +327,14 @@ namespace Messages {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (Sum != other.Sum) return false;
+      if (Name != other.Name) return false;
       return true;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (Sum != 0) hash ^= Sum.GetHashCode();
+      if (Name.Length != 0) hash ^= Name.GetHashCode();
       return hash;
     }
 
@@ -226,17 +345,17 @@ namespace Messages {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (Sum != 0) {
-        output.WriteRawTag(8);
-        output.WriteInt32(Sum);
+      if (Name.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Name);
       }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (Sum != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Sum);
+      if (Name.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
       }
       return size;
     }
@@ -246,8 +365,8 @@ namespace Messages {
       if (other == null) {
         return;
       }
-      if (other.Sum != 0) {
-        Sum = other.Sum;
+      if (other.Name.Length != 0) {
+        Name = other.Name;
       }
     }
 
@@ -259,8 +378,8 @@ namespace Messages {
           default:
             input.SkipLastField();
             break;
-          case 8: {
-            Sum = input.ReadInt32();
+          case 10: {
+            Name = input.ReadString();
             break;
           }
         }
