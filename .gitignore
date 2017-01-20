@@ -253,3 +253,5 @@ paket-files/
 
 # merge leftovers
 *.orig
+
+tools/

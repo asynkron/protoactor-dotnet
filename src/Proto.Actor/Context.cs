@@ -25,11 +25,13 @@ namespace Proto
         Props Props { get; }
         object Message { get; }
         PID Sender { get; }
+        IActor Actor { get; }
 
         void Respond(object msg);
         PID[] Children();
 
         void Stash();
+        void Receive(object message);
         Task NextAsync();
         PID Spawn(Props props);
 
@@ -43,7 +45,6 @@ namespace Proto
     public class Context : IMessageInvoker, IContext, ISupervisor
     {
         private readonly Stack<Receive> _behavior;
-        private IActor _actor;
         private HashSet<PID> _children;
         private object _message;
         private int _receiveIndex;
@@ -69,10 +70,11 @@ namespace Proto
             return _children.ToArray();
         }
 
+        public IActor Actor { get; private set; }
         public PID Parent { get; }
         public PID Self { get; internal set; }
         public Props Props { get; }
-
+        
         public object Message
         {
             get
@@ -92,6 +94,19 @@ namespace Proto
                 _stash = new Stack<object>();
             }
             _stash.Push(Message);
+        }
+
+        public void Receive(object message)
+        {
+            var i = _receiveIndex;
+            var m = Message;
+
+            _receiveIndex = 0;
+            Message = message;
+            NextAsync().Wait();
+
+            _receiveIndex = i;
+            Message = m;
         }
 
         public Task NextAsync()
@@ -226,7 +241,7 @@ namespace Proto
         {
             _restarting = false;
             _stopping = false;
-            _actor = Props.Producer();
+            Actor = Props.Producer();
             Become(ActorReceive);
         }
 
@@ -262,7 +277,7 @@ namespace Proto
 
         private void HandleFailure(Failure msg)
         {
-            if (_actor is ISupervisorStrategy supervisor)
+            if (Actor is ISupervisorStrategy supervisor)
             {
                 supervisor.HandleFailure(this, msg.Who, msg.ChildRestartStats, msg.Reason);
                 return;
@@ -344,7 +359,7 @@ namespace Proto
 
         private Task ActorReceive(IContext ctx)
         {
-            return _actor.ReceiveAsync(ctx);
+            return Actor.ReceiveAsync(ctx);
         }
 
         public PID SpawnNamed(Props props, string name)
@@ -359,7 +374,7 @@ namespace Proto
                 fullname = name;
             }
 
-            var pid = Actor.DefaultSpawner(fullname, props, Self);
+            var pid = Proto.Actor.DefaultSpawner(fullname, props, Self);
             if (_children == null)
             {
                 _children = new HashSet<PID>();
