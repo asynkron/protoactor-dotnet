@@ -10,7 +10,7 @@ namespace Proto
 {
     public partial class PID
     {
-        internal ActorRef Ref { get; set; }
+        internal Process Ref { get; set; }
 
         public void Tell(object message)
         {
@@ -58,7 +58,7 @@ namespace Proto
         public PID Sender { get; }
     }
 
-    public abstract class ActorRef
+    public abstract class Process
     {
         public abstract void SendUserMessage(PID pid, object message, PID sender);
 
@@ -70,7 +70,7 @@ namespace Proto
         public abstract void SendSystemMessage(PID pid, SystemMessage sys);
     }
 
-    public class LocalActorRef : ActorRef
+    public class LocalActorRef : Process
     {
         public LocalActorRef(IMailbox mailbox)
         {

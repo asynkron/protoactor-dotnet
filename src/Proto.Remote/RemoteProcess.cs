@@ -9,11 +9,11 @@ using Google.Protobuf;
 
 namespace Proto.Remote
 {
-    public class RemoteActorRef : ActorRef
+    public class RemoteProcess : Process
     {
         private readonly PID _pid;
 
-        public RemoteActorRef(PID pid)
+        public RemoteProcess(PID pid)
         {
             _pid = pid;
         }

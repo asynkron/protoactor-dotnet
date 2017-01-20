@@ -55,7 +55,7 @@ namespace Proto.Router
                 var routerId = ProcessRegistry.Instance.NextId();
                 var router = Actor.DefaultSpawner(routerId, routerProps, parent);
 
-                var reff = new RouterActorRef(router, routerState);
+                var reff = new RouterProcess(router, routerState);
                 var res = ProcessRegistry.Instance.TryAdd(routerId, reff);
                 var pid = res.Item1;
                 return pid;

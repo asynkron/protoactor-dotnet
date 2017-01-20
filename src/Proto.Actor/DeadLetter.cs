@@ -18,7 +18,7 @@ namespace Proto
         public object Message { get; }
     }
 
-    public class DeadLetterActorRef : ActorRef
+    public class DeadLetterActorRef : Process
     {
         public static readonly DeadLetterActorRef Instance = new DeadLetterActorRef();
 

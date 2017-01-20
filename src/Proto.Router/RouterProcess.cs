@@ -3,12 +3,12 @@ using Proto.Router.Routers;
 
 namespace Proto.Router
 {
-    public class RouterActorRef : ActorRef
+    public class RouterProcess : Process
     {
         private readonly PID _router;
         private readonly RouterState _state;
 
-        public RouterActorRef(PID router, RouterState state)
+        public RouterProcess(PID router, RouterState state)
         {
             _router = router;
             _state = state;

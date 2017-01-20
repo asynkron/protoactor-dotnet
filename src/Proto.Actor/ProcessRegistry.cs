@@ -13,7 +13,7 @@ namespace Proto
     public class ProcessRegistry
     {
         private const string NoHost = "nonhost";
-        private readonly IList<Func<PID, ActorRef>> _hostResolvers = new List<Func<PID, ActorRef>>();
+        private readonly IList<Func<PID, Process>> _hostResolvers = new List<Func<PID, Process>>();
 
         private readonly HashedConcurrentDictionary _localActorRefs =
             new HashedConcurrentDictionary();
@@ -23,12 +23,12 @@ namespace Proto
 
         public string Address { get; set; } = NoHost;
 
-        public void RegisterHostResolver(Func<PID, ActorRef> resolver)
+        public void RegisterHostResolver(Func<PID, Process> resolver)
         {
             _hostResolvers.Add(resolver);
         }
 
-        public ActorRef Get(PID pid)
+        public Process Get(PID pid)
         {
             if (pid.Address != "nonhost" && pid.Address != Address)
             {
@@ -46,7 +46,7 @@ namespace Proto
                 throw new NotSupportedException("Unknown host");
             }
 
-            ActorRef aref;
+            Process aref;
             if (_localActorRefs.TryGetValue(pid.Id, out aref))
             {
                 return aref;
@@ -54,7 +54,7 @@ namespace Proto
             return DeadLetterActorRef.Instance;
         }
 
-        public ValueTuple<PID, bool> TryAdd(string id, ActorRef aref)
+        public ValueTuple<PID, bool> TryAdd(string id, Process aref)
         {
             var pid = new PID
             {
