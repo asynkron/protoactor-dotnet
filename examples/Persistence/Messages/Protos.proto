@@ -1,0 +1,10 @@
+﻿syntax = "proto3";
+package messages;
+option csharp_namespace = "Messages";
+
+message Add {
+    int32 Number = 1;
+}
+message State {
+	int32 Sum = 1;
+}
