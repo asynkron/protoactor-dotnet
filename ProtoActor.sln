@@ -54,8 +54,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PersistenceProviders", "Per
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Persistence.Couchbase", "src\PersistenceProviders\Proto.Persistence.Couchbase\Proto.Persistence.Couchbase.csproj", "{89ED6E98-BB85-4B82-907A-D5EC5422C740}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CouchbasePersistence", "examples\Persistence\CouchbasePersistence\CouchbasePersistence.csproj", "{EBD6E777-BCC6-450B-B9C4-11DD408EEFD2}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -234,18 +232,6 @@ Global
 		{89ED6E98-BB85-4B82-907A-D5EC5422C740}.Release|x64.Build.0 = Release|x64
 		{89ED6E98-BB85-4B82-907A-D5EC5422C740}.Release|x86.ActiveCfg = Release|x86
 		{89ED6E98-BB85-4B82-907A-D5EC5422C740}.Release|x86.Build.0 = Release|x86
-		{EBD6E777-BCC6-450B-B9C4-11DD408EEFD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EBD6E777-BCC6-450B-B9C4-11DD408EEFD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EBD6E777-BCC6-450B-B9C4-11DD408EEFD2}.Debug|x64.ActiveCfg = Debug|x64
-		{EBD6E777-BCC6-450B-B9C4-11DD408EEFD2}.Debug|x64.Build.0 = Debug|x64
-		{EBD6E777-BCC6-450B-B9C4-11DD408EEFD2}.Debug|x86.ActiveCfg = Debug|x86
-		{EBD6E777-BCC6-450B-B9C4-11DD408EEFD2}.Debug|x86.Build.0 = Debug|x86
-		{EBD6E777-BCC6-450B-B9C4-11DD408EEFD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EBD6E777-BCC6-450B-B9C4-11DD408EEFD2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EBD6E777-BCC6-450B-B9C4-11DD408EEFD2}.Release|x64.ActiveCfg = Release|x64
-		{EBD6E777-BCC6-450B-B9C4-11DD408EEFD2}.Release|x64.Build.0 = Release|x64
-		{EBD6E777-BCC6-450B-B9C4-11DD408EEFD2}.Release|x86.ActiveCfg = Release|x86
-		{EBD6E777-BCC6-450B-B9C4-11DD408EEFD2}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -272,6 +258,5 @@ Global
 		{43E1097C-A356-4740-B4B1-A5AFC486CA8C} = {8622758C-75DB-4067-AB13-7D9531A16E9E}
 		{7AF64900-EA34-4A93-9514-FEBC4648E39E} = {771514F1-12AE-4A26-89CB-2646D3EF7034}
 		{89ED6E98-BB85-4B82-907A-D5EC5422C740} = {7AF64900-EA34-4A93-9514-FEBC4648E39E}
-		{EBD6E777-BCC6-450B-B9C4-11DD408EEFD2} = {8622758C-75DB-4067-AB13-7D9531A16E9E}
 	EndGlobalSection
 EndGlobal

@@ -15,10 +15,16 @@
     <PackageReference Include="Microsoft.NETCore.App" Version="1.0.1" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\src\PersistenceProviders\Proto.Persistence.Couchbase\Proto.Persistence.Couchbase.csproj" />
     <ProjectReference Include="..\..\..\src\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\..\..\src\Proto.Persistence\Proto.Persistence.csproj" />
     <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\..\src\Proto.Persistence\Proto.Persistence.csproj" />
     <ProjectReference Include="..\Messages\Messages.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Couchbase.NetClient">
+      <HintPath>..\..\..\..\..\..\Users\chpa\.nuget\packages\couchbasenetclient\2.4.0-dp3\lib\netstandard1.5\Couchbase.NetClient.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>
