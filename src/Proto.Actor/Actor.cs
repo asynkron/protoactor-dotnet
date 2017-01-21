@@ -60,9 +60,7 @@ namespace Proto
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
             var reff = new LocalActorRef(mailbox);
-            var res = ProcessRegistry.Instance.TryAdd(name, reff);
-            var pid = res.Item1;
-            var absent = res.Item2;
+            var (pid,absent) = ProcessRegistry.Instance.TryAdd(name, reff);
             if (absent)
             {
                 mailbox.RegisterHandlers(ctx, dispatcher);

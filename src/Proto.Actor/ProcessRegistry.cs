@@ -54,7 +54,7 @@ namespace Proto
             return DeadLetterActorRef.Instance;
         }
 
-        public ValueTuple<PID, bool> TryAdd(string id, Process aref)
+        public (PID pid, bool ok) TryAdd(string id, Process aref)
         {
             var pid = new PID
             {
@@ -63,7 +63,7 @@ namespace Proto
                 Address = Address // local
             };
             var ok = _localActorRefs.TryAdd(pid.Id, aref);
-            return ValueTuple.Create(pid, ok);
+            return (pid, ok);
         }
 
         public void Remove(PID pid)
