@@ -41,8 +41,7 @@ namespace Node2
         {
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             RemotingSystem.Start("127.0.0.1", 8080);
-            var props = Actor.FromProducer(() => new EchoActor());
-            var pid = Actor.SpawnNamed(props, "remote");
+            Actor.SpawnNamed(Actor.FromProducer(() => new EchoActor()), "remote");
             Console.ReadLine();
         }
     }

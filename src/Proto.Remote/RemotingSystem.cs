@@ -11,7 +11,7 @@ namespace Proto.Remote
 {
     public static class RemotingSystem
     {
-        private static Server server;
+        private static Server _server;
         public static PID EndpointManagerPid { get; private set; }
 
         public static void Start(string host, int port)
@@ -20,16 +20,16 @@ namespace Proto.Remote
             ProcessRegistry.Instance.Address = addr;
             ProcessRegistry.Instance.RegisterHostResolver(pid => new RemoteProcess(pid));
 
-            server = new Server
+            _server = new Server
             {
                 Services = {Remoting.BindService(new EndpointReader())},
                 Ports = {new ServerPort(host, port, ServerCredentials.Insecure)}
             };
-            server.Start();
+            _server.Start();
             var emProps = Actor.FromProducer(() => new EndpointManager());
             EndpointManagerPid = Actor.Spawn(emProps);
 
-            Console.WriteLine("[REMOTING] Starting GAM server on {0}", addr);
+            Console.WriteLine($"[REMOTING] Starting Proto.Actor server on {addr}");
         }
     }
 }

@@ -10,6 +10,12 @@ namespace Proto
 {
     public partial class PID
     {
+        public PID(string address, string id)
+        {
+            Address = address;
+            Id = id;
+        }
+
         internal Process Ref { get; set; }
 
         public void Tell(object message)
