@@ -20,8 +20,7 @@ namespace Proto
         {
             Subscribe(msg =>
             {
-                var letter = msg as DeadLetter;
-                if (letter != null)
+                if (msg is DeadLetterEvent letter)
                 {
                     Console.WriteLine("[DeadLetter] {0} got {1}", letter.Pid, letter.Message);
                 }

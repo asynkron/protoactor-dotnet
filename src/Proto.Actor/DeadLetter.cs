@@ -6,30 +6,32 @@
 
 namespace Proto
 {
-    public class DeadLetter
+    public class DeadLetterEvent
     {
-        public DeadLetter(PID pid, object message)
+        public DeadLetterEvent(PID pid, object message, PID sender)
         {
             Pid = pid;
             Message = message;
+            Sender = sender;
         }
 
         public PID Pid { get; }
         public object Message { get; }
+        public PID Sender { get; }
     }
 
-    public class DeadLetterActorRef : Process
+    public class DeadLetterProcess : Process
     {
-        public static readonly DeadLetterActorRef Instance = new DeadLetterActorRef();
+        public static readonly DeadLetterProcess Instance = new DeadLetterProcess();
 
         public override void SendUserMessage(PID pid, object message, PID sender)
         {
-            EventStream.Instance.Publish(new DeadLetter(pid, message));
+            EventStream.Instance.Publish(new DeadLetterEvent(pid, message, sender));
         }
 
         public override void SendSystemMessage(PID pid, SystemMessage sys)
         {
-            EventStream.Instance.Publish(new DeadLetter(pid, sys));
+            EventStream.Instance.Publish(new DeadLetterEvent(pid, sys, null));
         }
     }
 }

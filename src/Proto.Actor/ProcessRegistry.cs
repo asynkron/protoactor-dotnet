@@ -51,7 +51,7 @@ namespace Proto
             {
                 return aref;
             }
-            return DeadLetterActorRef.Instance;
+            return DeadLetterProcess.Instance;
         }
 
         public (PID pid, bool ok) TryAdd(string id, Process aref)
