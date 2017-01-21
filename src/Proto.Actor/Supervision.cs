@@ -30,7 +30,7 @@ namespace Proto
 
     public interface ISupervisorStrategy
     {
-        void HandleFailure(ISupervisor supervisor, PID child, ChildRestartStats crs, Exception cause);
+        void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics crs, Exception cause);
     }
 
     public delegate SupervisorDirective Decider(PID pid, Exception reason);
@@ -48,7 +48,33 @@ namespace Proto
             _withinTimeSpan = withinTimeSpan;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, ChildRestartStats crs, Exception reason)
+        //public bool RequestRestartPermission(int maxNrOfRetries, TimeSpan? withinTimeSpan)
+        //{
+        //    if (maxNrOfRetries == 0)
+        //    {
+        //        return false;
+        //    }
+
+        //    FailureCount++;
+
+        //    //supervisor says child may restart, and we don't care about any timewindow
+        //    if (withinTimeSpan == null)
+        //    {
+        //        return FailureCount <= maxNrOfRetries;
+        //    }
+
+        //    var max = DateTime.Now - withinTimeSpan;
+        //    if (LastFailureTime > max)
+        //    {
+        //        return FailureCount <= maxNrOfRetries;
+        //    }
+
+        //    //we are past the time limit, we can safely reset the failure count and restart
+        //    FailureCount = 0;
+        //    return true;
+        //}
+
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics crs, Exception reason)
         {
             var directive = _decider(child, reason);
             switch (directive)

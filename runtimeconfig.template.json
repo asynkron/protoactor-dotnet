@@ -1,6 +1,0 @@
-{
-  "configProperties": {
-    "System.GC.Server": false,
-    "System.GC.Concurrent": false
-  }
-}
