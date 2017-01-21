@@ -79,13 +79,13 @@ namespace Proto
         {
             get
             {
-                var r = _message as Request;
+                var r = _message as MessageSender;
                 return r != null ? r.Message : _message;
             }
             private set { _message = value; }
         }
 
-        public PID Sender => (_message as Request)?.Sender;
+        public PID Sender => (_message as MessageSender)?.Sender;
 
         public void Stash()
         {

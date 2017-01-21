@@ -97,4 +97,16 @@ namespace Proto
     {
         public static readonly Stopped Instance = new Stopped();
     }
+
+    public sealed class MessageSender
+    {
+        public MessageSender(object message, PID sender)
+        {
+            Message = message;
+            Sender = sender;
+        }
+
+        public object Message { get; }
+        public PID Sender { get; }
+    }
 }
