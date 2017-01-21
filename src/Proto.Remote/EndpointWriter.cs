@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Grpc.Core.Utils;
 
 namespace Proto.Remote
 {
@@ -79,14 +80,16 @@ namespace Proto.Remote
             _client = new Remoting.RemotingClient(_channel);
             _stream = _client.Receive();
 
-            Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(async () =>
             {
+                
                 try
                 {
-                    var tmp = _stream.ResponseStream.Current;
+                    await _stream.ResponseStream.ForEachAsync(i => Actor.Done);
                 }
-                catch
+                catch(Exception x)
                 {
+                    Console.WriteLine(x);
                     Console.WriteLine($"[REMOTING] EndpointWriter lost connection to address {_host}");
                     var terminated = new EndpointTerminatedEvent
                     {

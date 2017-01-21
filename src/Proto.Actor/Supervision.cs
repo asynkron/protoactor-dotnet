@@ -87,15 +87,18 @@ namespace Proto
                     //restart the failing child
                     if (crs.RequestRestartPermission(_maxNrOfRetries, _withinTimeSpan))
                     {
+                        Console.WriteLine("Restarting {0} Reason {1}", child.ToShortString(), reason);
                         child.SendSystemMessage(new Restart());
                     }
                     else
                     {
+                        Console.WriteLine("Stopping {0} Reason {1}", child.ToShortString(), reason);
                         child.Stop();
                     }
                     break;
                 case SupervisorDirective.Stop:
                     //stop the failing child
+                    Console.WriteLine("Stopping {0} Reason {1}",child.ToShortString(),reason);
                     child.Stop();
                     break;
                 case SupervisorDirective.Escalate:

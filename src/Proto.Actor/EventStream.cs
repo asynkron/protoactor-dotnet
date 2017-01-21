@@ -22,7 +22,7 @@ namespace Proto
             {
                 if (msg is DeadLetterEvent letter)
                 {
-                    Console.WriteLine("[DeadLetter] '{0}' got '{1}' from '{2}'", letter.Pid.ToShortString(), letter.Message,letter.Sender?.ToShortString());
+                    Console.WriteLine("[DeadLetter] '{0}' got '{1}:{2}' from '{3}'", letter.Pid.ToShortString(), letter.Message.GetType().Name ,letter.Message,letter.Sender?.ToShortString());
                 }
             });
         }
