@@ -174,6 +174,9 @@ namespace Proto
             {
                 switch (msg)
                 {
+                    case Started s:
+                        InvokeUserMessageAsync(s).Wait();
+                        break;
                     case Stop _:
                         HandleStop();
                         break;

@@ -6,7 +6,7 @@
 
 namespace Proto.Remote
 {
-    public sealed class EndpointTerminated
+    public sealed class EndpointTerminatedEvent
     {
         public string Address { get; set; }
     }

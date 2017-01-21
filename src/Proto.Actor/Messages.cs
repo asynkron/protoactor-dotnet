@@ -88,7 +88,7 @@ namespace Proto
         public static readonly Stopping Instance = new Stopping();
     }
 
-    public sealed class Started : AutoReceiveMessage
+    public sealed class Started : SystemMessage
     {
         public static readonly Started Instance = new Started();
     }

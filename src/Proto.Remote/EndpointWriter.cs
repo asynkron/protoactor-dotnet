@@ -88,7 +88,7 @@ namespace Proto.Remote
                 catch
                 {
                     Console.WriteLine($"[REMOTING] EndpointWriter lost connection to address {_host}");
-                    var terminated = new EndpointTerminated
+                    var terminated = new EndpointTerminatedEvent
                     {
                         Address = _host
                     };

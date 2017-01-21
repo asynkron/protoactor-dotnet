@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Proto.Router.Messages;
 using Proto.Router.Routers;
@@ -10,12 +11,14 @@ namespace Proto.Router
         private readonly IRouterConfig _config;
         private readonly Props _routeeProps;
         private readonly RouterState _routerState;
+        private readonly AutoResetEvent _wg;
 
-        public RouterActor(Props routeeProps, IRouterConfig config, RouterState routerState)
+        public RouterActor(Props routeeProps, IRouterConfig config, RouterState routerState, AutoResetEvent wg)
         {
             _routeeProps = routeeProps;
             _config = config;
             _routerState = routerState;
+            _wg = wg;
         }
 
         public Task ReceiveAsync(IContext context)
@@ -23,6 +26,7 @@ namespace Proto.Router
             if (context.Message is Started)
             {
                 _config.OnStarted(context, _routeeProps, _routerState);
+                _wg.Set();
                 return Actor.Done;
             }
             if (context.Message is RouterAddRoutee addRoutee)

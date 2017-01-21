@@ -1,4 +1,5 @@
-﻿using Proto.Router.Routers;
+﻿using System.Threading;
+using Proto.Router.Routers;
 
 namespace Proto.Router
 {
@@ -50,16 +51,15 @@ namespace Proto.Router
             {
                 var routeeProps = props.WithSpawner(null);
                 var routerState = config.CreateRouterState();
-
-                var routerProps = Actor.FromProducer(() => new RouterActor(routeeProps, config, routerState));
+                var wg = new AutoResetEvent(false);
+                var routerProps = Actor.FromProducer(() => new RouterActor(routeeProps, config, routerState, wg));
                 var routerId = ProcessRegistry.Instance.NextId();
                 var router = Actor.DefaultSpawner(routerId, routerProps, parent);
+                wg.WaitOne(); //wait for the router to start
 
                 var reff = new RouterProcess(router, routerState);
-                var res = ProcessRegistry.Instance.TryAdd(routerId, reff);
-                var pid = res.Item1;
+                var (pid,ok) = ProcessRegistry.Instance.TryAdd(routerId, reff);
                 return pid;
-
             };
         }
     }

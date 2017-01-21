@@ -61,17 +61,26 @@ namespace Proto
             var dispatcher = props.Dispatcher;
             var reff = new LocalActorRef(mailbox);
             var (pid,absent) = ProcessRegistry.Instance.TryAdd(name, reff);
-            if (absent)
+            if (!absent)
             {
-                mailbox.RegisterHandlers(ctx, dispatcher);
-                ctx.Self = pid;
-                //this is on purpose, Started is synchronous to its parent
-                ctx.InvokeUserMessageAsync(Started.Instance).Wait();
-                return pid;
+                throw new ProcessNameExistException(name);
             }
+            ctx.Self = pid;
+            mailbox.RegisterHandlers(ctx, dispatcher);
+            mailbox.PostSystemMessage(Started.Instance);
 
             return pid;
         };
+    }
+
+    public class ProcessNameExistException : Exception
+    {
+        private string _name;
+
+        public ProcessNameExistException(string name)
+        {
+            _name = name;
+        }
     }
 
     public interface IActor
