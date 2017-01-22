@@ -59,7 +59,7 @@ namespace Proto.Remote
                 {
                     _suspended = false;
                 }
-                _invoker.InvokeSystemMessageAsync(sys);
+                await _invoker.InvokeSystemMessageAsync(sys);
             }
             if (!_suspended)
             {
