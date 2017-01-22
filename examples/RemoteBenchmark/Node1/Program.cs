@@ -65,7 +65,8 @@ class Program
         var elapsed = DateTime.Now - start;
         Console.WriteLine("Elapsed {0}",elapsed);
 
-        var t = (messageCount * 2) ;
+        var t = ((messageCount * 2.0) / elapsed.TotalMilliseconds) * 1000;
+        Console.WriteLine("Throughput {0} msg / sec",t);
 
         Console.ReadLine();
     }
