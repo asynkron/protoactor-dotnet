@@ -13,16 +13,16 @@ using Proto;
 
 class Program
 {
-
-
     static void Main(string[] args)
     {
         const int messageCount = 1000000;
         const int batchSize = 100;
 
+        Console.WriteLine("Dispatcher\t\tElapsed\t\tMsg/sec");
         var tps = new[] {300, 400, 500, 600, 700, 800, 900};
         foreach (var t in tps)
         {
+
             var d = new ThreadPoolDispatcher {Throughput = t};
 
             var clientCount = Environment.ProcessorCount * 2;
@@ -64,11 +64,10 @@ class Program
             Task.WaitAll(tasks);
 
             sw.Stop();
-         //   Console.WriteLine(sw.Elapsed);
             var totalMessages = messageCount * 2 * clientCount;
 
             var x = (int)(totalMessages / (double)sw.ElapsedMilliseconds * 1000.0);
-            Console.WriteLine("{0}\t\t{1}\t\t{2}",t,sw.ElapsedMilliseconds, x);
+            Console.WriteLine("{0}\t\t\t{1}\t\t{2}",t,sw.ElapsedMilliseconds, x);
             Thread.Sleep(2000);
         }
        
