@@ -45,7 +45,7 @@ class Program
     static void Main(string[] args)
     {
         Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-        RemotingSystem.Start("127.0.0.1", 8081);
+        RemotingSystem.Start("127.0.0.1", 12001);
 
         var messageCount = 1000000;
         var wg = new AutoResetEvent(false);
@@ -54,7 +54,7 @@ class Program
             .WithMailbox(() => new DefaultMailbox(new BoundedMailboxQueue(32), new BoundedMailboxQueue(131072)));
 
         var pid = Actor.Spawn(props);
-        var remote = new PID("127.0.0.1:8080", "remote");
+        var remote = new PID("127.0.0.1:12000", "remote");
         remote.RequestAsync<Messages.Start>(new Messages.StartRemote() {Sender = pid}).Wait();
 
         var start = DateTime.Now;
