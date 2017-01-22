@@ -13,7 +13,7 @@ namespace Proto
 {
     public interface IMessageInvoker
     {
-        void InvokeSystemMessage(SystemMessage msg);
+        Task InvokeSystemMessageAsync(SystemMessage msg);
         Task InvokeUserMessageAsync(object msg);
     }
 
@@ -168,20 +168,20 @@ namespace Proto
             who.SendSystemMessage(new Unwatch(Self));
         }
 
-        public void InvokeSystemMessage(SystemMessage msg)
+        public async Task InvokeSystemMessageAsync(SystemMessage msg)
         {
             try
             {
                 switch (msg)
                 {
                     case Started s:
-                        InvokeUserMessageAsync(s).Wait();
+                        await InvokeUserMessageAsync(s);
                         break;
                     case Stop _:
-                        HandleStop();
+                        await HandleStopAsync();
                         break;
                     case Terminated t:
-                        HandleTerminated(t);
+                        await HandleTerminatedAsync(t);
                         break;
                     case Watch w:
                         HandleWatch(w);
@@ -193,7 +193,7 @@ namespace Proto
                         HandleFailure(f);
                         break;
                     case Restart r:
-                        HandleRestart();
+                        await HandleRestartAsync();
                         break;
                     case SuspendMailbox sm:
                         break;
@@ -252,12 +252,12 @@ namespace Proto
             Become(ActorReceive);
         }
 
-        private void HandleRestart()
+        private async Task HandleRestartAsync()
         {
             _stopping = false;
             _restarting = true;
 
-            InvokeUserMessageAsync(new Restarting()).Wait();
+            await InvokeUserMessageAsync(new Restarting());
             if (_children != null)
             {
                 foreach (var child in _children)
@@ -265,7 +265,7 @@ namespace Proto
                     child.Stop();
                 }
             }
-            TryRestartOrTerminate();
+            await TryRestartOrTerminateAsync();
         }
 
         private void HandleUnwatch(Unwatch uw)
@@ -292,12 +292,12 @@ namespace Proto
             Props.Supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
         }
 
-        private void HandleTerminated(Terminated msg)
+        private async Task HandleTerminatedAsync(Terminated msg)
         {
             _children.Remove(msg.Who);
             _watching.Remove(msg.Who);
-            InvokeUserMessageAsync(msg).Wait();
-            TryRestartOrTerminate();
+            await InvokeUserMessageAsync(msg);
+            await TryRestartOrTerminateAsync();
         }
 
         private void HandleRootFailure(Failure failure)
@@ -305,12 +305,12 @@ namespace Proto
             Supervision.DefaultStrategy.HandleFailure(this, failure.Who, failure.RestartStatistics, failure.Reason);
         }
 
-        private void HandleStop()
+        private async Task HandleStopAsync()
         {
             _restarting = false;
             _stopping = true;
             //this is intentional
-            InvokeUserMessageAsync(Stopping.Instance).Wait();
+            await InvokeUserMessageAsync(Stopping.Instance);
             if (_children != null)
             {
                 foreach (var child in _children)
@@ -318,10 +318,10 @@ namespace Proto
                     child.Stop();
                 }
             }
-            TryRestartOrTerminate();
+            await TryRestartOrTerminateAsync();
         }
 
-        private void TryRestartOrTerminate()
+        private async Task TryRestartOrTerminateAsync()
         {
             if (_children?.Count > 0)
             {
@@ -330,25 +330,25 @@ namespace Proto
 
             if (_restarting)
             {
-                Restart();
+                await RestartAsync();
                 return;
             }
 
             if (_stopping)
             {
-                Stopped();
+                await StopAsync();
             }
         }
 
-        private void Stopped()
+        private async Task StopAsync()
         {
             ProcessRegistry.Instance.Remove(Self);
             //This is intentional
-            InvokeUserMessageAsync(Proto.Stopped.Instance).Wait();
+            await InvokeUserMessageAsync(Stopped.Instance);
             //Notify watchers
         }
 
-        private void Restart()
+        private async Task RestartAsync()
         {
             IncarnateActor();
             Self.SendSystemMessage(ResumeMailbox.Instance);
@@ -359,7 +359,7 @@ namespace Proto
                 while (_stash.Any())
                 {
                     var msg = _stash.Pop();
-                    InvokeUserMessageAsync(msg).Wait();
+                    await InvokeUserMessageAsync(msg);
                 }
             }
         }

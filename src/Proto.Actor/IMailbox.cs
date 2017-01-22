@@ -124,7 +124,7 @@ namespace Proto
                     {
                         _suspended = false;
                     }
-                    _invoker.InvokeSystemMessage(sys);
+                    await _invoker.InvokeSystemMessageAsync(sys);
                     continue;
                 }
                 if (_suspended)
