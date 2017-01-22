@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
+    //TODO: remove this, just use a FutureProcess instead..
     public class FutureActor<T> : IActor
     {
         private readonly TaskCompletionSource<T> _tcs;
