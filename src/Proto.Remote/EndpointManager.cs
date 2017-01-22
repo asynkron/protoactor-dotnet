@@ -29,7 +29,6 @@ namespace Proto.Remote
                 PID pid;
                 if (!_connections.TryGetValue(env.Target.Address, out pid))
                 {
-                    Console.WriteLine("Resolving EndpointWriter for {0}", env.Target.Address);
                     var props =
                         Actor.FromProducer(() => new EndpointWriter(env.Target.Address))
                             .WithMailbox(() => new EndpointWriterMailbox());
