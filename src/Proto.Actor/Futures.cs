@@ -20,6 +20,10 @@ namespace Proto
         public Task ReceiveAsync(IContext context)
         {
             var msg = context.Message;
+            if (msg is AutoReceiveMessage || msg is SystemMessage)
+            {
+                return Actor.Done;
+            }
             if (msg is T)
             {
                 _tcs.TrySetResult((T) msg);

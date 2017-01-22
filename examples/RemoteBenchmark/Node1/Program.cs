@@ -53,7 +53,7 @@ class Program
         var pid = Actor.Spawn(props);
         var remote = new PID("127.0.0.1:8080", "remote");
         Console.WriteLine("Starting Remote");
-        remote.RequestAsync<object>(new Messages.StartRemote() {Sender = pid}).Wait();
+        remote.RequestAsync<Messages.Start>(new Messages.StartRemote() {Sender = pid}).Wait();
         Console.WriteLine("Remote started");
 
         Console.ReadLine();
