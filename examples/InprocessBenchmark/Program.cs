@@ -20,49 +20,58 @@ class Program
         const int messageCount = 1000000;
         const int batchSize = 100;
 
-        var clientCount = Environment.ProcessorCount * 2;
-        var clients = new PID[clientCount];
-        var echos = new PID[clientCount];
-        var completions = new TaskCompletionSource<bool>[clientCount];
-
-        
-        var echoProps = Actor.FromFunc(ctx =>
+        var tps = new[] {300, 400, 500, 600, 700, 800, 900};
+        foreach (var t in tps)
         {
-            switch (ctx.Message)
+            var d = new ThreadPoolDispatcher {Throughput = t};
+
+            var clientCount = Environment.ProcessorCount * 2;
+            var clients = new PID[clientCount];
+            var echos = new PID[clientCount];
+            var completions = new TaskCompletionSource<bool>[clientCount];
+
+
+            var echoProps = Actor.FromFunc(ctx =>
             {
-                case Msg msg:
-                    msg.Sender.Tell(msg);
-                    break;
+                switch (ctx.Message)
+                {
+                    case Msg msg:
+                        msg.Sender.Tell(msg);
+                        break;
+                }
+                return Actor.Done;
+            }).WithDispatcher(d);
+
+            for (int i = 0; i < clientCount; i++)
+            {
+                var tsc = new TaskCompletionSource<bool>();
+                completions[i] = tsc;
+                var clientProps = Actor.FromProducer(() => new PingActor(tsc, messageCount, batchSize))
+                    .WithDispatcher(d);
+
+                clients[i] = Actor.Spawn(clientProps);
+                echos[i] = Actor.Spawn(echoProps);
             }
-            return Actor.Done;
-        });
+            var tasks = completions.Select(tsc => tsc.Task).ToArray();
+            var sw = Stopwatch.StartNew();
+            for (int i = 0; i < clientCount; i++)
+            {
+                var client = clients[i];
+                var echo = echos[i];
 
-        for (int i = 0; i < clientCount; i++)
-        {
-            var tsc = new TaskCompletionSource<bool>();
-            completions[i] = tsc;
-            var clientProps = Actor.FromProducer(() => new PingActor(tsc, messageCount, batchSize));
-            clients[i] = Actor.Spawn(clientProps);
-            echos[i] = Actor.Spawn(echoProps);
+                client.Tell(new Start(echo));
+            }
+            Task.WaitAll(tasks);
+
+            sw.Stop();
+         //   Console.WriteLine(sw.Elapsed);
+            var totalMessages = messageCount * 2 * clientCount;
+
+            var x = (int)(totalMessages / (double)sw.ElapsedMilliseconds * 1000.0);
+            Console.WriteLine("{0}\t\t{1}\t\t{2}",t,sw.ElapsedMilliseconds, x);
+            Thread.Sleep(2000);
         }
-        var tasks = completions.Select(tsc => tsc.Task).ToArray();
-        var sw = Stopwatch.StartNew();
-        for (int i = 0; i < clientCount; i++)
-        {
-            var client = clients[i];
-            var echo = echos[i];
-
-            client.Tell(new Start(echo));
-        }
-        Task.WaitAll(tasks);
-
-        sw.Stop();
-        Console.WriteLine(sw.Elapsed);
-        var totalMessages = messageCount * 2 * clientCount;
-
-        var x = (int) (totalMessages / (double)sw.ElapsedMilliseconds * 1000.0);
-        Console.WriteLine("Throughput {0}",x);
-
+       
         Console.ReadLine();
     }
 
