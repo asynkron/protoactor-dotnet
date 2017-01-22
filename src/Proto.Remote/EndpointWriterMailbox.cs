@@ -19,8 +19,8 @@ namespace Proto.Remote
 
     public class EndpointWriterMailbox : IMailbox
     {
-        private readonly ConcurrentQueue<SystemMessage> _systemMessages = new ConcurrentQueue<SystemMessage>();
-        private readonly ConcurrentQueue<object> _userMessages = new ConcurrentQueue<object>();
+        private readonly BoundedMailboxQueue _systemMessages = new BoundedMailboxQueue(4);
+        private readonly BoundedMailboxQueue _userMessages = new BoundedMailboxQueue(1024*1024);
         private IDispatcher _dispatcher;
         private IMessageInvoker _invoker;
 
@@ -29,13 +29,13 @@ namespace Proto.Remote
 
         public void PostUserMessage(object msg)
         {
-            _userMessages.Enqueue(msg);
+            _userMessages.Push(msg);
             Schedule();
         }
 
         public void PostSystemMessage(SystemMessage sys)
         {
-            _systemMessages.Enqueue(sys);
+            _systemMessages.Push(sys);
             Schedule();
         }
 
@@ -49,7 +49,8 @@ namespace Proto.Remote
         {
             var t = _dispatcher.Throughput;
             var batch = new List<MessageEnvelope>();
-            if (_systemMessages.TryDequeue(out var sys))
+            var sys = (SystemMessage)_systemMessages.Pop();
+            if (sys != null)
             {
                 if (sys is SuspendMailbox)
                 {
@@ -64,7 +65,8 @@ namespace Proto.Remote
             if (!_suspended)
             {
                 batch.Clear();
-                while (_userMessages.TryDequeue(out object msg))
+                object msg;
+                while ((msg = _userMessages.Pop()) != null)
                 {
                     batch.Add((MessageEnvelope) msg);
                     if (batch.Count > 1000)
@@ -82,7 +84,7 @@ namespace Proto.Remote
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
-            if (_userMessages.Count > 0 || _systemMessages.Count > 0)
+            if (_userMessages.HasMessages || _systemMessages.HasMessages)
             {
                 Schedule();
             }
