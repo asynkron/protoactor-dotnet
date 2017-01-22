@@ -70,7 +70,7 @@ namespace Proto.Tests
 
             public void PostSystemMessage(SystemMessage sys)
             {
-                _invoker.InvokeSystemMessage(sys);
+                _invoker.InvokeSystemMessageAsync(sys);
             }
 
             public void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher)
