@@ -4,12 +4,13 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Grpc.Core;
 
 namespace Proto.Remote {
   public static class Remoting
   {
-    static readonly string __ServiceName = "remoting.Remoting";
+    static readonly string __ServiceName = "remote.Remoting";
 
     static readonly Marshaller<global::Proto.Remote.MessageBatch> __Marshaller_MessageBatch = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Proto.Remote.MessageBatch.Parser.ParseFrom);
     static readonly Marshaller<global::Proto.Remote.Unit> __Marshaller_Unit = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Proto.Remote.Unit.Parser.ParseFrom);

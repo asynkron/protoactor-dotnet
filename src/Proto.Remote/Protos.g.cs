@@ -6,7 +6,7 @@
 using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
-
+using scg = global::System.Collections.Generic;
 namespace Proto.Remote {
 
   /// <summary>Holder for reflection information generated from Protos.proto</summary>
@@ -22,16 +22,16 @@ namespace Proto.Remote {
     static ProtosReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgxQcm90b3MucHJvdG8SCHJlbW90aW5nGhhQcm90by5BY3Rvci9wcm90b3Mu",
-            "cHJvdG8icgoPTWVzc2FnZUVudmVsb3BlEhEKCXR5cGVfbmFtZRgBIAEoCRIU",
-            "CgxtZXNzYWdlX2RhdGEYAiABKAwSGgoGdGFyZ2V0GAMgASgLMgouYWN0b3Iu",
-            "UElEEhoKBnNlbmRlchgEIAEoCzIKLmFjdG9yLlBJRCItCg9BY3RvclBpZFJl",
-            "cXVlc3QSDAoEbmFtZRgBIAEoCRIMCgRraW5kGAIgASgJIisKEEFjdG9yUGlk",
-            "UmVzcG9uc2USFwoDcGlkGAEgASgLMgouYWN0b3IuUElEIjwKDE1lc3NhZ2VC",
-            "YXRjaBIsCgllbnZlbG9wZXMYASADKAsyGS5yZW1vdGluZy5NZXNzYWdlRW52",
-            "ZWxvcGUiBgoEVW5pdDJDCghSZW1vdGluZxI3CgdSZWNlaXZlEhYucmVtb3Rp",
-            "bmcuTWVzc2FnZUJhdGNoGg4ucmVtb3RpbmcuVW5pdCIAKAEwAUIRqgIOUHJv",
-            "dG8uUmVtb3RpbmdiBnByb3RvMw=="));
+            "CgxQcm90b3MucHJvdG8SBnJlbW90ZRoYUHJvdG8uQWN0b3IvcHJvdG9zLnBy",
+            "b3RvInIKD01lc3NhZ2VFbnZlbG9wZRIRCgl0eXBlX25hbWUYASABKAkSFAoM",
+            "bWVzc2FnZV9kYXRhGAIgASgMEhoKBnRhcmdldBgDIAEoCzIKLmFjdG9yLlBJ",
+            "RBIaCgZzZW5kZXIYBCABKAsyCi5hY3Rvci5QSUQiLQoPQWN0b3JQaWRSZXF1",
+            "ZXN0EgwKBG5hbWUYASABKAkSDAoEa2luZBgCIAEoCSIrChBBY3RvclBpZFJl",
+            "c3BvbnNlEhcKA3BpZBgBIAEoCzIKLmFjdG9yLlBJRCI6CgxNZXNzYWdlQmF0",
+            "Y2gSKgoJZW52ZWxvcGVzGAEgAygLMhcucmVtb3RlLk1lc3NhZ2VFbnZlbG9w",
+            "ZSIGCgRVbml0Mj8KCFJlbW90aW5nEjMKB1JlY2VpdmUSFC5yZW1vdGUuTWVz",
+            "c2FnZUJhdGNoGgwucmVtb3RlLlVuaXQiACgBMAFCD6oCDFByb3RvLlJlbW90",
+            "ZWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
