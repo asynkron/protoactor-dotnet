@@ -59,7 +59,7 @@ namespace Proto.Remote
             catch (Exception x)
             {
                 context.Stash();
-                Console.WriteLine($"[REMOTING] gRPC Failed to send to host {_host}");
+                Console.WriteLine($"[REMOTING] gRPC Failed to send to host {_host}, reason {x.Message}");
                 throw;
             }
         }
@@ -92,7 +92,7 @@ namespace Proto.Remote
                 }
                 catch(Exception x)
                 {
-                    Console.WriteLine($"[REMOTING] EndpointWriter lost connection to address {_host}");
+                    Console.WriteLine($"[REMOTING] EndpointWriter lost connection to address {_host}, reason {x.Message}");
                     var terminated = new EndpointTerminatedEvent
                     {
                         Address = _host

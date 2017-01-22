@@ -49,9 +49,7 @@ namespace Proto.Remote
         {
             var t = _dispatcher.Throughput;
             var batch = new List<MessageEnvelope>();
-
-            SystemMessage sys;
-            if (_systemMessages.TryDequeue(out sys))
+            if (_systemMessages.TryDequeue(out var sys))
             {
                 if (sys is SuspendMailbox)
                 {
@@ -65,9 +63,8 @@ namespace Proto.Remote
             }
             if (!_suspended)
             {
-                object msg;
                 batch.Clear();
-                while (_userMessages.TryDequeue(out msg))
+                while (_userMessages.TryDequeue(out object msg))
                 {
                     batch.Add((MessageEnvelope) msg);
                     if (batch.Count > 1000)

@@ -26,8 +26,7 @@ namespace Proto.Remote
             if (msg is MessageEnvelope)
             {
                 var env = (MessageEnvelope) msg;
-                PID pid;
-                if (!_connections.TryGetValue(env.Target.Address, out pid))
+                if (!_connections.TryGetValue(env.Target.Address, out var pid))
                 {
                     var props =
                         Actor.FromProducer(() => new EndpointWriter(env.Target.Address))

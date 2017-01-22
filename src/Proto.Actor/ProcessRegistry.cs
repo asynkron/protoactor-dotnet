@@ -46,8 +46,7 @@ namespace Proto
                 throw new NotSupportedException("Unknown host");
             }
 
-            Process aref;
-            if (_localActorRefs.TryGetValue(pid.Id, out aref))
+            if (_localActorRefs.TryGetValue(pid.Id, out var aref))
             {
                 return aref;
             }
