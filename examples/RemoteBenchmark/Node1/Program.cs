@@ -27,7 +27,7 @@ class Program
             {
                 case Messages.Pong _:
                     _count++;
-                    if (_count % 5000 == 0)
+                    if (_count % 50000 == 0)
                     {
                         Console.WriteLine(_count);
                     }
@@ -47,12 +47,25 @@ class Program
         Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
         RemotingSystem.Start("127.0.0.1", 8081);
 
-        
+        var messageCount = 1000000;
         var wg = new AutoResetEvent(false);
-        var props = Actor.FromProducer(() => new LocalActor(0, 1000000, wg));
+        var props = Actor.FromProducer(() => new LocalActor(0, messageCount, wg));
         var pid = Actor.Spawn(props);
         var remote = new PID("127.0.0.1:8080", "remote");
         remote.RequestAsync<Messages.Start>(new Messages.StartRemote() {Sender = pid}).Wait();
+
+        var start = DateTime.Now;
+        Console.WriteLine("Starting to send");
+        var msg = new Messages.Ping();
+        for (int i = 0; i < messageCount; i++)
+        {
+            remote.Tell(msg);
+        }
+        wg.WaitOne();
+        var elapsed = DateTime.Now - start;
+        Console.WriteLine("Elapsed {0}",elapsed);
+
+        var t = (messageCount * 2) ;
 
         Console.ReadLine();
     }
