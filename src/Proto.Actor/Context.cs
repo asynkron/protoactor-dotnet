@@ -353,7 +353,7 @@ namespace Proto
             IncarnateActor();
             Self.SendSystemMessage(ResumeMailbox.Instance);
 
-            InvokeUserMessageAsync(Started.Instance).Wait();
+            await InvokeUserMessageAsync(Started.Instance);
             if (_stash != null)
             {
                 while (_stash.Any())

@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,8 +20,9 @@ namespace Proto
     public interface IMailbox
     {
         void PostUserMessage(object msg);
-        void PostSystemMessage(SystemMessage sys);
+        void PostSystemMessage(SystemMessage msg);
         void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher);
+        void Start();
     }
 
     public interface IMailboxQueue
@@ -77,27 +79,31 @@ namespace Proto
     {
         private readonly IMailboxQueue _systemMessages;
         private readonly IMailboxQueue _userMailbox;
+        private readonly IMailboxStatistics[] _stats;
         private IDispatcher _dispatcher;
         private IMessageInvoker _invoker;
 
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
 
-        public DefaultMailbox(IMailboxQueue systemMessages, IMailboxQueue userMailbox)
+        public DefaultMailbox(IMailboxQueue systemMessages, IMailboxQueue userMailbox, params IMailboxStatistics[] stats)
         {
             _systemMessages = systemMessages;
             _userMailbox = userMailbox;
+            _stats = stats ?? Array.Empty<IMailboxStatistics>();
         }
 
         public void PostUserMessage(object msg)
         {
             _userMailbox.Push(msg);
+            for (var i = 0; i < _stats.Length; i++)
+                _stats[i].MessagePosted(msg);
             Schedule();
         }
 
-        public void PostSystemMessage(SystemMessage sys)
+        public void PostSystemMessage(SystemMessage msg)
         {
-            _systemMessages.Push(sys);
+            _systemMessages.Push(msg);
             Schedule();
         }
 
@@ -105,6 +111,12 @@ namespace Proto
         {
             _invoker = invoker;
             _dispatcher = dispatcher;
+        }
+
+        public void Start()
+        {
+            for (var i = 0; i < _stats.Length; i++)
+                _stats[i].MailboxStarted();
         }
 
         private async Task RunAsync()
@@ -135,6 +147,8 @@ namespace Proto
                 if (msg != null)
                 {
                     await _invoker.InvokeUserMessageAsync(msg);
+                    for (var si = 0; si < _stats.Length; si++)
+                        _stats[si].MessageReceived(msg);
                 }
                 else
                 {
@@ -148,6 +162,11 @@ namespace Proto
             {
                 Schedule();
             }
+            else
+            {
+                for (var i = 0; i < _stats.Length; i++)
+                    _stats[i].MailboxEmpty();
+            }
         }
 
         protected void Schedule()
@@ -157,5 +176,13 @@ namespace Proto
                 _dispatcher.Schedule(RunAsync);
             }
         }
+    }
+
+    public interface IMailboxStatistics
+    {
+        void MailboxStarted();
+        void MessagePosted(object message);
+        void MessageReceived(object message);
+        void MailboxEmpty();
     }
 }
