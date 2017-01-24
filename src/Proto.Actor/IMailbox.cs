@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
@@ -89,14 +90,14 @@ namespace Proto
         {
             _systemMessages = systemMessages;
             _userMailbox = userMailbox;
-            _stats = stats;
+            _stats = stats ?? Array.Empty<IMailboxStatistics>();
         }
 
         public void PostUserMessage(object msg)
         {
             _userMailbox.Push(msg);
-            foreach (var ms in _stats)
-                ms.MessagePosted(msg);
+            for (var i = 0; i < _stats.Length; i++)
+                _stats[i].MessagePosted(msg);
             Schedule();
         }
 
@@ -114,8 +115,8 @@ namespace Proto
 
         public void Start()
         {
-            foreach (var ms in _stats)
-                ms.MailboxStarted();
+            for (var i = 0; i < _stats.Length; i++)
+                _stats[i].MailboxStarted();
         }
 
         private async Task RunAsync()
@@ -146,8 +147,8 @@ namespace Proto
                 if (msg != null)
                 {
                     await _invoker.InvokeUserMessageAsync(msg);
-                    foreach (var ms in _stats)
-                        ms.MessageReceived(msg);
+                    for (var si = 0; si < _stats.Length; si++)
+                        _stats[si].MessageReceived(msg);
                 }
                 else
                 {
@@ -163,8 +164,8 @@ namespace Proto
             }
             else
             {
-                foreach (var ms in _stats)
-                    ms.MailboxEmpty();
+                for (var i = 0; i < _stats.Length; i++)
+                    _stats[i].MailboxEmpty();
             }
         }
 
