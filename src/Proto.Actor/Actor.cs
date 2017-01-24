@@ -69,6 +69,7 @@ namespace Proto
             mailbox.RegisterHandlers(ctx, dispatcher);
            // ctx.InvokeUserMessageAsync(Started.Instance);
             mailbox.PostSystemMessage(Started.Instance);
+            mailbox.Start();
 
             return pid;
         };
