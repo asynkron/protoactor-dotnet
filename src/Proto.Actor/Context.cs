@@ -438,21 +438,17 @@ namespace Proto
 
         private void ResetReceiveTimeout()
         {
-            _receiveTimeoutTimer.Change(ReceiveTimeout, ReceiveTimeout);
+            _receiveTimeoutTimer?.Change(ReceiveTimeout, ReceiveTimeout);
         }
 
-        private bool StopReceiveTimeout()
+        private void StopReceiveTimeout()
         {
-            return _receiveTimeoutTimer.Change(-1, -1);
+            _receiveTimeoutTimer?.Change(-1, -1);
         }
 
         private void ReceiveTimeoutCallback(object state)
         {
             Self.Request(Proto.ReceiveTimeout.Instance, null);
         }
-    }
-
-    public interface INotInfluenceReceiveTimeout
-    {
     }
 }

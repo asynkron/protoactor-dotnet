@@ -114,4 +114,8 @@ namespace Proto
         public object Message { get; }
         public PID Sender { get; }
     }
+
+    public interface INotInfluenceReceiveTimeout
+    {
+    }   
 }
