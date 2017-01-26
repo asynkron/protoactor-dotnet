@@ -346,6 +346,13 @@ namespace Proto
 
         private async Task TryRestartOrTerminateAsync()
         {
+            if (_receiveTimeoutTimer != null)
+            {
+                StopReceiveTimeout();
+                _receiveTimeoutTimer = null;
+                ReceiveTimeout = TimeSpan.Zero;
+            }
+
             if (_children?.Count > 0)
             {
                 return;
