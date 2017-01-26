@@ -40,7 +40,7 @@ namespace Node2
         static void Main(string[] args)
         {
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-            RemotingSystem.Start("127.0.0.1", 8080);
+            RemotingSystem.Start("127.0.0.1", 12000);
             Actor.SpawnNamed(Actor.FromProducer(() => new EchoActor()), "remote");
             Console.ReadLine();
         }

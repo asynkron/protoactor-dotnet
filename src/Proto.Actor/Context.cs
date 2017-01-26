@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto
@@ -26,6 +27,7 @@ namespace Proto
         object Message { get; }
         PID Sender { get; }
         IActor Actor { get; }
+        TimeSpan ReceiveTimeout { get; }
 
         void Respond(object msg);
         PID[] Children();
@@ -40,6 +42,7 @@ namespace Proto
         void UnbecomeStacked();
         void Watch(PID pid);
         void Unwatch(PID who);
+        void SetReceiveTimeout(TimeSpan duration);
     }
 
     public class Context : IMessageInvoker, IContext, ISupervisor
@@ -54,6 +57,7 @@ namespace Proto
         private HashSet<PID> _watchers;
         private HashSet<PID> _watching;
         private RestartStatistics _restartStatistics;
+        private Timer _receiveTimeoutTimer;
 
         public Context(Props props, PID parent)
         {
@@ -86,6 +90,8 @@ namespace Proto
         }
 
         public PID Sender => (_message as MessageSender)?.Sender;
+        public TimeSpan ReceiveTimeout { get; private set; }
+
 
         public void Stash()
         {
@@ -212,6 +218,23 @@ namespace Proto
 
         public async Task InvokeUserMessageAsync(object msg)
         {
+            var influenceTimeout = true;
+            if (ReceiveTimeout > TimeSpan.Zero)
+            {
+                var notInfluenceTimeout = msg is INotInfluenceReceiveTimeout;
+                influenceTimeout = !notInfluenceTimeout;
+                if (influenceTimeout)
+                    StopReceiveTimeout();
+            }
+
+            await ProcessMessageAsync(msg);
+
+            if (ReceiveTimeout > TimeSpan.Zero && influenceTimeout)
+                ResetReceiveTimeout();
+        }
+
+        private async Task ProcessMessageAsync(object msg)
+        {
             try
             {
                 _receiveIndex = 0;
@@ -323,6 +346,13 @@ namespace Proto
 
         private async Task TryRestartOrTerminateAsync()
         {
+            if (_receiveTimeoutTimer != null)
+            {
+                StopReceiveTimeout();
+                _receiveTimeoutTimer = null;
+                ReceiveTimeout = TimeSpan.Zero;
+            }
+
             if (_children?.Count > 0)
             {
                 return;
@@ -389,6 +419,43 @@ namespace Proto
             _children.Add(pid);
             Watch(pid);
             return pid;
+        }
+
+        public void SetReceiveTimeout(TimeSpan duration)
+        {
+            if (duration == ReceiveTimeout)
+                return;
+            if (duration > TimeSpan.Zero)
+                StopReceiveTimeout();
+            if (duration < TimeSpan.FromMilliseconds(1))
+                duration = TimeSpan.FromMilliseconds(1);
+            ReceiveTimeout = duration;
+            if (ReceiveTimeout > TimeSpan.Zero)
+            {
+                if (_receiveTimeoutTimer == null)
+                {
+                    _receiveTimeoutTimer = new Timer(ReceiveTimeoutCallback, null, ReceiveTimeout, ReceiveTimeout);
+                }
+                else
+                {
+                    ResetReceiveTimeout();
+                }
+            }
+        }
+
+        private void ResetReceiveTimeout()
+        {
+            _receiveTimeoutTimer?.Change(ReceiveTimeout, ReceiveTimeout);
+        }
+
+        private void StopReceiveTimeout()
+        {
+            _receiveTimeoutTimer?.Change(-1, -1);
+        }
+
+        private void ReceiveTimeoutCallback(object state)
+        {
+            Self.Request(Proto.ReceiveTimeout.Instance, null);
         }
     }
 }
