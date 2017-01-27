@@ -29,9 +29,9 @@ namespace Proto
             EventStream.Instance.Publish(new DeadLetterEvent(pid, message, sender));
         }
 
-        public override void SendSystemMessage(PID pid, SystemMessage sys)
+        public override void SendSystemMessage(PID pid, object message)
         {
-            EventStream.Instance.Publish(new DeadLetterEvent(pid, sys, null));
+            EventStream.Instance.Publish(new DeadLetterEvent(pid, message, null));
         }
     }
 }

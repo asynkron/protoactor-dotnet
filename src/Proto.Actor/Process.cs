@@ -15,7 +15,7 @@ namespace Proto
             SendSystemMessage(pid, new Stop());
         }
 
-        public abstract void SendSystemMessage(PID pid, SystemMessage sys);
+        public abstract void SendSystemMessage(PID pid, object message);
     }
 
     public class LocalActorRef : Process
@@ -38,9 +38,9 @@ namespace Proto
             Mailbox.PostUserMessage(message);
         }
 
-        public override void SendSystemMessage(PID pid, SystemMessage sys)
+        public override void SendSystemMessage(PID pid, object message)
         {
-            Mailbox.PostSystemMessage(sys);
+            Mailbox.PostSystemMessage(message);
         }
     }
 }

@@ -14,7 +14,7 @@ namespace Proto
 {
     public interface IMessageInvoker
     {
-        Task InvokeSystemMessageAsync(SystemMessage msg);
+        Task InvokeSystemMessageAsync(object msg);
         Task InvokeUserMessageAsync(object msg);
     }
 
@@ -174,7 +174,7 @@ namespace Proto
             who.SendSystemMessage(new Unwatch(Self));
         }
 
-        public async Task InvokeSystemMessageAsync(SystemMessage msg)
+        public async Task InvokeSystemMessageAsync(object msg)
         {
             try
             {

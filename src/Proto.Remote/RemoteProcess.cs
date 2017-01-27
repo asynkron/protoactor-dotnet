@@ -23,9 +23,9 @@ namespace Proto.Remote
             Send(pid, message, sender);
         }
 
-        public override void SendSystemMessage(PID pid, SystemMessage sys)
+        public override void SendSystemMessage(PID pid, object message)
         {
-            Send(pid, sys, null);
+            Send(pid, message, null);
         }
 
         private void Send(PID pid, object msg, PID sender)
