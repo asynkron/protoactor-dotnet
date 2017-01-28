@@ -27,9 +27,9 @@ namespace Proto.Router
             }
         }
 
-        public override void SendSystemMessage(PID pid, SystemMessage sys)
+        public override void SendSystemMessage(PID pid, object message)
         {
-            _router.SendSystemMessage(sys);
+            _router.SendSystemMessage(message);
         }
     }
 }

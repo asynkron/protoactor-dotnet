@@ -98,6 +98,11 @@ namespace Proto
         public static readonly Stopped Instance = new Stopped();
     }
 
+    public class ReceiveTimeout : SystemMessage
+    {
+        public static readonly ReceiveTimeout Instance = new ReceiveTimeout();
+    }
+
     public sealed class MessageSender
     {
         public MessageSender(object message, PID sender)
@@ -109,4 +114,8 @@ namespace Proto
         public object Message { get; }
         public PID Sender { get; }
     }
+
+    public interface INotInfluenceReceiveTimeout
+    {
+    }   
 }

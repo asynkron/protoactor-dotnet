@@ -8,30 +8,31 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    //TODO: remove this, just use a FutureProcess instead..
-    public class FutureActor<T> : IActor
+    public class FutureProcess<T> : Process
     {
         private readonly TaskCompletionSource<T> _tcs;
 
-        public FutureActor(TaskCompletionSource<T> tcs)
+        public FutureProcess(TaskCompletionSource<T> tcs)
         {
             _tcs = tcs;
         }
 
-        public Task ReceiveAsync(IContext context)
+        public override void SendUserMessage(PID pid, object message, PID sender)
         {
-            var msg = context.Message;
-            if (msg is AutoReceiveMessage || msg is SystemMessage)
+            if (message is T)
             {
-                return Actor.Done;
+                _tcs.TrySetResult((T)message);
+                pid.Stop();
             }
-            if (msg is T)
-            {
-                _tcs.TrySetResult((T) msg);
-                context.Self.Stop();
-            }
+        }
 
-            return Actor.Done;
+        public override void SendSystemMessage(PID pid, object message)
+        {
+            if (message is T)
+            {
+                _tcs.TrySetResult((T)message);  
+                pid.Stop();
+            }
         }
     }
 }
