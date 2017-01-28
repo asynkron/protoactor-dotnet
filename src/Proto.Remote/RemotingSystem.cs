@@ -28,7 +28,6 @@ namespace Proto.Remote
             _server.Start();
             var emProps =
                 Actor.FromProducer(() => new EndpointManager());
-                    .WithMailbox(() => new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue()));
             EndpointManagerPid = Actor.Spawn(emProps);
 
             Console.WriteLine($"[REMOTING] Starting Proto.Actor server on {addr}");

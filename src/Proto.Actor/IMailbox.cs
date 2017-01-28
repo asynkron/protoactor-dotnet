@@ -48,8 +48,7 @@ namespace Proto
 
         public object Pop()
         {
-            object message;
-            return _messages.TryDequeue(out message)
+            return _messages.TryDequeue(out var message)
                 ? message
                 : null;
         }
@@ -77,9 +76,9 @@ namespace Proto
 
     public class DefaultMailbox : IMailbox
     {
+        private readonly IMailboxStatistics[] _stats;
         private readonly IMailboxQueue _systemMessages;
         private readonly IMailboxQueue _userMailbox;
-        private readonly IMailboxStatistics[] _stats;
         private IDispatcher _dispatcher;
         private IMessageInvoker _invoker;
 
@@ -97,7 +96,9 @@ namespace Proto
         {
             _userMailbox.Push(msg);
             for (var i = 0; i < _stats.Length; i++)
+            {
                 _stats[i].MessagePosted(msg);
+            }
             Schedule();
         }
 
@@ -116,7 +117,9 @@ namespace Proto
         public void Start()
         {
             for (var i = 0; i < _stats.Length; i++)
+            {
                 _stats[i].MailboxStarted();
+            }
         }
 
         private async Task RunAsync()
@@ -148,7 +151,9 @@ namespace Proto
                 {
                     await _invoker.InvokeUserMessageAsync(msg);
                     for (var si = 0; si < _stats.Length; si++)
+                    {
                         _stats[si].MessageReceived(msg);
+                    }
                 }
                 else
                 {
@@ -158,14 +163,16 @@ namespace Proto
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
-            if (_userMailbox.HasMessages || _systemMessages.HasMessages)
+            if (_systemMessages.HasMessages || !_suspended && _userMailbox.HasMessages)
             {
                 Schedule();
             }
             else
             {
                 for (var i = 0; i < _stats.Length; i++)
+                {
                     _stats[i].MailboxEmpty();
+                }
             }
         }
 

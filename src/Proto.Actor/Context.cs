@@ -16,6 +16,8 @@ namespace Proto
     {
         Task InvokeSystemMessageAsync(object msg);
         Task InvokeUserMessageAsync(object msg);
+
+        void EscalateFailure(Exception reason, object message);
     }
 
     public interface IContext
@@ -244,20 +246,7 @@ namespace Proto
             }
             catch (Exception x)
             {
-                if (_restartStatistics == null)
-                {
-                    _restartStatistics = new RestartStatistics(1, null);
-                }
-                var failure = new Failure(Self, x, _restartStatistics);
-                if (Parent == null)
-                {
-                    HandleRootFailure(failure);
-                }
-                else
-                {
-                    Self.SendSystemMessage(SuspendMailbox.Instance);
-                    Parent.SendSystemMessage(failure);
-                }
+                EscalateFailure(x,msg);
             }
         }
 
@@ -456,6 +445,24 @@ namespace Proto
         private void ReceiveTimeoutCallback(object state)
         {
             Self.Request(Proto.ReceiveTimeout.Instance, null);
+        }
+
+        public void EscalateFailure(Exception reason, object message)
+        {
+            if (_restartStatistics == null)
+            {
+                _restartStatistics = new RestartStatistics(1, null);
+            }
+            var failure = new Failure(Self, reason, _restartStatistics);
+            if (Parent == null)
+            {
+                HandleRootFailure(failure);
+            }
+            else
+            {
+                Self.SendSystemMessage(SuspendMailbox.Instance);
+                Parent.SendSystemMessage(failure);
+            }
         }
     }
 }
