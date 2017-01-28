@@ -33,7 +33,7 @@ namespace Proto.Remote
             Schedule();
         }
 
-        public void PostSystemMessage(SystemMessage msg)
+        public void PostSystemMessage(object msg)
         {
             _systemMessages.Push(msg);
             Schedule();

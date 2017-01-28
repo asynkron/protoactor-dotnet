@@ -18,7 +18,7 @@ namespace Proto
             reff.SendUserMessage(this, message, null);
         }
 
-        public void SendSystemMessage(SystemMessage sys)
+        public void SendSystemMessage(object sys)
         {
             var reff = Ref ?? ProcessRegistry.Instance.Get(this);
             reff.SendSystemMessage(this, sys);
@@ -33,9 +33,14 @@ namespace Proto
         public Task<T> RequestAsync<T>(object message)
         {
             var tsc = new TaskCompletionSource<T>();
-            var p = Actor.FromProducer(() => new FutureActor<T>(tsc));
-            var fpid = Actor.Spawn(p);
-            Request(message,fpid);
+            var reff = new FutureProcess<T>(tsc);
+            var name = ProcessRegistry.Instance.NextId();
+            var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, reff);
+            if (!absent)
+            {
+                throw new ProcessNameExistException(name);
+            }
+            Request(message, pid);
             return tsc.Task;
         }
 

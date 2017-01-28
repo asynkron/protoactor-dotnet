@@ -20,7 +20,7 @@ namespace Proto
     public interface IMailbox
     {
         void PostUserMessage(object msg);
-        void PostSystemMessage(SystemMessage msg);
+        void PostSystemMessage(object msg);
         void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher);
         void Start();
     }
@@ -101,7 +101,7 @@ namespace Proto
             Schedule();
         }
 
-        public void PostSystemMessage(SystemMessage msg)
+        public void PostSystemMessage(object msg)
         {
             _systemMessages.Push(msg);
             Schedule();
