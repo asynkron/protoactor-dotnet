@@ -50,8 +50,7 @@ class Program
         var messageCount = 1000000;
         var wg = new AutoResetEvent(false);
         var props = Actor
-            .FromProducer(() => new LocalActor(0, messageCount, wg))
-            .WithMailbox(() => new DefaultMailbox(new BoundedMailboxQueue(32), new BoundedMailboxQueue(131072)));
+            .FromProducer(() => new LocalActor(0, messageCount, wg));
 
         var pid = Actor.Spawn(props);
         var remote = new PID("127.0.0.1:8080", "remote");
