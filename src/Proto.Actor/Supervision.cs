@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using Proto.Mailbox;
 
 namespace Proto
@@ -19,7 +20,7 @@ namespace Proto
 
     public interface ISupervisor
     {
-        PID[] Children();
+        IReadOnlyCollection<PID> Children { get; }
         void EscalateFailure(PID who, Exception reason);
     }
 
