@@ -15,28 +15,106 @@ namespace Proto
 {
     public interface IContext
     {
+        /// <summary>
+        /// Gets the PID for the parent of the current actor.
+        /// </summary>
         PID Parent { get; }
+
+        /// <summary>
+        /// Gets the PID for the current actor.
+        /// </summary>
         PID Self { get; }
 
-        Props Props { get; }
+        /// <summary>
+        /// The current message to be processed.
+        /// </summary>
         object Message { get; }
+        
+        /// <summary>
+        /// Gets the PID of the actor that sent the currently processed message.
+        /// </summary>
         PID Sender { get; }
+
+        /// <summary>
+        /// Gets the actor associated with this context.
+        /// </summary>
         IActor Actor { get; }
+        
+        /// <summary>
+        /// Gets the receive timeout.
+        /// </summary>
         TimeSpan ReceiveTimeout { get; }
 
-        void Respond(object msg);
-        PID[] Children();
+        /// <summary>
+        /// Sends a response to the current Sender. If the Sender is null, the actor will panic.
+        /// </summary>
+        /// <param name="message">The message to send</param>
+        void Respond(object message);
 
+        /// <summary>
+        /// Gets the PIDs of the actor's children.
+        /// </summary>
+        IReadOnlyCollection<PID> Children { get; }
+
+        /// <summary>
+        /// Stashes the current message on a stack for re-processing when the actor restarts.
+        /// </summary>
         void Stash();
-        void Receive(object message);
-        Task NextAsync();
+
+        /// <summary>
+        /// Spawns a new child actor based on props and named with a unique ID.
+        /// </summary>
+        /// <param name="props">The Props used to spawn the actor</param>
+        /// <returns>The PID of the child actor</returns>
         PID Spawn(Props props);
 
-        void Become(Receive receive);
-        void BecomeStacked(Receive receive);
-        void UnbecomeStacked();
+        /// <summary>
+        /// Spawns a new child actor based on props and named using a prefix followed by a unique ID.
+        /// </summary>
+        /// <param name="props">The Props used to spawn the actor</param>
+        /// <param name="prefix">The prefix for the actor name</param>
+        /// <returns>The PID of the child actor</returns>
+        PID SpawnPrefix(Props props, string prefix);
+
+        /// <summary>
+        /// Spawns a new child actor based on props and named using the specified name.
+        /// </summary>
+        /// <param name="props">The Props used to spawn the actor</param>
+        /// <param name="name">The actor name</param>
+        /// <returns>The PID of the child actor</returns>
+        PID SpawnNamed(Props props, string name);
+
+        /// <summary>
+        /// Replaces the current behavior stack with the new behavior.
+        /// </summary>
+        void SetBehavior(Receive behavior);
+        
+        /// <summary>
+        /// Pushes the behavior onto the current behavior stack and sets the current Receive handler to the new behavior.
+        /// </summary>
+        void PushBehavior(Receive behavior);
+        
+        /// <summary>
+        /// Reverts to the previous Receive handler.
+        /// </summary>
+        void PopBehavior();
+        
+        /// <summary>
+        /// Registers the actor as a watcher for the specified PID.
+        /// </summary>
+        /// <param name="pid">The PID to watch</param>
         void Watch(PID pid);
-        void Unwatch(PID who);
+        
+        /// <summary>
+        /// Unregisters the actor as a watcher for the specified PID.
+        /// </summary>
+        /// <param name="pid">The PID to unwatch</param>
+        void Unwatch(PID pid);
+        
+        /// <summary>
+        /// Sets the receive timeout. If no message is received for the given duration, a ReceiveTimeout message will be sent to the actor. If a message is received within the given duration, the timer is reset, unless the message implements INotInfluenceReceiveTimeout. Setting a duration of less than 1ms will disable the timer.
+        /// </summary>
+        /// <param name="duration">The receive timeout duration</param>
         void SetReceiveTimeout(TimeSpan duration);
     }
 
@@ -53,27 +131,24 @@ namespace Proto
         private HashSet<PID> _watching;
         private RestartStatistics _restartStatistics;
         private Timer _receiveTimeoutTimer;
+        private readonly Props _props;
+
 
         public Context(Props props, PID parent)
         {
             Parent = parent;
-            Props = props;
+            _props = props;
             _behavior = new Stack<Receive>();
             _behavior.Push(ActorReceive);
 
             IncarnateActor();
         }
 
-        public PID[] Children()
-        {
-            return _children.ToArray();
-        }
-
+        public IReadOnlyCollection<PID> Children => _children.ToList();
         public IActor Actor { get; private set; }
         public PID Parent { get; }
         public PID Self { get; internal set; }
-        public Props Props { get; }
-        
+
         public object Message
         {
             get
@@ -97,25 +172,12 @@ namespace Proto
             _stash.Push(Message);
         }
 
-        public void Receive(object message)
-        {
-            var i = _receiveIndex;
-            var m = Message;
-
-            _receiveIndex = 0;
-            Message = message;
-            NextAsync().Wait();
-
-            _receiveIndex = i;
-            Message = m;
-        }
-
-        public Task NextAsync()
+        private Task NextAsync()
         {
             Receive receive;
-            if (_receiveIndex < Props.ReceivePlugins?.Length)
+            if (_receiveIndex < _props.ReceivePlugins?.Length)
             {
-                receive = Props.ReceivePlugins[_receiveIndex];
+                receive = _props.ReceivePlugins[_receiveIndex];
                 _receiveIndex++;
             }
             else
@@ -127,9 +189,9 @@ namespace Proto
             return receive(this);
         }
 
-        public void Respond(object msg)
+        public void Respond(object message)
         {
-            Sender.Tell(msg);
+            Sender.Tell(message);
         }
 
         public PID Spawn(Props props)
@@ -139,18 +201,23 @@ namespace Proto
             return SpawnNamed(props, id);
         }
 
-        public void Become(Receive receive)
+        public PID SpawnPrefix(Props props, string prefix)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetBehavior(Receive receive)
         {
             _behavior.Clear();
             _behavior.Push(receive);
         }
 
-        public void BecomeStacked(Receive receive)
+        public void PushBehavior(Receive receive)
         {
             _behavior.Push(receive);
         }
 
-        public void UnbecomeStacked()
+        public void PopBehavior()
         {
             if (_behavior.Count <= 1)
             {
@@ -164,9 +231,9 @@ namespace Proto
             who.SendSystemMessage(new Watch(Self));
         }
 
-        public void Unwatch(PID who)
+        public void Unwatch(PID pid)
         {
-            who.SendSystemMessage(new Unwatch(Self));
+            pid.SendSystemMessage(new Unwatch(Self));
         }
 
         public async Task InvokeSystemMessageAsync(object msg)
@@ -253,8 +320,8 @@ namespace Proto
         {
             _restarting = false;
             _stopping = false;
-            Actor = Props.Producer();
-            Become(ActorReceive);
+            Actor = _props.Producer();
+            SetBehavior(ActorReceive);
         }
 
         private async Task HandleRestartAsync()
@@ -294,7 +361,7 @@ namespace Proto
                 supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
                 return;
             }
-            Props.Supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
+            _props.Supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
         }
 
         private async Task HandleTerminatedAsync(Terminated msg)
