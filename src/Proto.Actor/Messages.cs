@@ -25,24 +25,6 @@ namespace Proto
         public static readonly Restarting Instance = new Restarting();
     }
 
-    public sealed class SuspendMailbox : SystemMessage
-    {
-        public static readonly SuspendMailbox Instance = new SuspendMailbox();
-
-        private SuspendMailbox()
-        {
-        }
-    }
-
-    public sealed class ResumeMailbox : SystemMessage
-    {
-        public static readonly ResumeMailbox Instance = new ResumeMailbox();
-
-        private ResumeMailbox()
-        {
-        }
-    }
-
     public class Failure : SystemMessage
     {
         public Failure(PID who, Exception reason, RestartStatistics crs)

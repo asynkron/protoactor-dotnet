@@ -11,5 +11,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
+    <ProjectReference Include="..\Proto.Mailbox\Proto.Mailbox.csproj" />
   </ItemGroup>
 </Project>

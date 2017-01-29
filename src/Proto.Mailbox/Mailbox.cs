@@ -25,55 +25,6 @@ namespace Proto
         void Start();
     }
 
-    public interface IMailboxQueue
-    {
-        bool HasMessages { get; }
-        void Push(object message);
-        object Pop();
-    }
-
-    public class BoundedMailboxQueue : IMailboxQueue
-    {
-        private readonly MPMCQueue _messages;
-
-        public BoundedMailboxQueue(int size)
-        {
-            _messages = new MPMCQueue(size);
-        }
-
-        public void Push(object message)
-        {
-            _messages.Enqueue(message);
-        }
-
-        public object Pop()
-        {
-            return _messages.TryDequeue(out var message)
-                ? message
-                : null;
-        }
-
-        public bool HasMessages => _messages.Count > 0;
-    }
-
-    public class UnboundedMailboxQueue : IMailboxQueue
-    {
-        private readonly ConcurrentQueue<object> _messages = new ConcurrentQueue<object>();
-
-        public void Push(object message)
-        {
-            _messages.Enqueue(message);
-        }
-
-        public object Pop()
-        {
-            object message;
-            return _messages.TryDequeue(out message) ? message : null;
-        }
-
-        public bool HasMessages => _messages.Count > 0;
-    }
-
     public class DefaultMailbox : IMailbox
     {
         private readonly IMailboxStatistics[] _stats;
@@ -128,7 +79,7 @@ namespace Proto
 
             for (var i = 0; i < t; i++)
             {
-                var sys = (SystemMessage) _systemMessages.Pop();
+                var sys = _systemMessages.Pop();
                 if (sys != null)
                 {
                     if (sys is SuspendMailbox)

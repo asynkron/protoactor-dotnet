@@ -9,6 +9,14 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
+    public interface IMessageInvoker
+    {
+        Task InvokeSystemMessageAsync(object msg);
+        Task InvokeUserMessageAsync(object msg);
+        void EscalateFailure(Exception reason, object message);
+    }
+
+
     public interface IDispatcher
     {
         int Throughput { get; }

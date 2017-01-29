@@ -53,7 +53,7 @@ namespace Proto.Remote
         {
             var t = _dispatcher.Throughput;
             var batch = new List<MessageEnvelope>();
-            var sys = (SystemMessage)_systemMessages.Pop();
+            var sys = _systemMessages.Pop();
             if (sys != null)
             {
                 if (sys is SuspendMailbox)
