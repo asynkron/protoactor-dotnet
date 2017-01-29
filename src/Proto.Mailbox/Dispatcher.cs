@@ -7,7 +7,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Proto
+namespace Proto.Mailbox
 {
     public interface IMessageInvoker
     {

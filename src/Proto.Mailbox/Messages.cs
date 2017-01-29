@@ -1,4 +1,4 @@
-﻿namespace Proto
+﻿namespace Proto.Mailbox
 {
     public sealed class SuspendMailbox
     {

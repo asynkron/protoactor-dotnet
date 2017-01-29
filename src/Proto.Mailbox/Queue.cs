@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Proto
+﻿namespace Proto.Mailbox
 {
 
     public interface IMailboxQueue

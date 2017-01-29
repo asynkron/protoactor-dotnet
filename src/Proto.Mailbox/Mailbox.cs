@@ -5,11 +5,10 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Proto
+namespace Proto.Mailbox
 {
     internal static class MailboxStatus
     {

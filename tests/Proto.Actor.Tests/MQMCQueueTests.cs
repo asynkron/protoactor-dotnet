@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using Proto.Mailbox;
 using Xunit;
 
 namespace Proto.Tests

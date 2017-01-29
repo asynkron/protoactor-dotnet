@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Mailbox;
 using Xunit;
 
 namespace Proto.Tests

@@ -29,7 +29,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace Proto
+namespace Proto.Mailbox
 {
     [StructLayout(LayoutKind.Explicit, Size = 192, CharSet = CharSet.Ansi)]
     public class MPMCQueue

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 
-namespace Proto
+namespace Proto.Mailbox
 {
     public class UnboundedMailboxQueue : IMailboxQueue
     {

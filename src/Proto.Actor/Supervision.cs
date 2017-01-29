@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using Proto.Mailbox;
 
 namespace Proto
 {
