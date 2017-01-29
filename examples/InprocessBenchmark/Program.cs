@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto;
-
+using Proto.Mailbox;
 class Program
 {
     static void Main(string[] args)

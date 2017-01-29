@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Mailbox;
 
 namespace Proto.Remote
 {
@@ -53,7 +54,7 @@ namespace Proto.Remote
         {
             var t = _dispatcher.Throughput;
             var batch = new List<MessageEnvelope>();
-            var sys = (SystemMessage)_systemMessages.Pop();
+            var sys = _systemMessages.Pop();
             if (sys != null)
             {
                 if (sys is SuspendMailbox)

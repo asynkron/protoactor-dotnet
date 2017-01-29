@@ -9,17 +9,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Mailbox;
 
 namespace Proto
 {
-    public interface IMessageInvoker
-    {
-        Task InvokeSystemMessageAsync(object msg);
-        Task InvokeUserMessageAsync(object msg);
-
-        void EscalateFailure(Exception reason, object message);
-    }
-
     public interface IContext
     {
         PID Parent { get; }

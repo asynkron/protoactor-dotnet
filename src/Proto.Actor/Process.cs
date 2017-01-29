@@ -4,6 +4,8 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using Proto.Mailbox;
+
 namespace Proto
 {
     public abstract class Process

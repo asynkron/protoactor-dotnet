@@ -7,6 +7,7 @@
 using System;
 using System.Diagnostics;
 using Proto;
+using Proto.Mailbox;
 
 class Program
 {

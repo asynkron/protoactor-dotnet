@@ -25,4 +25,7 @@
     <PackageReference Include="NETStandard.Library" Version="1.6.1" />
     <PackageReference Include="System.ValueTuple" Version="4.3.0" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Proto.Mailbox\Proto.Mailbox.csproj" />
+  </ItemGroup>
 </Project>
