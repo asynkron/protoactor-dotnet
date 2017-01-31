@@ -125,7 +125,6 @@ namespace Proto
         private readonly Stack<Receive> _behavior;
         private HashSet<PID> _children;
         private object _message;
-        private int _receiveIndex;
         private bool _restarting;
         private Stack<object> _stash;
         private bool _stopping;
@@ -134,9 +133,9 @@ namespace Proto
         private RestartStatistics _restartStatistics;
         private Timer _receiveTimeoutTimer;
         private Receive _receive;
-        private Func<IActor> _producer;
-        private ISupervisorStrategy _supervisorStrategy;
-        private Receive _middleware;
+        private readonly Func<IActor> _producer;
+        private readonly ISupervisorStrategy _supervisorStrategy;
+        private readonly Receive _middleware;
 
 
         public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive middleware, PID parent)
@@ -232,14 +231,18 @@ namespace Proto
             _receive=_behavior.Pop();
         }
 
-        public void Watch(PID who)
+        public void Watch(PID pid)
         {
-            who.SendSystemMessage(new Watch(Self));
+            pid.SendSystemMessage(new Watch(Self));
+            if(_watching == null) _watching = new HashSet<PID>();
+            _watching.Add(pid);
         }
 
         public void Unwatch(PID pid)
         {
             pid.SendSystemMessage(new Unwatch(Self));
+            if (_watching == null) _watching = new HashSet<PID>();
+            _watching.Remove(pid);
         }
 
         public async Task InvokeSystemMessageAsync(object msg)
