@@ -7,10 +7,10 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class ReceivePluginTests
+    public class MiddlewareTests
     {
         [Fact]
-        public void Given_ReceivePlugins_Should_Call_In_Order_Then_Actor()
+        public void Given_Middleware_Should_Call_In_Order_Then_Actor()
         {
             var logs = new List<int>();
             var testMailbox = new ActorFixture.TestMailbox();
@@ -24,8 +24,8 @@ namespace Proto.Tests
                 }
                 return Actor.Done;
             })
-            .WithReceivers(
-                async c =>
+            .WithMiddleware(
+                next => async c =>
                 {
                     switch (c.Message)
                     {
@@ -33,9 +33,9 @@ namespace Proto.Tests
                             logs.Add(0);
                             break;
                     }
-                    await c.NextAsync();
+                    await next(c);
                 },
-                async c =>
+                next => async c =>
                 {
                     switch (c.Message)
                     {
@@ -43,7 +43,7 @@ namespace Proto.Tests
                             logs.Add(1);
                             break;
                     }
-                    await c.NextAsync();
+                    await next(c);
                 })
             .WithMailbox(() => testMailbox);
             var pid = Actor.Spawn(actor);

@@ -28,11 +28,6 @@ namespace Proto
 
         public override void SendSystemMessage(PID pid, object message)
         {
-            if (message is T)
-            {
-                _tcs.TrySetResult((T)message);  
-                pid.Stop();
-            }
         }
     }
 }
