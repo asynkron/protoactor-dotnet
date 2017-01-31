@@ -5,6 +5,8 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Proto.Mailbox;
 
 namespace Proto
@@ -16,12 +18,16 @@ namespace Proto
         public Func<IMailbox> MailboxProducer { get; private set; } =
             () => new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue());
 
+        public ISupervisorStrategy SupervisorStrategy { get; private set; } = Supervision.DefaultStrategy;
+
         public IDispatcher Dispatcher { get; private set; } = Dispatchers.DefaultDispatcher;
 
-        public ISupervisorStrategy Supervisor { get; private set; } = Supervision.DefaultStrategy;
+        public IList<Func<Receive, Receive>> Middleware { get; private set; } = new List<Func<Receive, Receive>>();
 
-        public Receive[] ReceivePlugins { get; private set; }
+        public Receive MiddlewareChain { get; set; }
+
         public Spawner Spawner { get; private set; }
+
 
         public Props WithProducer(Func<IActor> producer)
         {
@@ -40,12 +46,14 @@ namespace Proto
 
         public Props WithSupervisor(ISupervisorStrategy supervisor)
         {
-            return Copy(props => props.Supervisor = supervisor);
+            return Copy(props => props.SupervisorStrategy = supervisor);
         }
 
-        public Props WithReceivers(params Receive[] plugins)
+        public Props WithMiddleware(params Func<Receive,Receive>[] middleware)
         {
-            return Copy(props => props.ReceivePlugins = plugins);
+            Middleware = Middleware.Concat(middleware).ToList();
+            MiddlewareChain = Middleware.Reverse().Aggregate((Receive) Context.DefaultReceive, (inner, outer) => outer(inner));
+            return this;
         }
 
         private Props Copy(Action<Props> mutator)
@@ -55,9 +63,9 @@ namespace Proto
                 Dispatcher = Dispatcher,
                 MailboxProducer = MailboxProducer,
                 Producer = Producer,
-                ReceivePlugins = ReceivePlugins,
+                Middleware = Middleware,
                 Spawner = Spawner,
-                Supervisor = Supervisor
+                SupervisorStrategy = SupervisorStrategy
             };
             mutator(props);
             return props;

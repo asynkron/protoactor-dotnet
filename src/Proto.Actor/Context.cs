@@ -116,6 +116,8 @@ namespace Proto
         /// </summary>
         /// <param name="duration">The receive timeout duration</param>
         void SetReceiveTimeout(TimeSpan duration);
+
+        Task ReceiveAsync(object message);
     }
 
     public class Context : IMessageInvoker, IContext, ISupervisor
@@ -131,19 +133,24 @@ namespace Proto
         private HashSet<PID> _watching;
         private RestartStatistics _restartStatistics;
         private Timer _receiveTimeoutTimer;
-        private readonly Props _props;
+        private Receive _receive;
+        private Func<IActor> _producer;
+        private ISupervisorStrategy _supervisorStrategy;
+        private Receive _middleware;
 
 
-        public Context(Props props, PID parent)
+        public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive middleware, PID parent)
         {
+            _producer = producer;
+            _supervisorStrategy = supervisorStrategy;
+            _middleware = middleware;
             Parent = parent;
-            _props = props;
             _behavior = new Stack<Receive>();
             _behavior.Push(ActorReceive);
 
             IncarnateActor();
         }
-
+        
         public IReadOnlyCollection<PID> Children => _children.ToList();
         public IActor Actor { get; private set; }
         public PID Parent { get; }
@@ -172,21 +179,18 @@ namespace Proto
             _stash.Push(Message);
         }
 
-        private Task NextAsync()
+        internal static Task DefaultReceive(IContext context)
         {
-            Receive receive;
-            if (_receiveIndex < _props.ReceivePlugins?.Length)
+            var c = (Context) context;
+            if (c.Message is PoisonPill)
             {
-                receive = _props.ReceivePlugins[_receiveIndex];
-                _receiveIndex++;
+                c.Self.Stop();
+                return Proto.Actor.Done;
             }
             else
             {
-                var func = _behavior.Peek();
-                receive = func;
+                return c._receive(context);
             }
-
-            return receive(this);
         }
 
         public void Respond(object message)
@@ -210,11 +214,13 @@ namespace Proto
         {
             _behavior.Clear();
             _behavior.Push(receive);
+            _receive = receive;
         }
 
         public void PushBehavior(Receive receive)
         {
             _behavior.Push(receive);
+            _receive = receive;
         }
 
         public void PopBehavior()
@@ -223,7 +229,7 @@ namespace Proto
             {
                 throw new Exception("Can not unbecome actor base behaviour");
             }
-            _behavior.Pop();
+            _receive=_behavior.Pop();
         }
 
         public void Watch(PID who)
@@ -299,10 +305,15 @@ namespace Proto
         {
             try
             {
-                _receiveIndex = 0;
                 Message = msg;
-
-                await NextAsync();
+                if (_middleware != null)
+                {
+                    await _middleware(this);
+                }
+                else
+                {
+                    await DefaultReceive(this);
+                }
             }
             catch (Exception x)
             {
@@ -320,7 +331,7 @@ namespace Proto
         {
             _restarting = false;
             _stopping = false;
-            Actor = _props.Producer();
+            Actor = _producer();
             SetBehavior(ActorReceive);
         }
 
@@ -361,7 +372,7 @@ namespace Proto
                 supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
                 return;
             }
-            _props.Supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
+            _supervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
         }
 
         private async Task HandleTerminatedAsync(Terminated msg)
@@ -523,6 +534,11 @@ namespace Proto
                 Self.SendSystemMessage(SuspendMailbox.Instance);
                 Parent.SendSystemMessage(failure);
             }
+        }
+
+        public Task ReceiveAsync(object message)
+        {
+            return ProcessMessageAsync(message);
         }
     }
 }

@@ -56,7 +56,7 @@ namespace Proto
 
         public static Spawner DefaultSpawner = (name, props, parent) =>
         {
-            var ctx = new Context(props, parent);
+            var ctx = new Context(props.Producer, props.SupervisorStrategy, props.MiddlewareChain, parent);
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
             var reff = new LocalActorRef(mailbox);

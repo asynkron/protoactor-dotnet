@@ -49,7 +49,7 @@ class Program
         {
             var provider = new CouchbaseProvider(bucket, 5);
             var props = Actor.FromProducer(() => new MyActor())
-                .WithReceivers(Persistence.Using(provider));
+                .WithMiddleware(Persistence.Using(provider));
             var pid = Actor.Spawn(props);
             pid.Tell(new RenameCommand { Name = "Christian" });
             pid.Tell(new RenameCommand { Name = "Alex" });

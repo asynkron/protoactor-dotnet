@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+﻿using System;
 using Google.Protobuf;
 
 namespace Proto.Persistence
@@ -22,11 +22,11 @@ namespace Proto.Persistence
             if (t != null)
             {
                 EventIndex = t.Item2;
-                Context.Receive(t.Item1);
+                Context.ReceiveAsync(t.Item1).Wait();
             }
             State.GetEvents(Name, EventIndex, e =>
             {
-                Context.Receive(e);
+                Context.ReceiveAsync(e).Wait();
                 EventIndex++;
             });
         }
@@ -35,10 +35,10 @@ namespace Proto.Persistence
         {
             State.PersistEvent(Name, EventIndex, message);
             EventIndex++;
-            Context.Receive(message);
+            Context.ReceiveAsync(message).Wait();
             if (State.GetSnapshotInterval() == 0)
             {
-                Context.Receive(new RequestSnapshot());
+                Context.ReceiveAsync(new RequestSnapshot()).Wait();
             }
         }
 
@@ -47,14 +47,14 @@ namespace Proto.Persistence
             State.PersistSnapshot(Name, EventIndex, snapshot);
         }
 
-        public static Receive Using(IProvider provider)
+        public static Func<Receive,Receive> Using(IProvider provider)
         {
-            return async context =>
+            return next => async context =>
             {
                 switch (context.Message)
                 {
                     case Started started:
-                        await context.NextAsync();
+                        await next(context);
                         context.Self.Tell(new Replay());
                         break;
                     case Replay replay:
@@ -66,7 +66,7 @@ namespace Proto.Persistence
                         }
                         break;
                     default:
-                        await context.NextAsync();
+                        await next(context);
                         break;
                 }
             };
