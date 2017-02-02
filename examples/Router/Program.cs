@@ -45,31 +45,32 @@ namespace RouterExample
 
         private static void Main()
         {
-            TestRandomPool();
-            TestRandomGroup();
-
-            TestRoundRobinPool();
-            TestRoundRobinGroup();
-
-            TestConsistentHashPool();
-            TestConsistentHashGroup();
-
             TestBroadcastPool();
-            TestBroadcastGroup();
+            //TestBroadcastGroup();
+
+            //TestRandomPool();
+            //TestRandomGroup();
+
+            //TestRoundRobinPool();
+            //TestRoundRobinGroup();
+
+            //TestConsistentHashPool();
+            //TestConsistentHashGroup();
+
             Console.ReadLine();
         }
 
         private static void TestBroadcastGroup()
         {
-            for (var i = 0; i < 20; i++)
+            var props = Router.NewBroadcastGroup(
+                MyActorProps,
+                Actor.Spawn(MyActorProps),
+                Actor.Spawn(MyActorProps),
+                Actor.Spawn(MyActorProps),
+                Actor.Spawn(MyActorProps)
+            );
+            for (var i = 0; i < 10; i++)
             {
-                var props = Router.NewBroadcastGroup(
-                    MyActorProps,
-                    Actor.Spawn(MyActorProps),
-                    Actor.Spawn(MyActorProps),
-                    Actor.Spawn(MyActorProps),
-                    Actor.Spawn(MyActorProps)
-                );
                 var pid = Actor.Spawn(props);
                 pid.Tell(new Message {Text = $"{i % 4}"});
             }
@@ -77,88 +78,88 @@ namespace RouterExample
 
         private static void TestBroadcastPool()
         {
-            for (var i = 0; i < 20; i++)
+            var props = Router.NewBroadcastPool(MyActorProps, 5);
+            var pid = Actor.Spawn(props);
+            for (var i = 0; i < 10; i++)
             {
-                var props = Router.NewBroadcastPool(MyActorProps, 5);
-                var pid = Actor.Spawn(props);
                 pid.Tell(new Message {Text = $"{i % 4}"});
             }
         }
 
         private static void TestConsistentHashGroup()
         {
-            for (var i = 0; i < 20; i++)
+            var props = Router.NewConsistentHashGroup(
+                MyActorProps,
+                Actor.Spawn(MyActorProps),
+                Actor.Spawn(MyActorProps),
+                Actor.Spawn(MyActorProps),
+                Actor.Spawn(MyActorProps)
+            );
+            var pid = Actor.Spawn(props);
+            for (var i = 0; i < 10; i++)
             {
-                var props = Router.NewConsistentHashGroup(
-                    MyActorProps,
-                    Actor.Spawn(MyActorProps),
-                    Actor.Spawn(MyActorProps),
-                    Actor.Spawn(MyActorProps),
-                    Actor.Spawn(MyActorProps)
-                );
-                var pid = Actor.Spawn(props);
                 pid.Tell(new Message {Text = $"{i % 4}"});
             }
         }
 
         private static void TestConsistentHashPool()
         {
-            for (var i = 0; i < 20; i++)
+            var props = Router.NewConsistentHashPool(MyActorProps, 5);
+            var pid = Actor.Spawn(props);
+            for (var i = 0; i < 10; i++)
             {
-                var props = Router.NewConsistentHashPool(MyActorProps, 5);
-                var pid = Actor.Spawn(props);
                 pid.Tell(new Message {Text = $"{i % 4}"});
             }
         }
 
         private static void TestRoundRobinGroup()
         {
-            for (var i = 0; i < 20; i++)
+            var props = Router.NewRoundRobinGroup(
+                MyActorProps,
+                Actor.Spawn(MyActorProps),
+                Actor.Spawn(MyActorProps),
+                Actor.Spawn(MyActorProps),
+                Actor.Spawn(MyActorProps)
+            );
+            var pid = Actor.Spawn(props);
+            for (var i = 0; i < 10; i++)
             {
-                var props = Router.NewRoundRobinGroup(
-                    MyActorProps,
-                    Actor.Spawn(MyActorProps),
-                    Actor.Spawn(MyActorProps),
-                    Actor.Spawn(MyActorProps),
-                    Actor.Spawn(MyActorProps)
-                );
-                var pid = Actor.Spawn(props);
                 pid.Tell(new Message {Text = $"{i % 4}"});
             }
         }
 
         private static void TestRoundRobinPool()
         {
-            for (var i = 0; i < 20; i++)
+            var props = Router.NewRoundRobinPool(MyActorProps, 5);
+            var pid = Actor.Spawn(props);
+            for (var i = 0; i < 10; i++)
             {
-                var props = Router.NewRoundRobinPool(MyActorProps, 5);
-                var pid = Actor.Spawn(props);
                 pid.Tell(new Message {Text = $"{i % 4}"});
             }
         }
 
         private static void TestRandomGroup()
         {
-            for (var i = 0; i < 20; i++)
+            var props = Router.NewRandomGroup(
+                MyActorProps,
+                Actor.Spawn(MyActorProps),
+                Actor.Spawn(MyActorProps),
+                Actor.Spawn(MyActorProps),
+                Actor.Spawn(MyActorProps)
+            );
+            var pid = Actor.Spawn(props);
+            for (var i = 0; i < 10; i++)
             {
-                var props = Router.NewRandomGroup(
-                    MyActorProps,
-                    Actor.Spawn(MyActorProps),
-                    Actor.Spawn(MyActorProps),
-                    Actor.Spawn(MyActorProps),
-                    Actor.Spawn(MyActorProps)
-                );
-                var pid = Actor.Spawn(props);
                 pid.Tell(new Message {Text = $"{i % 4}"});
             }
         }
 
         private static void TestRandomPool()
         {
-            for (var i = 0; i < 20; i++)
+            var props = Router.NewRandomPool(MyActorProps, 5);
+            var pid = Actor.Spawn(props);
+            for (var i = 0; i < 10; i++)
             {
-                var props = Router.NewRandomPool(MyActorProps, 5);
-                var pid = Actor.Spawn(props);
                 pid.Tell(new Message {Text = $"{i % 4}"});
             }
         }
