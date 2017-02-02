@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Proto;
 
 class Program
@@ -27,6 +26,7 @@ class Program
 
         var pid = Actor.Spawn(actor);
         pid.Tell("hello");
+
         Console.ReadLine();
         Console.ReadLine();
     }

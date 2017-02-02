@@ -26,8 +26,7 @@ namespace Proto
 
         public Receive MiddlewareChain { get; set; }
 
-        public Spawner Spawner { get; private set; }
-
+        public Spawner Spawner { get; private set; } = Actor.DefaultSpawner;
 
         public Props WithProducer(Func<IActor> producer)
         {
@@ -49,11 +48,18 @@ namespace Proto
             return Copy(props => props.SupervisorStrategy = supervisor);
         }
 
-        public Props WithMiddleware(params Func<Receive,Receive>[] middleware)
+        public Props WithMiddleware(params Func<Receive, Receive>[] middleware)
         {
-            Middleware = Middleware.Concat(middleware).ToList();
-            MiddlewareChain = Middleware.Reverse().Aggregate((Receive) Context.DefaultReceive, (inner, outer) => outer(inner));
-            return this;
+            return Copy(props =>
+            {
+                props.Middleware = Middleware.Concat(middleware).ToList();
+                props.MiddlewareChain = props.Middleware.Reverse().Aggregate((Receive) Context.DefaultReceive, (inner, outer) => outer(inner));
+            });
+        }
+
+        public Props WithSpawner(Spawner spawner)
+        {
+            return Copy(props => props.Spawner = spawner);
         }
 
         private Props Copy(Action<Props> mutator)
@@ -64,6 +70,7 @@ namespace Proto
                 MailboxProducer = MailboxProducer,
                 Producer = Producer,
                 Middleware = Middleware,
+                MiddlewareChain = MiddlewareChain,
                 Spawner = Spawner,
                 SupervisorStrategy = SupervisorStrategy
             };
@@ -71,9 +78,9 @@ namespace Proto
             return props;
         }
 
-        public Props WithSpawner(Spawner spawner)
+        public PID Spawn(string name, PID parent)
         {
-            return Copy(props => props.Spawner = spawner);
+            return Spawner(name, this, parent);
         }
     }
 

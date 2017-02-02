@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Proto.Mailbox;
 using Xunit;
 
 namespace Proto.Tests
@@ -12,76 +12,36 @@ namespace Proto.Tests
         [Fact]
         public void Given_Middleware_Should_Call_In_Order_Then_Actor()
         {
-            var logs = new List<int>();
+            var logs = new List<string>();
             var testMailbox = new ActorFixture.TestMailbox();
-            var actor = Actor.FromFunc(c =>
+            var props = Actor.FromFunc(c =>
             {
-                switch(c.Message)
-                {
-                    case string s:
-                        logs.Add(2);
-                        break;
-                }
+                if(c.Message is string)
+                    logs.Add("actor");
                 return Actor.Done;
             })
             .WithMiddleware(
                 next => async c =>
                 {
-                    switch (c.Message)
-                    {
-                        case string s:
-                            logs.Add(0);
-                            break;
-                    }
+                    if(c.Message is string)
+                        logs.Add("middleware 1");
                     await next(c);
                 },
                 next => async c =>
                 {
-                    switch (c.Message)
-                    {
-                        case string s:
-                            logs.Add(1);
-                            break;
-                    }
+                    if(c.Message is string)
+                        logs.Add("middleware 2");
                     await next(c);
                 })
             .WithMailbox(() => testMailbox);
-            var pid = Actor.Spawn(actor);
+            var pid = Actor.Spawn(props);
 
             pid.Tell("");
 
             Assert.Equal(3, logs.Count);
-            Assert.Equal(0, logs[0]);
-            Assert.Equal(1, logs[1]);
-            Assert.Equal(2, logs[2]);
-        }
-    }
-
-    static class ActorFixture
-    {
-        public class TestMailbox : IMailbox
-        {
-            private IMessageInvoker _invoker;
-            private IDispatcher _dispatcher;
-
-            public void PostUserMessage(object msg)
-            {
-                _invoker.InvokeUserMessageAsync(msg).Wait();
-            }
-
-            public void PostSystemMessage(object msg)
-            {
-                _invoker.InvokeSystemMessageAsync(msg);
-            }
-
-            public void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher)
-            {
-                _invoker = invoker;
-            }
-
-            public void Start()
-            {
-            }
+            Assert.Equal("middleware 1", logs[0]);
+            Assert.Equal("middleware 2", logs[1]);
+            Assert.Equal("actor", logs[2]);
         }
     }
 }
