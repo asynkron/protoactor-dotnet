@@ -49,11 +49,13 @@ namespace Proto
             return Copy(props => props.SupervisorStrategy = supervisor);
         }
 
-        public Props WithMiddleware(params Func<Receive,Receive>[] middleware)
+        public Props WithMiddleware(params Func<Receive, Receive>[] middleware)
         {
-            Middleware = Middleware.Concat(middleware).ToList();
-            MiddlewareChain = Middleware.Reverse().Aggregate((Receive) Context.DefaultReceive, (inner, outer) => outer(inner));
-            return this;
+            return Copy(props =>
+            {
+                props.Middleware = Middleware.Concat(middleware).ToList();
+                props.MiddlewareChain = props.Middleware.Reverse().Aggregate((Receive) Context.DefaultReceive, (inner, outer) => outer(inner));
+            });
         }
 
         private Props Copy(Action<Props> mutator)
@@ -64,6 +66,7 @@ namespace Proto
                 MailboxProducer = MailboxProducer,
                 Producer = Producer,
                 Middleware = Middleware,
+                MiddlewareChain = MiddlewareChain,
                 Spawner = Spawner,
                 SupervisorStrategy = SupervisorStrategy
             };

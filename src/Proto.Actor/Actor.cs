@@ -30,7 +30,6 @@ namespace Proto
     {
         public static readonly Task Done = Task.FromResult(0);
 
-
         public static EventStream EventStream => EventStream.Instance;
 
         public static Props FromProducer(Func<IActor> producer)
