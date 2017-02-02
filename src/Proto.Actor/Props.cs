@@ -26,8 +26,7 @@ namespace Proto
 
         public Receive MiddlewareChain { get; set; }
 
-        public Spawner Spawner { get; private set; }
-
+        public Spawner Spawner { get; private set; } = Actor.DefaultSpawner;
 
         public Props WithProducer(Func<IActor> producer)
         {
@@ -58,6 +57,11 @@ namespace Proto
             });
         }
 
+        public Props WithSpawner(Spawner spawner)
+        {
+            return Copy(props => props.Spawner = spawner);
+        }
+
         private Props Copy(Action<Props> mutator)
         {
             var props = new Props
@@ -74,9 +78,9 @@ namespace Proto
             return props;
         }
 
-        public Props WithSpawner(Spawner spawner)
+        public PID Spawn(string name, PID parent)
         {
-            return Copy(props => props.Spawner = spawner);
+            return Spawner(name, this, parent);
         }
     }
 

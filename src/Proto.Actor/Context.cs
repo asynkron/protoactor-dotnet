@@ -200,13 +200,25 @@ namespace Proto
         public PID Spawn(Props props)
         {
             var id = ProcessRegistry.Instance.NextId();
-
             return SpawnNamed(props, id);
         }
 
         public PID SpawnPrefix(Props props, string prefix)
         {
-            throw new NotImplementedException();
+            var name = prefix + ProcessRegistry.Instance.NextId();
+            return SpawnNamed(props, name);
+        }
+
+        public PID SpawnNamed(Props props, string name)
+        {
+            var pid = props.Spawn($"{Self.Id}/{name}", Self);
+            if (_children == null)
+            {
+                _children = new HashSet<PID>();
+            }
+            _children.Add(pid);
+            Watch(pid);
+            return pid;
         }
 
         public void SetBehavior(Receive receive)
@@ -460,28 +472,6 @@ namespace Proto
         private Task ActorReceive(IContext ctx)
         {
             return Actor.ReceiveAsync(ctx);
-        }
-
-        public PID SpawnNamed(Props props, string name)
-        {
-            string fullname;
-            if (Parent != null)
-            {
-                fullname = Parent.Id + "/" + name;
-            }
-            else
-            {
-                fullname = name;
-            }
-
-            var pid = Proto.Actor.DefaultSpawner(fullname, props, Self);
-            if (_children == null)
-            {
-                _children = new HashSet<PID>();
-            }
-            _children.Add(pid);
-            Watch(pid);
-            return pid;
         }
 
         public void SetReceiveTimeout(TimeSpan duration)
