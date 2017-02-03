@@ -9,4 +9,4 @@ matrix:
 script:
   - dotnet restore
   - dotnet build
-  - dotnet test
+  - dotnet test ./tests/Proto.Actor.Tests/Proto.Actor.Tests.csproj
