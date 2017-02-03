@@ -1,3 +1,4 @@
+dist: trusty
 language: csharp
 solution: ProtoActor.sln
 matrix:
