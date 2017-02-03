@@ -1,0 +1,11 @@
+language: csharp
+solution: ProtoActor.sln
+matrix:
+  include:
+    - dotnet: 1.0.0-preview4-004233
+      mono: none
+      env: DOTNETCORE=1
+script:
+  - dotnet restore
+  - dotnet build
+  - dotnet test
