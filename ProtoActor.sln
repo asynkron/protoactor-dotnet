@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26020.0
+VisualStudioVersion = 15.0.26127.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{771514F1-12AE-4A26-89CB-2646D3EF7034}"
 EndProject
@@ -37,7 +37,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Router", "src\Proto.R
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Router", "examples\Router\Router.csproj", "{571A1CB9-2819-4FCD-A721-DB9AD63CC444}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Persistence", "src\Proto.Persistence\Proto.Persistence.csproj", "{30AAE00A-7FB9-43AC-8304-B824C0F097F2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence", "src\Proto.Persistence\Proto.Persistence.csproj", "{30AAE00A-7FB9-43AC-8304-B824C0F097F2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence", "Persistence", "{8622758C-75DB-4067-AB13-7D9531A16E9E}"
 EndProject
@@ -47,17 +47,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Messages", "examples\Persis
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PersistenceProviders", "PersistenceProviders", "{7AF64900-EA34-4A93-9514-FEBC4648E39E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Persistence.Couchbase", "src\PersistenceProviders\Proto.Persistence.Couchbase\Proto.Persistence.Couchbase.csproj", "{89ED6E98-BB85-4B82-907A-D5EC5422C740}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence.Couchbase", "src\PersistenceProviders\Proto.Persistence.Couchbase\Proto.Persistence.Couchbase.csproj", "{89ED6E98-BB85-4B82-907A-D5EC5422C740}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node1", "examples\RemoteBenchmark\Node1\Node1.csproj", "{A003CCAB-BE2A-4A8A-A858-A4FAE08B5F89}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Node1", "examples\RemoteBenchmark\Node1\Node1.csproj", "{A003CCAB-BE2A-4A8A-A858-A4FAE08B5F89}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "InprocessBenchmark", "InprocessBenchmark", "{768E2FB6-A663-4D6A-A791-B2E1AF7296AF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InprocessBenchmark", "examples\InprocessBenchmark\InprocessBenchmark.csproj", "{2C02A779-3805-42D3-A8F6-12940E6BDF34}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InprocessBenchmark", "examples\InprocessBenchmark\InprocessBenchmark.csproj", "{2C02A779-3805-42D3-A8F6-12940E6BDF34}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ReceiveTimeout", "ReceiveTimeout", "{C78E50DC-8D65-4117-9B3E-BFA3F4A8101E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReceiveTimeout", "examples\ReceiveTimeout\ReceiveTimeout.csproj", "{AC11D152-F1FD-4A48-A0DC-0B315D507457}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReceiveTimeout", "examples\ReceiveTimeout\ReceiveTimeout.csproj", "{AC11D152-F1FD-4A48-A0DC-0B315D507457}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Mailbox", "src\Proto.Mailbox\Proto.Mailbox.csproj", "{7B1E82F7-270F-40F0-AF76-3FA54EF79124}"
 EndProject
@@ -66,6 +66,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Futures", "Futures", "{F045416D-2BFA-4048-AB1D-D908F4566F75}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Futures", "examples\Futures\Futures.csproj", "{9DA55746-E70B-4B37-972C-F0745AF151DE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HelloWorld", "HelloWorld", "{83472FA5-ACB7-4781-ACE4-21D3879F6282}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelloWorld", "HelloWorld\HelloWorld.csproj", "{B5AC8F28-C0DB-4DDF-B55D-262BF2E6063C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -305,6 +309,18 @@ Global
 		{9DA55746-E70B-4B37-972C-F0745AF151DE}.Release|x64.Build.0 = Release|x64
 		{9DA55746-E70B-4B37-972C-F0745AF151DE}.Release|x86.ActiveCfg = Release|x86
 		{9DA55746-E70B-4B37-972C-F0745AF151DE}.Release|x86.Build.0 = Release|x86
+		{B5AC8F28-C0DB-4DDF-B55D-262BF2E6063C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5AC8F28-C0DB-4DDF-B55D-262BF2E6063C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5AC8F28-C0DB-4DDF-B55D-262BF2E6063C}.Debug|x64.ActiveCfg = Debug|x64
+		{B5AC8F28-C0DB-4DDF-B55D-262BF2E6063C}.Debug|x64.Build.0 = Debug|x64
+		{B5AC8F28-C0DB-4DDF-B55D-262BF2E6063C}.Debug|x86.ActiveCfg = Debug|x86
+		{B5AC8F28-C0DB-4DDF-B55D-262BF2E6063C}.Debug|x86.Build.0 = Debug|x86
+		{B5AC8F28-C0DB-4DDF-B55D-262BF2E6063C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5AC8F28-C0DB-4DDF-B55D-262BF2E6063C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5AC8F28-C0DB-4DDF-B55D-262BF2E6063C}.Release|x64.ActiveCfg = Release|x64
+		{B5AC8F28-C0DB-4DDF-B55D-262BF2E6063C}.Release|x64.Build.0 = Release|x64
+		{B5AC8F28-C0DB-4DDF-B55D-262BF2E6063C}.Release|x86.ActiveCfg = Release|x86
+		{B5AC8F28-C0DB-4DDF-B55D-262BF2E6063C}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -339,5 +355,7 @@ Global
 		{3378E8AC-72C6-4A19-8061-C22CC390EE09} = {AFF0BC22-B7E5-43C2-AB4F-5BBBF688C3F3}
 		{F045416D-2BFA-4048-AB1D-D908F4566F75} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
 		{9DA55746-E70B-4B37-972C-F0745AF151DE} = {F045416D-2BFA-4048-AB1D-D908F4566F75}
+		{83472FA5-ACB7-4781-ACE4-21D3879F6282} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
+		{B5AC8F28-C0DB-4DDF-B55D-262BF2E6063C} = {83472FA5-ACB7-4781-ACE4-21D3879F6282}
 	EndGlobalSection
 EndGlobal
