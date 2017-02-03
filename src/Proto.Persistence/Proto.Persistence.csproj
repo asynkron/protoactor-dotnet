@@ -6,6 +6,9 @@
     <Compile Include="**\*.cs" />
     <EmbeddedResource Include="**\*.resx" />
   </ItemGroup>
+  <PropertyGroup>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NETStandard.Library" Version="1.6.1" />
   </ItemGroup>

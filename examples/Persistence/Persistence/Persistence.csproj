@@ -4,6 +4,9 @@
     <AssemblyName>PersistenceExample</AssemblyName>
   </PropertyGroup>
   <PropertyGroup>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp1.0</TargetFramework>
   </PropertyGroup>
