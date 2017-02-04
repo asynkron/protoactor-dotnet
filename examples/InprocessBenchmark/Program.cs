@@ -15,6 +15,7 @@ class Program
 {
     static void Main(string[] args)
     {
+        Console.WriteLine("Is Server GC {0}", System.Runtime.GCSettings.IsServerGC);
         const int messageCount = 1000000;
         const int batchSize = 100;
 

@@ -11,7 +11,6 @@
     <EmbeddedResource Include="**\*.resx" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="runtimeconfig.template.dev.json" />
     <Content Include="runtimeconfig.template.json" />
   </ItemGroup>
   <ItemGroup>

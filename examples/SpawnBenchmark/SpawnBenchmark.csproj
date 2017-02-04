@@ -12,7 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="runtimeconfig.template.json" />
-    <Content Include="runtimeconfig.template.dev.json" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.1.0" />
