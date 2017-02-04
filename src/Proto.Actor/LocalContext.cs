@@ -175,45 +175,42 @@ namespace Proto
             return ProcessMessageAsync(message);
         }
 
-        public async Task InvokeSystemMessageAsync(object msg)
+        public Task InvokeSystemMessageAsync(object msg)
         {
             try
             {
                 switch (msg)
                 {
                     case Started s:
-                        await InvokeUserMessageAsync(s);
-                        break;
+                        return InvokeUserMessageAsync(s);
                     case Stop _:
-                        await HandleStopAsync();
-                        break;
+                        return HandleStopAsync();
                     case Terminated t:
-                        await HandleTerminatedAsync(t);
-                        break;
+                        return HandleTerminatedAsync(t);
                     case Watch w:
                         HandleWatch(w);
-                        break;
+                        return Task.CompletedTask;
                     case Unwatch uw:
                         HandleUnwatch(uw);
-                        break;
+                        return Task.CompletedTask;
                     case Failure f:
                         HandleFailure(f);
-                        break;
+                        return Task.CompletedTask;
                     case Restart r:
-                        await HandleRestartAsync();
-                        break;
+                        return HandleRestartAsync();
                     case SuspendMailbox sm:
-                        break;
+                        return Task.CompletedTask;
                     case ResumeMailbox rm:
-                        break;
+                        return Task.CompletedTask;
                     default:
                         Console.WriteLine("Unknown system message {0}", msg);
-                        break;
+                        return Task.CompletedTask;
                 }
             }
             catch (Exception x)
             {
                 Console.WriteLine("Error handling SystemMessage {0}", x);
+                return Task.CompletedTask;
             }
         }
 
@@ -234,14 +231,14 @@ namespace Proto
             //this is what we need to do in order to avoid async await, which splits perf in half
             if (res.IsCompleted)
             {
-                if (ReceiveTimeout > TimeSpan.Zero && influenceTimeout)
+                if (ReceiveTimeout != TimeSpan.Zero && influenceTimeout)
                 {
                     ResetReceiveTimeout();
                 }
                 return res;
             }
             //this is a non completed task that doesnt use receive timeout
-            if (ReceiveTimeout <= TimeSpan.Zero || !influenceTimeout)
+            if (ReceiveTimeout == TimeSpan.Zero || !influenceTimeout)
             {
                 return res;
             }
