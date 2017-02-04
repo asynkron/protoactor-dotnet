@@ -21,7 +21,19 @@ namespace Proto.Remote
                     var target = envelope.Target;
                     var sender = envelope.Sender;
                     var message = Serialization.Deserialize(envelope.TypeName, envelope.MessageData);
-                    target.Request(message, sender);
+                    if (message is Terminated msg)
+                    {
+                        var rt = new RemoteTerminate(target,msg.Who);
+                        RemotingSystem.EndpointManagerPid.Tell(rt);
+                    }
+                    if (message is SystemMessage sys)
+                    {
+                        target.SendSystemMessage(sys);
+                    }
+                    else
+                    {
+                        target.Request(message, sender);
+                    }
                 }
 
                 return Actor.Done;

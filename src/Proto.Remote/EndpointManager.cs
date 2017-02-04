@@ -76,19 +76,31 @@ namespace Proto.Remote
             var ok = _connections.TryGetValue(address, out var endpoint);
             if (!ok)
             {
-                var writerProps =
-                    Actor.FromProducer(() => new EndpointWriter(address))
-                        .WithMailbox(() => new EndpointWriterMailbox());
-                var writer = context.Spawn(writerProps);
+                var writer = SpawnWriter(address, context);
 
-                var watcherProps = Actor.FromProducer(() => new EndpointWatcher(address));
-                var watcher = context.Spawn(watcherProps);
+                var watcher = SpawnWatcher(address, context);
 
-
-                _connections.Add(address, new Endpoint(writer, watcher));
+                endpoint = new Endpoint(writer,watcher);
+                _connections.Add(address, endpoint);
             }
 
             return endpoint;
+        }
+
+        private static PID SpawnWatcher(string address, IContext context)
+        {
+            var watcherProps = Actor.FromProducer(() => new EndpointWatcher(address));
+            var watcher = context.Spawn(watcherProps);
+            return watcher;
+        }
+
+        private static PID SpawnWriter(string address, IContext context)
+        {
+            var writerProps =
+                Actor.FromProducer(() => new EndpointWriter(address))
+                    .WithMailbox(() => new EndpointWriterMailbox());
+            var writer = context.Spawn(writerProps);
+            return writer;
         }
     }
 }

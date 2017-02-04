@@ -30,12 +30,30 @@ namespace Proto.Remote
 
         private void Send(PID pid, object msg, PID sender)
         {
+            if (msg is Watch w)
+            {
+                var rw = new RemoteWatch(w.Watcher,_pid);
+                RemotingSystem.EndpointManagerPid.Tell(rw);
+            }
+            else if (msg is Unwatch uw)
+            {
+                var ruw = new RemoteUnwatch(uw.Watcher, _pid);
+                RemotingSystem.EndpointManagerPid.Tell(ruw);
+            }
+            else
+            {
+                SendRemoteMessage(_pid, msg, sender);
+            }
+        }
+
+        public static void SendRemoteMessage(PID pid,object msg, PID sender)
+        {
             if (msg is IMessage)
             {
                 var imsg = (IMessage) msg;
                 var env = new MessageEnvelope
                 {
-                    Target = _pid,
+                    Target = pid,
                     Sender = sender,
                     MessageData = Serialization.Serialize(imsg),
                     TypeName = imsg.Descriptor.File.Package + "." + imsg.Descriptor.Name
