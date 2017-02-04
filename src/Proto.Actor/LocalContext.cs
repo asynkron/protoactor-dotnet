@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+//  <copyright file="LocalContext.cs" company="Asynkron HB">
+//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
+//  </copyright>
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,19 +16,19 @@ namespace Proto
     public class Context : IMessageInvoker, IContext, ISupervisor
     {
         private readonly Stack<Receive> _behavior;
+        private readonly Receive _middleware;
+        private readonly Func<IActor> _producer;
+        private readonly ISupervisorStrategy _supervisorStrategy;
         private HashSet<PID> _children;
         private object _message;
+        private Receive _receive;
+        private Timer _receiveTimeoutTimer;
         private bool _restarting;
+        private RestartStatistics _restartStatistics;
         private Stack<object> _stash;
         private bool _stopping;
         private HashSet<PID> _watchers;
         private HashSet<PID> _watching;
-        private RestartStatistics _restartStatistics;
-        private Timer _receiveTimeoutTimer;
-        private Receive _receive;
-        private readonly Func<IActor> _producer;
-        private readonly ISupervisorStrategy _supervisorStrategy;
-        private readonly Receive _middleware;
 
 
         public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive middleware, PID parent)
@@ -36,7 +42,7 @@ namespace Proto
 
             IncarnateActor();
         }
-        
+
         public IReadOnlyCollection<PID> Children => _children.ToList();
         public IActor Actor { get; private set; }
         public PID Parent { get; }
@@ -63,20 +69,6 @@ namespace Proto
                 _stash = new Stack<object>();
             }
             _stash.Push(Message);
-        }
-
-        internal static Task DefaultReceive(IContext context)
-        {
-            var c = (Context) context;
-            if (c.Message is PoisonPill)
-            {
-                c.Self.Stop();
-                return Proto.Actor.Done;
-            }
-            else
-            {
-                return c._receive(context);
-            }
         }
 
         public void Respond(object message)
@@ -127,21 +119,60 @@ namespace Proto
             {
                 throw new Exception("Can not unbecome actor base behaviour");
             }
-            _receive=_behavior.Pop();
+            _receive = _behavior.Pop();
         }
 
         public void Watch(PID pid)
         {
             pid.SendSystemMessage(new Watch(Self));
-            if(_watching == null) _watching = new HashSet<PID>();
+            if (_watching == null)
+            {
+                _watching = new HashSet<PID>();
+            }
             _watching.Add(pid);
         }
 
         public void Unwatch(PID pid)
         {
             pid.SendSystemMessage(new Unwatch(Self));
-            if (_watching == null) _watching = new HashSet<PID>();
+            if (_watching == null)
+            {
+                _watching = new HashSet<PID>();
+            }
             _watching.Remove(pid);
+        }
+
+        public void SetReceiveTimeout(TimeSpan duration)
+        {
+            if (duration == ReceiveTimeout)
+            {
+                return;
+            }
+            if (duration > TimeSpan.Zero)
+            {
+                StopReceiveTimeout();
+            }
+            if (duration < TimeSpan.FromMilliseconds(1))
+            {
+                duration = TimeSpan.FromMilliseconds(1);
+            }
+            ReceiveTimeout = duration;
+            if (ReceiveTimeout > TimeSpan.Zero)
+            {
+                if (_receiveTimeoutTimer == null)
+                {
+                    _receiveTimeoutTimer = new Timer(ReceiveTimeoutCallback, null, ReceiveTimeout, ReceiveTimeout);
+                }
+                else
+                {
+                    ResetReceiveTimeout();
+                }
+            }
+        }
+
+        public Task ReceiveAsync(object message)
+        {
+            return ProcessMessageAsync(message);
         }
 
         public async Task InvokeSystemMessageAsync(object msg)
@@ -188,24 +219,62 @@ namespace Proto
 
         public async Task InvokeUserMessageAsync(object msg)
         {
-            //var influenceTimeout = true;
-            //if (ReceiveTimeout > TimeSpan.Zero)
-            //{
-            //    var notInfluenceTimeout = msg is INotInfluenceReceiveTimeout;
-            //    influenceTimeout = !notInfluenceTimeout;
-            //    if (influenceTimeout)
-            //        StopReceiveTimeout();
-            //}
+            var influenceTimeout = true;
+            if (ReceiveTimeout > TimeSpan.Zero)
+            {
+                var notInfluenceTimeout = msg is INotInfluenceReceiveTimeout;
+                influenceTimeout = !notInfluenceTimeout;
+                if (influenceTimeout)
+                {
+                    StopReceiveTimeout();
+                }
+            }
 
             await ProcessMessageAsync(msg);
 
-            //if (ReceiveTimeout > TimeSpan.Zero && influenceTimeout)
-            //    ResetReceiveTimeout();
+            if (ReceiveTimeout > TimeSpan.Zero && influenceTimeout)
+            {
+                ResetReceiveTimeout();
+            }
+        }
+
+        public void EscalateFailure(Exception reason, object message)
+        {
+            if (_restartStatistics == null)
+            {
+                _restartStatistics = new RestartStatistics(1, null);
+            }
+            var failure = new Failure(Self, reason, _restartStatistics);
+            if (Parent == null)
+            {
+                HandleRootFailure(failure);
+            }
+            else
+            {
+                Self.SendSystemMessage(SuspendMailbox.Instance);
+                Parent.SendSystemMessage(failure);
+            }
+        }
+
+        public void EscalateFailure(PID who, Exception reason)
+        {
+            Self.SendSystemMessage(SuspendMailbox.Instance);
+            Parent.SendSystemMessage(new Failure(who, reason, _restartStatistics));
+        }
+
+        internal static Task DefaultReceive(IContext context)
+        {
+            var c = (Context) context;
+            if (c.Message is PoisonPill)
+            {
+                c.Self.Stop();
+                return Proto.Actor.Done;
+            }
+            return c._receive(context);
         }
 
         private async Task ProcessMessageAsync(object msg)
         {
-
             Message = msg;
             if (_middleware != null)
             {
@@ -215,13 +284,6 @@ namespace Proto
             {
                 await DefaultReceive(this);
             }
-
-        }
-
-        public void EscalateFailure(PID who, Exception reason)
-        {
-            Self.SendSystemMessage(SuspendMailbox.Instance);
-            Parent.SendSystemMessage(new Failure(who, reason, _restartStatistics));
         }
 
         private void IncarnateActor()
@@ -356,28 +418,6 @@ namespace Proto
             return Actor.ReceiveAsync(ctx);
         }
 
-        public void SetReceiveTimeout(TimeSpan duration)
-        {
-            if (duration == ReceiveTimeout)
-                return;
-            if (duration > TimeSpan.Zero)
-                StopReceiveTimeout();
-            if (duration < TimeSpan.FromMilliseconds(1))
-                duration = TimeSpan.FromMilliseconds(1);
-            ReceiveTimeout = duration;
-            if (ReceiveTimeout > TimeSpan.Zero)
-            {
-                if (_receiveTimeoutTimer == null)
-                {
-                    _receiveTimeoutTimer = new Timer(ReceiveTimeoutCallback, null, ReceiveTimeout, ReceiveTimeout);
-                }
-                else
-                {
-                    ResetReceiveTimeout();
-                }
-            }
-        }
-
         private void ResetReceiveTimeout()
         {
             _receiveTimeoutTimer?.Change(ReceiveTimeout, ReceiveTimeout);
@@ -391,29 +431,6 @@ namespace Proto
         private void ReceiveTimeoutCallback(object state)
         {
             Self.Request(Proto.ReceiveTimeout.Instance, null);
-        }
-
-        public void EscalateFailure(Exception reason, object message)
-        {
-            if (_restartStatistics == null)
-            {
-                _restartStatistics = new RestartStatistics(1, null);
-            }
-            var failure = new Failure(Self, reason, _restartStatistics);
-            if (Parent == null)
-            {
-                HandleRootFailure(failure);
-            }
-            else
-            {
-                Self.SendSystemMessage(SuspendMailbox.Instance);
-                Parent.SendSystemMessage(failure);
-            }
-        }
-
-        public Task ReceiveAsync(object message)
-        {
-            return ProcessMessageAsync(message);
         }
     }
 }
