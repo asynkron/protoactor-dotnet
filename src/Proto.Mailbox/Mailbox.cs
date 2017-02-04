@@ -138,7 +138,7 @@ namespace Proto.Mailbox
 
         protected void Schedule()
         {
-            if (Interlocked.Exchange(ref _status, MailboxStatus.Busy) == MailboxStatus.Idle)
+            if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
             {
                 _dispatcher.Schedule(RunAsync);
             }
