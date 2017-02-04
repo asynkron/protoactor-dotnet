@@ -98,6 +98,8 @@ namespace Proto.Mailbox
             }
         }
 
+        //TODO: we can gain a good 10% perf by not having async here.
+        //but then we need some way to deal with non completed tasks, and handle mailbox idle/busy state for those
         private async Task Run()
         {
             var t = _dispatcher.Throughput;
