@@ -76,7 +76,7 @@ namespace Proto.Mailbox
         {
             //we follow the Go model for consistency.
             process:
-            await Run();
+            await ProcessMessages();
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
@@ -100,7 +100,7 @@ namespace Proto.Mailbox
 
         //TODO: we can gain a good 10% perf by not having async here.
         //but then we need some way to deal with non completed tasks, and handle mailbox idle/busy state for those
-        private async Task Run()
+        private async Task ProcessMessages()
         {
             var t = _dispatcher.Throughput;
             object message = null;

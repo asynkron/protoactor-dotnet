@@ -228,26 +228,21 @@ namespace Proto
             }
 
             var res = ProcessMessageAsync(msg);
-            //this is what we need to do in order to avoid async await, which splits perf in half
-            if (res.IsCompleted)
+
+            if (ReceiveTimeout != TimeSpan.Zero && influenceTimeout)
             {
-                if (ReceiveTimeout != TimeSpan.Zero && influenceTimeout)
+                if (res.IsCompleted)
                 {
                     ResetReceiveTimeout();
+                    return res;
                 }
-                return res;
+                var c = res.ContinueWith(t =>
+                {
+                    ResetReceiveTimeout();
+                });
+                return c;
             }
-            //this is a non completed task that doesnt use receive timeout
-            if (ReceiveTimeout == TimeSpan.Zero || !influenceTimeout)
-            {
-                return res;
-            }
-            //this is a non completed task that also need to reset receive timeout
-            var c = res.ContinueWith(t =>
-            {
-                ResetReceiveTimeout();
-            });
-            return c;
+            return res;
         }
 
 
