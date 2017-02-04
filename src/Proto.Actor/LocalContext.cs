@@ -231,16 +231,13 @@ namespace Proto
 
             if (ReceiveTimeout != TimeSpan.Zero && influenceTimeout)
             {
-                if (res.IsCompleted)
+                //special handle non completed tasks that need to reset receivetimout
+                if (!res.IsCompleted)
                 {
-                    ResetReceiveTimeout();
-                    return res;
+                    return res.ContinueWith(_ => ResetReceiveTimeout());
                 }
-                var c = res.ContinueWith(t =>
-                {
-                    ResetReceiveTimeout();
-                });
-                return c;
+
+                ResetReceiveTimeout();
             }
             return res;
         }
