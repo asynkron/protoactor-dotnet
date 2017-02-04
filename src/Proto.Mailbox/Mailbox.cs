@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="IMailbox.cs" company="Asynkron HB">
+//  <copyright file="Mailbox.cs" company="Asynkron HB">
 //      Copyright (C) 2015-2016 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -74,9 +74,34 @@ namespace Proto.Mailbox
 
         private async Task RunAsync()
         {
+            //we follow the Go model for consistency.
+            process:
+            await Run();
+
+            Interlocked.Exchange(ref _status, MailboxStatus.Idle);
+
+            if (_systemMessages.HasMessages || !_suspended && _userMailbox.HasMessages)
+            {
+                if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) ==
+                    MailboxStatus.Idle)
+                {
+                    await Task.Yield();
+                    goto process;
+                }
+            }
+            else
+            {
+                for (var i = 0; i < _stats.Length; i++)
+                {
+                    _stats[i].MailboxEmpty();
+                }
+            }
+        }
+
+        private async Task Run()
+        {
             var t = _dispatcher.Throughput;
             object message = null;
-
             try
             {
                 for (var i = 0; i < t; i++)
@@ -115,24 +140,10 @@ namespace Proto.Mailbox
                         break;
                     }
                 }
-
-                Interlocked.Exchange(ref _status, MailboxStatus.Idle);
-
-                if (_systemMessages.HasMessages || !_suspended && _userMailbox.HasMessages)
-                {
-                    Schedule();
-                }
-                else
-                {
-                    for (var i = 0; i < _stats.Length; i++)
-                    {
-                        _stats[i].MailboxEmpty();
-                    }
-                }
             }
             catch (Exception x)
             {
-                _invoker.EscalateFailure(x,message);
+                _invoker.EscalateFailure(x, message);
             }
         }
 

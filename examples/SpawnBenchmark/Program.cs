@@ -70,8 +70,8 @@ namespace SpawnBenchmark
     {
         private static void Main()
         {
-            Console.WriteLine("Is Server GC {0}", System.Runtime.GCSettings.IsServerGC);
-            
+            Console.WriteLine($"Is Server GC {System.Runtime.GCSettings.IsServerGC}");
+
             var pid = Actor.Spawn(MyActor.props);
             var sw = Stopwatch.StartNew();
             var t = pid.RequestAsync<long>(new Request

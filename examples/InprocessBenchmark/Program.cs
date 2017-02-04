@@ -15,7 +15,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        Console.WriteLine("Is Server GC {0}", System.Runtime.GCSettings.IsServerGC);
+        Console.WriteLine($"Is Server GC {System.Runtime.GCSettings.IsServerGC}");
         const int messageCount = 1000000;
         const int batchSize = 100;
 
@@ -23,7 +23,6 @@ class Program
         var tps = new[] {300, 400, 500, 600, 700, 800, 900};
         foreach (var t in tps)
         {
-
             var d = new ThreadPoolDispatcher {Throughput = t};
 
             var clientCount = Environment.ProcessorCount * 2;
