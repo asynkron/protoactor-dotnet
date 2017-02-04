@@ -217,7 +217,7 @@ namespace Proto
             }
         }
 
-        public async Task InvokeUserMessageAsync(object msg)
+        public Task InvokeUserMessageAsync(object msg)
         {
             var influenceTimeout = true;
             if (ReceiveTimeout > TimeSpan.Zero)
@@ -230,13 +230,30 @@ namespace Proto
                 }
             }
 
-            await ProcessMessageAsync(msg);
-
-            if (ReceiveTimeout > TimeSpan.Zero && influenceTimeout)
+            var res = ProcessMessageAsync(msg);
+            //this is what we need to do in order to avoid async await, which splits perf in half
+            if (res.IsCompleted)
+            {
+                if (ReceiveTimeout > TimeSpan.Zero && influenceTimeout)
+                {
+                    ResetReceiveTimeout();
+                }
+                return res;
+            }
+            //this is a non completed task that doesnt use receive timeout
+            if (ReceiveTimeout <= TimeSpan.Zero || !influenceTimeout)
+            {
+                return res;
+            }
+            //this is a non completed task that also need to reset receive timeout
+            var c = res.ContinueWith(t =>
             {
                 ResetReceiveTimeout();
-            }
+            });
+            return c;
         }
+
+
 
         public void EscalateFailure(Exception reason, object message)
         {
@@ -273,17 +290,14 @@ namespace Proto
             return c._receive(context);
         }
 
-        private async Task ProcessMessageAsync(object msg)
+        private Task ProcessMessageAsync(object msg)
         {
             Message = msg;
             if (_middleware != null)
             {
-                await _middleware(this);
+                return _middleware(this);
             }
-            else
-            {
-                await DefaultReceive(this);
-            }
+            return DefaultReceive(this);
         }
 
         private void IncarnateActor()
