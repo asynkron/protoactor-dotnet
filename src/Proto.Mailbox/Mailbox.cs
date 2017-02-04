@@ -75,54 +75,64 @@ namespace Proto.Mailbox
         private async Task RunAsync()
         {
             var t = _dispatcher.Throughput;
+            object message = null;
 
-            for (var i = 0; i < t; i++)
+            try
             {
-                var sys = _systemMessages.Pop();
-                if (sys != null)
+                for (var i = 0; i < t; i++)
                 {
-                    if (sys is SuspendMailbox)
+                    var sys = _systemMessages.Pop();
+                    message = sys;
+                    if (sys != null)
                     {
-                        _suspended = true;
+                        if (sys is SuspendMailbox)
+                        {
+                            _suspended = true;
+                        }
+                        if (sys is ResumeMailbox)
+                        {
+                            _suspended = false;
+                        }
+                        await _invoker.InvokeSystemMessageAsync(sys);
+                        continue;
                     }
-                    if (sys is ResumeMailbox)
+                    if (_suspended)
                     {
-                        _suspended = false;
+                        break;
                     }
-                    await _invoker.InvokeSystemMessageAsync(sys);
-                    continue;
+                    var msg = _userMailbox.Pop();
+                    if (msg != null)
+                    {
+                        message = msg;
+                        await _invoker.InvokeUserMessageAsync(msg);
+                        for (var si = 0; si < _stats.Length; si++)
+                        {
+                            _stats[si].MessageReceived(msg);
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
-                if (_suspended)
+
+                Interlocked.Exchange(ref _status, MailboxStatus.Idle);
+
+                if (_systemMessages.HasMessages || !_suspended && _userMailbox.HasMessages)
                 {
-                    break;
-                }
-                var msg = _userMailbox.Pop();
-                if (msg != null)
-                {
-                    await _invoker.InvokeUserMessageAsync(msg);
-                    for (var si = 0; si < _stats.Length; si++)
-                    {
-                        _stats[si].MessageReceived(msg);
-                    }
+                    Schedule();
                 }
                 else
                 {
-                    break;
+                    for (var i = 0; i < _stats.Length; i++)
+                    {
+                        _stats[i].MailboxEmpty();
+                    }
                 }
             }
-
-            Interlocked.Exchange(ref _status, MailboxStatus.Idle);
-
-            if (_systemMessages.HasMessages || !_suspended && _userMailbox.HasMessages)
+            catch (Exception x)
             {
-                Schedule();
-            }
-            else
-            {
-                for (var i = 0; i < _stats.Length; i++)
-                {
-                    _stats[i].MailboxEmpty();
-                }
+                _invoker.EscalateFailure(x,message);
             }
         }
 

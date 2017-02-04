@@ -20,9 +20,9 @@ namespace Proto
         public abstract void SendSystemMessage(PID pid, object message);
     }
 
-    public class LocalActorRef : Process
+    public class LocalProcess : Process
     {
-        public LocalActorRef(IMailbox mailbox)
+        public LocalProcess(IMailbox mailbox)
         {
             Mailbox = mailbox;
         }
