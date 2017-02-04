@@ -14,15 +14,15 @@ namespace Proto.Remote
 {
     public class EndpointWriter : IActor
     {
-        private readonly string _host;
+        private readonly string _address;
         private Channel _channel;
         private Remoting.RemotingClient _client;
         private AsyncDuplexStreamingCall<MessageBatch, Unit> _stream;
         private IClientStreamWriter<MessageBatch> _streamWriter;
 
-        public EndpointWriter(string host)
+        public EndpointWriter(string address)
         {
-            _host = host;
+            _address = address;
         }
 
         public async Task ReceiveAsync(IContext context)
@@ -59,7 +59,7 @@ namespace Proto.Remote
             catch (Exception x)
             {
                 context.Stash();
-                Console.WriteLine($"[REMOTING] gRPC Failed to send to host {_host}, reason {x.Message}");
+                Console.WriteLine($"[REMOTING] gRPC Failed to send to address {_address}, reason {x.Message}");
                 throw;
             }
         }
@@ -76,10 +76,10 @@ namespace Proto.Remote
 
         private Task StartedAsync()
         {
-            Console.WriteLine("[REMOTING] Started EndpointWriter for address {0}", _host);
+            Console.WriteLine("[REMOTING] Started EndpointWriter for address {0}", _address);
 
-            Console.WriteLine("[REMOTING] EndpointWriter connecting to address {0}", _host);
-            _channel = new Channel(_host, ChannelCredentials.Insecure);
+            Console.WriteLine("[REMOTING] EndpointWriter connecting to address {0}", _address);
+            _channel = new Channel(_address, ChannelCredentials.Insecure);
             _client = new Remoting.RemotingClient(_channel);
             _stream = _client.Receive();
 
@@ -92,10 +92,10 @@ namespace Proto.Remote
                 }
                 catch(Exception x)
                 {
-                    Console.WriteLine($"[REMOTING] EndpointWriter lost connection to address {_host}, reason {x.Message}");
+                    Console.WriteLine($"[REMOTING] EndpointWriter lost connection to address {_address}, reason {x.Message}");
                     var terminated = new EndpointTerminatedEvent
                     {
-                        Address = _host
+                        Address = _address
                     };
                     Actor.EventStream.Publish(terminated);
                 }
@@ -103,7 +103,7 @@ namespace Proto.Remote
 
             _streamWriter = _stream.RequestStream;
 
-            Console.WriteLine("[REMOTING] EndpointWriter connected to address {0}", _host);
+            Console.WriteLine("[REMOTING] EndpointWriter connected to address {0}", _address);
             return Actor.Done;
         }
     }

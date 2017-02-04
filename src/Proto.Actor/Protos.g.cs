@@ -25,8 +25,9 @@ namespace Proto {
             "CgxQcm90b3MucHJvdG8SBWFjdG9yIiIKA1BJRBIPCgdBZGRyZXNzGAEgASgJ",
             "EgoKAklkGAIgASgJIgwKClBvaXNvblBpbGwiJAoFV2F0Y2gSGwoHd2F0Y2hl",
             "chgBIAEoCzIKLmFjdG9yLlBJRCImCgdVbndhdGNoEhsKB3dhdGNoZXIYASAB",
-            "KAsyCi5hY3Rvci5QSUQiJQoKVGVybWluYXRlZBIXCgN3aG8YASABKAsyCi5h",
-            "Y3Rvci5QSURCCKoCBVByb3RvYgZwcm90bzM="));
+            "KAsyCi5hY3Rvci5QSUQiQAoKVGVybWluYXRlZBIXCgN3aG8YASABKAsyCi5h",
+            "Y3Rvci5QSUQSGQoRQWRkcmVzc1Rlcm1pbmF0ZWQYAiABKAgiBgoEU3RvcEII",
+            "qgIFUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
@@ -34,7 +35,8 @@ namespace Proto {
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.PoisonPill), global::Proto.PoisonPill.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Watch), global::Proto.Watch.Parser, new[]{ "Watcher" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Unwatch), global::Proto.Unwatch.Parser, new[]{ "Watcher" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Terminated), global::Proto.Terminated.Parser, new[]{ "Who" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Terminated), global::Proto.Terminated.Parser, new[]{ "Who", "AddressTerminated" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Stop), global::Proto.Stop.Parser, null, null, null, null)
           }));
     }
     #endregion
@@ -552,6 +554,7 @@ namespace Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Terminated(Terminated other) : this() {
       Who = other.who_ != null ? other.Who.Clone() : null;
+      addressTerminated_ = other.addressTerminated_;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -570,6 +573,17 @@ namespace Proto {
       }
     }
 
+    /// <summary>Field number for the "AddressTerminated" field.</summary>
+    public const int AddressTerminatedFieldNumber = 2;
+    private bool addressTerminated_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool AddressTerminated {
+      get { return addressTerminated_; }
+      set {
+        addressTerminated_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Terminated);
@@ -584,6 +598,7 @@ namespace Proto {
         return true;
       }
       if (!object.Equals(Who, other.Who)) return false;
+      if (AddressTerminated != other.AddressTerminated) return false;
       return true;
     }
 
@@ -591,6 +606,7 @@ namespace Proto {
     public override int GetHashCode() {
       int hash = 1;
       if (who_ != null) hash ^= Who.GetHashCode();
+      if (AddressTerminated != false) hash ^= AddressTerminated.GetHashCode();
       return hash;
     }
 
@@ -605,6 +621,10 @@ namespace Proto {
         output.WriteRawTag(10);
         output.WriteMessage(Who);
       }
+      if (AddressTerminated != false) {
+        output.WriteRawTag(16);
+        output.WriteBool(AddressTerminated);
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -612,6 +632,9 @@ namespace Proto {
       int size = 0;
       if (who_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Who);
+      }
+      if (AddressTerminated != false) {
+        size += 1 + 1;
       }
       return size;
     }
@@ -626,6 +649,9 @@ namespace Proto {
           who_ = new global::Proto.PID();
         }
         Who.MergeFrom(other.Who);
+      }
+      if (other.AddressTerminated != false) {
+        AddressTerminated = other.AddressTerminated;
       }
     }
 
@@ -644,6 +670,99 @@ namespace Proto {
             input.ReadMessage(who_);
             break;
           }
+          case 16: {
+            AddressTerminated = input.ReadBool();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class Stop : pb::IMessage<Stop> {
+    private static readonly pb::MessageParser<Stop> _parser = new pb::MessageParser<Stop>(() => new Stop());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<Stop> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Proto.ProtosReflection.Descriptor.MessageTypes[5]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public Stop() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public Stop(Stop other) : this() {
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public Stop Clone() {
+      return new Stop(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as Stop);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(Stop other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      return true;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(Stop other) {
+      if (other == null) {
+        return;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
         }
       }
     }

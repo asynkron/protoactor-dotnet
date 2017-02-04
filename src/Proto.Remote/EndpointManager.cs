@@ -10,61 +10,85 @@ using System.Threading.Tasks;
 
 namespace Proto.Remote
 {
+    public class Endpoint
+    {
+        public Endpoint(PID writer, PID watcher)
+        {
+            Writer = writer;
+            Watcher = watcher;
+        }
+
+        public PID Writer { get;  }
+        public PID Watcher { get;  }
+    }
     public class EndpointManager : IActor
     {
-        private readonly Dictionary<string, PID> _connections = new Dictionary<string, PID>();
+        private readonly Dictionary<string, Endpoint> _connections = new Dictionary<string, Endpoint>();
 
         public Task ReceiveAsync(IContext context)
         {
-            var msg = context.Message;
-            //TODO: convert to switch later, currently doesnt work, switching on type throws null ref error
-            if (msg is Started)
+           
+            switch (context.Message)
             {
-                Console.WriteLine("[REMOTING] Started EndpointManager");
-                return Actor.Done;
-            }
-            if (msg is MessageEnvelope)
-            {
-                var env = (MessageEnvelope) msg;
-                if (!_connections.TryGetValue(env.Target.Address, out var pid))
+                case Started _:
                 {
-                    var props =
-                        Actor.FromProducer(() => new EndpointWriter(env.Target.Address))
-                            .WithMailbox(() => new EndpointWriterMailbox());
-                    pid = context.Spawn(props);
-                    _connections.Add(env.Target.Address, pid);
+                    Console.WriteLine("[REMOTING] Started EndpointManager");
+                    return Actor.Done;
                 }
-                pid.Tell(msg);
-                return Actor.Done;
+                case EndpointTerminatedEvent msg:
+                {
+                    var endpoint = EnsureConnected(msg.Address, context);
+                    endpoint.Watcher.Tell(msg);
+                    return Actor.Done;
+                }
+                case RemoteTerminate msg:
+                {
+                    var endpoint = EnsureConnected(msg.Watchee.Address, context);
+                    endpoint.Watcher.Tell(msg);
+                    return Actor.Done;
+                }
+                case RemoteWatch msg:
+                {
+                    var endpoint = EnsureConnected(msg.Watchee.Address, context);
+                    endpoint.Watcher.Tell(msg);
+                    return Actor.Done;
+                }
+                case RemoteUnwatch msg:
+                {
+                    var endpoint = EnsureConnected(msg.Watchee.Address, context);
+                    endpoint.Watcher.Tell(msg);
+                    return Actor.Done;
+                }
+                case MessageEnvelope msg:
+                {
+                    var endpoint = EnsureConnected(msg.Target.Address, context);
+                    endpoint.Writer.Tell(msg);
+                    return Actor.Done;
+                }
+                default:
+                    return Actor.Done;
             }
-            return Actor.Done;
+        }
+    
+
+        private Endpoint EnsureConnected(string address, IContext context)
+        {
+            var ok = _connections.TryGetValue(address, out var endpoint);
+            if (!ok)
+            {
+                var writerProps =
+                    Actor.FromProducer(() => new EndpointWriter(address))
+                        .WithMailbox(() => new EndpointWriterMailbox());
+                var writer = context.Spawn(writerProps);
+
+                var watcherProps = Actor.FromProducer(() => new EndpointWatcher(address));
+                var watcher = context.Spawn(watcherProps);
 
 
-            //    switch (context.Message)
-            //    {
-            //        case null:
-            //            Console.WriteLine("null");
-            //            return Actor.Done;
-            //        case Started _:
-            //            Console.WriteLine("[REMOTING] Started EndpointManager");
-            //            return Actor.Done;
-            //        case MessageEnvelope env:
-            //            PID pid;
-            //            if (!_connections.TryGetValue(env.Target.Address, out pid))
-            //            {
-            //                Console.WriteLine("Resolving EndpointWriter for {0}", env.Target.Address);
-            //                var props =
-            //                    Actor.FromProducer(() => new EndpointWriter(env.Target.Address))
-            //                        .WithMailbox(() => new EndpointWriterMailbox());
-            //                pid = context.Spawn(props);
-            //                _connections.Add(env.Target.Address, pid);
-            //            }
-            //            pid.Tell(env);
-            //            return Actor.Done;
-            //        default:
-            //            return Actor.Done;
-            //    }
-            //}
+                _connections.Add(address, new Endpoint(writer, watcher));
+            }
+
+            return endpoint;
         }
     }
 }

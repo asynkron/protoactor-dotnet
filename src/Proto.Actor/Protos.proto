@@ -12,11 +12,16 @@ message PoisonPill {}
 
 //system messages
 message Watch {
-	PID watcher = 1;
+  PID watcher = 1;
 }
+
 message Unwatch {
-	PID watcher = 1;
+  PID watcher = 1;
 }
+
 message Terminated {
-	PID who = 1;
+  PID who = 1;
+  bool AddressTerminated = 2;
 }
+
+message Stop {}

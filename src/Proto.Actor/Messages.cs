@@ -60,7 +60,7 @@ namespace Proto
         public static readonly Restart Instance = new Restart();
     }
 
-    public sealed class Stop : SystemMessage
+    public partial class Stop : SystemMessage
     {
         public static readonly Stop Instance = new Stop();
     }

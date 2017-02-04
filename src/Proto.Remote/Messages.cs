@@ -10,4 +10,40 @@ namespace Proto.Remote
     {
         public string Address { get; set; }
     }
+
+    public class RemoteTerminate
+    {
+        public RemoteTerminate(PID watcher, PID watchee)
+        {
+            Watcher = watcher;
+            Watchee = watchee;
+        }
+
+        public PID Watcher { get; }
+        public PID Watchee { get; }
+    }
+
+    public class RemoteWatch
+    {
+        public RemoteWatch(PID watcher, PID watchee)
+        {
+            Watcher = watcher;
+            Watchee = watchee;
+        }
+
+        public PID Watcher { get; }
+        public PID Watchee { get; }
+    }
+
+    public class RemoteUnwatch
+    {
+        public RemoteUnwatch(PID watcher, PID watchee)
+        {
+            Watcher = watcher;
+            Watchee = watchee;
+        }
+
+        public PID Watcher { get; }
+        public PID Watchee { get; }
+    }
 }
