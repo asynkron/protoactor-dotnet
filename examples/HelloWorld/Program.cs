@@ -14,8 +14,7 @@ class Program
         public Task ReceiveAsync(IContext context)
         {
             var msg = context.Message;
-            var r = msg as Hello;
-            if (r != null)
+            if (msg is Hello r)
             {
                 Console.WriteLine($"Hello {r.Who}");
             }
