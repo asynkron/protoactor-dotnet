@@ -3,16 +3,6 @@
     <TargetFramework>netstandard1.6</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="**\*.cs" />
-    <EmbeddedResource Include="**\*.resx" />
-  </ItemGroup>
-  <PropertyGroup>
-    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="NETStandard.Library" Version="1.6.1" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\Proto.Mailbox\Proto.Mailbox.csproj" />
   </ItemGroup>
