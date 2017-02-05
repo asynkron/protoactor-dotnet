@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="EndpointManager.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -18,16 +18,16 @@ namespace Proto.Remote
             Watcher = watcher;
         }
 
-        public PID Writer { get;  }
-        public PID Watcher { get;  }
+        public PID Writer { get; }
+        public PID Watcher { get; }
     }
+
     public class EndpointManager : IActor
     {
         private readonly Dictionary<string, Endpoint> _connections = new Dictionary<string, Endpoint>();
 
         public Task ReceiveAsync(IContext context)
         {
-           
             switch (context.Message)
             {
                 case Started _:
@@ -69,7 +69,7 @@ namespace Proto.Remote
                     return Actor.Done;
             }
         }
-    
+
 
         private Endpoint EnsureConnected(string address, IContext context)
         {
@@ -80,7 +80,7 @@ namespace Proto.Remote
 
                 var watcher = SpawnWatcher(address, context);
 
-                endpoint = new Endpoint(writer,watcher);
+                endpoint = new Endpoint(writer, watcher);
                 _connections.Add(address, endpoint);
             }
 

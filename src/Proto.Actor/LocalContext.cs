@@ -117,7 +117,7 @@ namespace Proto
         {
             if (_behavior.Count <= 1)
             {
-                throw new Exception("Can not unbecome actor base behaviour");
+                throw new Exception("Can not unbecome actor base behavior");
             }
             _receive = _behavior.Pop();
         }
@@ -231,7 +231,7 @@ namespace Proto
 
             if (ReceiveTimeout != TimeSpan.Zero && influenceTimeout)
             {
-                //special handle non completed tasks that need to reset receivetimout
+                //special handle non completed tasks that need to reset ReceiveTimout
                 if (!res.IsCompleted)
                 {
                     return res.ContinueWith(_ => ResetReceiveTimeout());
@@ -241,8 +241,6 @@ namespace Proto
             }
             return res;
         }
-
-
 
         public void EscalateFailure(Exception reason, object message)
         {
@@ -302,7 +300,7 @@ namespace Proto
             _stopping = false;
             _restarting = true;
 
-            await InvokeUserMessageAsync(new Restarting());
+            await InvokeUserMessageAsync(Restarting.Instance);
             if (_children != null)
             {
                 foreach (var child in _children)

@@ -1,11 +1,12 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Program.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
 using System;
 using System.Diagnostics;
+using System.Runtime;
 using System.Threading.Tasks;
 using Proto;
 
@@ -70,7 +71,7 @@ namespace SpawnBenchmark
     {
         private static void Main()
         {
-            Console.WriteLine($"Is Server GC {System.Runtime.GCSettings.IsServerGC}");
+            Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
 
             var pid = Actor.Spawn(MyActor.props);
             var sw = Stopwatch.StartNew();

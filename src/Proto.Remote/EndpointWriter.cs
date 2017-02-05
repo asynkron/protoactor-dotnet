@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="EndpointWriter.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -30,14 +30,14 @@ namespace Proto.Remote
             switch (context.Message)
             {
                 case Started m:
-                   // Console.WriteLine("EndpointWriter Started");
+                    // Console.WriteLine("EndpointWriter Started");
                     await StartedAsync();
                     break;
                 case Stopped m:
                     await StoppedAsync();
                     break;
                 case Restarting m:
-                  //  Console.WriteLine("EndpointWriter Restarting");
+                    //  Console.WriteLine("EndpointWriter Restarting");
                     await RestartingAsync();
                     break;
                 case IEnumerable<MessageEnvelope> m:
@@ -85,14 +85,14 @@ namespace Proto.Remote
 
             Task.Factory.StartNew(async () =>
             {
-                
                 try
                 {
                     await _stream.ResponseStream.ForEachAsync(i => Actor.Done);
                 }
-                catch(Exception x)
+                catch (Exception x)
                 {
-                    Console.WriteLine($"[REMOTING] EndpointWriter lost connection to address {_address}, reason {x.Message}");
+                    Console.WriteLine(
+                        $"[REMOTING] EndpointWriter lost connection to address {_address}, reason {x.Message}");
                     var terminated = new EndpointTerminatedEvent
                     {
                         Address = _address

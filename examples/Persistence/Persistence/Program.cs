@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="Program.cs" company="Asynkron HB">
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Couchbase;
@@ -14,34 +20,6 @@ using Proto.Persistence.Couchbase;
 
 class Program
 {
-    class MyActor : IPersistentActor
-    {
-        public Persistence Persistence { get; set; }
-
-        private State _state = new State();
-
-        public Task ReceiveAsync(IContext context)
-        {
-            switch (context.Message)
-            {
-                case RenameCommand rc:
-                    Persistence.PersistReceive(new RenameEvent { Name = rc.Name });
-                    break;
-                case RenameEvent re:
-                    _state.Name = re.Name;
-                    Console.WriteLine($"{context.Self.Id} changed name to {_state.Name}");
-                    break;
-                case RequestSnapshot rs:
-                    Persistence.PersistSnapshot(_state);
-                    break;
-                case State s:
-                    _state = s;
-                    break;
-            }
-            return Actor.Done;
-        }
-    }
-
     static void Main(string[] args)
     {
         using (var cluster = GetCluster())
@@ -51,9 +29,9 @@ class Program
             var props = Actor.FromProducer(() => new MyActor())
                 .WithMiddleware(Persistence.Using(provider));
             var pid = Actor.Spawn(props);
-            pid.Tell(new RenameCommand { Name = "Christian" });
-            pid.Tell(new RenameCommand { Name = "Alex" });
-            pid.Tell(new RenameCommand { Name = "Roger" });
+            pid.Tell(new RenameCommand {Name = "Christian"});
+            pid.Tell(new RenameCommand {Name = "Alex"});
+            pid.Tell(new RenameCommand {Name = "Roger"});
             Console.WriteLine("Hello World!");
             Console.ReadLine();
         }
@@ -72,14 +50,14 @@ class Program
                     {
                         EnableTcpKeepAlives = true,
                         MaxSize = 100,
-                        MinSize = 10,
-                    },
+                        MinSize = 10
+                    }
                 }
             },
             Servers = new List<Uri>
             {
                 new Uri("http://localhost:8091")
-            },
+            }
         };
         var jsonSerializerSettings = new JsonSerializerSettings
         {
@@ -91,5 +69,32 @@ class Program
             Serializer = () => new DefaultSerializer(jsonSerializerSettings, jsonSerializerSettings)
         };
         return new Cluster(configuration);
+    }
+
+    class MyActor : IPersistentActor
+    {
+        private State _state = new State();
+        public Persistence Persistence { get; set; }
+
+        public Task ReceiveAsync(IContext context)
+        {
+            switch (context.Message)
+            {
+                case RenameCommand rc:
+                    Persistence.PersistReceive(new RenameEvent {Name = rc.Name});
+                    break;
+                case RenameEvent re:
+                    _state.Name = re.Name;
+                    Console.WriteLine($"{context.Self.Id} changed name to {_state.Name}");
+                    break;
+                case RequestSnapshot rs:
+                    Persistence.PersistSnapshot(_state);
+                    break;
+                case State s:
+                    _state = s;
+                    break;
+            }
+            return Actor.Done;
+        }
     }
 }

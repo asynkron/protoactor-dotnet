@@ -1,4 +1,10 @@
-﻿using System.Threading;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="Router.cs" company="Asynkron HB">
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System.Threading;
 using Proto.Router.Routers;
 
 namespace Proto.Router

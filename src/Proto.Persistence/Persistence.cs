@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="Persistence.cs" company="Asynkron HB">
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using Google.Protobuf;
 
 namespace Proto.Persistence
@@ -16,7 +22,7 @@ namespace Proto.Persistence
             State = provider.GetState();
             Context = context;
             Recovering = true;
-            
+
             State.Restart();
             var t = State.GetSnapshot(Name);
             if (t != null)
@@ -47,7 +53,7 @@ namespace Proto.Persistence
             State.PersistSnapshot(Name, EventIndex, snapshot);
         }
 
-        public static Func<Receive,Receive> Using(IProvider provider)
+        public static Func<Receive, Receive> Using(IProvider provider)
         {
             return next => async context =>
             {

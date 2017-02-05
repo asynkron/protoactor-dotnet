@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+//  <copyright file="ActorFixture.cs" company="Asynkron HB">
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//  </copyright>
+// -----------------------------------------------------------------------
+
 using Proto.Mailbox;
 
 namespace Proto.Tests
@@ -8,8 +14,8 @@ namespace Proto.Tests
 
         public class TestMailbox : IMailbox
         {
-            private IMessageInvoker _invoker;
             private IDispatcher _dispatcher;
+            private IMessageInvoker _invoker;
 
             public void PostUserMessage(object msg)
             {

@@ -1,6 +1,11 @@
-﻿namespace Proto.Mailbox
-{
+﻿// -----------------------------------------------------------------------
+//  <copyright file="Queue.cs" company="Asynkron HB">
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//  </copyright>
+// -----------------------------------------------------------------------
 
+namespace Proto.Mailbox
+{
     public interface IMailboxQueue
     {
         bool HasMessages { get; }

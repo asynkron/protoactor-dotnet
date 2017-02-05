@@ -23,6 +23,10 @@ namespace Proto
     public sealed class Restarting
     {
         public static readonly Restarting Instance = new Restarting();
+
+        private Restarting()
+        {
+        }
     }
 
     public class Failure : SystemMessage
@@ -58,6 +62,10 @@ namespace Proto
     public sealed class Restart : SystemMessage
     {
         public static readonly Restart Instance = new Restart();
+
+        private Restart()
+        {
+        }
     }
 
     public partial class Stop : SystemMessage
@@ -68,21 +76,37 @@ namespace Proto
     public sealed class Stopping : AutoReceiveMessage
     {
         public static readonly Stopping Instance = new Stopping();
+
+        private Stopping()
+        {
+        }
     }
 
     public sealed class Started : SystemMessage
     {
         public static readonly Started Instance = new Started();
+
+        private Started()
+        {
+        }
     }
 
     public sealed class Stopped : AutoReceiveMessage
     {
         public static readonly Stopped Instance = new Stopped();
+
+        private Stopped()
+        {
+        }
     }
 
     public class ReceiveTimeout : SystemMessage
     {
         public static readonly ReceiveTimeout Instance = new ReceiveTimeout();
+
+        private ReceiveTimeout()
+        {
+        }
     }
 
     public sealed class MessageSender
@@ -99,5 +123,5 @@ namespace Proto
 
     public interface INotInfluenceReceiveTimeout
     {
-    }   
+    }
 }

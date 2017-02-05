@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Actor.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -28,7 +28,27 @@ namespace Proto
 
     public static class Actor
     {
-        public static readonly Task Done = Task.FromResult(0);
+        public static readonly Task Done = Task.CompletedTask;
+
+        public static Spawner DefaultSpawner = (name, props, parent) =>
+        {
+            var ctx = new Context(props.Producer, props.SupervisorStrategy, props.MiddlewareChain, parent);
+            var mailbox = props.MailboxProducer();
+            var dispatcher = props.Dispatcher;
+            var reff = new LocalProcess(mailbox);
+            var (pid,absent) = ProcessRegistry.Instance.TryAdd(name, reff);
+            if (!absent)
+            {
+                throw new ProcessNameExistException(name);
+            }
+            ctx.Self = pid;
+            mailbox.RegisterHandlers(ctx, dispatcher);
+            // ctx.InvokeUserMessageAsync(Started.Instance);
+            mailbox.PostSystemMessage(Started.Instance);
+            mailbox.Start();
+
+            return pid;
+        };
 
         public static EventStream EventStream => EventStream.Instance;
 
@@ -58,26 +78,6 @@ namespace Proto
         {
             return props.Spawn(name, null);
         }
-
-        public static Spawner DefaultSpawner = (name, props, parent) =>
-        {
-            var ctx = new Context(props.Producer, props.SupervisorStrategy, props.MiddlewareChain, parent);
-            var mailbox = props.MailboxProducer();
-            var dispatcher = props.Dispatcher;
-            var reff = new LocalProcess(mailbox);
-            var (pid,absent) = ProcessRegistry.Instance.TryAdd(name, reff);
-            if (!absent)
-            {
-                throw new ProcessNameExistException(name);
-            }
-            ctx.Self = pid;
-            mailbox.RegisterHandlers(ctx, dispatcher);
-           // ctx.InvokeUserMessageAsync(Started.Instance);
-            mailbox.PostSystemMessage(Started.Instance);
-            mailbox.Start();
-
-            return pid;
-        };
     }
 
     public class ProcessNameExistException : Exception

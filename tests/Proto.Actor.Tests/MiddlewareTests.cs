@@ -1,8 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="MiddlewareTests.cs" company="Asynkron HB">
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//  </copyright>
+// -----------------------------------------------------------------------
+
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Proto.Tests
@@ -15,25 +17,31 @@ namespace Proto.Tests
             var logs = new List<string>();
             var testMailbox = new ActorFixture.TestMailbox();
             var props = Actor.FromFunc(c =>
-            {
-                if(c.Message is string)
-                    logs.Add("actor");
-                return Actor.Done;
-            })
-            .WithMiddleware(
-                next => async c =>
                 {
-                    if(c.Message is string)
-                        logs.Add("middleware 1");
-                    await next(c);
-                },
-                next => async c =>
-                {
-                    if(c.Message is string)
-                        logs.Add("middleware 2");
-                    await next(c);
+                    if (c.Message is string)
+                    {
+                        logs.Add("actor");
+                    }
+                    return Actor.Done;
                 })
-            .WithMailbox(() => testMailbox);
+                .WithMiddleware(
+                    next => async c =>
+                    {
+                        if (c.Message is string)
+                        {
+                            logs.Add("middleware 1");
+                        }
+                        await next(c);
+                    },
+                    next => async c =>
+                    {
+                        if (c.Message is string)
+                        {
+                            logs.Add("middleware 2");
+                        }
+                        await next(c);
+                    })
+                .WithMailbox(() => testMailbox);
             var pid = Actor.Spawn(props);
 
             pid.Tell("");

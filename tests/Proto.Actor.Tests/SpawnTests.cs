@@ -1,4 +1,10 @@
-﻿using Xunit;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="SpawnTests.cs" company="Asynkron HB">
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using Xunit;
 using static Proto.Tests.ActorFixture;
 
 namespace Proto.Tests

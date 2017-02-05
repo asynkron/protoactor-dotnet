@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="EventStream.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -22,7 +22,8 @@ namespace Proto
             {
                 if (msg is DeadLetterEvent letter)
                 {
-                    Console.WriteLine("[DeadLetter] '{0}' got '{1}:{2}' from '{3}'", letter.Pid.ToShortString(), letter.Message.GetType().Name ,letter.Message,letter.Sender?.ToShortString());
+                    Console.WriteLine("[DeadLetter] '{0}' got '{1}:{2}' from '{3}'", letter.Pid.ToShortString(),
+                        letter.Message.GetType().Name, letter.Message, letter.Sender?.ToShortString());
                 }
             });
         }

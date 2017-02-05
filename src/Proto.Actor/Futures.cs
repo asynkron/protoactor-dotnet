@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Futures.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -21,7 +21,7 @@ namespace Proto
         {
             if (message is T)
             {
-                _tcs.TrySetResult((T)message);
+                _tcs.TrySetResult((T) message);
                 pid.Stop();
             }
         }

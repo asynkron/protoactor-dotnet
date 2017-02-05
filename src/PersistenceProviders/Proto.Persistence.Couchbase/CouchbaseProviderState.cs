@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="CouchbaseProviderState.cs" company="Asynkron HB">
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Linq;
 using Couchbase.Core;
 using Couchbase.N1QL;
@@ -19,7 +25,8 @@ namespace Proto.Persistence.Couchbase
 
         public void GetEvents(string actorName, int eventIndexStart, Action<object> callback)
         {
-            var q = $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.eventIndex>={eventIndexStart} AND b.type='event' ORDER BY b.eventIndex ASC";
+            var q =
+                $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.eventIndex>={eventIndexStart} AND b.type='event' ORDER BY b.eventIndex ASC";
             var req = QueryRequest.Create(q);
             req.ScanConsistency(ScanConsistency.RequestPlus);
             var res = _bucket.Query<Envelope>(req);
@@ -31,21 +38,16 @@ namespace Proto.Persistence.Couchbase
             }
         }
 
-        static void ThrowOnError(IQueryResult res)
-        {
-            if(!res.Success)
-                throw new Exception($"Couchbase query failed: {res}");
-        }
-
         public Tuple<object, int> GetSnapshot(string actorName)
         {
-            var q = $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName={actorName} AND b.type=snapshot ORDER BY b.eventIndex DESC LIMIT 1";
+            var q =
+                $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName={actorName} AND b.type=snapshot ORDER BY b.eventIndex DESC LIMIT 1";
             var req = QueryRequest.Create(q);
             req.ScanConsistency(ScanConsistency.RequestPlus);
             var res = _bucket.Query<Envelope>(req);
             var envelope = res.Rows.FirstOrDefault();
             return envelope != null
-                ? Tuple.Create((object)envelope.Event, envelope.EventIndex)
+                ? Tuple.Create((object) envelope.Event, envelope.EventIndex)
                 : null;
         }
 
@@ -68,6 +70,14 @@ namespace Proto.Persistence.Couchbase
 
         public void Restart()
         {
+        }
+
+        static void ThrowOnError(IQueryResult res)
+        {
+            if (!res.Success)
+            {
+                throw new Exception($"Couchbase query failed: {res}");
+            }
         }
     }
 }

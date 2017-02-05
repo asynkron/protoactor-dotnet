@@ -1,4 +1,10 @@
-﻿namespace Proto.Mailbox
+﻿// -----------------------------------------------------------------------
+//  <copyright file="BoundedMailboxQueue.cs" company="Asynkron HB">
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//  </copyright>
+// -----------------------------------------------------------------------
+
+namespace Proto.Mailbox
 {
     public class BoundedMailboxQueue : IMailboxQueue
     {

@@ -7,15 +7,17 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto;
 using Proto.Mailbox;
+
 class Program
 {
     static void Main(string[] args)
     {
-        Console.WriteLine($"Is Server GC {System.Runtime.GCSettings.IsServerGC}");
+        Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
         const int messageCount = 1000000;
         const int batchSize = 100;
 
@@ -42,7 +44,7 @@ class Program
                 return Actor.Done;
             }).WithDispatcher(d);
 
-            for (int i = 0; i < clientCount; i++)
+            for (var i = 0; i < clientCount; i++)
             {
                 var tsc = new TaskCompletionSource<bool>();
                 completions[i] = tsc;
@@ -54,7 +56,7 @@ class Program
             }
             var tasks = completions.Select(tsc => tsc.Task).ToArray();
             var sw = Stopwatch.StartNew();
-            for (int i = 0; i < clientCount; i++)
+            for (var i = 0; i < clientCount; i++)
             {
                 var client = clients[i];
                 var echo = echos[i];
@@ -66,11 +68,11 @@ class Program
             sw.Stop();
             var totalMessages = messageCount * 2 * clientCount;
 
-            var x = (int)(totalMessages / (double)sw.ElapsedMilliseconds * 1000.0);
-            Console.WriteLine("{0}\t\t\t{1}\t\t{2}",t,sw.ElapsedMilliseconds, x);
+            var x = (int) (totalMessages / (double) sw.ElapsedMilliseconds * 1000.0d);
+            Console.WriteLine($"{t}\t\t\t{sw.ElapsedMilliseconds}\t\t{x}");
             Thread.Sleep(2000);
         }
-       
+
         Console.ReadLine();
     }
 
@@ -141,8 +143,7 @@ class Program
             }
 
             var m = new Msg(context.Self);
-
-
+            
             for (var i = 0; i < _batchSize; i++)
             {
                 sender.Tell(m);

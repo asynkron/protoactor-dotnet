@@ -1,16 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="RestartStatistics.cs" company="Asynkron HB">
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 
 namespace Proto
 {
     public class RestartStatistics
     {
-        public RestartStatistics(int failureCount,DateTime? lastFailuretime)
+        public RestartStatistics(int failureCount, DateTime? lastFailuretime)
         {
             FailureCount = failureCount;
             LastFailureTime = lastFailuretime;
         }
+
         public int FailureCount { get; set; }
         public DateTime? LastFailureTime { get; set; }
 

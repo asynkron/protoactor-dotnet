@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="RemoteActorRef.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
+//  <copyright file="RemoteProcess.cs" company="Asynkron HB">
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ namespace Proto.Remote
         {
             if (msg is Watch w)
             {
-                var rw = new RemoteWatch(w.Watcher,_pid);
+                var rw = new RemoteWatch(w.Watcher, _pid);
                 RemotingSystem.EndpointManagerPid.Tell(rw);
             }
             else if (msg is Unwatch uw)
@@ -46,7 +46,7 @@ namespace Proto.Remote
             }
         }
 
-        public static void SendRemoteMessage(PID pid,object msg, PID sender)
+        public static void SendRemoteMessage(PID pid, object msg, PID sender)
         {
             if (msg is IMessage)
             {

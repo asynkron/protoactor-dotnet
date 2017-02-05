@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Props.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -53,7 +53,8 @@ namespace Proto
             return Copy(props =>
             {
                 props.Middleware = Middleware.Concat(middleware).ToList();
-                props.MiddlewareChain = props.Middleware.Reverse().Aggregate((Receive) Context.DefaultReceive, (inner, outer) => outer(inner));
+                props.MiddlewareChain = props.Middleware.Reverse()
+                    .Aggregate((Receive) Context.DefaultReceive, (inner, outer) => outer(inner));
             });
         }
 
