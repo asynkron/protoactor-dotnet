@@ -60,7 +60,7 @@ namespace Proto.Router
                 var wg = new AutoResetEvent(false);
                 var routerProps = Actor.FromProducer(() => new RouterActor(routeeProps, config, routerState, wg));
                 var routerId = ProcessRegistry.Instance.NextId();
-                var router = Actor.DefaultSpawner(routerId, routerProps, parent);
+                var router = Props.DefaultSpawner(routerId + "/router" , routerProps, parent);
                 wg.WaitOne(); //wait for the router to start
 
                 var reff = new RouterProcess(router, routerState);
