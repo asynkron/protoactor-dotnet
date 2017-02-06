@@ -72,11 +72,14 @@ namespace Proto.Mailbox
             }
         }
 
-        private async Task RunAsync()
+        private Task RunAsync()
         {
             //we follow the Go model for consistency.
             process:
-            await ProcessMessages();
+            var done = ProcessMessages();
+
+            if (!done)
+                return Task.FromResult(0);
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
@@ -85,7 +88,6 @@ namespace Proto.Mailbox
                 if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) ==
                     MailboxStatus.Idle)
                 {
-                    await Task.Yield();
                     goto process;
                 }
             }
@@ -96,11 +98,12 @@ namespace Proto.Mailbox
                     _stats[i].MailboxEmpty();
                 }
             }
+            return Task.FromResult(0);
         }
 
         //TODO: we can gain a good 10% perf by not having async here.
         //but then we need some way to deal with non completed tasks, and handle mailbox idle/busy state for those
-        private async Task ProcessMessages()
+        private bool ProcessMessages()
         {
             var t = _dispatcher.Throughput;
             object message = null;
@@ -120,8 +123,14 @@ namespace Proto.Mailbox
                         {
                             _suspended = false;
                         }
-                        await _invoker.InvokeSystemMessageAsync(sys);
-                        continue;
+                        var t1 = _invoker.InvokeSystemMessageAsync(sys);
+                        if (t1.IsCompleted)
+                            continue;
+                        else
+                        {
+                            t1.ContinueWith(RescheduleOnTaskComplete, message);
+                            return false;
+                        }
                     }
                     if (_suspended)
                     {
@@ -131,10 +140,18 @@ namespace Proto.Mailbox
                     if (msg != null)
                     {
                         message = msg;
-                        await _invoker.InvokeUserMessageAsync(msg);
-                        for (var si = 0; si < _stats.Length; si++)
+                        var t1 = _invoker.InvokeUserMessageAsync(msg);
+                        if (t1.IsCompleted)
                         {
-                            _stats[si].MessageReceived(msg);
+                            for (var si = 0; si < _stats.Length; si++)
+                            {
+                                _stats[si].MessageReceived(msg);
+                            }
+                        }
+                        else
+                        {
+                            t1.ContinueWith(RescheduleOnTaskComplete, message);
+                            return false;
                         }
                     }
                     else
@@ -147,7 +164,22 @@ namespace Proto.Mailbox
             {
                 _invoker.EscalateFailure(x, message);
             }
+            return true;
         }
+
+        private void RescheduleOnTaskComplete(Task task, object message)
+        {
+            if (task.IsFaulted)
+            {
+                _invoker.EscalateFailure(task.Exception, message);
+            }
+            for (var si = 0; si < _stats.Length; si++)
+            {
+                _stats[si].MessageReceived(message);
+            }
+            ProcessMessages();
+        }
+
 
         protected void Schedule()
         {
