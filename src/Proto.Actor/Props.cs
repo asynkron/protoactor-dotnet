@@ -26,7 +26,11 @@ namespace Proto
 
         public Receive MiddlewareChain { get; set; }
 
-        public Spawner Spawner { get; private set; } = Actor.DefaultSpawner;
+        private Spawner _spawner = null;
+        public Spawner Spawner {
+            get => _spawner ?? Actor.DefaultSpawner;
+            private set => _spawner = value;
+        }
 
         public Props WithProducer(Func<IActor> producer)
         {
