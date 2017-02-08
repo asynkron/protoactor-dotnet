@@ -1,0 +1,9 @@
+﻿syntax = "proto3";
+package messages;
+option csharp_namespace = "Chat";
+import "Protos.proto";
+
+message Connect
+{
+	actor.PID Sender = 1;
+}

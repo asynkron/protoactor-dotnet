@@ -77,7 +77,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "examples\Chat\Cli
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "examples\Chat\Server\Server.csproj", "{BB91F8FB-412B-420F-90DA-6DCB970CEA74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messages", "examples\Chat\Messages\Messages.csproj", "{08EB688D-2E71-4C78-BB50-797AAC310650}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chat.Messages", "examples\Chat\Messages\Chat.Messages.csproj", "{08EB688D-2E71-4C78-BB50-797AAC310650}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
