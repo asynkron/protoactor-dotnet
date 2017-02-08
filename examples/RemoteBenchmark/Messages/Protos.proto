@@ -1,7 +1,7 @@
 ﻿syntax = "proto3";
 package messages;
 option csharp_namespace = "Messages";
-import "github.com/AsynkronIT/gam/languages/csharp/src/GAM/Protos.proto";
+import "Proto.Actor/Protos.proto";
 
 message Start {}
 message StartRemote {
