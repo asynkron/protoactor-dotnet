@@ -7,7 +7,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Chat {
+namespace chat.messages {
 
   /// <summary>Holder for reflection information generated from Chat.proto</summary>
   public static partial class ChatReflection {
@@ -22,23 +22,23 @@ namespace Chat {
     static ChatReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgpDaGF0LnByb3RvEghtZXNzYWdlcxoMUHJvdG9zLnByb3RvIiUKB0Nvbm5l",
-            "Y3QSGgoGU2VuZGVyGAEgASgLMgouYWN0b3IuUElEIhwKCUNvbm5lY3RlZBIP",
-            "CgdNZXNzYWdlGAEgASgJIi8KClNheVJlcXVlc3QSEAoIVXNlck5hbWUYASAB",
-            "KAkSDwoHTWVzc2FnZRgCIAEoCSIwCgtTYXlSZXNwb25zZRIQCghVc2VyTmFt",
-            "ZRgBIAEoCRIPCgdNZXNzYWdlGAIgASgJIjcKC05pY2tSZXF1ZXN0EhMKC09s",
-            "ZFVzZXJOYW1lGAEgASgJEhMKC05ld1VzZXJOYW1lGAIgASgJIjgKDE5pY2tS",
-            "ZXNwb25zZRITCgtPbGRVc2VyTmFtZRgBIAEoCRITCgtOZXdVc2VyTmFtZRgC",
-            "IAEoCUIHqgIEQ2hhdGIGcHJvdG8z"));
+            "CgpDaGF0LnByb3RvEg1jaGF0Lm1lc3NhZ2VzGgxQcm90b3MucHJvdG8iJQoH",
+            "Q29ubmVjdBIaCgZTZW5kZXIYASABKAsyCi5hY3Rvci5QSUQiHAoJQ29ubmVj",
+            "dGVkEg8KB01lc3NhZ2UYASABKAkiLwoKU2F5UmVxdWVzdBIQCghVc2VyTmFt",
+            "ZRgBIAEoCRIPCgdNZXNzYWdlGAIgASgJIjAKC1NheVJlc3BvbnNlEhAKCFVz",
+            "ZXJOYW1lGAEgASgJEg8KB01lc3NhZ2UYAiABKAkiNwoLTmlja1JlcXVlc3QS",
+            "EwoLT2xkVXNlck5hbWUYASABKAkSEwoLTmV3VXNlck5hbWUYAiABKAkiOAoM",
+            "Tmlja1Jlc3BvbnNlEhMKC09sZFVzZXJOYW1lGAEgASgJEhMKC05ld1VzZXJO",
+            "YW1lGAIgASgJQhCqAg1jaGF0Lm1lc3NhZ2VzYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Chat.Connect), global::Chat.Connect.Parser, new[]{ "Sender" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Chat.Connected), global::Chat.Connected.Parser, new[]{ "Message" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Chat.SayRequest), global::Chat.SayRequest.Parser, new[]{ "UserName", "Message" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Chat.SayResponse), global::Chat.SayResponse.Parser, new[]{ "UserName", "Message" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Chat.NickRequest), global::Chat.NickRequest.Parser, new[]{ "OldUserName", "NewUserName" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Chat.NickResponse), global::Chat.NickResponse.Parser, new[]{ "OldUserName", "NewUserName" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::chat.messages.Connect), global::chat.messages.Connect.Parser, new[]{ "Sender" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::chat.messages.Connected), global::chat.messages.Connected.Parser, new[]{ "Message" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::chat.messages.SayRequest), global::chat.messages.SayRequest.Parser, new[]{ "UserName", "Message" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::chat.messages.SayResponse), global::chat.messages.SayResponse.Parser, new[]{ "UserName", "Message" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::chat.messages.NickRequest), global::chat.messages.NickRequest.Parser, new[]{ "OldUserName", "NewUserName" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::chat.messages.NickResponse), global::chat.messages.NickResponse.Parser, new[]{ "OldUserName", "NewUserName" }, null, null, null)
           }));
     }
     #endregion
@@ -52,7 +52,7 @@ namespace Chat {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chat.ChatReflection.Descriptor.MessageTypes[0]; }
+      get { return global::chat.messages.ChatReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -175,7 +175,7 @@ namespace Chat {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chat.ChatReflection.Descriptor.MessageTypes[1]; }
+      get { return global::chat.messages.ChatReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -292,7 +292,7 @@ namespace Chat {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chat.ChatReflection.Descriptor.MessageTypes[2]; }
+      get { return global::chat.messages.ChatReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -437,7 +437,7 @@ namespace Chat {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chat.ChatReflection.Descriptor.MessageTypes[3]; }
+      get { return global::chat.messages.ChatReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -582,7 +582,7 @@ namespace Chat {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chat.ChatReflection.Descriptor.MessageTypes[4]; }
+      get { return global::chat.messages.ChatReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -727,7 +727,7 @@ namespace Chat {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chat.ChatReflection.Descriptor.MessageTypes[5]; }
+      get { return global::chat.messages.ChatReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

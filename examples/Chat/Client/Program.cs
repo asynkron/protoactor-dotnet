@@ -1,5 +1,5 @@
 ﻿using System;
-using Chat;
+using chat.messages;
 using Proto;
 using Proto.Remote;
 
@@ -7,7 +7,8 @@ class Program
 {
     static void Main(string[] args)
     {
-        RemotingSystem.Start("127.0.0.1", 0);
+        Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
+        RemotingSystem.Start("127.0.0.1", 12001);
         var server = new PID("127.0.0.1:8080", "chatserver");
 
         var props = Actor.FromFunc(ctx =>

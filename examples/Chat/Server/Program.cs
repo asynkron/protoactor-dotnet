@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Chat;
+using chat.messages;
 using Proto;
 using Proto.Remote;
 
@@ -8,6 +8,7 @@ class Program
 {
     static void Main(string[] args)
     {
+        Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
         RemotingSystem.Start("127.0.0.1", 8080);
         var clients = new HashSet<PID>();
         var props = Actor.FromFunc(ctx =>
