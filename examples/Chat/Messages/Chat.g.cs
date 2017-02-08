@@ -22,14 +22,15 @@ namespace chat.messages {
     static ChatReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgpDaGF0LnByb3RvEg1jaGF0Lm1lc3NhZ2VzGgxQcm90b3MucHJvdG8iJQoH",
-            "Q29ubmVjdBIaCgZTZW5kZXIYASABKAsyCi5hY3Rvci5QSUQiHAoJQ29ubmVj",
-            "dGVkEg8KB01lc3NhZ2UYASABKAkiLwoKU2F5UmVxdWVzdBIQCghVc2VyTmFt",
-            "ZRgBIAEoCRIPCgdNZXNzYWdlGAIgASgJIjAKC1NheVJlc3BvbnNlEhAKCFVz",
-            "ZXJOYW1lGAEgASgJEg8KB01lc3NhZ2UYAiABKAkiNwoLTmlja1JlcXVlc3QS",
-            "EwoLT2xkVXNlck5hbWUYASABKAkSEwoLTmV3VXNlck5hbWUYAiABKAkiOAoM",
-            "Tmlja1Jlc3BvbnNlEhMKC09sZFVzZXJOYW1lGAEgASgJEhMKC05ld1VzZXJO",
-            "YW1lGAIgASgJQhCqAg1jaGF0Lm1lc3NhZ2VzYgZwcm90bzM="));
+            "CgpDaGF0LnByb3RvEg1jaGF0Lm1lc3NhZ2VzGhhQcm90by5BY3Rvci9Qcm90",
+            "b3MucHJvdG8iJQoHQ29ubmVjdBIaCgZTZW5kZXIYASABKAsyCi5hY3Rvci5Q",
+            "SUQiHAoJQ29ubmVjdGVkEg8KB01lc3NhZ2UYASABKAkiLwoKU2F5UmVxdWVz",
+            "dBIQCghVc2VyTmFtZRgBIAEoCRIPCgdNZXNzYWdlGAIgASgJIjAKC1NheVJl",
+            "c3BvbnNlEhAKCFVzZXJOYW1lGAEgASgJEg8KB01lc3NhZ2UYAiABKAkiNwoL",
+            "Tmlja1JlcXVlc3QSEwoLT2xkVXNlck5hbWUYASABKAkSEwoLTmV3VXNlck5h",
+            "bWUYAiABKAkiOAoMTmlja1Jlc3BvbnNlEhMKC09sZFVzZXJOYW1lGAEgASgJ",
+            "EhMKC05ld1VzZXJOYW1lGAIgASgJQhCqAg1jaGF0Lm1lc3NhZ2VzYgZwcm90",
+            "bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {

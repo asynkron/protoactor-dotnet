@@ -9,7 +9,7 @@ class Program
     static void Main(string[] args)
     {
         Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
-        RemotingSystem.Start("127.0.0.1", 8080);
+        RemotingSystem.Start("127.0.0.1", 8000);
         var clients = new HashSet<PID>();
         var props = Actor.FromFunc(ctx =>
         {
@@ -26,14 +26,14 @@ class Program
                         client.Tell(new SayResponse
                         {
                             UserName = sayRequest.UserName,
-                            Message = sayRequest.UserName
+                            Message = sayRequest.Message
                         });        
                     }
                     break;
                 case NickRequest nickRequest:
                     foreach (var client in clients)
                     {
-                        client.Tell(new NickRequest
+                        client.Tell(new NickResponse
                         {
                             OldUserName = nickRequest.OldUserName,
                             NewUserName = nickRequest.NewUserName

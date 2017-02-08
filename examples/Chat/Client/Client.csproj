@@ -4,10 +4,6 @@
     <TargetFramework>netcoreapp1.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="runtimeconfig.template.dev.json" />
-    <Content Include="runtimeconfig.template.json" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.2.0" />
   </ItemGroup>
   <ItemGroup>

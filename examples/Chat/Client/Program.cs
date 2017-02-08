@@ -8,8 +8,8 @@ class Program
     static void Main(string[] args)
     {
         Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
-        RemotingSystem.Start("127.0.0.1", 12001);
-        var server = new PID("127.0.0.1:8080", "chatserver");
+        RemotingSystem.Start("127.0.0.1", new Random().Next(10000, 65000));
+        var server = new PID("127.0.0.1:8000", "chatserver");
 
         var props = Actor.FromFunc(ctx =>
         {
@@ -21,7 +21,7 @@ class Program
                 case SayResponse sayResponse:
                     Console.WriteLine($"{sayResponse.UserName} {sayResponse.Message}");
                     break;
-                case NickResponse nickResponse :
+                case NickResponse nickResponse:
                     Console.WriteLine($"{nickResponse.OldUserName} is now {nickResponse.NewUserName}");
                     break;
             }
@@ -33,17 +33,32 @@ class Program
         {
             Sender = client
         });
-        var nick = "Roger";
-        server.Tell(new SayRequest
+        var nick = "Alex";
+        while (true)
         {
-            UserName = nick,
-            Message = "text"
-        });
-        server.Tell(new NickRequest
-        {
-            OldUserName = nick,
-            NewUserName = "Prem"
-        });
-        Console.ReadLine();
+            var text = Console.ReadLine();
+            if (text.Equals("/exit"))
+            {
+                return;
+            }
+            if (text.StartsWith("/nick "))
+            {
+                var t = text.Split(' ')[1];
+                server.Tell(new NickRequest
+                {
+                    OldUserName = nick,
+                    NewUserName = t
+                });
+                nick = t;
+            }
+            else
+            {
+                server.Tell(new SayRequest
+                {
+                    UserName = nick,
+                    Message = text
+                });
+            }
+        }
     }
 }

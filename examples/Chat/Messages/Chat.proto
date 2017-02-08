@@ -1,7 +1,7 @@
 ﻿syntax = "proto3";
 package chat.messages;
 option csharp_namespace = "chat.messages";
-import "Protos.proto";
+import "Proto.Actor/Protos.proto";
 
 message Connect
 {
