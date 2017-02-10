@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto.Mailbox;
+using System.Collections.ObjectModel;
 
 namespace Proto
 {
@@ -43,7 +44,8 @@ namespace Proto
             IncarnateActor();
         }
 
-        public IReadOnlyCollection<PID> Children => _children.ToList();
+        static IReadOnlyCollection<PID> _EmptyChildren = new ReadOnlyCollection<PID>(new List<PID>(0));
+        public IReadOnlyCollection<PID> Children => _children?.ToList() ?? _EmptyChildren;
         public IActor Actor { get; private set; }
         public PID Parent { get; }
         public PID Self { get; internal set; }
@@ -268,7 +270,7 @@ namespace Proto
 
         internal static Task DefaultReceive(IContext context)
         {
-            var c = (Context) context;
+            var c = (Context)context;
             if (c.Message is PoisonPill)
             {
                 c.Self.Stop();
