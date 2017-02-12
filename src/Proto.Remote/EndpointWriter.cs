@@ -30,28 +30,57 @@ namespace Proto.Remote
             switch (context.Message)
             {
                 case Started m:
-                    // Console.WriteLine("EndpointWriter Started");
                     await StartedAsync();
                     break;
                 case Stopped m:
                     await StoppedAsync();
                     break;
                 case Restarting m:
-                    //  Console.WriteLine("EndpointWriter Restarting");
                     await RestartingAsync();
                     break;
-                case IEnumerable<MessageEnvelope> m:
-                    var envelopes = m;
-                    await SendEnvelopesAsync(envelopes, context);
+                case IEnumerable<RemoteDeliver> m:
+                    var envelopes = new List<MessageEnvelope>();
+                    var typeNames = new SortedDictionary<string,int>();
+                    var targetNames = new SortedDictionary<string,int>();
+                    foreach(var rd in m)
+                    {
+                        var targetName = rd.Target.Id;
+                        if (!targetNames.ContainsKey(targetName))
+                        {
+                            targetNames.Add(targetName, typeNames.Count);
+                        }
+                        var targetId = targetNames[targetName];
+
+                        var typeName = rd.Message.Descriptor.File.Package + "." + rd.Message.Descriptor.Name;
+                        if (!typeNames.ContainsKey(typeName))
+                        {
+                            typeNames.Add(typeName, typeNames.Count);
+                        }
+                        var typeId = typeNames[typeName];
+
+                        var bytes = Serialization.Serialize(rd.Message);
+                        var envelope = new MessageEnvelope
+                        {
+                            MessageData = bytes,
+                            Sender = rd.Sender,
+                            Target = targetId,
+                            TypeId = typeId,
+                        };
+                        envelopes.Add(envelope);
+                    }
+
+                    var batch = new MessageBatch();
+                    batch.TargetNames.AddRange(targetNames.Keys);
+                    batch.TypeNames.AddRange(typeNames.Keys);
+                    batch.Envelopes.AddRange(envelopes);
+
+                    await SendEnvelopesAsync(batch, context);
                     break;
             }
         }
 
-        private async Task SendEnvelopesAsync(IEnumerable<MessageEnvelope> envelopes, IContext context)
+        private async Task SendEnvelopesAsync(MessageBatch batch, IContext context)
         {
-            var batch = new MessageBatch();
-            batch.Envelopes.AddRange(envelopes);
-
             try
             {
                 await _streamWriter.WriteAsync(batch);

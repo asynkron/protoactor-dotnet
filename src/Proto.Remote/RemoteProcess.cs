@@ -51,13 +51,17 @@ namespace Proto.Remote
             if (msg is IMessage)
             {
                 var imsg = (IMessage) msg;
-                var env = new MessageEnvelope
+                var env = new RemoteDeliver(imsg, pid, sender);
+
+                /*
+                 *
                 {
                     Target = pid,
                     Sender = sender,
                     MessageData = Serialization.Serialize(imsg),
                     TypeName = imsg.Descriptor.File.Package + "." + imsg.Descriptor.Name
-                };
+                }; 
+                 */
                 RemotingSystem.EndpointManagerPid.Tell(env);
             }
             else
@@ -65,5 +69,18 @@ namespace Proto.Remote
                 throw new NotSupportedException("Non protobuf message");
             }
         }
+    }
+
+    public class RemoteDeliver
+    {
+        public RemoteDeliver(IMessage message, PID target,PID sender)
+        {
+            Message = message;
+            Target = target;
+            Sender = sender;
+        }
+        public IMessage Message { get;  }
+        public PID Target { get;  }
+        public PID Sender { get;  }
     }
 }
