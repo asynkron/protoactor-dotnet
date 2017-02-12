@@ -29,9 +29,9 @@ namespace Proto.Tests
             Assert.Null(context.Sender);
             Assert.Null(context.Self);
             Assert.Null(context.Actor);
+            Assert.Null(context.Children);
 
             Assert.Equal(TimeSpan.Zero, context.ReceiveTimeout);
-            Assert.Equal(0, context.Children.Count);
         }
 
       
