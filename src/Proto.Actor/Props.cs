@@ -26,7 +26,31 @@ namespace Proto
 
         public Receive MiddlewareChain { get; set; }
 
-        public Spawner Spawner { get; private set; } = Actor.DefaultSpawner;
+        private Spawner _spawner = null;
+        public Spawner Spawner {
+            get => _spawner ?? DefaultSpawner;
+            private set => _spawner = value;
+        }
+
+        public static Spawner DefaultSpawner = (name, props, parent) =>
+        {
+            var ctx = new Context(props.Producer, props.SupervisorStrategy, props.MiddlewareChain, parent);
+            var mailbox = props.MailboxProducer();
+            var dispatcher = props.Dispatcher;
+            var reff = new LocalProcess(mailbox);
+            var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, reff);
+            if (!absent)
+            {
+                throw new ProcessNameExistException(name);
+            }
+            ctx.Self = pid;
+            mailbox.RegisterHandlers(ctx, dispatcher);
+            // ctx.InvokeUserMessageAsync(Started.Instance);
+            mailbox.PostSystemMessage(Started.Instance);
+            mailbox.Start();
+
+            return pid;
+        };
 
         public Props WithProducer(Func<IActor> producer)
         {

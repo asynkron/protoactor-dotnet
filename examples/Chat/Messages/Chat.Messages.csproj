@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard1.6</TargetFramework>
+    <AssemblyName>Chat.Messages</AssemblyName>
+    <RootNamespace>Chat.Messages</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="build.bat" />
+    <None Include="Chat.proto" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.2.0" />
+    <PackageReference Include="Grpc.Tools" Version="1.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Proto.Actor\Proto.Actor.csproj" />
+  </ItemGroup>
+</Project>

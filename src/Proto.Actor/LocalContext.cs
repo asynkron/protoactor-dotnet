@@ -43,7 +43,7 @@ namespace Proto
             IncarnateActor();
         }
 
-        public IReadOnlyCollection<PID> Children => _children.ToList();
+        public IReadOnlyCollection<PID> Children => _children?.ToList();
         public IActor Actor { get; private set; }
         public PID Parent { get; }
         public PID Self { get; internal set; }
@@ -246,7 +246,7 @@ namespace Proto
         {
             if (_restartStatistics == null)
             {
-                _restartStatistics = new RestartStatistics(1, null);
+                _restartStatistics = new RestartStatistics(0, null);
             }
             var failure = new Failure(Self, reason, _restartStatistics);
             if (Parent == null)
@@ -268,7 +268,7 @@ namespace Proto
 
         internal static Task DefaultReceive(IContext context)
         {
-            var c = (Context) context;
+            var c = (Context)context;
             if (c.Message is PoisonPill)
             {
                 c.Self.Stop();

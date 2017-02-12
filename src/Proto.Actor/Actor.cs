@@ -30,26 +30,6 @@ namespace Proto
     {
         public static readonly Task Done = Task.CompletedTask;
 
-        public static Spawner DefaultSpawner = (name, props, parent) =>
-        {
-            var ctx = new Context(props.Producer, props.SupervisorStrategy, props.MiddlewareChain, parent);
-            var mailbox = props.MailboxProducer();
-            var dispatcher = props.Dispatcher;
-            var reff = new LocalProcess(mailbox);
-            var (pid,absent) = ProcessRegistry.Instance.TryAdd(name, reff);
-            if (!absent)
-            {
-                throw new ProcessNameExistException(name);
-            }
-            ctx.Self = pid;
-            mailbox.RegisterHandlers(ctx, dispatcher);
-            // ctx.InvokeUserMessageAsync(Started.Instance);
-            mailbox.PostSystemMessage(Started.Instance);
-            mailbox.Start();
-
-            return pid;
-        };
-
         public static EventStream EventStream => EventStream.Instance;
 
         public static Props FromProducer(Func<IActor> producer)
