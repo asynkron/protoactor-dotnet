@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto
@@ -11,17 +12,22 @@ namespace Proto
     public class FutureProcess<T> : Process
     {
         private readonly TaskCompletionSource<T> _tcs;
+        private readonly CancellationToken _cancellationToken;
 
-        public FutureProcess(TaskCompletionSource<T> tcs)
+        public FutureProcess(TaskCompletionSource<T> tcs) : this(tcs, CancellationToken.None) { }
+        public FutureProcess(TaskCompletionSource<T> tcs, CancellationToken cancellationToken)
         {
             _tcs = tcs;
+            _cancellationToken = cancellationToken;
         }
 
         public override void SendUserMessage(PID pid, object message, PID sender)
         {
             if (message is T)
             {
-                _tcs.TrySetResult((T) message);
+                if (_cancellationToken.IsCancellationRequested) return;
+
+                _tcs.TrySetResult((T)message);
                 pid.Stop();
             }
         }
