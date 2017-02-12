@@ -173,9 +173,12 @@ namespace Proto.Mailbox
             {
                 _invoker.EscalateFailure(task.Exception, message);
             }
-            for (var si = 0; si < _stats.Length; si++)
+            else
             {
-                _stats[si].MessageReceived(message);
+                for (var si = 0; si < _stats.Length; si++)
+                {
+                    _stats[si].MessageReceived(message);
+                }
             }
             ProcessMessages();
         }
