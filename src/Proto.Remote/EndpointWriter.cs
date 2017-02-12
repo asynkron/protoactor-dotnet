@@ -40,14 +40,17 @@ namespace Proto.Remote
                     break;
                 case IEnumerable<RemoteDeliver> m:
                     var envelopes = new List<MessageEnvelope>();
-                    var typeNames = new SortedDictionary<string,int>();
-                    var targetNames = new SortedDictionary<string,int>();
+                    var typeNames = new Dictionary<string,int>();
+                    var targetNames = new Dictionary<string,int>();
+                    var typeNameList = new List<string>();
+                    var targetNameList = new List<string>();
                     foreach(var rd in m)
                     {
                         var targetName = rd.Target.Id;
                         if (!targetNames.ContainsKey(targetName))
                         {
                             targetNames.Add(targetName, typeNames.Count);
+                            targetNameList.Add(targetName);
                         }
                         var targetId = targetNames[targetName];
 
@@ -55,6 +58,7 @@ namespace Proto.Remote
                         if (!typeNames.ContainsKey(typeName))
                         {
                             typeNames.Add(typeName, typeNames.Count);
+                            typeNameList.Add(typeName);
                         }
                         var typeId = typeNames[typeName];
 
@@ -70,8 +74,8 @@ namespace Proto.Remote
                     }
 
                     var batch = new MessageBatch();
-                    batch.TargetNames.AddRange(targetNames.Keys);
-                    batch.TypeNames.AddRange(typeNames.Keys);
+                    batch.TargetNames.AddRange(targetNameList);
+                    batch.TypeNames.AddRange(typeNameList);
                     batch.Envelopes.AddRange(envelopes);
 
                     await SendEnvelopesAsync(batch, context);
