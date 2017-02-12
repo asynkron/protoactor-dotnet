@@ -52,7 +52,7 @@ namespace Proto.Remote
         private async Task RunAsync()
         {
             var t = _dispatcher.Throughput;
-            var batch = new List<MessageEnvelope>();
+            var batch = new List<RemoteDeliver>();
             var sys = _systemMessages.Pop();
             if (sys != null)
             {
@@ -72,7 +72,7 @@ namespace Proto.Remote
                 object msg;
                 while ((msg = _userMessages.Pop()) != null)
                 {
-                    batch.Add((MessageEnvelope) msg);
+                    batch.Add((RemoteDeliver) msg);
                     if (batch.Count > 1000)
                     {
                         break;

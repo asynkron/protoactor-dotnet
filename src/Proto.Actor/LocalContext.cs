@@ -44,8 +44,7 @@ namespace Proto
             IncarnateActor();
         }
 
-        static IReadOnlyCollection<PID> _EmptyChildren = new ReadOnlyCollection<PID>(new List<PID>(0));
-        public IReadOnlyCollection<PID> Children => _children?.ToList() ?? _EmptyChildren;
+        public IReadOnlyCollection<PID> Children => _children?.ToList();
         public IActor Actor { get; private set; }
         public PID Parent { get; }
         public PID Self { get; internal set; }
@@ -248,7 +247,7 @@ namespace Proto
         {
             if (_restartStatistics == null)
             {
-                _restartStatistics = new RestartStatistics(1, null);
+                _restartStatistics = new RestartStatistics(0, null);
             }
             var failure = new Failure(Self, reason, _restartStatistics);
             if (Parent == null)

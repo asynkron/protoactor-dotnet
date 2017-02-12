@@ -1,27 +1,18 @@
 image: Visual Studio 2017 RC
 version: '0.1.0.{build}'
 configuration:
-#- Debug
 - Release
 platform: Any CPU
-#environment:
+environment:
   # Don't report back to the mothership
-  # DOTNET_CLI_TELEMETRY_OPTOUT: 1
-#init:
-#- ps: $Env:LABEL = "CI" + $Env:APPVEYOR_BUILD_NUMBER.PadLeft(5, "0")
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
 before_build:
-#- appveyor-retry dotnet restore -v Minimal
-- dotnet restore
+- nuget install Cake -ExcludeVersion
 build_script:
-- dotnet build
-#after_build:
-#- dotnet pack "src\LibNETStandard16" -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o artifacts
-#- dotnet publish "src\ConsoleApplication" -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o artifacts\ConsoleApplication
+- .\Cake\Cake.exe --target=Build
+after_build:
+- .\Cake\Cake.exe --target=Pack
 test_script:
-- dotnet test "tests\Proto.Actor.Tests\Proto.Actor.Tests.csproj"
-#artifacts:
-#- path: artifacts\**\*.*
-#cache:
-#- '%USERPROFILE%\.nuget\packages'
-#on_finish: # Run the demo to show that it works
-#- dotnet artifacts\ConsoleApplication\ConsoleApplication.dll
+- .\Cake\Cake.exe --target=UnitTest
+artifacts:
+- path: out\*

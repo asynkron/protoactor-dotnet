@@ -59,7 +59,7 @@ namespace Proto.Remote
                     endpoint.Watcher.Tell(msg);
                     return Actor.Done;
                 }
-                case MessageEnvelope msg:
+                case RemoteDeliver msg:
                 {
                     var endpoint = EnsureConnected(msg.Target.Address, context);
                     endpoint.Writer.Tell(msg);
