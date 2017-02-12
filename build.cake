@@ -13,13 +13,11 @@ Task("Build")
     });
 
 Task("UnitTest")
-    .IsDependentOn("Build")
     .Does(() => {
         DotNetCoreTest("tests/Proto.Actor.Tests//Proto.Actor.Tests.csproj");
     });
 
 Task("Pack")
-    .IsDependentOn("Build")
     .Does(() => {
         foreach(var proj in GetFiles("src/**/*.csproj")) {
             DotNetCorePack(proj.ToString(), new DotNetCorePackSettings {

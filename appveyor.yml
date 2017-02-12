@@ -13,14 +13,12 @@ before_build:
 #- appveyor-retry dotnet restore -v Minimal
 - nuget install Cake -ExcludeVersion
 build_script:
-- dir
-- dir Cake
 - .\Cake\Cake.exe --target=Build
-#after_build:
-#- dotnet pack "src\LibNETStandard16" -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o artifacts
-#- dotnet publish "src\ConsoleApplication" -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o artifacts\ConsoleApplication
+after_build:
+- .\Cake\Cake.exe --target=Pack
 test_script:
 - .\Cake\Cake.exe --target=UnitTest
+
 #artifacts:
 #- path: artifacts\**\*.*
 #cache:
