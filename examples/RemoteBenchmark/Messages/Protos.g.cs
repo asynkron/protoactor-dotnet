@@ -22,10 +22,10 @@ namespace Messages {
     static ProtosReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgxQcm90b3MucHJvdG8SCG1lc3NhZ2VzGj9naXRodWIuY29tL0FzeW5rcm9u",
-            "SVQvZ2FtL2xhbmd1YWdlcy9jc2hhcnAvc3JjL0dBTS9Qcm90b3MucHJvdG8i",
-            "BwoFU3RhcnQiKQoLU3RhcnRSZW1vdGUSGgoGU2VuZGVyGAEgASgLMgouYWN0",
-            "b3IuUElEIgYKBFBpbmciBgoEUG9uZ0ILqgIITWVzc2FnZXNiBnByb3RvMw=="));
+            "CgxQcm90b3MucHJvdG8SCG1lc3NhZ2VzGhhQcm90by5BY3Rvci9Qcm90b3Mu",
+            "cHJvdG8iBwoFU3RhcnQiKQoLU3RhcnRSZW1vdGUSGgoGU2VuZGVyGAEgASgL",
+            "MgouYWN0b3IuUElEIgYKBFBpbmciBgoEUG9uZ0ILqgIITWVzc2FnZXNiBnBy",
+            "b3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {

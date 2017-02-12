@@ -23,22 +23,22 @@ namespace Proto.Remote {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "CgxQcm90b3MucHJvdG8SBnJlbW90ZRoYUHJvdG8uQWN0b3IvcHJvdG9zLnBy",
-            "b3RvInIKD01lc3NhZ2VFbnZlbG9wZRIRCgl0eXBlX25hbWUYASABKAkSFAoM",
-            "bWVzc2FnZV9kYXRhGAIgASgMEhoKBnRhcmdldBgDIAEoCzIKLmFjdG9yLlBJ",
-            "RBIaCgZzZW5kZXIYBCABKAsyCi5hY3Rvci5QSUQiLQoPQWN0b3JQaWRSZXF1",
-            "ZXN0EgwKBG5hbWUYASABKAkSDAoEa2luZBgCIAEoCSIrChBBY3RvclBpZFJl",
-            "c3BvbnNlEhcKA3BpZBgBIAEoCzIKLmFjdG9yLlBJRCI6CgxNZXNzYWdlQmF0",
-            "Y2gSKgoJZW52ZWxvcGVzGAEgAygLMhcucmVtb3RlLk1lc3NhZ2VFbnZlbG9w",
-            "ZSIGCgRVbml0Mj8KCFJlbW90aW5nEjMKB1JlY2VpdmUSFC5yZW1vdGUuTWVz",
-            "c2FnZUJhdGNoGgwucmVtb3RlLlVuaXQiACgBMAFCD6oCDFByb3RvLlJlbW90",
-            "ZWIGcHJvdG8z"));
+            "b3RvImQKDE1lc3NhZ2VCYXRjaBISCgp0eXBlX25hbWVzGAEgAygJEhQKDHRh",
+            "cmdldF9uYW1lcxgCIAMoCRIqCgllbnZlbG9wZXMYAyADKAsyFy5yZW1vdGUu",
+            "TWVzc2FnZUVudmVsb3BlImQKD01lc3NhZ2VFbnZlbG9wZRIPCgd0eXBlX2lk",
+            "GAEgASgFEhQKDG1lc3NhZ2VfZGF0YRgCIAEoDBIOCgZ0YXJnZXQYAyABKAUS",
+            "GgoGc2VuZGVyGAQgASgLMgouYWN0b3IuUElEIi0KD0FjdG9yUGlkUmVxdWVz",
+            "dBIMCgRuYW1lGAEgASgJEgwKBGtpbmQYAiABKAkiKwoQQWN0b3JQaWRSZXNw",
+            "b25zZRIXCgNwaWQYASABKAsyCi5hY3Rvci5QSUQiBgoEVW5pdDI/CghSZW1v",
+            "dGluZxIzCgdSZWNlaXZlEhQucmVtb3RlLk1lc3NhZ2VCYXRjaBoMLnJlbW90",
+            "ZS5Vbml0IgAoATABQg+qAgxQcm90by5SZW1vdGViBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageEnvelope), global::Proto.Remote.MessageEnvelope.Parser, new[]{ "TypeName", "MessageData", "Target", "Sender" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageBatch), global::Proto.Remote.MessageBatch.Parser, new[]{ "TypeNames", "TargetNames", "Envelopes" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageEnvelope), global::Proto.Remote.MessageEnvelope.Parser, new[]{ "TypeId", "MessageData", "Target", "Sender" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ActorPidRequest), global::Proto.Remote.ActorPidRequest.Parser, new[]{ "Name", "Kind" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ActorPidResponse), global::Proto.Remote.ActorPidResponse.Parser, new[]{ "Pid" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageBatch), global::Proto.Remote.MessageBatch.Parser, new[]{ "Envelopes" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.Unit), global::Proto.Remote.Unit.Parser, null, null, null, null)
           }));
     }
@@ -46,6 +46,155 @@ namespace Proto.Remote {
 
   }
   #region Messages
+  public sealed partial class MessageBatch : pb::IMessage<MessageBatch> {
+    private static readonly pb::MessageParser<MessageBatch> _parser = new pb::MessageParser<MessageBatch>(() => new MessageBatch());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<MessageBatch> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[0]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public MessageBatch() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public MessageBatch(MessageBatch other) : this() {
+      typeNames_ = other.typeNames_.Clone();
+      targetNames_ = other.targetNames_.Clone();
+      envelopes_ = other.envelopes_.Clone();
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public MessageBatch Clone() {
+      return new MessageBatch(this);
+    }
+
+    /// <summary>Field number for the "type_names" field.</summary>
+    public const int TypeNamesFieldNumber = 1;
+    private static readonly pb::FieldCodec<string> _repeated_typeNames_codec
+        = pb::FieldCodec.ForString(10);
+    private readonly pbc::RepeatedField<string> typeNames_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<string> TypeNames {
+      get { return typeNames_; }
+    }
+
+    /// <summary>Field number for the "target_names" field.</summary>
+    public const int TargetNamesFieldNumber = 2;
+    private static readonly pb::FieldCodec<string> _repeated_targetNames_codec
+        = pb::FieldCodec.ForString(18);
+    private readonly pbc::RepeatedField<string> targetNames_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<string> TargetNames {
+      get { return targetNames_; }
+    }
+
+    /// <summary>Field number for the "envelopes" field.</summary>
+    public const int EnvelopesFieldNumber = 3;
+    private static readonly pb::FieldCodec<global::Proto.Remote.MessageEnvelope> _repeated_envelopes_codec
+        = pb::FieldCodec.ForMessage(26, global::Proto.Remote.MessageEnvelope.Parser);
+    private readonly pbc::RepeatedField<global::Proto.Remote.MessageEnvelope> envelopes_ = new pbc::RepeatedField<global::Proto.Remote.MessageEnvelope>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<global::Proto.Remote.MessageEnvelope> Envelopes {
+      get { return envelopes_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as MessageBatch);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(MessageBatch other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if(!typeNames_.Equals(other.typeNames_)) return false;
+      if(!targetNames_.Equals(other.targetNames_)) return false;
+      if(!envelopes_.Equals(other.envelopes_)) return false;
+      return true;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      hash ^= typeNames_.GetHashCode();
+      hash ^= targetNames_.GetHashCode();
+      hash ^= envelopes_.GetHashCode();
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      typeNames_.WriteTo(output, _repeated_typeNames_codec);
+      targetNames_.WriteTo(output, _repeated_targetNames_codec);
+      envelopes_.WriteTo(output, _repeated_envelopes_codec);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      size += typeNames_.CalculateSize(_repeated_typeNames_codec);
+      size += targetNames_.CalculateSize(_repeated_targetNames_codec);
+      size += envelopes_.CalculateSize(_repeated_envelopes_codec);
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(MessageBatch other) {
+      if (other == null) {
+        return;
+      }
+      typeNames_.Add(other.typeNames_);
+      targetNames_.Add(other.targetNames_);
+      envelopes_.Add(other.envelopes_);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 10: {
+            typeNames_.AddEntriesFrom(input, _repeated_typeNames_codec);
+            break;
+          }
+          case 18: {
+            targetNames_.AddEntriesFrom(input, _repeated_targetNames_codec);
+            break;
+          }
+          case 26: {
+            envelopes_.AddEntriesFrom(input, _repeated_envelopes_codec);
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
   public sealed partial class MessageEnvelope : pb::IMessage<MessageEnvelope> {
     private static readonly pb::MessageParser<MessageEnvelope> _parser = new pb::MessageParser<MessageEnvelope>(() => new MessageEnvelope());
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -53,7 +202,7 @@ namespace Proto.Remote {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -70,9 +219,9 @@ namespace Proto.Remote {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public MessageEnvelope(MessageEnvelope other) : this() {
-      typeName_ = other.typeName_;
+      typeId_ = other.typeId_;
       messageData_ = other.messageData_;
-      Target = other.target_ != null ? other.Target.Clone() : null;
+      target_ = other.target_;
       Sender = other.sender_ != null ? other.Sender.Clone() : null;
     }
 
@@ -81,14 +230,14 @@ namespace Proto.Remote {
       return new MessageEnvelope(this);
     }
 
-    /// <summary>Field number for the "type_name" field.</summary>
-    public const int TypeNameFieldNumber = 1;
-    private string typeName_ = "";
+    /// <summary>Field number for the "type_id" field.</summary>
+    public const int TypeIdFieldNumber = 1;
+    private int typeId_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public string TypeName {
-      get { return typeName_; }
+    public int TypeId {
+      get { return typeId_; }
       set {
-        typeName_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        typeId_ = value;
       }
     }
 
@@ -105,9 +254,9 @@ namespace Proto.Remote {
 
     /// <summary>Field number for the "target" field.</summary>
     public const int TargetFieldNumber = 3;
-    private global::Proto.PID target_;
+    private int target_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Proto.PID Target {
+    public int Target {
       get { return target_; }
       set {
         target_ = value;
@@ -138,9 +287,9 @@ namespace Proto.Remote {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (TypeName != other.TypeName) return false;
+      if (TypeId != other.TypeId) return false;
       if (MessageData != other.MessageData) return false;
-      if (!object.Equals(Target, other.Target)) return false;
+      if (Target != other.Target) return false;
       if (!object.Equals(Sender, other.Sender)) return false;
       return true;
     }
@@ -148,9 +297,9 @@ namespace Proto.Remote {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (TypeName.Length != 0) hash ^= TypeName.GetHashCode();
+      if (TypeId != 0) hash ^= TypeId.GetHashCode();
       if (MessageData.Length != 0) hash ^= MessageData.GetHashCode();
-      if (target_ != null) hash ^= Target.GetHashCode();
+      if (Target != 0) hash ^= Target.GetHashCode();
       if (sender_ != null) hash ^= Sender.GetHashCode();
       return hash;
     }
@@ -162,17 +311,17 @@ namespace Proto.Remote {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (TypeName.Length != 0) {
-        output.WriteRawTag(10);
-        output.WriteString(TypeName);
+      if (TypeId != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(TypeId);
       }
       if (MessageData.Length != 0) {
         output.WriteRawTag(18);
         output.WriteBytes(MessageData);
       }
-      if (target_ != null) {
-        output.WriteRawTag(26);
-        output.WriteMessage(Target);
+      if (Target != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(Target);
       }
       if (sender_ != null) {
         output.WriteRawTag(34);
@@ -183,14 +332,14 @@ namespace Proto.Remote {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (TypeName.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(TypeName);
+      if (TypeId != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(TypeId);
       }
       if (MessageData.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeBytesSize(MessageData);
       }
-      if (target_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Target);
+      if (Target != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Target);
       }
       if (sender_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Sender);
@@ -203,17 +352,14 @@ namespace Proto.Remote {
       if (other == null) {
         return;
       }
-      if (other.TypeName.Length != 0) {
-        TypeName = other.TypeName;
+      if (other.TypeId != 0) {
+        TypeId = other.TypeId;
       }
       if (other.MessageData.Length != 0) {
         MessageData = other.MessageData;
       }
-      if (other.target_ != null) {
-        if (target_ == null) {
-          target_ = new global::Proto.PID();
-        }
-        Target.MergeFrom(other.Target);
+      if (other.Target != 0) {
+        Target = other.Target;
       }
       if (other.sender_ != null) {
         if (sender_ == null) {
@@ -231,19 +377,16 @@ namespace Proto.Remote {
           default:
             input.SkipLastField();
             break;
-          case 10: {
-            TypeName = input.ReadString();
+          case 8: {
+            TypeId = input.ReadInt32();
             break;
           }
           case 18: {
             MessageData = input.ReadBytes();
             break;
           }
-          case 26: {
-            if (target_ == null) {
-              target_ = new global::Proto.PID();
-            }
-            input.ReadMessage(target_);
+          case 24: {
+            Target = input.ReadInt32();
             break;
           }
           case 34: {
@@ -266,7 +409,7 @@ namespace Proto.Remote {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -411,7 +554,7 @@ namespace Proto.Remote {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -519,115 +662,6 @@ namespace Proto.Remote {
               pid_ = new global::Proto.PID();
             }
             input.ReadMessage(pid_);
-            break;
-          }
-        }
-      }
-    }
-
-  }
-
-  public sealed partial class MessageBatch : pb::IMessage<MessageBatch> {
-    private static readonly pb::MessageParser<MessageBatch> _parser = new pb::MessageParser<MessageBatch>(() => new MessageBatch());
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pb::MessageParser<MessageBatch> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[3]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public MessageBatch() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public MessageBatch(MessageBatch other) : this() {
-      envelopes_ = other.envelopes_.Clone();
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public MessageBatch Clone() {
-      return new MessageBatch(this);
-    }
-
-    /// <summary>Field number for the "envelopes" field.</summary>
-    public const int EnvelopesFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Proto.Remote.MessageEnvelope> _repeated_envelopes_codec
-        = pb::FieldCodec.ForMessage(10, global::Proto.Remote.MessageEnvelope.Parser);
-    private readonly pbc::RepeatedField<global::Proto.Remote.MessageEnvelope> envelopes_ = new pbc::RepeatedField<global::Proto.Remote.MessageEnvelope>();
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Proto.Remote.MessageEnvelope> Envelopes {
-      get { return envelopes_; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override bool Equals(object other) {
-      return Equals(other as MessageBatch);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public bool Equals(MessageBatch other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if(!envelopes_.Equals(other.envelopes_)) return false;
-      return true;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override int GetHashCode() {
-      int hash = 1;
-      hash ^= envelopes_.GetHashCode();
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void WriteTo(pb::CodedOutputStream output) {
-      envelopes_.WriteTo(output, _repeated_envelopes_codec);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public int CalculateSize() {
-      int size = 0;
-      size += envelopes_.CalculateSize(_repeated_envelopes_codec);
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(MessageBatch other) {
-      if (other == null) {
-        return;
-      }
-      envelopes_.Add(other.envelopes_);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public void MergeFrom(pb::CodedInputStream input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            input.SkipLastField();
-            break;
-          case 10: {
-            envelopes_.AddEntriesFrom(input, _repeated_envelopes_codec);
             break;
           }
         }
