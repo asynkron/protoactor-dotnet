@@ -4,6 +4,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <TargetFramework>netstandard1.6</TargetFramework>
+    <Version>0.1.0</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <OutputType>library</OutputType>
