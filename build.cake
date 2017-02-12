@@ -1,4 +1,4 @@
-var target = Argument("target", "UnitTest");
+var target = Argument("target", "Default");
 
 Task("Restore")
     .Does(() => {
@@ -17,5 +17,21 @@ Task("UnitTest")
     .Does(() => {
         DotNetCoreTest("tests/Proto.Actor.Tests//Proto.Actor.Tests.csproj");
     });
+
+Task("Pack")
+    .IsDependentOn("Build")
+    .Does(() => {
+        foreach(var proj in GetFiles("src/**/*.csproj")) {
+            DotNetCorePack(proj.ToString(), new DotNetCorePackSettings {
+                OutputDirectory = "out"
+            });
+        }
+    });
+
+Task("Default")
+    .IsDependentOn("Restore")
+    .IsDependentOn("Build")
+    .IsDependentOn("UnitTest")
+    .IsDependentOn("Pack");
 
 RunTarget(target);
