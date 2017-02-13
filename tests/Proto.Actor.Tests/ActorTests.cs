@@ -33,12 +33,7 @@ namespace Proto.Tests
         [Fact]
         public async Task RequestActorAsync_should_raise_TimeoutException_when_timeout_is_reached()
         {
-            PID pid = SpawnActorFromFunc(ctx =>
-            {
-                // Do not reply
-                return Actor.Done;
-            });
-
+            PID pid = SpawnActorFromFunc(ActorFixture.EmptyReceive);
 
             var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(() => pid.RequestAsync<object>("", TimeSpan.FromMilliseconds(100)));
             Assert.Equal("Request didn't receive any Response within the expected time.", timeoutEx.Message);
