@@ -64,27 +64,20 @@ namespace Proto.Tests
         [Fact]
         public void ActorLifeCycle()
         {
-            var are = new AutoResetEvent(false);
-
             var messages = new Queue<object>();
 
-            var pid = SpawnActorFromFunc(ctx =>
-            {
-                messages.Enqueue(ctx.Message);
-                are.Set();
-                return Actor.Done;
-            });
+            var pid = Actor.Spawn(
+                Actor
+                    .FromFunc(ctx =>
+                    {
+                        messages.Enqueue(ctx.Message);
+                        return Actor.Done;
+                    })
+                    .WithMailbox(() => new ActorFixture.TestMailbox())
+                );
 
-            pid.Request("hello", null);
-            are.WaitOne(100); // Started
-            are.WaitOne(100); // string
-
+            pid.Tell("hello");
             pid.Stop();
-            are.WaitOne(100); // Stopping
-            are.WaitOne(100); // Stopped
-
-            // to prevent the Stop sequence to grow longer in the future without updating this test
-            Thread.Sleep(1000);
 
             Assert.Equal(4, messages.Count);
             var msgs = messages.ToArray();
