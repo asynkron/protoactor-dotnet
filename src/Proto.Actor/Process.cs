@@ -12,7 +12,7 @@ namespace Proto
     {
         public abstract void SendUserMessage(PID pid, object message, PID sender);
 
-        public void Stop(PID pid)
+        public virtual void Stop(PID pid)
         {
             SendSystemMessage(pid, new Stop());
         }
@@ -22,12 +22,14 @@ namespace Proto
 
     public class LocalProcess : Process
     {
+        public IMailbox Mailbox { get; }
+        public bool IsDead { get; private set; }
+
         public LocalProcess(IMailbox mailbox)
         {
             Mailbox = mailbox;
         }
 
-        public IMailbox Mailbox { get; }
 
         public override void SendUserMessage(PID pid, object message, PID sender)
         {
@@ -43,6 +45,12 @@ namespace Proto
         public override void SendSystemMessage(PID pid, object message)
         {
             Mailbox.PostSystemMessage(message);
+        }
+
+        public override void Stop(PID pid)
+        {
+            base.Stop(pid);
+            IsDead = true;
         }
     }
 }

@@ -45,6 +45,8 @@ namespace Proto
             var p = GetPartition(key);
             lock (p)
             {
+                if (p.ContainsKey(key))
+                    return false;
                 p.Add(key, reff);
                 return true;
             }
