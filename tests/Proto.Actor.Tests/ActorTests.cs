@@ -13,7 +13,7 @@ namespace Proto.Tests
 
 
         [Fact]
-        public void RequestActorAsync()
+        public async Task RequestActorAsync()
         {
             PID pid = SpawnActorFromFunc(ctx =>
             {
@@ -24,18 +24,17 @@ namespace Proto.Tests
                 return Actor.Done;
             });
 
-            var reply = pid.RequestAsync<object>("hello").Result;
+            var reply = await pid.RequestAsync<object>("hello");
 
             Assert.Equal("hey", reply);
         }
-
-
+        
         [Fact]
         public async Task RequestActorAsync_should_raise_TimeoutException_when_timeout_is_reached()
         {
             PID pid = SpawnActorFromFunc(ActorFixture.EmptyReceive);
 
-            var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(() => pid.RequestAsync<object>("", TimeSpan.FromMilliseconds(100)));
+            var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(() => pid.RequestAsync<object>("", TimeSpan.FromMilliseconds(20)));
             Assert.Equal("Request didn't receive any Response within the expected time.", timeoutEx.Message);
         }
 

@@ -40,44 +40,18 @@ namespace Proto
 
 
         public Task<T> RequestAsync<T>(object message, TimeSpan timeout)
-            => RequestAsync<T>(message, new CancellationTokenSource(timeout));
+            => RequestAsync(message, new FutureProcess<T>(timeout));
 
         public Task<T> RequestAsync<T>(object message, CancellationToken cancellationToken)
-            => RequestAsync<T>(message, CancellationTokenSource.CreateLinkedTokenSource(cancellationToken));
+            => RequestAsync(message, new FutureProcess<T>(cancellationToken));
 
         public Task<T> RequestAsync<T>(object message)
-            => RequestAsync<T>(message, null);
+            => RequestAsync(message, new FutureProcess<T>());
 
-        private Task<T> RequestAsync<T>(object message, CancellationTokenSource cts = null)
+        private Task<T> RequestAsync<T>(object message, FutureProcess<T> future)
         {
-            var tsc = new TaskCompletionSource<T>();
-
-            var reff = (cts == null) ? new FutureProcess<T>(tsc) : new FutureProcess<T>(tsc, cts.Token);
-
-            var name = ProcessRegistry.Instance.NextId();
-            var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, reff);
-            if (!absent)
-            {
-                throw new ProcessNameExistException(name);
-            }
-            Request(message, pid);
-
-
-            if (cts == null) return tsc.Task;
-            else
-            {
-                var resultTask = tsc.Task;
-                var resultRunner = tsc.Task.ContinueWith(t => cts.Cancel(), cts.Token);
-                var timeoutRunner = Task.Delay(-1, cts.Token).ContinueWith(t => { if (!resultTask.IsCompleted) pid.Stop(); });
-
-                return
-                    Task.WhenAny(resultRunner, timeoutRunner)
-                    .ContinueWith(t =>
-                    {
-                        if (resultTask.IsCompleted) return resultTask.Result;
-                        else throw new TimeoutException("Request didn't receive any Response within the expected time.");
-                    });
-            }
+            Request(message, future.PID);
+            return future.Task;
         }
 
         public void Stop()

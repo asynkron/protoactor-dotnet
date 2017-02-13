@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,20 +13,49 @@ namespace Proto
     public class FutureProcess<T> : Process
     {
         private readonly TaskCompletionSource<T> _tcs;
-        private readonly CancellationToken _cancellationToken;
+        private readonly CancellationTokenSource _cts;
 
-        public FutureProcess(TaskCompletionSource<T> tcs) : this(tcs, CancellationToken.None) { }
-        public FutureProcess(TaskCompletionSource<T> tcs, CancellationToken cancellationToken)
+        public FutureProcess(TimeSpan timeout) : this(new CancellationTokenSource(timeout)) { }
+        public FutureProcess(CancellationToken cancellationToken) : this(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) { }
+        public FutureProcess() : this((CancellationTokenSource)null) { }
+
+        FutureProcess(CancellationTokenSource cts)
         {
-            _tcs = tcs;
-            _cancellationToken = cancellationToken;
+            _tcs = new TaskCompletionSource<T>();
+            _cts = cts;
+
+            var name = ProcessRegistry.Instance.NextId();
+            var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, this);
+            if (!absent)
+            {
+                throw new ProcessNameExistException(name);
+            }
+            PID = pid;
+
+            if (cts != null)
+            {
+                System.Threading.Tasks.Task.Delay(-1, cts.Token)
+                    .ContinueWith(t =>
+                    {
+                        if (!_tcs.Task.IsCompleted)
+                        {
+                            _tcs.TrySetException(new TimeoutException("Request didn't receive any Response within the expected time."));
+                            pid.Stop();
+                        }
+                    });
+            }
+
+            Task = _tcs.Task;
         }
+
+        public PID PID { get; }
+        public Task<T> Task { get; }
 
         public override void SendUserMessage(PID pid, object message, PID sender)
         {
             if (message is T)
             {
-                if (_cancellationToken.IsCancellationRequested) return;
+                if (_cts != null && _cts.IsCancellationRequested) return;
 
                 _tcs.TrySetResult((T)message);
                 pid.Stop();
