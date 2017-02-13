@@ -1,4 +1,5 @@
 ﻿using System;
+using Proto.Tests.Fixture;
 using Xunit;
 
 namespace Proto.Tests
@@ -70,17 +71,6 @@ namespace Proto.Tests
             var p2 = reg.Get(pid);
 
             Assert.Same(p, p2);
-        }
-        
-        public class TestProcess : Process
-        {
-            public override void SendUserMessage(PID pid, object message, PID sender)
-            {
-            }
-
-            public override void SendSystemMessage(PID pid, object message)
-            {
-            }
         }
     }
 }

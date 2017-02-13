@@ -14,17 +14,16 @@ namespace Proto.Tests
 
         public class TestMailbox : IMailbox
         {
-            private IDispatcher _dispatcher;
             private IMessageInvoker _invoker;
 
             public void PostUserMessage(object msg)
             {
-                _invoker.InvokeUserMessageAsync(msg).Wait();
+                _invoker?.InvokeUserMessageAsync(msg).Wait();
             }
 
             public void PostSystemMessage(object msg)
             {
-                _invoker.InvokeSystemMessageAsync(msg);
+                _invoker?.InvokeSystemMessageAsync(msg).Wait();
             }
 
             public void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher)
