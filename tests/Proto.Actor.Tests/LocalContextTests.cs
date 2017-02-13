@@ -7,17 +7,12 @@ using Xunit;
 namespace Proto.Tests
 {
     public class LocalContextTests
-    {
-        class SupervisorStrategyMock : ISupervisorStrategy
-        {
-            public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics crs, Exception cause) { }
-        }
-
+    { 
         [Fact]
         public void Given__Context_ctor_should_set_some_fields()
         {
             var producer = (Func<IActor>)(() => null);
-            var supervisorStrategyMock = new SupervisorStrategyMock();
+            var supervisorStrategyMock = new ActorFixture.DoNothingSupervisorStrategy();
             var middleware = new Receive(ctx => Task.CompletedTask);
             var parent = new PID("test", "test");
 
