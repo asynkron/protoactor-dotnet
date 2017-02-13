@@ -105,62 +105,61 @@ namespace Proto.Mailbox
         {
             var t = _dispatcher.Throughput;
             object message = null;
-            try
+            for (var i = 0; i < t; i++)
             {
-                for (var i = 0; i < t; i++)
+                var sys = _systemMessages.Pop();
+                message = sys;
+                if (sys != null)
                 {
-                    var sys = _systemMessages.Pop();
-                    message = sys;
-                    if (sys != null)
+                    if (sys is SuspendMailbox)
                     {
-                        if (sys is SuspendMailbox)
-                        {
-                            _suspended = true;
-                        }
-                        if (sys is ResumeMailbox)
-                        {
-                            _suspended = false;
-                        }
-                        var t1 = _invoker.InvokeSystemMessageAsync(sys);
-                        if (t1.IsCompleted)
-                            continue;
-                        else
-                        {
-                            t1.ContinueWith(RescheduleOnTaskComplete, message);
-                            return false;
-                        }
+                        _suspended = true;
                     }
-                    if (_suspended)
+                    if (sys is ResumeMailbox)
                     {
-                        break;
+                        _suspended = false;
                     }
-                    var msg = _userMailbox.Pop();
-                    if (msg != null)
+                    var t1 = _invoker.InvokeSystemMessageAsync(sys);
+                    if (t1.IsFaulted)
                     {
-                        message = msg;
-                        var t1 = _invoker.InvokeUserMessageAsync(msg);
-                        if (t1.IsCompleted)
-                        {
-                            for (var si = 0; si < _stats.Length; si++)
-                            {
-                                _stats[si].MessageReceived(msg);
-                            }
-                        }
-                        else
-                        {
-                            t1.ContinueWith(RescheduleOnTaskComplete, message);
-                            return false;
-                        }
+                        _invoker.EscalateFailure(t1.Exception, message);
+                        continue;
                     }
-                    else
+                    if (!t1.IsCompleted)
                     {
-                        break;
+                        t1.ContinueWith(RescheduleOnTaskComplete, message);
+                        return false;
+                    }
+                    continue;
+                }
+                if (_suspended)
+                {
+                    break;
+                }
+                var msg = _userMailbox.Pop();
+                if (msg != null)
+                {
+                    message = msg;
+                    var t1 = _invoker.InvokeUserMessageAsync(msg);
+                    if (t1.IsFaulted)
+                    {
+                        _invoker.EscalateFailure(t1.Exception, message);
+                        continue;
+                    }
+                    if (!t1.IsCompleted)
+                    {
+                        t1.ContinueWith(RescheduleOnTaskComplete, message);
+                        return false;
+                    }
+                    for (var si = 0; si < _stats.Length; si++)
+                    {
+                        _stats[si].MessageReceived(msg);
                     }
                 }
-            }
-            catch (Exception x)
-            {
-                _invoker.EscalateFailure(x, message);
+                else
+                {
+                    break;
+                }
             }
             return true;
         }
