@@ -79,7 +79,7 @@ namespace Proto.Mailbox
             var done = ProcessMessages();
 
             if (!done)
-                return Task.FromResult(0);
+                return Task.CompletedTask;
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
