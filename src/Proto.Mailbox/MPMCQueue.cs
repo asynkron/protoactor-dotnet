@@ -28,6 +28,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Proto.Mailbox
 {
@@ -86,10 +87,11 @@ namespace Proto.Mailbox
 
         public void Enqueue(object item)
         {
-            while(true)
+            while (true)
             {
                 if (TryEnqueue(item))
                     break;
+                Task.Delay(1).Wait();
             }
         }
 
