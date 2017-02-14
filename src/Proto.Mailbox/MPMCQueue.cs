@@ -91,7 +91,7 @@ namespace Proto.Mailbox
             {
                 if (TryEnqueue(item))
                     break;
-                Task.Delay(1).Wait();
+                Task.Delay(1).Wait(); // Could be Thread.Sleep(1) or Thread.SpinWait() if the assembly is not portable lib.
             }
         }
 
