@@ -2,6 +2,8 @@
 using Proto.Tests.Fixture;
 using Xunit;
 
+using static Proto.Tests.Fixture.Receivers;
+
 namespace Proto.Tests
 {
     public class PIDTests
@@ -9,7 +11,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_ActorNotDead_Ref_ShouldReturnIt()
         {
-            var pid = Actor.Spawn(Actor.FromFunc(ActorFixture.EmptyReceive));
+            var pid = Actor.Spawn(Actor.FromFunc(EmptyReceive));
 
             var p = pid.Ref;
 
@@ -19,7 +21,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_ActorDied_Ref_ShouldNotReturnIt()
         {
-            var pid = Actor.Spawn(Actor.FromFunc(ActorFixture.EmptyReceive).WithMailbox(() => new ActorFixture.TestMailbox()));
+            var pid = Actor.Spawn(Actor.FromFunc(EmptyReceive).WithMailbox(() => new Fixture.TestMailbox()));
             pid.Stop();
 
             var p = pid.Ref;
