@@ -74,22 +74,17 @@ namespace Proto.Mailbox
 
         private Task RunAsync()
         {
-            //we follow the Go model for consistency.
-            process:
             var done = ProcessMessages();
 
             if (!done)
+                // mailbox is halted, awaiting completion of a message task, upon which mailbox will be rescheduled
                 return Task.CompletedTask;
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
             if (_systemMessages.HasMessages || !_suspended && _userMailbox.HasMessages)
             {
-                if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) ==
-                    MailboxStatus.Idle)
-                {
-                    goto process;
-                }
+                Schedule();
             }
             else
             {
@@ -98,36 +93,34 @@ namespace Proto.Mailbox
                     _stats[i].MailboxEmpty();
                 }
             }
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
 
         private bool ProcessMessages()
         {
-            var t = _dispatcher.Throughput;
-            object message = null;
-            for (var i = 0; i < t; i++)
+            for (var i = 0; i < _dispatcher.Throughput; i++)
             {
-                var sys = _systemMessages.Pop();
-                message = sys;
-                if (sys != null)
+                object msg;
+                if ((msg = _systemMessages.Pop()) != null)
                 {
-                    if (sys is SuspendMailbox)
+                    if (msg is SuspendMailbox)
                     {
                         _suspended = true;
                     }
-                    if (sys is ResumeMailbox)
+                    if (msg is ResumeMailbox)
                     {
                         _suspended = false;
                     }
-                    var t1 = _invoker.InvokeSystemMessageAsync(sys);
-                    if (t1.IsFaulted)
+                    var t = _invoker.InvokeSystemMessageAsync(msg);
+                    if (t.IsFaulted)
                     {
-                        _invoker.EscalateFailure(t1.Exception, message);
+                        _invoker.EscalateFailure(t.Exception, msg);
                         continue;
                     }
-                    if (!t1.IsCompleted)
+                    if (!t.IsCompleted)
                     {
-                        t1.ContinueWith(RescheduleOnTaskComplete, message);
+                        // if task didn't complete immediately, halt processing and reschedule a new run when task completes
+                        t.ContinueWith(RescheduleOnTaskComplete, msg);
                         return false;
                     }
                     continue;
@@ -136,19 +129,18 @@ namespace Proto.Mailbox
                 {
                     break;
                 }
-                var msg = _userMailbox.Pop();
-                if (msg != null)
+                if ((msg = _userMailbox.Pop()) != null)
                 {
-                    message = msg;
-                    var t1 = _invoker.InvokeUserMessageAsync(msg);
-                    if (t1.IsFaulted)
+                    var t = _invoker.InvokeUserMessageAsync(msg);
+                    if (t.IsFaulted)
                     {
-                        _invoker.EscalateFailure(t1.Exception, message);
+                        _invoker.EscalateFailure(t.Exception, msg);
                         continue;
                     }
-                    if (!t1.IsCompleted)
+                    if (!t.IsCompleted)
                     {
-                        t1.ContinueWith(RescheduleOnTaskComplete, message);
+                        // if task didn't complete immediately, halt processing and reschedule a new run when task completes
+                        t.ContinueWith(RescheduleOnTaskComplete, msg);
                         return false;
                     }
                     for (var si = 0; si < _stats.Length; si++)
