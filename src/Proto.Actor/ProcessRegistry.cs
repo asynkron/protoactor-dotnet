@@ -39,18 +39,16 @@ namespace Proto
                     {
                         continue;
                     }
-                    //this is racy but it doesnt matter
-                    pid.Ref = reff;
                     return reff;
                 }
                 throw new NotSupportedException("Unknown host");
             }
 
-            if (_localActorRefs.TryGetValue(pid.Id, out var aref))
+            if (!_localActorRefs.TryGetValue(pid.Id, out var aref))
             {
-                return aref;
+                return DeadLetterProcess.Instance;
             }
-            return DeadLetterProcess.Instance;
+            return aref;
         }
 
         public (PID pid, bool ok) TryAdd(string id, Process aref)
@@ -58,7 +56,6 @@ namespace Proto
             var pid = new PID
             {
                 Id = id,
-                Ref = aref, //cache aref lookup
                 Address = Address // local
             };
             var ok = _localActorRefs.TryAdd(pid.Id, aref);

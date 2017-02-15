@@ -12,13 +12,37 @@ namespace Proto
 {
     public partial class PID
     {
+        private Process _p;
+
         public PID(string address, string id)
         {
             Address = address;
             Id = id;
         }
 
-        internal Process Ref { get; set; }
+        internal Process Ref
+        {
+            get
+            {
+                var p = _p;
+                if (p != null)
+                {
+                    if (p is LocalProcess lp && lp.IsDead)
+                    {
+                        _p = null;
+                    }
+                    return _p;
+                }
+
+                var reff = ProcessRegistry.Instance.Get(this);
+                if (!(reff is DeadLetterProcess))
+                {
+                    _p = reff;
+                }
+
+                return _p;
+            }
+        }
 
         public void Tell(object message)
         {
