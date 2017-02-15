@@ -87,6 +87,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Supervision", "examples\Sup
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LifecycleEvents", "examples\LifecycleEvents\LifecycleEvents.csproj", "{593AD0C1-687B-4D43-AE3C-A7786B718EB5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Mailbox.Tests", "tests\Proto.Mailbox.Tests\Proto.Mailbox.Tests.csproj", "{19311B7A-5B7B-4544-B8A2-0C98D7A7051A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -397,6 +399,18 @@ Global
 		{593AD0C1-687B-4D43-AE3C-A7786B718EB5}.Release|x64.Build.0 = Release|x64
 		{593AD0C1-687B-4D43-AE3C-A7786B718EB5}.Release|x86.ActiveCfg = Release|x86
 		{593AD0C1-687B-4D43-AE3C-A7786B718EB5}.Release|x86.Build.0 = Release|x86
+		{19311B7A-5B7B-4544-B8A2-0C98D7A7051A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19311B7A-5B7B-4544-B8A2-0C98D7A7051A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19311B7A-5B7B-4544-B8A2-0C98D7A7051A}.Debug|x64.ActiveCfg = Debug|x64
+		{19311B7A-5B7B-4544-B8A2-0C98D7A7051A}.Debug|x64.Build.0 = Debug|x64
+		{19311B7A-5B7B-4544-B8A2-0C98D7A7051A}.Debug|x86.ActiveCfg = Debug|x86
+		{19311B7A-5B7B-4544-B8A2-0C98D7A7051A}.Debug|x86.Build.0 = Debug|x86
+		{19311B7A-5B7B-4544-B8A2-0C98D7A7051A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19311B7A-5B7B-4544-B8A2-0C98D7A7051A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19311B7A-5B7B-4544-B8A2-0C98D7A7051A}.Release|x64.ActiveCfg = Release|x64
+		{19311B7A-5B7B-4544-B8A2-0C98D7A7051A}.Release|x64.Build.0 = Release|x64
+		{19311B7A-5B7B-4544-B8A2-0C98D7A7051A}.Release|x86.ActiveCfg = Release|x86
+		{19311B7A-5B7B-4544-B8A2-0C98D7A7051A}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -441,5 +455,6 @@ Global
 		{660167A8-008A-45D1-B489-AF49907895ED} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
 		{84C778CD-2290-4011-8E21-312BE9DC7350} = {660167A8-008A-45D1-B489-AF49907895ED}
 		{593AD0C1-687B-4D43-AE3C-A7786B718EB5} = {7C0D5FCB-D7B0-42F7-97D5-86A044927503}
+		{19311B7A-5B7B-4544-B8A2-0C98D7A7051A} = {9AA2BCF0-19AB-4DD9-8D91-7D188E463806}
 	EndGlobalSection
 EndGlobal
