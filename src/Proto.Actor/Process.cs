@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading;
 using Proto.Mailbox;
 
 namespace Proto
@@ -22,8 +23,14 @@ namespace Proto
 
     public class LocalProcess : Process
     {
+        private long _isDead;
         public IMailbox Mailbox { get; }
-        public bool IsDead { get; private set; }
+
+        internal bool IsDead
+        {
+            get { return Interlocked.Read(ref _isDead) == 1; }
+            private set { Interlocked.Exchange(ref _isDead, value ? 1 : 0); }
+        }
 
         public LocalProcess(IMailbox mailbox)
         {

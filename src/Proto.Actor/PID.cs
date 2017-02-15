@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto
@@ -22,16 +23,14 @@ namespace Proto
         {
             get
             {
-                if (_p != null)
+                var p = _p;
+                if (p != null)
                 {
-                    if (_p is LocalProcess lp && lp.IsDead)
+                    if (p is LocalProcess lp && lp.IsDead)
                     {
                         _p = null;
                     }
-                    else
-                    {
-                        return _p;
-                    }
+                    return _p;
                 }
 
                 var reff = ProcessRegistry.Instance.Get(this);
