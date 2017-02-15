@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto.Mailbox;
+using System.Collections.ObjectModel;
 
 namespace Proto
 {
