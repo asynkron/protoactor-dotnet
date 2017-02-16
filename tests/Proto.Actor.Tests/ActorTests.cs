@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Proto.Tests.Fixture;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -28,11 +29,11 @@ namespace Proto.Tests
 
             Assert.Equal("hey", reply);
         }
-        
+
         [Fact]
         public async Task RequestActorAsync_should_raise_TimeoutException_when_timeout_is_reached()
         {
-            PID pid = SpawnActorFromFunc(ActorFixture.EmptyReceive);
+            PID pid = SpawnActorFromFunc(Receivers.EmptyReceive);
 
             var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(() => pid.RequestAsync<object>("", TimeSpan.FromMilliseconds(20)));
             Assert.Equal("Request didn't receive any Response within the expected time.", timeoutEx.Message);
@@ -67,7 +68,7 @@ namespace Proto.Tests
                         messages.Enqueue(ctx.Message);
                         return Actor.Done;
                     })
-                    .WithMailbox(() => new ActorFixture.TestMailbox())
+                    .WithMailbox(() => new TestMailbox())
                 );
 
             pid.Tell("hello");

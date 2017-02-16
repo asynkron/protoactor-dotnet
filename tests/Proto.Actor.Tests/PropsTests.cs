@@ -1,4 +1,5 @@
 ﻿using Proto.Mailbox;
+using Proto.Tests.Fixture;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -11,7 +12,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_Props_When_WithDispatcher_Then_mutate_Dispatcher()
         {
-            var dispatcher = new ActorFixture.TestDispatcher();
+            var dispatcher = new TestDispatcher();
 
             var props = new Props();
             var props2 = props.WithDispatcher(dispatcher);
@@ -31,7 +32,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_Props_When_WithMailbox_Then_mutate_MailboxProducer()
         {
-            Func<IMailbox> mailboxProducer = () => new ActorFixture.TestMailbox();
+            Func<IMailbox> mailboxProducer = () => new TestMailbox();
 
             var props = new Props();
             var props2 = props.WithMailbox(mailboxProducer);
@@ -115,7 +116,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_Props_When_WithSupervisor_Then_mutate_SupervisorStrategy()
         {
-            var supervision = new ActorFixture.DoNothingSupervisorStrategy();
+            var supervision = new DoNothingSupervisorStrategy();
 
             var props = new Props();
             var props2 = props.WithSupervisor(supervision);

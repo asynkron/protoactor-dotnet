@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Proto.Tests.Fixture;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ namespace Proto.Tests
         public void Given__Context_ctor_should_set_some_fields()
         {
             var producer = (Func<IActor>)(() => null);
-            var supervisorStrategyMock = new ActorFixture.DoNothingSupervisorStrategy();
+            var supervisorStrategyMock = new DoNothingSupervisorStrategy();
             var middleware = new Receive(ctx => Task.CompletedTask);
             var parent = new PID("test", "test");
 
