@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Google.Protobuf;
 
 namespace Proto.Persistence
@@ -37,20 +38,20 @@ namespace Proto.Persistence
             });
         }
 
-        public void PersistReceive(IMessage message)
+        public async Task PersistReceiveAsync(IMessage message)
         {
-            State.PersistEvent(Name, EventIndex, message);
+            State.PersistEventAsync(Name, EventIndex, message);
             EventIndex++;
-            Context.ReceiveAsync(message).Wait();
+            await Context.ReceiveAsync(message);
             if (State.GetSnapshotInterval() == 0)
             {
-                Context.ReceiveAsync(new RequestSnapshot()).Wait();
+                await Context.ReceiveAsync(new RequestSnapshot());
             }
         }
 
-        public void PersistSnapshot(IMessage snapshot)
+        public async Task PersistSnapshotAsync(IMessage snapshot)
         {
-            State.PersistSnapshot(Name, EventIndex, snapshot);
+            await State.PersistSnapshotAsync(Name, EventIndex, snapshot);
         }
 
         public static Func<Receive, Receive> Using(IProvider provider)
