@@ -72,22 +72,19 @@ namespace Proto.Mailbox
             }
         }
 
-        private async Task RunAsync()
+        private Task RunAsync()
         {
-            //we follow the Go model for consistency.
-            process:
-            await ProcessMessages();
+            var done = ProcessMessages();
+
+            if (!done)
+                // mailbox is halted, awaiting completion of a message task, upon which mailbox will be rescheduled
+                return Task.CompletedTask;
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
             if (_systemMessages.HasMessages || !_suspended && _userMailbox.HasMessages)
             {
-                if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) ==
-                    MailboxStatus.Idle)
-                {
-                    await Task.Yield();
-                    goto process;
-                }
+                Schedule();
             }
             else
             {
@@ -96,58 +93,85 @@ namespace Proto.Mailbox
                     _stats[i].MailboxEmpty();
                 }
             }
+            return Task.CompletedTask;
         }
 
-        //TODO: we can gain a good 10% perf by not having async here.
-        //but then we need some way to deal with non completed tasks, and handle mailbox idle/busy state for those
-        private async Task ProcessMessages()
+        private bool ProcessMessages()
         {
-            var t = _dispatcher.Throughput;
-            object message = null;
-            try
+            for (var i = 0; i < _dispatcher.Throughput; i++)
             {
-                for (var i = 0; i < t; i++)
+                object msg;
+                if ((msg = _systemMessages.Pop()) != null)
                 {
-                    var sys = _systemMessages.Pop();
-                    message = sys;
-                    if (sys != null)
+                    if (msg is SuspendMailbox)
                     {
-                        if (sys is SuspendMailbox)
-                        {
-                            _suspended = true;
-                        }
-                        if (sys is ResumeMailbox)
-                        {
-                            _suspended = false;
-                        }
-                        await _invoker.InvokeSystemMessageAsync(sys);
+                        _suspended = true;
+                    }
+                    if (msg is ResumeMailbox)
+                    {
+                        _suspended = false;
+                    }
+                    var t = _invoker.InvokeSystemMessageAsync(msg);
+                    if (t.IsFaulted)
+                    {
+                        _invoker.EscalateFailure(t.Exception, msg);
                         continue;
                     }
-                    if (_suspended)
+                    if (!t.IsCompleted)
                     {
-                        break;
+                        // if task didn't complete immediately, halt processing and reschedule a new run when task completes
+                        t.ContinueWith(RescheduleOnTaskComplete, msg);
+                        return false;
                     }
-                    var msg = _userMailbox.Pop();
-                    if (msg != null)
+                    continue;
+                }
+                if (_suspended)
+                {
+                    break;
+                }
+                if ((msg = _userMailbox.Pop()) != null)
+                {
+                    var t = _invoker.InvokeUserMessageAsync(msg);
+                    if (t.IsFaulted)
                     {
-                        message = msg;
-                        await _invoker.InvokeUserMessageAsync(msg);
-                        for (var si = 0; si < _stats.Length; si++)
-                        {
-                            _stats[si].MessageReceived(msg);
-                        }
+                        _invoker.EscalateFailure(t.Exception, msg);
+                        continue;
                     }
-                    else
+                    if (!t.IsCompleted)
                     {
-                        break;
+                        // if task didn't complete immediately, halt processing and reschedule a new run when task completes
+                        t.ContinueWith(RescheduleOnTaskComplete, msg);
+                        return false;
+                    }
+                    for (var si = 0; si < _stats.Length; si++)
+                    {
+                        _stats[si].MessageReceived(msg);
                     }
                 }
+                else
+                {
+                    break;
+                }
             }
-            catch (Exception x)
-            {
-                _invoker.EscalateFailure(x, message);
-            }
+            return true;
         }
+
+        private void RescheduleOnTaskComplete(Task task, object message)
+        {
+            if (task.IsFaulted)
+            {
+                _invoker.EscalateFailure(task.Exception, message);
+            }
+            else
+            {
+                for (var si = 0; si < _stats.Length; si++)
+                {
+                    _stats[si].MessageReceived(message);
+                }
+            }
+            ProcessMessages();
+        }
+
 
         protected void Schedule()
         {

@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf;
 
 namespace Proto.Persistence
@@ -47,18 +48,20 @@ namespace Proto.Persistence
             }
         }
 
-        public void PersistEvent(string actorName, int eventIndex, IMessage @event)
+        public Task PersistEventAsync(string actorName, int eventIndex, IMessage @event)
         {
             List<object> events;
             if (_events.TryGetValue(actorName, out events))
             {
                 events.Add(@event);
             }
+            return Task.CompletedTask;
         }
 
-        public void PersistSnapshot(string actorName, int eventIndex, IMessage snapshot)
+        public Task PersistSnapshotAsync(string actorName, int eventIndex, IMessage snapshot)
         {
             _snapshots[actorName] = Tuple.Create((object) snapshot, eventIndex);
+            return Task.CompletedTask;
         }
     }
 }

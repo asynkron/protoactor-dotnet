@@ -76,25 +76,24 @@ class Program
         private State _state = new State();
         public Persistence Persistence { get; set; }
 
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
                 case RenameCommand rc:
-                    Persistence.PersistReceive(new RenameEvent {Name = rc.Name});
+                    await Persistence.PersistReceiveAsync(new RenameEvent {Name = rc.Name});
                     break;
                 case RenameEvent re:
                     _state.Name = re.Name;
                     Console.WriteLine($"{context.Self.Id} changed name to {_state.Name}");
                     break;
                 case RequestSnapshot rs:
-                    Persistence.PersistSnapshot(_state);
+                    await Persistence.PersistSnapshotAsync(_state);
                     break;
                 case State s:
                     _state = s;
                     break;
             }
-            return Actor.Done;
         }
     }
 }
