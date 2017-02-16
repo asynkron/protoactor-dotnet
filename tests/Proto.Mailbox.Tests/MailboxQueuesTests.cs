@@ -5,15 +5,11 @@ using System.Text;
 using System.Threading;
 using Xunit;
 
-namespace Proto.Tests
+namespace Proto.Mailbox.Tests
 {
     public class MailboxQueuesTests
     {
-        public enum MailboxQueueKing
-        {
-            Bounded,
-            Unbounded,
-        }
+        public enum MailboxQueueKing { Bounded, Unbounded, }
 
         IMailboxQueue GetMailboxQueue(MailboxQueueKing kind)
         {
@@ -86,8 +82,12 @@ namespace Proto.Tests
             producer.Start(); consumer.Start(consumerList);
             producer.Join(1000); consumer.Join(1000);
             cancelSource.Cancel();
-            
+
             Assert.Equal(msgCount, consumerList.Count);
+            for (int i = 0; i < msgCount; i++)
+            {
+                Assert.Equal(i, consumerList[i]);
+            }
         }
     }
 }

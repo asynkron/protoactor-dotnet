@@ -10,7 +10,7 @@ namespace Proto.Tests
     public class LocalContextTests
     { 
         [Fact]
-        public void Given__Context_ctor_should_set_some_fields()
+        public void Given_Context_ctor_should_set_some_fields()
         {
             var producer = (Func<IActor>)(() => null);
             var supervisorStrategyMock = new DoNothingSupervisorStrategy();
