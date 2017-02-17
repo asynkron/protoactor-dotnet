@@ -18,20 +18,20 @@ namespace Proto.Persistence
         public bool Recovering { get; set; }
         public string Name => Context.Self.Id;
 
-        public void Init(IProvider provider, IContext context)
+        public async Task InitAsync(IProvider provider, IContext context)
         {
             State = provider.GetState();
             Context = context;
             Recovering = true;
 
             State.Restart();
-            var t = State.GetSnapshot(Name);
+            var t = await State.GetSnapshotAsync(Name);
             if (t != null)
             {
                 EventIndex = t.Item2;
                 Context.ReceiveAsync(t.Item1).Wait();
             }
-            State.GetEvents(Name, EventIndex, e =>
+            await State.GetEventsAsync(Name, EventIndex, e =>
             {
                 Context.ReceiveAsync(e).Wait();
                 EventIndex++;
@@ -40,7 +40,7 @@ namespace Proto.Persistence
 
         public async Task PersistReceiveAsync(IMessage message)
         {
-            State.PersistEventAsync(Name, EventIndex, message);
+            await State.PersistEventAsync(Name, EventIndex, message);
             EventIndex++;
             await Context.ReceiveAsync(message);
             if (State.GetSnapshotInterval() == 0)
@@ -65,7 +65,7 @@ namespace Proto.Persistence
                         if (p != null)
                         {
                             p.Persistence = new Persistence();
-                            p.Persistence.Init(provider, context);
+                            await p.Persistence.InitAsync(provider, context);
                         }
                         break;
                     default:

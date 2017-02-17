@@ -12,8 +12,8 @@ namespace Proto.Persistence
 {
     public interface IProviderState
     {
-        void GetEvents(string actorName, int eventIndexStart, Action<object> callback);
-        Tuple<object, int> GetSnapshot(string actorName);
+        Task GetEventsAsync(string actorName, int eventIndexStart, Action<object> callback);
+        Task<Tuple<object, int>> GetSnapshotAsync(string actorName);
         int GetSnapshotInterval();
         Task PersistEventAsync(string actorName, int eventIndex, IMessage @event);
         Task PersistSnapshotAsync(string actorName, int eventIndex, IMessage snapshot);
