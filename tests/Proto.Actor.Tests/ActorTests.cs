@@ -1,9 +1,8 @@
-﻿using System;
+﻿using Proto.Tests.Fixture;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Proto.Tests.Fixture;
 using Xunit;
-
 using static Proto.Tests.Fixture.Receivers;
 
 namespace Proto.Tests
@@ -29,7 +28,7 @@ namespace Proto.Tests
 
             Assert.Equal("hey", reply);
         }
-        
+
         [Fact]
         public async Task RequestActorAsync_should_raise_TimeoutException_when_timeout_is_reached()
         {
