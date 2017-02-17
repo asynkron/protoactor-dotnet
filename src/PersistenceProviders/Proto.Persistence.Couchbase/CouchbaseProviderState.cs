@@ -24,13 +24,13 @@ namespace Proto.Persistence.Couchbase
             _snapshotInterval = snapshotInterval;
         }
 
-        public void GetEvents(string actorName, int eventIndexStart, Action<object> callback)
+        public async Task GetEventsAsync(string actorName, int eventIndexStart, Action<object> callback)
         {
             var q =
                 $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.eventIndex>={eventIndexStart} AND b.type='event' ORDER BY b.eventIndex ASC";
             var req = QueryRequest.Create(q);
             req.ScanConsistency(ScanConsistency.RequestPlus);
-            var res = _bucket.Query<Envelope>(req);
+            var res = await _bucket.QueryAsync<Envelope>(req);
             ThrowOnError(res);
             var envelopes = res.Rows;
             foreach (var envelope in envelopes)
@@ -39,13 +39,13 @@ namespace Proto.Persistence.Couchbase
             }
         }
 
-        public Tuple<object, int> GetSnapshot(string actorName)
+        public async Task<Tuple<object, int>> GetSnapshotAsync(string actorName)
         {
             var q =
                 $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName={actorName} AND b.type=snapshot ORDER BY b.eventIndex DESC LIMIT 1";
             var req = QueryRequest.Create(q);
             req.ScanConsistency(ScanConsistency.RequestPlus);
-            var res = _bucket.Query<Envelope>(req);
+            var res = await _bucket.QueryAsync<Envelope>(req);
             var envelope = res.Rows.FirstOrDefault();
             return envelope != null
                 ? Tuple.Create((object) envelope.Event, envelope.EventIndex)

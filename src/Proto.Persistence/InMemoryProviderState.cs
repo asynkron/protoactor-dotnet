@@ -28,15 +28,14 @@ namespace Proto.Persistence
             return 0;
         }
 
-        public Tuple<object, int> GetSnapshot(string actorName)
+        public Task<Tuple<object, int>> GetSnapshotAsync(string actorName)
         {
             Tuple<object, int> snapshot;
-            return _snapshots.TryGetValue(actorName, out snapshot)
-                ? snapshot
-                : null;
+            _snapshots.TryGetValue(actorName, out snapshot);
+            return Task.FromResult(snapshot);
         }
 
-        public void GetEvents(string actorName, int eventIndexStart, Action<object> callback)
+        public Task GetEventsAsync(string actorName, int eventIndexStart, Action<object> callback)
         {
             List<object> events;
             if (_events.TryGetValue(actorName, out events))
@@ -46,6 +45,7 @@ namespace Proto.Persistence
                     callback(e);
                 }
             }
+            return Task.CompletedTask;
         }
 
         public Task PersistEventAsync(string actorName, int eventIndex, IMessage @event)
