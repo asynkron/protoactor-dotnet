@@ -61,7 +61,6 @@ namespace Proto.Persistence
                 switch (context.Message)
                 {
                     case Started started:
-                    case Replay replay:
                         var p = context.Actor as IPersistentActor;
                         if (p != null)
                         {
