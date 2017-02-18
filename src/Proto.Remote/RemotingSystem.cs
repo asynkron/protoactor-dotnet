@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using Grpc.Core;
 
 namespace Proto.Remote
@@ -16,8 +17,6 @@ namespace Proto.Remote
 
         public static void Start(string host, int port)
         {
-            var addr = host + ":" + port;
-            ProcessRegistry.Instance.Address = addr;
             ProcessRegistry.Instance.RegisterHostResolver(pid => new RemoteProcess(pid));
 
             _server = new Server
@@ -26,9 +25,13 @@ namespace Proto.Remote
                 Ports = {new ServerPort(host, port, ServerCredentials.Insecure)}
             };
             _server.Start();
-            var emProps =
-                Actor.FromProducer(() => new EndpointManager());
-            EndpointManagerPid = Actor.Spawn(emProps);
+
+            var boundPort = _server.Ports.Single().BoundPort;
+            var addr = host + ":" + boundPort;
+            ProcessRegistry.Instance.Address = addr;
+            
+            var props = Actor.FromProducer(() => new EndpointManager());
+            EndpointManagerPid = Actor.Spawn(props);
 
             Console.WriteLine($"[REMOTING] Starting Proto.Actor server on {addr}");
         }
