@@ -1,16 +1,28 @@
 {
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
     "version": "0.1.0",
-    "command": "dotnet",
+    "showOutput": "silent",
+    "command": "cake",
+    "windows": {
+        "command": "@powershell",
+        "args": [
+            "-NoProfile", "-ExecutionPolicy", "Bypass", "${cwd}/build.ps1"
+        ]
+    },
+    "linux": {
+        "command": "./build.sh"
+    },
+    "osx": {
+        "command": "./build.sh"
+    },
     "isShellCommand": true,
-    "args": [],
     "tasks": [
         {
             "taskName": "build",
-            "args": [
-                "${workspaceRoot}\\examples\\InprocessBenchmark\\InprocessBenchmark.csproj"
-            ],
-            "isBuildCommand": true,
-            "problemMatcher": "$msCompile"
+            "suppressTaskName": true,
+            "args": [ ],
+            "isBuildCommand": true
         }
     ]
 }

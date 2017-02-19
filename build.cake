@@ -15,6 +15,8 @@ Task("Build")
 Task("UnitTest")
     .Does(() => {
         DotNetCoreTest("tests/Proto.Actor.Tests//Proto.Actor.Tests.csproj");
+        DotNetCoreTest("tests/Proto.MailBox.Tests//Proto.MailBox.Tests.csproj");
+        DotNetCoreTest("tests/Proto.Remote.Tests//Proto.Remote.Tests.csproj");
     });
 
 Task("Pack")
