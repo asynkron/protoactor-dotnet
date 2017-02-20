@@ -23,6 +23,13 @@
             "suppressTaskName": true,
             "args": [ ],
             "isBuildCommand": true
+        },
+        {
+            "taskName": "test",
+            "args": [ ],
+            "isTestCommand": true,
+            "showOutput": "always",
+            "problemMatcher": "$msCompile"
         }
     ]
 }
