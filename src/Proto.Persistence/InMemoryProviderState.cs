@@ -16,8 +16,8 @@ namespace Proto.Persistence
     {
         private readonly IDictionary<string, List<object>> _events = new ConcurrentDictionary<string, List<object>>();
 
-        private readonly IDictionary<string, Tuple<object, int>> _snapshots =
-            new Dictionary<string, Tuple<object, int>>();
+        private readonly IDictionary<string, Tuple<object, ulong>> _snapshots =
+            new Dictionary<string, Tuple<object, ulong>>();
 
         public void Restart()
         {
@@ -28,14 +28,14 @@ namespace Proto.Persistence
             return 0;
         }
 
-        public Task<Tuple<object, int>> GetSnapshotAsync(string actorName)
+        public Task<Tuple<object, ulong>> GetSnapshotAsync(string actorName)
         {
-            Tuple<object, int> snapshot;
+            Tuple<object, ulong> snapshot;
             _snapshots.TryGetValue(actorName, out snapshot);
             return Task.FromResult(snapshot);
         }
 
-        public Task GetEventsAsync(string actorName, int eventIndexStart, Action<object> callback)
+        public Task GetEventsAsync(string actorName, ulong eventIndexStart, Action<object> callback)
         {
             List<object> events;
             if (_events.TryGetValue(actorName, out events))
@@ -48,7 +48,7 @@ namespace Proto.Persistence
             return Task.CompletedTask;
         }
 
-        public Task PersistEventAsync(string actorName, int eventIndex, IMessage @event)
+        public Task PersistEventAsync(string actorName, ulong eventIndex, IMessage @event)
         {
             List<object> events;
             if (_events.TryGetValue(actorName, out events))
@@ -58,7 +58,7 @@ namespace Proto.Persistence
             return Task.CompletedTask;
         }
 
-        public Task PersistSnapshotAsync(string actorName, int eventIndex, IMessage snapshot)
+        public Task PersistSnapshotAsync(string actorName, ulong eventIndex, IMessage snapshot)
         {
             _snapshots[actorName] = Tuple.Create((object) snapshot, eventIndex);
             return Task.CompletedTask;
