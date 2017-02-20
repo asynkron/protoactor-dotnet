@@ -24,7 +24,7 @@ namespace Proto.Persistence.Couchbase
             _snapshotInterval = snapshotInterval;
         }
 
-        public async Task GetEventsAsync(string actorName, int eventIndexStart, Action<object> callback)
+        public async Task GetEventsAsync(string actorName, ulong eventIndexStart, Action<object> callback)
         {
             var q =
                 $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.eventIndex>={eventIndexStart} AND b.type='event' ORDER BY b.eventIndex ASC";
@@ -39,7 +39,7 @@ namespace Proto.Persistence.Couchbase
             }
         }
 
-        public async Task<Tuple<object, int>> GetSnapshotAsync(string actorName)
+        public async Task<Tuple<object, ulong>> GetSnapshotAsync(string actorName)
         {
             var q =
                 $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName={actorName} AND b.type=snapshot ORDER BY b.eventIndex DESC LIMIT 1";
@@ -57,13 +57,13 @@ namespace Proto.Persistence.Couchbase
             return _snapshotInterval;
         }
 
-        public async Task PersistEventAsync(string actorName, int eventIndex, IMessage @event)
+        public async Task PersistEventAsync(string actorName, ulong eventIndex, IMessage @event)
         {
             var envelope = new Envelope(actorName, eventIndex, @event, "event");
             var res = await _bucket.InsertAsync(envelope.Key, envelope);
         }
 
-        public async Task PersistSnapshotAsync(string actorName, int eventIndex, IMessage snapshot)
+        public async Task PersistSnapshotAsync(string actorName, ulong eventIndex, IMessage snapshot)
         {
             var envelope = new Envelope(actorName, eventIndex, snapshot, "snapshot");
             var res = await _bucket.InsertAsync(envelope.Key, envelope);

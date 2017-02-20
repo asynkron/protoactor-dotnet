@@ -13,7 +13,7 @@ namespace Proto.Persistence
     public class Persistence
     {
         public IProviderState State { get; set; }
-        public int EventIndex { get; set; }
+        public ulong EventIndex { get; set; }
         public IContext Context { get; set; }
         public bool Recovering { get; set; }
         public string Name => Context.Self.Id;
@@ -60,7 +60,7 @@ namespace Proto.Persistence
             {
                 switch (context.Message)
                 {
-                    case Started started:
+                    case Started _:
                         var p = context.Actor as IPersistentActor;
                         if (p != null)
                         {
@@ -68,10 +68,8 @@ namespace Proto.Persistence
                             await p.Persistence.InitAsync(provider, context);
                         }
                         break;
-                    default:
-                        await next(context);
-                        break;
                 }
+                await next(context);
             };
         }
     }
