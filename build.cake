@@ -3,11 +3,13 @@
 var target = Argument("target", "Default");
 var mygetApiKey = Argument<string>("mygetApiKey", null);
 var packageVersion = Argument<string>("packageVersion", "0.1.0");
+var currentBranch = Argument<string>("currentBranch", GitBranchCurrent("./").FriendlyName);
 
-var currentBranch = GitBranchCurrent("./").FriendlyName;
 var versionSuffix = currentBranch == "master" ? null : currentBranch;
 if (versionSuffix != null)
     packageVersion += "-" + versionSuffix;
+
+Information("Version: " + packageVersion);
 
 Task("Restore")
     .Does(() => {
