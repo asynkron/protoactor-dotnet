@@ -2,12 +2,12 @@
 
 var target = Argument("target", "Default");
 var mygetApiKey = Argument<string>("mygetApiKey", null);
+var packageVersion = Argument<string>("packageVersion", "0.1.0");
 
 var currentBranch = GitBranchCurrent("./").FriendlyName;
 var versionSuffix = currentBranch == "master" ? null : currentBranch;
-var version = Argument<string>("version", "0.1.0");
 if (versionSuffix != null)
-    version += "-" + versionSuffix;
+    packageVersion += "-" + versionSuffix;
 
 Task("Restore")
     .Does(() => {
@@ -18,7 +18,7 @@ Task("Build")
     .Does(() => {
         DotNetCoreBuild("ProtoActor.sln", new DotNetCoreBuildSettings {
             Configuration = "Release",
-            ArgumentCustomization = args => args.Append("/property:Version=" + version)
+            ArgumentCustomization = args => args.Append("/property:Version=" + packageVersion)
         });
     });
 
@@ -34,7 +34,7 @@ Task("Pack")
                 OutputDirectory = "out",
                 Configuration = "Release",
                 VersionSuffix = versionSuffix,
-                ArgumentCustomization = args => args.Append("/property:Version=" + version)
+                ArgumentCustomization = args => args.Append("/property:Version=" + packageVersion)
             });
         }
     });
