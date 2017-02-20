@@ -6,8 +6,6 @@ platform: Any CPU
 environment:
   # Don't report back to the mothership
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
-  NUGET_API_KEY:
-    secure: EsuJKJ3FzjcSX1xp9nKr0Lg+xVkIg5EGYB1FEuwIE/dm0lFolL7LKd3G3F6Z195+
 before_build:
 - nuget install Cake -ExcludeVersion
 build_script:
@@ -20,7 +18,7 @@ deploy:
   provider: NuGet
   server: https://www.myget.org/F/protoactor/api/v2/package
   api_key:
-    secure: Lg87f7FMaIazSs+Cmlhk5y7elJBeQ+h/FiI6tC+XJtBKqTxHpCWlTq+nvBPPfH/x
+    secure: EsuJKJ3FzjcSX1xp9nKr0Lg+xVkIg5EGYB1FEuwIE/dm0lFolL7LKd3G3F6Z195+
   skip_symbols: false
   symbol_server: https://www.myget.org/F/protoactor/symbols/api/v2/package
 artifacts:
