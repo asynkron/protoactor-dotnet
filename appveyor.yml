@@ -11,7 +11,7 @@ environment:
 before_build:
 - nuget install Cake -ExcludeVersion
 build_script:
-- .\Cake\Cake.exe --target=Build --packageVersion=$env:APPVEYOR_BUILD_VERSION
+- .\Cake\Cake.exe --target=Build --packageVersion=$env:APPVEYOR_BUILD_VERSION --verbosity=Verbose
 after_build:
 - .\Cake\Cake.exe --target=Pack --packageVersion=$env:APPVEYOR_BUILD_VERSION
 test_script:
