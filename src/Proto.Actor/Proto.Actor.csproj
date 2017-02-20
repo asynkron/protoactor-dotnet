@@ -4,7 +4,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <TargetFrameworks>netstandard1.6;net461</TargetFrameworks>
-    <Version>0.1.0</Version>
+    <Version>$(Version)</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net461'">
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
