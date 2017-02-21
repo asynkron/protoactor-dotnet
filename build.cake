@@ -53,7 +53,6 @@ Task("Default")
     .IsDependentOn("Build")
     .IsDependentOn("UnitTest")
     .IsDependentOn("Pack")
-    //.IsDependentOn("Push")
     ;
 
 RunTarget(target);
