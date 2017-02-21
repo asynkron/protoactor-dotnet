@@ -14,12 +14,7 @@ after_build:
 - .\Cake\Cake.exe --target=Pack --packageVersion=%APPVEYOR_BUILD_VERSION% --currentBranch=%APPVEYOR_REPO_BRANCH%
 test_script:
 - .\Cake\Cake.exe --target=UnitTest
-deploy:
-  provider: NuGet
-  server: https://www.myget.org/F/protoactor/api/v2/package
-  api_key:
-    secure: EsuJKJ3FzjcSX1xp9nKr0Lg+xVkIg5EGYB1FEuwIE/dm0lFolL7LKd3G3F6Z195+
-  skip_symbols: false
-  symbol_server: https://www.myget.org/F/protoactor/symbols/api/v2/package
+after_test:
+- .\Cake\Cake.exe --target=Push --mygetApiKey=%MYGET_API_KEY%
 artifacts:
 - path: out\*
