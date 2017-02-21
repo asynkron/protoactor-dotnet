@@ -42,10 +42,13 @@ Task("Pack")
     });
 Task("Push")
     .Does(() => {
-        NuGetPush("out/*.nupkg", new NuGetPushSettings {
-            Source = "https://www.myget.org/F/protoactor/api/v2/package",
-            ApiKey = mygetApiKey
-        });
+        var pkgs = GetFiles("out/*.nupkg");
+        foreach(var pkg in pkgs) {
+            NuGetPush(pkg, new NuGetPushSettings {
+                Source = "https://www.myget.org/F/protoactor/api/v2/package",
+                ApiKey = mygetApiKey
+            });
+        }
     });
 
 Task("Default")
