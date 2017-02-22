@@ -1,15 +1,15 @@
-﻿using Proto.Tests.Fixture;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Proto.TestFixtures;
 using Xunit;
-using static Proto.Tests.Fixture.Receivers;
+using static Proto.TestFixtures.Receivers;
 
 namespace Proto.Tests
 {
     public class ActorTests
     {
-        static PID SpawnActorFromFunc(Receive receive) => Actor.Spawn(Actor.FromFunc(receive));
+        public static PID SpawnActorFromFunc(Receive receive) => Actor.Spawn(Actor.FromFunc(receive));
 
 
         [Fact]

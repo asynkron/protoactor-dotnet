@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using Proto.TestFixtures;
 using Xunit;
 
 namespace Proto.Mailbox.Tests
@@ -10,9 +11,7 @@ namespace Proto.Mailbox.Tests
         public void GivenCompletedUserMessageTaskThrewException_ShouldEscalateFailure()
         {
             var mailboxHandler = new TestMailboxHandler();
-            var userMailbox = new UnboundedMailboxQueue();
-            var systemMessages = new UnboundedMailboxQueue();
-            var mailbox = new DefaultMailbox(systemMessages, userMailbox);
+            var mailbox = UnboundedMailbox.Create();
             mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
 
             var msg1 = new TestMessage();
@@ -30,9 +29,7 @@ namespace Proto.Mailbox.Tests
         public void GivenCompletedSystemMessageTaskThrewException_ShouldEscalateFailure()
         {
             var mailboxHandler = new TestMailboxHandler();
-            var userMailbox = new UnboundedMailboxQueue();
-            var systemMessages = new UnboundedMailboxQueue();
-            var mailbox = new DefaultMailbox(systemMessages, userMailbox);
+            var mailbox = UnboundedMailbox.Create();
             mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
 
             var msg1 = new TestMessage();
@@ -50,9 +47,7 @@ namespace Proto.Mailbox.Tests
         public void GivenNonCompletedUserMessageTaskThrewException_ShouldEscalateFailure()
         {
             var mailboxHandler = new TestMailboxHandler();
-            var userMailbox = new UnboundedMailboxQueue();
-            var systemMessages = new UnboundedMailboxQueue();
-            var mailbox = new DefaultMailbox(systemMessages, userMailbox);
+            var mailbox = UnboundedMailbox.Create();
             mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
 
             var msg1 = new TestMessage();
@@ -71,9 +66,7 @@ namespace Proto.Mailbox.Tests
         public void GivenNonCompletedSystemMessageTaskThrewException_ShouldEscalateFailure()
         {
             var mailboxHandler = new TestMailboxHandler();
-            var userMailbox = new UnboundedMailboxQueue();
-            var systemMessages = new UnboundedMailboxQueue();
-            var mailbox = new DefaultMailbox(systemMessages, userMailbox);
+            var mailbox = UnboundedMailbox.Create();
             mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
 
             var msg1 = new TestMessage();

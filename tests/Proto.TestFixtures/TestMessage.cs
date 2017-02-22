@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace Proto.Mailbox.Tests
+namespace Proto.TestFixtures
 {
     public class TestMessage
     {

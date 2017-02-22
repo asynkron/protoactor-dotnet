@@ -1,12 +1,13 @@
 using System.Collections.Generic;
+using Proto.Mailbox;
 
-namespace Proto.Mailbox.Tests
+namespace Proto.TestFixtures
 {
     public class TestMailboxStatistics : IMailboxStatistics
     {
-        internal List<object> Stats { get; } = new List<object>();
-        internal List<object> Posted { get; } = new List<object>();
-        internal List<object> Received { get; } = new List<object>();
+        public List<object> Stats { get; } = new List<object>();
+        public List<object> Posted { get; } = new List<object>();
+        public List<object> Received { get; } = new List<object>();
 
         public void MailboxStarted()
         {

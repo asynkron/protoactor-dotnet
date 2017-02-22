@@ -5,9 +5,9 @@
 // -----------------------------------------------------------------------
 
 
-namespace Proto.Tests.Fixture
+namespace Proto.TestFixtures
 {
-    static class Receivers
+    public static class Receivers
     {
         public static Receive EmptyReceive = c => Actor.Done;
     }

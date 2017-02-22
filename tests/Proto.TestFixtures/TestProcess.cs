@@ -1,4 +1,4 @@
-﻿namespace Proto.Tests.Fixture
+﻿namespace Proto.TestFixtures
 {
     public class TestProcess : Process
     {

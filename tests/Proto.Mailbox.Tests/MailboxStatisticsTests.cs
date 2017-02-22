@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Proto.TestFixtures;
 using Xunit;
 
 namespace Proto.Mailbox.Tests
