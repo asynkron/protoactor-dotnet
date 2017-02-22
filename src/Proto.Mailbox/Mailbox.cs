@@ -24,7 +24,23 @@ namespace Proto.Mailbox
         void Start();
     }
 
-    public class DefaultMailbox : IMailbox
+    public static class BoundedMailbox
+    {
+        public static IMailbox Create(int size, params IMailboxStatistics[] stats)
+        {
+            return new DefaultMailbox(new UnboundedMailboxQueue(), new BoundedMailboxQueue(size), stats);
+        }
+    }
+
+    public static class UnboundedMailbox
+    {
+        public static IMailbox Create(params IMailboxStatistics[] stats)
+        {
+            return new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue(), stats);
+        }
+    }
+
+    internal class DefaultMailbox : IMailbox
     {
         private readonly IMailboxStatistics[] _stats;
         private readonly IMailboxQueue _systemMessages;
