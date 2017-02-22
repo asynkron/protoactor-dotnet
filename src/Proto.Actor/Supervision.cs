@@ -22,12 +22,15 @@ namespace Proto
     {
         IReadOnlyCollection<PID> Children { get; }
         void EscalateFailure(PID who, Exception reason);
+        void RestartChildren(params PID[] pids);
+        void StopChildren(params PID[] pids);
+        void ResumeChildren(params PID[] pids);
     }
 
     public static class Supervision
     {
         public static ISupervisorStrategy DefaultStrategy { get; } =
-            new OneForOneStrategy((who, reason) => SupervisorDirective.Restart,10, TimeSpan.FromSeconds(10));
+            new OneForOneStrategy((who, reason) => SupervisorDirective.Restart, 10, TimeSpan.FromSeconds(10));
     }
 
     public interface ISupervisorStrategy
@@ -83,25 +86,25 @@ namespace Proto
             {
                 case SupervisorDirective.Resume:
                     //resume the failing child
-                    child.SendSystemMessage(ResumeMailbox.Instance);
+                    supervisor.ResumeChildren(child);
                     break;
                 case SupervisorDirective.Restart:
                     //restart the failing child
                     if (crs.RequestRestartPermission(_maxNrOfRetries, _withinTimeSpan))
                     {
                         Console.WriteLine($"Restarting {child.ToShortString()} Reason {reason}");
-                        child.SendSystemMessage(Restart.Instance);
+                        supervisor.RestartChildren(child);
                     }
                     else
                     {
                         Console.WriteLine($"Stopping {child.ToShortString()} Reason { reason}");
-                        child.Stop();
+                        supervisor.StopChildren(child);
                     }
                     break;
                 case SupervisorDirective.Stop:
                     //stop the failing child
                     Console.WriteLine($"Stopping {child.ToShortString()} Reason {reason}");
-                    child.Stop();
+                    supervisor.StopChildren(child);
                     break;
                 case SupervisorDirective.Escalate:
                     supervisor.EscalateFailure(child, reason);

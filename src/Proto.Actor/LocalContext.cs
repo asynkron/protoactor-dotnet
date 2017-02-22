@@ -267,6 +267,30 @@ namespace Proto
             Parent.SendSystemMessage(new Failure(who, reason, _restartStatistics));
         }
 
+        public void RestartChildren(params PID[] pids)
+        {
+            for (int i = 0; i < pids.Length; i++)
+            {
+                pids[i].SendSystemMessage(Restart.Instance);
+            }
+        }
+
+        public void StopChildren(params PID[] pids)
+        {
+            for (int i = 0; i < pids.Length; i++)
+            {
+                pids[i].SendSystemMessage(Stop.Instance);
+            }
+        }
+
+        public void ResumeChildren(params PID[] pids)
+        {
+            for (int i = 0; i < pids.Length; i++)
+            {
+                pids[i].SendSystemMessage(ResumeMailbox.Instance);
+            }
+        }
+
         internal static Task DefaultReceive(IContext context)
         {
             var c = (Context)context;
