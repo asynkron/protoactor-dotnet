@@ -5,13 +5,10 @@
 // -----------------------------------------------------------------------
 
 using System;
+using Proto.Mailbox;
 
 namespace Proto
 {
-    public abstract class SystemMessage
-    {
-    }
-
     public abstract class AutoReceiveMessage
     {
     }
