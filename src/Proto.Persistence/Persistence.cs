@@ -28,7 +28,7 @@ namespace Proto.Persistence
             if (t != null)
             {
                 EventIndex = t.Item2;
-                Context.ReceiveAsync(t.Item1).Wait();
+                await Context.ReceiveAsync(t.Item1);
             }
             State.GetEvents(Name, EventIndex, e =>
             {
