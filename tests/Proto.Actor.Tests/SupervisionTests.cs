@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Proto.Mailbox;
 using Proto.TestFixtures;
 using Xunit;
+using System.Linq;
 
 namespace Proto.Tests
 {
@@ -49,7 +50,7 @@ namespace Proto.Tests
         public void OneForOneStrategy_Should_ResumeChildOnFailure()
         {
             var childMailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
-            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 1, TimeSpan.MaxValue);
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 1, null);
             var childProps = Actor.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
@@ -67,7 +68,7 @@ namespace Proto.Tests
         public void OneForOneStrategy_Should_StopChildOnFailure()
         {
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, TimeSpan.MaxValue);
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
             var childProps = Actor.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
@@ -79,6 +80,42 @@ namespace Proto.Tests
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(Stop.Instance, childMailboxStats.Posted);
             Assert.Contains(Stop.Instance, childMailboxStats.Received);
+        }
+
+        [Fact]
+        public void OneForOneStrategy_Should_RestartChildOnFailure()
+        {
+            var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
+            var childProps = Actor.FromProducer(() => new ChildActor())
+                .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
+                .WithSupervisor(strategy);
+            var parent = Actor.Spawn(parentProps);
+
+            parent.Tell("hello");
+
+            childMailboxStats.Reset.Wait(1000);
+            Assert.Contains(Restart.Instance, childMailboxStats.Posted);
+            Assert.Contains(Restart.Instance, childMailboxStats.Received);
+        }
+
+        [Fact]
+        public void OneForOneStrategy_Should_EscalateFailureToParent()
+        {
+            var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
+            var childProps = Actor.FromProducer(() => new ChildActor());
+            var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
+                .WithSupervisor(strategy)
+                .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
+            var parent = Actor.Spawn(parentProps);
+
+            parent.Tell("hello");
+
+            parentMailboxStats.Reset.Wait(1000);
+            var failure = parentMailboxStats.Received.OfType<Failure>().Single();
+            Assert.IsType<Exception>(failure.Reason);
         }
     }
 }
