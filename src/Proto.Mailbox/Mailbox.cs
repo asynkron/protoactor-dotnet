@@ -39,7 +39,7 @@ namespace Proto.Mailbox
         {
             _systemMessages = systemMessages;
             _userMailbox = userMailbox;
-            _stats = stats ?? Array.Empty<IMailboxStatistics>();
+            _stats = stats ?? new IMailboxStatistics[0];
         }
 
         public void PostUserMessage(object msg)
@@ -78,7 +78,7 @@ namespace Proto.Mailbox
 
             if (!done)
                 // mailbox is halted, awaiting completion of a message task, upon which mailbox will be rescheduled
-                return Task.CompletedTask;
+                return Task.FromResult(0);
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
@@ -93,7 +93,7 @@ namespace Proto.Mailbox
                     _stats[i].MailboxEmpty();
                 }
             }
-            return Task.CompletedTask;
+            return Task.FromResult(0);
         }
 
         private bool ProcessMessages()
