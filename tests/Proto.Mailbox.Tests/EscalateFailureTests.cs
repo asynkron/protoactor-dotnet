@@ -56,7 +56,7 @@ namespace Proto.Mailbox.Tests
             var taskException = new Exception();
             msg1.TaskCompletionSource.SetException(taskException);
 
-            Thread.Sleep(10);
+            Thread.Sleep(100);
             Assert.Equal(1, mailboxHandler.EscalatedFailures.Count);
             var e = Assert.IsType<AggregateException>(mailboxHandler.EscalatedFailures[0]);
             Assert.Equal(taskException, e.InnerException);
@@ -75,7 +75,7 @@ namespace Proto.Mailbox.Tests
             var taskException = new Exception();
             msg1.TaskCompletionSource.SetException(taskException);
 
-            Thread.Sleep(10);
+            Thread.Sleep(100);
             Assert.Equal(1, mailboxHandler.EscalatedFailures.Count);
             var e = Assert.IsType<AggregateException>(mailboxHandler.EscalatedFailures[0]);
             Assert.Equal(taskException, e.InnerException);
