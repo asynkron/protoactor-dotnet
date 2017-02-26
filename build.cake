@@ -5,7 +5,7 @@ var packageVersion = "0.1.0";
 var target = Argument("target", "Default");
 var mygetApiKey = Argument<string>("mygetApiKey", null);
 var currentBranch = Argument<string>("currentBranch", GitBranchCurrent("./").FriendlyName);
-var buildNumber = Argument<string>("buildNumber");
+var buildNumber = Argument<string>("buildNumber", null);
 
 var versionSuffix = "";
 if (currentBranch != "master") {
