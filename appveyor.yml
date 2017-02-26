@@ -2,7 +2,7 @@ image: Visual Studio 2017 RC
 version: '0.1.0.{build}'
 configuration:
 - Release
-platform: Any CPU
+#platform: Any CPU
 environment:
   # Don't report back to the mothership
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
