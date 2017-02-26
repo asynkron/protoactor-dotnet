@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Proto.Mailbox;
 using Proto.TestFixtures;
@@ -47,19 +48,35 @@ namespace Proto.Tests
         [Fact]
         public void OneForOneStrategy_Should_ResumeChildOnFailure()
         {
-            var childMailboxStats = new TestMailboxStatistics();
+            var childMailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 1, TimeSpan.MaxValue);
             var childProps = Actor.FromProducer(() => new ChildActor())
-                .WithDispatcher(new TestDispatcher())
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
-                .WithSupervisor(strategy)
-                .WithDispatcher(new TestDispatcher());
+                .WithSupervisor(strategy);
             var parent = Actor.Spawn(parentProps);
 
             parent.Tell("hello");
 
-            
+            childMailboxStats.Reset.Wait(1000);
+            Assert.Contains(ResumeMailbox.Instance, childMailboxStats.Received);
+        }
+
+        [Fact]
+        public void OneForOneStrategy_Should_StopChildOnFailure()
+        {
+            var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, TimeSpan.MaxValue);
+            var childProps = Actor.FromProducer(() => new ChildActor())
+                .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
+                .WithSupervisor(strategy);
+            var parent = Actor.Spawn(parentProps);
+
+            parent.Tell("hello");
+
+            childMailboxStats.Reset.Wait(1000);
+            Assert.Contains(Stopped.Instance, childMailboxStats.Received);
         }
     }
 }
