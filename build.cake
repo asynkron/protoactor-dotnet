@@ -40,7 +40,9 @@ Task("Build")
 Task("UnitTest")
     .Does(() => {
         foreach(var proj in GetFiles("tests/**/*.Tests.csproj")) {
-            DotNetCoreTest(proj.ToString());
+            DotNetCoreTest(proj.ToString(), new DotNetCoreTestSettings {
+                NoBuild = true,
+            });
         }
     });
 Task("Pack")
@@ -49,6 +51,7 @@ Task("Pack")
             DotNetCorePack(proj.ToString(), new DotNetCorePackSettings {
                 OutputDirectory = "out",
                 Configuration = "Release",
+                NoBuild = true,
             });
         }
     });
