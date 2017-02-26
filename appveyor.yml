@@ -1,5 +1,5 @@
 image: Visual Studio 2017 RC
-version: '0.1.0.{build}'
+version: '{branch}-{build}'
 configuration:
 - Release
 environment:
