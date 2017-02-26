@@ -59,6 +59,7 @@ namespace Proto.Tests
             parent.Tell("hello");
 
             childMailboxStats.Reset.Wait(1000);
+            Assert.Contains(ResumeMailbox.Instance, childMailboxStats.Posted);
             Assert.Contains(ResumeMailbox.Instance, childMailboxStats.Received);
         }
 
@@ -76,7 +77,8 @@ namespace Proto.Tests
             parent.Tell("hello");
 
             childMailboxStats.Reset.Wait(1000);
-            Assert.Contains(Stopped.Instance, childMailboxStats.Received);
+            Assert.Contains(Stop.Instance, childMailboxStats.Posted);
+            Assert.Contains(Stop.Instance, childMailboxStats.Received);
         }
     }
 }

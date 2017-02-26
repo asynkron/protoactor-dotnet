@@ -17,10 +17,9 @@ namespace Proto.Mailbox.Tests
             var mailbox = new DefaultMailbox(systemMessages, userMailbox, mailboxStatistics);
             mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
 
-            var msg1 = new TestMessage();
+            mailbox.Start();
 
-            mailbox.PostSystemMessage(msg1);
-            Assert.DoesNotContain(msg1, mailboxStatistics.Posted);
+            Assert.Contains("Started", mailboxStatistics.Stats);
         }
 
         [Fact]
@@ -40,7 +39,7 @@ namespace Proto.Mailbox.Tests
         }
 
         [Fact]
-        public void GivenSystemMessage_ShouldNotInvokeMessagePosted()
+        public void GivenSystemMessage_ShouldInvokeMessagePosted()
         {
             var mailboxHandler = new TestMailboxHandler();
             var userMailbox = new UnboundedMailboxQueue();
@@ -52,7 +51,7 @@ namespace Proto.Mailbox.Tests
             var msg1 = new TestMessage();
 
             mailbox.PostSystemMessage(msg1);
-            Assert.DoesNotContain(msg1, mailboxStatistics.Posted);
+            Assert.Contains(msg1, mailboxStatistics.Posted);
         }
 
         [Fact]
