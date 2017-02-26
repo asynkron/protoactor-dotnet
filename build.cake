@@ -49,7 +49,6 @@ Task("Pack")
             DotNetCorePack(proj.ToString(), new DotNetCorePackSettings {
                 OutputDirectory = "out",
                 Configuration = "Release",
-                NoBuild = true,
             });
         }
     });
