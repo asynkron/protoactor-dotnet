@@ -18,10 +18,6 @@ if (currentBranch != "master") {
 
 Information("Version: " + packageVersion);
 
-Task("Restore")
-    .Does(() => {
-        DotNetCoreRestore();
-    });
 Task("PatchVersion")
     .Does(() => {
         foreach(var proj in GetFiles("src/**/*.csproj")) {
@@ -29,9 +25,13 @@ Task("PatchVersion")
             XmlPoke(proj, "/Project/PropertyGroup/Version", packageVersion);
         }
     });
+Task("Restore")
+    .IsDependentOn("PatchVersion")
+    .Does(() => {
+        DotNetCoreRestore();
+    });
 Task("Build")
     .IsDependentOn("Restore")
-    .IsDependentOn("PatchVersion")
     .Does(() => {
         DotNetCoreBuild("ProtoActor.sln", new DotNetCoreBuildSettings {
             Configuration = "Release",
