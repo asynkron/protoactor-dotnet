@@ -91,6 +91,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Mailbox.Tests", "test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence.Tests", "tests\Proto.Persistence.Tests\Proto.Persistence.Tests.csproj", "{848E5CE2-D894-4321-8961-3521D3F2233C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.TestFixtures", "tests\Proto.TestFixtures\Proto.TestFixtures.csproj", "{BEAC63DD-5701-4B33-8155-5218B9761A70}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -425,6 +427,18 @@ Global
 		{848E5CE2-D894-4321-8961-3521D3F2233C}.Release|x64.Build.0 = Release|x64
 		{848E5CE2-D894-4321-8961-3521D3F2233C}.Release|x86.ActiveCfg = Release|x86
 		{848E5CE2-D894-4321-8961-3521D3F2233C}.Release|x86.Build.0 = Release|x86
+		{BEAC63DD-5701-4B33-8155-5218B9761A70}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BEAC63DD-5701-4B33-8155-5218B9761A70}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BEAC63DD-5701-4B33-8155-5218B9761A70}.Debug|x64.ActiveCfg = Debug|x64
+		{BEAC63DD-5701-4B33-8155-5218B9761A70}.Debug|x64.Build.0 = Debug|x64
+		{BEAC63DD-5701-4B33-8155-5218B9761A70}.Debug|x86.ActiveCfg = Debug|x86
+		{BEAC63DD-5701-4B33-8155-5218B9761A70}.Debug|x86.Build.0 = Debug|x86
+		{BEAC63DD-5701-4B33-8155-5218B9761A70}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BEAC63DD-5701-4B33-8155-5218B9761A70}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BEAC63DD-5701-4B33-8155-5218B9761A70}.Release|x64.ActiveCfg = Release|x64
+		{BEAC63DD-5701-4B33-8155-5218B9761A70}.Release|x64.Build.0 = Release|x64
+		{BEAC63DD-5701-4B33-8155-5218B9761A70}.Release|x86.ActiveCfg = Release|x86
+		{BEAC63DD-5701-4B33-8155-5218B9761A70}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -471,5 +485,6 @@ Global
 		{593AD0C1-687B-4D43-AE3C-A7786B718EB5} = {7C0D5FCB-D7B0-42F7-97D5-86A044927503}
 		{19311B7A-5B7B-4544-B8A2-0C98D7A7051A} = {9AA2BCF0-19AB-4DD9-8D91-7D188E463806}
 		{848E5CE2-D894-4321-8961-3521D3F2233C} = {9AA2BCF0-19AB-4DD9-8D91-7D188E463806}
+		{BEAC63DD-5701-4B33-8155-5218B9761A70} = {9AA2BCF0-19AB-4DD9-8D91-7D188E463806}
 	EndGlobalSection
 EndGlobal

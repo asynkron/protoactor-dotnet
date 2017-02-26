@@ -1,5 +1,5 @@
 ﻿using System;
-using Proto.Tests.Fixture;
+using Proto.TestFixtures;
 using Xunit;
 
 namespace Proto.Tests

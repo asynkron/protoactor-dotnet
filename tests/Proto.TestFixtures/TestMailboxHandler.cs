@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Proto.Mailbox;
 
-namespace Proto.Mailbox.Tests
+namespace Proto.TestFixtures
 {
     public class TestMailboxHandler : IMessageInvoker, IDispatcher
     {

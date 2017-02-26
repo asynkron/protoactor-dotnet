@@ -13,6 +13,6 @@ test_script:
 - .\Cake\Cake.exe --target=UnitTest
 after_test:
 - .\Cake\Cake.exe --target=Pack --buildNumber=%APPVEYOR_BUILD_NUMBER% --currentBranch=%APPVEYOR_REPO_BRANCH%
-- .\Cake\Cake.exe --target=Push --mygetApiKey=%MYGET_API_KEY%
+- IF NOT DEFINED %APPVEYOR_PULL_REQUEST_NUMBER% .\Cake\Cake.exe --target=Push --mygetApiKey=%MYGET_API_KEY%
 artifacts:
 - path: out\*

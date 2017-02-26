@@ -6,7 +6,11 @@
 
 namespace Proto.Mailbox
 {
-    public sealed class SuspendMailbox
+    public abstract class SystemMessage
+    {
+    }
+
+    public sealed class SuspendMailbox : SystemMessage
     {
         public static readonly SuspendMailbox Instance = new SuspendMailbox();
 
@@ -15,7 +19,7 @@ namespace Proto.Mailbox
         }
     }
 
-    public sealed class ResumeMailbox
+    public sealed class ResumeMailbox : SystemMessage
     {
         public static readonly ResumeMailbox Instance = new ResumeMailbox();
 

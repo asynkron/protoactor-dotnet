@@ -1,10 +1,8 @@
-﻿using Proto.Mailbox;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
 using System.Threading.Tasks;
+using Proto.Mailbox;
 
-namespace Proto.Tests.Fixture
+namespace Proto.TestFixtures
 {
     public class TestDispatcher : IDispatcher
     {

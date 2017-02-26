@@ -1,7 +1,9 @@
 ﻿using System.Linq;
 using System.Threading;
+using Proto.TestFixtures;
 using Xunit;
 using Xunit.Sdk;
+using TestMessage = Proto.TestFixtures.TestMessage;
 
 namespace Proto.Mailbox.Tests
 {

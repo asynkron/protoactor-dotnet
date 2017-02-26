@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Proto.Tests.Fixture
+namespace Proto.TestFixtures
 {
     public class DoNothingSupervisorStrategy : ISupervisorStrategy
     {
