@@ -73,7 +73,7 @@ namespace Proto.Persistence.Couchbase
         {
         }
 
-        private static void ThrowOnError(IQueryResult res)
+        private static void ThrowOnError<T>(IQueryResult<T> res)
         {
             if (!res.Success)
             {

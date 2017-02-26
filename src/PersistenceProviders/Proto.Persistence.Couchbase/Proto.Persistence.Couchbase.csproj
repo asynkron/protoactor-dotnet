@@ -7,7 +7,7 @@
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CouchbaseNetClient" Version="2.4.0-dp3" />
+    <PackageReference Include="CouchbaseNetClient" Version="2.4.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Proto.Actor\Proto.Actor.csproj" />
