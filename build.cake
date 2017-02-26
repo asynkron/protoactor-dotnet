@@ -39,7 +39,7 @@ Task("Build")
     });
 Task("UnitTest")
     .Does(() => {
-        foreach(var proj in GetFiles("test/**/*.Tests.csproj")) {
+        foreach(var proj in GetFiles("tests/**/*.Tests.csproj")) {
             DotNetCoreTest(proj.ToString());
         }
     });
