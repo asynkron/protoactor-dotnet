@@ -118,64 +118,71 @@ namespace Proto.Mailbox
 
         private bool ProcessMessages()
         {
-            for (var i = 0; i < _dispatcher.Throughput; i++)
+            object msg = null;
+            try
             {
-                object msg;
-                if ((msg = _systemMessages.Pop()) != null)
+                for (var i = 0; i < _dispatcher.Throughput; i++)
                 {
-                    if (msg is SuspendMailbox)
+                    if ((msg = _systemMessages.Pop()) != null)
                     {
-                        _suspended = true;
-                    }
-                    if (msg is ResumeMailbox)
-                    {
-                        _suspended = false;
-                    }
-                    var t = _invoker.InvokeSystemMessageAsync(msg);
-                    if (t.IsFaulted)
-                    {
-                        _invoker.EscalateFailure(t.Exception, msg);
+                        if (msg is SuspendMailbox)
+                        {
+                            _suspended = true;
+                        }
+                        if (msg is ResumeMailbox)
+                        {
+                            _suspended = false;
+                        }
+                        var t = _invoker.InvokeSystemMessageAsync(msg);
+                        if (t.IsFaulted)
+                        {
+                            _invoker.EscalateFailure(t.Exception, msg);
+                            continue;
+                        }
+                        if (!t.IsCompleted)
+                        {
+                            // if task didn't complete immediately, halt processing and reschedule a new run when task completes
+                            t.ContinueWith(RescheduleOnTaskComplete, msg);
+                            return false;
+                        }
+                        for (var si = 0; si < _stats.Length; si++)
+                        {
+                            _stats[si].MessageReceived(msg);
+                        }
                         continue;
                     }
-                    if (!t.IsCompleted)
+                    if (_suspended)
                     {
-                        // if task didn't complete immediately, halt processing and reschedule a new run when task completes
-                        t.ContinueWith(RescheduleOnTaskComplete, msg);
-                        return false;
+                        break;
                     }
-                    for (var si = 0; si < _stats.Length; si++)
+                    if ((msg = _userMailbox.Pop()) != null)
                     {
-                        _stats[si].MessageReceived(msg);
+                        var t = _invoker.InvokeUserMessageAsync(msg);
+                        if (t.IsFaulted)
+                        {
+                            _invoker.EscalateFailure(t.Exception, msg);
+                            continue;
+                        }
+                        if (!t.IsCompleted)
+                        {
+                            // if task didn't complete immediately, halt processing and reschedule a new run when task completes
+                            t.ContinueWith(RescheduleOnTaskComplete, msg);
+                            return false;
+                        }
+                        for (var si = 0; si < _stats.Length; si++)
+                        {
+                            _stats[si].MessageReceived(msg);
+                        }
                     }
-                    continue;
-                }
-                if (_suspended)
-                {
-                    break;
-                }
-                if ((msg = _userMailbox.Pop()) != null)
-                {
-                    var t = _invoker.InvokeUserMessageAsync(msg);
-                    if (t.IsFaulted)
+                    else
                     {
-                        _invoker.EscalateFailure(t.Exception, msg);
-                        continue;
-                    }
-                    if (!t.IsCompleted)
-                    {
-                        // if task didn't complete immediately, halt processing and reschedule a new run when task completes
-                        t.ContinueWith(RescheduleOnTaskComplete, msg);
-                        return false;
-                    }
-                    for (var si = 0; si < _stats.Length; si++)
-                    {
-                        _stats[si].MessageReceived(msg);
+                        break;
                     }
                 }
-                else
-                {
-                    break;
-                }
+            }
+            catch (Exception e)
+            {
+                _invoker.EscalateFailure(e, msg);
             }
             return true;
         }

@@ -441,15 +441,8 @@ namespace Proto
 
         private Task ActorReceive(IContext ctx)
         {
-            try
-            {
-                var task = Actor.ReceiveAsync(ctx);
-                return task;
-            }
-            catch (Exception e)
-            {
-                return Task.FromException(e);
-            }
+            var task = Actor.ReceiveAsync(ctx);
+            return task;
         }
 
         private void ResetReceiveTimeout()
