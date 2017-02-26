@@ -71,6 +71,10 @@ namespace Proto.Mailbox
         public void PostSystemMessage(object msg)
         {
             _systemMessages.Push(msg);
+            for (var i = 0; i < _stats.Length; i++)
+            {
+                _stats[i].MessagePosted(msg);
+            }
             Schedule();
         }
 
@@ -138,6 +142,10 @@ namespace Proto.Mailbox
                         // if task didn't complete immediately, halt processing and reschedule a new run when task completes
                         t.ContinueWith(RescheduleOnTaskComplete, msg);
                         return false;
+                    }
+                    for (var si = 0; si < _stats.Length; si++)
+                    {
+                        _stats[si].MessageReceived(msg);
                     }
                     continue;
                 }
