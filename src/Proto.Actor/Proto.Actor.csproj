@@ -3,7 +3,7 @@
     <RootNamespace>Proto</RootNamespace>
   </PropertyGroup>
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.6;net461</TargetFrameworks>
+    <TargetFrameworks>netstandard1.5;net461</TargetFrameworks>
     <Version>$(Version)</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net461'">
