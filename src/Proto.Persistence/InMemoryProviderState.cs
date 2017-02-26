@@ -45,7 +45,7 @@ namespace Proto.Persistence
                     callback(e);
                 }
             }
-            return Task.CompletedTask;
+            return Task.FromResult(0);
         }
 
         public Task PersistEventAsync(string actorName, ulong eventIndex, IMessage @event)
@@ -55,13 +55,13 @@ namespace Proto.Persistence
             {
                 events.Add(@event);
             }
-            return Task.CompletedTask;
+            return Task.FromResult(0);
         }
 
         public Task PersistSnapshotAsync(string actorName, ulong eventIndex, IMessage snapshot)
         {
             _snapshots[actorName] = Tuple.Create((object) snapshot, eventIndex);
-            return Task.CompletedTask;
+            return Task.FromResult(0);
         }
     }
 }

@@ -28,7 +28,7 @@ namespace Proto
 
     public static class Actor
     {
-        public static readonly Task Done = Task.CompletedTask;
+        public static readonly Task Done = Task.FromResult(0);
 
         public static EventStream EventStream => EventStream.Instance;
 

@@ -26,7 +26,7 @@ namespace Proto.Mailbox.Tests
             Assert.True(userMailbox.HasMessages, "Mailbox should not have processed msg2 because processing of msg1 is not completed.");
 
             msg1.TaskCompletionSource.SetResult(0);
-            Thread.Sleep(10);
+            msg2.TaskCompletionSource.Task.Wait(1000);
             Assert.False(userMailbox.HasMessages, "Mailbox should have processed msg2 because processing of msg1 is completed.");
         }
 
@@ -66,7 +66,7 @@ namespace Proto.Mailbox.Tests
             Assert.True(systemMessages.HasMessages, "Mailbox should not have processed msg2 because processing of msg1 is not completed.");
 
             msg1.TaskCompletionSource.SetResult(0);
-            Thread.Sleep(10);
+            msg2.TaskCompletionSource.Task.Wait(1000);
             Assert.False(systemMessages.HasMessages, "Mailbox should have processed msg2 because processing of msg1 is completed.");
         }
 
