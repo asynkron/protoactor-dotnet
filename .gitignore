@@ -255,4 +255,5 @@ paket-files/
 *.orig
 
 tools/
-Cake
+Cake/
+Addins/

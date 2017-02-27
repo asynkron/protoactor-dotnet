@@ -1,20 +1,18 @@
 image: Visual Studio 2017 RC
-version: '0.1.0.{build}'
+version: '{branch}-{build}'
 configuration:
 - Release
-platform: Any CPU
 environment:
   # Don't report back to the mothership
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
 before_build:
 - nuget install Cake -ExcludeVersion
 build_script:
-- .\Cake\Cake.exe --target=Build --packageVersion=%APPVEYOR_BUILD_VERSION% --currentBranch=%APPVEYOR_REPO_BRANCH%
-after_build:
-- .\Cake\Cake.exe --target=Pack --packageVersion=%APPVEYOR_BUILD_VERSION% --currentBranch=%APPVEYOR_REPO_BRANCH%
+- .\Cake\Cake.exe --target=Build --buildNumber=%APPVEYOR_BUILD_NUMBER% --currentBranch=%APPVEYOR_REPO_BRANCH%
 test_script:
 - .\Cake\Cake.exe --target=UnitTest
 after_test:
+- .\Cake\Cake.exe --target=Pack --buildNumber=%APPVEYOR_BUILD_NUMBER% --currentBranch=%APPVEYOR_REPO_BRANCH%
 - .\Cake\Cake.exe --target=Push --mygetApiKey=%MYGET_API_KEY%
 artifacts:
 - path: out\*
