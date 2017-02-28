@@ -14,7 +14,7 @@ namespace Proto.Persistence
 {
     internal class InMemoryProviderState : IProviderState
     {
-        private readonly IDictionary<string, List<object>> _events = new ConcurrentDictionary<string, List<object>>();
+        private readonly ConcurrentDictionary<string, List<object>> _events = new ConcurrentDictionary<string, List<object>>();
 
         private readonly IDictionary<string, Tuple<object, ulong>> _snapshots =
             new Dictionary<string, Tuple<object, ulong>>();
@@ -50,11 +50,9 @@ namespace Proto.Persistence
 
         public Task PersistEventAsync(string actorName, ulong eventIndex, IMessage @event)
         {
-            List<object> events;
-            if (_events.TryGetValue(actorName, out events))
-            {
-                events.Add(@event);
-            }
+            var events = _events.GetOrAdd(actorName, new List<object>());
+            events.Add(@event);
+
             return Task.FromResult(0);
         }
 
