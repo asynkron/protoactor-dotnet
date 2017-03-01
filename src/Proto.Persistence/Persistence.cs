@@ -6,7 +6,6 @@
 
 using System;
 using System.Threading.Tasks;
-using Google.Protobuf;
 
 namespace Proto.Persistence
 {
@@ -38,7 +37,7 @@ namespace Proto.Persistence
             });
         }
 
-        public async Task PersistReceiveAsync(IMessage message)
+        public async Task PersistReceiveAsync(object message)
         {
             await State.PersistEventAsync(Name, EventIndex, message);
             EventIndex++;
@@ -49,7 +48,7 @@ namespace Proto.Persistence
             }
         }
 
-        public async Task PersistSnapshotAsync(IMessage snapshot)
+        public async Task PersistSnapshotAsync(object snapshot)
         {
             await State.PersistSnapshotAsync(Name, EventIndex, snapshot);
         }

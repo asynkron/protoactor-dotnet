@@ -8,7 +8,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Google.Protobuf;
 
 namespace Proto.Persistence
 {
@@ -48,7 +47,7 @@ namespace Proto.Persistence
             return Task.FromResult(0);
         }
 
-        public Task PersistEventAsync(string actorName, ulong eventIndex, IMessage @event)
+        public Task PersistEventAsync(string actorName, ulong eventIndex, object @event)
         {
             var events = _events.GetOrAdd(actorName, new List<object>());
             events.Add(@event);
@@ -56,7 +55,7 @@ namespace Proto.Persistence
             return Task.FromResult(0);
         }
 
-        public Task PersistSnapshotAsync(string actorName, ulong eventIndex, IMessage snapshot)
+        public Task PersistSnapshotAsync(string actorName, ulong eventIndex, object snapshot)
         {
             _snapshots[actorName] = Tuple.Create((object) snapshot, eventIndex);
             return Task.FromResult(0);
