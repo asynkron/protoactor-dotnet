@@ -57,10 +57,6 @@ Task("Pack")
     });
 Task("Push")
     .Does(() => {
-        if (currentBranch != "master") {
-            Information("Skipping package push")
-            return;
-        }
         var pkgs = GetFiles("out/*.nupkg");
         foreach(var pkg in pkgs) {
             NuGetPush(pkg, new NuGetPushSettings {
