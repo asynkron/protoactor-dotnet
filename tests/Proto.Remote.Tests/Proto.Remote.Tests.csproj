@@ -6,14 +6,15 @@
 
   <ItemGroup>
     <PackageReference Include="Grpc" Version="1.1.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0-preview-20170125-04" />
-    <PackageReference Include="xunit" Version="2.2.0-beta5-build3474" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0-beta5-build1225" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
+    <PackageReference Include="xunit" Version="2.2.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
+    <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
   </ItemGroup>
 
   <ItemGroup>

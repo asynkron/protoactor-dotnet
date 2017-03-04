@@ -23,7 +23,6 @@ namespace Proto.Remote
                 var typeNames = new List<string>(batch.TypeNames);
                 foreach (var envelope in batch.Envelopes)
                 {
-                    
                     var targetName = targetNames[envelope.Target];
                     var target = new PID(ProcessRegistry.Instance.Address, targetName);
                     var sender = envelope.Sender;

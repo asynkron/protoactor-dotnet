@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Proto.Remote.Tests.Fixture
+namespace Proto.TestFixtures
 {
     public class TestAsyncStreamReader<T> : IAsyncStreamReader<T>
     {
