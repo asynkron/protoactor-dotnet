@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using System.Collections.Generic;
+using Proto.Mailbox;
 
 namespace Proto.Remote
 {

@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using Proto.TestFixtures;
 using Xunit;
 
 namespace Proto.Tests
@@ -15,7 +16,7 @@ namespace Proto.Tests
         public void Given_Middleware_Should_Call_In_Order_Then_Actor()
         {
             var logs = new List<string>();
-            var testMailbox = new Fixture.TestMailbox();
+            var testMailbox = new TestMailbox();
             var props = Actor.FromFunc(c =>
                 {
                     if (c.Message is string)

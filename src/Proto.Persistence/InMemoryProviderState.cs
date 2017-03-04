@@ -8,13 +8,12 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Google.Protobuf;
 
 namespace Proto.Persistence
 {
     internal class InMemoryProviderState : IProviderState
     {
-        private readonly IDictionary<string, List<object>> _events = new ConcurrentDictionary<string, List<object>>();
+        private readonly ConcurrentDictionary<string, List<object>> _events = new ConcurrentDictionary<string, List<object>>();
 
         private readonly IDictionary<string, Tuple<object, ulong>> _snapshots =
             new Dictionary<string, Tuple<object, ulong>>();
@@ -45,23 +44,21 @@ namespace Proto.Persistence
                     callback(e);
                 }
             }
-            return Task.CompletedTask;
+            return Task.FromResult(0);
         }
 
-        public Task PersistEventAsync(string actorName, ulong eventIndex, IMessage @event)
+        public Task PersistEventAsync(string actorName, ulong eventIndex, object @event)
         {
-            List<object> events;
-            if (_events.TryGetValue(actorName, out events))
-            {
-                events.Add(@event);
-            }
-            return Task.CompletedTask;
+            var events = _events.GetOrAdd(actorName, new List<object>());
+            events.Add(@event);
+
+            return Task.FromResult(0);
         }
 
-        public Task PersistSnapshotAsync(string actorName, ulong eventIndex, IMessage snapshot)
+        public Task PersistSnapshotAsync(string actorName, ulong eventIndex, object snapshot)
         {
             _snapshots[actorName] = Tuple.Create((object) snapshot, eventIndex);
-            return Task.CompletedTask;
+            return Task.FromResult(0);
         }
     }
 }

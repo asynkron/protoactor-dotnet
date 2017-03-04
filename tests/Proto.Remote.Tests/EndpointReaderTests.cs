@@ -18,16 +18,5 @@ namespace Proto.Remote.Tests
                 );
         }
 
-        [Fact]
-        public async Task Given_EndpointReader_When_Receive_MessageBatchs_Then_Do_Nothing()
-        {
-            var sut = new EndpointReader();
-            await sut.Receive(
-                new TestAsyncStreamReader<MessageBatch>(new MessageBatch(), new MessageBatch()),
-                null,   // not used 
-                null    // not used
-                );
-        }
-
     }
 }

@@ -24,7 +24,23 @@ namespace Proto.Mailbox
         void Start();
     }
 
-    public class DefaultMailbox : IMailbox
+    public static class BoundedMailbox
+    {
+        public static IMailbox Create(int size, params IMailboxStatistics[] stats)
+        {
+            return new DefaultMailbox(new UnboundedMailboxQueue(), new BoundedMailboxQueue(size), stats);
+        }
+    }
+
+    public static class UnboundedMailbox
+    {
+        public static IMailbox Create(params IMailboxStatistics[] stats)
+        {
+            return new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue(), stats);
+        }
+    }
+
+    internal class DefaultMailbox : IMailbox
     {
         private readonly IMailboxStatistics[] _stats;
         private readonly IMailboxQueue _systemMessages;
@@ -39,7 +55,7 @@ namespace Proto.Mailbox
         {
             _systemMessages = systemMessages;
             _userMailbox = userMailbox;
-            _stats = stats ?? Array.Empty<IMailboxStatistics>();
+            _stats = stats ?? new IMailboxStatistics[0];
         }
 
         public void PostUserMessage(object msg)
@@ -55,6 +71,10 @@ namespace Proto.Mailbox
         public void PostSystemMessage(object msg)
         {
             _systemMessages.Push(msg);
+            for (var i = 0; i < _stats.Length; i++)
+            {
+                _stats[i].MessagePosted(msg);
+            }
             Schedule();
         }
 
@@ -78,7 +98,7 @@ namespace Proto.Mailbox
 
             if (!done)
                 // mailbox is halted, awaiting completion of a message task, upon which mailbox will be rescheduled
-                return Task.CompletedTask;
+                return Task.FromResult(0);
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
@@ -93,65 +113,76 @@ namespace Proto.Mailbox
                     _stats[i].MailboxEmpty();
                 }
             }
-            return Task.CompletedTask;
+            return Task.FromResult(0);
         }
 
         private bool ProcessMessages()
         {
-            for (var i = 0; i < _dispatcher.Throughput; i++)
+            object msg = null;
+            try
             {
-                object msg;
-                if ((msg = _systemMessages.Pop()) != null)
+                for (var i = 0; i < _dispatcher.Throughput; i++)
                 {
-                    if (msg is SuspendMailbox)
+                    if ((msg = _systemMessages.Pop()) != null)
                     {
-                        _suspended = true;
-                    }
-                    if (msg is ResumeMailbox)
-                    {
-                        _suspended = false;
-                    }
-                    var t = _invoker.InvokeSystemMessageAsync(msg);
-                    if (t.IsFaulted)
-                    {
-                        _invoker.EscalateFailure(t.Exception, msg);
+                        if (msg is SuspendMailbox)
+                        {
+                            _suspended = true;
+                        }
+                        if (msg is ResumeMailbox)
+                        {
+                            _suspended = false;
+                        }
+                        var t = _invoker.InvokeSystemMessageAsync(msg);
+                        if (t.IsFaulted)
+                        {
+                            _invoker.EscalateFailure(t.Exception, msg);
+                            continue;
+                        }
+                        if (!t.IsCompleted)
+                        {
+                            // if task didn't complete immediately, halt processing and reschedule a new run when task completes
+                            t.ContinueWith(RescheduleOnTaskComplete, msg);
+                            return false;
+                        }
+                        for (var si = 0; si < _stats.Length; si++)
+                        {
+                            _stats[si].MessageReceived(msg);
+                        }
                         continue;
                     }
-                    if (!t.IsCompleted)
+                    if (_suspended)
                     {
-                        // if task didn't complete immediately, halt processing and reschedule a new run when task completes
-                        t.ContinueWith(RescheduleOnTaskComplete, msg);
-                        return false;
+                        break;
                     }
-                    continue;
-                }
-                if (_suspended)
-                {
-                    break;
-                }
-                if ((msg = _userMailbox.Pop()) != null)
-                {
-                    var t = _invoker.InvokeUserMessageAsync(msg);
-                    if (t.IsFaulted)
+                    if ((msg = _userMailbox.Pop()) != null)
                     {
-                        _invoker.EscalateFailure(t.Exception, msg);
-                        continue;
+                        var t = _invoker.InvokeUserMessageAsync(msg);
+                        if (t.IsFaulted)
+                        {
+                            _invoker.EscalateFailure(t.Exception, msg);
+                            continue;
+                        }
+                        if (!t.IsCompleted)
+                        {
+                            // if task didn't complete immediately, halt processing and reschedule a new run when task completes
+                            t.ContinueWith(RescheduleOnTaskComplete, msg);
+                            return false;
+                        }
+                        for (var si = 0; si < _stats.Length; si++)
+                        {
+                            _stats[si].MessageReceived(msg);
+                        }
                     }
-                    if (!t.IsCompleted)
+                    else
                     {
-                        // if task didn't complete immediately, halt processing and reschedule a new run when task completes
-                        t.ContinueWith(RescheduleOnTaskComplete, msg);
-                        return false;
-                    }
-                    for (var si = 0; si < _stats.Length; si++)
-                    {
-                        _stats[si].MessageReceived(msg);
+                        break;
                     }
                 }
-                else
-                {
-                    break;
-                }
+            }
+            catch (Exception e)
+            {
+                _invoker.EscalateFailure(e, msg);
             }
             return true;
         }

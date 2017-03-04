@@ -190,28 +190,28 @@ namespace Proto
                         return HandleTerminatedAsync(t);
                     case Watch w:
                         HandleWatch(w);
-                        return Task.CompletedTask;
+                        return Task.FromResult(0);
                     case Unwatch uw:
                         HandleUnwatch(uw);
-                        return Task.CompletedTask;
+                        return Task.FromResult(0);
                     case Failure f:
                         HandleFailure(f);
-                        return Task.CompletedTask;
+                        return Task.FromResult(0);
                     case Restart r:
                         return HandleRestartAsync();
                     case SuspendMailbox sm:
-                        return Task.CompletedTask;
+                        return Task.FromResult(0);
                     case ResumeMailbox rm:
-                        return Task.CompletedTask;
+                        return Task.FromResult(0);
                     default:
                         Console.WriteLine("Unknown system message {0}", msg);
-                        return Task.CompletedTask;
+                        return Task.FromResult(0);
                 }
             }
             catch (Exception x)
             {
                 Console.WriteLine("Error handling SystemMessage {0}", x);
-                return Task.CompletedTask;
+                return Task.FromResult(0);
             }
         }
 
@@ -441,7 +441,8 @@ namespace Proto
 
         private Task ActorReceive(IContext ctx)
         {
-            return Actor.ReceiveAsync(ctx);
+            var task = Actor.ReceiveAsync(ctx);
+            return task;
         }
 
         private void ResetReceiveTimeout()

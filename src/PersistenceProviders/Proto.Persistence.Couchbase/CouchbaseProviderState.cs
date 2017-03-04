@@ -9,7 +9,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Couchbase.Core;
 using Couchbase.N1QL;
-using Google.Protobuf;
 
 namespace Proto.Persistence.Couchbase
 {
@@ -57,13 +56,13 @@ namespace Proto.Persistence.Couchbase
             return _snapshotInterval;
         }
 
-        public async Task PersistEventAsync(string actorName, ulong eventIndex, IMessage @event)
+        public async Task PersistEventAsync(string actorName, ulong eventIndex, object @event)
         {
             var envelope = new Envelope(actorName, eventIndex, @event, "event");
             var res = await _bucket.InsertAsync(envelope.Key, envelope);
         }
 
-        public async Task PersistSnapshotAsync(string actorName, ulong eventIndex, IMessage snapshot)
+        public async Task PersistSnapshotAsync(string actorName, ulong eventIndex, object snapshot)
         {
             var envelope = new Envelope(actorName, eventIndex, snapshot, "snapshot");
             var res = await _bucket.InsertAsync(envelope.Key, envelope);
@@ -73,7 +72,7 @@ namespace Proto.Persistence.Couchbase
         {
         }
 
-        private static void ThrowOnError(IQueryResult res)
+        private static void ThrowOnError<T>(IQueryResult<T> res)
         {
             if (!res.Success)
             {

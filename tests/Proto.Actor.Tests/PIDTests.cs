@@ -1,8 +1,8 @@
 ﻿using System;
-using Proto.Tests.Fixture;
+using Proto.TestFixtures;
 using Xunit;
 
-using static Proto.Tests.Fixture.Receivers;
+using static Proto.TestFixtures.Receivers;
 
 namespace Proto.Tests
 {
@@ -21,7 +21,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_ActorDied_Ref_ShouldNotReturnIt()
         {
-            var pid = Actor.Spawn(Actor.FromFunc(EmptyReceive).WithMailbox(() => new Fixture.TestMailbox()));
+            var pid = Actor.Spawn(Actor.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
             pid.Stop();
 
             var p = pid.Ref;

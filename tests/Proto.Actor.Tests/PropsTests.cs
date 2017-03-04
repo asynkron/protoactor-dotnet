@@ -1,8 +1,8 @@
 ﻿using Proto.Mailbox;
-using Proto.Tests.Fixture;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Proto.TestFixtures;
 using Xunit;
 
 namespace Proto.Tests
