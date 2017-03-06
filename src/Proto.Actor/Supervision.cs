@@ -35,14 +35,14 @@ namespace Proto
 
     public interface ISupervisorStrategy
     {
-        void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics crs, Exception cause);
+        void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause);
     }
 
     public delegate SupervisorDirective Decider(PID pid, Exception reason);
 
     public class OneForOneStrategy : ISupervisorStrategy
     {
-        private readonly int _maxNrOfRetries;
+        public readonly int _maxNrOfRetries;
         private readonly TimeSpan? _withinTimeSpan;
         private readonly Decider _decider;
 
@@ -53,44 +53,16 @@ namespace Proto
             _withinTimeSpan = withinTimeSpan;
         }
 
-        //public bool RequestRestartPermission(int maxNrOfRetries, TimeSpan? withinTimeSpan)
-        //{
-        //    if (maxNrOfRetries == 0)
-        //    {
-        //        return false;
-        //    }
-
-        //    FailureCount++;
-
-        //    //supervisor says child may restart, and we don't care about any timewindow
-        //    if (withinTimeSpan == null)
-        //    {
-        //        return FailureCount <= maxNrOfRetries;
-        //    }
-
-        //    var max = DateTime.Now - withinTimeSpan;
-        //    if (LastFailureTime > max)
-        //    {
-        //        return FailureCount <= maxNrOfRetries;
-        //    }
-
-        //    //we are past the time limit, we can safely reset the failure count and restart
-        //    FailureCount = 0;
-        //    return true;
-        //}
-
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics crs, Exception reason)
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
         {
             var directive = _decider(child, reason);
             switch (directive)
             {
                 case SupervisorDirective.Resume:
-                    //resume the failing child
                     supervisor.ResumeChildren(child);
                     break;
                 case SupervisorDirective.Restart:
-                    //restart the failing child
-                    if (crs.RequestRestartPermission(_maxNrOfRetries, _withinTimeSpan))
+                    if (RequestRestartPermission(rs))
                     {
                         Console.WriteLine($"Restarting {child.ToShortString()} Reason {reason}");
                         supervisor.RestartChildren(child);
@@ -102,7 +74,6 @@ namespace Proto
                     }
                     break;
                 case SupervisorDirective.Stop:
-                    //stop the failing child
                     Console.WriteLine($"Stopping {child.ToShortString()} Reason {reason}");
                     supervisor.StopChildren(child);
                     break;
@@ -113,5 +84,21 @@ namespace Proto
                     throw new ArgumentOutOfRangeException();
             }
         }
+
+        private bool RequestRestartPermission(RestartStatistics rs)
+        {
+            if (_maxNrOfRetries == 0)
+            {
+                return false;
+            }
+            rs.Fail();
+            if (_withinTimeSpan == null || rs.IsWithinDuration(_withinTimeSpan.Value))
+            {
+                return rs.FailureCount <= _maxNrOfRetries;
+            }
+            rs.Reset();
+            return true;
+        }
+
     }
 }
