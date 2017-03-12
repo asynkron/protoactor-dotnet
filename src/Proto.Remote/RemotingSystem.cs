@@ -17,6 +17,11 @@ namespace Proto.Remote
 
         public static void Start(string host, int port)
         {
+            Start(host, port, new RemoteConfig());
+        }
+
+        public static void Start(string host, int port, RemoteConfig config)
+        {
             ProcessRegistry.Instance.RegisterHostResolver(pid => new RemoteProcess(pid));
 
             _server = new Server
@@ -30,7 +35,7 @@ namespace Proto.Remote
             var addr = host + ":" + boundPort;
             ProcessRegistry.Instance.Address = addr;
             
-            var props = Actor.FromProducer(() => new EndpointManager());
+            var props = Actor.FromProducer(() => new EndpointManager(config));
             EndpointManagerPid = Actor.Spawn(props);
 
             Console.WriteLine($"[REMOTING] Starting Proto.Actor server on {addr}");
