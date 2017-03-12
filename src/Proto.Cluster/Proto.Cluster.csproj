@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard1.5;net452</TargetFrameworks>
+    <Version>0.1.0-dev</Version>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OutputType>library</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="Protos.proto" />
+  </ItemGroup>
+    <ItemGroup>
+    <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
+      <ProjectReference Include="..\Proto.Remote\Proto.Remote.csproj" />
+    <ProjectReference Include="..\Proto.Mailbox\Proto.Mailbox.csproj" />
+  </ItemGroup>
+</Project>
