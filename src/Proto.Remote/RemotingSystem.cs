@@ -27,8 +27,7 @@ namespace Proto.Remote
             _server = new Server
             {
                 Services = {Remoting.BindService(new EndpointReader())},
-                Ports = {new ServerPort(host, port, ServerCredentials.Insecure)},
-
+                Ports = {new ServerPort(host, port, config.ServerCredentials)},
             };
             _server.Start();
 
