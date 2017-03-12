@@ -103,7 +103,7 @@ namespace Proto.Remote
         private PID SpawnWriter(string address, IContext context)
         {
             var writerProps =
-                Actor.FromProducer(() => new EndpointWriter(address))
+                Actor.FromProducer(() => new EndpointWriter(address, _config.ChannelOptions, _config.CallOptions))
                     .WithMailbox(() => new EndpointWriterMailbox(_config.EndpointWriterBatchSize));
             var writer = context.Spawn(writerProps);
             return writer;
