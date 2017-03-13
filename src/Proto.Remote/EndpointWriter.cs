@@ -15,14 +15,20 @@ namespace Proto.Remote
     public class EndpointWriter : IActor
     {
         private readonly string _address;
+        private readonly IEnumerable<ChannelOption> _channelOptions;
         private Channel _channel;
         private Remoting.RemotingClient _client;
         private AsyncDuplexStreamingCall<MessageBatch, Unit> _stream;
         private IClientStreamWriter<MessageBatch> _streamWriter;
+        private readonly CallOptions _callOptions;
+        private readonly ChannelCredentials _channelCredentials;
 
-        public EndpointWriter(string address)
+        public EndpointWriter(string address, IEnumerable<ChannelOption> channelOptions, CallOptions callOptions, ChannelCredentials channelCredentials)
         {
             _address = address;
+            _channelOptions = channelOptions;
+            _callOptions = callOptions;
+            _channelCredentials = channelCredentials;
         }
 
         public async Task ReceiveAsync(IContext context)
@@ -112,9 +118,9 @@ namespace Proto.Remote
             Console.WriteLine("[REMOTING] Started EndpointWriter for address {0}", _address);
 
             Console.WriteLine("[REMOTING] EndpointWriter connecting to address {0}", _address);
-            _channel = new Channel(_address, ChannelCredentials.Insecure);
+            _channel = new Channel(_address, _channelCredentials, _channelOptions);
             _client = new Remoting.RemotingClient(_channel);
-            _stream = _client.Receive();
+            _stream = _client.Receive(_callOptions);
 
             Task.Factory.StartNew(async () =>
             {
