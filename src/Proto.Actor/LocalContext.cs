@@ -17,8 +17,8 @@ namespace Proto
     public class Context : IMessageInvoker, IContext, ISupervisor
     {
         private readonly Stack<Receive> _behavior;
-        private readonly Receive _middleware;
-        private readonly Sender _outboundMiddleware;
+        private readonly Receive _receiveMiddleware;
+        private readonly Sender _senderMiddleware;
         private readonly Func<IActor> _producer;
         private readonly ISupervisorStrategy _supervisorStrategy;
         private HashSet<PID> _children;
@@ -33,12 +33,12 @@ namespace Proto
         private HashSet<PID> _watching;
 
 
-        public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive middleware, Sender outboundMiddleware, PID parent)
+        public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
         {
             _producer = producer;
             _supervisorStrategy = supervisorStrategy;
-            _middleware = middleware;
-            _outboundMiddleware = outboundMiddleware;
+            _receiveMiddleware = receiveMiddleware;
+            _senderMiddleware = senderMiddleware;
             Parent = parent;
             _behavior = new Stack<Receive>();
             _behavior.Push(ActorReceive);
@@ -313,9 +313,9 @@ namespace Proto
         private Task ProcessMessageAsync(object msg)
         {
             Message = msg;
-            if (_middleware != null)
+            if (_receiveMiddleware != null)
             {
-                return _middleware(this);
+                return _receiveMiddleware(this);
             }
             return DefaultReceive(this);
         }
@@ -347,9 +347,9 @@ namespace Proto
 
         private void SendUserMessage(PID target, object message, PID sender)
         {
-            if (_outboundMiddleware != null)
+            if (_senderMiddleware != null)
             {
-                _outboundMiddleware(this, target, new MessageEnvelope
+                _senderMiddleware(this, target, new MessageEnvelope
                 {
                     Message = message,
                     Header = new MessageHeader(),
