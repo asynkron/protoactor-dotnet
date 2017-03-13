@@ -17,7 +17,8 @@ namespace Proto
     public class Context : IMessageInvoker, IContext, ISupervisor
     {
         private readonly Stack<Receive> _behavior;
-        private readonly Receive _middleware;
+        private readonly Receive _receiveMiddleware;
+        private readonly Sender _senderMiddleware;
         private readonly Func<IActor> _producer;
         private readonly ISupervisorStrategy _supervisorStrategy;
         private HashSet<PID> _children;
@@ -32,11 +33,12 @@ namespace Proto
         private HashSet<PID> _watching;
 
 
-        public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive middleware, PID parent)
+        public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
         {
             _producer = producer;
             _supervisorStrategy = supervisorStrategy;
-            _middleware = middleware;
+            _receiveMiddleware = receiveMiddleware;
+            _senderMiddleware = senderMiddleware;
             Parent = parent;
             _behavior = new Stack<Receive>();
             _behavior.Push(ActorReceive);
@@ -302,14 +304,62 @@ namespace Proto
             return c._receive(context);
         }
 
+        internal static Task DefaultSender(IContext context, PID target, MessageEnvelope envelope)
+        {
+            target.Ref.SendUserMessage(target, envelope.Message, envelope.Sender);
+            return Task.FromResult(0);
+        }
+
         private Task ProcessMessageAsync(object msg)
         {
             Message = msg;
-            if (_middleware != null)
+            if (_receiveMiddleware != null)
             {
-                return _middleware(this);
+                return _receiveMiddleware(this);
             }
             return DefaultReceive(this);
+        }
+
+        public void Tell(PID target, object message)
+        {
+            SendUserMessage(target, message, null);
+        }
+
+        public void Request(PID target, object message)
+        {
+            SendUserMessage(target, message, Self);
+        }
+
+        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
+            => RequestAsync(target, message, new FutureProcess<T>(timeout));
+
+        public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
+            => RequestAsync(target, message, new FutureProcess<T>(cancellationToken));
+
+        public Task<T> RequestAsync<T>(PID target, object message)
+            => RequestAsync(target, message, new FutureProcess<T>());
+
+        private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
+        {
+            SendUserMessage(target, message, future.PID);
+            return future.Task;
+        }
+
+        private void SendUserMessage(PID target, object message, PID sender)
+        {
+            if (_senderMiddleware != null)
+            {
+                _senderMiddleware(this, target, new MessageEnvelope
+                {
+                    Message = message,
+                    Header = new MessageHeader(),
+                    Sender = sender
+                });
+            }
+            else
+            {
+                target.Ref.SendUserMessage(target, message, sender);
+            }
         }
 
         private void IncarnateActor()

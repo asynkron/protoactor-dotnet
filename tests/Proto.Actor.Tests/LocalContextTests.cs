@@ -17,7 +17,7 @@ namespace Proto.Tests
             var middleware = new Receive(ctx => Task.CompletedTask);
             var parent = new PID("test", "test");
 
-            var context = new Context(producer, supervisorStrategyMock, middleware, parent);
+            var context = new Context(producer, supervisorStrategyMock, middleware, null, parent);
 
             Assert.Equal(parent, context.Parent);
 

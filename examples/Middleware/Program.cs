@@ -16,7 +16,7 @@ class Program
                 Console.WriteLine($"actor got {c.Message.GetType()}:{c.Message}");
                 return Actor.Done;
             })
-            .WithMiddleware(
+            .WithReceiveMiddleware(
                 next => async c =>
                 {
                     Console.WriteLine($"middleware 1 enter {c.Message.GetType()}:{c.Message}");

@@ -19,7 +19,7 @@ namespace Proto.Persistence.Tests
                         wasCalled = true;
                     return Task.FromResult(0);
                 })
-                .WithMiddleware(Persistence.Using(provider))
+                .WithReceiveMiddleware(Persistence.Using(provider))
                 .WithMailbox(() => new TestMailbox())
                 );
 
@@ -38,7 +38,7 @@ namespace Proto.Persistence.Tests
                         wasCalled = true;
                     return Task.FromResult(0);
                 })
-                .WithMiddleware(Persistence.Using(provider))
+                .WithReceiveMiddleware(Persistence.Using(provider))
                 .WithMailbox(() => new TestMailbox())
                 );
 
