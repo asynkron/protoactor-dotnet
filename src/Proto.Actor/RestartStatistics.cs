@@ -10,40 +10,33 @@ namespace Proto
 {
     public class RestartStatistics
     {
+        public int FailureCount { get; private set; }
+        public DateTime? LastFailureTime { get; private set; }
+
         public RestartStatistics(int failureCount, DateTime? lastFailuretime)
         {
             FailureCount = failureCount;
             LastFailureTime = lastFailuretime;
         }
 
-        public int FailureCount { get; set; }
-        public DateTime? LastFailureTime { get; set; }
-
-
-        public bool RequestRestartPermission(int maxNrOfRetries, TimeSpan? withinTimeSpan)
+        public void Fail()
         {
-            if (maxNrOfRetries == 0)
-            {
-                return false;
-            }
-
             FailureCount++;
+        }
 
-            //supervisor says child may restart, and we don't care about any timewindow
-            if (withinTimeSpan == null)
-            {
-                return FailureCount <= maxNrOfRetries;
-            }
-
-            var max = DateTime.Now - withinTimeSpan;
-            if (LastFailureTime > max)
-            {
-                return FailureCount <= maxNrOfRetries;
-            }
-
-            //we are past the time limit, we can safely reset the failure count and restart
+        public void Reset()
+        {
             FailureCount = 0;
-            return true;
+        }
+
+        public void Restart()
+        {
+            LastFailureTime = DateTime.Now;
+        }
+
+        public bool IsWithinDuration(TimeSpan within)
+        {
+            return (DateTime.Now - LastFailureTime) < within;
         }
     }
 }

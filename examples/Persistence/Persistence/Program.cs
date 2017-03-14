@@ -27,7 +27,7 @@ class Program
         {
             var provider = new CouchbaseProvider(bucket, 5);
             var props = Actor.FromProducer(() => new MyActor())
-                .WithMiddleware(Persistence.Using(provider));
+                .WithReceiveMiddleware(Persistence.Using(provider));
             var pid = Actor.Spawn(props);
             pid.Tell(new RenameCommand {Name = "Christian"});
             pid.Tell(new RenameCommand {Name = "Alex"});

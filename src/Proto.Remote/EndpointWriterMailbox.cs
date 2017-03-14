@@ -19,6 +19,7 @@ namespace Proto.Remote
 
     public class EndpointWriterMailbox : IMailbox
     {
+        private readonly int _batchSize;
         private readonly IMailboxQueue _systemMessages = new UnboundedMailboxQueue();
         private readonly IMailboxQueue _userMessages = new UnboundedMailboxQueue();
         private IDispatcher _dispatcher;
@@ -26,6 +27,11 @@ namespace Proto.Remote
 
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
+
+        public EndpointWriterMailbox(int batchSize)
+        {
+            _batchSize = batchSize;
+        }
 
         public void PostUserMessage(object msg)
         {
@@ -52,7 +58,7 @@ namespace Proto.Remote
         private async Task RunAsync()
         {
             var t = _dispatcher.Throughput;
-            var batch = new List<RemoteDeliver>();
+            var batch = new List<RemoteDeliver>(_batchSize);
             var sys = _systemMessages.Pop();
             if (sys != null)
             {
@@ -73,7 +79,7 @@ namespace Proto.Remote
                 while ((msg = _userMessages.Pop()) != null)
                 {
                     batch.Add((RemoteDeliver) msg);
-                    if (batch.Count > 1000)
+                    if (batch.Count >= _batchSize)
                     {
                         break;
                     }
