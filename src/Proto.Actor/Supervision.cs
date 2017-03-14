@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
 
 namespace Proto
@@ -45,6 +46,7 @@ namespace Proto
         public readonly int _maxNrOfRetries;
         private readonly TimeSpan? _withinTimeSpan;
         private readonly Decider _decider;
+        private readonly ILogger logger = Log.CreateLogger<OneForOneStrategy>();
 
         public OneForOneStrategy(Decider decider, int maxNrOfRetries, TimeSpan? withinTimeSpan)
         {
@@ -64,17 +66,17 @@ namespace Proto
                 case SupervisorDirective.Restart:
                     if (RequestRestartPermission(rs))
                     {
-                        Console.WriteLine($"Restarting {child.ToShortString()} Reason {reason}");
+                        logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
                         supervisor.RestartChildren(child);
                     }
                     else
                     {
-                        Console.WriteLine($"Stopping {child.ToShortString()} Reason { reason}");
+                        logger.LogInformation($"Stopping {child.ToShortString()} Reason { reason}");
                         supervisor.StopChildren(child);
                     }
                     break;
                 case SupervisorDirective.Stop:
-                    Console.WriteLine($"Stopping {child.ToShortString()} Reason {reason}");
+                    logger.LogInformation($"Stopping {child.ToShortString()} Reason {reason}");
                     supervisor.StopChildren(child);
                     break;
                 case SupervisorDirective.Escalate:

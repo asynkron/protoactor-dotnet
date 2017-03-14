@@ -6,19 +6,25 @@
 
 using System;
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 
 namespace Proto
 {
     public class EventStream : EventStream<object>
     {
         public static readonly EventStream Instance = new EventStream();
+
+        private readonly ILogger logger;
+
         public EventStream()
         {
+            logger = Log.CreateLogger<EventStream>();
+
             Subscribe(msg =>
             {
                 if (msg is DeadLetterEvent letter)
                 {
-                    Console.WriteLine("[DeadLetter] '{0}' got '{1}:{2}' from '{3}'", letter.Pid.ToShortString(),
+                    logger.LogInformation("[DeadLetter] '{0}' got '{1}:{2}' from '{3}'", letter.Pid.ToShortString(),
                         letter.Message.GetType().Name, letter.Message, letter.Sender?.ToShortString());
                 }
             });
