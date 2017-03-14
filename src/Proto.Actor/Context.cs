@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto
@@ -117,5 +118,10 @@ namespace Proto
         void SetReceiveTimeout(TimeSpan duration);
 
         Task ReceiveAsync(object message);
+        void Tell(PID target, object message);
+        void Request(PID target, object message);
+        Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout);
+        Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken);
+        Task<T> RequestAsync<T>(PID target, object message);
     }
 }
