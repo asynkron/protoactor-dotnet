@@ -24,7 +24,7 @@ namespace Proto.Mailbox
         void Start();
     }
 
-    public static class BoundedMailbox
+    internal static class BoundedMailbox
     {
         public static IMailbox Create(int size, params IMailboxStatistics[] stats)
         {
