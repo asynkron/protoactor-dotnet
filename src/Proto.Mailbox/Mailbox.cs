@@ -51,6 +51,8 @@ namespace Proto.Mailbox
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
 
+        internal int Status => _status;
+
         public DefaultMailbox(IMailboxQueue systemMessages, IMailboxQueue userMailbox, params IMailboxStatistics[] stats)
         {
             _systemMessages = systemMessages;
