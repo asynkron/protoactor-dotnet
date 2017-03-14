@@ -48,7 +48,7 @@ namespace Proto
                     if (_messages.Count == 0) break;
 
                     var now = DateTime.UtcNow;
-                    var msgsToSend = _messages.Where(msg => msg.Timeout < now).ToArray();
+                    var msgsToSend = _messages.TakeWhile(msg => msg.Timeout < now).ToArray();
                     if (msgsToSend.Length != 0)
                     {
                         foreach (var msg in msgsToSend)
