@@ -63,5 +63,9 @@ pid.Tell(new Hello
 });
 ```
 
-For more examples, see the example folder in this repository.
+For more examples, see the examples folder in this repository.
+
+## NuGet
+
+`PM> Install-Package Proto.Actor`
 
