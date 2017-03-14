@@ -44,6 +44,15 @@ namespace Proto
             _behavior.Push(ActorReceive);
 
             IncarnateActor();
+
+            //fast path
+            if (parent != null)
+            {
+                _watchers = new HashSet<PID>
+                {
+                    parent
+                };
+            }
         }
 
         public IReadOnlyCollection<PID> Children => _children?.ToList();
@@ -99,7 +108,13 @@ namespace Proto
                 _children = new HashSet<PID>();
             }
             _children.Add(pid);
-            Watch(pid);
+
+            //fast path add watched
+            if (_watching == null)
+            {
+                _watching = new HashSet<PID>();
+            }
+            _watching.Add(pid);
             return pid;
         }
 
