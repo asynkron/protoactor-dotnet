@@ -200,7 +200,7 @@ namespace Proto.Mailbox
                     _stats[si].MessageReceived(message);
                 }
             }
-            ProcessMessages();
+            _dispatcher.Schedule(RunAsync);
         }
 
 

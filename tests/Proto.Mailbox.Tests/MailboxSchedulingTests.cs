@@ -88,5 +88,23 @@ namespace Proto.Mailbox.Tests
             mailbox.PostSystemMessage(msg2);
             Assert.False(systemMessages.HasMessages, "Mailbox should have processed both messages because they were already completed.");
         }
+
+        [Fact]
+        public void GivenNonCompletedUserMessage_ShouldSetMailboxToIdleAfterCompletion()
+        {
+            var mailboxHandler = new TestMailboxHandler();
+            var userMailbox = new UnboundedMailboxQueue();
+            var systemMessages = new UnboundedMailboxQueue();
+            var mailbox = new DefaultMailbox(systemMessages, userMailbox);
+            mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
+
+            var msg1 = new TestMessage();
+            mailbox.PostUserMessage(msg1);
+            msg1.TaskCompletionSource.SetResult(0);
+
+            Thread.Sleep(500); // wait for mailbox to finish
+
+            Assert.True(mailbox.Status == MailboxStatus.Idle, "Mailbox should be set back to Idle after completion of message.");
+        }
     }
 }
