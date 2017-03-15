@@ -24,7 +24,7 @@ namespace Proto.Mailbox
         void Start();
     }
 
-    public static class BoundedMailbox
+    internal static class BoundedMailbox
     {
         public static IMailbox Create(int size, params IMailboxStatistics[] stats)
         {
@@ -50,6 +50,8 @@ namespace Proto.Mailbox
 
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
+
+        internal int Status => _status;
 
         public DefaultMailbox(IMailboxQueue systemMessages, IMailboxQueue userMailbox, params IMailboxStatistics[] stats)
         {
@@ -200,7 +202,7 @@ namespace Proto.Mailbox
                     _stats[si].MessageReceived(message);
                 }
             }
-            ProcessMessages();
+            _dispatcher.Schedule(RunAsync);
         }
 
 

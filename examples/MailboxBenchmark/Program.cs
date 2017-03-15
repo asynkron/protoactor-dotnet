@@ -15,10 +15,10 @@ class Program
     {
         Func<IMailbox> unboundedMailbox =
             () => UnboundedMailbox.Create();
-        Func<IMailbox> boundedMailbox =
-            () => BoundedMailbox.Create(1024 * 1024);
+        //Func<IMailbox> boundedMailbox =
+        //    () => BoundedMailbox.Create(1024 * 1024);
 
-        RunTest(boundedMailbox, "Bounded mailbox");
+        //RunTest(boundedMailbox, "Bounded mailbox");
         RunTest(unboundedMailbox, "Unbounded mailbox");
 
         Console.ReadLine();
