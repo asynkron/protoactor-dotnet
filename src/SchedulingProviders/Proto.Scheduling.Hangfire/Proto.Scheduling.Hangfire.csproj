@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+ <PropertyGroup Label="Configuration">
+    <RootNamespace>Proto.Scheduling.Hangfire</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard1.5;net452</TargetFrameworks>
+    <Version>0.1.2</Version>
+  </PropertyGroup>
+  
+ <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+  </PropertyGroup>
+  
+ <ItemGroup>
+   <PackageReference Include="Hangfire" Version="1.6.11" />
+ </ItemGroup>
+  
+ <ItemGroup>
+   <ProjectReference Include="..\..\Proto.Scheduling\Proto.Scheduling.csproj" />
+ </ItemGroup>
+  
+</Project>

@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+ <PropertyGroup Label="Configuration">
+    <RootNamespace>Proto.Scheduling.Quartz</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard1.5;net452</TargetFrameworks>
+    <Version>0.1.2</Version>
+  </PropertyGroup>
+  
+ <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+  </PropertyGroup>
+  
+ <ItemGroup>
+   <ProjectReference Include="..\..\Proto.Scheduling\Proto.Scheduling.csproj" />
+ </ItemGroup>
+  
+ <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
+   <PackageReference Include="Quartz">
+     <Version>2.5.0</Version>
+   </PackageReference>
+ </ItemGroup>
+  
+</Project>
