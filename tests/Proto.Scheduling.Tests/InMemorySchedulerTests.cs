@@ -1,13 +1,14 @@
-﻿using Proto.TestFixtures;
+﻿using Proto.Scheduling;
+using Proto.TestFixtures;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Proto.Tests
+namespace Proto.Scheduling.Tests
 {
-    public class AlarmClockTests
+    public class InMemorySchedulerTests
     {
         [Fact]
         public void Test()
@@ -16,6 +17,8 @@ namespace Proto.Tests
             var sent = 0;
             var dead = 0;
 
+            var scheduler = new InMemoryScheduler();
+
             var pid = Actor.Spawn(
                Actor
                    .FromFunc(context =>
@@ -23,12 +26,12 @@ namespace Proto.Tests
                            switch (context.Message)
                            {
                                case Started _:
-                                   context.SelfDelayMessage("count", 0.5);
+                                   scheduler.ScheduleMessage(context, "count", 0.5);
                                    sent++;
                                    break;
                                case string s:
                                    if (s == "count") count++;
-                                   context.SelfDelayMessage("count", TimeSpan.FromMilliseconds(500));
+                                   scheduler.ScheduleMessage(context, "count", TimeSpan.FromMilliseconds(500));
                                    sent++;
                                    break;
                            }

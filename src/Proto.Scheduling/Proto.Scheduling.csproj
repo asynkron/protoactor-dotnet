@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+ <PropertyGroup Label="Configuration">
+    <RootNamespace>Proto.Scheduling</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard1.5;net452</TargetFrameworks>
+    <Version>0.1.2</Version>
+  </PropertyGroup>
+  
+ <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+  </PropertyGroup>
+  
+ <ItemGroup>
+   <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
+   <ProjectReference Include="..\Proto.Mailbox\Proto.Mailbox.csproj" />
+ </ItemGroup>
+</Project>

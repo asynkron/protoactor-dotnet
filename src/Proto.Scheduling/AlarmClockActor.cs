@@ -6,15 +6,15 @@ using Proto.Mailbox;
 using System.Linq;
 using System.Threading;
 
-namespace Proto
+namespace Proto.Scheduling
 {
-    public class AlarmClock : IActor
+    public class AlarmClockActor : IActor
     {
         public static PID InstancePID { get => _lazyInstance.Value; }
 
         static Lazy<PID> _lazyInstance = new Lazy<PID>(() =>
         {
-            var pid = Actor.SpawnNamed(Actor.FromProducer(() => new AlarmClock()), nameof(AlarmClock));
+            var pid = Actor.SpawnNamed(Actor.FromProducer(() => new AlarmClockActor()), nameof(AlarmClockActor));
             return pid;
         }, LazyThreadSafetyMode.ExecutionAndPublication);
 
@@ -30,7 +30,7 @@ namespace Proto
             public int Compare(DelayMessage x, DelayMessage y) => x.Timeout.CompareTo(y.Timeout);
         }
 
-        private AlarmClock() { }
+        private AlarmClockActor() { }
 
         const string _tickMessage = "tickMessage";
         readonly SortedSet<DelayMessage> _messages = new SortedSet<DelayMessage>(new DelayMessageComparer());
