@@ -59,7 +59,12 @@ namespace Proto
 
                 _tcs.TrySetResult((T)message);
                 pid.Stop();
+            }            
+            else
+            {
+                throw new InvalidOperationException($"Unexpected message.  Was type {message.GetType()} but expected {typeof(T)}");
             }
+
         }
 
         public override void SendSystemMessage(PID pid, object message)
