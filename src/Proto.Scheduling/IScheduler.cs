@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Proto.Scheduling
 {
     public interface IScheduler
     {
-        void ScheduleMessage(IContext context, object message, DateTime timestamp);
+        Task ScheduleMessage(DelayMessage delayMessage);
     }
 }

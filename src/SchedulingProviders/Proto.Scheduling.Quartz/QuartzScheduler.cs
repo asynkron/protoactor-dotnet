@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Proto.Scheduling
+namespace Proto.Scheduling.Quartz
 {
-    public class InMemoryScheduler : IScheduler
+    public class QuartzScheduler : IScheduler
     {
         public Task ScheduleMessage(DelayMessage delayMessage)
         {
-            AlarmClockActor.InstancePID.Tell(delayMessage);
-            return Actor.Done;
+            throw new NotImplementedException();
         }
     }
 }

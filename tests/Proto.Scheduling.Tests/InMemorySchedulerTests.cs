@@ -17,8 +17,6 @@ namespace Proto.Scheduling.Tests
             var sent = 0;
             var dead = 0;
 
-            var scheduler = new InMemoryScheduler();
-
             var pid = Actor.Spawn(
                Actor
                    .FromFunc(context =>
@@ -26,21 +24,22 @@ namespace Proto.Scheduling.Tests
                            switch (context.Message)
                            {
                                case Started _:
-                                   scheduler.ScheduleMessage(context, "count", 0.5);
+                                   context.Schedule("count", 0.5);
                                    sent++;
                                    break;
                                case string s:
                                    if (s == "count") count++;
-                                   scheduler.ScheduleMessage(context, "count", TimeSpan.FromMilliseconds(500));
+                                   context.Schedule("count", TimeSpan.FromMilliseconds(500));
                                    sent++;
                                    break;
                            }
                            return Actor.Done;
                        })
                    .WithMailbox(() => new TestMailbox())
+                   .WithScheduler(new InMemoryScheduler())
                );
 
-            EventStream.Instance.Subscribe(msg => { if (msg is DeadLetterEvent letter) dead++; });
+            EventStream.Instance.Subscribe(msg => { if (msg is DeadLetterEvent letter && letter.Message == (object)"count") dead++; });
 
             /*
              * Started -> sent "count" to myself in 0.5s

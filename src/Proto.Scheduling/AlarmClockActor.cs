@@ -17,18 +17,7 @@ namespace Proto.Scheduling
             var pid = Actor.SpawnNamed(Actor.FromProducer(() => new AlarmClockActor()), nameof(AlarmClockActor));
             return pid;
         }, LazyThreadSafetyMode.ExecutionAndPublication);
-
-        public class DelayMessage
-        {
-            public PID Target { get; set; }
-            public object Message { get; set; }
-            public DateTime Timeout { get; set; }
-        }
-
-        class DelayMessageComparer : IComparer<DelayMessage>
-        {
-            public int Compare(DelayMessage x, DelayMessage y) => x.Timeout.CompareTo(y.Timeout);
-        }
+        
 
         private AlarmClockActor() { }
 
