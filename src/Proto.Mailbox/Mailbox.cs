@@ -215,11 +215,26 @@ namespace Proto.Mailbox
         }
     }
 
+    /// <summary>
+    /// Extension point for getting notifications about mailbox events
+    /// </summary>
     public interface IMailboxStatistics
     {
+        /// <summary>
+        /// This method is invoked when the mailbox is started
+        /// </summary>
         void MailboxStarted();
+        /// <summary>
+        /// This method is invoked when a message is posted to the mailbox.
+        /// </summary>
         void MessagePosted(object message);
+        /// <summary>
+        /// This method is invoked when a message has been received by the invoker associated with the mailbox.
+        /// </summary>
         void MessageReceived(object message);
+        /// <summary>
+        /// This method is invoked when all messages in the mailbox have been received.
+        /// </summary>
         void MailboxEmpty();
     }
 }
