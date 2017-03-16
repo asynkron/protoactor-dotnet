@@ -11,11 +11,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Proto.Mailbox;
 using System.Collections.ObjectModel;
+using Proto.Logging;
 
 namespace Proto
 {
     public class Context : IMessageInvoker, IContext, ISupervisor
     {
+        private readonly ILog log = LogProvider.For<Context>();
+
         private readonly Stack<Receive> _behavior;
         private readonly Receive _receiveMiddleware;
         private readonly Sender _senderMiddleware;
@@ -221,13 +224,13 @@ namespace Proto
                     case ResumeMailbox rm:
                         return Task.FromResult(0);
                     default:
-                        Console.WriteLine("Unknown system message {0}", msg);
+                        log.Warn("Unknown system message {0}", msg);
                         return Task.FromResult(0);
                 }
             }
             catch (Exception x)
             {
-                Console.WriteLine("Error handling SystemMessage {0}", x);
+                log.Error("Error handling SystemMessage {0}", x);
                 return Task.FromResult(0);
             }
         }

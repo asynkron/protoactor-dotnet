@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using Proto.Logging;
 using Proto.Mailbox;
 
 namespace Proto
@@ -42,6 +43,8 @@ namespace Proto
 
     public class OneForOneStrategy : ISupervisorStrategy
     {
+        private readonly ILog log = LogProvider.For<OneForOneStrategy>();
+
         public readonly int _maxNrOfRetries;
         private readonly TimeSpan? _withinTimeSpan;
         private readonly Decider _decider;
@@ -64,17 +67,17 @@ namespace Proto
                 case SupervisorDirective.Restart:
                     if (RequestRestartPermission(rs))
                     {
-                        Console.WriteLine($"Restarting {child.ToShortString()} Reason {reason}");
+                        log.Warn($"Restarting {child.ToShortString()} Reason {reason}");
                         supervisor.RestartChildren(child);
                     }
                     else
                     {
-                        Console.WriteLine($"Stopping {child.ToShortString()} Reason { reason}");
+                        log.Warn($"Stopping {child.ToShortString()} Reason { reason}");
                         supervisor.StopChildren(child);
                     }
                     break;
                 case SupervisorDirective.Stop:
-                    Console.WriteLine($"Stopping {child.ToShortString()} Reason {reason}");
+                    log.Warn($"Stopping {child.ToShortString()} Reason {reason}");
                     supervisor.StopChildren(child);
                     break;
                 case SupervisorDirective.Escalate:
