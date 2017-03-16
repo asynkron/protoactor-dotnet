@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System;
+using Xunit;
 
 namespace Proto.Tests
 {
@@ -45,6 +46,23 @@ namespace Proto.Tests
             var reply2 = pid2.RequestAsync<string>("hello").Result;
 
             Assert.Equal("hellohey", reply2);
+        }
+
+        [Fact]
+        public void Given_Actor_When_ReplyIsNull_Should_Return()
+        {
+            var pid = Actor.Spawn(Actor.FromFunc(ctx =>
+            {
+                if (ctx.Message is string)
+                {
+                    ctx.Respond(null);
+                }
+                return Actor.Done;
+            }));
+
+            var reply = pid.RequestAsync<object>("hello", TimeSpan.FromSeconds(1)).Result;
+
+            Assert.Equal(null, reply);
         }
     }
 }

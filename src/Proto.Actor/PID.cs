@@ -61,8 +61,7 @@ namespace Proto
             var reff = Ref ?? ProcessRegistry.Instance.Get(this);
             reff.SendUserMessage(this, message, sender);
         }
-
-
+        
         public Task<T> RequestAsync<T>(object message, TimeSpan timeout)
             => RequestAsync(message, new FutureProcess<T>(timeout));
 
