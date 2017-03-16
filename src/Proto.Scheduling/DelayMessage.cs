@@ -9,10 +9,13 @@ namespace Proto.Scheduling
         public int Compare(DelayMessage x, DelayMessage y) => x.Timeout.CompareTo(y.Timeout);
     }
 
-    public class DelayMessage
+    public abstract class DelayMessage
     {
         public PID Target { get; set; }
         public object Message { get; set; }
         public DateTime Timeout { get; set; }
     }
+
+    public class TransientDelayMessage : DelayMessage { }
+    public class PersistentDelayMessage : DelayMessage { }
 }

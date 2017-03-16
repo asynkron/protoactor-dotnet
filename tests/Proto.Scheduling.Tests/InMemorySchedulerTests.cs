@@ -24,12 +24,12 @@ namespace Proto.Scheduling.Tests
                            switch (context.Message)
                            {
                                case Started _:
-                                   context.Schedule("count", 0.5);
+                                   context.ScheduleTransient("count", 0.5);
                                    sent++;
                                    break;
                                case string s:
                                    if (s == "count") count++;
-                                   context.Schedule("count", TimeSpan.FromMilliseconds(500));
+                                   context.SchedulePersistent("count", TimeSpan.FromMilliseconds(500));
                                    sent++;
                                    break;
                            }
