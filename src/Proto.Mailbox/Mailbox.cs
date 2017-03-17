@@ -24,7 +24,7 @@ namespace Proto.Mailbox
         void Start();
     }
 
-    public static class BoundedMailbox
+    internal static class BoundedMailbox
     {
         public static IMailbox Create(int size, params IMailboxStatistics[] stats)
         {
@@ -50,6 +50,8 @@ namespace Proto.Mailbox
 
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
+
+        internal int Status => _status;
 
         public DefaultMailbox(IMailboxQueue systemMessages, IMailboxQueue userMailbox, params IMailboxStatistics[] stats)
         {
@@ -200,7 +202,7 @@ namespace Proto.Mailbox
                     _stats[si].MessageReceived(message);
                 }
             }
-            ProcessMessages();
+            _dispatcher.Schedule(RunAsync);
         }
 
 
@@ -213,11 +215,26 @@ namespace Proto.Mailbox
         }
     }
 
+    /// <summary>
+    /// Extension point for getting notifications about mailbox events
+    /// </summary>
     public interface IMailboxStatistics
     {
+        /// <summary>
+        /// This method is invoked when the mailbox is started
+        /// </summary>
         void MailboxStarted();
+        /// <summary>
+        /// This method is invoked when a message is posted to the mailbox.
+        /// </summary>
         void MessagePosted(object message);
+        /// <summary>
+        /// This method is invoked when a message has been received by the invoker associated with the mailbox.
+        /// </summary>
         void MessageReceived(object message);
+        /// <summary>
+        /// This method is invoked when all messages in the mailbox have been received.
+        /// </summary>
         void MailboxEmpty();
     }
 }

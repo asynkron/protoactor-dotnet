@@ -4,13 +4,20 @@
   </PropertyGroup>
   <PropertyGroup>
     <TargetFrameworks>netstandard1.5;net452</TargetFrameworks>
-    <Version>0.1.0-dev</Version>
+    <Version>0.1.2</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup>
     <OutputType>library</OutputType>
+    <Authors>Proto.Actor Team</Authors>
+    <Description>Ultra-fast distributed actors for .NET.</Description>
+    <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
+    <PackageProjectUrl>http://proto.actor/</PackageProjectUrl>
+    <PackageIconUrl>http://proto.actor/images/logo.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/AsynkronIT/protoactor-dotnet</RepositoryUrl>
+    <PackageTags>actors actor model concurrency proto protoactor</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <None Include="build.bat" />

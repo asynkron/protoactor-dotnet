@@ -365,12 +365,13 @@ namespace Proto
         {
             if (_senderMiddleware != null)
             {
-                _senderMiddleware(this, target, new MessageEnvelope
+                var messageEnvelope = message as MessageEnvelope ?? new MessageEnvelope
                 {
                     Message = message,
                     Header = new MessageHeader(),
                     Sender = sender
-                });
+                };
+                _senderMiddleware(this, target, messageEnvelope);
             }
             else
             {

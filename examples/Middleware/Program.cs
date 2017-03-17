@@ -28,7 +28,21 @@ class Program
                     Console.WriteLine($"middleware 2 enter {c.Message.GetType()}:{c.Message}");
                     await next(c);
                     Console.WriteLine($"middleware 2 exit");
-                });
+                })
+            .WithSenderMiddleware(
+                next => async (c, target, envelope) =>
+                {
+                    Console.WriteLine($"middleware 1 enter {c.Message.GetType()}:{c.Message}");
+                    await next(c, target, envelope);
+                    Console.WriteLine($"middleware 1 enter {c.Message.GetType()}:{c.Message}");
+                },
+                next => async (c, target, envelope) =>
+                {
+                    Console.WriteLine($"middleware 2 enter {c.Message.GetType()}:{c.Message}");
+                    await next(c, target, envelope);
+                    Console.WriteLine($"middleware 2 enter {c.Message.GetType()}:{c.Message}");
+                }
+            );
 
         var pid = Actor.Spawn(actor);
         pid.Tell("hello");
