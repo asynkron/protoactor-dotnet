@@ -18,15 +18,6 @@ namespace Proto.Persistence
         private readonly IDictionary<string, Tuple<object, ulong>> _snapshots =
             new Dictionary<string, Tuple<object, ulong>>();
 
-        public void Restart()
-        {
-        }
-
-        public int GetSnapshotInterval()
-        {
-            return 0;
-        }
-
         public Task<Tuple<object, ulong>> GetSnapshotAsync(string actorName)
         {
             Tuple<object, ulong> snapshot;
@@ -59,6 +50,16 @@ namespace Proto.Persistence
         {
             _snapshots[actorName] = Tuple.Create((object) snapshot, eventIndex);
             return Task.FromResult(0);
+        }
+
+        public Task DeleteEventsAsync(string actorName, ulong fromEventIndex)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task DeleteSnapshotsAsync(string actorName, ulong fromEventIndex)
+        {
+            throw new NotImplementedException();
         }
     }
 }

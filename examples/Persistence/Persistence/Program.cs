@@ -25,7 +25,7 @@ class Program
         using (var cluster = GetCluster())
         using (var bucket = cluster.OpenBucket("protoactor-test"))
         {
-            var provider = new CouchbaseProvider(bucket, 5);
+            var provider = new CouchbaseProvider(bucket);
             var props = Actor.FromProducer(() => new MyActor())
                 .WithReceiveMiddleware(Persistence.Using(provider));
             var pid = Actor.Spawn(props);

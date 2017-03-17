@@ -13,9 +13,9 @@ namespace Proto.Persistence
     {
         Task GetEventsAsync(string actorName, ulong eventIndexStart, Action<object> callback);
         Task<Tuple<object, ulong>> GetSnapshotAsync(string actorName);
-        int GetSnapshotInterval();
         Task PersistEventAsync(string actorName, ulong eventIndex, object @event);
         Task PersistSnapshotAsync(string actorName, ulong eventIndex, object snapshot);
-        void Restart();
+        Task DeleteEventsAsync(string actorName, ulong fromEventIndex);
+        Task DeleteSnapshotsAsync(string actorName, ulong fromEventIndex);
     }
 }
