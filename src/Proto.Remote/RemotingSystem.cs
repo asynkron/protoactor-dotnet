@@ -7,6 +7,7 @@
 using System;
 using System.Linq;
 using Grpc.Core;
+using System.Collections.Generic;
 
 namespace Proto.Remote
 {
@@ -14,6 +15,11 @@ namespace Proto.Remote
     {
         private static Server _server;
         public static PID EndpointManagerPid { get; private set; }
+
+        public static string[] GetKnownKinds()
+        {
+            return kinds.Keys.ToArray();
+        }
 
         public static void Start(string host, int port)
         {
@@ -39,6 +45,12 @@ namespace Proto.Remote
             EndpointManagerPid = Actor.Spawn(props);
 
             Console.WriteLine($"[REMOTING] Starting Proto.Actor server on {addr}");
+        }
+
+        private static Dictionary<string, Props> kinds = new Dictionary<string, Props>();
+        public static void Register(string kind,Props props)
+        {
+            kinds.Add(kind, props);
         }
     }
 }
