@@ -30,7 +30,10 @@ namespace Proto.Remote
         }
         public static Props GetKnownKind(string kind)
         {
-            return _kinds[kind];
+            if (_kinds.TryGetValue(kind, out var props)){
+                return props;
+            }
+            throw new ArgumentException($"No Props found for kind '{kind}'");
         }
 
         public static void Start(string host, int port)
