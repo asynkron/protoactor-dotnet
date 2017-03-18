@@ -33,12 +33,12 @@ namespace Proto.Remote
             if (msg is Watch w)
             {
                 var rw = new RemoteWatch(w.Watcher, _pid);
-                RemotingSystem.EndpointManagerPid.Tell(rw);
+                Remote.EndpointManagerPid.Tell(rw);
             }
             else if (msg is Unwatch uw)
             {
                 var ruw = new RemoteUnwatch(uw.Watcher, _pid);
-                RemotingSystem.EndpointManagerPid.Tell(ruw);
+                Remote.EndpointManagerPid.Tell(ruw);
             }
             else
             {
@@ -62,7 +62,7 @@ namespace Proto.Remote
                     TypeName = imsg.Descriptor.File.Package + "." + imsg.Descriptor.Name
                 }; 
                  */
-                RemotingSystem.EndpointManagerPid.Tell(env);
+                Remote.EndpointManagerPid.Tell(env);
             }
             else
             {

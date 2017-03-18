@@ -10,7 +10,7 @@ namespace Proto.Cluster
         public static void Start(string clusterName, string address, IClusterProvider provider)
         {
             var (h, p) = ParseAddress(address);
-            var kinds = RemotingSystem.GetKnownKinds();
+            var kinds = Remote.Remote.GetKnownKinds();
 
             SubscribePartitionKindsToEventStream();
             SpawnPidCacheActor();

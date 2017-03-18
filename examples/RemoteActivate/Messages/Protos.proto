@@ -1,0 +1,9 @@
+﻿syntax = "proto3";
+package messages;
+option csharp_namespace = "Messages";
+import "Proto.Actor/Protos.proto";
+
+message HelloRequest {}
+message HelloResponse {
+    string Message=1;
+}
