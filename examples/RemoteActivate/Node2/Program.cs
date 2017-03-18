@@ -19,7 +19,6 @@ namespace Node2
         static void Main(string[] args)
         {
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-            Remote.Start("127.0.0.1", 12000);
             var props = Actor.FromFunc(ctx =>
             {
                 switch (ctx.Message)
@@ -37,6 +36,8 @@ namespace Node2
             });
 
             Remote.RegisterKnownKind("hello", props);
+            Remote.Start("127.0.0.1", 12000);
+
             Console.ReadLine();
         }
     }
