@@ -10,7 +10,7 @@ namespace Proto.Remote
             switch (context.Message)
             {
                 case ActorPidRequest msg:
-                    var props = RemotingSystem.GetKindProps(msg.Kind);
+                    var props = Remote.GetKnownKind(msg.Kind);
                     var name = msg.Name;
                     if (string.IsNullOrEmpty(name))
                     {

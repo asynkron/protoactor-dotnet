@@ -12,15 +12,25 @@ using System.Threading.Tasks;
 
 namespace Proto.Remote
 {
-    public static class RemotingSystem
+    public static class Remote
     {
         private static Server _server;
+        private static Dictionary<string, Props> _kinds = new Dictionary<string, Props>();
         public static PID EndpointManagerPid { get; private set; }
         public static PID ActivatorPID { get; private set; }
 
         public static string[] GetKnownKinds()
         {
-            return Kinds.Keys.ToArray();
+            return _kinds.Keys.ToArray();
+        }
+
+        public static void RegisterKnownKind(string kind, Props props)
+        {
+            _kinds.Add(kind, props);
+        }
+        public static Props GetKnownKind(string kind)
+        {
+            return _kinds[kind];
         }
 
         public static void Start(string host, int port)
@@ -52,7 +62,7 @@ namespace Proto.Remote
         private static void SpawnActivator()
         {
             var props = Actor.FromProducer(() => new Activator());
-            ActivatorPID = Actor.Spawn(props);
+            ActivatorPID = Actor.SpawnNamed(props,"activator");
         }
 
         private static void SpawnEndpointManager(RemoteConfig config)
@@ -61,15 +71,8 @@ namespace Proto.Remote
             EndpointManagerPid = Actor.Spawn(props);
         }
 
-        private static Dictionary<string, Props> Kinds { get; } = new Dictionary<string, Props>();
-        public static void Register(string kind,Props props)
-        {
-            Kinds.Add(kind, props);
-        }
-        public static Props GetKindProps(string kind)
-        {
-            return Kinds[kind];
-        }
+  
+
 
         public static PID ActivatorForAddress(string address)
         {
@@ -81,7 +84,7 @@ namespace Proto.Remote
             return SpawnNamedAsync(address, "", kind, timeout);
         }
 
-        private static async Task<PID> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
+        public static async Task<PID> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
         {
             var activator = ActivatorForAddress(address);
 
