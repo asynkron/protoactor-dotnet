@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto.Mailbox
@@ -38,6 +39,27 @@ namespace Proto.Mailbox
         public void Schedule(Func<Task> runner)
         {
             Task.Factory.StartNew(runner, TaskCreationOptions.None);
+        }
+
+        public int Throughput { get; set; }
+    }
+
+    /// <summary>
+    /// This must be created on the UI thread after a SynhronizationContext has been created.  Otherwise, an error will occur.
+    /// </summary>
+    public sealed class CurrentSynchronizationContextDispatcher : IDispatcher
+    {
+        private readonly TaskScheduler scheduler;
+
+        public CurrentSynchronizationContextDispatcher()
+        {
+            scheduler = TaskScheduler.FromCurrentSynchronizationContext();
+            Throughput = 300;
+        }
+
+        public void Schedule(Func<Task> runner)
+        {
+            Task.Factory.StartNew(runner, CancellationToken.None, TaskCreationOptions.None, scheduler);
         }
 
         public int Throughput { get; set; }

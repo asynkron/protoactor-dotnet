@@ -53,13 +53,18 @@ namespace Proto
 
         public override void SendUserMessage(PID pid, object message, PID sender)
         {
-            if (message is T)
+            if (message is T || message == null)
             {
                 if (_cts != null && _cts.IsCancellationRequested) return;
 
                 _tcs.TrySetResult((T)message);
                 pid.Stop();
+            }            
+            else
+            {
+                throw new InvalidOperationException($"Unexpected message.  Was type {message.GetType()} but expected {typeof(T)}");
             }
+
         }
 
         public override void SendSystemMessage(PID pid, object message)
