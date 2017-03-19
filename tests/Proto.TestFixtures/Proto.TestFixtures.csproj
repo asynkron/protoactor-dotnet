@@ -3,6 +3,9 @@
     <TargetFramework>netstandard1.5</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Grpc" Version="1.1.0" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\..\src\Proto.Mailbox\Proto.Mailbox.csproj" />
   </ItemGroup>

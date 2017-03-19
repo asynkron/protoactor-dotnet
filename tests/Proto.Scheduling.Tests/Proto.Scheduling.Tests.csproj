@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+ <PropertyGroup Label="Configuration">
+    <RootNamespace>Proto.Scheduling.Tests</RootNamespace>
+  </PropertyGroup>
+ <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard1.5|AnyCPU'">
+   <OutputType>exe</OutputType>
+ </PropertyGroup>
+
+    <PropertyGroup>    
+    <TargetFramework>netcoreapp1.1</TargetFramework>
+  </PropertyGroup>
+  
+ <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+  </PropertyGroup>
+  
+   <ItemGroup>
+    <PackageReference Include="Grpc" Version="1.1.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
+    <PackageReference Include="xunit" Version="2.2.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
+  </ItemGroup>
+
+ <ItemGroup>
+   <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
+   <ProjectReference Include="..\..\src\Proto.Scheduling\Proto.Scheduling.csproj" />
+   <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
+ </ItemGroup>
+
+ <ItemGroup>
+   <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
+ </ItemGroup>
+</Project>

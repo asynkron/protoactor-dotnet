@@ -30,7 +30,7 @@ namespace Proto
 
         public Process Get(PID pid)
         {
-            if (pid.Address != "nonhost" && pid.Address != Address)
+            if (pid.Address != NoHost && pid.Address != Address)
             {
                 foreach (var resolver in _hostResolvers)
                 {

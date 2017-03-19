@@ -9,20 +9,22 @@ namespace Proto.Mailbox.Tests
 {
     public class MailboxQueuesTests
     {
-        public enum MailboxQueueKind { Bounded, Unbounded, }
+        public enum MailboxQueueKind { Bounded_Big, Bounded_Small, Unbounded, }
 
         IMailboxQueue GetMailboxQueue(MailboxQueueKind kind)
         {
             switch (kind)
             {
-                case MailboxQueueKind.Bounded: return new BoundedMailboxQueue(4);
+                case MailboxQueueKind.Bounded_Small: return new BoundedMailboxQueue(16);
+                case MailboxQueueKind.Bounded_Big: return new BoundedMailboxQueue((int)Math.Pow(2, 10));
                 case MailboxQueueKind.Unbounded: return new UnboundedMailboxQueue();
             }
             throw new ArgumentOutOfRangeException(nameof(kind));
         }
 
         [Theory]
-        //[InlineData(MailboxQueueKind.Bounded)] -- temporarily disabled because the Bounded queue doesn't seem to work correctly
+        [InlineData(MailboxQueueKind.Bounded_Small)]
+        [InlineData(MailboxQueueKind.Bounded_Big)]
         [InlineData(MailboxQueueKind.Unbounded)]
         public void Given_MailboxQueue_When_push_pop_Then_HasMessages_relate_the_queue_status(MailboxQueueKind kind)
         {
@@ -43,7 +45,8 @@ namespace Proto.Mailbox.Tests
         }
 
         [Theory]
-        //[InlineData(MailboxQueueKind.Bounded)] -- temporarily disabled because the Bounded queue doesn't seem to work correctly
+        [InlineData(MailboxQueueKind.Bounded_Small)]
+        [InlineData(MailboxQueueKind.Bounded_Big)]
         [InlineData(MailboxQueueKind.Unbounded)]
         public void Given_MailboxQueue_when_enqueue_and_dequeue_in_different_threads_Then_we_get_the_elements_in_the_FIFO_order(MailboxQueueKind kind)
         {
