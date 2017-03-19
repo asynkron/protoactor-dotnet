@@ -9,11 +9,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto;
+using Proto.Logging;
 
 class Program
 {
     static void Main(string[] args)
     {
+        LogProvider.SetCurrentLogProvider(new ColoredConsoleLogProvider());
         var props = Actor.FromProducer(() => new ParentActor()).WithSupervisor(new OneForOneStrategy(Decider.Decide, 1, null));
 
         var actor = Actor.Spawn(props);
