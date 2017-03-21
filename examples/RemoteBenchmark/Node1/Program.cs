@@ -17,7 +17,7 @@ class Program
     static void Main(string[] args)
     {
         Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-        RemotingSystem.Start("127.0.0.1", 12001);
+        Remote.Start("127.0.0.1", 12001);
 
         var messageCount = 1000000;
         var wg = new AutoResetEvent(false);

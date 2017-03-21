@@ -9,8 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
-using System.Collections.ObjectModel;
 
 namespace Proto
 {
@@ -31,6 +31,7 @@ namespace Proto
         private bool _stopping;
         private HashSet<PID> _watchers;
         private HashSet<PID> _watching;
+        private readonly ILogger logger = Log.CreateLogger<Context>();
 
 
         public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
@@ -221,13 +222,13 @@ namespace Proto
                     case ResumeMailbox rm:
                         return Task.FromResult(0);
                     default:
-                        Console.WriteLine("Unknown system message {0}", msg);
+                        logger.LogWarning("Unknown system message {0}", msg);
                         return Task.FromResult(0);
                 }
             }
             catch (Exception x)
             {
-                Console.WriteLine("Error handling SystemMessage {0}", x);
+                logger.LogError("Error handling SystemMessage {0}", x);
                 return Task.FromResult(0);
             }
         }

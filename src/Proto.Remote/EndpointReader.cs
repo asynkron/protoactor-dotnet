@@ -33,7 +33,7 @@ namespace Proto.Remote
                     if (message is Terminated msg)
                     {
                         var rt = new RemoteTerminate(target, msg.Who);
-                        RemotingSystem.EndpointManagerPid.Tell(rt);
+                        Remote.EndpointManagerPid.Tell(rt);
                     }
                     if (message is SystemMessage sys)
                     {

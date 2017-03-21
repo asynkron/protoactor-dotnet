@@ -25,6 +25,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="1.1.1" />
     <PackageReference Include="System.ValueTuple" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>

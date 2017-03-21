@@ -9,11 +9,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto;
+using Microsoft.Extensions.Logging;
 
 class Program
 {
     static void Main(string[] args)
     {
+        Proto.Log.SetLoggerFactory(new LoggerFactory()
+            .AddConsole(minLevel: LogLevel.Debug));
+
         var props = Actor.FromProducer(() => new ParentActor()).WithSupervisor(new OneForOneStrategy(Decider.Decide, 1, null));
 
         var actor = Actor.Spawn(props);
@@ -83,6 +87,8 @@ class Program
 
     internal class ChildActor : IActor
     {
+        private ILogger logger = Log.CreateLogger<ChildActor>();
+
         public Task ReceiveAsync(IContext context)
         {
             var msg = context.Message;
@@ -90,23 +96,23 @@ class Program
             switch (context.Message)
             {
                 case Hello r:
-                    Console.WriteLine($"Hello {r.Who}");
+                    logger.LogDebug($"Hello {r.Who}");
                     break;
                 case Recoverable r:
                     throw new RecoverableException();
                 case Fatal r:
                     throw new FatalException();
                 case Started r:
-                    Console.WriteLine("Started, initialize actor here");
+                    logger.LogDebug("Started, initialize actor here");
                     break;
                 case Stopping r:
-                    Console.WriteLine("Stopping, actor is about shut down");
+                    logger.LogDebug("Stopping, actor is about shut down");
                     break;
                 case Stopped r:
-                    Console.WriteLine("Stopped, actor and it's children are stopped");
+                    logger.LogDebug("Stopped, actor and it's children are stopped");
                     break;
                 case Restarting r:
-                    Console.WriteLine("Restarting, actor is about restart");
+                    logger.LogDebug("Restarting, actor is about restart");
                     break;
             }
             return Actor.Done;
