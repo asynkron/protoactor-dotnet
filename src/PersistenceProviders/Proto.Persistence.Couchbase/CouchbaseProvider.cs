@@ -12,17 +12,14 @@ namespace Proto.Persistence.Couchbase
     {
         private readonly IBucket _bucket;
 
-        public CouchbaseProvider(IBucket bucket, int snapshotInterval)
+        public CouchbaseProvider(IBucket bucket)
         {
             _bucket = bucket;
-            SnapshotInterval = snapshotInterval;
         }
-
-        public int SnapshotInterval { get; }
 
         public IProviderState GetState()
         {
-            return new CouchbaseProviderState(_bucket, SnapshotInterval);
+            return new CouchbaseProviderState(_bucket);
         }
     }
 }

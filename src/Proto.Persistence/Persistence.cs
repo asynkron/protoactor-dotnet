@@ -14,38 +14,41 @@ namespace Proto.Persistence
         public IProviderState State { get; set; }
         public ulong EventIndex { get; set; }
         public IContext Context { get; set; }
-        public bool Recovering { get; set; }
         public string Name => Context.Self.Id;
 
         public async Task InitAsync(IProvider provider, IContext context)
         {
             State = provider.GetState();
             Context = context;
-            Recovering = true;
 
-            State.Restart();
+            await Context.ReceiveAsync(new RecoveryStarted());
+
             var t = await State.GetSnapshotAsync(Name);
+
             if (t != null)
             {
                 EventIndex = t.Item2;
-                await Context.ReceiveAsync(t.Item1);
+                await Context.ReceiveAsync(new RecoverSnapshot(t.Item1));
             }
+
             await State.GetEventsAsync(Name, EventIndex, e =>
             {
-                Context.ReceiveAsync(e).Wait();
+                Context.ReceiveAsync(new RecoverEvent(e)).Wait();
                 EventIndex++;
             });
+            
+            await Context.ReceiveAsync(new RecoveryCompleted());
         }
 
         public async Task PersistReceiveAsync(object message)
         {
-            await State.PersistEventAsync(Name, EventIndex, message);
+            var persistEventIndex = EventIndex;
+
+            await State.PersistEventAsync(Name, persistEventIndex, message);
+
             EventIndex++;
-            await Context.ReceiveAsync(message);
-            if (State.GetSnapshotInterval() == 0)
-            {
-                await Context.ReceiveAsync(new RequestSnapshot());
-            }
+
+            await Context.ReceiveAsync(new PersistedEvent(persistEventIndex, message));
         }
 
         public async Task PersistSnapshotAsync(object snapshot)
@@ -73,7 +76,40 @@ namespace Proto.Persistence
         }
     }
 
-    public class RequestSnapshot
+    public class RequestSnapshot { }
+
+    public class RecoverSnapshot
     {
+        public RecoverSnapshot(object snapshot)
+        {
+            Snapshot = snapshot;
+        }
+        
+        public object Snapshot { get; }
+    }
+
+    public class RecoverEvent
+    {
+        public RecoverEvent(object message)
+        {
+            Message = message;
+        }
+        
+        public object Message { get; }
+    }
+
+    public class RecoveryStarted { }
+    public class RecoveryCompleted { }
+
+    public class PersistedEvent
+    {
+        public PersistedEvent(ulong eventIndex, object message)
+        {
+            EventIndex = eventIndex;
+            Message = message;
+        }
+
+        public ulong EventIndex { get; }
+        public object Message { get; }
     }
 }
