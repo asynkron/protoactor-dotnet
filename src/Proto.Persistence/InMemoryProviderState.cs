@@ -54,12 +54,12 @@ namespace Proto.Persistence
 
         public Task DeleteEventsAsync(string actorName, ulong fromEventIndex)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(0);
         }
 
         public Task DeleteSnapshotsAsync(string actorName, ulong fromEventIndex)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(0);
         }
     }
 }
