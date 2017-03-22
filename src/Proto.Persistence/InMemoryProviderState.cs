@@ -15,17 +15,17 @@ namespace Proto.Persistence
     {
         private readonly ConcurrentDictionary<string, List<object>> _events = new ConcurrentDictionary<string, List<object>>();
 
-        private readonly IDictionary<string, Tuple<object, ulong>> _snapshots =
-            new Dictionary<string, Tuple<object, ulong>>();
+        private readonly IDictionary<string, Tuple<object, long>> _snapshots =
+            new Dictionary<string, Tuple<object, long>>();
 
-        public Task<Tuple<object, ulong>> GetSnapshotAsync(string actorName)
+        public Task<Tuple<object, long>> GetSnapshotAsync(string actorName)
         {
-            Tuple<object, ulong> snapshot;
+            Tuple<object, long> snapshot;
             _snapshots.TryGetValue(actorName, out snapshot);
             return Task.FromResult(snapshot);
         }
 
-        public Task GetEventsAsync(string actorName, ulong indexStart, Action<object> callback)
+        public Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
         {
             List<object> events;
             if (_events.TryGetValue(actorName, out events))
@@ -38,7 +38,7 @@ namespace Proto.Persistence
             return Task.FromResult(0);
         }
 
-        public Task PersistEventAsync(string actorName, ulong index, object data)
+        public Task PersistEventAsync(string actorName, long index, object data)
         {
             var events = _events.GetOrAdd(actorName, new List<object>());
             events.Add(data);
@@ -46,18 +46,18 @@ namespace Proto.Persistence
             return Task.FromResult(0);
         }
 
-        public Task PersistSnapshotAsync(string actorName, ulong index, object data)
+        public Task PersistSnapshotAsync(string actorName, long index, object data)
         {
             _snapshots[actorName] = Tuple.Create((object) data, index);
             return Task.FromResult(0);
         }
 
-        public Task DeleteEventsAsync(string actorName, ulong fromIndex)
+        public Task DeleteEventsAsync(string actorName, long fromIndex)
         {
             return Task.FromResult(0);
         }
 
-        public Task DeleteSnapshotsAsync(string actorName, ulong fromIndex)
+        public Task DeleteSnapshotsAsync(string actorName, long fromIndex)
         {
             return Task.FromResult(0);
         }

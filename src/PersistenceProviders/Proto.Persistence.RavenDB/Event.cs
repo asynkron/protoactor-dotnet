@@ -2,7 +2,7 @@
 {
     internal class Event
     {
-        public Event(string actorName, ulong index, object data)
+        public Event(string actorName, long index, object data)
         {
             ActorName = actorName;
             Index = index;
@@ -11,7 +11,7 @@
         }
 
         public string ActorName { get; }
-        public ulong Index { get; }
+        public long Index { get; }
         public object Data { get; }
         public string Id { get; }
     }

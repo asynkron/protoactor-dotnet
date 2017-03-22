@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26228.4
+VisualStudioVersion = 15.0.26228.9
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{771514F1-12AE-4A26-89CB-2646D3EF7034}"
 EndProject
@@ -94,7 +94,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.TestFixtures", "tests
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Cluster", "src\Proto.Cluster\Proto.Cluster.csproj", "{31517A92-5B06-434B-8BA2-597ECD3DEBA5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Persistence.RavenDB", "src\PersistenceProviders\Proto.Persistence.RavenDB\Proto.Persistence.RavenDB.csproj", "{3ACE539B-0BE6-4CC3-9016-52F902BF25EC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence.RavenDB", "src\PersistenceProviders\Proto.Persistence.RavenDB\Proto.Persistence.RavenDB.csproj", "{3ACE539B-0BE6-4CC3-9016-52F902BF25EC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence.Marten", "src\PersistenceProviders\Proto.Persistence.Marten\Proto.Persistence.Marten.csproj", "{D68E7578-BCB0-49AE-B434-F080F6D334AB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -465,6 +467,18 @@ Global
 		{3ACE539B-0BE6-4CC3-9016-52F902BF25EC}.Release|x64.Build.0 = Release|Any CPU
 		{3ACE539B-0BE6-4CC3-9016-52F902BF25EC}.Release|x86.ActiveCfg = Release|Any CPU
 		{3ACE539B-0BE6-4CC3-9016-52F902BF25EC}.Release|x86.Build.0 = Release|Any CPU
+		{D68E7578-BCB0-49AE-B434-F080F6D334AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D68E7578-BCB0-49AE-B434-F080F6D334AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D68E7578-BCB0-49AE-B434-F080F6D334AB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D68E7578-BCB0-49AE-B434-F080F6D334AB}.Debug|x64.Build.0 = Debug|Any CPU
+		{D68E7578-BCB0-49AE-B434-F080F6D334AB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D68E7578-BCB0-49AE-B434-F080F6D334AB}.Debug|x86.Build.0 = Debug|Any CPU
+		{D68E7578-BCB0-49AE-B434-F080F6D334AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D68E7578-BCB0-49AE-B434-F080F6D334AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D68E7578-BCB0-49AE-B434-F080F6D334AB}.Release|x64.ActiveCfg = Release|Any CPU
+		{D68E7578-BCB0-49AE-B434-F080F6D334AB}.Release|x64.Build.0 = Release|Any CPU
+		{D68E7578-BCB0-49AE-B434-F080F6D334AB}.Release|x86.ActiveCfg = Release|Any CPU
+		{D68E7578-BCB0-49AE-B434-F080F6D334AB}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -514,5 +528,6 @@ Global
 		{BEAC63DD-5701-4B33-8155-5218B9761A70} = {9AA2BCF0-19AB-4DD9-8D91-7D188E463806}
 		{31517A92-5B06-434B-8BA2-597ECD3DEBA5} = {771514F1-12AE-4A26-89CB-2646D3EF7034}
 		{3ACE539B-0BE6-4CC3-9016-52F902BF25EC} = {7AF64900-EA34-4A93-9514-FEBC4648E39E}
+		{D68E7578-BCB0-49AE-B434-F080F6D334AB} = {7AF64900-EA34-4A93-9514-FEBC4648E39E}
 	EndGlobalSection
 EndGlobal
