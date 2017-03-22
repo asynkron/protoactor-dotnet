@@ -22,24 +22,23 @@ namespace Proto.Persistence.RavenDB
 
         private async void SetupIndexes()
         {
-            await IndexCreation.CreateIndexesAsync(typeof(DeleteEnvelopeEventIndex).Assembly(), _store);
-            await IndexCreation.CreateIndexesAsync(typeof(DeleteEnvelopeSnapshotIndex).Assembly(), _store);
+            await IndexCreation.CreateIndexesAsync(typeof(DeleteEventIndex).Assembly(), _store);
+            await IndexCreation.CreateIndexesAsync(typeof(DeleteSnapshotIndex).Assembly(), _store);
         }
 
-        public async Task GetEventsAsync(string actorName, ulong eventIndexStart, Action<object> callback)
+        public async Task GetEventsAsync(string actorName, ulong indexStart, Action<object> callback)
         {
             using (var session = _store.OpenAsyncSession())
             {
-                var envelopes = await session.Query<Envelope>()
+                var events = await session.Query<Event>()
                     .Where(x => x.ActorName == actorName)
-                    .Where(x => x.EventIndex >= eventIndexStart)
-                    .Where(x => x.Type == "event")
-                    .OrderBy(x => x.EventIndex)
+                    .Where(x => x.Index >= indexStart)
+                    .OrderBy(x => x.Index)
                     .ToListAsync();
 
-                foreach (var envelope in envelopes)
+                foreach (var @event in events)
                 {
-                    callback(envelope.Event);
+                    callback(@event.Data);
                 }
             }
         }
@@ -48,54 +47,53 @@ namespace Proto.Persistence.RavenDB
         {
             using (var session = _store.OpenAsyncSession())
             {
-                var envelope = await session.Query<Envelope>()
+                var snapshot = await session.Query<Snapshot>()
                     .Where(x => x.ActorName == actorName)
-                    .Where(x => x.Type == "snapshot")
-                    .OrderByDescending(x => x.EventIndex)
+                    .OrderByDescending(x => x.Index)
                     .FirstOrDefaultAsync();
 
-                return envelope != null ? Tuple.Create((object)envelope.Event, envelope.EventIndex) : null;
+                return snapshot != null ? Tuple.Create((object)snapshot.Data, snapshot.Index) : null;
             }
         }
         
-        public async Task PersistEventAsync(string actorName, ulong eventIndex, object @event)
+        public async Task PersistEventAsync(string actorName, ulong index, object data)
         {
             using (var session = _store.OpenAsyncSession())
             {
-                var envelope = new Envelope(actorName, eventIndex, @event, "event");
+                var @event = new Event(actorName, index, data);
 
-                await session.StoreAsync(envelope);
+                await session.StoreAsync(@event);
 
                 await session.SaveChangesAsync();
             }
         }
 
-        public async Task PersistSnapshotAsync(string actorName, ulong eventIndex, object snapshot)
+        public async Task PersistSnapshotAsync(string actorName, ulong index, object data)
         {
             using (var session = _store.OpenAsyncSession())
             {
-                var envelope = new Envelope(actorName, eventIndex, snapshot, "snapshot");
+                var snapshot = new Snapshot(actorName, index, data);
 
-                await session.StoreAsync(envelope);
+                await session.StoreAsync(snapshot);
 
                 await session.SaveChangesAsync();
             }
         }
 
-        public async Task DeleteEventsAsync(string actorName, ulong fromEventIndex)
+        public async Task DeleteEventsAsync(string actorName, ulong fromIndex)
         {
-            var indexName = "DeleteEnvelopeEventIndex";
+            var indexName = "DeleteEventIndex";
 
-            var indexQuery = new IndexQuery { Query = $"ActorName:{actorName} AND Type:event AND EventIndex:[Lx0 TO Lx{fromEventIndex}]" };
+            var indexQuery = new IndexQuery { Query = $"ActorName:{actorName} AND Index_Range:[Lx0 TO Lx{fromIndex}]" };
 
             Operation operation = await _store.AsyncDatabaseCommands.DeleteByIndexAsync(indexName, indexQuery);
         }
 
-        public async Task DeleteSnapshotsAsync(string actorName, ulong fromEventIndex)
+        public async Task DeleteSnapshotsAsync(string actorName, ulong fromIndex)
         {
-            var indexName = "DeleteEnvelopeSnapshotIndex";
+            var indexName = "DeleteSnapshotIndex";
 
-            var indexQuery = new IndexQuery { Query = $"ActorName:{actorName} AND Type:snapshot AND EventIndex:[Lx0 TO Lx{fromEventIndex}]" };
+            var indexQuery = new IndexQuery { Query = $"ActorName:{actorName} AND Index_Range:[Lx0 TO Lx{fromIndex}]" };
 
             Operation operation = await _store.AsyncDatabaseCommands.DeleteByIndexAsync(indexName, indexQuery);
         }
