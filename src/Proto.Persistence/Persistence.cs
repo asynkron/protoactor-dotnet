@@ -53,7 +53,11 @@ namespace Proto.Persistence
 
         public async Task PersistSnapshotAsync(object snapshot)
         {
-            await State.PersistSnapshotAsync(Name, EventIndex, snapshot);
+            var persistEventIndex = EventIndex;
+
+            await State.PersistSnapshotAsync(Name, persistEventIndex, snapshot);
+
+            await Context.ReceiveAsync(new PersistedSnapshot(persistEventIndex));
         }
 
         public static Func<Receive, Receive> Using(IProvider provider)
@@ -111,5 +115,15 @@ namespace Proto.Persistence
 
         public ulong EventIndex { get; }
         public object Message { get; }
+    }
+
+    public class PersistedSnapshot
+    {
+        public PersistedSnapshot(ulong eventIndex)
+        {
+            EventIndex = eventIndex;
+        }
+
+        public ulong EventIndex { get; }
     }
 }
