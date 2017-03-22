@@ -28,8 +28,7 @@ namespace Proto.Cluster
     {
         public MemberByKindRequest(string kind, bool onlyAlive)
         {
-            Kind = kind ??
-            throw new ArgumentNullException(nameof(kind));
+            Kind = kind ?? throw new ArgumentNullException(nameof(kind));
             OnlyAlive = onlyAlive;
         }
 

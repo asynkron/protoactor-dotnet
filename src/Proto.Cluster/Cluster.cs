@@ -12,7 +12,7 @@ namespace Proto.Cluster
             var (h, p) = ParseAddress(address);
             var kinds = Remote.Remote.GetKnownKinds();
 
-            SubscribePartitionKindsToEventStream();
+            Partition.SubscribePartitionKindsToEventStream();
             SpawnPidCacheActor();
             SpawnMembershipActor();
             SubscribeMembershipActorToEventStream();
@@ -26,7 +26,7 @@ namespace Proto.Cluster
             var parts = address.Split(':');
             var host = parts[0];
             var port = int.Parse(parts[1]);
-            return (host,port);
+            return (host, port);
         }
 
         private static void SubscribeMembershipActorToEventStream()
@@ -40,11 +40,6 @@ namespace Proto.Cluster
         }
 
         private static void SpawnPidCacheActor()
-        {
-            throw new NotImplementedException();
-        }
-
-        private static void SubscribePartitionKindsToEventStream()
         {
             throw new NotImplementedException();
         }
