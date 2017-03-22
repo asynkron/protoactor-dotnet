@@ -25,7 +25,7 @@ namespace Proto.Persistence
             return Task.FromResult(snapshot);
         }
 
-        public Task GetEventsAsync(string actorName, ulong eventIndexStart, Action<object> callback)
+        public Task GetEventsAsync(string actorName, ulong indexStart, Action<object> callback)
         {
             List<object> events;
             if (_events.TryGetValue(actorName, out events))
@@ -38,26 +38,26 @@ namespace Proto.Persistence
             return Task.FromResult(0);
         }
 
-        public Task PersistEventAsync(string actorName, ulong eventIndex, object @event)
+        public Task PersistEventAsync(string actorName, ulong index, object data)
         {
             var events = _events.GetOrAdd(actorName, new List<object>());
-            events.Add(@event);
+            events.Add(data);
 
             return Task.FromResult(0);
         }
 
-        public Task PersistSnapshotAsync(string actorName, ulong eventIndex, object snapshot)
+        public Task PersistSnapshotAsync(string actorName, ulong index, object data)
         {
-            _snapshots[actorName] = Tuple.Create((object) snapshot, eventIndex);
+            _snapshots[actorName] = Tuple.Create((object) data, index);
             return Task.FromResult(0);
         }
 
-        public Task DeleteEventsAsync(string actorName, ulong fromEventIndex)
+        public Task DeleteEventsAsync(string actorName, ulong fromIndex)
         {
             return Task.FromResult(0);
         }
 
-        public Task DeleteSnapshotsAsync(string actorName, ulong fromEventIndex)
+        public Task DeleteSnapshotsAsync(string actorName, ulong fromIndex)
         {
             return Task.FromResult(0);
         }
