@@ -1,10 +1,8 @@
 ﻿syntax = "proto3";
 package cluster;
+option csharp_namespace = "Proto.Cluster";
 
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-import "github.com/AsynkronIT/protoactor-go/actor/protos.proto";
-
-option (gogoproto.gostring_all) = false;
+import "Proto.Actor/protos.proto";
 
 message TakeOwnership {
     actor.PID pid = 1;

@@ -6,5 +6,6 @@ namespace Proto.Cluster
 {
     class MemberListActor
     {
+        public static PID MemberListPID;
     }
 }

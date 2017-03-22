@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Proto.Cluster
 {
-    public static class ClusterSystem
+    public static class Cluster
     {
         public static void Start(string clusterName, string address, IClusterProvider provider)
         {
