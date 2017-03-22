@@ -13,6 +13,7 @@ namespace Proto.Persistence
     {
         public IProviderState State { get; set; }
         public ulong EventIndex { get; set; }
+        public ulong SnapshotIndex { get; set; }
         public IContext Context { get; set; }
         public string Name => Context.Self.Id;
 
@@ -27,7 +28,7 @@ namespace Proto.Persistence
 
             if (t != null)
             {
-                EventIndex = t.Item2;
+                SnapshotIndex = t.Item2;
                 await Context.ReceiveAsync(new RecoverSnapshot(t.Item1));
             }
 
@@ -40,20 +41,26 @@ namespace Proto.Persistence
             await Context.ReceiveAsync(new RecoveryCompleted());
         }
 
-        public async Task PersistReceiveAsync(object message)
+        public async Task PersistReceiveAsync(object data)
         {
             var persistEventIndex = EventIndex;
 
-            await State.PersistEventAsync(Name, persistEventIndex, message);
+            await State.PersistEventAsync(Name, persistEventIndex, data);
 
             EventIndex++;
 
-            await Context.ReceiveAsync(new PersistedEvent(persistEventIndex, message));
+            await Context.ReceiveAsync(new PersistedEvent(persistEventIndex, data));
         }
 
-        public async Task PersistSnapshotAsync(object snapshot)
+        public async Task PersistSnapshotAsync(object data)
         {
-            await State.PersistSnapshotAsync(Name, EventIndex, snapshot);
+            var persistSnapshotIndex = SnapshotIndex;
+
+            await State.PersistSnapshotAsync(Name, persistSnapshotIndex, data);
+
+            SnapshotIndex++;
+
+            await Context.ReceiveAsync(new PersistedSnapshot(persistSnapshotIndex));
         }
 
         public static Func<Receive, Receive> Using(IProvider provider)
@@ -80,22 +87,22 @@ namespace Proto.Persistence
 
     public class RecoverSnapshot
     {
-        public RecoverSnapshot(object snapshot)
+        public RecoverSnapshot(object data)
         {
-            Snapshot = snapshot;
+            Data = data;
         }
         
-        public object Snapshot { get; }
+        public object Data { get; }
     }
 
     public class RecoverEvent
     {
-        public RecoverEvent(object message)
+        public RecoverEvent(object data)
         {
-            Message = message;
+            Data = data;
         }
         
-        public object Message { get; }
+        public object Data { get; }
     }
 
     public class RecoveryStarted { }
@@ -103,13 +110,23 @@ namespace Proto.Persistence
 
     public class PersistedEvent
     {
-        public PersistedEvent(ulong eventIndex, object message)
+        public PersistedEvent(ulong index, object data)
         {
-            EventIndex = eventIndex;
-            Message = message;
+            Index = index;
+            Data = data;
         }
 
-        public ulong EventIndex { get; }
-        public object Message { get; }
+        public ulong Index { get; }
+        public object Data { get; }
+    }
+
+    public class PersistedSnapshot
+    {
+        public PersistedSnapshot(ulong index)
+        {
+            Index = index;
+        }
+
+        public ulong Index { get; }
     }
 }

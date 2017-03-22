@@ -11,11 +11,11 @@ namespace Proto.Persistence
 {
     public interface IProviderState
     {
-        Task GetEventsAsync(string actorName, ulong eventIndexStart, Action<object> callback);
+        Task GetEventsAsync(string actorName, ulong indexStart, Action<object> callback);
         Task<Tuple<object, ulong>> GetSnapshotAsync(string actorName);
-        Task PersistEventAsync(string actorName, ulong eventIndex, object @event);
-        Task PersistSnapshotAsync(string actorName, ulong eventIndex, object snapshot);
-        Task DeleteEventsAsync(string actorName, ulong fromEventIndex);
-        Task DeleteSnapshotsAsync(string actorName, ulong fromEventIndex);
+        Task PersistEventAsync(string actorName, ulong index, object data);
+        Task PersistSnapshotAsync(string actorName, ulong index, object data);
+        Task DeleteEventsAsync(string actorName, ulong fromIndex);
+        Task DeleteSnapshotsAsync(string actorName, ulong fromIndex);
     }
 }
