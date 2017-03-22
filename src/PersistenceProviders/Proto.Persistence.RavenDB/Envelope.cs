@@ -1,6 +1,6 @@
 ﻿namespace Proto.Persistence.RavenDB
 {
-    public class Envelope
+    internal class Envelope
     {
         public Envelope(string actorName, ulong eventIndex, object @event, string type)
         {

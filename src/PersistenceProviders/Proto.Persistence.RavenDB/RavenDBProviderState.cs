@@ -1,4 +1,8 @@
-﻿using Raven.Client;
+﻿using Raven.Abstractions.Data;
+using Raven.Abstractions.Extensions;
+using Raven.Client;
+using Raven.Client.Connection;
+using Raven.Client.Indexes;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,6 +16,14 @@ namespace Proto.Persistence.RavenDB
         public RavenDBProviderState(IDocumentStore store)
         {
             _store = store;
+
+            SetupIndexes();
+        }
+
+        private async void SetupIndexes()
+        {
+            await IndexCreation.CreateIndexesAsync(typeof(DeleteEnvelopeEventIndex).Assembly(), _store);
+            await IndexCreation.CreateIndexesAsync(typeof(DeleteEnvelopeSnapshotIndex).Assembly(), _store);
         }
 
         public async Task GetEventsAsync(string actorName, ulong eventIndexStart, Action<object> callback)
@@ -72,40 +84,20 @@ namespace Proto.Persistence.RavenDB
 
         public async Task DeleteEventsAsync(string actorName, ulong fromEventIndex)
         {
-            using (var session = _store.OpenAsyncSession())
-            {
-                var envelopes = await session.Query<Envelope>()
-                    .Where(x => x.ActorName == actorName)
-                    .Where(x => x.Type == "event")
-                    .Where(x => x.EventIndex <= fromEventIndex)
-                    .ToListAsync();
+            var indexName = "DeleteEnvelopeEventIndex";
 
-                foreach(var envelope in envelopes)
-                {
-                    session.Delete(envelope.Id);
-                }
+            var indexQuery = new IndexQuery { Query = $"ActorName:{actorName} AND Type:event AND EventIndex:[Lx0 TO Lx{fromEventIndex}]" };
 
-                await session.SaveChangesAsync();
-            }
+            Operation operation = await _store.AsyncDatabaseCommands.DeleteByIndexAsync(indexName, indexQuery);
         }
 
         public async Task DeleteSnapshotsAsync(string actorName, ulong fromEventIndex)
         {
-            using (var session = _store.OpenAsyncSession())
-            {
-                var envelopes = await session.Query<Envelope>()
-                    .Where(x => x.ActorName == actorName)
-                    .Where(x => x.Type == "snapshot")
-                    .Where(x => x.EventIndex <= fromEventIndex)
-                    .ToListAsync();
+            var indexName = "DeleteEnvelopeSnapshotIndex";
 
-                foreach (var envelope in envelopes)
-                {
-                    session.Delete(envelope.Id);
-                }
+            var indexQuery = new IndexQuery { Query = $"ActorName:{actorName} AND Type:snapshot AND EventIndex:[Lx0 TO Lx{fromEventIndex}]" };
 
-                await session.SaveChangesAsync();
-            }
+            Operation operation = await _store.AsyncDatabaseCommands.DeleteByIndexAsync(indexName, indexQuery);
         }
     }
 }
