@@ -1,12 +1,11 @@
-﻿using Proto.Remote;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
 
 namespace Proto.Cluster
 {
     public static class Cluster
     {
+        private static readonly Random Random = new Random();
+
         public static void Start(string clusterName, string address, IClusterProvider provider)
         {
             var (h, p) = ParseAddress(address);
@@ -27,6 +26,18 @@ namespace Proto.Cluster
             var host = parts[0];
             var port = int.Parse(parts[1]);
             return (host, port);
+        }
+
+        public static string GetRandomActivator(string kind)
+        {
+            var r = Random.Next();
+            var members = GetMembers(kind);
+            return members[r % members.Length];
+        }
+
+        private static string[] GetMembers(string kind)
+        {
+            throw new NotImplementedException();
         }
 
         private static void SubscribeMembershipActorToEventStream()
