@@ -121,20 +121,19 @@ namespace Proto
 
         public void SetBehavior(Receive receive)
         {
-            _behavior.Clear();
-            _behavior.Push(receive);
+            _behavior.Clear();            
             _receive = receive;
         }
 
         public void PushBehavior(Receive receive)
         {
-            _behavior.Push(receive);
+            _behavior.Push(_receive);
             _receive = receive;
         }
 
         public void PopBehavior()
         {
-            if (_behavior.Count <= 1)
+            if (_behavior.Count == 0)
             {
                 throw new Exception("Can not unbecome actor base behavior");
             }
