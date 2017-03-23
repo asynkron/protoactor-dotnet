@@ -37,7 +37,7 @@ namespace Proto.Persistence.Couchbase
 
         public async Task<Tuple<object, ulong>> GetSnapshotAsync(string actorName)
         {
-            var q = $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName={actorName} AND b.type='snapshot' ORDER BY b.eventIndex DESC LIMIT 1";
+            var q = $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.type='snapshot' ORDER BY b.eventIndex DESC LIMIT 1";
             var req = QueryRequest.Create(q);
             req.ScanConsistency(ScanConsistency.RequestPlus);
             var res = await _bucket.QueryAsync<Envelope>(req);
