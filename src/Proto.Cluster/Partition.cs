@@ -15,7 +15,7 @@ namespace Proto.Cluster
             return pid;
         }
 
-        public static void SubscribePartitionKindsToEventStream()
+        public static void SubscribeToEventStream()
         {
             EventStream.Instance.Subscribe<MemberStatusEvent>(msg =>
             {
@@ -74,7 +74,7 @@ namespace Proto.Cluster
             PID pid;
             if (!_partition.TryGetValue(msg.Name, out pid))
             {
-                var random = Cluster.GetRandomActivator(msg.Kind);
+                var random = await MemberList.GetRandomActivatorAsync(msg.Kind);
                 pid = await Remote.Remote.SpawnNamedAsync(random, msg.Name, msg.Kind, TimeSpan.FromSeconds(5));
                 _partition[msg.Name] = pid;
             }

@@ -31,7 +31,7 @@ namespace Proto
         private bool _stopping;
         private HashSet<PID> _watchers;
         private HashSet<PID> _watching;
-        private readonly ILogger logger = Log.CreateLogger<Context>();
+        private readonly ILogger _logger = Log.CreateLogger<Context>();
 
 
         public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
@@ -221,13 +221,13 @@ namespace Proto
                     case ResumeMailbox rm:
                         return Task.FromResult(0);
                     default:
-                        logger.LogWarning("Unknown system message {0}", msg);
+                        _logger.LogWarning("Unknown system message {0}", msg);
                         return Task.FromResult(0);
                 }
             }
             catch (Exception x)
             {
-                logger.LogError("Error handling SystemMessage {0}", x);
+                _logger.LogError("Error handling SystemMessage {0}", x);
                 return Task.FromResult(0);
             }
         }
@@ -286,25 +286,25 @@ namespace Proto
 
         public void RestartChildren(params PID[] pids)
         {
-            for (int i = 0; i < pids.Length; i++)
+            foreach (var t in pids)
             {
-                pids[i].SendSystemMessage(Restart.Instance);
+                t.SendSystemMessage(Restart.Instance);
             }
         }
 
         public void StopChildren(params PID[] pids)
         {
-            for (int i = 0; i < pids.Length; i++)
+            foreach (var t in pids)
             {
-                pids[i].SendSystemMessage(Stop.Instance);
+                t.SendSystemMessage(Stop.Instance);
             }
         }
 
         public void ResumeChildren(params PID[] pids)
         {
-            for (int i = 0; i < pids.Length; i++)
+            foreach (var t in pids)
             {
-                pids[i].SendSystemMessage(ResumeMailbox.Instance);
+                t.SendSystemMessage(ResumeMailbox.Instance);
             }
         }
 

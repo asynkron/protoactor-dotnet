@@ -14,11 +14,12 @@ namespace Proto.Cluster
             Alive = alive;
         }
 
-        private string MemberID { get; }
-        private string Host { get; }
-        private int Port { get; }
-        private IReadOnlyCollection<string> Kinds { get; }
-        private bool Alive { get; }
+        public string Address => Host + ":" + Port;
+        public string MemberID { get; }
+        public string Host { get; }
+        public int Port { get; }
+        public IReadOnlyCollection<string> Kinds { get; }
+        public bool Alive { get; }
     }
 
     public class ClusterTopologyEvent
