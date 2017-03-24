@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//   <copyright file="DeadLetter.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Threading.Tasks;
 
 namespace Proto.Cluster
@@ -6,6 +12,8 @@ namespace Proto.Cluster
     public static class MemberList
     {
         public static PID PID;
+
+        private static readonly Random Random = new Random();
 
         public static void SubscribeToEventStream()
         {
@@ -23,15 +31,12 @@ namespace Proto.Cluster
             return res.Kinds;
         }
 
-        private static readonly Random Random = new Random();
-
         public static async Task<string> GetRandomActivatorAsync(string kind)
         {
             var r = Random.Next();
             var members = await GetMembersAsync(kind);
             return members[r % members.Length];
         }
-
     }
 
     public class MemberByKindResponse

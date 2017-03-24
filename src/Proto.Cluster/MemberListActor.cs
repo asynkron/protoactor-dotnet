@@ -23,15 +23,14 @@ namespace Proto.Cluster
                     var tmp = new Dictionary<string, MemberStatus>();
                     foreach (var status in msg.Statuses)
                     {
-                        var address = status.Address;
-                        tmp[address] = status;
+                        tmp[status.Address] = status;
                     }
 
                     foreach ((var address,var old) in _members)
                     {
                         if (!tmp.TryGetValue(address, out var _))
                         {
-                            Notify(address, null, old);
+                            Notify(null, old);
                         }
                     }
 
@@ -40,7 +39,7 @@ namespace Proto.Cluster
                         if (!_members.TryGetValue(address, out var _))
                         {
                             _members[address] = @new;
-                            Notify(address, @new, null);
+                            Notify(@new, null);
                         }
                     }
 
@@ -51,7 +50,7 @@ namespace Proto.Cluster
             return Actor.Done;
         }
 
-        private void Notify(string address, MemberStatus @new, MemberStatus old)
+        private void Notify(MemberStatus @new, MemberStatus old)
         {
             if (@new == null && old == null)
             {
@@ -83,8 +82,8 @@ namespace Proto.Cluster
 
             if (@new.MemberId != old.MemberId)
             {
-                var joined = new MemberRejoinedEvent(@new.Host, @new.Port, @new.Kinds);
-                Actor.EventStream.Publish(joined);
+                var rejoined = new MemberRejoinedEvent(@new.Host, @new.Port, @new.Kinds);
+                Actor.EventStream.Publish(rejoined);
                 return;
             }
 
