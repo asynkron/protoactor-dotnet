@@ -286,17 +286,17 @@ namespace Proto
 
         public void RestartChildren(params PID[] pids)
         {
-            foreach (var t in pids)
+            foreach (var pid in pids)
             {
-                t.SendSystemMessage(Restart.Instance);
+                pid.SendSystemMessage(Restart.Instance);
             }
         }
 
         public void StopChildren(params PID[] pids)
         {
-            foreach (var t in pids)
+            foreach (var pid in pids)
             {
-                t.SendSystemMessage(Stop.Instance);
+                pid.SendSystemMessage(Stop.Instance);
             }
         }
 

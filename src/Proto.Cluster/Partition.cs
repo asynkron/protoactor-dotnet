@@ -105,7 +105,7 @@ namespace Proto.Cluster
         private void MemberLeft(MemberLeftEvent msg)
         {
             _logger.LogInformation("Member Left {0}", msg.Address);
-            foreach ((var actorId, var pid) in _partition)
+            foreach (var (actorId, pid) in _partition)
             {
             }
         }
@@ -113,7 +113,7 @@ namespace Proto.Cluster
         private void MemberRejoined(MemberRejoinedEvent msg)
         {
             _logger.LogInformation("Member Rejoined {0}", msg.Address);
-            foreach ((var actorId,var pid) in _partition)
+            foreach (var (actorId, pid) in _partition)
             {
             }
         }
@@ -121,7 +121,7 @@ namespace Proto.Cluster
         private void MemberJoined(MemberJoinedEvent msg)
         {
             _logger.LogInformation("Member Joined {0}", msg.Address);
-            foreach ((var actorId, var pid) in _partition)
+            foreach (var (actorId, pid) in _partition)
             {
             }
         }

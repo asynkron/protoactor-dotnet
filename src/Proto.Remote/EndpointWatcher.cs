@@ -40,7 +40,7 @@ namespace Proto.Remote
                 }
                 case EndpointTerminatedEvent _:
                 {
-                    foreach ((var id,var pid) in _watched)
+                    foreach (var (id, pid) in _watched)
                     {
                         //create a terminated event for the Watched actor
                         var t = new Terminated

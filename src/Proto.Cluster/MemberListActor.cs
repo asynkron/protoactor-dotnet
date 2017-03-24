@@ -26,7 +26,7 @@ namespace Proto.Cluster
                         tmp[status.Address] = status;
                     }
 
-                    foreach ((var address,var old) in _members)
+                    foreach (var (address, old) in _members)
                     {
                         if (!tmp.TryGetValue(address, out var _))
                         {
