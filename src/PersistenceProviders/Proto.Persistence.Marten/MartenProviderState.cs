@@ -14,20 +14,19 @@ namespace Proto.Persistence.Marten
             _store = store;
         }
 
-        public async Task GetEventsAsync(string actorName, long eventIndexStart, Action<object> callback)
+        public async Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
         {
             using (var session = _store.OpenSession())
             {
-                var envelopes = await session.Query<Envelope>()
+                var events = await session.Query<Event>()
                     .Where(x => x.ActorName == actorName)
-                    .Where(x => x.EventIndex >= eventIndexStart)
-                    .Where(x => x.Type == "event")
-                    .OrderBy(x => x.EventIndex)
+                    .Where(x => x.Index >= indexStart)
+                    .OrderBy(x => x.Index)
                     .ToListAsync();
 
-                foreach (var envelope in envelopes)
+                foreach (var @event in events)
                 {
-                    callback(envelope.Event);
+                    callback(@event.Data);
                 }
             }
         }
@@ -36,21 +35,20 @@ namespace Proto.Persistence.Marten
         {
             using (var session = _store.OpenSession())
             {
-                var envelope = await session.Query<Envelope>()
+                var snapshot = await session.Query<Snapshot>()
                     .Where(x => x.ActorName == actorName)
-                    .Where(x => x.Type == "snapshot")
-                    .OrderByDescending(x => x.EventIndex)
+                    .OrderByDescending(x => x.Index)
                     .FirstOrDefaultAsync();
 
-                return envelope != null ? Tuple.Create((object)envelope.Event, envelope.EventIndex) : null;
+                return snapshot != null ? Tuple.Create((object)snapshot.Data, snapshot.Index) : null;
             }
         }
 
-        public async Task PersistEventAsync(string actorName, long eventIndex, object @event)
+        public async Task PersistEventAsync(string actorName, long index, object @event)
         {
             using (var session = _store.OpenSession())
             {
-                var envelope = new Envelope(actorName, eventIndex, @event, "event");
+                var envelope = new Event(actorName, index, @event);
 
                 session.Store(envelope);
 
@@ -58,11 +56,11 @@ namespace Proto.Persistence.Marten
             }
         }
 
-        public async Task PersistSnapshotAsync(string actorName, long eventIndex, object snapshot)
+        public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)
         {
             using (var session = _store.OpenSession())
             {
-                var envelope = new Envelope(actorName, eventIndex, snapshot, "snapshot");
+                var envelope = new Snapshot(actorName, index, snapshot);
 
                 session.Store(envelope);
 
@@ -70,39 +68,25 @@ namespace Proto.Persistence.Marten
             }
         }
 
-        public async Task DeleteEventsAsync(string actorName, long fromEventIndex)
+        public async Task DeleteEventsAsync(string actorName, long fromIndex)
         {
             using (var session = _store.OpenSession())
             {
-                var envelopes = await session.Query<Envelope>()
-                    .Where(x => x.ActorName == actorName)
-                    .Where(x => x.Type == "event")
-                    .Where(x => x.EventIndex <= fromEventIndex)
-                    .ToListAsync();
-
-                foreach (var envelope in envelopes)
-                {
-                    session.Delete(envelope.Id);
-                }
+                session.DeleteWhere<Event>(x =>
+                    x.ActorName == actorName &&
+                    x.Index <= fromIndex);
 
                 await session.SaveChangesAsync();
             }
         }
 
-        public async Task DeleteSnapshotsAsync(string actorName, long fromEventIndex)
+        public async Task DeleteSnapshotsAsync(string actorName, long fromIndex)
         {
             using (var session = _store.OpenSession())
             {
-                var envelopes = await session.Query<Envelope>()
-                    .Where(x => x.ActorName == actorName)
-                    .Where(x => x.Type == "snapshot")
-                    .Where(x => x.EventIndex <= fromEventIndex)
-                    .ToListAsync();
-
-                foreach (var envelope in envelopes)
-                {
-                    session.Delete(envelope.Id);
-                }
+                session.DeleteWhere<Snapshot>(x =>
+                    x.ActorName == actorName &&
+                    x.Index <= fromIndex);
 
                 await session.SaveChangesAsync();
             }
