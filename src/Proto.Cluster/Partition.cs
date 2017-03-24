@@ -1,6 +1,13 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//   <copyright file="DeadLetter.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Proto.Remote;
 
 namespace Proto.Cluster
@@ -20,8 +27,12 @@ namespace Proto.Cluster
             EventStream.Instance.Subscribe<MemberStatusEvent>(msg =>
             {
                 foreach (var kind in msg.Kinds)
+                {
                     if (KindMap.TryGetValue(kind, out var kindPid))
+                    {
                         kindPid.Tell(msg);
+                    }
+                }
             });
         }
 
@@ -34,6 +45,7 @@ namespace Proto.Cluster
     internal class PartitionActor : IActor
     {
         private readonly string _kind;
+        private readonly ILogger _logger = Log.CreateLogger<PartitionActor>();
 
         private readonly Dictionary<string, PID> _partition = new Dictionary<string, PID>(); //actor/grain name to PID
 
@@ -50,22 +62,67 @@ namespace Proto.Cluster
                     //TODO: Log started
                     break;
                 case ActorPidRequest msg:
-                    await Spawn(msg,context);
+                    await Spawn(msg, context);
                     break;
                 case MemberJoinedEvent msg:
+                    MemberJoined(msg);
                     break;
                 case MemberRejoinedEvent msg:
+                    MemberRejoined(msg);
                     break;
                 case MemberLeftEvent msg:
+                    MemberLeft(msg);
                     break;
                 case MemberAvailableEvent msg:
+                    MemberAvailable(msg);
                     break;
                 case MemberUnavailableEvent msg:
+                    MemberUnavailable(msg);
                     break;
                 case TakeOwnership msg:
+                    TakeOwnership(msg);
                     break;
                 default:
                     break;
+            }
+        }
+
+        private void TakeOwnership(TakeOwnership msg)
+        {
+            _partition[msg.Name] = msg.Pid;
+        }
+
+        private void MemberUnavailable(MemberUnavailableEvent msg)
+        {
+            _logger.LogInformation("Member Unavailable {0}", msg.Address);
+        }
+
+        private void MemberAvailable(MemberAvailableEvent msg)
+        {
+            _logger.LogInformation("Member Available {0}", msg.Address);
+        }
+
+        private void MemberLeft(MemberLeftEvent msg)
+        {
+            _logger.LogInformation("Member Left {0}", msg.Address);
+            foreach ((var actorId, var pid) in _partition)
+            {
+            }
+        }
+
+        private void MemberRejoined(MemberRejoinedEvent msg)
+        {
+            _logger.LogInformation("Member Rejoined {0}", msg.Address);
+            foreach ((var actorId,var pid) in _partition)
+            {
+            }
+        }
+
+        private void MemberJoined(MemberJoinedEvent msg)
+        {
+            _logger.LogInformation("Member Joined {0}", msg.Address);
+            foreach ((var actorId, var pid) in _partition)
+            {
             }
         }
 
@@ -78,7 +135,7 @@ namespace Proto.Cluster
                 pid = await Remote.Remote.SpawnNamedAsync(random, msg.Name, msg.Kind, TimeSpan.FromSeconds(5));
                 _partition[msg.Name] = pid;
             }
-            context.Respond(new ActorPidResponse() { Pid = pid });
+            context.Respond(new ActorPidResponse {Pid = pid});
         }
     }
 }

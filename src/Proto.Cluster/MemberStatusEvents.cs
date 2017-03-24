@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//   <copyright file="DeadLetter.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 
 namespace Proto.Cluster
@@ -7,7 +13,7 @@ namespace Proto.Cluster
     {
         public MemberStatus(string memberId, string host, int port, IReadOnlyCollection<string> kinds, bool alive)
         {
-            MemberID = memberId ?? throw new ArgumentNullException(nameof(memberId));
+            MemberId = memberId ?? throw new ArgumentNullException(nameof(memberId));
             Host = host ?? throw new ArgumentNullException(nameof(host));
             Kinds = kinds ?? throw new ArgumentNullException(nameof(kinds));
             Port = port;
@@ -15,7 +21,7 @@ namespace Proto.Cluster
         }
 
         public string Address => Host + ":" + Port;
-        public string MemberID { get; }
+        public string MemberId { get; }
         public string Host { get; }
         public int Port { get; }
         public IReadOnlyCollection<string> Kinds { get; }
@@ -24,6 +30,11 @@ namespace Proto.Cluster
 
     public class ClusterTopologyEvent
     {
+        public ClusterTopologyEvent(IReadOnlyCollection<MemberStatus> statuses)
+        {
+            Statuses = statuses ?? throw new ArgumentNullException(nameof(statuses));
+        }
+
         public IReadOnlyCollection<MemberStatus> Statuses { get; }
     }
 
@@ -36,6 +47,7 @@ namespace Proto.Cluster
             Port = port;
         }
 
+        public string Address => Host + ":" + Port;
         public string Host { get; }
         public int Port { get; }
         public IReadOnlyCollection<string> Kinds { get; }
