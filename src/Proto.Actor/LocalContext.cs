@@ -220,6 +220,9 @@ namespace Proto
                         return Task.FromResult(0);
                     case ResumeMailbox rm:
                         return Task.FromResult(0);
+                    case Continuation cont:
+                        _message = cont.Message;
+                        return cont.Action();
                     default:
                         _logger.LogWarning("Unknown system message {0}", msg);
                         return Task.FromResult(0);
@@ -524,6 +527,17 @@ namespace Proto
         private void ReceiveTimeoutCallback(object state)
         {
             Self.Request(Proto.ReceiveTimeout.Instance, null);
+        }
+
+        public void AwaitTask<T>(Task<T> target, Func<Task<T>,Task> action)
+        {
+            var msg = _message;
+            var cont = new Continuation(() => action(target),msg);
+
+            target.ContinueWith(t =>
+            {
+               Self.SendSystemMessage(cont);
+            });
         }
     }
 }

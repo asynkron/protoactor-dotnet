@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="DeadLetter.cs" company="Asynkron HB">
+//   <copyright file="MemberList.cs" company="Asynkron HB">
 //       Copyright (C) 2015-2017 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
@@ -11,9 +11,8 @@ namespace Proto.Cluster
 {
     public static class MemberList
     {
-        public static PID PID;
-
         private static readonly Random Random = new Random();
+        public static PID PID { get; private set; }
 
         public static void SubscribeToEventStream()
         {
@@ -36,6 +35,11 @@ namespace Proto.Cluster
             var r = Random.Next();
             var members = await GetMembersAsync(kind);
             return members[r % members.Length];
+        }
+
+        public static string GetMember(string name, string kind)
+        {
+            throw new NotImplementedException();
         }
     }
 

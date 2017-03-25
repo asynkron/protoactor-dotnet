@@ -123,5 +123,6 @@ namespace Proto
         Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout);
         Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken);
         Task<T> RequestAsync<T>(PID target, object message);
+        void AwaitTask<T>(Task<T> target, Func<Task<T>,Task> action);
     }
 }

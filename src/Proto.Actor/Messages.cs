@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Proto.Mailbox;
 
 namespace Proto
@@ -120,5 +121,17 @@ namespace Proto
 
     public interface INotInfluenceReceiveTimeout
     {
+    }
+
+    public class Continuation : SystemMessage
+    {
+        public Continuation(Func<Task> fun, object message)
+        {
+            Action = fun ?? throw new ArgumentNullException(nameof(fun));
+            Message = message ?? throw new ArgumentNullException(nameof(message));
+        }
+
+        public Func<Task> Action { get;  }
+        public object Message { get; }
     }
 }
