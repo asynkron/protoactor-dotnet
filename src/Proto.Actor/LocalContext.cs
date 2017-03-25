@@ -529,7 +529,7 @@ namespace Proto
             Self.Request(Proto.ReceiveTimeout.Instance, null);
         }
 
-        public void AwaitTask<T>(Task<T> target, Func<Task<T>,Task> action)
+        public void ReenterAfter<T>(Task<T> target, Func<Task<T>,Task> action)
         {
             var msg = _message;
             var cont = new Continuation(() => action(target),msg);

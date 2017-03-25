@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Remote;
@@ -39,6 +40,15 @@ namespace Proto.Cluster
         public static PID PartitionForKind(string address, string kind)
         {
             return new PID(address, "partition-" + kind);
+        }
+
+        public static void SpawnPartitionActors(string[] kinds)
+        {
+            foreach (var kind in kinds)
+            {
+                var pid = SpawnPartitionActor(kind);
+                KindMap[kind] = pid;
+            }
         }
     }
 
@@ -105,25 +115,56 @@ namespace Proto.Cluster
         private void MemberLeft(MemberLeftEvent msg)
         {
             _logger.LogInformation("Member Left {0}", msg.Address);
-            foreach (var (actorId, pid) in _partition)
+            foreach (var (actorId, pid) in _partition.ToArray())
             {
+                if (pid.Address == msg.Address)
+                {
+                    _partition.Remove(actorId);
+                }
             }
         }
 
         private void MemberRejoined(MemberRejoinedEvent msg)
         {
+
             _logger.LogInformation("Member Rejoined {0}", msg.Address);
-            foreach (var (actorId, pid) in _partition)
+
+            foreach (var (actorId, pid) in _partition.ToArray())
             {
+                if (pid.Address == msg.Address)
+                {
+                    _partition.Remove(actorId);
+                }
             }
         }
 
         private void MemberJoined(MemberJoinedEvent msg)
         {
             _logger.LogInformation("Member Joined {0}", msg.Address);
-            foreach (var (actorId, pid) in _partition)
+            //TODO: right now we transfer ownership on a per actor basis.
+            //this could be done in a batch
+            //ownership is also racy, new nodes should maybe forward requests to neighbours (?)
+            foreach (var (actorId, pid) in _partition.ToArray())
             {
+                var address = MemberList.GetMember(actorId, _kind);
+
+                if (address != ProcessRegistry.Instance.Address)
+                {
+                    TransferOwnership(actorId, address);
+                }
             }
+        }
+
+        private void TransferOwnership(string actorId, string address)
+        {
+            var pid = _partition[actorId];
+            var owner = Partition.PartitionForKind(address, _kind);
+            owner.Tell(new TakeOwnership()
+                       {
+                           Name = actorId,
+                           Pid = pid
+                       });
+            _partition.Remove(actorId);
         }
 
         private async Task Spawn(ActorPidRequest msg, IContext context)

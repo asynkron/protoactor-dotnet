@@ -47,8 +47,7 @@ namespace Proto.Cluster
     {
         public MemberByKindResponse(string[] kinds)
         {
-            Kinds = kinds ??
-            throw new ArgumentNullException(nameof(kinds));
+            Kinds = kinds ?? throw new ArgumentNullException(nameof(kinds));
         }
 
         public string[] Kinds { get; set; }
@@ -58,8 +57,7 @@ namespace Proto.Cluster
     {
         public MemberByKindRequest(string kind, bool onlyAlive)
         {
-            Kind = kind ??
-            throw new ArgumentNullException(nameof(kind));
+            Kind = kind ?? throw new ArgumentNullException(nameof(kind));
             OnlyAlive = onlyAlive;
         }
 

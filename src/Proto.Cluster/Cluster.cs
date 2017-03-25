@@ -17,7 +17,7 @@ namespace Proto.Cluster
             Logger.LogInformation("Starting Proto.Actor cluster");
             var (h, p) = ParseAddress(address);
             var kinds = Remote.Remote.GetKnownKinds();
-
+            Partition.SpawnPartitionActors(kinds);
             Partition.SubscribeToEventStream();
             PidCache.Spawn();
             MemberList.Spawn();
