@@ -53,25 +53,29 @@ namespace Proto.Cluster
             var name = msg.Name;
             var kind = msg.Kind;
 
-            var address = MemberList.GetMember(name, kind);
-            var remotePid = Partition.PartitionForKind(address, kind);
-            var req = new ActorPidRequest
-                      {
-                          Kind = kind,
-                          Name = name
-                      };
-            var resp = remotePid.RequestAsync<ActorPidResponse>(req);
-            context.ReenterAfter(resp, t =>
+            context.ReenterAfter(MemberList.GetMemberAsync(name, kind), address =>
             {
-                var res = t.Result;
-                var respid = res.Pid;
-                var key = respid.ToShortString();
-                _cache[name] = respid;
-                _reverseCache[key] = name;
-                context.Watch(respid);
-                context.Respond(res);
+                var remotePid = Partition.PartitionForKind(address.Result, kind);
+                var req = new ActorPidRequest
+                {
+                    Kind = kind,
+                    Name = name
+                };
+                var resp = remotePid.RequestAsync<ActorPidResponse>(req);
+                context.ReenterAfter(resp, t =>
+                {
+                    var res = t.Result;
+                    var respid = res.Pid;
+                    var key = respid.ToShortString();
+                    _cache[name] = respid;
+                    _reverseCache[key] = name;
+                    context.Watch(respid);
+                    context.Respond(res);
+                    return Actor.Done;
+                });
                 return Actor.Done;
             });
+            
         }
 
         private void RemoveTerminated(Terminated msg)

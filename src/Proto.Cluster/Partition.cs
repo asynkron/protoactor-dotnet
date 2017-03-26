@@ -75,7 +75,7 @@ namespace Proto.Cluster
                     await Spawn(msg, context);
                     break;
                 case MemberJoinedEvent msg:
-                    MemberJoined(msg);
+                    await MemberJoinedAsync(msg);
                     break;
                 case MemberRejoinedEvent msg:
                     MemberRejoined(msg);
@@ -91,8 +91,6 @@ namespace Proto.Cluster
                     break;
                 case TakeOwnership msg:
                     TakeOwnership(msg);
-                    break;
-                default:
                     break;
             }
         }
@@ -138,7 +136,7 @@ namespace Proto.Cluster
             }
         }
 
-        private void MemberJoined(MemberJoinedEvent msg)
+        private async Task MemberJoinedAsync(MemberJoinedEvent msg)
         {
             _logger.LogInformation("Member Joined {0}", msg.Address);
             //TODO: right now we transfer ownership on a per actor basis.
@@ -146,7 +144,7 @@ namespace Proto.Cluster
             //ownership is also racy, new nodes should maybe forward requests to neighbours (?)
             foreach (var (actorId, pid) in _partition.ToArray())
             {
-                var address = MemberList.GetMember(actorId, _kind);
+                var address = await MemberList.GetMemberAsync(actorId, _kind);
 
                 if (address != ProcessRegistry.Instance.Address)
                 {
@@ -159,7 +157,7 @@ namespace Proto.Cluster
         {
             var pid = _partition[actorId];
             var owner = Partition.PartitionForKind(address, _kind);
-            owner.Tell(new TakeOwnership()
+            owner.Tell(new TakeOwnership
                        {
                            Name = actorId,
                            Pid = pid

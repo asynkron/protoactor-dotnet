@@ -37,9 +37,12 @@ namespace Proto.Cluster
             return members[r % members.Length];
         }
 
-        public static string GetMember(string name, string kind)
+        public static async Task<string> GetMemberAsync(string name, string kind)
         {
-            throw new NotImplementedException();
+            var members = await GetMembersAsync(kind);
+            var hashring = new HashRing(members);
+            var member = hashring.GetNode(name);
+            return member;
         }
     }
 
