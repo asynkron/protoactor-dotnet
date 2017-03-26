@@ -4,7 +4,9 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Remote;
 
 namespace Proto.Cluster
 {
@@ -12,10 +14,10 @@ namespace Proto.Cluster
     {
         internal static ILogger Logger { get; } = Log.CreateLogger("Cluster");
 
-        public static void Start(string clusterName, string address, IClusterProvider provider)
+        public static void Start(string clusterName, IClusterProvider provider)
         {
             Logger.LogInformation("Starting Proto.Actor cluster");
-            var (h, p) = ParseAddress(address);
+            var (h, p) = ParseAddress(ProcessRegistry.Instance.Address);
             var kinds = Remote.Remote.GetKnownKinds();
             Partition.SpawnPartitionActors(kinds);
             Partition.SubscribeToEventStream();
@@ -33,6 +35,17 @@ namespace Proto.Cluster
             var host = parts[0];
             var port = int.Parse(parts[1]);
             return (host, port);
+        }
+
+        public static async Task<PID> GetAsync(string name, string kind)
+        {
+            var req = new ActorPidRequest()
+                      {
+                          Name = name,
+                          Kind = kind,
+                      };
+            var res = await PidCache.PID.RequestAsync<ActorPidResponse>(req);
+            return res.Pid;
         }
     }
 }
