@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26228.4
+VisualStudioVersion = 15.0.26228.9
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{771514F1-12AE-4A26-89CB-2646D3EF7034}"
 EndProject
@@ -103,6 +103,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Node1", "examples\ClusterHelloWorld\Node1\Node1.csproj", "{8E7D6BB1-BA5C-494E-AA30-0D71B7AA4F28}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Node2", "examples\ClusterHelloWorld\Node2\Node2.csproj", "{99941C02-5A9E-43F2-AA7B-42645DBB6907}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ClusterProviders", "ClusterProviders", "{3A922679-370D-42DC-850B-3F799DE0C803}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -562,5 +564,6 @@ Global
 		{B829E4C2-5D3E-4B31-87DD-3498EEEA78A8} = {AC12A8DF-9992-4B42-B016-62573DB36421}
 		{8E7D6BB1-BA5C-494E-AA30-0D71B7AA4F28} = {AC12A8DF-9992-4B42-B016-62573DB36421}
 		{99941C02-5A9E-43F2-AA7B-42645DBB6907} = {AC12A8DF-9992-4B42-B016-62573DB36421}
+		{3A922679-370D-42DC-850B-3F799DE0C803} = {771514F1-12AE-4A26-89CB-2646D3EF7034}
 	EndGlobalSection
 EndGlobal
