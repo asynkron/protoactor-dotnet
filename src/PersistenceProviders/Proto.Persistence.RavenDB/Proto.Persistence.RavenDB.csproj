@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard1.5</TargetFramework>
+    <TargetFrameworks>netstandard1.5;net452</TargetFrameworks>
     <Version>0.1.2</Version>
     <Authors>Proto.Actor Team</Authors>
     <Company>Proto.Actor Team</Company>
@@ -18,6 +18,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>TRACE;DEBUG;NETSTANDARD1_5</DefineConstants>
     <OutputPath>bin\Debug\netstandard1.5\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
   </PropertyGroup>
 
   <ItemGroup>
