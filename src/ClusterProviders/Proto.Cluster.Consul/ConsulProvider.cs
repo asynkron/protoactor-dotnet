@@ -74,7 +74,13 @@ namespace Proto.Cluster.Consul
 
         public void MonitorMemberStatusChanges()
         {
-            throw new NotImplementedException();
+            Task.Run(async () =>
+            {
+                while (!_shutdown)
+                {
+                    await NotifyStatusesAsync();
+                }
+            });
         }
 
         private void UpdateTtl()
