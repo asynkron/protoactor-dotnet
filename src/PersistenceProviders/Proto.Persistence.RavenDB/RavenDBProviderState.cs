@@ -26,7 +26,7 @@ namespace Proto.Persistence.RavenDB
             await IndexCreation.CreateIndexesAsync(typeof(DeleteSnapshotIndex).Assembly(), _store);
         }
 
-        public async Task GetEventsAsync(string actorName, ulong indexStart, Action<object> callback)
+        public async Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
         {
             using (var session = _store.OpenAsyncSession())
             {
@@ -43,7 +43,7 @@ namespace Proto.Persistence.RavenDB
             }
         }
 
-        public async Task<Tuple<object, ulong>> GetSnapshotAsync(string actorName)
+        public async Task<Tuple<object, long>> GetSnapshotAsync(string actorName)
         {
             using (var session = _store.OpenAsyncSession())
             {
@@ -55,8 +55,8 @@ namespace Proto.Persistence.RavenDB
                 return snapshot != null ? Tuple.Create((object)snapshot.Data, snapshot.Index) : null;
             }
         }
-        
-        public async Task PersistEventAsync(string actorName, ulong index, object data)
+
+        public async Task PersistEventAsync(string actorName, long index, object data)
         {
             using (var session = _store.OpenAsyncSession())
             {
@@ -68,7 +68,7 @@ namespace Proto.Persistence.RavenDB
             }
         }
 
-        public async Task PersistSnapshotAsync(string actorName, ulong index, object data)
+        public async Task PersistSnapshotAsync(string actorName, long index, object data)
         {
             using (var session = _store.OpenAsyncSession())
             {
@@ -80,7 +80,7 @@ namespace Proto.Persistence.RavenDB
             }
         }
 
-        public async Task DeleteEventsAsync(string actorName, ulong fromIndex)
+        public async Task DeleteEventsAsync(string actorName, long fromIndex)
         {
             var indexName = "DeleteEventIndex";
 
@@ -89,7 +89,7 @@ namespace Proto.Persistence.RavenDB
             Operation operation = await _store.AsyncDatabaseCommands.DeleteByIndexAsync(indexName, indexQuery);
         }
 
-        public async Task DeleteSnapshotsAsync(string actorName, ulong fromIndex)
+        public async Task DeleteSnapshotsAsync(string actorName, long fromIndex)
         {
             var indexName = "DeleteSnapshotIndex";
 

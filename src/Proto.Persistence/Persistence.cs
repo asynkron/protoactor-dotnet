@@ -12,8 +12,8 @@ namespace Proto.Persistence
     public class Persistence
     {
         public IProviderState State { get; set; }
-        public ulong EventIndex { get; set; }
-        public ulong SnapshotIndex { get; set; }
+        public long EventIndex { get; set; }
+        public long SnapshotIndex { get; set; }
         public IContext Context { get; set; }
         public string Name => Context.Self.Id;
 
@@ -110,23 +110,23 @@ namespace Proto.Persistence
 
     public class PersistedEvent
     {
-        public PersistedEvent(ulong index, object data)
+        public PersistedEvent(long index, object data)
         {
             Index = index;
             Data = data;
         }
 
-        public ulong Index { get; }
+        public long Index { get; }
         public object Data { get; }
     }
 
     public class PersistedSnapshot
     {
-        public PersistedSnapshot(ulong index)
+        public PersistedSnapshot(long index)
         {
             Index = index;
         }
 
-        public ulong Index { get; }
+        public long Index { get; }
     }
 }

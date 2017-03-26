@@ -1,13 +1,13 @@
-﻿namespace Proto.Persistence.RavenDB
+﻿namespace Proto.Persistence.Marten
 {
-    internal class Event
+    internal class Snapshot
     {
-        public Event(string actorName, long index, object data)
+        public Snapshot(string actorName, long index, object data)
         {
             ActorName = actorName;
             Index = index;
             Data = data;
-            Id = $"{actorName}-event-{index}";
+            Id = $"{actorName}-snapshot-{index}";
         }
 
         public string ActorName { get; }

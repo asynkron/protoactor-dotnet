@@ -1,4 +1,4 @@
-﻿namespace Proto.Persistence.RavenDB
+﻿namespace Proto.Persistence.Marten
 {
     internal class Event
     {
