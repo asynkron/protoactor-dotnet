@@ -8,6 +8,7 @@ using System;
 using Messages;
 using Proto;
 using Proto.Cluster;
+using Proto.Cluster.Consul;
 using Proto.Remote;
 using ProtosReflection = Messages.ProtosReflection;
 
@@ -37,7 +38,7 @@ namespace Node2
 
             Remote.RegisterKnownKind("HelloKind", props);
             Remote.Start("127.0.0.1", 12000);
-            Cluster.Start("MyCluster",null);
+            Cluster.Start("MyCluster",new ConsulProvider());
 
             Console.ReadLine();
         }

@@ -19,10 +19,12 @@
     <FileVersion>0.1.2.0</FileVersion>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Consul" Version="0.7.2.1" />
     <PackageReference Include="CouchbaseNetClient" Version="2.4.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Proto.Actor\Proto.Actor.csproj" />
+    <ProjectReference Include="..\..\Proto.Cluster\Proto.Cluster.csproj" />
     <ProjectReference Include="..\..\Proto.Mailbox\Proto.Mailbox.csproj" />
     <ProjectReference Include="..\..\Proto.Persistence\Proto.Persistence.csproj" />
   </ItemGroup>
