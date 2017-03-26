@@ -4,7 +4,9 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Proto.Remote;
 
@@ -18,7 +20,22 @@ namespace Proto.Cluster
         {
             switch (context.Message)
             {
+                case Started _:
+                    Console.WriteLine("Started MemberListActor");
+                    break;
+                case MemberByKindRequest msg:
+                {
+                    var members = (from kvp in _members
+                                   let address = kvp.Key
+                                   let member = kvp.Value
+                                   where member.Kinds.Contains(msg.Kind)
+                                   select address).ToArray();
+
+                    context.Respond(new MemberByKindResponse(members));
+                    break;
+                }
                 case ClusterTopologyEvent msg:
+                {
 
                     var tmp = new Dictionary<string, MemberStatus>();
                     foreach (var status in msg.Statuses)
@@ -42,10 +59,8 @@ namespace Proto.Cluster
                             Notify(@new, null);
                         }
                     }
-
                     break;
-                default:
-                    break;
+                }
             }
             return Actor.Done;
         }

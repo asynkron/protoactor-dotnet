@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading;
 using Messages;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
@@ -18,6 +19,7 @@ class Program
         Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
         Remote.Start("127.0.0.1", 12001);
         Cluster.Start("MyCluster", new ConsulProvider());
+        Thread.Sleep(2000);
 
         var pid = Cluster.GetAsync("TheName", "HelloKind").Result;
         var res = pid.RequestAsync<HelloResponse>(new HelloRequest()).Result;

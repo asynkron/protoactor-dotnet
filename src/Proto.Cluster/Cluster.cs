@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Remote;
@@ -26,6 +27,7 @@ namespace Proto.Cluster
             MemberList.SubscribeToEventStream();
             provider.RegisterMemberAsync(clusterName, h, p, kinds).Wait();
             provider.MonitorMemberStatusChanges();
+            Console.WriteLine("Cluster started");
         }
 
         private static (string host,int port) ParseAddress(string address)
@@ -39,11 +41,7 @@ namespace Proto.Cluster
 
         public static async Task<PID> GetAsync(string name, string kind)
         {
-            var req = new ActorPidRequest()
-                      {
-                          Name = name,
-                          Kind = kind,
-                      };
+            var req = new PidCacheRequest(name, kind);
             var res = await PidCache.PID.RequestAsync<ActorPidResponse>(req);
             return res.Pid;
         }

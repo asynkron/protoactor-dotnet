@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Proto.Remote;
@@ -16,11 +17,27 @@ namespace Proto.Cluster
 
         public static void Spawn()
         {
-            var props = Router.Router.NewConsistentHashPool(Actor.FromProducer(() => new PidCacheActor()), 128);
+            var props = Router.Router.NewConsistentHashPool(Actor.FromProducer(() => new PidCachePartitionActor()), 128);
             PID = Actor.SpawnNamed(props,"pidcache");
         }
     }
-    public class PidCacheActor : IActor
+
+    public class PidCacheRequest : Router.IHashable
+    {
+        public PidCacheRequest(string name, string kind)
+        {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Kind = kind ?? throw new ArgumentNullException(nameof(kind));
+        }
+
+        public string Name { get;  }
+        public string Kind { get;  }
+        public string HashBy()
+        {
+            return Name;
+        }
+    }
+    public class PidCachePartitionActor : IActor
     {
         private readonly Dictionary<string,PID> _cache = new Dictionary<string, PID>();
         private readonly Dictionary<string,string> _reverseCache = new Dictionary<string, string>();
@@ -29,7 +46,10 @@ namespace Proto.Cluster
         {
             switch (context.Message)
             {
-                case ActorPidRequest msg:
+                case Started _:
+                  //  Console.WriteLine("Started PidCacheActor");
+                    break;
+                case PidCacheRequest msg:
                     GetPid(context, msg);
                     break;
                 case Terminated msg:
@@ -39,7 +59,7 @@ namespace Proto.Cluster
             return Actor.Done;
         }
 
-        private void GetPid(IContext context, ActorPidRequest msg)
+        private void GetPid(IContext context, PidCacheRequest msg)
         {
             if (_cache.TryGetValue(msg.Name, out var pid))
             {
