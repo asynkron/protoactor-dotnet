@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Proto.Cluster
 {
@@ -30,9 +31,9 @@ namespace Proto.Cluster
 
     public class ClusterTopologyEvent
     {
-        public ClusterTopologyEvent(IReadOnlyCollection<MemberStatus> statuses)
+        public ClusterTopologyEvent(IEnumerable<MemberStatus> statuses)
         {
-            Statuses = statuses ?? throw new ArgumentNullException(nameof(statuses));
+            Statuses = statuses?.ToArray() ?? throw new ArgumentNullException(nameof(statuses));
         }
 
         public IReadOnlyCollection<MemberStatus> Statuses { get; }

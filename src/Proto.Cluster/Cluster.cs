@@ -24,7 +24,7 @@ namespace Proto.Cluster
             PidCache.Spawn();
             MemberList.Spawn();
             MemberList.SubscribeToEventStream();
-            provider.RegisterMember(clusterName, h, p, kinds);
+            provider.RegisterMemberAsync(clusterName, h, p, kinds).Wait();
             provider.MonitorMemberStatusChanges();
         }
 
