@@ -21,7 +21,7 @@ namespace Proto.Persistence.Couchbase
             _bucket = bucket;
         }
 
-        public async Task GetEventsAsync(string actorName, ulong eventIndexStart, Action<object> callback)
+        public async Task GetEventsAsync(string actorName, long eventIndexStart, Action<object> callback)
         {
             var q = $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.eventIndex>={eventIndexStart} AND b.type='event' ORDER BY b.eventIndex ASC";
             var req = QueryRequest.Create(q);
@@ -35,7 +35,7 @@ namespace Proto.Persistence.Couchbase
             }
         }
 
-        public async Task<Tuple<object, ulong>> GetSnapshotAsync(string actorName)
+        public async Task<Tuple<object, long>> GetSnapshotAsync(string actorName)
         {
             var q = $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.type='snapshot' ORDER BY b.eventIndex DESC LIMIT 1";
             var req = QueryRequest.Create(q);
@@ -47,19 +47,19 @@ namespace Proto.Persistence.Couchbase
                 : null;
         }
 
-        public async Task PersistEventAsync(string actorName, ulong eventIndex, object @event)
+        public async Task PersistEventAsync(string actorName, long eventIndex, object @event)
         {
             var envelope = new Envelope(actorName, eventIndex, @event, "event");
             var res = await _bucket.InsertAsync(envelope.Key, envelope);
         }
 
-        public async Task PersistSnapshotAsync(string actorName, ulong eventIndex, object snapshot)
+        public async Task PersistSnapshotAsync(string actorName, long eventIndex, object snapshot)
         {
             var envelope = new Envelope(actorName, eventIndex, snapshot, "snapshot");
             var res = await _bucket.InsertAsync(envelope.Key, envelope);
         }
 
-        public async Task DeleteEventsAsync(string actorName, ulong fromEventIndex)
+        public async Task DeleteEventsAsync(string actorName, long fromEventIndex)
         {
             var q = $"SELECT FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.eventIndex<={fromEventIndex} AND b.type='event'";
             var req = QueryRequest.Create(q);
@@ -73,7 +73,7 @@ namespace Proto.Persistence.Couchbase
             }
         }
 
-        public async Task DeleteSnapshotsAsync(string actorName, ulong fromEventIndex)
+        public async Task DeleteSnapshotsAsync(string actorName, long fromEventIndex)
         {
             var q = $"SELECT FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.eventIndex<={fromEventIndex} AND b.type='snapshot'";
             var req = QueryRequest.Create(q);

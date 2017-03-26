@@ -10,7 +10,7 @@ namespace Proto.Persistence.Couchbase
 {
     internal class Envelope
     {
-        public Envelope(string actorName, ulong eventIndex, object @event, string type)
+        public Envelope(string actorName, long eventIndex, object @event, string type)
         {
             ActorName = actorName;
             EventIndex = eventIndex;
@@ -20,7 +20,7 @@ namespace Proto.Persistence.Couchbase
         }
 
         public string ActorName { get; }
-        public ulong EventIndex { get; }
+        public long EventIndex { get; }
         public object Event { get; }
         public string Type { get; }
 
