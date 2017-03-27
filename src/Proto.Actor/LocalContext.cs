@@ -451,6 +451,7 @@ namespace Proto
                 {
                     child.Stop();
                 }
+                _children = null;
             }
             await TryRestartOrTerminateAsync();
         }
