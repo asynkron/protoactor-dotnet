@@ -3,7 +3,7 @@
 [![Join the chat at https://gitter.im/AsynkronIT/protoactor](https://badges.gitter.im/AsynkronIT/protoactor.svg)](https://gitter.im/AsynkronIT/protoactor?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # Proto.Actor
-Ultra fast distributed actors for .NET and Go
+Ultra-fast, distributed, cross-platform actors.
 
 ## Installing
 
@@ -77,3 +77,4 @@ pid.Tell(new Hello
 });
 ```
 
+You should see the output `Hello Alex`.
