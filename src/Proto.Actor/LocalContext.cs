@@ -16,7 +16,7 @@ namespace Proto
 {
     public class Context : IMessageInvoker, IContext, ISupervisor
     {
-        private static readonly IReadOnlyCollection<PID> Empty = new List<PID>();
+        public static readonly IReadOnlyCollection<PID> EmptyChildren = new List<PID>();
 
         private readonly Stack<Receive> _behavior;
         private readonly Receive _receiveMiddleware;
@@ -58,7 +58,7 @@ namespace Proto
             }
         }
 
-        public IReadOnlyCollection<PID> Children => _children?.ToList() ?? Empty;
+        public IReadOnlyCollection<PID> Children => _children?.ToList() ?? EmptyChildren;
 
         public IActor Actor { get; private set; }
         public PID Parent { get; }

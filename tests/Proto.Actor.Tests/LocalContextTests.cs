@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Proto.TestFixtures;
 using Xunit;
@@ -25,7 +23,8 @@ namespace Proto.Tests
             Assert.Null(context.Sender);
             Assert.Null(context.Self);
             Assert.Null(context.Actor);
-            Assert.Null(context.Children);
+            Assert.NotNull(context.Children);
+            Assert.Same(context.Children, Context.EmptyChildren);
 
             Assert.Equal(TimeSpan.Zero, context.ReceiveTimeout);
         }
