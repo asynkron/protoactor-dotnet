@@ -21,7 +21,7 @@ namespace Proto
         private readonly Sender _senderMiddleware;
         private readonly Func<IActor> _producer;
         private readonly ISupervisorStrategy _supervisorStrategy;
-        private HashSet<PID> _children;
+        private readonly HashSet<PID> _children = new HashSet<PID>();
         private object _message;
         private Receive _receive;
         private Timer _receiveTimeoutTimer;
@@ -31,7 +31,7 @@ namespace Proto
         private bool _stopping;
         private HashSet<PID> _watchers;
         private HashSet<PID> _watching;
-        private readonly ILogger logger = Log.CreateLogger<Context>();
+        private readonly ILogger _logger = Log.CreateLogger<Context>();
 
 
         public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
@@ -56,7 +56,7 @@ namespace Proto
             }
         }
 
-        public IReadOnlyCollection<PID> Children => _children?.ToList();
+        public IReadOnlyCollection<PID> Children => _children.ToList();
         public IActor Actor { get; private set; }
         public PID Parent { get; }
         public PID Self { get; internal set; }
@@ -68,7 +68,7 @@ namespace Proto
                 var r = _message as MessageSender;
                 return r != null ? r.Message : _message;
             }
-            private set { _message = value; }
+            private set => _message = value;
         }
 
         public PID Sender => (_message as MessageSender)?.Sender;
@@ -104,10 +104,6 @@ namespace Proto
         public PID SpawnNamed(Props props, string name)
         {
             var pid = props.Spawn($"{Self.Id}/{name}", Self);
-            if (_children == null)
-            {
-                _children = new HashSet<PID>();
-            }
             _children.Add(pid);
 
             //fast path add watched
@@ -221,13 +217,13 @@ namespace Proto
                     case ResumeMailbox rm:
                         return Task.FromResult(0);
                     default:
-                        logger.LogWarning("Unknown system message {0}", msg);
+                        _logger.LogWarning("Unknown system message {0}", msg);
                         return Task.FromResult(0);
                 }
             }
             catch (Exception x)
             {
-                logger.LogError("Error handling SystemMessage {0}", x);
+                _logger.LogError("Error handling SystemMessage {0}", x);
                 return Task.FromResult(0);
             }
         }
