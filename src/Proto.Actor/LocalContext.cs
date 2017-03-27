@@ -16,6 +16,8 @@ namespace Proto
 {
     public class Context : IMessageInvoker, IContext, ISupervisor
     {
+        public static readonly IReadOnlyCollection<PID> EmptyChildren = new List<PID>();
+
         private readonly Stack<Receive> _behavior;
         private readonly Receive _receiveMiddleware;
         private readonly Sender _senderMiddleware;
@@ -31,7 +33,7 @@ namespace Proto
         private bool _stopping;
         private HashSet<PID> _watchers;
         private HashSet<PID> _watching;
-        private readonly ILogger logger = Log.CreateLogger<Context>();
+        private readonly ILogger _logger = Log.CreateLogger<Context>();
 
 
         public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
@@ -56,7 +58,8 @@ namespace Proto
             }
         }
 
-        public IReadOnlyCollection<PID> Children => _children?.ToList();
+        public IReadOnlyCollection<PID> Children => _children?.ToList() ?? EmptyChildren;
+
         public IActor Actor { get; private set; }
         public PID Parent { get; }
         public PID Self { get; internal set; }
@@ -68,7 +71,7 @@ namespace Proto
                 var r = _message as MessageSender;
                 return r != null ? r.Message : _message;
             }
-            private set { _message = value; }
+            private set => _message = value;
         }
 
         public PID Sender => (_message as MessageSender)?.Sender;
@@ -221,13 +224,13 @@ namespace Proto
                     case ResumeMailbox rm:
                         return Task.FromResult(0);
                     default:
-                        logger.LogWarning("Unknown system message {0}", msg);
+                        _logger.LogWarning("Unknown system message {0}", msg);
                         return Task.FromResult(0);
                 }
             }
             catch (Exception x)
             {
-                logger.LogError("Error handling SystemMessage {0}", x);
+                _logger.LogError("Error handling SystemMessage {0}", x);
                 return Task.FromResult(0);
             }
         }
