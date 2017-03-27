@@ -68,7 +68,7 @@ namespace Proto
                 var r = _message as MessageSender;
                 return r != null ? r.Message : _message;
             }
-            private set { _message = value; }
+            private set => _message = value;
         }
 
         public PID Sender => (_message as MessageSender)?.Sender;
@@ -214,11 +214,11 @@ namespace Proto
                     case Failure f:
                         HandleFailure(f);
                         return Task.FromResult(0);
-                    case Restart r:
+                    case Restart _:
                         return HandleRestartAsync();
-                    case SuspendMailbox sm:
+                    case SuspendMailbox _:
                         return Task.FromResult(0);
-                    case ResumeMailbox rm:
+                    case ResumeMailbox _:
                         return Task.FromResult(0);
                     case Continuation cont:
                         _message = cont.Message;
@@ -421,6 +421,7 @@ namespace Proto
 
         private void HandleFailure(Failure msg)
         {
+            // ReSharper disable once SuspiciousTypeConversion.Global
             if (Actor is ISupervisorStrategy supervisor)
             {
                 supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
