@@ -16,12 +16,14 @@ namespace Proto
 {
     public class Context : IMessageInvoker, IContext, ISupervisor
     {
+        private static readonly IReadOnlyCollection<PID> Empty = new List<PID>();
+
         private readonly Stack<Receive> _behavior;
         private readonly Receive _receiveMiddleware;
         private readonly Sender _senderMiddleware;
         private readonly Func<IActor> _producer;
         private readonly ISupervisorStrategy _supervisorStrategy;
-        private readonly HashSet<PID> _children = new HashSet<PID>();
+        private HashSet<PID> _children;
         private object _message;
         private Receive _receive;
         private Timer _receiveTimeoutTimer;
@@ -56,7 +58,8 @@ namespace Proto
             }
         }
 
-        public IReadOnlyCollection<PID> Children => _children.ToList();
+        public IReadOnlyCollection<PID> Children => _children?.ToList() ?? Empty;
+
         public IActor Actor { get; private set; }
         public PID Parent { get; }
         public PID Self { get; internal set; }
