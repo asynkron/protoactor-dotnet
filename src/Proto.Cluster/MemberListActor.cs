@@ -36,7 +36,6 @@ namespace Proto.Cluster
                 }
                 case ClusterTopologyEvent msg:
                 {
-
                     var tmp = new Dictionary<string, MemberStatus>();
                     foreach (var status in msg.Statuses)
                     {
@@ -51,7 +50,7 @@ namespace Proto.Cluster
                         }
                     }
 
-                    foreach ((var address, var @new) in tmp)
+                    foreach (var ( address, @new) in tmp)
                     {
                         if (!_members.TryGetValue(address, out var _))
                         {
@@ -79,9 +78,9 @@ namespace Proto.Cluster
                 Actor.EventStream.Publish(left);
                 _members.Remove(old.Address);
                 var endpointTerminated = new EndpointTerminatedEvent
-                {
-                    Address = old.Address
-                };
+                                         {
+                                             Address = old.Address
+                                         };
                 Actor.EventStream.Publish(endpointTerminated);
 
                 return;

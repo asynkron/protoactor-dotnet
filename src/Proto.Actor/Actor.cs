@@ -64,11 +64,8 @@ namespace Proto
 
     public class ProcessNameExistException : Exception
     {
-        private string _name;
-
-        public ProcessNameExistException(string name)
+        public ProcessNameExistException(string name) : base($"a Process with the name '{name}' already exists")
         {
-            _name = name;
         }
     }
 

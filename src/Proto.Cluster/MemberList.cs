@@ -12,21 +12,21 @@ namespace Proto.Cluster
     public static class MemberList
     {
         private static readonly Random Random = new Random();
-        public static PID PID { get; private set; }
+        public static PID Pid { get; private set; }
 
         public static void SubscribeToEventStream()
         {
-            Actor.EventStream.Subscribe<ClusterTopologyEvent>(PID.Tell);
+            Actor.EventStream.Subscribe<ClusterTopologyEvent>(Pid.Tell);
         }
 
         public static void Spawn()
         {
-            PID = Actor.SpawnNamed(Actor.FromProducer(() => new MemberListActor()), "memberlist");
+            Pid = Actor.SpawnNamed(Actor.FromProducer(() => new MemberListActor()), "memberlist");
         }
 
         public static async Task<string[]> GetMembersAsync(string kind)
         {
-            var res = await PID.RequestAsync<MemberByKindResponse>(new MemberByKindRequest(kind, true));
+            var res = await Pid.RequestAsync<MemberByKindResponse>(new MemberByKindRequest(kind, true));
             return res.Kinds;
         }
 

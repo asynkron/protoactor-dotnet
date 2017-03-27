@@ -13,12 +13,16 @@ namespace Proto.Cluster
 {
     public static class PidCache
     {
-        public static PID PID { get; private set; }
+        //arbitrary value, number of partitions used in the PidCache.
+        //the intention is just to reduce contention on too few actors when doing Pid lookups
+        private const int PartitionCount = 100;
+
+        public static PID Pid { get; private set; }
 
         public static void Spawn()
         {
-            var props = Router.Router.NewConsistentHashPool(Actor.FromProducer(() => new PidCachePartitionActor()), 128);
-            PID = Actor.SpawnNamed(props,"pidcache");
+            var props = Router.Router.NewConsistentHashPool(Actor.FromProducer(() => new PidCachePartitionActor()), PartitionCount);
+            Pid = Actor.SpawnNamed(props, "pidcache");
         }
     }
 
@@ -30,24 +34,26 @@ namespace Proto.Cluster
             Kind = kind ?? throw new ArgumentNullException(nameof(kind));
         }
 
-        public string Name { get;  }
-        public string Kind { get;  }
+        public string Name { get; }
+        public string Kind { get; }
+
         public string HashBy()
         {
             return Name;
         }
     }
+
     public class PidCachePartitionActor : IActor
     {
-        private readonly Dictionary<string,PID> _cache = new Dictionary<string, PID>();
-        private readonly Dictionary<string,string> _reverseCache = new Dictionary<string, string>();
+        private readonly Dictionary<string, PID> _cache = new Dictionary<string, PID>();
+        private readonly Dictionary<string, string> _reverseCache = new Dictionary<string, string>();
 
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
                 case Started _:
-                  //  Console.WriteLine("Started PidCacheActor");
+                    //  Console.WriteLine("Started PidCacheActor");
                     break;
                 case PidCacheRequest msg:
                     GetPid(context, msg);
@@ -77,10 +83,10 @@ namespace Proto.Cluster
             {
                 var remotePid = Partition.PartitionForKind(address.Result, kind);
                 var req = new ActorPidRequest
-                {
-                    Kind = kind,
-                    Name = name
-                };
+                          {
+                              Kind = kind,
+                              Name = name
+                          };
                 var resp = remotePid.RequestAsync<ActorPidResponse>(req);
                 context.ReenterAfter(resp, t =>
                 {
@@ -95,7 +101,6 @@ namespace Proto.Cluster
                 });
                 return Actor.Done;
             });
-            
         }
 
         private void RemoveTerminated(Terminated msg)

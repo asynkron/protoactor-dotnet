@@ -124,7 +124,6 @@ namespace Proto.Cluster
 
         private void MemberRejoined(MemberRejoinedEvent msg)
         {
-
             _logger.LogInformation("Member Rejoined {0}", msg.Address);
 
             foreach (var (actorId, pid) in _partition.ToArray())
@@ -142,7 +141,7 @@ namespace Proto.Cluster
             //TODO: right now we transfer ownership on a per actor basis.
             //this could be done in a batch
             //ownership is also racy, new nodes should maybe forward requests to neighbours (?)
-            foreach (var (actorId, pid) in _partition.ToArray())
+            foreach (var (actorId, _) in _partition.ToArray())
             {
                 var address = await MemberList.GetMemberAsync(actorId, _kind);
 

@@ -1,7 +1,5 @@
-﻿using Proto.Mailbox;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using Xunit;
 
@@ -11,14 +9,15 @@ namespace Proto.Mailbox.Tests
     {
         public enum MailboxQueueKind { Bounded, Unbounded, }
 
-        IMailboxQueue GetMailboxQueue(MailboxQueueKind kind)
+        private IMailboxQueue GetMailboxQueue(MailboxQueueKind kind)
         {
             switch (kind)
             {
                 case MailboxQueueKind.Bounded: return new BoundedMailboxQueue(4);
                 case MailboxQueueKind.Unbounded: return new UnboundedMailboxQueue();
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
             }
-            throw new ArgumentOutOfRangeException(nameof(kind));
         }
 
         [Theory]
@@ -65,9 +64,9 @@ namespace Proto.Mailbox.Tests
             var consumer = new Thread(l =>
             {
                 var list = (List<int>)l;
-                for (int i = 0; i < msgCount; i++)
+                for (var i = 0; i < msgCount; i++)
                 {
-                    object popped = sut.Pop();
+                    var popped = sut.Pop();
                     while (popped == null)
                     {
                         if (cancelSource.IsCancellationRequested) return;
@@ -76,7 +75,7 @@ namespace Proto.Mailbox.Tests
                         popped = sut.Pop();
                     }
                     list.Add((int)popped);
-                };
+                }
             });
 
             producer.Start(); consumer.Start(consumerList);
@@ -84,7 +83,7 @@ namespace Proto.Mailbox.Tests
             cancelSource.Cancel();
 
             Assert.Equal(msgCount, consumerList.Count);
-            for (int i = 0; i < msgCount; i++)
+            for (var i = 0; i < msgCount; i++)
             {
                 Assert.Equal(i, consumerList[i]);
             }

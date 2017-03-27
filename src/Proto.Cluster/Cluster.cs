@@ -30,7 +30,7 @@ namespace Proto.Cluster
             Console.WriteLine("Cluster started");
         }
 
-        private static (string host,int port) ParseAddress(string address)
+        private static (string host, int port) ParseAddress(string address)
         {
             //TODO: use correct parsing
             var parts = address.Split(':');
@@ -42,7 +42,7 @@ namespace Proto.Cluster
         public static async Task<PID> GetAsync(string name, string kind)
         {
             var req = new PidCacheRequest(name, kind);
-            var res = await PidCache.PID.RequestAsync<ActorPidResponse>(req);
+            var res = await PidCache.Pid.RequestAsync<ActorPidResponse>(req);
             return res.Pid;
         }
     }

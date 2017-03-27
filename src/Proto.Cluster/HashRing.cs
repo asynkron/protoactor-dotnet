@@ -21,11 +21,12 @@ namespace Proto.Cluster
         public HashRing(IEnumerable<string> nodes)
         {
             _ring = nodes
-                .SelectMany(n => Enumerable.Range(0, ReplicaCount).Select(i => new
-                {
-                    hashKey = i + n,
-                    node = n
-                }))
+                .SelectMany(n => Enumerable.Range(0, ReplicaCount)
+                                           .Select(i => new
+                                                        {
+                                                            hashKey = i + n,
+                                                            node = n
+                                                        }))
                 .Select(a => Tuple.Create(Hash(a.hashKey), a.node))
                 .OrderBy(t => t.Item1)
                 .ToList();
@@ -35,9 +36,9 @@ namespace Proto.Cluster
         {
             //TODO: list is ordered, we could binary search
             return (
-                _ring.FirstOrDefault(t => t.Item1 > Hash(key))
-                ?? _ring.First()
-            ).Item2;
+                       _ring.FirstOrDefault(t => t.Item1 > Hash(key))
+                       ?? _ring.First()
+                   ).Item2;
         }
 
         private static uint Hash(string s)
