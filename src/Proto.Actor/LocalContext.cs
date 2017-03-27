@@ -107,6 +107,10 @@ namespace Proto
         public PID SpawnNamed(Props props, string name)
         {
             var pid = props.Spawn($"{Self.Id}/{name}", Self);
+            if (_children == null)
+            {
+                _children = new HashSet<PID>();
+            }
             _children.Add(pid);
 
             //fast path add watched
