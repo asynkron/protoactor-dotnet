@@ -107,18 +107,6 @@ namespace Proto
         }
     }
 
-    public sealed class MessageSender
-    {
-        public MessageSender(object message, PID sender)
-        {
-            Message = message;
-            Sender = sender;
-        }
-
-        public object Message { get; }
-        public PID Sender { get; }
-    }
-
     public interface INotInfluenceReceiveTimeout
     {
     }

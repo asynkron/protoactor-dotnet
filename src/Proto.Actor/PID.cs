@@ -73,7 +73,7 @@ namespace Proto
 
         private Task<T> RequestAsync<T>(object message, FutureProcess<T> future)
         {
-            Request(message, future.PID);
+            Request(message, future.Pid);
             return future.Task;
         }
 

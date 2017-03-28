@@ -65,13 +65,13 @@ namespace Proto
         {
             get
             {
-                var r = _message as MessageSender;
+                var r = _message as MessageEnvelope;
                 return r != null ? r.Message : _message;
             }
             private set => _message = value;
         }
 
-        public PID Sender => (_message as MessageSender)?.Sender;
+        public PID Sender => (_message as MessageEnvelope)?.Sender;
         public TimeSpan ReceiveTimeout { get; private set; }
 
 
@@ -359,7 +359,7 @@ namespace Proto
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
         {
-            SendUserMessage(target, message, future.PID);
+            SendUserMessage(target, message, future.Pid);
             return future.Task;
         }
 
@@ -367,12 +367,7 @@ namespace Proto
         {
             if (_senderMiddleware != null)
             {
-                var messageEnvelope = message as MessageEnvelope ?? new MessageEnvelope
-                {
-                    Message = message,
-                    Header = new MessageHeader(),
-                    Sender = sender
-                };
+                var messageEnvelope = message as MessageEnvelope ?? new MessageEnvelope(message,sender, new MessageHeader());
                 _senderMiddleware(this, target, messageEnvelope);
             }
             else
