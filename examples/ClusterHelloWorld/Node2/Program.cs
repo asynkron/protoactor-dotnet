@@ -24,13 +24,11 @@ namespace Node2
             {
                 switch (ctx.Message)
                 {
-                    case HelloRequest msg:
+                    case HelloRequest _:
                         ctx.Respond(new HelloResponse
                         {
                             Message = "Hello from node 2"
                         });
-                        break;
-                    default:
                         break;
                 }
                 return Actor.Done;
@@ -38,7 +36,7 @@ namespace Node2
 
             Remote.RegisterKnownKind("HelloKind", props);
             Remote.Start("127.0.0.1", 12000);
-            Cluster.Start("MyCluster",new ConsulProvider());
+            Cluster.Start("MyCluster",new ConsulProvider(new ConsulProviderOptions()));
 
             Console.ReadLine();
         }
