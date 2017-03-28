@@ -490,6 +490,17 @@ namespace Proto
             //This is intentional
             await InvokeUserMessageAsync(Stopped.Instance);
             //Notify watchers
+            if (_watchers != null)
+            {
+                var message = new Terminated()
+                {
+                    Who = Self
+                };
+                foreach (var watcher in _watchers)
+                {
+                    watcher.SendSystemMessage(message);
+                }
+            }
         }
 
         private async Task RestartAsync()
