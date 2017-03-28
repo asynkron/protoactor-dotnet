@@ -33,6 +33,7 @@ class Program
         actor.Tell(new Recoverable());
         actor.Tell(new Fatal());
 
+        actor.Stop();
         Console.ReadLine();
     }
 
@@ -78,6 +79,9 @@ class Program
                     break;
                 case Fatal r:
                     child.Tell(context.Message);
+                    break;
+                case Terminated r:
+                    Console.WriteLine("Watched actor was Terminated, {0}", r.Who);
                     break;
             }
 

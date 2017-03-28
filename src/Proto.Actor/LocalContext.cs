@@ -412,11 +412,21 @@ namespace Proto
 
         private void HandleWatch(Watch w)
         {
-            if (_watchers == null)
+            if (_stopping)
             {
-                _watchers = new HashSet<PID>();
+                w.Watcher.SendSystemMessage(new Terminated()
+                {
+                    Who = Self
+                });
             }
-            _watchers.Add(w.Watcher);
+            else
+            {
+                if (_watchers == null)
+                {
+                    _watchers = new HashSet<PID>();
+                }
+                _watchers.Add(w.Watcher);
+            }
         }
 
         private void HandleFailure(Failure msg)
@@ -490,6 +500,17 @@ namespace Proto
             //This is intentional
             await InvokeUserMessageAsync(Stopped.Instance);
             //Notify watchers
+            if (_watchers != null)
+            {
+                var message = new Terminated()
+                {
+                    Who = Self
+                };
+                foreach (var watcher in _watchers)
+                {
+                    watcher.SendSystemMessage(message);
+                }
+            }
         }
 
         private async Task RestartAsync()
