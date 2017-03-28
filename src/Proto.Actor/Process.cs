@@ -42,7 +42,7 @@ namespace Proto
         {
             if (sender != null)
             {
-                Mailbox.PostUserMessage(new MessageEnvelope(message, sender));
+                Mailbox.PostUserMessage(new MessageEnvelope(message, sender, null));
                 return;
             }
 

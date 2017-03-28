@@ -1,17 +1,9 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Proto
 {
     public class MessageEnvelope
     {
-        public MessageEnvelope(object message, PID sender)
-        {
-            Sender = sender; // ?? throw new ArgumentNullException(nameof(sender));
-            Message = message; //?? throw new ArgumentNullException(nameof(message));
-        }
-
         public MessageEnvelope(object message, PID sender, MessageHeader header)
         {
             Sender = sender; // ?? throw new ArgumentNullException(nameof(sender));
