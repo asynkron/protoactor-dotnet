@@ -6,6 +6,7 @@
 
 using System;
 using Messages;
+using Microsoft.Extensions.Options;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
@@ -36,7 +37,8 @@ namespace Node2
 
             Remote.RegisterKnownKind("HelloKind", props);
             Remote.Start("127.0.0.1", 12000);
-            Cluster.Start("MyCluster",new ConsulProvider(new ConsulProviderOptions()));
+            var options = new OptionsWrapper<ConsulProviderOptions>(new ConsulProviderOptions());
+            Cluster.Start("MyCluster",new ConsulProvider(options));
 
             Console.ReadLine();
         }
