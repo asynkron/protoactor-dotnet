@@ -6,7 +6,6 @@
 
 using System;
 using Messages;
-using Microsoft.Extensions.Options;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
@@ -15,7 +14,6 @@ using ProtosReflection = Messages.ProtosReflection;
 
 namespace Node2
 {
-   
     class Program
     {
         static void Main(string[] args)
@@ -27,9 +25,9 @@ namespace Node2
                 {
                     case HelloRequest _:
                         ctx.Respond(new HelloResponse
-                        {
-                            Message = "Hello from node 2"
-                        });
+                                    {
+                                        Message = "Hello from node 2"
+                                    });
                         break;
                 }
                 return Actor.Done;
@@ -37,8 +35,7 @@ namespace Node2
 
             Remote.RegisterKnownKind("HelloKind", props);
             Remote.Start("127.0.0.1", 12000);
-            var options = new OptionsWrapper<ConsulProviderOptions>(new ConsulProviderOptions());
-            Cluster.Start("MyCluster",new ConsulProvider(options));
+            Cluster.Start("MyCluster", new ConsulProvider(new ConsulProviderOptions()));
 
             Console.ReadLine();
         }

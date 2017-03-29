@@ -35,18 +35,26 @@ namespace Proto.Cluster.Consul
         private ulong _index;
         private bool _shutdown = false;
 
-        public ConsulProvider(IOptions<ConsulProviderOptions> options) : this(options, config => { })
+        public ConsulProvider(ConsulProviderOptions options) : this(options, config => { })
         {
         }
 
-        public ConsulProvider(IOptions<ConsulProviderOptions> options, Action<ConsulClientConfiguration> consulConfig)
+        public ConsulProvider(ConsulProviderOptions options, Action<ConsulClientConfiguration> consulConfig)
         {
-            _serviceTtl = options.Value.ServiceTtl ?? TimeSpan.FromSeconds(3);
-            _refreshTtl = options.Value.RefreshTtl ?? TimeSpan.FromSeconds(1);
-            _deregisterCritical = options.Value.DeregisterCritical ?? TimeSpan.FromSeconds(10);
-            _blockingWaitTime = options.Value.BlockingWaitTime ?? TimeSpan.FromSeconds(20);
+            _serviceTtl = options.ServiceTtl ?? TimeSpan.FromSeconds(3);
+            _refreshTtl = options.RefreshTtl ?? TimeSpan.FromSeconds(1);
+            _deregisterCritical = options.DeregisterCritical ?? TimeSpan.FromSeconds(10);
+            _blockingWaitTime = options.BlockingWaitTime ?? TimeSpan.FromSeconds(20);
 
             _client = new ConsulClient(consulConfig);
+        }
+
+        public ConsulProvider(IOptions<ConsulProviderOptions> options) : this(options.Value, config => { })
+        {
+        }
+
+        public ConsulProvider(IOptions<ConsulProviderOptions> options, Action<ConsulClientConfiguration> consulConfig) : this(options.Value, consulConfig)
+        {
         }
 
 

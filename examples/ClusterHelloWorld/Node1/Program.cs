@@ -7,7 +7,6 @@
 using System;
 using System.Threading;
 using Messages;
-using Microsoft.Extensions.Options;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Remote;
@@ -19,8 +18,7 @@ class Program
     {
         Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
         Remote.Start("127.0.0.1", 12001);
-        var options = new OptionsWrapper<ConsulProviderOptions>(new ConsulProviderOptions());
-        Cluster.Start("MyCluster", new ConsulProvider(options));
+        Cluster.Start("MyCluster", new ConsulProvider(new ConsulProviderOptions()));
         Thread.Sleep(2000);
 
         var pid = Cluster.GetAsync("TheName", "HelloKind").Result;
