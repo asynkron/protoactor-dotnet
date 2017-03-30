@@ -112,7 +112,7 @@ class Program
                     {
                         _state = ss;
 
-                        Console.WriteLine("MyPersistenceActor - RecoverSnapshot = {0}, Snapshot.Name = {1}", Persistence.SnapshotIndex, ss.Name);
+                        Console.WriteLine("MyPersistenceActor - RecoverSnapshot = {0}, Snapshot.Name = {1}", Persistence.Index, ss.Name);
 
                     }
 
@@ -121,7 +121,7 @@ class Program
                     
                     if (msg.Data is RenameEvent recev)
                     {
-                        Console.WriteLine("MyPersistenceActor - RecoverEvent = {0}, Event.Name = {1}", Persistence.EventIndex, recev.Name);
+                        Console.WriteLine("MyPersistenceActor - RecoverEvent = {0}, Event.Name = {1}", Persistence.Index, recev.Name);
                     }
 
                     break;
@@ -163,19 +163,13 @@ class Program
             }
         }
 
-        private Task Handle(PersistedSnapshot message)
+        private async Task Handle(PersistedSnapshot message)
         {
-            Console.WriteLine("MyPersistenceActor - PersistedSnapshot");
+            Console.WriteLine("MyPersistenceActor - PersistedSnapshot at Index = {0}", message.Index);
 
-            var sn_index = Persistence.SnapshotIndex - 2;
+            var sn_index = Persistence.Index - 2;
 
-            //await Persistence.State.DeleteSnapshotsAsync(Persistence.Name, sn_index);
-
-            var ev_index = Persistence.EventIndex;
-
-            //await Persistence.State.DeleteEventsAsync(Persistence.Name, ev_index);
-
-            return Actor.Done;
+            await Persistence.State.DeleteSnapshotsAsync(Persistence.Name, sn_index);
         }
 
         private async Task Handle(IContext context, RequestSnapshot message)
@@ -187,13 +181,18 @@ class Program
             context.Self.Tell(new TimeToSnapshot());
         }
 
-        private async Task Handle(IContext context, TimeToSnapshot message)
+        private Task Handle(IContext context, TimeToSnapshot message)
         {
             Console.WriteLine("MyPersistenceActor - TimeToSnapshot");
 
-            await Task.Delay(TimeSpan.FromSeconds(10));
+            Task.Run(async () =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(10));
 
-            context.Self.Tell(new RequestSnapshot());
+                context.Self.Tell(new RequestSnapshot());
+            });
+
+            return Actor.Done;
         }
 
         private Task Handle(IContext context, StartLoopActor message)
@@ -204,7 +203,7 @@ class Program
 
             Console.WriteLine("MyPersistenceActor - StartLoopActor");
 
-            var props = Actor.FromProducer(() => new LoopActor(Persistence.EventIndex));
+            var props = Actor.FromProducer(() => new LoopActor());
 
             _loopActor = context.Spawn(props);
 
@@ -217,19 +216,13 @@ class Program
         {
             Console.WriteLine("MyPersistenceActor - RenameCommand");
 
-            await Persistence.PersistReceiveAsync(new RenameEvent { Name = message.Name });
+            await Persistence.PersistEventAsync(new RenameEvent { Name = message.Name });
         }
     }
 
     class LoopActor : IActor
     {
         internal class LoopParentMessage { }
-        long prefixCounter = 0;
-
-        public LoopActor(long startPrefixCounter)
-        {
-            prefixCounter = startPrefixCounter;
-        }
 
         public Task ReceiveAsync(IContext context)
         {
@@ -246,9 +239,7 @@ class Program
 
                     Task.Run(async () => {
                         
-                        context.Parent.Tell(new RenameCommand { Name = "Daniel-" + prefixCounter });
-
-                        prefixCounter++;
+                        context.Parent.Tell(new RenameCommand { Name = "Daniel" });
 
                         await Task.Delay(TimeSpan.FromSeconds(2));
 

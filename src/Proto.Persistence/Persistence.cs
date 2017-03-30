@@ -12,8 +12,7 @@ namespace Proto.Persistence
     public class Persistence
     {
         public IProviderState State { get; set; }
-        public long EventIndex { get; set; }
-        public long SnapshotIndex { get; set; }
+        public long Index { get; set; }
         public IContext Context { get; set; }
         public string Name => Context.Self.Id;
 
@@ -28,39 +27,39 @@ namespace Proto.Persistence
 
             if (t != null)
             {
-                SnapshotIndex = t.Item2;
+                Index = t.Item2;
                 await Context.ReceiveAsync(new RecoverSnapshot(t.Item1));
             }
 
-            await State.GetEventsAsync(Name, EventIndex, e =>
+            await State.GetEventsAsync(Name, Index, e =>
             {
                 Context.ReceiveAsync(new RecoverEvent(e)).Wait();
-                EventIndex++;
+                Index++;
             });
             
             await Context.ReceiveAsync(new RecoveryCompleted());
         }
 
-        public async Task PersistReceiveAsync(object data)
+        public async Task PersistEventAsync(object data)
         {
-            var persistEventIndex = EventIndex;
+            var index = Index;
 
-            await State.PersistEventAsync(Name, persistEventIndex, data);
+            await State.PersistEventAsync(Name, index, data);
 
-            EventIndex++;
+            Index++;
 
-            await Context.ReceiveAsync(new PersistedEvent(persistEventIndex, data));
+            await Context.ReceiveAsync(new PersistedEvent(index, data));
         }
 
         public async Task PersistSnapshotAsync(object data)
         {
-            var persistSnapshotIndex = SnapshotIndex;
+            var index = Index;
 
-            await State.PersistSnapshotAsync(Name, persistSnapshotIndex, data);
+            await State.PersistSnapshotAsync(Name, index, data);
 
-            SnapshotIndex++;
+            Index++;
 
-            await Context.ReceiveAsync(new PersistedSnapshot(persistSnapshotIndex));
+            await Context.ReceiveAsync(new PersistedSnapshot(index));
         }
 
         public static Func<Receive, Receive> Using(IProvider provider)
