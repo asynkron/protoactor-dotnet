@@ -21,66 +21,91 @@ namespace Proto.Persistence.Couchbase
             _bucket = bucket;
         }
 
-        public async Task GetEventsAsync(string actorName, long eventIndexStart, Action<object> callback)
+        public async Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
         {
-            var q = $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.eventIndex>={eventIndexStart} AND b.type='event' ORDER BY b.eventIndex ASC";
+            var q = $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName = '{actorName}' AND b.type = 'event' AND b.eventIndex >= {indexStart} ORDER BY b.eventIndex ASC";
+
             var req = QueryRequest.Create(q);
+
             req.ScanConsistency(ScanConsistency.RequestPlus);
-            var res = await _bucket.QueryAsync<Envelope>(req);
+
+            var res = await _bucket.QueryAsync<Event>(req);
+
             ThrowOnError(res);
-            var envelopes = res.Rows;
-            foreach (var envelope in envelopes)
+
+            var events = res.Rows;
+
+            foreach (var @event in events)
             {
-                callback(envelope.Event);
+                callback(@event.Data);
             }
         }
 
         public async Task<Tuple<object, long>> GetSnapshotAsync(string actorName)
         {
-            var q = $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.type='snapshot' ORDER BY b.eventIndex DESC LIMIT 1";
+            var q = $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName = '{actorName}' AND b.type = 'snapshot' ORDER BY b.snapshotIndex DESC LIMIT 1";
+
             var req = QueryRequest.Create(q);
+
             req.ScanConsistency(ScanConsistency.RequestPlus);
-            var res = await _bucket.QueryAsync<Envelope>(req);
-            var envelope = res.Rows.FirstOrDefault();
-            return envelope != null
-                ? Tuple.Create((object) envelope.Event, envelope.EventIndex)
-                : null;
-        }
 
-        public async Task PersistEventAsync(string actorName, long eventIndex, object @event)
-        {
-            var envelope = new Envelope(actorName, eventIndex, @event, "event");
-            var res = await _bucket.InsertAsync(envelope.Key, envelope);
-        }
+            var res = await _bucket.QueryAsync<Snapshot>(req);
 
-        public async Task PersistSnapshotAsync(string actorName, long eventIndex, object snapshot)
-        {
-            var envelope = new Envelope(actorName, eventIndex, snapshot, "snapshot");
-            var res = await _bucket.InsertAsync(envelope.Key, envelope);
-        }
-
-        public async Task DeleteEventsAsync(string actorName, long fromEventIndex)
-        {
-            var q = $"SELECT FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.eventIndex<={fromEventIndex} AND b.type='event'";
-            var req = QueryRequest.Create(q);
-            req.ScanConsistency(ScanConsistency.RequestPlus);
-            var res = await _bucket.QueryAsync<Envelope>(req);
             ThrowOnError(res);
+
+            var snapshot = res.Rows.FirstOrDefault();
+
+            return snapshot != null ? Tuple.Create((object)snapshot.Data, snapshot.SnapshotIndex) : null;
+        }
+
+        public async Task PersistEventAsync(string actorName, long index, object data)
+        {
+            var @event = new Event(actorName, index, data);
+
+            var res = await _bucket.InsertAsync(@event.Key, @event);
+        }
+
+        public async Task PersistSnapshotAsync(string actorName, long index, object data)
+        {
+            var snapshot = new Snapshot(actorName, index, data);
+
+            var res = await _bucket.InsertAsync(snapshot.Key, snapshot);
+        }
+
+        public async Task DeleteEventsAsync(string actorName, long fromIndex)
+        {
+            var q = $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.type = 'event' AND b.eventIndex <= {fromIndex}";
+
+            var req = QueryRequest.Create(q);
+
+            req.ScanConsistency(ScanConsistency.RequestPlus);
+
+            var res = await _bucket.QueryAsync<Event>(req);
+
+            ThrowOnError(res);
+
             var envelopes = res.Rows;
+
             foreach (var envelope in envelopes)
             {
                 await _bucket.RemoveAsync(envelope.Key);
             }
         }
 
-        public async Task DeleteSnapshotsAsync(string actorName, long fromEventIndex)
+        public async Task DeleteSnapshotsAsync(string actorName, long fromIndex)
         {
-            var q = $"SELECT FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.eventIndex<={fromEventIndex} AND b.type='snapshot'";
+            var q = $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.type = 'snapshot' AND b.snapshotIndex <= {fromIndex}";
+
             var req = QueryRequest.Create(q);
+
             req.ScanConsistency(ScanConsistency.RequestPlus);
-            var res = await _bucket.QueryAsync<Envelope>(req);
+
+            var res = await _bucket.QueryAsync<Snapshot>(req);
+
             ThrowOnError(res);
+
             var envelopes = res.Rows;
+
             foreach (var envelope in envelopes)
             {
                 await _bucket.RemoveAsync(envelope.Key);
