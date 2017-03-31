@@ -31,9 +31,9 @@ namespace Proto.Persistence
                 await Context.ReceiveAsync(new RecoverSnapshot(t.Item1));
             }
 
-            await State.GetEventsAsync(Name, Index, e =>
+            await State.GetEventsAsync(Name, Index, callbackData =>
             {
-                Context.ReceiveAsync(new RecoverEvent(e)).Wait();
+                Context.ReceiveAsync(new RecoverEvent(callbackData)).Wait();
                 Index++;
             });
             
@@ -56,10 +56,8 @@ namespace Proto.Persistence
             var index = Index;
 
             await State.PersistSnapshotAsync(Name, index, data);
-
-            Index++;
-
-            await Context.ReceiveAsync(new PersistedSnapshot(index));
+            
+            await Context.ReceiveAsync(new PersistedSnapshot(index, data));
         }
 
         public static Func<Receive, Receive> Using(IProvider provider)
@@ -90,7 +88,7 @@ namespace Proto.Persistence
         {
             Data = data;
         }
-        
+
         public object Data { get; }
     }
 
@@ -121,11 +119,13 @@ namespace Proto.Persistence
 
     public class PersistedSnapshot
     {
-        public PersistedSnapshot(long index)
+        public PersistedSnapshot(long index, object data)
         {
             Index = index;
+            Data = data;
         }
 
         public long Index { get; }
+        public object Data { get; }
     }
 }
