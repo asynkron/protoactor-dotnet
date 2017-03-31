@@ -12,7 +12,7 @@ namespace Proto.Persistence
     public class Persistence
     {
         public IProviderState State { get; set; }
-        public ulong EventIndex { get; set; }
+        public long Index { get; set; }
         public IContext Context { get; set; }
         public string Name => Context.Self.Id;
 
@@ -27,33 +27,37 @@ namespace Proto.Persistence
 
             if (t != null)
             {
-                EventIndex = t.Item2;
+                Index = t.Item2;
                 await Context.ReceiveAsync(new RecoverSnapshot(t.Item1));
             }
 
-            await State.GetEventsAsync(Name, EventIndex, e =>
+            await State.GetEventsAsync(Name, Index, callbackData =>
             {
-                Context.ReceiveAsync(new RecoverEvent(e)).Wait();
-                EventIndex++;
+                Context.ReceiveAsync(new RecoverEvent(callbackData)).Wait();
+                Index++;
             });
             
             await Context.ReceiveAsync(new RecoveryCompleted());
         }
 
-        public async Task PersistReceiveAsync(object message)
+        public async Task PersistEventAsync(object data)
         {
-            var persistEventIndex = EventIndex;
+            var index = Index;
 
-            await State.PersistEventAsync(Name, persistEventIndex, message);
+            await State.PersistEventAsync(Name, index, data);
 
-            EventIndex++;
+            Index++;
 
-            await Context.ReceiveAsync(new PersistedEvent(persistEventIndex, message));
+            await Context.ReceiveAsync(new PersistedEvent(index, data));
         }
 
-        public async Task PersistSnapshotAsync(object snapshot)
+        public async Task PersistSnapshotAsync(object data)
         {
-            await State.PersistSnapshotAsync(Name, EventIndex, snapshot);
+            var index = Index;
+
+            await State.PersistSnapshotAsync(Name, index, data);
+            
+            await Context.ReceiveAsync(new PersistedSnapshot(index, data));
         }
 
         public static Func<Receive, Receive> Using(IProvider provider)
@@ -80,22 +84,22 @@ namespace Proto.Persistence
 
     public class RecoverSnapshot
     {
-        public RecoverSnapshot(object snapshot)
+        public RecoverSnapshot(object data)
         {
-            Snapshot = snapshot;
+            Data = data;
         }
-        
-        public object Snapshot { get; }
+
+        public object Data { get; }
     }
 
     public class RecoverEvent
     {
-        public RecoverEvent(object message)
+        public RecoverEvent(object data)
         {
-            Message = message;
+            Data = data;
         }
         
-        public object Message { get; }
+        public object Data { get; }
     }
 
     public class RecoveryStarted { }
@@ -103,13 +107,25 @@ namespace Proto.Persistence
 
     public class PersistedEvent
     {
-        public PersistedEvent(ulong eventIndex, object message)
+        public PersistedEvent(long index, object data)
         {
-            EventIndex = eventIndex;
-            Message = message;
+            Index = index;
+            Data = data;
         }
 
-        public ulong EventIndex { get; }
-        public object Message { get; }
+        public long Index { get; }
+        public object Data { get; }
+    }
+
+    public class PersistedSnapshot
+    {
+        public PersistedSnapshot(long index, object data)
+        {
+            Index = index;
+            Data = data;
+        }
+
+        public long Index { get; }
+        public object Data { get; }
     }
 }

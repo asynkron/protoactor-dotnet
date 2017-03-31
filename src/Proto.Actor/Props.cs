@@ -116,7 +116,7 @@ namespace Proto
             return props;
         }
 
-        public PID Spawn(string name, PID parent)
+        internal PID Spawn(string name, PID parent)
         {
             return Spawner(name, this, parent);
         }
