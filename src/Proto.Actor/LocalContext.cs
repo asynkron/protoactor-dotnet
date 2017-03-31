@@ -18,7 +18,7 @@ namespace Proto
     {
         public static readonly IReadOnlyCollection<PID> EmptyChildren = new List<PID>();
 
-        private readonly Stack<Receive> _behavior;
+        private Stack<Receive> _behavior;
         private readonly Receive _receiveMiddleware;
         private readonly Sender _senderMiddleware;
         private readonly Func<IActor> _producer;
@@ -33,7 +33,7 @@ namespace Proto
         private bool _stopping;
         private HashSet<PID> _watchers;
         private HashSet<PID> _watching;
-        private readonly ILogger _logger = Log.CreateLogger<Context>();
+        private ILogger _logger;
 
 
         public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
@@ -43,8 +43,6 @@ namespace Proto
             _receiveMiddleware = receiveMiddleware;
             _senderMiddleware = senderMiddleware;
             Parent = parent;
-            _behavior = new Stack<Receive>();
-            _behavior.Push(ActorReceive);
 
             IncarnateActor();
 
@@ -55,6 +53,18 @@ namespace Proto
                 {
                     parent
                 };
+            }
+        }
+
+        public ILogger Logger
+        {
+            get
+            {
+                if (_logger == null)
+                {
+                    _logger = Log.CreateLogger<Context>();
+                }
+                return _logger;
             }
         }
 
@@ -124,18 +134,26 @@ namespace Proto
 
         public void SetBehavior(Receive receive)
         {
-            _behavior.Clear();            
+            _behavior = null;
             _receive = receive;
         }
 
         public void PushBehavior(Receive receive)
         {
+            if (_behavior == null)
+            {
+                _behavior = new Stack<Receive>();
+            }
             _behavior.Push(_receive);
             _receive = receive;
         }
 
         public void PopBehavior()
         {
+            if(_behavior == null)
+            {
+                return;
+            }
             if (_behavior.Count == 0)
             {
                 throw new Exception("Can not unbecome actor base behavior");
@@ -224,13 +242,13 @@ namespace Proto
                     case ResumeMailbox rm:
                         return Task.FromResult(0);
                     default:
-                        _logger.LogWarning("Unknown system message {0}", msg);
+                        Logger.LogWarning("Unknown system message {0}", msg);
                         return Task.FromResult(0);
                 }
             }
             catch (Exception x)
             {
-                _logger.LogError("Error handling SystemMessage {0}", x);
+                Logger.LogError("Error handling SystemMessage {0}", x);
                 return Task.FromResult(0);
             }
         }
