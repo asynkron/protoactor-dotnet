@@ -150,11 +150,7 @@ namespace Proto
 
         public void PopBehavior()
         {
-            if(_behavior == null)
-            {
-                return;
-            }
-            if (_behavior.Count == 0)
+            if (_behavior == null || _behavior?.Count == 0)
             {
                 throw new Exception("Can not unbecome actor base behavior");
             }
