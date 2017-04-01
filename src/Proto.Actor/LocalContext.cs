@@ -16,7 +16,9 @@ namespace Proto
 {
     public class Context : IMessageInvoker, IContext, ISupervisor
     {
-        private readonly Stack<Receive> _behavior;
+        public static readonly IReadOnlyCollection<PID> EmptyChildren = new List<PID>();
+
+        private Stack<Receive> _behavior;
         private readonly Receive _receiveMiddleware;
         private readonly Sender _senderMiddleware;
         private readonly Func<IActor> _producer;
@@ -31,7 +33,7 @@ namespace Proto
         private bool _stopping;
         private HashSet<PID> _watchers;
         private HashSet<PID> _watching;
-        private readonly ILogger _logger = Log.CreateLogger<Context>();
+        private ILogger _logger;
 
 
         public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
@@ -41,8 +43,6 @@ namespace Proto
             _receiveMiddleware = receiveMiddleware;
             _senderMiddleware = senderMiddleware;
             Parent = parent;
-            _behavior = new Stack<Receive>();
-            _behavior.Push(ActorReceive);
 
             IncarnateActor();
 
@@ -56,7 +56,20 @@ namespace Proto
             }
         }
 
-        public IReadOnlyCollection<PID> Children => _children?.ToList();
+        public ILogger Logger
+        {
+            get
+            {
+                if (_logger == null)
+                {
+                    _logger = Log.CreateLogger<Context>();
+                }
+                return _logger;
+            }
+        }
+
+        public IReadOnlyCollection<PID> Children => _children?.ToList() ?? EmptyChildren;
+
         public IActor Actor { get; private set; }
         public PID Parent { get; }
         public PID Self { get; internal set; }
@@ -121,19 +134,23 @@ namespace Proto
 
         public void SetBehavior(Receive receive)
         {
-            _behavior.Clear();            
+            _behavior = null;
             _receive = receive;
         }
 
         public void PushBehavior(Receive receive)
         {
+            if (_behavior == null)
+            {
+                _behavior = new Stack<Receive>();
+            }
             _behavior.Push(_receive);
             _receive = receive;
         }
 
         public void PopBehavior()
         {
-            if (_behavior.Count == 0)
+            if (_behavior == null || _behavior?.Count == 0)
             {
                 throw new Exception("Can not unbecome actor base behavior");
             }
@@ -224,13 +241,13 @@ namespace Proto
                         _message = cont.Message;
                         return cont.Action();
                     default:
-                        _logger.LogWarning("Unknown system message {0}", msg);
+                        Logger.LogWarning("Unknown system message {0}", msg);
                         return Task.FromResult(0);
                 }
             }
             catch (Exception x)
             {
-                _logger.LogError("Error handling SystemMessage {0}", x);
+                Logger.LogError("Error handling SystemMessage {0}", x);
                 return Task.FromResult(0);
             }
         }
@@ -407,11 +424,21 @@ namespace Proto
 
         private void HandleWatch(Watch w)
         {
-            if (_watchers == null)
+            if (_stopping)
             {
-                _watchers = new HashSet<PID>();
+                w.Watcher.SendSystemMessage(new Terminated()
+                {
+                    Who = Self
+                });
             }
-            _watchers.Add(w.Watcher);
+            else
+            {
+                if (_watchers == null)
+                {
+                    _watchers = new HashSet<PID>();
+                }
+                _watchers.Add(w.Watcher);
+            }
         }
 
         private void HandleFailure(Failure msg)
@@ -486,6 +513,17 @@ namespace Proto
             //This is intentional
             await InvokeUserMessageAsync(Stopped.Instance);
             //Notify watchers
+            if (_watchers != null)
+            {
+                var message = new Terminated()
+                {
+                    Who = Self
+                };
+                foreach (var watcher in _watchers)
+                {
+                    watcher.SendSystemMessage(message);
+                }
+            }
         }
 
         private async Task RestartAsync()
