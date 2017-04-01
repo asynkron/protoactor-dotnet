@@ -12,9 +12,9 @@ namespace Proto.Cluster
 {
     public class MemberStatus
     {
-        public MemberStatus(string memberId, string host, int port, IReadOnlyCollection<string> kinds, bool alive)
+        public MemberStatus(long memberId, string host, int port, IReadOnlyCollection<string> kinds, bool alive)
         {
-            MemberId = memberId ?? throw new ArgumentNullException(nameof(memberId));
+            MemberId = memberId;
             Host = host ?? throw new ArgumentNullException(nameof(host));
             Kinds = kinds ?? throw new ArgumentNullException(nameof(kinds));
             Port = port;
@@ -22,7 +22,7 @@ namespace Proto.Cluster
         }
 
         public string Address => Host + ":" + Port;
-        public string MemberId { get; }
+        public long MemberId { get; }
         public string Host { get; }
         public int Port { get; }
         public IReadOnlyCollection<string> Kinds { get; }

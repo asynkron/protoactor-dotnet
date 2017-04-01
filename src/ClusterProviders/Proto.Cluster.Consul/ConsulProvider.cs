@@ -6,9 +6,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Consul;
 using Microsoft.Extensions.Options;
@@ -85,13 +83,15 @@ namespace Proto.Cluster.Consul
             await _client.Agent.ServiceRegister(s);
 
 
-            //register a unique ID for the current process
-            //similar to UID for Akka ActorSystem
-            //TODO: Orleans just use an int32 for the unique id called Generation.
+            //register a semi unique ID for the current process
             var kvKey = $"{_clusterName}/{host}:{port}"; //slash should be present
+            var value = BitConverter.GetBytes(DateTime.Now.Ticks);
             await _client.KV.Put(new KVPair(kvKey)
                                  {
-                                     Value = Encoding.UTF8.GetBytes(DateTime.Now.ToString(CultureInfo.InvariantCulture))
+                                     //Write the ID for this member.
+                                     //the value is later used to see if an existing node have changed its ID over time
+                                     //meaning that it has Re-joined the cluster.
+                                     Value = value
                                  }, new WriteOptions());
 
             await BlockingUpdateTtlAsync();
@@ -138,15 +138,18 @@ namespace Proto.Cluster.Consul
             var kvKey = _clusterName + "/";
             var kv = await _client.KV.List(kvKey);
 
-            var kvMap = new Dictionary<string, string>();
+            var memberIds = new Dictionary<string, long>();
             foreach (var v in kv.Response)
             {
-                kvMap[v.Key] = Encoding.UTF8.GetString(v.Value);
+                //Read the ID per member.
+                //The value is used to see if an existing node have changed its ID over time
+                //meaning that it has Re-joined the cluster.
+                memberIds[v.Key] = BitConverter.ToInt64(v.Value, 0);
             }
             var memberStatuses =
                 from v in statuses.Response
-                let key = $"{_clusterName}/{v.Service.Address}:{v.Service.Port}"
-                let memberId = kvMap[key]
+                let memberIdKey = $"{_clusterName}/{v.Service.Address}:{v.Service.Port}"
+                let memberId = memberIds[memberIdKey]
                 let passing = Equals(v.Checks[1].Status, HealthStatus.Passing)
                 select new MemberStatus(memberId, v.Service.Address, v.Service.Port, v.Service.Tags, passing);
             var res = new ClusterTopologyEvent(memberStatuses);
