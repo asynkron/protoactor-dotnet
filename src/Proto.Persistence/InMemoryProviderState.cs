@@ -15,20 +15,17 @@ namespace Proto.Persistence
     {
         private readonly ConcurrentDictionary<string, List<object>> _events = new ConcurrentDictionary<string, List<object>>();
 
-        private readonly IDictionary<string, Tuple<object, long>> _snapshots =
-            new Dictionary<string, Tuple<object, long>>();
+        private readonly IDictionary<string, (object Data, long Index)> _snapshots = new Dictionary<string, (object Data, long Index)>();
 
-        public Task<Tuple<object, long>> GetSnapshotAsync(string actorName)
+        public Task<(object Data, long Index)> GetSnapshotAsync(string actorName)
         {
-            Tuple<object, long> snapshot;
-            _snapshots.TryGetValue(actorName, out snapshot);
+            _snapshots.TryGetValue(actorName, out (object Data, long Index) snapshot);
             return Task.FromResult(snapshot);
         }
 
         public Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
         {
-            List<object> events;
-            if (_events.TryGetValue(actorName, out events))
+            if (_events.TryGetValue(actorName, out List<object> events))
             {
                 foreach (var e in events)
                 {
@@ -42,13 +39,12 @@ namespace Proto.Persistence
         {
             var events = _events.GetOrAdd(actorName, new List<object>());
             events.Add(data);
-
             return Task.FromResult(0);
         }
 
         public Task PersistSnapshotAsync(string actorName, long index, object data)
         {
-            _snapshots[actorName] = Tuple.Create((object) data, index);
+            _snapshots[actorName] = (data, index);
             return Task.FromResult(0);
         }
 

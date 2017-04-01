@@ -167,9 +167,7 @@ class Program
         {
             Console.WriteLine("MyPersistenceActor - PersistedSnapshot at Index = {0}", message.Index);
 
-            var sn_index = Persistence.Index - 2;
-
-            await Persistence.State.DeleteSnapshotsAsync(Persistence.Name, sn_index);
+            await Persistence.State.DeleteSnapshotsAsync(Persistence.Name, (message.Index - 1));
         }
 
         private async Task Handle(IContext context, RequestSnapshot message)

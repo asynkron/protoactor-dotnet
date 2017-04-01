@@ -41,7 +41,7 @@ namespace Proto.Persistence.Couchbase
             }
         }
 
-        public async Task<Tuple<object, long>> GetSnapshotAsync(string actorName)
+        public async Task<(object Data, long Index)> GetSnapshotAsync(string actorName)
         {
             var q = $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName = '{actorName}' AND b.type = 'snapshot' ORDER BY b.snapshotIndex DESC LIMIT 1";
 
@@ -54,8 +54,8 @@ namespace Proto.Persistence.Couchbase
             ThrowOnError(res);
 
             var snapshot = res.Rows.FirstOrDefault();
-
-            return snapshot != null ? Tuple.Create((object)snapshot.Data, snapshot.SnapshotIndex) : null;
+            
+            return snapshot != null ? (snapshot.Data, snapshot.SnapshotIndex) : (null, 0);
         }
 
         public async Task PersistEventAsync(string actorName, long index, object data)

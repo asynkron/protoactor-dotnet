@@ -43,7 +43,7 @@ namespace Proto.Persistence.RavenDB
             }
         }
 
-        public async Task<Tuple<object, long>> GetSnapshotAsync(string actorName)
+        public async Task<(object Data, long Index)> GetSnapshotAsync(string actorName)
         {
             using (var session = _store.OpenAsyncSession())
             {
@@ -52,7 +52,7 @@ namespace Proto.Persistence.RavenDB
                     .OrderByDescending(x => x.Index)
                     .FirstOrDefaultAsync();
 
-                return snapshot != null ? Tuple.Create((object)snapshot.Data, snapshot.Index) : null;
+                return snapshot != null ? (snapshot.Data, snapshot.Index) : (null, 0);
             }
         }
 
