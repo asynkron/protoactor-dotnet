@@ -123,6 +123,14 @@ namespace Proto
         Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout);
         Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken);
         Task<T> RequestAsync<T>(PID target, object message);
+
+        /// <summary>
+        ///     Awaits the given target task and once completed, the given action is then completed within the actors concurrency constraint.
+        ///     The concept is called Reentrancy, where an actor can continue to process messages while also awaiting that some asynchronous operation completes.
+        /// </summary>
+        /// <param name="target">the Task to await</param>
+        /// <param name="action">the continuation to call once the task is completed</param>
+        /// <typeparam name="T">The generic type of the task</typeparam>
         void ReenterAfter<T>(Task<T> target, Func<Task<T>,Task> action);
     }
 }
