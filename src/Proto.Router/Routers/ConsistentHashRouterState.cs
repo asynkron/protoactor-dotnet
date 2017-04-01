@@ -25,7 +25,7 @@ namespace Proto.Router.Routers
             var nodes = new List<string>();
             foreach (var pid in routees)
             {
-                var nodeName = pid.Address + "@" + pid.Id;
+                var nodeName = pid.ToShortString();
                 nodes.Add(nodeName);
                 _routeeMap[nodeName] = pid;
             }

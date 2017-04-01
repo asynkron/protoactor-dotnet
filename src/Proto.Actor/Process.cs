@@ -28,8 +28,8 @@ namespace Proto
 
         internal bool IsDead
         {
-            get { return Interlocked.Read(ref _isDead) == 1; }
-            private set { Interlocked.Exchange(ref _isDead, value ? 1 : 0); }
+            get => Interlocked.Read(ref _isDead) == 1;
+            private set => Interlocked.Exchange(ref _isDead, value ? 1 : 0);
         }
 
         public LocalProcess(IMailbox mailbox)
@@ -42,7 +42,7 @@ namespace Proto
         {
             if (sender != null)
             {
-                Mailbox.PostUserMessage(new MessageSender(message, sender));
+                Mailbox.PostUserMessage(new MessageEnvelope(message, sender, null));
                 return;
             }
 

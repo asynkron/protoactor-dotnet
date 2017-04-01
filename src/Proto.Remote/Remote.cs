@@ -15,22 +15,22 @@ namespace Proto.Remote
     public static class Remote
     {
         private static Server _server;
-        private static Dictionary<string, Props> _kinds = new Dictionary<string, Props>();
+        private static readonly Dictionary<string, Props> Kinds = new Dictionary<string, Props>();
         public static PID EndpointManagerPid { get; private set; }
         public static PID ActivatorPID { get; private set; }
 
         public static string[] GetKnownKinds()
         {
-            return _kinds.Keys.ToArray();
+            return Kinds.Keys.ToArray();
         }
 
         public static void RegisterKnownKind(string kind, Props props)
         {
-            _kinds.Add(kind, props);
+            Kinds.Add(kind, props);
         }
         public static Props GetKnownKind(string kind)
         {
-            if (_kinds.TryGetValue(kind, out var props)){
+            if (Kinds.TryGetValue(kind, out var props)){
                 return props;
             }
             throw new ArgumentException($"No Props found for kind '{kind}'");

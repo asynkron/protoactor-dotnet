@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Proto.Mailbox;
 
 namespace Proto
@@ -106,19 +107,19 @@ namespace Proto
         }
     }
 
-    public sealed class MessageSender
-    {
-        public MessageSender(object message, PID sender)
-        {
-            Message = message;
-            Sender = sender;
-        }
-
-        public object Message { get; }
-        public PID Sender { get; }
-    }
-
     public interface INotInfluenceReceiveTimeout
     {
+    }
+
+    public class Continuation : SystemMessage
+    {
+        public Continuation(Func<Task> fun, object message)
+        {
+            Action = fun ?? throw new ArgumentNullException(nameof(fun));
+            Message = message ?? throw new ArgumentNullException(nameof(message));
+        }
+
+        public Func<Task> Action { get;  }
+        public object Message { get; }
     }
 }

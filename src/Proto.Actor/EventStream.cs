@@ -14,11 +14,9 @@ namespace Proto
     {
         public static readonly EventStream Instance = new EventStream();
 
-        private readonly ILogger logger;
-
         public EventStream()
         {
-            logger = Log.CreateLogger<EventStream>();
+            var logger = Log.CreateLogger<EventStream>();
 
             Subscribe(msg =>
             {
@@ -42,6 +40,20 @@ namespace Proto
             return new Subscription<T>(sub, this);
         }
 
+        public Subscription<T> Subscribe<TMsg>(Action<TMsg> action) where TMsg : T
+        {
+            var sub = Guid.NewGuid();
+            _subscriptions.TryAdd(sub, msg =>
+            {
+                if (msg is TMsg typed)
+                {
+                    action(typed);
+                }
+            });
+            return new Subscription<T>(sub, this);
+        }
+
+
         public void Publish(T msg)
         {
             foreach (var sub in _subscriptions)
@@ -58,8 +70,8 @@ namespace Proto
 
     public class Subscription<T>
     {
-        private Guid _id;
-        private EventStream<T> _eventStream;
+        private readonly Guid _id;
+        private readonly EventStream<T> _eventStream;
 
         public Subscription(Guid sub, EventStream<T> eventStream)
         {

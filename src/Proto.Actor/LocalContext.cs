@@ -78,13 +78,13 @@ namespace Proto
         {
             get
             {
-                var r = _message as MessageSender;
+                var r = _message as MessageEnvelope;
                 return r != null ? r.Message : _message;
             }
             private set => _message = value;
         }
 
-        public PID Sender => (_message as MessageSender)?.Sender;
+        public PID Sender => (_message as MessageEnvelope)?.Sender;
         public TimeSpan ReceiveTimeout { get; private set; }
 
 
@@ -231,12 +231,15 @@ namespace Proto
                     case Failure f:
                         HandleFailure(f);
                         return Task.FromResult(0);
-                    case Restart r:
+                    case Restart _:
                         return HandleRestartAsync();
-                    case SuspendMailbox sm:
+                    case SuspendMailbox _:
                         return Task.FromResult(0);
-                    case ResumeMailbox rm:
+                    case ResumeMailbox _:
                         return Task.FromResult(0);
+                    case Continuation cont:
+                        _message = cont.Message;
+                        return cont.Action();
                     default:
                         Logger.LogWarning("Unknown system message {0}", msg);
                         return Task.FromResult(0);
@@ -303,25 +306,25 @@ namespace Proto
 
         public void RestartChildren(params PID[] pids)
         {
-            for (int i = 0; i < pids.Length; i++)
+            foreach (var pid in pids)
             {
-                pids[i].SendSystemMessage(Restart.Instance);
+                pid.SendSystemMessage(Restart.Instance);
             }
         }
 
         public void StopChildren(params PID[] pids)
         {
-            for (int i = 0; i < pids.Length; i++)
+            foreach (var pid in pids)
             {
-                pids[i].SendSystemMessage(Stop.Instance);
+                pid.SendSystemMessage(Stop.Instance);
             }
         }
 
         public void ResumeChildren(params PID[] pids)
         {
-            for (int i = 0; i < pids.Length; i++)
+            foreach (var t in pids)
             {
-                pids[i].SendSystemMessage(ResumeMailbox.Instance);
+                t.SendSystemMessage(ResumeMailbox.Instance);
             }
         }
 
@@ -373,7 +376,7 @@ namespace Proto
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
         {
-            SendUserMessage(target, message, future.PID);
+            SendUserMessage(target, message, future.Pid);
             return future.Task;
         }
 
@@ -381,12 +384,7 @@ namespace Proto
         {
             if (_senderMiddleware != null)
             {
-                var messageEnvelope = message as MessageEnvelope ?? new MessageEnvelope
-                {
-                    Message = message,
-                    Header = new MessageHeader(),
-                    Sender = sender
-                };
+                var messageEnvelope = message as MessageEnvelope ?? new MessageEnvelope(message,sender, new MessageHeader());
                 _senderMiddleware(this, target, messageEnvelope);
             }
             else
@@ -445,6 +443,7 @@ namespace Proto
 
         private void HandleFailure(Failure msg)
         {
+            // ReSharper disable once SuspiciousTypeConversion.Global
             if (Actor is ISupervisorStrategy supervisor)
             {
                 supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
@@ -562,6 +561,17 @@ namespace Proto
         private void ReceiveTimeoutCallback(object state)
         {
             Self.Request(Proto.ReceiveTimeout.Instance, null);
+        }
+
+        public void ReenterAfter<T>(Task<T> target, Func<Task<T>,Task> action)
+        {
+            var msg = _message;
+            var cont = new Continuation(() => action(target),msg);
+
+            target.ContinueWith(t =>
+            {
+               Self.SendSystemMessage(cont);
+            });
         }
     }
 }
