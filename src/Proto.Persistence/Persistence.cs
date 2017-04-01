@@ -29,9 +29,9 @@ namespace Proto.Persistence
                 await Context.ReceiveAsync(new RecoverSnapshot(snapshot.Data));
             };
 
-            await State.GetEventsAsync(Name, Index, Callback =>
+            await State.GetEventsAsync(Name, Index, callbackData =>
             {
-                Context.ReceiveAsync(new RecoverEvent(Callback)).Wait();
+                Context.ReceiveAsync(new RecoverEvent(callbackData)).Wait();
                 Index++;
             });
             
