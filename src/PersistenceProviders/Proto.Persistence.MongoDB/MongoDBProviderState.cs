@@ -33,7 +33,7 @@ namespace Proto.Persistence.MongoDB
             }
         }
 
-        public async Task<(object Data, long Index)> GetSnapshotAsync(string actorName)
+        public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
             var sort = Builders<Snapshot>.Sort.Descending("snapshotIndex");
             var snapshot = await SnapshotCollection
@@ -44,38 +44,28 @@ namespace Proto.Persistence.MongoDB
             return snapshot != null ? (snapshot.Data, snapshot.SnapshotIndex) : (null, 0);
         }
 
-        public async Task PersistEventAsync(string actorName, long index, object data)
+        public async Task PersistEventAsync(string actorName, long index, object @event)
         {
-            var @event = new Event(actorName, index, data);
-
-            await EventCollection.InsertOneAsync(@event);
+            await EventCollection.InsertOneAsync(new Event(actorName, index, @event));
         }
 
-        public async Task PersistSnapshotAsync(string actorName, long index, object data)
+        public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)
         {
-            var snapshot = new Snapshot(actorName, index, data);
-
-            await SnapshotCollection.InsertOneAsync(snapshot);
+            await SnapshotCollection.InsertOneAsync(new Snapshot(actorName, index, snapshot));
         }
 
-        public async Task DeleteEventsAsync(string actorName, long fromIndex)
+        public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
         {
-            await EventCollection.DeleteManyAsync(e => e.ActorName == actorName && e.EventIndex <= fromIndex);
+            await EventCollection.DeleteManyAsync(e => e.ActorName == actorName && e.EventIndex <= inclusiveToIndex);
         }
 
-        public async Task DeleteSnapshotsAsync(string actorName, long fromIndex)
+        public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
         {
-            await SnapshotCollection.DeleteManyAsync(s => s.ActorName == actorName && s.SnapshotIndex <= fromIndex);
+            await SnapshotCollection.DeleteManyAsync(s => s.ActorName == actorName && s.SnapshotIndex <= inclusiveToIndex);
         }
 
-        private IMongoCollection<Event> EventCollection
-        {
-            get => _mongoDB.GetCollection<Event>("events");
-        }
+        private IMongoCollection<Event> EventCollection => _mongoDB.GetCollection<Event>("events");
 
-        private IMongoCollection<Snapshot> SnapshotCollection
-        {
-            get => _mongoDB.GetCollection<Snapshot>("snapshots");
-        }
+        private IMongoCollection<Snapshot> SnapshotCollection => _mongoDB.GetCollection<Snapshot>("snapshots");
     }
 }

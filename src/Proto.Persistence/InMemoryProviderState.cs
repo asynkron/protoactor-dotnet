@@ -18,9 +18,9 @@ namespace Proto.Persistence
 
         private readonly IDictionary<string, (object Data, long Index)> _snapshots = new Dictionary<string, (object Data, long Index)>();
 
-        public Task<(object Data, long Index)> GetSnapshotAsync(string actorName)
+        public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
-            _snapshots.TryGetValue(actorName, out (object Data, long Index) snapshot);
+            _snapshots.TryGetValue(actorName, out (object Snapshot, long Index) snapshot);
             return Task.FromResult(snapshot);
         }
 
@@ -36,7 +36,7 @@ namespace Proto.Persistence
             return Task.FromResult(0);
         }
 
-        public Task PersistEventAsync(string actorName, long index, object data)
+        public Task PersistEventAsync(string actorName, long index, object @event)
         {
             var events = _events.GetOrAdd(actorName, new Dictionary<long, object>());
             long nextEventIndex = 1;
@@ -44,23 +44,23 @@ namespace Proto.Persistence
             {
                 nextEventIndex = events.Last().Key + 1;
             }
-            events.Add(nextEventIndex, data);
+            events.Add(nextEventIndex, @event);
 
             return Task.FromResult(0);
         }
 
-        public Task PersistSnapshotAsync(string actorName, long index, object data)
+        public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
         {
-            _snapshots[actorName] = (data, index);
+            _snapshots[actorName] = (snapshot, index);
             return Task.FromResult(0);
         }
 
-        public Task DeleteEventsAsync(string actorName, long fromIndex)
+        public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
         {
             return Task.FromResult(0);
         }
 
-        public Task DeleteSnapshotsAsync(string actorName, long fromIndex)
+        public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
         {
             _snapshots.Remove(actorName);
             return Task.FromResult(0);
