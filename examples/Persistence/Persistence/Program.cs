@@ -108,7 +108,7 @@ class Program
                     break;
                 case RecoverSnapshot msg:
                     
-                    if (msg.Data is State ss)
+                    if (msg.Snapshot is State ss)
                     {
                         _state = ss;
 
@@ -119,7 +119,7 @@ class Program
                     break;
                 case RecoverEvent msg:
                     
-                    if (msg.Data is RenameEvent recev)
+                    if (msg.Event is RenameEvent recev)
                     {
                         Console.WriteLine("MyPersistenceActor - RecoverEvent = {0}, Event.Name = {1}", Persistence.Index, recev.Name);
                     }
@@ -134,7 +134,7 @@ class Program
 
                     Console.WriteLine("MyPersistenceActor - PersistedEvent = {0}", msg.Index);
 
-                    if(msg.Data is RenameEvent rne)
+                    if(msg.Event is RenameEvent rne)
                     {
                         _state.Name = rne.Name;
                     }
@@ -166,8 +166,8 @@ class Program
         private async Task Handle(PersistedSnapshot message)
         {
             Console.WriteLine("MyPersistenceActor - PersistedSnapshot at Index = {0}", message.Index);
-
-            await Persistence.State.DeleteSnapshotsAsync(Persistence.Name, (message.Index - 1));
+            
+            await Persistence.DeleteSnapshotsAsync(message.Index - 1);
         }
 
         private async Task Handle(IContext context, RequestSnapshot message)

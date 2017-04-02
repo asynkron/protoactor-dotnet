@@ -11,51 +11,58 @@ namespace Proto.Persistence
 {
     public class Persistence
     {
-        public IProviderState State { get; set; }
-        public long Index { get; set; }
-        public IContext Context { get; set; }
-        public string Name => Context.Self.Id;
+        private IProviderState _state;
+        public long Index { get; private set; }
+        private IContext _context;
+        private string ActorId => _context.Self.Id;
 
         public async Task InitAsync(IProvider provider, IContext context)
         {
-            State = provider.GetState();
-            Context = context;
+            _state = provider.GetState();
+            _context = context;
 
-            await Context.ReceiveAsync(new RecoveryStarted());
+            await _context.ReceiveAsync(new RecoveryStarted());
 
-            var snapshot = await State.GetSnapshotAsync(Name);
+            var (snapshot, index) = await _state.GetSnapshotAsync(ActorId);
+
+            if (snapshot != null)
             {
-                Index = snapshot.Index;
-                await Context.ReceiveAsync(new RecoverSnapshot(snapshot.Data));
+                Index = index;
+                await _context.ReceiveAsync(new RecoverSnapshot(snapshot));
             };
 
-            await State.GetEventsAsync(Name, Index, callbackData =>
+            await _state.GetEventsAsync(ActorId, Index, @event =>
             {
-                Context.ReceiveAsync(new RecoverEvent(callbackData)).Wait();
+                _context.ReceiveAsync(new RecoverEvent(@event)).Wait();
                 Index++;
             });
             
-            await Context.ReceiveAsync(new RecoveryCompleted());
+            await _context.ReceiveAsync(new RecoveryCompleted());
         }
 
-        public async Task PersistEventAsync(object data)
+        public async Task PersistEventAsync(object @event)
         {
             var index = Index;
-
-            await State.PersistEventAsync(Name, index, data);
-
+            await _state.PersistEventAsync(ActorId, index, @event);
             Index++;
-
-            await Context.ReceiveAsync(new PersistedEvent(index, data));
+            await _context.ReceiveAsync(new PersistedEvent(index, @event));
         }
 
-        public async Task PersistSnapshotAsync(object data)
+        public async Task PersistSnapshotAsync(object snapshot)
         {
             var index = Index;
+            await _state.PersistSnapshotAsync(ActorId, index, snapshot);
+            await _context.ReceiveAsync(new PersistedSnapshot(index, snapshot));
+        }
 
-            await State.PersistSnapshotAsync(Name, index, data);
-            
-            await Context.ReceiveAsync(new PersistedSnapshot(index, data));
+        public async Task DeleteSnapshotsAsync(long inclusiveToIndex)
+        {
+            await _state.DeleteSnapshotsAsync(ActorId, inclusiveToIndex);
+        }
+
+        public async Task DeleteEventsAsync(long inclusiveToIndex)
+        {
+            await _state.DeleteEventsAsync(ActorId, inclusiveToIndex);
         }
 
         public static Func<Receive, Receive> Using(IProvider provider)
@@ -81,22 +88,22 @@ namespace Proto.Persistence
 
     public class RecoverSnapshot
     {
-        public RecoverSnapshot(object data)
+        public RecoverSnapshot(object snapshot)
         {
-            Data = data;
+            Snapshot = snapshot;
         }
 
-        public object Data { get; }
+        public object Snapshot { get; }
     }
 
     public class RecoverEvent
     {
-        public RecoverEvent(object data)
+        public RecoverEvent(object @event)
         {
-            Data = data;
+            Event = @event;
         }
         
-        public object Data { get; }
+        public object Event { get; }
     }
 
     public class RecoveryStarted { }
@@ -104,25 +111,25 @@ namespace Proto.Persistence
 
     public class PersistedEvent
     {
-        public PersistedEvent(long index, object data)
+        public PersistedEvent(long index, object @event)
         {
             Index = index;
-            Data = data;
+            Event = @event;
         }
 
         public long Index { get; }
-        public object Data { get; }
+        public object Event { get; }
     }
 
     public class PersistedSnapshot
     {
-        public PersistedSnapshot(long index, object data)
+        public PersistedSnapshot(long index, object snapshot)
         {
             Index = index;
-            Data = data;
+            Snapshot = snapshot;
         }
 
         public long Index { get; }
-        public object Data { get; }
+        public object Snapshot { get; }
     }
 }
