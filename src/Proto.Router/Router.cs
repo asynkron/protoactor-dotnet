@@ -58,7 +58,8 @@ namespace Proto.Router
                 var routeeProps = props.WithSpawner(null);
                 var routerState = config.CreateRouterState();
                 var wg = new AutoResetEvent(false);
-                var routerProps = Actor.FromProducer(() => new RouterActor(routeeProps, config, routerState, wg));
+                var routerProps = Actor.FromProducer(() => new RouterActor(routeeProps, config, routerState, wg))
+                                       .WithMailbox(props.MailboxProducer);
                 var routerId = ProcessRegistry.Instance.NextId();
                 var router = Props.DefaultSpawner(routerId + "/router" , routerProps, parent);
                 wg.WaitOne(); //wait for the router to start
