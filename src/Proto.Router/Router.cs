@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Threading;
 using Proto.Router.Routers;
 
@@ -18,7 +19,12 @@ namespace Proto.Router
 
         public static Props NewConsistentHashGroup(Props props, params PID[] routees)
         {
-            return props.WithSpawner(Spawner(new ConsistentHashGroupRouterConfig(routees)));
+            return props.WithSpawner(Spawner(new ConsistentHashGroupRouterConfig(MD5Hasher.Hash, 100, routees)));
+        }
+
+        public static Props NewConsistentHashGroup(Props props, Func<string, uint> hash, int replicaCount, params PID[] routees)
+        {
+            return props.WithSpawner(Spawner(new ConsistentHashGroupRouterConfig(hash, replicaCount, routees)));
         }
 
         public static Props NewRandomGroup(Props props, params PID[] routees)
@@ -36,9 +42,9 @@ namespace Proto.Router
             return props.WithSpawner(Spawner(new BroadcastPoolRouterConfig(poolSize)));
         }
 
-        public static Props NewConsistentHashPool(Props props, int poolSize)
+        public static Props NewConsistentHashPool(Props props, int poolSize, Func<string, uint> hash = null, int replicaCount = 100)
         {
-            return props.WithSpawner(Spawner(new ConsistentHashPoolRouterConfig(poolSize)));
+            return props.WithSpawner(Spawner(new ConsistentHashPoolRouterConfig(poolSize, hash ?? MD5Hasher.Hash, replicaCount)));
         }
 
         public static Props NewRandomPool(Props props, int poolSize)

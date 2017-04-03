@@ -4,15 +4,23 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 
 namespace Proto.Router.Routers
 {
     internal class ConsistentHashRouterState : RouterState
     {
+        private readonly Func<string, uint> _hash;
+        private readonly int _replicaCount;
         private HashRing _hashRing;
         private Dictionary<string, PID> _routeeMap;
 
+        public ConsistentHashRouterState(Func<string, uint> hash, int replicaCount)
+        {
+            _hash = hash;
+            _replicaCount = replicaCount;
+        }
 
         public override HashSet<PID> GetRoutees()
         {
@@ -29,7 +37,7 @@ namespace Proto.Router.Routers
                 nodes.Add(nodeName);
                 _routeeMap[nodeName] = pid;
             }
-            _hashRing = new HashRing(nodes);
+            _hashRing = new HashRing(nodes, _hash, _replicaCount);
         }
 
         public override void RouteMessage(object message, PID sender)
