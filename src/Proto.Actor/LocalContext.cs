@@ -23,7 +23,7 @@ namespace Proto
         private readonly Sender _senderMiddleware;
         private readonly Func<IActor> _producer;
         private readonly ISupervisorStrategy _supervisorStrategy;
-        private HashSet<PID> _children;
+        private FastSet<PID> _children;
         private object _message;
         private Receive _receive;
         private Timer _receiveTimeoutTimer;
@@ -31,8 +31,8 @@ namespace Proto
         private RestartStatistics _restartStatistics;
         private Stack<object> _stash;
         private bool _stopping;
-        private HashSet<PID> _watchers;
-        private HashSet<PID> _watching;
+        private FastSet<PID> _watchers;
+        private FastSet<PID> _watching;
         private ILogger _logger;
 
 
@@ -49,10 +49,8 @@ namespace Proto
             //fast path
             if (parent != null)
             {
-                _watchers = new HashSet<PID>
-                {
-                    parent
-                };
+                _watchers = new FastSet<PID>();
+                _watchers.Add(parent);
             }
         }
 
@@ -119,14 +117,14 @@ namespace Proto
             var pid = props.Spawn($"{Self.Id}/{name}", Self);
             if (_children == null)
             {
-                _children = new HashSet<PID>();
+                _children = new FastSet<PID>();
             }
             _children.Add(pid);
 
             //fast path add watched
             if (_watching == null)
             {
-                _watching = new HashSet<PID>();
+                _watching = new FastSet<PID>();
             }
             _watching.Add(pid);
             return pid;
@@ -162,7 +160,7 @@ namespace Proto
             pid.SendSystemMessage(new Watch(Self));
             if (_watching == null)
             {
-                _watching = new HashSet<PID>();
+                _watching = new FastSet<PID>();
             }
             _watching.Add(pid);
         }
@@ -172,7 +170,7 @@ namespace Proto
             pid.SendSystemMessage(new Unwatch(Self));
             if (_watching == null)
             {
-                _watching = new HashSet<PID>();
+                _watching = new FastSet<PID>();
             }
             _watching.Remove(pid);
         }
@@ -435,7 +433,7 @@ namespace Proto
             {
                 if (_watchers == null)
                 {
-                    _watchers = new HashSet<PID>();
+                    _watchers = new FastSet<PID>();
                 }
                 _watchers.Add(w.Watcher);
             }
