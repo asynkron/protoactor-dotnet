@@ -23,7 +23,7 @@ namespace Proto
         private readonly Sender _senderMiddleware;
         private readonly Func<IActor> _producer;
         private readonly ISupervisorStrategy _supervisorStrategy;
-        private HashSet<PID> _children;
+        private FastSet<PID> _children;
         private object _message;
         private Receive _receive;
         private Timer _receiveTimeoutTimer;
@@ -117,7 +117,7 @@ namespace Proto
             var pid = props.Spawn($"{Self.Id}/{name}", Self);
             if (_children == null)
             {
-                _children = new HashSet<PID>();
+                _children = new FastSet<PID>();
             }
             _children.Add(pid);
 

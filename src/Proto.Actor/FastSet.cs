@@ -14,6 +14,18 @@ namespace Proto
         private T _first;
         private HashSet<T> _set;
 
+        public int Count
+        {
+            get
+            {
+                if (_set == null && _first == null)
+                {
+                    return 0;
+                }
+                return _set?.Count ?? 1;
+            }
+        }
+
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
