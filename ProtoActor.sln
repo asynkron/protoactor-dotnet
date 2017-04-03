@@ -110,7 +110,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ClusterProviders", "Cluster
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Cluster.Consul", "src\ClusterProviders\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj", "{95137AC0-8F7B-4CC0-A10B-E985927CCAB7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Router.Tests", "Proto.Router.Tests\Proto.Router.Tests.csproj", "{3D0EE7EB-3C1F-4293-A6C1-47AFABCB0D6D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Router.Tests", "tests\Proto.Router.Tests\Proto.Router.Tests.csproj", "{3D0EE7EB-3C1F-4293-A6C1-47AFABCB0D6D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
