@@ -6,6 +6,7 @@ var target = Argument("target", "Default");
 var mygetApiKey = Argument<string>("mygetApiKey", null);
 var currentBranch = Argument<string>("currentBranch", GitBranchCurrent("./").FriendlyName);
 var buildNumber = Argument<string>("buildNumber", null);
+var configuration = "Release";
 
 var versionSuffix = "";
 if (currentBranch != "master") {
@@ -34,7 +35,7 @@ Task("Build")
     .IsDependentOn("Restore")
     .Does(() => {
         DotNetCoreBuild("ProtoActor.sln", new DotNetCoreBuildSettings {
-            Configuration = "Release",
+            Configuration = configuration,
         });
     });
 Task("UnitTest")
@@ -42,6 +43,7 @@ Task("UnitTest")
         foreach(var proj in GetFiles("tests/**/*.Tests.csproj")) {
             DotNetCoreTest(proj.ToString(), new DotNetCoreTestSettings {
                 NoBuild = true,
+                Configuration = configuration
             });
         }
     });
@@ -50,7 +52,7 @@ Task("Pack")
         foreach(var proj in GetFiles("src/**/*.csproj")) {
             DotNetCorePack(proj.ToString(), new DotNetCorePackSettings {
                 OutputDirectory = "out",
-                Configuration = "Release",
+                Configuration = configuration,
                 NoBuild = true,
             });
         }
