@@ -23,13 +23,11 @@ namespace Proto.Persistence
 
             await Context.ReceiveAsync(new RecoveryStarted());
 
-            var t = await State.GetSnapshotAsync(Name);
-
-            if (t != null)
+            var snapshot = await State.GetSnapshotAsync(Name);
             {
-                Index = t.Item2;
-                await Context.ReceiveAsync(new RecoverSnapshot(t.Item1));
-            }
+                Index = snapshot.Index;
+                await Context.ReceiveAsync(new RecoverSnapshot(snapshot.Data));
+            };
 
             await State.GetEventsAsync(Name, Index, callbackData =>
             {
@@ -67,11 +65,10 @@ namespace Proto.Persistence
                 switch (context.Message)
                 {
                     case Started _:
-                        var p = context.Actor as IPersistentActor;
-                        if (p != null)
+                        if(context.Actor is IPersistentActor actor)
                         {
-                            p.Persistence = new Persistence();
-                            await p.Persistence.InitAsync(provider, context);
+                            actor.Persistence = new Persistence();
+                            await actor.Persistence.InitAsync(provider, context);
                         }
                         break;
                 }

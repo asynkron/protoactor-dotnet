@@ -31,7 +31,7 @@ namespace Proto.Persistence.Marten
             }
         }
 
-        public async Task<Tuple<object, long>> GetSnapshotAsync(string actorName)
+        public async Task<(object Data, long Index)> GetSnapshotAsync(string actorName)
         {
             using (var session = _store.OpenSession())
             {
@@ -40,7 +40,7 @@ namespace Proto.Persistence.Marten
                     .OrderByDescending(x => x.Index)
                     .FirstOrDefaultAsync();
 
-                return snapshot != null ? Tuple.Create((object)snapshot.Data, snapshot.Index) : null;
+                return snapshot != null ? (snapshot.Data, snapshot.Index) : (null, 0);
             }
         }
 
