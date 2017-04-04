@@ -20,16 +20,16 @@ namespace Proto.Router
             _state = state;
         }
 
-        public override void SendUserMessage(PID pid, object message, PID sender)
+        public override void SendUserMessage(PID pid, object message)
         {
             if (message is RouterManagementMessage)
             {
                 var router = ProcessRegistry.Instance.Get(_router);
-                router.SendUserMessage(pid, message, sender);
+                router.SendUserMessage(pid, message);
             }
             else
             {
-                _state.RouteMessage(message, sender);
+                _state.RouteMessage(message);
             }
         }
 

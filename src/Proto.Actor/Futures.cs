@@ -51,8 +51,13 @@ namespace Proto
         public PID Pid { get; }
         public Task<T> Task { get; }
 
-        public override void SendUserMessage(PID pid, object message, PID sender)
+        public override void SendUserMessage(PID pid, object message)
         {
+            if (message is MessageEnvelope messageEnvelope)
+            {
+                message = messageEnvelope.Message;
+            }
+
             if (message is T || message == null)
             {
                 if (_cts != null && _cts.IsCancellationRequested) return;

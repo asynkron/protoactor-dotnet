@@ -27,12 +27,12 @@ namespace Proto.Router.Routers
             _values = routees.ToList();
         }
 
-        public override void RouteMessage(object message, PID sender)
+        public override void RouteMessage(object message)
         {
             var i = _currentIndex % _values.Count;
             var pid = _values[i];
             Interlocked.Add(ref _currentIndex, 1);
-            pid.Request(message, sender);
+            pid.Tell(message);
         }
     }
 }
