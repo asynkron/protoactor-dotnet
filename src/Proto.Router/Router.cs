@@ -32,6 +32,11 @@ namespace Proto.Router
             return props.WithSpawner(Spawner(new RandomGroupRouterConfig(routees)));
         }
 
+        public static Props NewRandomGroup(Props props, int seed, params PID[] routees)
+        {
+            return props.WithSpawner(Spawner(new RandomGroupRouterConfig(seed, routees)));
+        }
+
         public static Props NewRoundRobinGroup(Props props, params PID[] routees)
         {
             return props.WithSpawner(Spawner(new RoundRobinGroupRouterConfig(routees)));
@@ -47,9 +52,9 @@ namespace Proto.Router
             return props.WithSpawner(Spawner(new ConsistentHashPoolRouterConfig(poolSize, hash ?? MD5Hasher.Hash, replicaCount)));
         }
 
-        public static Props NewRandomPool(Props props, int poolSize)
+        public static Props NewRandomPool(Props props, int poolSize, int? seed = null)
         {
-            return props.WithSpawner(Spawner(new RandomPoolRouterConfig(poolSize)));
+            return props.WithSpawner(Spawner(new RandomPoolRouterConfig(poolSize, seed)));
         }
 
         public static Props NewRoundRobinPool(Props props, int poolSize)
