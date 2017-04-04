@@ -110,7 +110,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ClusterProviders", "Cluster
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Cluster.Consul", "src\ClusterProviders\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj", "{95137AC0-8F7B-4CC0-A10B-E985927CCAB7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Router.Tests", "tests\Proto.Router.Tests\Proto.Router.Tests.csproj", "{3D0EE7EB-3C1F-4293-A6C1-47AFABCB0D6D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Router.Tests", "tests\Proto.Router.Tests\Proto.Router.Tests.csproj", "{3D0EE7EB-3C1F-4293-A6C1-47AFABCB0D6D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence.MongoDB", "src\PersistenceProviders\Proto.Persistence.MongoDB\Proto.Persistence.MongoDB.csproj", "{632CC904-A74F-470E-BD50-0F225BE3B2E9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -553,6 +555,18 @@ Global
 		{3D0EE7EB-3C1F-4293-A6C1-47AFABCB0D6D}.Release|x64.Build.0 = Release|Any CPU
 		{3D0EE7EB-3C1F-4293-A6C1-47AFABCB0D6D}.Release|x86.ActiveCfg = Release|Any CPU
 		{3D0EE7EB-3C1F-4293-A6C1-47AFABCB0D6D}.Release|x86.Build.0 = Release|Any CPU
+		{632CC904-A74F-470E-BD50-0F225BE3B2E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{632CC904-A74F-470E-BD50-0F225BE3B2E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{632CC904-A74F-470E-BD50-0F225BE3B2E9}.Debug|x64.ActiveCfg = Debug|x64
+		{632CC904-A74F-470E-BD50-0F225BE3B2E9}.Debug|x64.Build.0 = Debug|x64
+		{632CC904-A74F-470E-BD50-0F225BE3B2E9}.Debug|x86.ActiveCfg = Debug|x86
+		{632CC904-A74F-470E-BD50-0F225BE3B2E9}.Debug|x86.Build.0 = Debug|x86
+		{632CC904-A74F-470E-BD50-0F225BE3B2E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{632CC904-A74F-470E-BD50-0F225BE3B2E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{632CC904-A74F-470E-BD50-0F225BE3B2E9}.Release|x64.ActiveCfg = Release|x64
+		{632CC904-A74F-470E-BD50-0F225BE3B2E9}.Release|x64.Build.0 = Release|x64
+		{632CC904-A74F-470E-BD50-0F225BE3B2E9}.Release|x86.ActiveCfg = Release|x86
+		{632CC904-A74F-470E-BD50-0F225BE3B2E9}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -610,5 +624,6 @@ Global
 		{3A922679-370D-42DC-850B-3F799DE0C803} = {771514F1-12AE-4A26-89CB-2646D3EF7034}
 		{95137AC0-8F7B-4CC0-A10B-E985927CCAB7} = {3A922679-370D-42DC-850B-3F799DE0C803}
 		{3D0EE7EB-3C1F-4293-A6C1-47AFABCB0D6D} = {9AA2BCF0-19AB-4DD9-8D91-7D188E463806}
+		{632CC904-A74F-470E-BD50-0F225BE3B2E9} = {7AF64900-EA34-4A93-9514-FEBC4648E39E}
 	EndGlobalSection
 EndGlobal
