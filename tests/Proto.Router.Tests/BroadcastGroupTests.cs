@@ -54,7 +54,7 @@ namespace Proto.Router.Tests
 
             router.Tell(new RouterRemoveRoutee { PID = routee1 });
 
-            var routees = await router.RequestAsync<Routees>(new RouterGetRoutees());
+            var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.PIDs);
             Assert.Contains(routee2, routees.PIDs);
             Assert.Contains(routee3, routees.PIDs);
@@ -67,7 +67,7 @@ namespace Proto.Router.Tests
             var routee4 = Actor.Spawn(MyActorProps);
             router.Tell(new RouterAddRoutee { PID = routee4 });
 
-            var routees = await router.RequestAsync<Routees>(new RouterGetRoutees());
+            var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.PIDs);
             Assert.Contains(routee2, routees.PIDs);
             Assert.Contains(routee3, routees.PIDs);
