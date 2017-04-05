@@ -5,72 +5,24 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using Couchbase;
-using Couchbase.Configuration.Client;
-using Couchbase.Core;
-using Couchbase.Core.Serialization;
 using Messages;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Proto;
 using Proto.Persistence;
-using Proto.Persistence.Couchbase;
+using Proto.Persistence.Sqlite;
 
 class Program
 {
     static void Main(string[] args)
     {
-        using (var cluster = GetCluster())
-        using (var bucket = cluster.OpenBucket("protoactor_test"))
-        {
-            //NOTE: Don't forget to create index for the bucket!
-            //QUERY: CREATE INDEX `persistence` ON `protoactor_test`(type) USING GSI;
+        var provider = new SqliteProvider();
 
-            var provider = new CouchbaseProvider(bucket);
+        var props = Actor.FromProducer(() => new MyPersistenceActor())
+            .WithReceiveMiddleware(Persistence.Using(provider));
 
-            var props = Actor.FromProducer(() => new MyPersistenceActor())
-                .WithReceiveMiddleware(Persistence.Using(provider));
+        var pid = Actor.Spawn(props);
 
-            var pid = Actor.Spawn(props);
-            
-            Console.ReadLine();
-        }
-    }
-
-    private static ICluster GetCluster()
-    {
-        var clientDefinition = new CouchbaseClientDefinition
-        {
-            Buckets = new List<BucketDefinition>
-            {
-                new BucketDefinition
-                {
-                    Name = "protoactor_test",
-                    ConnectionPool = new ConnectionPoolDefinition
-                    {
-                        EnableTcpKeepAlives = true,
-                        MaxSize = 100,
-                        MinSize = 10
-                    }
-                }
-            },
-            Servers = new List<Uri>
-            {
-                new Uri("http://localhost:8091")
-            }
-        };
-        var jsonSerializerSettings = new JsonSerializerSettings
-        {
-            TypeNameHandling = TypeNameHandling.All,
-            ContractResolver = new CamelCasePropertyNamesContractResolver()
-        };
-        var configuration = new ClientConfiguration(clientDefinition)
-        {
-            Serializer = () => new DefaultSerializer(jsonSerializerSettings, jsonSerializerSettings)
-        };
-        return new Cluster(configuration);
+        Console.ReadLine();
     }
 
     class MyPersistenceActor : IPersistentActor
