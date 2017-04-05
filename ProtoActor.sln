@@ -116,6 +116,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence.MongoDB",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence.SqlServer", "src\PersistenceProviders\Proto.Persistence.SqlServer\Proto.Persistence.SqlServer.csproj", "{7C991DD1-9793-4AE1-8098-74D521CE999C}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence.Sqlite", "src\PersistenceProviders\Proto.Persistence.Sqlite\Proto.Persistence.Sqlite.csproj", "{F2CCA870-6D3E-46F0-921D-D5012507FECA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -581,6 +583,18 @@ Global
 		{7C991DD1-9793-4AE1-8098-74D521CE999C}.Release|x64.Build.0 = Release|Any CPU
 		{7C991DD1-9793-4AE1-8098-74D521CE999C}.Release|x86.ActiveCfg = Release|Any CPU
 		{7C991DD1-9793-4AE1-8098-74D521CE999C}.Release|x86.Build.0 = Release|Any CPU
+		{F2CCA870-6D3E-46F0-921D-D5012507FECA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2CCA870-6D3E-46F0-921D-D5012507FECA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2CCA870-6D3E-46F0-921D-D5012507FECA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F2CCA870-6D3E-46F0-921D-D5012507FECA}.Debug|x64.Build.0 = Debug|Any CPU
+		{F2CCA870-6D3E-46F0-921D-D5012507FECA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F2CCA870-6D3E-46F0-921D-D5012507FECA}.Debug|x86.Build.0 = Debug|Any CPU
+		{F2CCA870-6D3E-46F0-921D-D5012507FECA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2CCA870-6D3E-46F0-921D-D5012507FECA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2CCA870-6D3E-46F0-921D-D5012507FECA}.Release|x64.ActiveCfg = Release|Any CPU
+		{F2CCA870-6D3E-46F0-921D-D5012507FECA}.Release|x64.Build.0 = Release|Any CPU
+		{F2CCA870-6D3E-46F0-921D-D5012507FECA}.Release|x86.ActiveCfg = Release|Any CPU
+		{F2CCA870-6D3E-46F0-921D-D5012507FECA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -640,5 +654,6 @@ Global
 		{3D0EE7EB-3C1F-4293-A6C1-47AFABCB0D6D} = {9AA2BCF0-19AB-4DD9-8D91-7D188E463806}
 		{632CC904-A74F-470E-BD50-0F225BE3B2E9} = {7AF64900-EA34-4A93-9514-FEBC4648E39E}
 		{7C991DD1-9793-4AE1-8098-74D521CE999C} = {7AF64900-EA34-4A93-9514-FEBC4648E39E}
+		{F2CCA870-6D3E-46F0-921D-D5012507FECA} = {7AF64900-EA34-4A93-9514-FEBC4648E39E}
 	EndGlobalSection
 EndGlobal
