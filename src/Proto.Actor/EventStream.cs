@@ -28,6 +28,7 @@ namespace Proto
             });
         }
     }
+
     public class EventStream<T>
     {
         private readonly ConcurrentDictionary<Guid, Action<T>> _subscriptions =
