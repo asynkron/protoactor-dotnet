@@ -28,8 +28,8 @@ namespace Proto.Persistence.Tests
             var (pid, _, actorName, providerState) = CreateTestActor();
             pid.Tell(new Multiply { Amount = 10 });
             pid.Tell(new RequestSnapshot());
-            var snapshot = await providerState.GetSnapshotAsync(actorName);
-            var snapshotState = snapshot.Item1 as State;
+            var (snapshot, _) = await providerState.GetSnapshotAsync(actorName);
+            var snapshotState = snapshot as State;
             Assert.Equal(10, snapshotState.Value);
         }
 
@@ -153,16 +153,16 @@ namespace Proto.Persistence.Tests
                     context.Sender.Tell(_state.Value);
                     break;
                 case RecoverSnapshot msg:
-                    if (msg.Data is State ss)
+                    if (msg.Snapshot is State ss)
                     {
                         _state = ss;
                     }
                     break;
                 case RecoverEvent msg:
-                    UpdateState(msg.Data);
+                    UpdateState(msg.Event);
                     break;
                 case PersistedEvent msg:
-                    UpdateState(msg.Data);
+                    UpdateState(msg.Event);
                     break;
                 case RequestSnapshot msg:
                     await Persistence.PersistSnapshotAsync(new State { Value = _state.Value });
