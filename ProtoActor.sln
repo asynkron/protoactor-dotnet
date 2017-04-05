@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26228.9
+VisualStudioVersion = 15.0.26228.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{771514F1-12AE-4A26-89CB-2646D3EF7034}"
 EndProject
@@ -113,6 +113,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Router.Tests", "tests\Proto.Router.Tests\Proto.Router.Tests.csproj", "{3D0EE7EB-3C1F-4293-A6C1-47AFABCB0D6D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence.MongoDB", "src\PersistenceProviders\Proto.Persistence.MongoDB\Proto.Persistence.MongoDB.csproj", "{632CC904-A74F-470E-BD50-0F225BE3B2E9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence.SqlServer", "src\PersistenceProviders\Proto.Persistence.SqlServer\Proto.Persistence.SqlServer.csproj", "{7C991DD1-9793-4AE1-8098-74D521CE999C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -567,6 +569,18 @@ Global
 		{632CC904-A74F-470E-BD50-0F225BE3B2E9}.Release|x64.Build.0 = Release|Any CPU
 		{632CC904-A74F-470E-BD50-0F225BE3B2E9}.Release|x86.ActiveCfg = Release|Any CPU
 		{632CC904-A74F-470E-BD50-0F225BE3B2E9}.Release|x86.Build.0 = Release|Any CPU
+		{7C991DD1-9793-4AE1-8098-74D521CE999C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C991DD1-9793-4AE1-8098-74D521CE999C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C991DD1-9793-4AE1-8098-74D521CE999C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7C991DD1-9793-4AE1-8098-74D521CE999C}.Debug|x64.Build.0 = Debug|Any CPU
+		{7C991DD1-9793-4AE1-8098-74D521CE999C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7C991DD1-9793-4AE1-8098-74D521CE999C}.Debug|x86.Build.0 = Debug|Any CPU
+		{7C991DD1-9793-4AE1-8098-74D521CE999C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C991DD1-9793-4AE1-8098-74D521CE999C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C991DD1-9793-4AE1-8098-74D521CE999C}.Release|x64.ActiveCfg = Release|Any CPU
+		{7C991DD1-9793-4AE1-8098-74D521CE999C}.Release|x64.Build.0 = Release|Any CPU
+		{7C991DD1-9793-4AE1-8098-74D521CE999C}.Release|x86.ActiveCfg = Release|Any CPU
+		{7C991DD1-9793-4AE1-8098-74D521CE999C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -625,5 +639,6 @@ Global
 		{95137AC0-8F7B-4CC0-A10B-E985927CCAB7} = {3A922679-370D-42DC-850B-3F799DE0C803}
 		{3D0EE7EB-3C1F-4293-A6C1-47AFABCB0D6D} = {9AA2BCF0-19AB-4DD9-8D91-7D188E463806}
 		{632CC904-A74F-470E-BD50-0F225BE3B2E9} = {7AF64900-EA34-4A93-9514-FEBC4648E39E}
+		{7C991DD1-9793-4AE1-8098-74D521CE999C} = {7AF64900-EA34-4A93-9514-FEBC4648E39E}
 	EndGlobalSection
 EndGlobal
