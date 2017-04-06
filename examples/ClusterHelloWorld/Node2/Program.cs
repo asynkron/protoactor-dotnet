@@ -25,9 +25,9 @@ namespace Node2
                 {
                     case HelloRequest _:
                         ctx.Respond(new HelloResponse
-                                    {
-                                        Message = "Hello from node 2"
-                                    });
+                        {
+                            Message = "Hello from node 2"
+                        });
                         break;
                 }
                 return Actor.Done;

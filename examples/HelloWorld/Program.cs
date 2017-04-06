@@ -16,7 +16,7 @@ class Program
         var pid = Actor.Spawn(props);
         pid.Tell(new Hello
         {
-            Who = "Alex"
+            Who = "ProtoActor"
         });
         Console.ReadLine();
     }

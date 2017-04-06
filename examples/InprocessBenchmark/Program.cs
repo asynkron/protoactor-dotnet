@@ -32,7 +32,6 @@ class Program
             var echos = new PID[clientCount];
             var completions = new TaskCompletionSource<bool>[clientCount];
 
-
             var echoProps = Actor.FromFunc(ctx =>
             {
                 switch (ctx.Message)
