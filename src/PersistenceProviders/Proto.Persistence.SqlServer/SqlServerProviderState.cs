@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace Proto.Persistence.SqlServer
 {
-    public class SqlServerProviderState : IProviderState
+    public class SqlServerProviderState : IEventState, ISnapshotState
     {
         private readonly string _connectionString;
         private readonly string _tableSnapshots;

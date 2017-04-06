@@ -11,7 +11,12 @@ namespace Proto.Persistence.RavenDB
             _store = store;
         }
 
-        public IProviderState GetState()
+        public IEventState GetEventState()
+        {
+            return new RavenDBProviderState(_store);
+        }
+
+        public ISnapshotState GetSnapshotState()
         {
             return new RavenDBProviderState(_store);
         }

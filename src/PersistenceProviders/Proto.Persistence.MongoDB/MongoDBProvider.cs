@@ -17,7 +17,12 @@ namespace Proto.Persistence.MongoDB
             _mongoDB = mongoDB;
         }
 
-        public IProviderState GetState()
+        public IEventState GetEventState()
+        {
+            return new MongoDBProviderState(_mongoDB);
+        }
+
+        public ISnapshotState GetSnapshotState()
         {
             return new MongoDBProviderState(_mongoDB);
         }

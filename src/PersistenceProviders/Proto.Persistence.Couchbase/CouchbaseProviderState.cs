@@ -12,7 +12,7 @@ using Couchbase.N1QL;
 
 namespace Proto.Persistence.Couchbase
 {
-    internal class CouchbaseProviderState : IProviderState
+    internal class CouchbaseProviderState : IEventState, ISnapshotState
     {
         private readonly IBucket _bucket;
 

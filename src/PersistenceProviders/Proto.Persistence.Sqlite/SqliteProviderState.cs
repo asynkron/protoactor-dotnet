@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace Proto.Persistence.Sqlite
 {
-    public class SqliteProviderState : IProviderState
+    public class SqliteProviderState : IEventState, ISnapshotState
     {
         private readonly string _datasource;
 

@@ -15,7 +15,12 @@
             _useTablesWithSchema = useTablesWithSchema;
         }
 
-        public IProviderState GetState()
+        public IEventState GetEventState()
+        {
+            return new SqlServerProviderState(_connectionString, _autoCreateTables, _useTablesWithPrefix, _useTablesWithSchema);
+        }
+
+        public ISnapshotState GetSnapshotState()
         {
             return new SqlServerProviderState(_connectionString, _autoCreateTables, _useTablesWithPrefix, _useTablesWithSchema);
         }

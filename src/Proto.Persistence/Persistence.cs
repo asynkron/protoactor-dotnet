@@ -8,22 +8,24 @@ using System;
 using System.Threading.Tasks;
 
 namespace Proto.Persistence
-{
+{ 
     public class Persistence
     {
-        private IProviderState _state;
+        private IEventState _eventState;
+        private ISnapshotState _snapshotState;
         public long Index { get; private set; }
         private IContext _context;
         private string ActorId => _context.Self.Id;
 
         public async Task InitAsync(IProvider provider, IContext context)
         {
-            _state = provider.GetState();
+            _eventState = provider.GetEventState();
+            _snapshotState = provider.GetSnapshotState();
             _context = context;
 
             await _context.ReceiveAsync(new RecoveryStarted());
 
-            var (snapshot, index) = await _state.GetSnapshotAsync(ActorId);
+            var (snapshot, index) = await _snapshotState.GetSnapshotAsync(ActorId);
 
             if (snapshot != null)
             {
@@ -31,7 +33,7 @@ namespace Proto.Persistence
                 await _context.ReceiveAsync(new RecoverSnapshot(snapshot));
             };
 
-            await _state.GetEventsAsync(ActorId, Index, @event =>
+            await _eventState.GetEventsAsync(ActorId, Index, @event =>
             {
                 _context.ReceiveAsync(new RecoverEvent(@event)).Wait();
                 Index++;
@@ -43,7 +45,7 @@ namespace Proto.Persistence
         public async Task PersistEventAsync(object @event)
         {
             var index = Index;
-            await _state.PersistEventAsync(ActorId, index, @event);
+            await _eventState.PersistEventAsync(ActorId, index, @event);
             Index++;
             await _context.ReceiveAsync(new PersistedEvent(index, @event));
         }
@@ -51,18 +53,18 @@ namespace Proto.Persistence
         public async Task PersistSnapshotAsync(object snapshot)
         {
             var index = Index;
-            await _state.PersistSnapshotAsync(ActorId, index, snapshot);
+            await _snapshotState.PersistSnapshotAsync(ActorId, index, snapshot);
             await _context.ReceiveAsync(new PersistedSnapshot(index, snapshot));
         }
 
         public async Task DeleteSnapshotsAsync(long inclusiveToIndex)
         {
-            await _state.DeleteSnapshotsAsync(ActorId, inclusiveToIndex);
+            await _snapshotState.DeleteSnapshotsAsync(ActorId, inclusiveToIndex);
         }
 
         public async Task DeleteEventsAsync(long inclusiveToIndex)
         {
-            await _state.DeleteEventsAsync(ActorId, inclusiveToIndex);
+            await _eventState.DeleteEventsAsync(ActorId, inclusiveToIndex);
         }
 
         public static Func<Receive, Receive> Using(IProvider provider)

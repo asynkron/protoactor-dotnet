@@ -10,7 +10,7 @@ namespace Proto.Persistence.Tests
         [Fact]
         public void Should_Call_Next_Middleware_On_Started()
         {
-            var provider = new InMemoryProvider();
+            var provider = InMemoryProvider.Default();
             var wasCalled = false;
             var actor = Actor.Spawn(
                 Actor.FromFunc(context =>
@@ -29,7 +29,7 @@ namespace Proto.Persistence.Tests
         [Fact]
         public void Should_Call_Next_Middleware_On_UserMessage()
         {
-            var provider = new InMemoryProvider();
+            var provider = InMemoryProvider.Default();
             var wasCalled = false;
             var actor = Actor.Spawn(
                 Actor.FromFunc(context =>

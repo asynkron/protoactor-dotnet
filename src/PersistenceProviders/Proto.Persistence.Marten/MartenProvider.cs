@@ -11,7 +11,12 @@ namespace Proto.Persistence.Marten
             _store = store;
         }
 
-        public IProviderState GetState()
+        public IEventState GetEventState()
+        {
+            return new MartenProviderState(_store);
+        }
+
+        public ISnapshotState GetSnapshotState()
         {
             return new MartenProviderState(_store);
         }

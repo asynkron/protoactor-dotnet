@@ -8,15 +8,28 @@ namespace Proto.Persistence
 {
     public class InMemoryProvider : IProvider
     {
-        private readonly IProviderState _state;
-        // allow passing in of IProviderState to allow state to "persist" across actor restarts
-        public InMemoryProvider(InMemoryProviderState state = null)
+        private readonly InMemoryProviderState _state;
+
+        public static InMemoryProvider Default()
+        {
+            var state=  new InMemoryProviderState();
+            return new InMemoryProvider(state);
+        }
+
+        // allow passing in of InMemoryProviderState to allow state to "persist" across actor restarts
+        public InMemoryProvider(InMemoryProviderState state)
         {
             _state = state;
         }
-        public IProviderState GetState()
+
+        public IEventState GetEventState()
         {
-            return _state ?? new InMemoryProviderState();
+            return _state;
+        }
+
+        public ISnapshotState GetSnapshotState()
+        {
+            return _state;
         }
     }
 }
