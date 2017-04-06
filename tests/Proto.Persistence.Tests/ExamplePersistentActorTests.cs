@@ -103,7 +103,34 @@ namespace Proto.Persistence.Tests
             Assert.Equal(InitialState * 2 * 2 * 4 * 8, state);
         }
 
-        private (PID pid, Props props, string actorName, IProviderState providerState) CreateTestActor()
+        [Fact]
+        public async void SnapshotsAndEventsCanUseDifferentPersistence()
+        {
+            var actorName = Guid.NewGuid().ToString();
+            var eventState = new InMemoryProviderState();
+            var snapshotState = new InMemoryProviderState();
+            var eventProvider = new InMemoryProvider(eventState);
+            var snapshotProvider = new InMemoryProvider(snapshotState);
+            var props = Actor.FromProducer(() => new ExamplePersistentActor())
+                .WithReceiveMiddleware(Persistence.Using(new SeparateEventAndSnapshotStateProvider(eventProvider, snapshotProvider)))
+                .WithMailbox(() => new TestMailbox());
+            var pid = Actor.SpawnNamed(props, actorName);
+
+            pid.Tell(new Multiply { Amount = 2 });
+            pid.Tell(new Multiply { Amount = 2 });
+            pid.Tell(new RequestSnapshot());
+            pid.Tell(new Multiply { Amount = 4 });
+            pid.Tell(new Multiply { Amount = 8 });
+
+            await snapshotState.GetEventsAsync(actorName, 0, o => throw new Exception("Should not have any events"));
+            var (snapshot, _) = await eventState.GetSnapshotAsync(actorName);
+            Assert.Null(snapshot);
+
+            var state = await RestartActorAndGetState(pid, props, actorName);
+            Assert.Equal(InitialState * 2 * 2 * 4 * 8, state);
+        }
+
+        private (PID pid, Props props, string actorName, InMemoryProviderState providerState) CreateTestActor()
         {
             var actorName = Guid.NewGuid().ToString();
             var inMemoryProviderState = new InMemoryProviderState();

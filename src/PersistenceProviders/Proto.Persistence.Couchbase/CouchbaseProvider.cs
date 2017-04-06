@@ -17,7 +17,12 @@ namespace Proto.Persistence.Couchbase
             _bucket = bucket;
         }
 
-        public IProviderState GetState()
+        public IEventState GetEventState()
+        {
+            return new CouchbaseProviderState(_bucket);
+        }
+
+        public ISnapshotState GetSnapshotState()
         {
             return new CouchbaseProviderState(_bucket);
         }

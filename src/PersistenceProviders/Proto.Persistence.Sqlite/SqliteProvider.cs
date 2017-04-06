@@ -11,7 +11,24 @@ namespace Proto.Persistence.Sqlite
             _datasource = datasource;
         }
 
-        public IProviderState GetState()
+        public IEventState GetEventState()
+        {
+            try
+            {
+                using (var db = new SqlitePersistenceContext(_datasource))
+                {
+                    db.Database.EnsureCreated();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            return new SqliteProviderState(_datasource);
+        }
+
+        public ISnapshotState GetSnapshotState()
         {
             try
             {

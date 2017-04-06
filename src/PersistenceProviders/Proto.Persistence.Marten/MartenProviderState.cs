@@ -5,7 +5,7 @@ using Marten;
 
 namespace Proto.Persistence.Marten
 {
-    public class MartenProviderState : IProviderState
+    public class MartenProviderState : IEventState, ISnapshotState
     {
         private readonly IDocumentStore _store;
 

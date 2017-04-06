@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Proto.Persistence
 {
-    public class InMemoryProviderState : IProviderState
+    public class InMemoryProviderState : IEventState, ISnapshotState
     {
         private readonly ConcurrentDictionary<string, Dictionary<long, object>> _events = new ConcurrentDictionary<string, Dictionary<long, object>>();
 

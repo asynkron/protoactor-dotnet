@@ -10,7 +10,7 @@ using MongoDB.Driver;
 
 namespace Proto.Persistence.MongoDB
 {
-    internal class MongoDBProviderState : IProviderState
+    internal class MongoDBProviderState : IEventState, ISnapshotState
     {
         private readonly IMongoDatabase _mongoDB;
 

@@ -15,10 +15,11 @@ class Program
 {
     static void Main(string[] args)
     {
+        var inMemProvider = InMemoryProvider.Default();
         var provider = new SqliteProvider();
 
         var props = Actor.FromProducer(() => new MyPersistenceActor())
-            .WithReceiveMiddleware(Persistence.Using(provider));
+            .WithReceiveMiddleware(Persistence.Using(new SeparateEventAndSnapshotStateProvider(provider, inMemProvider)));
 
         var pid = Actor.Spawn(props);
 

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Proto.Persistence.RavenDB
 {
-    public class RavenDBProviderState : IProviderState
+    public class RavenDBProviderState : IEventState, ISnapshotState
     {
         private readonly IDocumentStore _store;
 
