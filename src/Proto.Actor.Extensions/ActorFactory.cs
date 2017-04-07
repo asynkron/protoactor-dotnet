@@ -18,7 +18,7 @@ namespace Proto
             where T : IActor
         {
             id = id ?? typeof(T).FullName;
-            address = address ?? "nonhost";
+            address = address ?? ProcessRegistry.NoHost;
 
             var pid = new PID(address, id);
             var reff = ProcessRegistry.Instance.Get(pid);
@@ -33,7 +33,7 @@ namespace Proto
             where T : IActor
         {
             id = id ?? typeof(T).FullName;
-            address = address ?? "nonhost";
+            address = address ?? ProcessRegistry.NoHost;
 
             var pidId = id;
             if (parent != null)

@@ -14,10 +14,10 @@ namespace Proto
     {
         public static readonly EventStream Instance = new EventStream();
 
+        private readonly ILogger logger = Log.CreateLogger<EventStream>();
+
         public EventStream()
         {
-            var logger = Log.CreateLogger<EventStream>();
-
             Subscribe(msg =>
             {
                 if (msg is DeadLetterEvent letter)

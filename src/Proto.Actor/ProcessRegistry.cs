@@ -12,7 +12,7 @@ namespace Proto
 {
     public class ProcessRegistry
     {
-        private const string NoHost = "nonhost";
+        public const string NoHost = "nonhost";
         private readonly IList<Func<PID, Process>> _hostResolvers = new List<Func<PID, Process>>();
 
         private readonly HashedConcurrentDictionary _localActorRefs =
@@ -30,7 +30,7 @@ namespace Proto
 
         public Process Get(PID pid)
         {
-            if (pid.Address != "nonhost" && pid.Address != Address)
+            if (pid.Address != NoHost && pid.Address != Address)
             {
                 foreach (var resolver in _hostResolvers)
                 {

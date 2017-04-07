@@ -24,11 +24,12 @@ namespace DependencyInjection
             Proto.Log.SetLoggerFactory(loggerFactory);
 
             //This is only for demo purposes done in the service initialization
-            app.ApplicationServices.GetRequiredService<IActorManager>().Activate();
+            var actorManager = app.ApplicationServices.GetRequiredService<IActorManager>();
+            actorManager.Activate();
             //never do this
             Thread.Sleep(TimeSpan.FromSeconds(2));
             //notice, there is no second creation!
-            app.ApplicationServices.GetRequiredService<IActorManager>().Activate();
+            actorManager.Activate();
         }
     }
 }
