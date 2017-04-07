@@ -12,7 +12,16 @@ namespace DependencyInjection
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddProtoActor();
+            services.AddProtoActor(props =>
+            {
+                //attached console tracing
+                props.RegisterProps<DIActor>(p => p.WithReceiveMiddleware(next => async c =>
+                {
+                    Console.WriteLine($"enter {c.Actor.GetType().FullName} {c.Message.GetType().FullName}");
+                    await next(c);
+                    Console.WriteLine($"exit {c.Actor.GetType().FullName} {c.Message.GetType().FullName}");
+                }));
+            });
             services.AddTransient<IActorManager, ActorManager>();
         }
 
