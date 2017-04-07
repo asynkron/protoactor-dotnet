@@ -61,6 +61,15 @@ namespace Proto.Persistence
 
         public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
         {
+            if (!_events.TryGetValue(actorName, out Dictionary<long, object> events))
+                return Task.FromResult<(object, long)>((null, 0));
+
+            var eventsToRemove = events.Where(s => s.Key <= inclusiveToIndex)
+                                             .Select(e => e.Key)
+                                             .ToList();
+
+            eventsToRemove.ForEach(key => events.Remove(key));
+
             return Task.FromResult(0);
         }
 
