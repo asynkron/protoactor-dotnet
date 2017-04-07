@@ -16,12 +16,15 @@ namespace Proto.Persistence
     {
         private readonly ConcurrentDictionary<string, Dictionary<long, object>> _events = new ConcurrentDictionary<string, Dictionary<long, object>>();
 
-        private readonly IDictionary<string, (object Data, long Index)> _snapshots = new Dictionary<string, (object Data, long Index)>();
+        private readonly ConcurrentDictionary<string, Dictionary<long, object>> _snapshots = new ConcurrentDictionary<string, Dictionary<long, object>>();
 
         public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
-            _snapshots.TryGetValue(actorName, out (object Snapshot, long Index) snapshot);
-            return Task.FromResult(snapshot);
+            if (!_snapshots.TryGetValue(actorName, out Dictionary<long, object> snapshots))
+                return Task.FromResult<(object, long)>((null, 0));
+
+            var snapshot = snapshots.OrderBy(ss => ss.Key).LastOrDefault();
+            return Task.FromResult((snapshot.Value, snapshot.Key));
         }
 
         public Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
@@ -51,7 +54,8 @@ namespace Proto.Persistence
 
         public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
         {
-            _snapshots[actorName] = (snapshot, index);
+            var snapshots = _snapshots.GetOrAdd(actorName, new Dictionary<long, object>());
+            snapshots.Add(index, snapshot);
             return Task.FromResult(0);
         }
 
@@ -62,7 +66,15 @@ namespace Proto.Persistence
 
         public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
         {
-            _snapshots.Remove(actorName);
+            if (!_snapshots.TryGetValue(actorName, out Dictionary<long, object> snapshots))
+                return Task.FromResult<(object, long)>((null, 0));
+
+            var snapshotsToRemove = snapshots.Where(s => s.Key <= inclusiveToIndex)
+                                             .Select(snapshot => snapshot.Key)
+                                             .ToList();
+
+            snapshotsToRemove.ForEach(key => snapshots.Remove(key));
+
             return Task.FromResult(0);
         }
     }
