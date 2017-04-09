@@ -33,6 +33,8 @@ namespace Proto
         private readonly ConcurrentDictionary<Guid, Action<T>> _subscriptions =
             new ConcurrentDictionary<Guid, Action<T>>();
 
+        private readonly ILogger _logger = Log.CreateLogger<EventStream<T>>();
+
         public Subscription<T> Subscribe(Action<T> action)
         {
             var sub = Guid.NewGuid();
@@ -58,7 +60,14 @@ namespace Proto
         {
             foreach (var sub in _subscriptions)
             {
-                sub.Value(msg);
+                try
+                {
+                    sub.Value(msg);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(0, ex, "Exception has occurred when publish msg.");
+                }
             }
         }
 
