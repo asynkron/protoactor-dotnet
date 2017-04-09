@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using Xunit;
 
@@ -18,6 +19,10 @@ namespace Proto.Remote.Tests
             var testsDirectory = System.IO.Directory.GetParent(System.IO.Directory.GetCurrentDirectory()).Parent.Parent.Parent;
             var nodeDllPath = $@"{testsDirectory.FullName}/{nodeAppPath}";
             Console.WriteLine($"NodeDLL path: {nodeDllPath}");
+            if (!File.Exists(nodeDllPath))
+            {
+                throw new FileNotFoundException(nodeDllPath);
+            }
             _process = new System.Diagnostics.Process
             {
                 StartInfo =
