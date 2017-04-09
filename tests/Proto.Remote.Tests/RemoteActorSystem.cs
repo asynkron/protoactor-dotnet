@@ -6,15 +6,17 @@ namespace Proto.Remote.Tests
 {
     public class RemoteActorSystem : IDisposable
     {
-        private static string NodeAppPath => @"Proto.Remote.Tests.Node/bin/Debug/netcoreapp1.1/Proto.Remote.Tests.Node.dll";
-
         private readonly System.Diagnostics.Process _process;
 
         public RemoteActorSystem()
         {
+            string buildConfig = "Debug";
+#if RELEASE
+            buildConfig = "Release";
+#endif
+            var nodeAppPath = $@"Proto.Remote.Tests.Node/bin/{buildConfig}/netcoreapp1.1/Proto.Remote.Tests.Node.dll";
             var testsDirectory = System.IO.Directory.GetParent(System.IO.Directory.GetCurrentDirectory()).Parent.Parent.Parent;
-           
-            var nodeDllPath = $@"{testsDirectory.FullName}/{NodeAppPath}";
+            var nodeDllPath = $@"{testsDirectory.FullName}/{nodeAppPath}";
             Console.WriteLine($"NodeDLL path: {nodeDllPath}");
             _process = new System.Diagnostics.Process
             {
@@ -26,7 +28,9 @@ namespace Proto.Remote.Tests
                     FileName = "dotnet"
                 }
             };
+         
             _process.Start();
+           
             Remote.Start("127.0.0.1", 12001);
 
             Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
