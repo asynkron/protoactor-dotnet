@@ -12,9 +12,14 @@ namespace Proto.Router.Routers
 {
     internal class RandomRouterState : RouterState
     {
-        private readonly Random _random = new Random();
+        private readonly Random _random;
         private HashSet<PID> _routees;
         private PID[] _values;
+
+        public RandomRouterState(int? seed)
+        {
+            _random = seed.HasValue ? new Random(seed.Value) : new Random();
+        }
 
         public override HashSet<PID> GetRoutees()
         {
