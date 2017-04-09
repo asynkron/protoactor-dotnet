@@ -53,21 +53,19 @@ namespace Proto
 
         public override void SendUserMessage(PID pid, object message)
         {
-            if (message is MessageEnvelope messageEnvelope)
-            {
-                message = messageEnvelope.Message;
-            }
+            var env = MessageEnvelope.Unwrap(message);
+            
 
-            if (message is T || message == null)
+            if (env.message is T || message == null)
             {
                 if (_cts != null && _cts.IsCancellationRequested) return;
 
-                _tcs.TrySetResult((T)message);
+                _tcs.TrySetResult((T)env.message);
                 pid.Stop();
             }            
             else
             {
-                throw new InvalidOperationException($"Unexpected message.  Was type {message.GetType()} but expected {typeof(T)}");
+                throw new InvalidOperationException($"Unexpected message.  Was type {env.message.GetType()} but expected {typeof(T)}");
             }
 
         }

@@ -48,19 +48,7 @@ namespace Proto.Remote
 
         public static void SendRemoteMessage(PID pid, object msg)
         {
-            object message;
-            PID sender;
-
-            if (msg is Proto.MessageEnvelope messageEnvelope)
-            {
-                message = messageEnvelope.Message;
-                sender = messageEnvelope.Sender;
-            }
-            else
-            {
-                message = msg;
-                sender = null;
-            }
+            var (message, sender, _) = Proto.MessageEnvelope.Unwrap(msg);
 
             if (message is IMessage protoMessage)
             {
