@@ -14,7 +14,7 @@ namespace Proto.Remote.Tests
         {
             var props = Actor.FromProducer(() => new LocalActor());
             var pid = Actor.Spawn(props);
-
+            
             var remoteActor = new PID("127.0.0.1:12000", "remote");
             await remoteActor.RequestAsync<Start>(new StartRemote { Sender = pid }, TimeSpan.FromMilliseconds(2500));
 
@@ -38,9 +38,25 @@ namespace Proto.Remote.Tests
             });
         }
 
+        [Fact]
+        public async void CanSpawnRemoteActor()
+        {
+            var props = Actor.FromProducer(() => new LocalActor());
+            var pid = Actor.Spawn(props);
+            var remoteActorName = Guid.NewGuid().ToString();
+            var remoteActor = await Remote.SpawnNamedAsync("127.0.0.1:12000", remoteActorName, "remote", TimeSpan.FromSeconds(5));
+            await remoteActor.RequestAsync<Start>(new StartRemote { Sender = pid }, TimeSpan.FromMilliseconds(2500));
+            remoteActor.Tell(new Ping());
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            var responseReceived = await pid.RequestAsync<bool>("?", TimeSpan.FromMilliseconds(2500));
+            Assert.True(responseReceived);
+        }
+
         public class LocalActor : IActor
         {
-            private bool _pongReceived = false;
+            private bool _pongReceived;
+
             public Task ReceiveAsync(IContext context)
             {
                 switch (context.Message)
@@ -50,9 +66,6 @@ namespace Proto.Remote.Tests
                         break;
                     case string msg when msg == "?":
                         context.Sender.Tell(_pongReceived);
-                        break;
-                    case Watch w:
-                        context.Watch(w.Watcher);
                         break;
                 }
                 return Actor.Done;

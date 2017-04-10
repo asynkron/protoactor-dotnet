@@ -10,7 +10,9 @@ namespace Proto.Remote.Tests.Node
         {
             Serialization.RegisterFileDescriptor(Tests.Messages.ProtosReflection.Descriptor);
             Remote.Start("127.0.0.1", 12000);
-            Actor.SpawnNamed(Actor.FromProducer(() => new EchoActor()), "remote");
+            var props = Actor.FromProducer(() => new EchoActor());
+            Remote.RegisterKnownKind("remote", props);
+            Actor.SpawnNamed(props, "remote");
             Console.ReadLine();
         }
     }
