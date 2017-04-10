@@ -24,15 +24,16 @@ namespace Proto.Remote.Tests.Messages {
           string.Concat(
             "CgxQcm90b3MucHJvdG8SFHJlbW90ZV90ZXN0X21lc3NhZ2VzGhhQcm90by5B",
             "Y3Rvci9Qcm90b3MucHJvdG8iBwoFU3RhcnQiKQoLU3RhcnRSZW1vdGUSGgoG",
-            "U2VuZGVyGAEgASgLMgouYWN0b3IuUElEIgYKBFBpbmciBgoEUG9uZ0IeqgIb",
-            "UHJvdG8uUmVtb3RlLlRlc3RzLk1lc3NhZ2VzYgZwcm90bzM="));
+            "U2VuZGVyGAEgASgLMgouYWN0b3IuUElEIhcKBFBpbmcSDwoHbWVzc2FnZRgB",
+            "IAEoCSIXCgRQb25nEg8KB21lc3NhZ2UYASABKAlCHqoCG1Byb3RvLlJlbW90",
+            "ZS5UZXN0cy5NZXNzYWdlc2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.Tests.Messages.Start), global::Proto.Remote.Tests.Messages.Start.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.Tests.Messages.StartRemote), global::Proto.Remote.Tests.Messages.StartRemote.Parser, new[]{ "Sender" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.Tests.Messages.Ping), global::Proto.Remote.Tests.Messages.Ping.Parser, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.Tests.Messages.Pong), global::Proto.Remote.Tests.Messages.Pong.Parser, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.Tests.Messages.Ping), global::Proto.Remote.Tests.Messages.Ping.Parser, new[]{ "Message" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.Tests.Messages.Pong), global::Proto.Remote.Tests.Messages.Pong.Parser, new[]{ "Message" }, null, null, null)
           }));
     }
     #endregion
@@ -275,11 +276,23 @@ namespace Proto.Remote.Tests.Messages {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Ping(Ping other) : this() {
+      message_ = other.message_;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Ping Clone() {
       return new Ping(this);
+    }
+
+    /// <summary>Field number for the "message" field.</summary>
+    public const int MessageFieldNumber = 1;
+    private string message_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string Message {
+      get { return message_; }
+      set {
+        message_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -295,12 +308,14 @@ namespace Proto.Remote.Tests.Messages {
       if (ReferenceEquals(other, this)) {
         return true;
       }
+      if (Message != other.Message) return false;
       return true;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
+      if (Message.Length != 0) hash ^= Message.GetHashCode();
       return hash;
     }
 
@@ -311,11 +326,18 @@ namespace Proto.Remote.Tests.Messages {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
+      if (Message.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Message);
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
+      if (Message.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Message);
+      }
       return size;
     }
 
@@ -323,6 +345,9 @@ namespace Proto.Remote.Tests.Messages {
     public void MergeFrom(Ping other) {
       if (other == null) {
         return;
+      }
+      if (other.Message.Length != 0) {
+        Message = other.Message;
       }
     }
 
@@ -334,6 +359,10 @@ namespace Proto.Remote.Tests.Messages {
           default:
             input.SkipLastField();
             break;
+          case 10: {
+            Message = input.ReadString();
+            break;
+          }
         }
       }
     }
@@ -364,11 +393,23 @@ namespace Proto.Remote.Tests.Messages {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Pong(Pong other) : this() {
+      message_ = other.message_;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Pong Clone() {
       return new Pong(this);
+    }
+
+    /// <summary>Field number for the "message" field.</summary>
+    public const int MessageFieldNumber = 1;
+    private string message_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string Message {
+      get { return message_; }
+      set {
+        message_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -384,12 +425,14 @@ namespace Proto.Remote.Tests.Messages {
       if (ReferenceEquals(other, this)) {
         return true;
       }
+      if (Message != other.Message) return false;
       return true;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
+      if (Message.Length != 0) hash ^= Message.GetHashCode();
       return hash;
     }
 
@@ -400,11 +443,18 @@ namespace Proto.Remote.Tests.Messages {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
+      if (Message.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Message);
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
+      if (Message.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Message);
+      }
       return size;
     }
 
@@ -412,6 +462,9 @@ namespace Proto.Remote.Tests.Messages {
     public void MergeFrom(Pong other) {
       if (other == null) {
         return;
+      }
+      if (other.Message.Length != 0) {
+        Message = other.Message;
       }
     }
 
@@ -423,6 +476,10 @@ namespace Proto.Remote.Tests.Messages {
           default:
             input.SkipLastField();
             break;
+          case 10: {
+            Message = input.ReadString();
+            break;
+          }
         }
       }
     }
