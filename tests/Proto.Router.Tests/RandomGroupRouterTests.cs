@@ -11,7 +11,7 @@ namespace Proto.Router.Tests
     public class RandomGroupRouterTests
     {
         private static readonly Props MyActorProps = Actor.FromProducer(() => new MyTestActor());
-        private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(250);
+        private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
         [Fact]
         public async void RandomGroupRouter_RouteesReceiveMessagesInRandomOrder()
