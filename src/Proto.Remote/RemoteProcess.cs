@@ -53,7 +53,6 @@ namespace Proto.Remote
             if (message is IMessage protoMessage)
             {
                 var env = new RemoteDeliver(protoMessage, pid, sender);
-
                 Remote.EndpointManagerPid.Tell(env);
             }
             else
