@@ -14,7 +14,7 @@ namespace Proto.Router.Tests
     {
         private static readonly Props MyActorProps = Actor.FromProducer(() => new MyTestActor())
             .WithMailbox(() => new TestMailbox());
-        private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(250);
+        private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
         [Fact]
         public async void ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee()
