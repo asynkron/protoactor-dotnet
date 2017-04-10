@@ -14,7 +14,7 @@ namespace Proto
             this.actorPropsRegistry = actorPropsRegistry;
         }
 
-        public PID RegisterActor<T>(T actor, string id, string address = null, IContext parent = null)
+        public PID RegisterActor<T>(T actor, string id = null, string address = null, IContext parent = null)
             where T : IActor
         {
             id = id ?? typeof(T).FullName;
