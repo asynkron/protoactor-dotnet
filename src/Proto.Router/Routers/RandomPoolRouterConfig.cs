@@ -8,14 +8,17 @@ namespace Proto.Router.Routers
 {
     internal class RandomPoolRouterConfig : PoolRouterConfig
     {
-        public RandomPoolRouterConfig(int poolSize)
+        private readonly int? _seed;
+
+        public RandomPoolRouterConfig(int poolSize, int? seed)
             : base(poolSize)
         {
+            _seed = seed;
         }
 
         public override RouterState CreateRouterState()
         {
-            return new RandomRouterState();
+            return new RandomRouterState(_seed);
         }
     }
 }
