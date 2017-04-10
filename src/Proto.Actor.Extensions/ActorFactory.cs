@@ -14,26 +14,28 @@ namespace Proto
             this.actorPropsRegistry = actorPropsRegistry;
         }
 
-        public PID GetActor<T>(T actor, string id, string address = null, IContext parent = null)
+        public PID RegisterActor<T>(T actor, string id, string address = null, IContext parent = null)
             where T : IActor
         {
             id = id ?? typeof(T).FullName;
-            address = address ?? ProcessRegistry.NoHost;
-
-            var pid = new PID(address, id);
-            var reff = ProcessRegistry.Instance.Get(pid);
-            if (reff is DeadLetterProcess)
-            {
-                pid = CreateActor<T>(id, parent, () => new Props().WithProducer(() => actor));
-            }
-            return pid;
+            return GetActor(id, address, parent, () => CreateActor<T>(id, parent, () => new Props().WithProducer(() => actor)));
         }
-        
+
+        public PID GetActor(string id, string address = null, IContext parent = null)
+        {
+            return GetActor(id, address, parent, () => throw new InvalidOperationException($"Actor not created {id}"));
+        }
+
         public PID GetActor<T>(string id = null, string address = null, IContext parent = null)
             where T : IActor
         {
             id = id ?? typeof(T).FullName;
-            address = address ?? ProcessRegistry.NoHost;
+            return GetActor(id, address, parent, () => CreateActor<T>(id, parent, () => new Props().WithProducer(() => ActivatorUtilities.CreateInstance<T>(serviceProvider))));
+        }
+
+        public PID GetActor(string id, string address, IContext parent, Func<PID> create)
+        {
+            address = address ?? "nonhost";
 
             var pidId = id;
             if (parent != null)
@@ -45,7 +47,7 @@ namespace Proto
             var reff = ProcessRegistry.Instance.Get(pid);
             if (reff is DeadLetterProcess)
             {
-                pid = CreateActor<T>(id, parent, () => new Props().WithProducer(() => ActivatorUtilities.CreateInstance<T>(serviceProvider)));
+                pid = create();
             }
             return pid;
         }
