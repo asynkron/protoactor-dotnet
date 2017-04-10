@@ -339,7 +339,7 @@ namespace Proto
 
         internal static Task DefaultSender(IContext context, PID target, MessageEnvelope envelope)
         {
-            target.Ref.SendUserMessage(target, envelope.Message, envelope.Sender);
+            target.Ref.SendUserMessage(target, envelope);
             return Task.FromResult(0);
         }
 
@@ -355,12 +355,13 @@ namespace Proto
 
         public void Tell(PID target, object message)
         {
-            SendUserMessage(target, message, null);
+            SendUserMessage(target, message);
         }
 
         public void Request(PID target, object message)
         {
-            SendUserMessage(target, message, Self);
+            var messageEnvelope = new MessageEnvelope(message,Self,null);
+            SendUserMessage(target, messageEnvelope);
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
@@ -374,20 +375,30 @@ namespace Proto
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
         {
-            SendUserMessage(target, message, future.Pid);
+            var messageEnvelope = new MessageEnvelope(message,future.Pid,null);
+            SendUserMessage(target, messageEnvelope);
             return future.Task;
         }
 
-        private void SendUserMessage(PID target, object message, PID sender)
+        private void SendUserMessage(PID target, object message)
         {
             if (_senderMiddleware != null)
             {
-                var messageEnvelope = message as MessageEnvelope ?? new MessageEnvelope(message,sender, new MessageHeader());
-                _senderMiddleware(this, target, messageEnvelope);
+                if (message is MessageEnvelope messageEnvelope)
+                {
+                    //Request based middleware
+                    _senderMiddleware(this, target, messageEnvelope);
+                }
+                else
+                {
+                    //tell based middleware
+                    _senderMiddleware(this, target, new MessageEnvelope(message,null,null));
+                }
             }
             else
             {
-                target.Ref.SendUserMessage(target, message, sender);
+                //Default path
+                target.Ref.SendUserMessage(target, message);
             }
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Dynamic;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Proto.TestFixtures;
 using Xunit;
@@ -32,6 +33,18 @@ namespace Proto.Persistence.Tests
             var (snapshot, _) = await providerState.GetSnapshotAsync(actorName);
             var snapshotState = snapshot as State;
             Assert.Equal(10, snapshotState.Value);
+        }
+
+        [Fact]
+        public async void EventsCanBeDeleted()
+        {
+            var (pid, _, actorName, providerState) = CreateTestActor();
+            pid.Tell(new Multiply { Amount = 10 });
+            await providerState.DeleteEventsAsync(actorName, 1);
+            var events = new List<object>();
+            await providerState.GetEventsAsync(actorName, 0, v => events.Add(v));
+
+            Assert.Equal(0, events.Count);
         }
 
         [Fact]

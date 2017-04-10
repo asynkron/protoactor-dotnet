@@ -11,7 +11,7 @@ namespace Proto
 {
     public abstract class Process
     {
-        public abstract void SendUserMessage(PID pid, object message, PID sender);
+        public abstract void SendUserMessage(PID pid, object message);
 
         public virtual void Stop(PID pid)
         {
@@ -38,14 +38,8 @@ namespace Proto
         }
 
 
-        public override void SendUserMessage(PID pid, object message, PID sender)
+        public override void SendUserMessage(PID pid, object message)
         {
-            if (sender != null)
-            {
-                Mailbox.PostUserMessage(new MessageEnvelope(message, sender, null));
-                return;
-            }
-
             Mailbox.PostUserMessage(message);
         }
 

@@ -18,17 +18,17 @@ namespace Proto.Remote
             _pid = pid;
         }
 
-        public override void SendUserMessage(PID pid, object message, PID sender)
+        public override void SendUserMessage(PID pid, object message)
         {
-            Send(pid, message, sender);
+            Send(pid, message);
         }
 
         public override void SendSystemMessage(PID pid, object message)
         {
-            Send(pid, message, null);
+            Send(pid, message);
         }
 
-        private void Send(PID pid, object msg, PID sender)
+        private void Send(PID _, object msg)
         {
             if (msg is Watch w)
             {
@@ -42,26 +42,18 @@ namespace Proto.Remote
             }
             else
             {
-                SendRemoteMessage(_pid, msg, sender);
+                SendRemoteMessage(_pid, msg);
             }
         }
 
-        public static void SendRemoteMessage(PID pid, object msg, PID sender)
+        public static void SendRemoteMessage(PID pid, object msg)
         {
-            if (msg is IMessage)
-            {
-                var imsg = (IMessage) msg;
-                var env = new RemoteDeliver(imsg, pid, sender);
+            var (message, sender, _) = Proto.MessageEnvelope.Unwrap(msg);
 
-                /*
-                 *
-                {
-                    Target = pid,
-                    Sender = sender,
-                    MessageData = Serialization.Serialize(imsg),
-                    TypeName = imsg.Descriptor.File.Package + "." + imsg.Descriptor.Name
-                }; 
-                 */
+            if (message is IMessage protoMessage)
+            {
+                var env = new RemoteDeliver(protoMessage, pid, sender);
+
                 Remote.EndpointManagerPid.Tell(env);
             }
             else

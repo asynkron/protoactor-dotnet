@@ -14,6 +14,17 @@ namespace Proto
         public PID Sender { get; }
         public object Message { get; }
         public MessageHeader Header { get; }
+
+
+        public static (object message, PID sender, MessageHeader headers) Unwrap(object message)
+        {
+            if (message is MessageEnvelope envelope)
+            {
+                return (envelope.Message, envelope.Sender, envelope.Header);
+            }
+
+            return (message, null, null);
+        }
     }
 
     public class MessageHeader : Dictionary<string, string>

@@ -9,7 +9,7 @@ namespace Proto.Router.Tests
     public class BroadcastGroupTests
     {
         private static readonly Props MyActorProps = Actor.FromProducer(() => new MyTestActor());
-        private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(250);
+        private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
         [Fact]
         public async void BroadcastGroupRouter_AllRouteesReceiveMessages()

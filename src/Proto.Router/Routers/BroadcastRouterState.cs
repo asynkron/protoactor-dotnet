@@ -22,11 +22,11 @@ namespace Proto.Router.Routers
             _routees = routees;
         }
 
-        public override void RouteMessage(object message, PID sender)
+        public override void RouteMessage(object message)
         {
             foreach (var pid in _routees)
             {
-                pid.Request(message, sender);
+                pid.Tell(message);
             }
         }
     }
