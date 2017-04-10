@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Proto.Mailbox;
 using Xunit;
 
 namespace Proto.Tests
@@ -47,6 +48,19 @@ namespace Proto.Tests
             eventStream.Subscribe<int>(@event => eventsReceived.Add(@event));
             eventStream.Publish("not an int");
             Assert.Equal(0, eventsReceived.Count);
+        }
+
+        [Fact]
+        public void EventStream_CanSubscribeToSpecificEventTypes_Async()
+        {
+            var received = "";
+            var eventStream = new EventStream();
+            eventStream.Subscribe<string>(theString =>
+            {
+                received = theString;
+                Assert.Equal("hello", received);
+            }, Dispatchers.DefaultDispatcher);
+            eventStream.Publish("hello");
         }
     }
 }
