@@ -67,7 +67,7 @@ namespace Proto
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(0, ex, "Exception has occurred when publish msg.");
+                    _logger.LogError(0, ex, "Exception has occurred when publish msg.");
                 }
             }
         }
