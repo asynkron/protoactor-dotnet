@@ -40,15 +40,21 @@ namespace Proto.Router.Routers
             _hashRing = new HashRing(nodes, _hash, _replicaCount);
         }
 
-        public override void RouteMessage(object message, PID sender)
+        public override void RouteMessage(object message)
         {
-            if (message is IHashable hashable)
+            var env = MessageEnvelope.Unwrap(message);
+            if (env.message is IHashable hashable)
             {
                 var key = hashable.HashBy();
                 var node = _hashRing.GetNode(key);
                 var routee = _routeeMap[node];
-                routee.Request(message, sender);
+                routee.Tell(message);
             }
+            else
+            {
+                throw new NotSupportedException($"Message of type '{message.GetType().Name}' does not implement IHashable");
+            }
+
         }
     }
 }

@@ -32,11 +32,11 @@ namespace Proto.Router.Routers
             _values = routees.ToArray();
         }
 
-        public override void RouteMessage(object message, PID sender)
+        public override void RouteMessage(object message)
         {
             var i = _random.Next(_values.Length);
             var pid = _values[i];
-            pid.Request(message, sender);
+            pid.Tell(message);
         }
     }
 }
