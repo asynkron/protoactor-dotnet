@@ -463,8 +463,8 @@ namespace Proto
 
         private async Task HandleTerminatedAsync(Terminated msg)
         {
-            _children.Remove(msg.Who);
-            _watching.Remove(msg.Who);
+            _children?.Remove(msg.Who);
+            _watching?.Remove(msg.Who);
             await InvokeUserMessageAsync(msg);
             await TryRestartOrTerminateAsync();
         }
