@@ -37,7 +37,7 @@ namespace Proto
 
         public Subscription<T> Subscribe(Action<T> action, IDispatcher dispatcher = null)
         {
-            var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.NullDispatcher, x =>
+            var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, x =>
             {
                 action(x);
                 return Actor.Done;
@@ -48,14 +48,14 @@ namespace Proto
 
         public Subscription<T> Subscribe(Func<T, Task> action, IDispatcher dispatcher = null)
         {
-            var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.NullDispatcher, action);
+            var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, action);
             _subscriptions.TryAdd(sub.Id, sub);
             return sub;
         }
 
         public Subscription<T> Subscribe<TMsg>(Action<TMsg> action, IDispatcher dispatcher = null) where TMsg : T
         {
-            var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.NullDispatcher, msg =>
+            var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, msg =>
             {
                 if (msg is TMsg typed)
                 {

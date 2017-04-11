@@ -27,10 +27,10 @@ namespace Proto.Mailbox
     public static class Dispatchers
     {
         public static ThreadPoolDispatcher DefaultDispatcher { get; } = new ThreadPoolDispatcher();
-        public static NullDispatcher NullDispatcher { get; } = new NullDispatcher();
+        public static SynchronousDispatcher SynchronousDispatcher { get; } = new SynchronousDispatcher();
     }
 
-    public sealed class NullDispatcher : IDispatcher
+    public sealed class SynchronousDispatcher : IDispatcher
     {
         public int Throughput => 300;
 
