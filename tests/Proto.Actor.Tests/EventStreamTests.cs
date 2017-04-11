@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Proto.Tests
@@ -47,6 +48,17 @@ namespace Proto.Tests
             eventStream.Subscribe<int>(@event => eventsReceived.Add(@event));
             eventStream.Publish("not an int");
             Assert.Equal(0, eventsReceived.Count);
+        }
+
+        [Fact]
+        public void EventStream_ErrorsAreIsolatedBetweenSubscribers()
+        {
+            var eventsReceived = new List<object>();
+            var eventStream = new EventStream();
+            eventStream.Subscribe<int>(@event => throw new Exception());
+            eventStream.Subscribe<int>(@event => eventsReceived.Add(@event));
+            eventStream.Publish(1);
+            Assert.Equal(1, eventsReceived.Count);
         }
     }
 }
