@@ -7,5 +7,9 @@ message Start {}
 message StartRemote {
 	actor.PID Sender = 1;
 }
-message Ping {}
-message Pong {}
+message Ping {
+	string message=1;
+	}
+message Pong {
+	string message=1;
+	}
