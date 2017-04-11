@@ -57,8 +57,7 @@ namespace Proto.Remote
                     _watched[msg.Watcher.Id] = null;
 
                     var w = new Unwatch(msg.Watcher);
-                    msg.Watchee.SendSystemMessage(w);
-
+                    RemoteProcess.SendRemoteMessage(msg.Watchee, w);
                     break;
                 }
                 case RemoteWatch msg:
@@ -66,8 +65,7 @@ namespace Proto.Remote
                     _watched[msg.Watcher.Id] = msg.Watchee;
 
                     var w = new Watch(msg.Watcher);
-                    msg.Watchee.SendSystemMessage(w);
-
+                    RemoteProcess.SendRemoteMessage(msg.Watchee, w);
                     break;
                 }
 
