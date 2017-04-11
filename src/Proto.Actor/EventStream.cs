@@ -35,6 +35,8 @@ namespace Proto
         private readonly ConcurrentDictionary<Guid, Subscription<T>> _subscriptions =
             new ConcurrentDictionary<Guid, Subscription<T>>();
 
+        private readonly ILogger _logger = Log.CreateLogger<EventStream<T>>();
+
         public Subscription<T> Subscribe(Action<T> action, IDispatcher dispatcher = null)
         {
             var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, x =>
@@ -75,7 +77,14 @@ namespace Proto
             {
                 sub.Value.Dispatcher.Schedule(() =>
                 {
-                    sub.Value.Action(msg);
+                    try
+                    {
+                        sub.Value.Action(msg);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(0, ex, "Exception has occurred when publishing a message.");
+                    }
                     return Actor.Done;
                 });
             }
