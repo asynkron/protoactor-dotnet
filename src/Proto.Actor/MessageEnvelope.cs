@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Proto
+﻿namespace Proto
 {
     public class MessageEnvelope
     {
@@ -25,9 +23,5 @@ namespace Proto
 
             return (message, null, null);
         }
-    }
-
-    public class MessageHeader : Dictionary<string, string>
-    {
     }
 }

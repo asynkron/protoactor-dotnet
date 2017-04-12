@@ -11,7 +11,7 @@ namespace Proto
 {
     public delegate Task Receive(IContext context);
 
-    public delegate Task Sender(IContext ctx, PID target, MessageEnvelope envelope);
+    public delegate Task Sender(IOutboundContext ctx, PID target, MessageEnvelope envelope);
 
     public class EmptyActor : IActor
     {
