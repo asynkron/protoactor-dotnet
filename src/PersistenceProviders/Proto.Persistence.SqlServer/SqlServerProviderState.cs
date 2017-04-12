@@ -52,8 +52,6 @@ namespace Proto.Persistence.SqlServer
 
                         tx.Commit();
                     }
-
-                    connection.Close();
                 }
             }
             catch (Exception ex)
@@ -181,8 +179,6 @@ namespace Proto.Persistence.SqlServer
                     {
                         callback(JsonConvert.DeserializeObject<object>(eventReader["EventData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
                     }
-
-                    connection.Close();
                 }
             }
             catch (Exception ex)
@@ -219,8 +215,6 @@ namespace Proto.Persistence.SqlServer
                         snapshotIndex = Convert.ToInt64(snapshotReader["SnapshotIndex"]);
                         snapshotData = JsonConvert.DeserializeObject<object>(snapshotReader["SnapshotData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
                     }
-
-                    connection.Close();
                 }
             }
             catch (Exception ex)
