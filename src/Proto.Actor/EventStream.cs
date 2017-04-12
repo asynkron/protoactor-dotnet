@@ -6,7 +6,9 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Mailbox;
 
 namespace Proto
 {
@@ -28,32 +30,44 @@ namespace Proto
             });
         }
     }
-
     public class EventStream<T>
     {
-        private readonly ConcurrentDictionary<Guid, Action<T>> _subscriptions =
-            new ConcurrentDictionary<Guid, Action<T>>();
+        private readonly ConcurrentDictionary<Guid, Subscription<T>> _subscriptions =
+            new ConcurrentDictionary<Guid, Subscription<T>>();
 
         private readonly ILogger _logger = Log.CreateLogger<EventStream<T>>();
 
-        public Subscription<T> Subscribe(Action<T> action)
+        public Subscription<T> Subscribe(Action<T> action, IDispatcher dispatcher = null)
         {
-            var sub = Guid.NewGuid();
-            _subscriptions.TryAdd(sub, action);
-            return new Subscription<T>(sub, this);
+            var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, x =>
+            {
+                action(x);
+                return Actor.Done;
+            });
+            _subscriptions.TryAdd(sub.Id, sub);
+            return sub;
         }
 
-        public Subscription<T> Subscribe<TMsg>(Action<TMsg> action) where TMsg : T
+        public Subscription<T> Subscribe(Func<T, Task> action, IDispatcher dispatcher = null)
         {
-            var sub = Guid.NewGuid();
-            _subscriptions.TryAdd(sub, msg =>
+            var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, action);
+            _subscriptions.TryAdd(sub.Id, sub);
+            return sub;
+        }
+
+        public Subscription<T> Subscribe<TMsg>(Action<TMsg> action, IDispatcher dispatcher = null) where TMsg : T
+        {
+            var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, msg =>
             {
                 if (msg is TMsg typed)
                 {
                     action(typed);
                 }
+                return Actor.Done;
             });
-            return new Subscription<T>(sub, this);
+
+            _subscriptions.TryAdd(sub.Id, sub);
+            return sub;
         }
 
 
@@ -61,14 +75,18 @@ namespace Proto
         {
             foreach (var sub in _subscriptions)
             {
-                try
+                sub.Value.Dispatcher.Schedule(() =>
                 {
-                    sub.Value(msg);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(0, ex, "Exception has occurred when publish msg.");
-                }
+                    try
+                    {
+                        sub.Value.Action(msg);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(0, ex, "Exception has occurred when publishing a message.");
+                    }
+                    return Actor.Done;
+                });
             }
         }
 
@@ -80,18 +98,23 @@ namespace Proto
 
     public class Subscription<T>
     {
-        private readonly Guid _id;
         private readonly EventStream<T> _eventStream;
 
-        public Subscription(Guid sub, EventStream<T> eventStream)
+        public Subscription(EventStream<T> eventStream, IDispatcher dispatcher, Func<T, Task> action)
         {
-            _id = sub;
+            Id = Guid.NewGuid();
             _eventStream = eventStream;
+            Dispatcher = dispatcher;
+            Action = action;
         }
+
+        public Guid Id { get; }
+        public IDispatcher Dispatcher { get; }
+        public Func<T, Task> Action { get; }
 
         public void Unsubscribe()
         {
-            _eventStream.Unsubscribe(_id);
+            _eventStream.Unsubscribe(Id);
         }
     }
 }
