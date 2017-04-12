@@ -9,18 +9,25 @@ namespace Proto.Remote.Tests
     [Trait("Category", "Remote")]
     public class RemoteTests
     {
+        private readonly RemoteManager _remoteManager;
+
+        public RemoteTests(RemoteManager remoteManager)
+        {
+            _remoteManager = remoteManager;
+        }
+
         [Fact]
         public async void CanSendAndReceiveRemote()
         {
-            var remoteActor = new PID("127.0.0.1:12000", "remote");
+            var remoteActor = new PID(_remoteManager.DefaultNode.Address, "EchoActorInstance");
             var pong = await remoteActor.RequestAsync<Pong>(new Ping { Message = "Hello" }, TimeSpan.FromMilliseconds(5000));
-            Assert.Equal("127.0.0.1:12000 Hello", pong.Message);
+            Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
         }
 
         [Fact]
         public async void WhenRemoteActorNotFound_RequestAsyncTimesout()
         {
-            var unknownRemoteActor = new PID("127.0.0.1:12000", "doesn't exist");
+            var unknownRemoteActor = new PID(_remoteManager.DefaultNode.Address, "doesn't exist");
             await Assert.ThrowsAsync<TimeoutException>(async () =>
             {
                 await unknownRemoteActor.RequestAsync<Pong>(new Ping { Message = "Hello" }, TimeSpan.FromMilliseconds(2000));
@@ -31,21 +38,37 @@ namespace Proto.Remote.Tests
         public async void CanSpawnRemoteActor()
         {
             var remoteActorName = Guid.NewGuid().ToString();
-            var remoteActor = await Remote.SpawnNamedAsync("127.0.0.1:12000", remoteActorName, "remote", TimeSpan.FromSeconds(5));
+            var remoteActor = await Remote.SpawnNamedAsync(_remoteManager.DefaultNode.Address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
             var pong = await remoteActor.RequestAsync<Pong>(new Ping{Message="Hello"}, TimeSpan.FromMilliseconds(5000));
-            Assert.Equal("127.0.0.1:12000 Hello", pong.Message);
+            Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
         }
 
         [Fact]
         public async void CanWatchRemoteActor()
         {
             var remoteActorName = Guid.NewGuid().ToString();
-            var remoteActor = await Remote.SpawnNamedAsync("127.0.0.1:12000", remoteActorName, "remote", TimeSpan.FromSeconds(5));
+            var remoteActor = await Remote.SpawnNamedAsync(_remoteManager.DefaultNode.Address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
 
             var props = Actor.FromProducer(() => new LocalActor(remoteActor));
-            var localActor = Actor.SpawnNamed(props, "local watcher");
+            var localActor = Actor.Spawn(props);
             remoteActor.Stop();
             await Task.Delay(TimeSpan.FromSeconds(3)); // wait for stop to propagate...
+            var terminatedMessageReceived = await localActor.RequestAsync<bool>("?", TimeSpan.FromSeconds(5));
+            Assert.True(terminatedMessageReceived);
+        }
+
+        [Fact]
+        public async void WhenRemoteTerminated_LocalWatcherReceivesNotification()
+        {
+            var (address, process) = _remoteManager.StartRemote("127.0.0.1", 12002);
+            await Task.Delay(TimeSpan.FromSeconds(3));
+            var remoteActorName = Guid.NewGuid().ToString();
+            var remoteActor = await Remote.SpawnNamedAsync(address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
+
+            var props = Actor.FromProducer(() => new LocalActor(remoteActor));
+            var localActor = Actor.Spawn(props);
+            process.Kill();
+            await Task.Delay(TimeSpan.FromSeconds(3)); // wait for kill to propagate...
             var terminatedMessageReceived = await localActor.RequestAsync<bool>("?", TimeSpan.FromSeconds(5));
             Assert.True(terminatedMessageReceived);
         }
@@ -65,13 +88,13 @@ namespace Proto.Remote.Tests
         {
             switch (context.Message)
             {
-                case Started msg:
+                case Started _:
                     context.Watch(_remoteActor);
                     break;
                 case string msg when msg == "?":
                     context.Sender.Tell(_terminateReceived);
                     break;
-                case Terminated msg:
+                case Terminated _:
                     _terminateReceived = true;
                     break;
             }
