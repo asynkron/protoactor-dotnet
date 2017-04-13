@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.CommandLineUtils;
 using Proto.Remote.Tests.Messages;
 
 namespace Proto.Remote.Tests.Node
@@ -8,14 +9,31 @@ namespace Proto.Remote.Tests.Node
     {
         static void Main(string[] args)
         {
-            var host = "127.0.0.1";
-            var port = 12000;
-            Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
-            Remote.Start(host, port);
-            var props = Actor.FromProducer(() => new EchoActor(host, port));
-            Remote.RegisterKnownKind("remote", props);
-            Actor.SpawnNamed(props, "remote");
-            Console.ReadLine();
+            var app = new CommandLineApplication();
+            var hostOption = app.Option("-h|--host", "host", CommandOptionType.SingleValue);
+            var portArgument = app.Option("-p|--port", "port", CommandOptionType.SingleValue);
+
+            app.OnExecute(() => {
+                var host = hostOption.Value() ?? "127.0.0.1";
+                var portString = portArgument.Value() ?? "12000";
+                int port = 12000;
+               
+                if (!string.IsNullOrWhiteSpace(portString))
+                {
+                    int.TryParse(portString, out port);
+                }
+                Console.WriteLine(host);
+                Console.WriteLine(port);
+                Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
+                Remote.Start(host, port);
+                var props = Actor.FromProducer(() => new EchoActor(host, port));
+                Remote.RegisterKnownKind("EchoActor", props);
+                Actor.SpawnNamed(props, "EchoActorInstance");
+                Console.ReadLine();
+                return 0;
+            });
+
+            app.Execute(args);
         }
     }
 
