@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
@@ -27,6 +28,8 @@ namespace Proto.Remote
         private readonly RemoteConfig _config;
         private readonly Dictionary<string, Endpoint> _connections = new Dictionary<string, Endpoint>();
 
+        private readonly ILogger _logger = Log.CreateLogger<EndpointManager>();
+
         public EndpointManager(RemoteConfig config)
         {
             _config = config;
@@ -38,7 +41,7 @@ namespace Proto.Remote
             {
                 case Started _:
                 {
-                    Console.WriteLine("[REMOTING] Started EndpointManager");
+                    _logger.LogDebug("Started EndpointManager");
                     return Actor.Done;
                 }
                 case EndpointTerminatedEvent msg:

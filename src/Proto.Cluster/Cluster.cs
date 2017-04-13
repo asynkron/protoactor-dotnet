@@ -13,11 +13,11 @@ namespace Proto.Cluster
 {
     public static class Cluster
     {
-        internal static ILogger Logger { get; } = Log.CreateLogger("Cluster");
+        private static ILogger _logger = Log.CreateLogger(typeof(Cluster).FullName);
 
         public static void Start(string clusterName, IClusterProvider provider)
         {
-            Logger.LogInformation("Starting Proto.Actor cluster");
+            _logger.LogInformation("Starting Proto.Actor cluster");
             var (h, p) = ParseAddress(ProcessRegistry.Instance.Address);
             var kinds = Remote.Remote.GetKnownKinds();
             Partition.SpawnPartitionActors(kinds);
@@ -27,7 +27,7 @@ namespace Proto.Cluster
             MemberList.SubscribeToEventStream();
             provider.RegisterMemberAsync(clusterName, h, p, kinds).Wait();
             provider.MonitorMemberStatusChanges();
-            Console.WriteLine("Cluster started");
+            _logger.LogInformation("Cluster started");
         }
 
         private static (string host, int port) ParseAddress(string address)

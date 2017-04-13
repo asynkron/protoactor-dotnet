@@ -9,11 +9,14 @@ using System.Linq;
 using Grpc.Core;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
     public static class Remote
     {
+        private static ILogger _logger = Log.CreateLogger(typeof(Remote).FullName);
+
         private static Server _server;
         private static readonly Dictionary<string, Props> Kinds = new Dictionary<string, Props>();
         public static PID EndpointManagerPid { get; private set; }
@@ -59,7 +62,7 @@ namespace Proto.Remote
             SpawnEndpointManager(config);
             SpawnActivator();
 
-            Console.WriteLine($"[REMOTING] Starting Proto.Actor server on {addr}");
+            _logger.LogDebug($"Starting Proto.Actor server on {addr}");;
         }
 
         private static void SpawnActivator()

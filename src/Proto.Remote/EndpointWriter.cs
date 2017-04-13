@@ -9,11 +9,14 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
     public class EndpointWriter : IActor
     {
+        private readonly ILogger _logger = Log.CreateLogger<EndpointWriter>();
+
         private readonly string _address;
         private readonly IEnumerable<ChannelOption> _channelOptions;
         private Channel _channel;
@@ -98,7 +101,7 @@ namespace Proto.Remote
             catch (Exception x)
             {
                 context.Stash();
-                Console.WriteLine($"[REMOTING] gRPC Failed to send to address {_address}, reason {x.Message}");
+                _logger.LogError($"gRPC Failed to send to address {_address}, reason {x.Message}");
                 throw;
             }
         }
@@ -115,9 +118,7 @@ namespace Proto.Remote
 
         private Task StartedAsync()
         {
-            Console.WriteLine("[REMOTING] Started EndpointWriter for address {0}", _address);
-
-            Console.WriteLine("[REMOTING] EndpointWriter connecting to address {0}", _address);
+            _logger.LogDebug($"Connecting to address {_address}");
             _channel = new Channel(_address, _channelCredentials, _channelOptions);
             _client = new Remoting.RemotingClient(_channel);
             _stream = _client.Receive(_callOptions);
@@ -130,8 +131,7 @@ namespace Proto.Remote
                 }
                 catch (Exception x)
                 {
-                    Console.WriteLine(
-                        $"[REMOTING] EndpointWriter lost connection to address {_address}, reason {x.Message}");
+                    _logger.LogError($"Lost connection to address {_address}, reason {x.Message}");
                     var terminated = new EndpointTerminatedEvent
                     {
                         Address = _address
@@ -142,7 +142,7 @@ namespace Proto.Remote
 
             _streamWriter = _stream.RequestStream;
 
-            Console.WriteLine("[REMOTING] EndpointWriter connected to address {0}", _address);
+            _logger.LogDebug($"Connected to address {_address}");
             return Actor.Done;
         }
     }

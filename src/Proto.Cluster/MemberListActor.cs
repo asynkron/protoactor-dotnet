@@ -8,12 +8,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Proto.Remote;
 
 namespace Proto.Cluster
 {
     public class MemberListActor : IActor
     {
+        private readonly ILogger _logger = Log.CreateLogger<MemberListActor>();
         private readonly Dictionary<string, MemberStatus> _members = new Dictionary<string, MemberStatus>();
 
         public Task ReceiveAsync(IContext context)
@@ -21,7 +23,7 @@ namespace Proto.Cluster
             switch (context.Message)
             {
                 case Started _:
-                    Console.WriteLine("Started MemberListActor");
+                    _logger.LogDebug("Started MemberListActor");
                     break;
                 case MemberByKindRequest msg:
                 {
