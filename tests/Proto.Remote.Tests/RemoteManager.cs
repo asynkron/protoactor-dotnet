@@ -15,10 +15,10 @@ namespace Proto.Remote.Tests
 
         public RemoteManager()
         {
-            StartRemote("127.0.0.1", 12000);
-            
-            Remote.Start("127.0.0.1", 12001);
             Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
+            ProvisionNode("127.0.0.1", 12000);
+            Remote.Start("127.0.0.1", 12001);
+            
             Thread.Sleep(3000);
         }
 
@@ -31,16 +31,17 @@ namespace Proto.Remote.Tests
             }
         }
 
-        public (string Address, System.Diagnostics.Process Process) StartRemote(string host = "127.0.0.1", int port = 12000)
+        public (string Address, System.Diagnostics.Process Process) ProvisionNode(string host = "127.0.0.1", int port = 12000)
         {
-            string buildConfig = "Debug";
+            var address = $"{host}:{port}";
+            var buildConfig = "Debug";
 #if RELEASE
             buildConfig = "Release";
 #endif
             var nodeAppPath = $@"Proto.Remote.Tests.Node/bin/{buildConfig}/netcoreapp1.1/Proto.Remote.Tests.Node.dll";
             var testsDirectory = System.IO.Directory.GetParent(System.IO.Directory.GetCurrentDirectory()).Parent.Parent.Parent;
             var nodeDllPath = $@"{testsDirectory.FullName}/{nodeAppPath}";
-            Console.WriteLine($"NodeDLL path: {nodeDllPath}");
+            
             if (!File.Exists(nodeDllPath))
             {
                 throw new FileNotFoundException(nodeDllPath);
@@ -58,8 +59,12 @@ namespace Proto.Remote.Tests
             };
             
             process.Start();
-            Nodes.Add($"{host}:{port}", process);
-            return ($"{host}:{port}", process);
+            Nodes.Add(address, process);
+            
+            Console.WriteLine($"Waiting for remote node {address} to initialise...");
+            Thread.Sleep(TimeSpan.FromSeconds(3));
+
+            return (address, process);
         }
     }
 
