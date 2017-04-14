@@ -29,8 +29,7 @@ namespace Proto.Remote
                     //create a terminated event for the Watched actor
                     var t = new Terminated
                     {
-                        Who = msg.Watchee,
-                        AddressTerminated = true
+                        Who = msg.Watchee
                     };
                     //send the address Terminated event to the Watcher
                     msg.Watcher.SendSystemMessage(t);

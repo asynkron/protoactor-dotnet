@@ -22,8 +22,7 @@ namespace Proto.Remote.Tests.Node
                 {
                     int.TryParse(portString, out port);
                 }
-                Console.WriteLine(host);
-                Console.WriteLine(port);
+
                 Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
                 Remote.Start(host, port);
                 var props = Actor.FromProducer(() => new EchoActor(host, port));
