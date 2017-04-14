@@ -10,6 +10,8 @@ using Messages;
 using Proto;
 using Proto.Persistence;
 using Proto.Persistence.Sqlite;
+using Event = Proto.Persistence.Event;
+using Snapshot = Proto.Persistence.Snapshot;
 
 class Program
 {
@@ -30,6 +32,44 @@ class Program
         private PID _loopActor;
         private State _state = new State();
         public Persistence Persistence { get; set; }
+
+        public void UpdateState(object message)
+        {
+            switch (message)
+            {
+                case Event e:
+                    Apply(e);
+                    break;
+                case Snapshot s:
+                    Apply(s);
+                    break;
+            }
+        }
+
+        private void Apply(Event @event)
+        {
+            switch (@event.Data)
+            {
+                case RenameEvent msg:
+                    Console.WriteLine("MyPersistenceActor - RecoverEvent = {0}, Event.Name = {1}", Persistence.Index, msg.Name);
+                    break;
+            }
+        }
+
+        private void Apply(Snapshot snapshot)
+        {
+            switch (snapshot)
+            {
+                case RecoverSnapshot msg:
+                    if (msg.State is State ss)
+                    {
+                        _state = ss;
+                        Console.WriteLine("MyPersistenceActor - RecoverSnapshot = {0}, Snapshot.Name = {1}", Persistence.Index, ss.Name);
+                    }
+                    break;
+            }
+        }
+
         private class StartLoopActor { }
         private class TimeToSnapshot { }
 
@@ -56,40 +96,6 @@ class Program
                     Console.WriteLine("MyPersistenceActor - RecoveryCompleted");
 
                     context.Self.Tell(new StartLoopActor());
-
-                    break;
-                case RecoverSnapshot msg:
-                    
-                    if (msg.Snapshot is State ss)
-                    {
-                        _state = ss;
-
-                        Console.WriteLine("MyPersistenceActor - RecoverSnapshot = {0}, Snapshot.Name = {1}", Persistence.Index, ss.Name);
-
-                    }
-
-                    break;
-                case RecoverEvent msg:
-                    
-                    if (msg.Event is RenameEvent recev)
-                    {
-                        Console.WriteLine("MyPersistenceActor - RecoverEvent = {0}, Event.Name = {1}", Persistence.Index, recev.Name);
-                    }
-
-                    break;
-                case PersistedSnapshot msg:
-
-                    await Handle(msg);
-
-                    break;
-                case PersistedEvent msg:
-
-                    Console.WriteLine("MyPersistenceActor - PersistedEvent = {0}", msg.Index);
-
-                    if(msg.Event is RenameEvent rne)
-                    {
-                        _state.Name = rne.Name;
-                    }
 
                     break;
                 case RequestSnapshot msg:

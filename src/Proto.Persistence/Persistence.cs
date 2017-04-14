@@ -12,14 +12,16 @@ namespace Proto.Persistence
     public class Persistence
     {
         private IProviderState _state;
+        private IPersistentActor _actor;
         public long Index { get; private set; }
         private IContext _context;
         private string ActorId => _context.Self.Id;
 
-        public async Task InitAsync(IProvider provider, IContext context)
+        public async Task InitAsync(IProvider provider, IContext context, IPersistentActor actor)
         {
             _state = provider.GetState();
             _context = context;
+            _actor = actor;
 
             await _context.ReceiveAsync(new RecoveryStarted());
 
@@ -28,13 +30,13 @@ namespace Proto.Persistence
             if (snapshot != null)
             {
                 Index = index;
-                await _context.ReceiveAsync(new RecoverSnapshot(snapshot));
+                _actor.UpdateState(new RecoverSnapshot(snapshot, index));
             };
 
             await _state.GetEventsAsync(ActorId, Index, @event =>
             {
-                _context.ReceiveAsync(new RecoverEvent(@event)).Wait();
                 Index++;
+                _actor.UpdateState(new RecoverEvent(@event, Index));
             });
             
             await _context.ReceiveAsync(new RecoveryCompleted());
@@ -42,17 +44,16 @@ namespace Proto.Persistence
 
         public async Task PersistEventAsync(object @event)
         {
+            Index++;
             var index = Index;
             await _state.PersistEventAsync(ActorId, index, @event);
-            Index++;
-            await _context.ReceiveAsync(new PersistedEvent(index, @event));
+            _actor.UpdateState(new PersistedEvent(@event, index));
         }
 
         public async Task PersistSnapshotAsync(object snapshot)
         {
             var index = Index;
             await _state.PersistSnapshotAsync(ActorId, index, snapshot);
-            await _context.ReceiveAsync(new PersistedSnapshot(index, snapshot));
         }
 
         public async Task DeleteSnapshotsAsync(long inclusiveToIndex)
@@ -75,7 +76,7 @@ namespace Proto.Persistence
                         if(context.Actor is IPersistentActor actor)
                         {
                             actor.Persistence = new Persistence();
-                            await actor.Persistence.InitAsync(provider, context);
+                            await actor.Persistence.InitAsync(provider, context, actor);
                         }
                         break;
                 }
@@ -86,50 +87,56 @@ namespace Proto.Persistence
 
     public class RequestSnapshot { }
 
-    public class RecoverSnapshot
+    public class Snapshot
     {
-        public RecoverSnapshot(object snapshot)
-        {
-            Snapshot = snapshot;
-        }
+        public object State { get; }
+        public long Index { get; }
 
-        public object Snapshot { get; }
+        public Snapshot(object state, long index)
+        {
+            State = state;
+            Index = index;
+        }
+    }
+    public class RecoverSnapshot : Snapshot
+    {
+        public RecoverSnapshot(object state, long index) : base(state, index)
+        {
+        }
     }
 
-    public class RecoverEvent
+    public class PersistedSnapshot : Snapshot
     {
-        public RecoverEvent(object @event)
+        public PersistedSnapshot(object state, long index) : base(state, index)
         {
-            Event = @event;
         }
-        
-        public object Event { get; }
     }
 
     public class RecoveryStarted { }
     public class RecoveryCompleted { }
 
-    public class PersistedEvent
+    public class Event
     {
-        public PersistedEvent(long index, object @event)
-        {
-            Index = index;
-            Event = @event;
-        }
-
+        public object Data { get; }
         public long Index { get; }
-        public object Event { get; }
+
+        public Event(object data, long index)
+        {
+            Data = data;
+            Index = index;
+        }
+    }
+    public class RecoverEvent : Event
+    {
+        public RecoverEvent(object data, long index) : base(data, index)
+        {
+        }
     }
 
-    public class PersistedSnapshot
+    public class PersistedEvent : Event
     {
-        public PersistedSnapshot(long index, object snapshot)
+        public PersistedEvent(object data, long index) : base(data, index)
         {
-            Index = index;
-            Snapshot = snapshot;
         }
-
-        public long Index { get; }
-        public object Snapshot { get; }
     }
 }
