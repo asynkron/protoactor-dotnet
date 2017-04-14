@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Proto.Remote;
 
 namespace Proto.Cluster
@@ -45,6 +46,7 @@ namespace Proto.Cluster
 
     public class PidCachePartitionActor : IActor
     {
+        private readonly ILogger _logger = Log.CreateLogger<PidCachePartitionActor>();
         private readonly Dictionary<string, PID> _cache = new Dictionary<string, PID>();
         private readonly Dictionary<string, string> _reverseCache = new Dictionary<string, string>();
 
@@ -53,7 +55,7 @@ namespace Proto.Cluster
             switch (context.Message)
             {
                 case Started _:
-                    //  Console.WriteLine("Started PidCacheActor");
+                    _logger.LogDebug("Started PidCacheActor");
                     break;
                 case PidCacheRequest msg:
                     GetPid(context, msg);

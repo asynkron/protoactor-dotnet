@@ -69,7 +69,7 @@ namespace Proto.Cluster
             switch (context.Message)
             {
                 case Started _:
-                    Console.WriteLine("Started PartitionActor " + _kind);
+                    _logger.LogDebug("Started PartitionActor " + _kind);
                     break;
                 case ActorPidRequest msg:
                     await Spawn(msg, context);
