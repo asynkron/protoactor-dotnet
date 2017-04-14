@@ -79,7 +79,6 @@ namespace Proto
                 var r = _message as MessageEnvelope;
                 return r != null ? r.Message : _message;
             }
-            private set => _message = value;
         }
 
         public PID Sender => (_message as MessageEnvelope)?.Sender;
@@ -345,12 +344,8 @@ namespace Proto
 
         private Task ProcessMessageAsync(object msg)
         {
-            Message = msg;
-            if (_receiveMiddleware != null)
-            {
-                return _receiveMiddleware(this);
-            }
-            return DefaultReceive(this);
+            _message = msg;
+            return _receiveMiddleware != null ? _receiveMiddleware(this) : DefaultReceive(this);
         }
 
         public void Tell(PID target, object message)
