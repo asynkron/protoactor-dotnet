@@ -4,7 +4,7 @@ namespace Proto
 {
     public class MessageHeader : Dictionary<string, string>
     {
-        internal static readonly MessageHeader EmotyHeader = new MessageHeader();
+        internal static readonly MessageHeader EmptyHeader = new MessageHeader();
 
         public string GetOrDefault(string key, string @default = null)
         {

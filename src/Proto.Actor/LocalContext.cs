@@ -94,7 +94,7 @@ namespace Proto
                         return messageEnvelope.Header;
                     }
                 }
-                return MessageHeader.EmotyHeader;
+                return MessageHeader.EmptyHeader;
             }
         }
 
