@@ -14,11 +14,11 @@ class Program
     {
         var actor = Actor.FromFunc(c =>
                          {
-                             if (c.MessageHeader.ContainsKey("TraceID"))
+                             if (c.Headers.ContainsKey("TraceID"))
                              {
-                                 Console.WriteLine($"TraceID = {c.MessageHeader.GetOrDefault("TraceID")}");
-                                 Console.WriteLine($"SpanID = {c.MessageHeader.GetOrDefault("SpanID")}");
-                                 Console.WriteLine($"ParentSpanID = {c.MessageHeader.GetOrDefault("ParentSpanID")}");
+                                 Console.WriteLine($"TraceID = {c.Headers.GetOrDefault("TraceID")}");
+                                 Console.WriteLine($"SpanID = {c.Headers.GetOrDefault("SpanID")}");
+                                 Console.WriteLine($"ParentSpanID = {c.Headers.GetOrDefault("ParentSpanID")}");
                              }
                              Console.WriteLine($"actor got {c.Message.GetType()}:{c.Message}");
                              return Actor.Done;
@@ -40,17 +40,17 @@ class Program
         var pid = Actor.Spawn(actor);
 
         //Set headers, e.g. Zipkin trace headers
-        var rootHeaders = new MessageHeader
+        var headers = new MessageHeader
         {
             {"TraceID", "1000"},
             {"SpanID", "2000"}
         };
 
-        var root = new RootContext(rootHeaders, next => async (c, target, envelope) =>
+        var root = new ActorClient(headers, next => async (c, target, envelope) =>
                                    {
-                                       envelope.SetHeader("TraceID", c.MessageHeader.GetOrDefault("TraceID"));
-                                       envelope.SetHeader("SpanID", c.MessageHeader.GetOrDefault("SpanID"));
-                                       envelope.SetHeader("ParentSpanID", c.MessageHeader.GetOrDefault("ParentSpanID"));
+                                       envelope.SetHeader("TraceID", c.Headers.GetOrDefault("TraceID"));
+                                       envelope.SetHeader("SpanID", c.Headers.GetOrDefault("SpanID"));
+                                       envelope.SetHeader("ParentSpanID", c.Headers.GetOrDefault("ParentSpanID"));
 
                                        Console.WriteLine($"sender middleware 1 enter {envelope.Message.GetType()}:{c.Message}");
                                        await next(c, target, envelope);

@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public interface IContext
+    public interface IContext : ISenderContext
     {
         /// <summary>
         ///     Gets the PID for the parent of the current actor.
@@ -22,16 +22,6 @@ namespace Proto
         ///     Gets the PID for the current actor.
         /// </summary>
         PID Self { get; }
-
-        /// <summary>
-        ///     The current message to be processed.
-        /// </summary>
-        object Message { get; }
-
-        /// <summary>
-        /// The current message headers associated with the current message
-        /// </summary>
-        MessageHeader MessageHeader { get; }
 
         /// <summary>
         ///     Gets the PID of the actor that sent the currently processed message.

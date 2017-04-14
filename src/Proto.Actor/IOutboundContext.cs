@@ -1,9 +1,8 @@
 namespace Proto
 {
-    public interface IOutboundContext
-    {
+    public interface ISenderContext    {
         object Message { get; }
 
-        MessageHeader MessageHeader { get; }
+        MessageHeader Headers { get; }
     }
 }

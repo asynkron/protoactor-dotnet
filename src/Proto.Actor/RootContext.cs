@@ -11,18 +11,17 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public class RootContext : IOutboundContext
-    {
+    public class ActorClient : ISenderContext    {
         private readonly Sender _senderMiddleware;
 
-        public RootContext(MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
+        public ActorClient(MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
         {
             _senderMiddleware = middleware.Reverse()
                     .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner));
-            MessageHeader = messageHeader;
+            Headers = messageHeader;
         }
 
-        private Task DefaultSender(IOutboundContext context,PID target, MessageEnvelope message)
+        private Task DefaultSender(ISenderContext context,PID target, MessageEnvelope message)
         {
             target.Tell(message);
             return Actor.Done;
@@ -72,6 +71,6 @@ namespace Proto
         }
 
         public object Message => null;
-        public MessageHeader MessageHeader { get; }
+        public MessageHeader Headers { get; }
     }
 }
