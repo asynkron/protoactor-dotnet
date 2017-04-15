@@ -15,29 +15,30 @@ namespace Proto.Persistence
         public long Index { get; private set; }
         private IContext _context;
         private string ActorId => _context.Self.Id;
+        private static bool _initialized = false;
 
         public async Task InitAsync(IProvider provider, IContext context)
         {
             _state = provider.GetState();
             _context = context;
 
-            await _context.ReceiveAsync(new RecoveryStarted());
+            _context.Self.Tell(new RecoveryStarted());
 
             var (snapshot, index) = await _state.GetSnapshotAsync(ActorId);
 
             if (snapshot != null)
             {
                 Index = index;
-                await _context.ReceiveAsync(new RecoverSnapshot(snapshot));
+                _context.Self.Tell(new RecoverSnapshot(snapshot));
             };
 
             await _state.GetEventsAsync(ActorId, Index, @event =>
             {
-                _context.ReceiveAsync(new RecoverEvent(@event)).Wait();
+                _context.Self.Tell(new RecoverEvent(@event));
                 Index++;
             });
-            
-            await _context.ReceiveAsync(new RecoveryCompleted());
+
+            _context.Self.Tell(new RecoveryCompleted());
         }
 
         public async Task PersistEventAsync(object @event)
@@ -45,14 +46,14 @@ namespace Proto.Persistence
             var index = Index;
             await _state.PersistEventAsync(ActorId, index, @event);
             Index++;
-            await _context.ReceiveAsync(new PersistedEvent(index, @event));
+            _context.Self.Tell(new PersistedEvent(index, @event));
         }
 
         public async Task PersistSnapshotAsync(object snapshot)
         {
             var index = Index;
             await _state.PersistSnapshotAsync(ActorId, index, snapshot);
-            await _context.ReceiveAsync(new PersistedSnapshot(index, snapshot));
+            _context.Self.Tell(new PersistedSnapshot(index, snapshot));
         }
 
         public async Task DeleteSnapshotsAsync(long inclusiveToIndex)
@@ -69,15 +70,20 @@ namespace Proto.Persistence
         {
             return next => async context =>
             {
-                switch (context.Message)
+                if (!_initialized)
                 {
-                    case Started _:
-                        if(context.Actor is IPersistentActor actor)
-                        {
-                            actor.Persistence = new Persistence();
-                            await actor.Persistence.InitAsync(provider, context);
-                        }
-                        break;
+                    _initialized = true;
+
+                    switch (context.Message)
+                    {
+                        case Started _:
+                            if (context.Actor is IPersistentActor actor)
+                            {
+                                actor.Persistence = new Persistence();
+                                await actor.Persistence.InitAsync(provider, context);
+                            }
+                            break;
+                    }
                 }
                 await next(context);
             };
