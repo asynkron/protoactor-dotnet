@@ -23,8 +23,6 @@ namespace Proto.Persistence
             _context = context;
             _actor = actor;
 
-            await _context.ReceiveAsync(new RecoveryStarted());
-
             var (snapshot, index) = await _state.GetSnapshotAsync(ActorId);
 
             if (snapshot != null)
@@ -38,8 +36,6 @@ namespace Proto.Persistence
                 Index++;
                 _actor.UpdateState(new RecoverEvent(@event, Index));
             });
-            
-            await _context.ReceiveAsync(new RecoveryCompleted());
         }
 
         public async Task PersistEventAsync(object @event)
@@ -74,13 +70,14 @@ namespace Proto.Persistence
                 switch (context.Message)
                 {
                     case Started _:
-                        if(context.Actor is IPersistentActor actor)
+                        if (context.Actor is IPersistentActor actor)
                         {
                             actor.Persistence = new Persistence();
                             await actor.Persistence.InitAsync(provider, context, actor);
                         }
                         break;
                 }
+                
                 await next(context);
             };
         }
