@@ -41,12 +41,16 @@ class Program
             {
                 case Started msg:
 
+                    RegisterHandlers();
+
                     Console.WriteLine("MyPersistenceActor - Started");
 
                     context.Self.Tell(new StartLoopActor());
 
                     break;
                 case RecoveryStarted msg:
+
+                    RegisterHandlers();
 
                     Console.WriteLine("MyPersistenceActor - RecoveryStarted");
 
@@ -56,40 +60,6 @@ class Program
                     Console.WriteLine("MyPersistenceActor - RecoveryCompleted");
 
                     context.Self.Tell(new StartLoopActor());
-
-                    break;
-                case RecoverSnapshot msg:
-                    
-                    if (msg.Snapshot is State ss)
-                    {
-                        _state = ss;
-
-                        Console.WriteLine("MyPersistenceActor - RecoverSnapshot = {0}, Snapshot.Name = {1}", Persistence.Index, ss.Name);
-
-                    }
-
-                    break;
-                case RecoverEvent msg:
-                    
-                    if (msg.Event is RenameEvent recev)
-                    {
-                        Console.WriteLine("MyPersistenceActor - RecoverEvent = {0}, Event.Name = {1}", Persistence.Index, recev.Name);
-                    }
-
-                    break;
-                case PersistedSnapshot msg:
-
-                    await Handle(msg);
-
-                    break;
-                case PersistedEvent msg:
-
-                    Console.WriteLine("MyPersistenceActor - PersistedEvent = {0}", msg.Index);
-
-                    if(msg.Event is RenameEvent rne)
-                    {
-                        _state.Name = rne.Name;
-                    }
 
                     break;
                 case RequestSnapshot msg:
@@ -115,11 +85,53 @@ class Program
             }
         }
 
-        private async Task Handle(PersistedSnapshot message)
+        private void RegisterHandlers()
         {
-            Console.WriteLine("MyPersistenceActor - PersistedSnapshot at Index = {0}", message.Index);
-            
-            await Persistence.DeleteSnapshotsAsync(message.Index - 1);
+            Persistence.OnRecoverSnapshot += Persistence_OnRecoverSnapshot;
+            Persistence.OnRecoverEvent += Persistence_OnRecoverEvent;
+            Persistence.OnPersistedSnapshot += Persistence_OnPersistedSnapshot;
+            Persistence.OnPersistedEvent += Persistence_OnPersistedEvent;
+        }
+
+        private Task Persistence_OnRecoverSnapshot(object sender, RecoverSnapshotArgs e)
+        {
+            if (e.Snapshot is State ss)
+            {
+                _state = ss;
+
+                Console.WriteLine("MyPersistenceActor - RecoverSnapshot = {0}, Snapshot.Name = {1}", Persistence.Index, ss.Name);
+            }
+
+            return Actor.Done;
+        }
+
+        private Task Persistence_OnRecoverEvent(object sender, RecoverEventArgs e)
+        {
+            if (e.Event is RenameEvent recev)
+            {
+                Console.WriteLine("MyPersistenceActor - RecoverEvent = {0}, Event.Name = {1}", Persistence.Index, recev.Name);
+            }
+
+            return Actor.Done;
+        }
+
+        private async Task Persistence_OnPersistedSnapshot(object sender, PersistedSnapshotArgs e)
+        {
+            Console.WriteLine("MyPersistenceActor - PersistedSnapshot at Index = {0}", e.Index);
+
+            await Persistence.DeleteSnapshotsAsync(e.Index - 1);
+        }
+
+        private Task Persistence_OnPersistedEvent(object sender, PersistedEventArgs e)
+        {
+            Console.WriteLine("MyPersistenceActor - PersistedEvent = {0}", e.Index);
+
+            if (e.Event is RenameEvent rne)
+            {
+                _state.Name = rne.Name;
+            }
+
+            return Actor.Done;
         }
 
         private async Task Handle(IContext context, RequestSnapshot message)

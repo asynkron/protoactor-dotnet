@@ -232,23 +232,17 @@ namespace Proto.Persistence.Tests
         {
             switch (context.Message)
             {
+                case Started msg:
+                    RegisterHandlers();
+                    break;
+                case RecoveryStarted msg:
+                    RegisterHandlers();
+                    break;
                 case GetState msg:
                     context.Sender.Tell(_state.Value);
                     break;
                 case GetIndex msg:
                     context.Sender.Tell(Persistence.Index);
-                    break;
-                case RecoverSnapshot msg:
-                    if (msg.Snapshot is State ss)
-                    {
-                        _state = ss;
-                    }
-                    break;
-                case RecoverEvent msg:
-                    UpdateState(msg.Event);
-                    break;
-                case PersistedEvent msg:
-                    UpdateState(msg.Event);
                     break;
                 case RequestSnapshot msg:
                     await Persistence.PersistSnapshotAsync(new State { Value = _state.Value });
@@ -257,6 +251,37 @@ namespace Proto.Persistence.Tests
                     await Persistence.PersistEventAsync(new Multiplied { Amount = msg.Amount });
                     break;
             }
+        }
+
+        private void RegisterHandlers()
+        {
+            Persistence.OnRecoverSnapshot += Persistence_OnRecoverSnapshot;
+            Persistence.OnRecoverEvent += Persistence_OnRecoverEvent;
+            Persistence.OnPersistedEvent += Persistence_OnPersistedEvent;
+        }
+
+        private Task Persistence_OnRecoverSnapshot(object sender, RecoverSnapshotArgs e)
+        {
+            if (e.Snapshot is State ss)
+            {
+                _state = ss;
+            }
+
+            return Actor.Done;
+        }
+
+        private Task Persistence_OnRecoverEvent(object sender, RecoverEventArgs e)
+        {
+            UpdateState(e.Event);
+
+            return Actor.Done;
+        }
+
+        private Task Persistence_OnPersistedEvent(object sender, PersistedEventArgs e)
+        {
+            UpdateState(e.Event);
+
+            return Actor.Done;
         }
 
         private void UpdateState(object message)
