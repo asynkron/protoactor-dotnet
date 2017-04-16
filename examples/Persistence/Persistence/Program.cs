@@ -12,6 +12,7 @@ using Proto.Persistence;
 using Proto.Persistence.Sqlite;
 using Event = Proto.Persistence.Event;
 using Snapshot = Proto.Persistence.Snapshot;
+using System.Text;
 
 class Program
 {
@@ -51,7 +52,11 @@ class Program
             switch (@event)
             {
                 case RecoverEvent msg:
-                    Console.WriteLine("MyPersistenceActor - RecoverEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
+                    if(msg.Data is RenameEvent re)
+                    {
+                        _state.Name = re.Name;
+                        Console.WriteLine("MyPersistenceActor - RecoverEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
+                    }
                     break;
                 case PersistedEvent msg:
                     Console.WriteLine("MyPersistenceActor - PersistedEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
@@ -86,36 +91,30 @@ class Program
 
                     Console.WriteLine("MyPersistenceActor - Started");
 
-                    context.Self.Tell(new StartLoopActor());
-
-                    break;
-                case RecoveryStarted msg:
-
-                    Console.WriteLine("MyPersistenceActor - RecoveryStarted");
-
-                    break;
-                case RecoveryCompleted msg:
-
-                    Console.WriteLine("MyPersistenceActor - RecoveryCompleted");
+                    Console.WriteLine("MyPersistenceActor - Current State: {0}", _state);
 
                     context.Self.Tell(new StartLoopActor());
 
                     break;
+     
                 case RequestSnapshot msg:
 
                     await Handle(context, msg);
 
                     break;
+
                 case TimeToSnapshot msg:
 
                     await Handle(context, msg);
 
                     break;
+
                 case StartLoopActor msg:
 
                     await Handle(context, msg);
 
                     break;
+
                 case RenameCommand msg:
 
                     await Handle(msg);
@@ -193,7 +192,7 @@ class Program
 
                     Task.Run(async () => {
                         
-                        context.Parent.Tell(new RenameCommand { Name = "Daniel" });
+                        context.Parent.Tell(new RenameCommand { Name = GeneratePronounceableName(5) });
 
                         await Task.Delay(TimeSpan.FromSeconds(2));
 
@@ -204,6 +203,26 @@ class Program
             }
 
             return Actor.Done;
+        }
+
+        static string GeneratePronounceableName(int length)
+        {
+            const string vowels = "aeiou";
+            const string consonants = "bcdfghjklmnpqrstvwxyz";
+
+            var rnd = new Random();
+            var name = new StringBuilder();
+
+            length = length % 2 == 0 ? length : length + 1;
+
+            for (var i = 0; i < length / 2; i++)
+            {
+                name
+                    .Append(vowels[rnd.Next(vowels.Length)])
+                    .Append(consonants[rnd.Next(consonants.Length)]);
+            }
+
+            return name.ToString();
         }
     }
 }
