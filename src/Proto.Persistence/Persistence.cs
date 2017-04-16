@@ -28,12 +28,12 @@ namespace Proto.Persistence
             if (snapshot != null)
             {
                 Index = index;
-                await _context.ReceiveAsync(new RecoverSnapshot(snapshot));
+                await OnRecoverSnapshot(this, new RecoverSnapshotArgs(snapshot));
             };
 
-            await _state.GetEventsAsync(ActorId, Index, @event =>
+            await _state.GetEventsAsync(ActorId, Index, async @event =>
             {
-                _context.ReceiveAsync(new RecoverEvent(@event)).Wait();
+                await OnRecoverEvent(this, new RecoverEventArgs(@event));
                 Index++;
             });
             
@@ -45,14 +45,14 @@ namespace Proto.Persistence
             var index = Index;
             await _state.PersistEventAsync(ActorId, index, @event);
             Index++;
-            await _context.ReceiveAsync(new PersistedEvent(index, @event));
+            await OnPersistedEvent(this, new PersistedEventArgs(index, @event));
         }
 
         public async Task PersistSnapshotAsync(object snapshot)
         {
             var index = Index;
             await _state.PersistSnapshotAsync(ActorId, index, snapshot);
-            await _context.ReceiveAsync(new PersistedSnapshot(index, snapshot));
+            await OnPersistedSnapshot(this, new PersistedSnapshotArgs(index, snapshot));
         }
 
         public async Task DeleteSnapshotsAsync(long inclusiveToIndex)
@@ -72,64 +72,81 @@ namespace Proto.Persistence
                 switch (context.Message)
                 {
                     case Started _:
-                        if(context.Actor is IPersistentActor actor)
+                        if (context.Actor is IPersistentActor actor)
                         {
                             actor.Persistence = new Persistence();
+
                             await actor.Persistence.InitAsync(provider, context);
                         }
                         break;
                 }
+
                 await next(context);
             };
         }
+
+        public delegate Task RecoverSnapshotHandler(object sender, RecoverSnapshotArgs e);
+
+        public delegate Task RecoverEventHandler(object sender, RecoverEventArgs e);
+
+        public delegate Task PersistedEventHandler(object sender, PersistedEventArgs e);
+
+        public delegate Task PersistedSnapshotHandler(object sender, PersistedSnapshotArgs e);
+
+        public event RecoverSnapshotHandler OnRecoverSnapshot;
+
+        public event RecoverEventHandler OnRecoverEvent;
+
+        public event PersistedEventHandler OnPersistedEvent;
+
+        public event PersistedSnapshotHandler OnPersistedSnapshot;
+    }
+
+    public class RecoverSnapshotArgs : EventArgs
+    {
+        public RecoverSnapshotArgs(object snapshot)
+        {
+            Snapshot = snapshot;
+        }
+
+        public object Snapshot { get; }
+    }
+
+    public class RecoverEventArgs : EventArgs
+    {
+        public RecoverEventArgs(object @event)
+        {
+            Event = @event;
+        }
+
+        public object Event { get; }
+    }
+
+    public class PersistedEventArgs : EventArgs
+    {
+        public PersistedEventArgs(long index, object @event)
+        {
+            Index = index;
+            Event = @event;
+        }
+
+        public long Index { get; }
+        public object Event { get; }
+    }
+
+    public class PersistedSnapshotArgs : EventArgs
+    {
+        public PersistedSnapshotArgs(long index, object snapshot)
+        {
+            Index = index;
+            Snapshot = snapshot;
+        }
+
+        public long Index { get; }
+        public object Snapshot { get; }
     }
 
     public class RequestSnapshot { }
-
-    public class RecoverSnapshot
-    {
-        public RecoverSnapshot(object snapshot)
-        {
-            Snapshot = snapshot;
-        }
-
-        public object Snapshot { get; }
-    }
-
-    public class RecoverEvent
-    {
-        public RecoverEvent(object @event)
-        {
-            Event = @event;
-        }
-        
-        public object Event { get; }
-    }
-
     public class RecoveryStarted { }
     public class RecoveryCompleted { }
-
-    public class PersistedEvent
-    {
-        public PersistedEvent(long index, object @event)
-        {
-            Index = index;
-            Event = @event;
-        }
-
-        public long Index { get; }
-        public object Event { get; }
-    }
-
-    public class PersistedSnapshot
-    {
-        public PersistedSnapshot(long index, object snapshot)
-        {
-            Index = index;
-            Snapshot = snapshot;
-        }
-
-        public long Index { get; }
-        public object Snapshot { get; }
-    }
 }
