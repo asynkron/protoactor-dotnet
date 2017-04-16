@@ -70,9 +70,6 @@ class Program
                         Console.WriteLine("MyPersistenceActor - RecoverSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}", Persistence.Index, ss.Name);
                     }
                     break;
-                case PersistedSnapshot msg:
-                    Console.WriteLine("MyPersistenceActor - PersistedSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}", msg.Index, msg.State);
-                    break;
             }
         }
 
@@ -132,7 +129,7 @@ class Program
             Console.WriteLine("MyPersistenceActor - RequestSnapshot");
 
             await Persistence.PersistSnapshotAsync(_state);
-
+            Console.WriteLine("MyPersistenceActor - PersistedSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}", Persistence.Index, _state);
             context.Self.Tell(new TimeToSnapshot());
         }
 
