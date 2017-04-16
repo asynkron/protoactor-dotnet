@@ -54,6 +54,7 @@ namespace Proto.Persistence
         {
             var index = Index;
             await _state.PersistSnapshotAsync(ActorId, index, snapshot);
+            _actor.UpdateState(new PersistedSnapshot(snapshot, index));
         }
 
         public async Task DeleteSnapshotsAsync(long inclusiveToIndex)
