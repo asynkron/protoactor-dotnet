@@ -48,10 +48,13 @@ class Program
 
         private void Apply(Event @event)
         {
-            switch (@event.Data)
+            switch (@event)
             {
-                case RenameEvent msg:
-                    Console.WriteLine("MyPersistenceActor - RecoverEvent = {0}, Event.Name = {1}", Persistence.Index, msg.Name);
+                case RecoverEvent msg:
+                    Console.WriteLine("MyPersistenceActor - RecoverEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
+                    break;
+                case PersistedEvent msg:
+                    Console.WriteLine("MyPersistenceActor - PersistedEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
                     break;
             }
         }
@@ -64,8 +67,11 @@ class Program
                     if (msg.State is State ss)
                     {
                         _state = ss;
-                        Console.WriteLine("MyPersistenceActor - RecoverSnapshot = {0}, Snapshot.Name = {1}", Persistence.Index, ss.Name);
+                        Console.WriteLine("MyPersistenceActor - RecoverSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}", Persistence.Index, ss.Name);
                     }
+                    break;
+                case PersistedSnapshot msg:
+                    Console.WriteLine("MyPersistenceActor - PersistedSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}", msg.Index, msg.State);
                     break;
             }
         }
@@ -121,13 +127,6 @@ class Program
             }
         }
 
-        private async Task Handle(PersistedSnapshot message)
-        {
-            Console.WriteLine("MyPersistenceActor - PersistedSnapshot at Index = {0}", message.Index);
-            
-            await Persistence.DeleteSnapshotsAsync(message.Index - 1);
-        }
-
         private async Task Handle(IContext context, RequestSnapshot message)
         {
             Console.WriteLine("MyPersistenceActor - RequestSnapshot");
@@ -171,6 +170,8 @@ class Program
         private async Task Handle(RenameCommand message)
         {
             Console.WriteLine("MyPersistenceActor - RenameCommand");
+
+            _state.Name = message.Name;
 
             await Persistence.PersistEventAsync(new RenameEvent { Name = message.Name });
         }
