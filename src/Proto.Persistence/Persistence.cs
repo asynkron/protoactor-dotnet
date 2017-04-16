@@ -110,9 +110,6 @@ namespace Proto.Persistence
         }
     }
 
-    public class RecoveryStarted { }
-    public class RecoveryCompleted { }
-
     public class Event
     {
         public object Data { get; }
