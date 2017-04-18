@@ -41,15 +41,13 @@ namespace Proto.Persistence
         public async Task PersistEventAsync(object @event)
         {
             Index++;
-            var index = Index;
-            await _state.PersistEventAsync(ActorId, index, @event);
-            _actor.UpdateState(new PersistedEvent(@event, index));
+            await _state.PersistEventAsync(ActorId, Index, @event);
+            _actor.UpdateState(new PersistedEvent(@event, Index));
         }
 
         public async Task PersistSnapshotAsync(object snapshot)
         {
-            var index = Index;
-            await _state.PersistSnapshotAsync(ActorId, index, snapshot);
+            await _state.PersistSnapshotAsync(ActorId, Index, snapshot);
         }
 
         public async Task DeleteSnapshotsAsync(long inclusiveToIndex)
