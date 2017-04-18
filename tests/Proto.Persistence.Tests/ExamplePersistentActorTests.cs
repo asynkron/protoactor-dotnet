@@ -223,6 +223,8 @@ namespace Proto.Persistence.Tests
         public int Amount { get; set; }
     }
 
+    internal class RequestSnapshot { }
+
     internal class ExamplePersistentActor : IPersistentActor
     {
         private State _state = new State{Value = 1};

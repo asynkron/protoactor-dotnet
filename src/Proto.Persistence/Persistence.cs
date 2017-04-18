@@ -82,8 +82,6 @@ namespace Proto.Persistence
         }
     }
 
-    public class RequestSnapshot { }
-
     public class Snapshot
     {
         public object State { get; }

@@ -28,6 +28,8 @@ class Program
         Console.ReadLine();
     }
 
+    public class RequestSnapshot { }
+
     class MyPersistenceActor : IPersistentActor
     {
         private PID _loopActor;
