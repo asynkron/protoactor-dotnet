@@ -189,7 +189,7 @@ namespace Proto {
   }
 
   /// <summary>
-  /// user messages
+  ///user messages
   /// </summary>
   public sealed partial class PoisonPill : pb::IMessage<PoisonPill> {
     private static readonly pb::MessageParser<PoisonPill> _parser = new pb::MessageParser<PoisonPill>(() => new PoisonPill());
@@ -281,7 +281,7 @@ namespace Proto {
   }
 
   /// <summary>
-  /// system messages
+  ///system messages
   /// </summary>
   public sealed partial class Watch : pb::IMessage<Watch> {
     private static readonly pb::MessageParser<Watch> _parser = new pb::MessageParser<Watch>(() => new Watch());

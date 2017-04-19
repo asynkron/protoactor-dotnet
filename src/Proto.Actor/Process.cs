@@ -11,7 +11,7 @@ namespace Proto
 {
     public abstract class Process
     {
-        public abstract void SendUserMessage(PID pid, object message, PID sender);
+        public abstract void SendUserMessage(PID pid, object message);
 
         public virtual void Stop(PID pid)
         {
@@ -28,8 +28,8 @@ namespace Proto
 
         internal bool IsDead
         {
-            get { return Interlocked.Read(ref _isDead) == 1; }
-            private set { Interlocked.Exchange(ref _isDead, value ? 1 : 0); }
+            get => Interlocked.Read(ref _isDead) == 1;
+            private set => Interlocked.Exchange(ref _isDead, value ? 1 : 0);
         }
 
         public LocalProcess(IMailbox mailbox)
@@ -38,14 +38,8 @@ namespace Proto
         }
 
 
-        public override void SendUserMessage(PID pid, object message, PID sender)
+        public override void SendUserMessage(PID pid, object message)
         {
-            if (sender != null)
-            {
-                Mailbox.PostUserMessage(new MessageSender(message, sender));
-                return;
-            }
-
             Mailbox.PostUserMessage(message);
         }
 

@@ -11,53 +11,53 @@ namespace Proto.Persistence
 {
     public class Persistence
     {
-        public IProviderState State { get; set; }
-        public long Index { get; set; }
-        public IContext Context { get; set; }
-        public string Name => Context.Self.Id;
+        private IProviderState _state;
+        private IPersistentActor _actor;
+        public long Index { get; private set; }
+        private IContext _context;
+        private string ActorId => _context.Self.Id;
 
-        public async Task InitAsync(IProvider provider, IContext context)
+        public async Task InitAsync(IProvider provider, IContext context, IPersistentActor actor)
         {
-            State = provider.GetState();
-            Context = context;
+            _state = provider.GetState();
+            _context = context;
+            _actor = actor;
 
-            await Context.ReceiveAsync(new RecoveryStarted());
+            var (snapshot, index) = await _state.GetSnapshotAsync(ActorId);
 
-            var t = await State.GetSnapshotAsync(Name);
-
-            if (t != null)
+            if (snapshot != null)
             {
-                Index = t.Item2;
-                await Context.ReceiveAsync(new RecoverSnapshot(t.Item1));
-            }
+                Index = index;
+                _actor.UpdateState(new RecoverSnapshot(snapshot, index));
+            };
 
-            await State.GetEventsAsync(Name, Index, callbackData =>
+            await _state.GetEventsAsync(ActorId, Index, @event =>
             {
-                Context.ReceiveAsync(new RecoverEvent(callbackData)).Wait();
                 Index++;
+                _actor.UpdateState(new RecoverEvent(@event, Index));
             });
-            
-            await Context.ReceiveAsync(new RecoveryCompleted());
         }
 
-        public async Task PersistEventAsync(object data)
+        public async Task PersistEventAsync(object @event)
         {
-            var index = Index;
-
-            await State.PersistEventAsync(Name, index, data);
-
             Index++;
-
-            await Context.ReceiveAsync(new PersistedEvent(index, data));
+            await _state.PersistEventAsync(ActorId, Index, @event);
+            _actor.UpdateState(new PersistedEvent(@event, Index));
         }
 
-        public async Task PersistSnapshotAsync(object data)
+        public async Task PersistSnapshotAsync(object snapshot)
         {
-            var index = Index;
+            await _state.PersistSnapshotAsync(ActorId, Index, snapshot);
+        }
 
-            await State.PersistSnapshotAsync(Name, index, data);
-            
-            await Context.ReceiveAsync(new PersistedSnapshot(index, data));
+        public async Task DeleteSnapshotsAsync(long inclusiveToIndex)
+        {
+            await _state.DeleteSnapshotsAsync(ActorId, inclusiveToIndex);
+        }
+
+        public async Task DeleteEventsAsync(long inclusiveToIndex)
+        {
+            await _state.DeleteEventsAsync(ActorId, inclusiveToIndex);
         }
 
         public static Func<Receive, Receive> Using(IProvider provider)
@@ -67,65 +67,66 @@ namespace Proto.Persistence
                 switch (context.Message)
                 {
                     case Started _:
-                        var p = context.Actor as IPersistentActor;
-                        if (p != null)
+                        if (context.Actor is IPersistentActor actor)
                         {
-                            p.Persistence = new Persistence();
-                            await p.Persistence.InitAsync(provider, context);
+                            actor.Persistence = new Persistence();
+                            await actor.Persistence.InitAsync(provider, context, actor);
                         }
                         break;
                 }
+                
                 await next(context);
             };
         }
     }
 
-    public class RequestSnapshot { }
-
-    public class RecoverSnapshot
+    public class Snapshot
     {
-        public RecoverSnapshot(object data)
-        {
-            Data = data;
-        }
-
-        public object Data { get; }
-    }
-
-    public class RecoverEvent
-    {
-        public RecoverEvent(object data)
-        {
-            Data = data;
-        }
-        
-        public object Data { get; }
-    }
-
-    public class RecoveryStarted { }
-    public class RecoveryCompleted { }
-
-    public class PersistedEvent
-    {
-        public PersistedEvent(long index, object data)
-        {
-            Index = index;
-            Data = data;
-        }
-
+        public object State { get; }
         public long Index { get; }
-        public object Data { get; }
+
+        public Snapshot(object state, long index)
+        {
+            State = state;
+            Index = index;
+        }
+    }
+    public class RecoverSnapshot : Snapshot
+    {
+        public RecoverSnapshot(object state, long index) : base(state, index)
+        {
+        }
     }
 
-    public class PersistedSnapshot
+    public class PersistedSnapshot : Snapshot
     {
-        public PersistedSnapshot(long index, object data)
+        public PersistedSnapshot(object state, long index) : base(state, index)
         {
-            Index = index;
-            Data = data;
         }
+    }
 
-        public long Index { get; }
+    public class Event
+    {
         public object Data { get; }
+        public long Index { get; }
+
+        public Event(object data, long index)
+        {
+            Data = data;
+            Index = index;
+        }
+    }
+    public class RecoverEvent : Event
+    {
+        public RecoverEvent(object data, long index) : base(data, index)
+        {
+        }
+    }
+
+    public class PersistedEvent : Event
+    {
+        public PersistedEvent(object data, long index) : base(data, index)
+        {
+        }
     }
 }

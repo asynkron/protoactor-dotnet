@@ -12,7 +12,6 @@ namespace Proto.Remote
     public class EndpointWatcher : IActor
     {
         private readonly Dictionary<string, PID> _watched = new Dictionary<string, PID>();
-        private readonly Dictionary<string, PID> _watcher = new Dictionary<string, PID>();
         private string _address; //for logging
 
         public EndpointWatcher(string address)
@@ -27,12 +26,10 @@ namespace Proto.Remote
                 case RemoteTerminate msg:
                 {
                     _watched.Remove(msg.Watcher.Id);
-                    _watcher.Remove(msg.Watchee.Id);
                     //create a terminated event for the Watched actor
                     var t = new Terminated
                     {
-                        Who = msg.Watchee,
-                        AddressTerminated = true
+                        Who = msg.Watchee
                     };
                     //send the address Terminated event to the Watcher
                     msg.Watcher.SendSystemMessage(t);
@@ -40,11 +37,8 @@ namespace Proto.Remote
                 }
                 case EndpointTerminatedEvent _:
                 {
-                    foreach (var kvp in _watched)
+                    foreach (var (id, pid) in _watched)
                     {
-                        var id = kvp.Key;
-                        var pid = kvp.Value;
-
                         //create a terminated event for the Watched actor
                         var t = new Terminated
                         {
@@ -60,21 +54,17 @@ namespace Proto.Remote
                 case RemoteUnwatch msg:
                 {
                     _watched[msg.Watcher.Id] = null;
-                    _watcher[msg.Watchee.Id] = null;
 
                     var w = new Unwatch(msg.Watcher);
-                    msg.Watchee.SendSystemMessage(w);
-
+                    RemoteProcess.SendRemoteMessage(msg.Watchee, w);
                     break;
                 }
                 case RemoteWatch msg:
                 {
                     _watched[msg.Watcher.Id] = msg.Watchee;
-                    _watcher[msg.Watchee.Id] = msg.Watcher;
 
                     var w = new Watch(msg.Watcher);
-                    msg.Watchee.SendSystemMessage(w);
-
+                    RemoteProcess.SendRemoteMessage(msg.Watchee, w);
                     break;
                 }
 

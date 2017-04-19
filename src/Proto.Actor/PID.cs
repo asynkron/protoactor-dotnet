@@ -47,7 +47,7 @@ namespace Proto
         public void Tell(object message)
         {
             var reff = Ref ?? ProcessRegistry.Instance.Get(this);
-            reff.SendUserMessage(this, message, null);
+            reff.SendUserMessage(this, message);
         }
 
         public void SendSystemMessage(object sys)
@@ -59,7 +59,8 @@ namespace Proto
         public void Request(object message, PID sender)
         {
             var reff = Ref ?? ProcessRegistry.Instance.Get(this);
-            reff.SendUserMessage(this, message, sender);
+            var messageEnvelope = new MessageEnvelope(message,sender,null);
+            reff.SendUserMessage(this, messageEnvelope);
         }
         
         public Task<T> RequestAsync<T>(object message, TimeSpan timeout)
@@ -73,7 +74,7 @@ namespace Proto
 
         private Task<T> RequestAsync<T>(object message, FutureProcess<T> future)
         {
-            Request(message, future.PID);
+            Request(message, future.Pid);
             return future.Task;
         }
 

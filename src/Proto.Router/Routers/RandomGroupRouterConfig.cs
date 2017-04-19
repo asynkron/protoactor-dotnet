@@ -10,6 +10,14 @@ namespace Proto.Router.Routers
 {
     internal class RandomGroupRouterConfig : GroupRouterConfig
     {
+        private readonly int? _seed;
+
+        public RandomGroupRouterConfig(int seed, params PID[] routees)
+        {
+            _seed = seed;
+            Routees = new HashSet<PID>(routees);
+        }
+
         public RandomGroupRouterConfig(params PID[] routees)
         {
             Routees = new HashSet<PID>(routees);
@@ -17,7 +25,7 @@ namespace Proto.Router.Routers
 
         public override RouterState CreateRouterState()
         {
-            return new RandomRouterState();
+            return new RandomRouterState(_seed);
         }
     }
 }

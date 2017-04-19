@@ -31,7 +31,7 @@ namespace Proto.Persistence.Marten
             }
         }
 
-        public async Task<Tuple<object, long>> GetSnapshotAsync(string actorName)
+        public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
             using (var session = _store.OpenSession())
             {
@@ -40,7 +40,7 @@ namespace Proto.Persistence.Marten
                     .OrderByDescending(x => x.Index)
                     .FirstOrDefaultAsync();
 
-                return snapshot != null ? Tuple.Create((object)snapshot.Data, snapshot.Index) : null;
+                return snapshot != null ? (snapshot.Data, snapshot.Index) : (null, 0);
             }
         }
 
@@ -48,9 +48,7 @@ namespace Proto.Persistence.Marten
         {
             using (var session = _store.OpenSession())
             {
-                var envelope = new Event(actorName, index, @event);
-
-                session.Store(envelope);
+                session.Store(new Event(actorName, index, @event));
 
                 await session.SaveChangesAsync();
             }
@@ -60,33 +58,31 @@ namespace Proto.Persistence.Marten
         {
             using (var session = _store.OpenSession())
             {
-                var envelope = new Snapshot(actorName, index, snapshot);
-
-                session.Store(envelope);
+                session.Store(new Snapshot(actorName, index, snapshot));
 
                 await session.SaveChangesAsync();
             }
         }
 
-        public async Task DeleteEventsAsync(string actorName, long fromIndex)
+        public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
         {
             using (var session = _store.OpenSession())
             {
                 session.DeleteWhere<Event>(x =>
                     x.ActorName == actorName &&
-                    x.Index <= fromIndex);
+                    x.Index <= inclusiveToIndex);
 
                 await session.SaveChangesAsync();
             }
         }
 
-        public async Task DeleteSnapshotsAsync(string actorName, long fromIndex)
+        public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
         {
             using (var session = _store.OpenSession())
             {
                 session.DeleteWhere<Snapshot>(x =>
                     x.ActorName == actorName &&
-                    x.Index <= fromIndex);
+                    x.Index <= inclusiveToIndex);
 
                 await session.SaveChangesAsync();
             }

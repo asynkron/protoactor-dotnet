@@ -4,15 +4,23 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 
 namespace Proto.Router.Routers
 {
     internal class ConsistentHashRouterState : RouterState
     {
+        private readonly Func<string, uint> _hash;
+        private readonly int _replicaCount;
         private HashRing _hashRing;
         private Dictionary<string, PID> _routeeMap;
 
+        public ConsistentHashRouterState(Func<string, uint> hash, int replicaCount)
+        {
+            _hash = hash;
+            _replicaCount = replicaCount;
+        }
 
         public override HashSet<PID> GetRoutees()
         {
@@ -25,22 +33,28 @@ namespace Proto.Router.Routers
             var nodes = new List<string>();
             foreach (var pid in routees)
             {
-                var nodeName = pid.Address + "@" + pid.Id;
+                var nodeName = pid.ToShortString();
                 nodes.Add(nodeName);
                 _routeeMap[nodeName] = pid;
             }
-            _hashRing = new HashRing(nodes);
+            _hashRing = new HashRing(nodes, _hash, _replicaCount);
         }
 
-        public override void RouteMessage(object message, PID sender)
+        public override void RouteMessage(object message)
         {
-            if (message is IHashable hashable)
+            var env = MessageEnvelope.Unwrap(message);
+            if (env.message is IHashable hashable)
             {
                 var key = hashable.HashBy();
                 var node = _hashRing.GetNode(key);
                 var routee = _routeeMap[node];
-                routee.Request(message, sender);
+                routee.Tell(message);
             }
+            else
+            {
+                throw new NotSupportedException($"Message of type '{message.GetType().Name}' does not implement IHashable");
+            }
+
         }
     }
 }

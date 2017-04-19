@@ -12,6 +12,6 @@ namespace Proto.Router.Routers
     {
         public abstract HashSet<PID> GetRoutees();
         public abstract void SetRoutees(HashSet<PID> routees);
-        public abstract void RouteMessage(object message, PID sender);
+        public abstract void RouteMessage(object message);
     }
 }

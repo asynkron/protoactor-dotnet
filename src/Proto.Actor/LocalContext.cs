@@ -23,7 +23,7 @@ namespace Proto
         private readonly Sender _senderMiddleware;
         private readonly Func<IActor> _producer;
         private readonly ISupervisorStrategy _supervisorStrategy;
-        private HashSet<PID> _children;
+        private FastSet<PID> _children;
         private object _message;
         private Receive _receive;
         private Timer _receiveTimeoutTimer;
@@ -31,8 +31,8 @@ namespace Proto
         private RestartStatistics _restartStatistics;
         private Stack<object> _stash;
         private bool _stopping;
-        private HashSet<PID> _watchers;
-        private HashSet<PID> _watching;
+        private FastSet<PID> _watchers;
+        private FastSet<PID> _watching;
         private ILogger _logger;
 
 
@@ -49,10 +49,8 @@ namespace Proto
             //fast path
             if (parent != null)
             {
-                _watchers = new HashSet<PID>
-                {
-                    parent
-                };
+                _watchers = new FastSet<PID>();
+                _watchers.Add(parent);
             }
         }
 
@@ -78,13 +76,27 @@ namespace Proto
         {
             get
             {
-                var r = _message as MessageSender;
+                var r = _message as MessageEnvelope;
                 return r != null ? r.Message : _message;
             }
-            private set => _message = value;
         }
 
-        public PID Sender => (_message as MessageSender)?.Sender;
+        public PID Sender => (_message as MessageEnvelope)?.Sender;
+
+        public MessageHeader Headers
+        {
+            get {
+                if (_message is MessageEnvelope messageEnvelope)
+                {
+                    if (messageEnvelope.Header != null)
+                    {
+                        return messageEnvelope.Header;
+                    }
+                }
+                return MessageHeader.EmptyHeader;
+            }
+        }
+
         public TimeSpan ReceiveTimeout { get; private set; }
 
 
@@ -119,14 +131,14 @@ namespace Proto
             var pid = props.Spawn($"{Self.Id}/{name}", Self);
             if (_children == null)
             {
-                _children = new HashSet<PID>();
+                _children = new FastSet<PID>();
             }
             _children.Add(pid);
 
             //fast path add watched
             if (_watching == null)
             {
-                _watching = new HashSet<PID>();
+                _watching = new FastSet<PID>();
             }
             _watching.Add(pid);
             return pid;
@@ -162,7 +174,7 @@ namespace Proto
             pid.SendSystemMessage(new Watch(Self));
             if (_watching == null)
             {
-                _watching = new HashSet<PID>();
+                _watching = new FastSet<PID>();
             }
             _watching.Add(pid);
         }
@@ -172,7 +184,7 @@ namespace Proto
             pid.SendSystemMessage(new Unwatch(Self));
             if (_watching == null)
             {
-                _watching = new HashSet<PID>();
+                _watching = new FastSet<PID>();
             }
             _watching.Remove(pid);
         }
@@ -231,12 +243,15 @@ namespace Proto
                     case Failure f:
                         HandleFailure(f);
                         return Task.FromResult(0);
-                    case Restart r:
+                    case Restart _:
                         return HandleRestartAsync();
-                    case SuspendMailbox sm:
+                    case SuspendMailbox _:
                         return Task.FromResult(0);
-                    case ResumeMailbox rm:
+                    case ResumeMailbox _:
                         return Task.FromResult(0);
+                    case Continuation cont:
+                        _message = cont.Message;
+                        return cont.Action();
                     default:
                         Logger.LogWarning("Unknown system message {0}", msg);
                         return Task.FromResult(0);
@@ -303,25 +318,25 @@ namespace Proto
 
         public void RestartChildren(params PID[] pids)
         {
-            for (int i = 0; i < pids.Length; i++)
+            foreach (var pid in pids)
             {
-                pids[i].SendSystemMessage(Restart.Instance);
+                pid.SendSystemMessage(Restart.Instance);
             }
         }
 
         public void StopChildren(params PID[] pids)
         {
-            for (int i = 0; i < pids.Length; i++)
+            foreach (var pid in pids)
             {
-                pids[i].SendSystemMessage(Stop.Instance);
+                pid.SendSystemMessage(Stop.Instance);
             }
         }
 
         public void ResumeChildren(params PID[] pids)
         {
-            for (int i = 0; i < pids.Length; i++)
+            foreach (var t in pids)
             {
-                pids[i].SendSystemMessage(ResumeMailbox.Instance);
+                t.SendSystemMessage(ResumeMailbox.Instance);
             }
         }
 
@@ -336,30 +351,27 @@ namespace Proto
             return c._receive(context);
         }
 
-        internal static Task DefaultSender(IContext context, PID target, MessageEnvelope envelope)
+        internal static Task DefaultSender(ISenderContext context, PID target, MessageEnvelope envelope)
         {
-            target.Ref.SendUserMessage(target, envelope.Message, envelope.Sender);
+            target.Ref.SendUserMessage(target, envelope);
             return Task.FromResult(0);
         }
 
         private Task ProcessMessageAsync(object msg)
         {
-            Message = msg;
-            if (_receiveMiddleware != null)
-            {
-                return _receiveMiddleware(this);
-            }
-            return DefaultReceive(this);
+            _message = msg;
+            return _receiveMiddleware != null ? _receiveMiddleware(this) : DefaultReceive(this);
         }
 
         public void Tell(PID target, object message)
         {
-            SendUserMessage(target, message, null);
+            SendUserMessage(target, message);
         }
 
         public void Request(PID target, object message)
         {
-            SendUserMessage(target, message, Self);
+            var messageEnvelope = new MessageEnvelope(message,Self,null);
+            SendUserMessage(target, messageEnvelope);
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
@@ -373,25 +385,30 @@ namespace Proto
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
         {
-            SendUserMessage(target, message, future.PID);
+            var messageEnvelope = new MessageEnvelope(message,future.Pid,null);
+            SendUserMessage(target, messageEnvelope);
             return future.Task;
         }
 
-        private void SendUserMessage(PID target, object message, PID sender)
+        private void SendUserMessage(PID target, object message)
         {
             if (_senderMiddleware != null)
             {
-                var messageEnvelope = message as MessageEnvelope ?? new MessageEnvelope
+                if (message is MessageEnvelope messageEnvelope)
                 {
-                    Message = message,
-                    Header = new MessageHeader(),
-                    Sender = sender
-                };
-                _senderMiddleware(this, target, messageEnvelope);
+                    //Request based middleware
+                    _senderMiddleware(this, target, messageEnvelope);
+                }
+                else
+                {
+                    //tell based middleware
+                    _senderMiddleware(this, target, new MessageEnvelope(message,null,null));
+                }
             }
             else
             {
-                target.Ref.SendUserMessage(target, message, sender);
+                //Default path
+                target.Tell(message);
             }
         }
 
@@ -437,7 +454,7 @@ namespace Proto
             {
                 if (_watchers == null)
                 {
-                    _watchers = new HashSet<PID>();
+                    _watchers = new FastSet<PID>();
                 }
                 _watchers.Add(w.Watcher);
             }
@@ -445,6 +462,7 @@ namespace Proto
 
         private void HandleFailure(Failure msg)
         {
+            // ReSharper disable once SuspiciousTypeConversion.Global
             if (Actor is ISupervisorStrategy supervisor)
             {
                 supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
@@ -455,8 +473,8 @@ namespace Proto
 
         private async Task HandleTerminatedAsync(Terminated msg)
         {
-            _children.Remove(msg.Who);
-            _watching.Remove(msg.Who);
+            _children?.Remove(msg.Who);
+            _watching?.Remove(msg.Who);
             await InvokeUserMessageAsync(msg);
             await TryRestartOrTerminateAsync();
         }
@@ -562,6 +580,17 @@ namespace Proto
         private void ReceiveTimeoutCallback(object state)
         {
             Self.Request(Proto.ReceiveTimeout.Instance, null);
+        }
+
+        public void ReenterAfter<T>(Task<T> target, Func<Task<T>,Task> action)
+        {
+            var msg = _message;
+            var cont = new Continuation(() => action(target),msg);
+
+            target.ContinueWith(t =>
+            {
+               Self.SendSystemMessage(cont);
+            });
         }
     }
 }

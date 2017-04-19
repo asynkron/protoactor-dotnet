@@ -43,7 +43,7 @@ namespace Proto.Persistence.RavenDB
             }
         }
 
-        public async Task<Tuple<object, long>> GetSnapshotAsync(string actorName)
+        public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
             using (var session = _store.OpenAsyncSession())
             {
@@ -52,48 +52,44 @@ namespace Proto.Persistence.RavenDB
                     .OrderByDescending(x => x.Index)
                     .FirstOrDefaultAsync();
 
-                return snapshot != null ? Tuple.Create((object)snapshot.Data, snapshot.Index) : null;
+                return snapshot != null ? (snapshot.Data, snapshot.Index) : (null, 0);
             }
         }
 
-        public async Task PersistEventAsync(string actorName, long index, object data)
+        public async Task PersistEventAsync(string actorName, long index, object @event)
         {
             using (var session = _store.OpenAsyncSession())
             {
-                var @event = new Event(actorName, index, data);
-
-                await session.StoreAsync(@event);
+                await session.StoreAsync(new Event(actorName, index, @event));
 
                 await session.SaveChangesAsync();
             }
         }
 
-        public async Task PersistSnapshotAsync(string actorName, long index, object data)
+        public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)
         {
             using (var session = _store.OpenAsyncSession())
             {
-                var snapshot = new Snapshot(actorName, index, data);
-
-                await session.StoreAsync(snapshot);
+                await session.StoreAsync(new Snapshot(actorName, index, snapshot));
 
                 await session.SaveChangesAsync();
             }
         }
 
-        public async Task DeleteEventsAsync(string actorName, long fromIndex)
+        public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
         {
             var indexName = "DeleteEventIndex";
 
-            var indexQuery = new IndexQuery { Query = $"ActorName:{actorName} AND Index_Range:[Lx0 TO Lx{fromIndex}]" };
+            var indexQuery = new IndexQuery { Query = $"ActorName:{actorName} AND Index_Range:[Lx0 TO Lx{inclusiveToIndex}]" };
 
             Operation operation = await _store.AsyncDatabaseCommands.DeleteByIndexAsync(indexName, indexQuery);
         }
 
-        public async Task DeleteSnapshotsAsync(string actorName, long fromIndex)
+        public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
         {
             var indexName = "DeleteSnapshotIndex";
 
-            var indexQuery = new IndexQuery { Query = $"ActorName:{actorName} AND Index_Range:[Lx0 TO Lx{fromIndex}]" };
+            var indexQuery = new IndexQuery { Query = $"ActorName:{actorName} AND Index_Range:[Lx0 TO Lx{inclusiveToIndex}]" };
 
             Operation operation = await _store.AsyncDatabaseCommands.DeleteByIndexAsync(indexName, indexQuery);
         }

@@ -35,7 +35,7 @@ namespace Proto.Remote
                         var rt = new RemoteTerminate(target, msg.Who);
                         Remote.EndpointManagerPid.Tell(rt);
                     }
-                    if (message is SystemMessage sys)
+                    else if (message is SystemMessage sys)
                     {
                         target.SendSystemMessage(sys);
                     }

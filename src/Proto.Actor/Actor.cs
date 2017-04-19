@@ -11,7 +11,7 @@ namespace Proto
 {
     public delegate Task Receive(IContext context);
 
-    public delegate Task Sender(IContext ctx, PID target, MessageEnvelope envelope);
+    public delegate Task Sender(ISenderContext ctx, PID target, MessageEnvelope envelope);
 
     public class EmptyActor : IActor
     {
@@ -64,11 +64,8 @@ namespace Proto
 
     public class ProcessNameExistException : Exception
     {
-        private string _name;
-
-        public ProcessNameExistException(string name)
+        public ProcessNameExistException(string name) : base($"a Process with the name '{name}' already exists")
         {
-            _name = name;
         }
     }
 

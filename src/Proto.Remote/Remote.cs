@@ -9,28 +9,31 @@ using System.Linq;
 using Grpc.Core;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
     public static class Remote
     {
+        private static ILogger _logger = Log.CreateLogger(typeof(Remote).FullName);
+
         private static Server _server;
-        private static Dictionary<string, Props> _kinds = new Dictionary<string, Props>();
+        private static readonly Dictionary<string, Props> Kinds = new Dictionary<string, Props>();
         public static PID EndpointManagerPid { get; private set; }
         public static PID ActivatorPID { get; private set; }
 
         public static string[] GetKnownKinds()
         {
-            return _kinds.Keys.ToArray();
+            return Kinds.Keys.ToArray();
         }
 
         public static void RegisterKnownKind(string kind, Props props)
         {
-            _kinds.Add(kind, props);
+            Kinds.Add(kind, props);
         }
         public static Props GetKnownKind(string kind)
         {
-            if (_kinds.TryGetValue(kind, out var props)){
+            if (Kinds.TryGetValue(kind, out var props)){
                 return props;
             }
             throw new ArgumentException($"No Props found for kind '{kind}'");
@@ -59,7 +62,7 @@ namespace Proto.Remote
             SpawnEndpointManager(config);
             SpawnActivator();
 
-            Console.WriteLine($"[REMOTING] Starting Proto.Actor server on {addr}");
+            _logger.LogDebug($"Starting Proto.Actor server on {addr}");;
         }
 
         private static void SpawnActivator()
@@ -72,10 +75,8 @@ namespace Proto.Remote
         {
             var props = Actor.FromProducer(() => new EndpointManager(config));
             EndpointManagerPid = Actor.Spawn(props);
+            EventStream.Instance.Subscribe<EndpointTerminatedEvent>(EndpointManagerPid.Tell);
         }
-
-  
-
 
         public static PID ActivatorForAddress(string address)
         {

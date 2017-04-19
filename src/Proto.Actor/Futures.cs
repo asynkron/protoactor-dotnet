@@ -17,7 +17,7 @@ namespace Proto
 
         public FutureProcess(TimeSpan timeout) : this(new CancellationTokenSource(timeout)) { }
         public FutureProcess(CancellationToken cancellationToken) : this(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) { }
-        public FutureProcess() : this((CancellationTokenSource)null) { }
+        public FutureProcess() : this(null) { }
 
         FutureProcess(CancellationTokenSource cts)
         {
@@ -30,7 +30,7 @@ namespace Proto
             {
                 throw new ProcessNameExistException(name);
             }
-            PID = pid;
+            Pid = pid;
 
             if (cts != null)
             {
@@ -48,21 +48,24 @@ namespace Proto
             Task = _tcs.Task;
         }
 
-        public PID PID { get; }
+        public PID Pid { get; }
         public Task<T> Task { get; }
 
-        public override void SendUserMessage(PID pid, object message, PID sender)
+        public override void SendUserMessage(PID pid, object message)
         {
-            if (message is T || message == null)
+            var env = MessageEnvelope.Unwrap(message);
+            
+
+            if (env.message is T || message == null)
             {
                 if (_cts != null && _cts.IsCancellationRequested) return;
 
-                _tcs.TrySetResult((T)message);
+                _tcs.TrySetResult((T)env.message);
                 pid.Stop();
             }            
             else
             {
-                throw new InvalidOperationException($"Unexpected message.  Was type {message.GetType()} but expected {typeof(T)}");
+                throw new InvalidOperationException($"Unexpected message.  Was type {env.message.GetType()} but expected {typeof(T)}");
             }
 
         }

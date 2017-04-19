@@ -27,6 +27,17 @@ namespace Proto.Mailbox
     public static class Dispatchers
     {
         public static ThreadPoolDispatcher DefaultDispatcher { get; } = new ThreadPoolDispatcher();
+        public static SynchronousDispatcher SynchronousDispatcher { get; } = new SynchronousDispatcher();
+    }
+
+    public sealed class SynchronousDispatcher : IDispatcher
+    {
+        public int Throughput => 300;
+
+        public void Schedule(Func<Task> runner)
+        {
+            runner().Wait();
+        }
     }
 
     public sealed class ThreadPoolDispatcher : IDispatcher
