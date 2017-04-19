@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Proto
+﻿namespace Proto
 {
     public class MessageEnvelope
     {
@@ -8,12 +6,12 @@ namespace Proto
         {
             Sender = sender; // ?? throw new ArgumentNullException(nameof(sender));
             Message = message; // ?? throw new ArgumentNullException(nameof(message));
-            Header = header; // ?? throw new ArgumentNullException(nameof(header));
+            Header = header;
         }
 
         public PID Sender { get; }
         public object Message { get; }
-        public MessageHeader Header { get; }
+        public MessageHeader Header { get; private set; }
 
 
         public static (object message, PID sender, MessageHeader headers) Unwrap(object message)
@@ -25,9 +23,24 @@ namespace Proto
 
             return (message, null, null);
         }
-    }
 
-    public class MessageHeader : Dictionary<string, string>
-    {
+        public string GetHeader(string key, string @default = null)
+        {
+            if (Header == null)
+            {
+                return @default;
+            }
+            return Header.ContainsKey(key) ? Header[key] : @default;
+        }
+
+        public void SetHeader(string key, string value)
+        {
+            if (Header == null)
+            {
+                Header = new MessageHeader();
+            }
+
+            Header[key] = value;
+        }
     }
 }

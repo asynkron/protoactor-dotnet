@@ -83,6 +83,21 @@ namespace Proto
         }
 
         public PID Sender => (_message as MessageEnvelope)?.Sender;
+
+        public MessageHeader Headers
+        {
+            get {
+                if (_message is MessageEnvelope messageEnvelope)
+                {
+                    if (messageEnvelope.Header != null)
+                    {
+                        return messageEnvelope.Header;
+                    }
+                }
+                return MessageHeader.EmptyHeader;
+            }
+        }
+
         public TimeSpan ReceiveTimeout { get; private set; }
 
 
@@ -337,7 +352,7 @@ namespace Proto
             return c._receive(context);
         }
 
-        internal static Task DefaultSender(IContext context, PID target, MessageEnvelope envelope)
+        internal static Task DefaultSender(ISenderContext context, PID target, MessageEnvelope envelope)
         {
             target.Ref.SendUserMessage(target, envelope);
             return Task.FromResult(0);
@@ -398,7 +413,7 @@ namespace Proto
             else
             {
                 //Default path
-                target.Ref.SendUserMessage(target, message);
+                target.Tell(message);
             }
         }
 

@@ -5,36 +5,54 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto
 {
-    public interface IOutboundContext
-    {
-        void Tell(PID target, object message);
-        void Request(PID target, object message);
-        Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout);
-        Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken);
-        Task<T> RequestAsync<T>(PID target, object message);
-    }
-    public class RootContext : IOutboundContext
-    {
+    public class ActorClient : ISenderContext    {
         private readonly Sender _senderMiddleware;
 
-        public RootContext(Sender senderMiddleware)
+        public ActorClient(MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
         {
-            _senderMiddleware = senderMiddleware;
+            _senderMiddleware = middleware.Reverse()
+                    .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner));
+            Headers = messageHeader;
         }
 
-        public void Tell(PID pid, object message)
+        private Task DefaultSender(ISenderContext context,PID target, MessageEnvelope message)
         {
-            
+            target.Tell(message);
+            return Actor.Done;
         }
 
-        public void Request(PID target, object message)
+        public void Tell(PID target, object message)
         {
-            throw new NotImplementedException();
+            if (_senderMiddleware != null)
+            {
+                if (message is MessageEnvelope messageEnvelope)
+                {
+                    //Request based middleware
+                    _senderMiddleware(this, target, messageEnvelope);
+                }
+                else
+                {
+                    //tell based middleware
+                    _senderMiddleware(this, target, new MessageEnvelope(message,null,null));
+                }
+            }
+            else
+            {
+                //Default path
+                target.Tell(message);
+            }
+        }
+
+        public void Request(PID target, object message,PID sender)
+        {
+            var envelope = new MessageEnvelope(message,sender,null);
+            Tell(target,envelope);
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
@@ -51,5 +69,8 @@ namespace Proto
         {
             throw new NotImplementedException();
         }
+
+        public object Message => null;
+        public MessageHeader Headers { get; }
     }
 }
