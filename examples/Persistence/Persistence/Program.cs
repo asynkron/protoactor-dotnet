@@ -10,6 +10,9 @@ using Messages;
 using Proto;
 using Proto.Persistence;
 using Proto.Persistence.Sqlite;
+using Event = Proto.Persistence.Event;
+using Snapshot = Proto.Persistence.Snapshot;
+using System.Text;
 
 class Program
 {
@@ -25,11 +28,58 @@ class Program
         Console.ReadLine();
     }
 
+    public class RequestSnapshot { }
+
     class MyPersistenceActor : IPersistentActor
     {
         private PID _loopActor;
         private State _state = new State();
         public Persistence Persistence { get; set; }
+
+        public void UpdateState(object message)
+        {
+            switch (message)
+            {
+                case Event e:
+                    Apply(e);
+                    break;
+                case Snapshot s:
+                    Apply(s);
+                    break;
+            }
+        }
+
+        private void Apply(Event @event)
+        {
+            switch (@event)
+            {
+                case RecoverEvent msg:
+                    if(msg.Data is RenameEvent re)
+                    {
+                        _state.Name = re.Name;
+                        Console.WriteLine("MyPersistenceActor - RecoverEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
+                    }
+                    break;
+                case PersistedEvent msg:
+                    Console.WriteLine("MyPersistenceActor - PersistedEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
+                    break;
+            }
+        }
+
+        private void Apply(Snapshot snapshot)
+        {
+            switch (snapshot)
+            {
+                case RecoverSnapshot msg:
+                    if (msg.State is State ss)
+                    {
+                        _state = ss;
+                        Console.WriteLine("MyPersistenceActor - RecoverSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}", Persistence.Index, ss.Name);
+                    }
+                    break;
+            }
+        }
+
         private class StartLoopActor { }
         private class TimeToSnapshot { }
 
@@ -43,70 +93,30 @@ class Program
 
                     Console.WriteLine("MyPersistenceActor - Started");
 
-                    context.Self.Tell(new StartLoopActor());
-
-                    break;
-                case RecoveryStarted msg:
-
-                    Console.WriteLine("MyPersistenceActor - RecoveryStarted");
-
-                    break;
-                case RecoveryCompleted msg:
-
-                    Console.WriteLine("MyPersistenceActor - RecoveryCompleted");
+                    Console.WriteLine("MyPersistenceActor - Current State: {0}", _state);
 
                     context.Self.Tell(new StartLoopActor());
 
                     break;
-                case RecoverSnapshot msg:
-                    
-                    if (msg.Snapshot is State ss)
-                    {
-                        _state = ss;
-
-                        Console.WriteLine("MyPersistenceActor - RecoverSnapshot = {0}, Snapshot.Name = {1}", Persistence.Index, ss.Name);
-
-                    }
-
-                    break;
-                case RecoverEvent msg:
-                    
-                    if (msg.Event is RenameEvent recev)
-                    {
-                        Console.WriteLine("MyPersistenceActor - RecoverEvent = {0}, Event.Name = {1}", Persistence.Index, recev.Name);
-                    }
-
-                    break;
-                case PersistedSnapshot msg:
-
-                    await Handle(msg);
-
-                    break;
-                case PersistedEvent msg:
-
-                    Console.WriteLine("MyPersistenceActor - PersistedEvent = {0}", msg.Index);
-
-                    if(msg.Event is RenameEvent rne)
-                    {
-                        _state.Name = rne.Name;
-                    }
-
-                    break;
+     
                 case RequestSnapshot msg:
 
                     await Handle(context, msg);
 
                     break;
+
                 case TimeToSnapshot msg:
 
                     await Handle(context, msg);
 
                     break;
+
                 case StartLoopActor msg:
 
                     await Handle(context, msg);
 
                     break;
+
                 case RenameCommand msg:
 
                     await Handle(msg);
@@ -115,19 +125,12 @@ class Program
             }
         }
 
-        private async Task Handle(PersistedSnapshot message)
-        {
-            Console.WriteLine("MyPersistenceActor - PersistedSnapshot at Index = {0}", message.Index);
-            
-            await Persistence.DeleteSnapshotsAsync(message.Index - 1);
-        }
-
         private async Task Handle(IContext context, RequestSnapshot message)
         {
             Console.WriteLine("MyPersistenceActor - RequestSnapshot");
 
             await Persistence.PersistSnapshotAsync(_state);
-
+            Console.WriteLine("MyPersistenceActor - PersistedSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}", Persistence.Index, _state);
             context.Self.Tell(new TimeToSnapshot());
         }
 
@@ -166,6 +169,8 @@ class Program
         {
             Console.WriteLine("MyPersistenceActor - RenameCommand");
 
+            _state.Name = message.Name;
+
             await Persistence.PersistEventAsync(new RenameEvent { Name = message.Name });
         }
     }
@@ -189,7 +194,7 @@ class Program
 
                     Task.Run(async () => {
                         
-                        context.Parent.Tell(new RenameCommand { Name = "Daniel" });
+                        context.Parent.Tell(new RenameCommand { Name = GeneratePronounceableName(5) });
 
                         await Task.Delay(TimeSpan.FromSeconds(2));
 
@@ -200,6 +205,26 @@ class Program
             }
 
             return Actor.Done;
+        }
+
+        static string GeneratePronounceableName(int length)
+        {
+            const string vowels = "aeiou";
+            const string consonants = "bcdfghjklmnpqrstvwxyz";
+
+            var rnd = new Random();
+            var name = new StringBuilder();
+
+            length = length % 2 == 0 ? length : length + 1;
+
+            for (var i = 0; i < length / 2; i++)
+            {
+                name
+                    .Append(vowels[rnd.Next(vowels.Length)])
+                    .Append(consonants[rnd.Next(consonants.Length)]);
+            }
+
+            return name.ToString();
         }
     }
 }

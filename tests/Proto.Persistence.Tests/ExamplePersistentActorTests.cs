@@ -223,10 +223,43 @@ namespace Proto.Persistence.Tests
         public int Amount { get; set; }
     }
 
+    internal class RequestSnapshot { }
+
     internal class ExamplePersistentActor : IPersistentActor
     {
         private State _state = new State{Value = 1};
         public Persistence Persistence { get; set; }
+
+        public void UpdateState(object message)
+        {
+            switch (message)
+            {
+                case Event e:
+                    Apply(e);
+                    break;
+                case Snapshot s:
+                    Apply(s);
+                    break;
+            }
+        }
+
+        private void Apply(Event @event)
+        {
+            switch (@event.Data)
+            {
+                case Multiplied msg:
+                    _state.Value = _state.Value * msg.Amount;
+                    break;
+            }
+        }
+
+        private void Apply(Snapshot snapshot)
+        {
+            if (snapshot.State is State ss)
+            {
+                _state = ss;
+            }
+        }
 
         public async Task ReceiveAsync(IContext context)
         {
@@ -238,33 +271,11 @@ namespace Proto.Persistence.Tests
                 case GetIndex msg:
                     context.Sender.Tell(Persistence.Index);
                     break;
-                case RecoverSnapshot msg:
-                    if (msg.Snapshot is State ss)
-                    {
-                        _state = ss;
-                    }
-                    break;
-                case RecoverEvent msg:
-                    UpdateState(msg.Event);
-                    break;
-                case PersistedEvent msg:
-                    UpdateState(msg.Event);
-                    break;
                 case RequestSnapshot msg:
                     await Persistence.PersistSnapshotAsync(new State { Value = _state.Value });
                     break;
                 case Multiply msg:
                     await Persistence.PersistEventAsync(new Multiplied { Amount = msg.Amount });
-                    break;
-            }
-        }
-
-        private void UpdateState(object message)
-        {
-            switch (message)
-            {
-                case Multiplied msg:
-                    _state.Value = _state.Value * msg.Amount;
                     break;
             }
         }
