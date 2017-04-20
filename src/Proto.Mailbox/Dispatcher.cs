@@ -60,17 +60,17 @@ namespace Proto.Mailbox
     /// </summary>
     public sealed class CurrentSynchronizationContextDispatcher : IDispatcher
     {
-        private readonly TaskScheduler scheduler;
+        private readonly TaskScheduler _scheduler;
 
         public CurrentSynchronizationContextDispatcher()
         {
-            scheduler = TaskScheduler.FromCurrentSynchronizationContext();
+            _scheduler = TaskScheduler.FromCurrentSynchronizationContext();
             Throughput = 300;
         }
 
         public void Schedule(Func<Task> runner)
         {
-            Task.Factory.StartNew(runner, CancellationToken.None, TaskCreationOptions.None, scheduler);
+            Task.Factory.StartNew(runner, CancellationToken.None, TaskCreationOptions.None, _scheduler);
         }
 
         public int Throughput { get; set; }

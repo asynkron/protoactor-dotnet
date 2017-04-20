@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Proto.Mailbox;
 
 namespace Proto
 {
@@ -43,10 +42,10 @@ namespace Proto
 
     public class OneForOneStrategy : ISupervisorStrategy
     {
-        public readonly int _maxNrOfRetries;
+        private readonly int _maxNrOfRetries;
         private readonly TimeSpan? _withinTimeSpan;
         private readonly Decider _decider;
-        private readonly ILogger logger = Log.CreateLogger<OneForOneStrategy>();
+        private static readonly ILogger Logger = Log.CreateLogger<OneForOneStrategy>();
 
         public OneForOneStrategy(Decider decider, int maxNrOfRetries, TimeSpan? withinTimeSpan)
         {
@@ -66,17 +65,17 @@ namespace Proto
                 case SupervisorDirective.Restart:
                     if (RequestRestartPermission(rs))
                     {
-                        logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
+                        Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
                         supervisor.RestartChildren(child);
                     }
                     else
                     {
-                        logger.LogInformation($"Stopping {child.ToShortString()} Reason { reason}");
+                        Logger.LogInformation($"Stopping {child.ToShortString()} Reason { reason}");
                         supervisor.StopChildren(child);
                     }
                     break;
                 case SupervisorDirective.Stop:
-                    logger.LogInformation($"Stopping {child.ToShortString()} Reason {reason}");
+                    Logger.LogInformation($"Stopping {child.ToShortString()} Reason {reason}");
                     supervisor.StopChildren(child);
                     break;
                 case SupervisorDirective.Escalate:
@@ -101,6 +100,5 @@ namespace Proto
             rs.Reset();
             return true;
         }
-
     }
 }

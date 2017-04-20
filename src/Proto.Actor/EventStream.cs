@@ -16,7 +16,7 @@ namespace Proto
     {
         public static readonly EventStream Instance = new EventStream();
 
-        private readonly ILogger logger = Log.CreateLogger<EventStream>();
+        private readonly ILogger _logger = Log.CreateLogger<EventStream>();
 
         public EventStream()
         {
@@ -24,7 +24,7 @@ namespace Proto
             {
                 if (msg is DeadLetterEvent letter)
                 {
-                    logger.LogInformation("[DeadLetter] '{0}' got '{1}:{2}' from '{3}'", letter.Pid.ToShortString(),
+                    _logger.LogInformation("[DeadLetter] '{0}' got '{1}:{2}' from '{3}'", letter.Pid.ToShortString(),
                         letter.Message.GetType().Name, letter.Message, letter.Sender?.ToShortString());
                 }
             });

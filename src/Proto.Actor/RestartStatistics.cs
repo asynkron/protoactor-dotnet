@@ -19,24 +19,12 @@ namespace Proto
             LastFailureTime = lastFailuretime;
         }
 
-        public void Fail()
-        {
-            FailureCount++;
-        }
+        public void Fail() => FailureCount++;
 
-        public void Reset()
-        {
-            FailureCount = 0;
-        }
+        public void Reset() => FailureCount = 0;
 
-        public void Restart()
-        {
-            LastFailureTime = DateTime.Now;
-        }
+        public void Restart() => LastFailureTime = DateTime.Now;
 
-        public bool IsWithinDuration(TimeSpan within)
-        {
-            return (DateTime.Now - LastFailureTime) < within;
-        }
+        public bool IsWithinDuration(TimeSpan within) => (DateTime.Now - LastFailureTime) < within;
     }
 }

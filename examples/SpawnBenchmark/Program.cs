@@ -22,9 +22,9 @@ namespace SpawnBenchmark
     internal class MyActor : IActor
     {
         public static Props props = Actor.FromProducer(() => new MyActor());
-        private long Replies;
-        private PID ReplyTo;
-        private long Sum;
+        private long _replies;
+        private PID _replyTo;
+        private long _sum;
 
         public Task ReceiveAsync(IContext context)
         {
@@ -38,8 +38,8 @@ namespace SpawnBenchmark
                     context.Self.Stop();
                     return Actor.Done;
                 }
-                Replies = r.Div;
-                ReplyTo = context.Sender;
+                _replies = r.Div;
+                _replyTo = context.Sender;
                 for (var i = 0; i < r.Div; i++)
                 {
                     var child = Actor.Spawn(props);
@@ -55,11 +55,11 @@ namespace SpawnBenchmark
             }
             if (msg is Int64)
             {
-                Sum += (Int64) msg;
-                Replies--;
-                if (Replies == 0)
+                _sum += (Int64) msg;
+                _replies--;
+                if (_replies == 0)
                 {
-                    ReplyTo.Tell(Sum);
+                    _replyTo.Tell(_sum);
                 }
                 return Actor.Done;
             }

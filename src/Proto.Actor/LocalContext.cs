@@ -14,8 +14,17 @@ using Proto.Mailbox;
 
 namespace Proto
 {
+    public enum ContextState
+    {
+        None,
+        Alive,
+        Restarting,
+        Stopping
+    }
+
     public class Context : IMessageInvoker, IContext, ISupervisor
     {
+        private static ILogger Logger { get; } = Log.CreateLogger<Context>();
         public static readonly IReadOnlyCollection<PID> EmptyChildren = new List<PID>();
 
         private Stack<Receive> _behavior;
@@ -27,14 +36,10 @@ namespace Proto
         private object _message;
         private Receive _receive;
         private Timer _receiveTimeoutTimer;
-        private bool _restarting;
+        private ContextState _state;
         private RestartStatistics _restartStatistics;
         private Stack<object> _stash;
-        private bool _stopping;
         private FastSet<PID> _watchers;
-        private FastSet<PID> _watching;
-        private ILogger _logger;
-
 
         public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
         {
@@ -42,28 +47,12 @@ namespace Proto
             _supervisorStrategy = supervisorStrategy;
             _receiveMiddleware = receiveMiddleware;
             _senderMiddleware = senderMiddleware;
+
+            //Parents are implicitly watching the child
+            //The parent is not part of the Watchers set
             Parent = parent;
 
             IncarnateActor();
-
-            //fast path
-            if (parent != null)
-            {
-                _watchers = new FastSet<PID>();
-                _watchers.Add(parent);
-            }
-        }
-
-        public ILogger Logger
-        {
-            get
-            {
-                if (_logger == null)
-                {
-                    _logger = Log.CreateLogger<Context>();
-                }
-                return _logger;
-            }
         }
 
         public IReadOnlyCollection<PID> Children => _children?.ToList() ?? EmptyChildren;
@@ -85,7 +74,8 @@ namespace Proto
 
         public MessageHeader Headers
         {
-            get {
+            get
+            {
                 if (_message is MessageEnvelope messageEnvelope)
                 {
                     if (messageEnvelope.Header != null)
@@ -98,7 +88,6 @@ namespace Proto
         }
 
         public TimeSpan ReceiveTimeout { get; private set; }
-
 
         public void Stash()
         {
@@ -135,13 +124,7 @@ namespace Proto
             }
             _children.Add(pid);
 
-            //fast path add watched
-            if (_watching == null)
-            {
-                _watching = new FastSet<PID>();
-            }
-            _watching.Add(pid);
-            return pid;
+           return pid;
         }
 
         public void SetBehavior(Receive receive)
@@ -172,21 +155,11 @@ namespace Proto
         public void Watch(PID pid)
         {
             pid.SendSystemMessage(new Watch(Self));
-            if (_watching == null)
-            {
-                _watching = new FastSet<PID>();
-            }
-            _watching.Add(pid);
         }
 
         public void Unwatch(PID pid)
         {
             pid.SendSystemMessage(new Unwatch(Self));
-            if (_watching == null)
-            {
-                _watching = new FastSet<PID>();
-            }
-            _watching.Remove(pid);
         }
 
         public void SetReceiveTimeout(TimeSpan duration)
@@ -342,7 +315,7 @@ namespace Proto
 
         internal static Task DefaultReceive(IContext context)
         {
-            var c = (Context)context;
+            var c = (Context) context;
             if (c.Message is PoisonPill)
             {
                 c.Self.Stop();
@@ -370,7 +343,7 @@ namespace Proto
 
         public void Request(PID target, object message)
         {
-            var messageEnvelope = new MessageEnvelope(message,Self,null);
+            var messageEnvelope = new MessageEnvelope(message, Self, null);
             SendUserMessage(target, messageEnvelope);
         }
 
@@ -385,7 +358,7 @@ namespace Proto
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
         {
-            var messageEnvelope = new MessageEnvelope(message,future.Pid,null);
+            var messageEnvelope = new MessageEnvelope(message, future.Pid, null);
             SendUserMessage(target, messageEnvelope);
             return future.Task;
         }
@@ -402,7 +375,7 @@ namespace Proto
                 else
                 {
                     //tell based middleware
-                    _senderMiddleware(this, target, new MessageEnvelope(message,null,null));
+                    _senderMiddleware(this, target, new MessageEnvelope(message, null, null));
                 }
             }
             else
@@ -414,17 +387,14 @@ namespace Proto
 
         private void IncarnateActor()
         {
-            _restarting = false;
-            _stopping = false;
+            _state = ContextState.Alive;
             Actor = _producer();
             SetBehavior(ActorReceive);
         }
 
         private async Task HandleRestartAsync()
         {
-            _stopping = false;
-            _restarting = true;
-
+            _state = ContextState.Restarting;
             await InvokeUserMessageAsync(Restarting.Instance);
             if (_children != null)
             {
@@ -443,7 +413,7 @@ namespace Proto
 
         private void HandleWatch(Watch w)
         {
-            if (_stopping)
+            if (_state == ContextState.Stopping)
             {
                 w.Watcher.SendSystemMessage(new Terminated()
                 {
@@ -474,7 +444,6 @@ namespace Proto
         private async Task HandleTerminatedAsync(Terminated msg)
         {
             _children?.Remove(msg.Who);
-            _watching?.Remove(msg.Who);
             await InvokeUserMessageAsync(msg);
             await TryRestartOrTerminateAsync();
         }
@@ -486,8 +455,7 @@ namespace Proto
 
         private async Task HandleStopAsync()
         {
-            _restarting = false;
-            _stopping = true;
+            _state = ContextState.Stopping;
             //this is intentional
             await InvokeUserMessageAsync(Stopping.Instance);
             if (_children != null)
@@ -514,15 +482,14 @@ namespace Proto
                 return;
             }
 
-            if (_restarting)
+            switch (_state)
             {
-                await RestartAsync();
-                return;
-            }
-
-            if (_stopping)
-            {
-                await StopAsync();
+                case ContextState.Restarting:
+                    await RestartAsync();
+                    return;
+                case ContextState.Stopping:
+                    await StopAsync();
+                    break;
             }
         }
 
@@ -534,14 +501,22 @@ namespace Proto
             //Notify watchers
             if (_watchers != null)
             {
-                var message = new Terminated()
+                var terminated = new Terminated()
                 {
                     Who = Self
                 };
                 foreach (var watcher in _watchers)
                 {
-                    watcher.SendSystemMessage(message);
+                    watcher.SendSystemMessage(terminated);
                 }
+            }
+            if (Parent != null)
+            {
+                var terminated = new Terminated()
+                {
+                    Who = Self
+                };
+                Parent.SendSystemMessage(terminated);
             }
         }
 
@@ -582,15 +557,12 @@ namespace Proto
             Self.Request(Proto.ReceiveTimeout.Instance, null);
         }
 
-        public void ReenterAfter<T>(Task<T> target, Func<Task<T>,Task> action)
+        public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
             var msg = _message;
-            var cont = new Continuation(() => action(target),msg);
+            var cont = new Continuation(() => action(target), msg);
 
-            target.ContinueWith(t =>
-            {
-               Self.SendSystemMessage(cont);
-            });
+            target.ContinueWith(t => { Self.SendSystemMessage(cont); });
         }
     }
 }

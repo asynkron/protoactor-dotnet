@@ -17,15 +17,9 @@ namespace Proto
     {
         private readonly Receive _receive;
 
-        public EmptyActor(Receive receive)
-        {
-            _receive = receive;
-        }
+        public EmptyActor(Receive receive) => _receive = receive;
 
-        public Task ReceiveAsync(IContext context)
-        {
-            return _receive(context);
-        }
+        public Task ReceiveAsync(IContext context) => _receive(context);
     }
 
     public static class Actor
@@ -34,15 +28,9 @@ namespace Proto
 
         public static EventStream EventStream => EventStream.Instance;
 
-        public static Props FromProducer(Func<IActor> producer)
-        {
-            return new Props().WithProducer(producer);
-        }
+        public static Props FromProducer(Func<IActor> producer) => new Props().WithProducer(producer);
 
-        public static Props FromFunc(Receive receive)
-        {
-            return FromProducer(() => new EmptyActor(receive));
-        }
+        public static Props FromFunc(Receive receive) => FromProducer(() => new EmptyActor(receive));
 
         public static PID Spawn(Props props)
         {

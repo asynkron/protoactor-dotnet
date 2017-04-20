@@ -26,19 +26,20 @@ namespace Proto.Schedulers.SimpleScheduler
             {
                 await Task.Delay(delay);
 
-                async void Trigger(object _message)
+                async void Trigger()
                 {
-                    if (cts.IsCancellationRequested)
-                        return;
+                    while (true)
+                    {
+                        if (cts.IsCancellationRequested)
+                            return;
 
-                    target.Tell(message);
+                        target.Tell(message);
 
-                    await Task.Delay(interval);
-
-                    Trigger(_message);
+                        await Task.Delay(interval);
+                    }
                 }
 
-                Trigger(message);
+                Trigger();
 
             }, cts.Token);
 
