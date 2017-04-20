@@ -5,7 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -26,7 +26,7 @@ namespace Proto.Remote
     public class EndpointManager : IActor
     {
         private readonly RemoteConfig _config;
-        private readonly Dictionary<string, Endpoint> _connections = new Dictionary<string, Endpoint>();
+        private readonly ConcurrentDictionary<string, Endpoint> _connections = new ConcurrentDictionary<string, Endpoint>();
 
         private readonly ILogger _logger = Log.CreateLogger<EndpointManager>();
 
@@ -90,7 +90,10 @@ namespace Proto.Remote
                 var watcher = SpawnWatcher(address, context);
 
                 endpoint = new Endpoint(writer, watcher);
-                _connections.Add(address, endpoint);
+                
+                if (!_connections.TryAdd(address, endpoint)){
+                    _connections.TryGetValue(address, out endpoint);
+                }
             }
 
             return endpoint;
