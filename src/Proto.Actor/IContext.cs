@@ -78,21 +78,6 @@ namespace Proto
         PID SpawnNamed(Props props, string name);
 
         /// <summary>
-        ///     Replaces the current behavior stack with the new behavior.
-        /// </summary>
-        void SetBehavior(Receive behavior);
-
-        /// <summary>
-        ///     Pushes the behavior onto the current behavior stack and sets the current Receive handler to the new behavior.
-        /// </summary>
-        void PushBehavior(Receive behavior);
-
-        /// <summary>
-        ///     Reverts to the previous Receive handler.
-        /// </summary>
-        void PopBehavior();
-
-        /// <summary>
         ///     Registers the actor as a watcher for the specified PID.
         /// </summary>
         /// <param name="pid">The PID to watch</param>
