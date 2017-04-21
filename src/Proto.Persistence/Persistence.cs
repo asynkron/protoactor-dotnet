@@ -11,72 +11,79 @@ namespace Proto.Persistence
 {
     public class Persistence
     {
-        private IProviderState _state;
-        private IPersistentActor _actor;
         public long Index { get; private set; }
-        private IContext _context;
-        private string ActorId => _context.Self.Id;
+        private readonly IProviderState _state;
+        private readonly string _persistenceId;
 
-        public async Task InitAsync(IProvider provider, IContext context, IPersistentActor actor)
+        /// <summary>
+        /// Provides Event Sourcing with optional snapshotting functionality to persist an actor's state.
+        /// </summary>
+        /// <param name="provider">The database provider to use for persistence</param>
+        /// <param name="persistenceId">The id of the actor. This should be a unique string</param>
+        public Persistence(IProvider provider, string persistenceId)
         {
+            _persistenceId = persistenceId;
             _state = provider.GetState();
-            _context = context;
-            _actor = actor;
+        }
 
-            var (snapshot, index) = await _state.GetSnapshotAsync(ActorId);
+        public async Task RecoverStateFromEventsAsync(Action<Event> applyEvent)
+        {
+            if (applyEvent == null)
+            {
+                throw new ArgumentNullException(nameof(applyEvent));
+            }
+            await _state.GetEventsAsync(_persistenceId, Index, @event =>
+            {
+                Index++;
+                applyEvent(new RecoverEvent(@event, Index));
+            });
+        }
+
+        public async Task RecoverStateFromSnapshotAsync(Action<Snapshot> applySnapshot)
+        {
+            if (applySnapshot == null)
+            {
+                throw new ArgumentNullException(nameof(applySnapshot));
+            }
+            var (snapshot, index) = await _state.GetSnapshotAsync(_persistenceId);
 
             if (snapshot != null)
             {
                 Index = index;
-                _actor.UpdateState(new RecoverSnapshot(snapshot, index));
-            };
-
-            await _state.GetEventsAsync(ActorId, Index, @event =>
-            {
-                Index++;
-                _actor.UpdateState(new RecoverEvent(@event, Index));
-            });
+                applySnapshot(new RecoverSnapshot(snapshot, index));
+            }
         }
 
-        public async Task PersistEventAsync(object @event)
+        public async Task RecoverStateFromSnapshotThenEventsAsync(Action<Snapshot> applySnapshot, Action<Event> applyEvent)
         {
+            await RecoverStateFromSnapshotAsync(applySnapshot);
+            await RecoverStateFromEventsAsync(applyEvent);
+        }
+        
+        public async Task PersistEventAsync(object @event, Action<Event> applyEvent)
+        {
+            if (applyEvent == null)
+            {
+                throw new ArgumentNullException(nameof(applyEvent));
+            }
             Index++;
-            await _state.PersistEventAsync(ActorId, Index, @event);
-            _actor.UpdateState(new PersistedEvent(@event, Index));
+            await _state.PersistEventAsync(_persistenceId, Index, @event);
+            applyEvent(new PersistedEvent(@event, Index));
         }
 
         public async Task PersistSnapshotAsync(object snapshot)
         {
-            await _state.PersistSnapshotAsync(ActorId, Index, snapshot);
+            await _state.PersistSnapshotAsync(_persistenceId, Index, snapshot);
         }
 
         public async Task DeleteSnapshotsAsync(long inclusiveToIndex)
         {
-            await _state.DeleteSnapshotsAsync(ActorId, inclusiveToIndex);
+            await _state.DeleteSnapshotsAsync(_persistenceId, inclusiveToIndex);
         }
 
         public async Task DeleteEventsAsync(long inclusiveToIndex)
         {
-            await _state.DeleteEventsAsync(ActorId, inclusiveToIndex);
-        }
-
-        public static Func<Receive, Receive> Using(IProvider provider)
-        {
-            return next => async context =>
-            {
-                switch (context.Message)
-                {
-                    case Started _:
-                        if (context.Actor is IPersistentActor actor)
-                        {
-                            actor.Persistence = new Persistence();
-                            await actor.Persistence.InitAsync(provider, context, actor);
-                        }
-                        break;
-                }
-                
-                await next(context);
-            };
+            await _state.DeleteEventsAsync(_persistenceId, inclusiveToIndex);
         }
     }
 
