@@ -191,8 +191,7 @@ namespace Proto.Persistence.Tests
             var actorName = Guid.NewGuid().ToString();
             var inMemoryProviderState = new InMemoryProviderState();
             var provider = new InMemoryProvider(inMemoryProviderState);
-            var props = Actor.FromProducer(() => new ExamplePersistentActor())
-                .WithReceiveMiddleware(Persistence.Using(provider))
+            var props = Actor.FromProducer(() => new ExamplePersistentActor(provider))
                 .WithMailbox(() => new TestMailbox());
             var pid = Actor.SpawnNamed(props, actorName);
             return (pid, props, actorName, inMemoryProviderState);
@@ -225,10 +224,15 @@ namespace Proto.Persistence.Tests
 
     internal class RequestSnapshot { }
 
-    internal class ExamplePersistentActor : IPersistentActor
+    internal class ExamplePersistentActor : IActor
     {
         private State _state = new State{Value = 1};
-        public Persistence Persistence { get; set; }
+        private readonly Persistence _persistence;
+
+        public ExamplePersistentActor(IProvider provider)
+        {
+            _persistence = new Persistence(provider);
+        }
 
         public void UpdateState(object message)
         {
@@ -265,17 +269,20 @@ namespace Proto.Persistence.Tests
         {
             switch (context.Message)
             {
+                case Started _:
+                    await _persistence.InitAsync(context, UpdateState);
+                    break;
                 case GetState msg:
                     context.Sender.Tell(_state.Value);
                     break;
                 case GetIndex msg:
-                    context.Sender.Tell(Persistence.Index);
+                    context.Sender.Tell(_persistence.Index);
                     break;
                 case RequestSnapshot msg:
-                    await Persistence.PersistSnapshotAsync(new State { Value = _state.Value });
+                    await _persistence.PersistSnapshotAsync(new State { Value = _state.Value });
                     break;
                 case Multiply msg:
-                    await Persistence.PersistEventAsync(new Multiplied { Amount = msg.Amount });
+                    await _persistence.PersistEventAsync(new Multiplied { Amount = msg.Amount });
                     break;
             }
         }

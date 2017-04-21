@@ -11,30 +11,34 @@ namespace Proto.Persistence
 {
     public class Persistence
     {
-        private IProviderState _state;
-        private IPersistentActor _actor;
+        private readonly IProviderState _state;
+        private Action<object> _updateState;
         public long Index { get; private set; }
         private IContext _context;
         private string ActorId => _context.Self.Id;
 
-        public async Task InitAsync(IProvider provider, IContext context, IPersistentActor actor)
+        public Persistence(IProvider provider)
         {
             _state = provider.GetState();
+        }
+
+        public async Task InitAsync(IContext context, Action<object> updateState)
+        {
             _context = context;
-            _actor = actor;
+            _updateState = updateState;
 
             var (snapshot, index) = await _state.GetSnapshotAsync(ActorId);
 
             if (snapshot != null)
             {
                 Index = index;
-                _actor.UpdateState(new RecoverSnapshot(snapshot, index));
+                updateState(new RecoverSnapshot(snapshot, index));
             };
 
             await _state.GetEventsAsync(ActorId, Index, @event =>
             {
                 Index++;
-                _actor.UpdateState(new RecoverEvent(@event, Index));
+                updateState(new RecoverEvent(@event, Index));
             });
         }
 
@@ -42,7 +46,7 @@ namespace Proto.Persistence
         {
             Index++;
             await _state.PersistEventAsync(ActorId, Index, @event);
-            _actor.UpdateState(new PersistedEvent(@event, Index));
+            _updateState(new PersistedEvent(@event, Index));
         }
 
         public async Task PersistSnapshotAsync(object snapshot)
@@ -58,25 +62,6 @@ namespace Proto.Persistence
         public async Task DeleteEventsAsync(long inclusiveToIndex)
         {
             await _state.DeleteEventsAsync(ActorId, inclusiveToIndex);
-        }
-
-        public static Func<Receive, Receive> Using(IProvider provider)
-        {
-            return next => async context =>
-            {
-                switch (context.Message)
-                {
-                    case Started _:
-                        if (context.Actor is IPersistentActor actor)
-                        {
-                            actor.Persistence = new Persistence();
-                            await actor.Persistence.InitAsync(provider, context, actor);
-                        }
-                        break;
-                }
-                
-                await next(context);
-            };
         }
     }
 
