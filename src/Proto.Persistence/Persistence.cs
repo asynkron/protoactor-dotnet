@@ -12,7 +12,9 @@ namespace Proto.Persistence
     public class Persistence
     {
         private readonly IProviderState _state;
-        private Action<object> _updateState;
+        private Action<Event> _applyEvent;
+        private Action<Snapshot> _applySnapshot;
+
         public long Index { get; private set; }
         private IContext _context;
         private string ActorId => _context.Self.Id;
@@ -22,31 +24,38 @@ namespace Proto.Persistence
             _state = provider.GetState();
         }
 
-        public async Task InitAsync(IContext context, Action<object> updateState)
+        public async Task InitAsync(IContext context, Action<Event> applyEvent = null, Action<Snapshot> applySnapshot = null)
         {
             _context = context;
-            _updateState = updateState;
+            _applyEvent = applyEvent;
+            _applySnapshot = applySnapshot;
 
-            var (snapshot, index) = await _state.GetSnapshotAsync(ActorId);
-
-            if (snapshot != null)
+            if (applySnapshot != null)
             {
-                Index = index;
-                updateState(new RecoverSnapshot(snapshot, index));
-            };
+                var (snapshot, index) = await _state.GetSnapshotAsync(ActorId);
 
-            await _state.GetEventsAsync(ActorId, Index, @event =>
+                if (snapshot != null)
+                {
+                    Index = index;
+                    _applySnapshot(new RecoverSnapshot(snapshot, index));
+                }
+            }
+
+            if (_applyEvent != null)
             {
-                Index++;
-                updateState(new RecoverEvent(@event, Index));
-            });
+                await _state.GetEventsAsync(ActorId, Index, @event =>
+                {
+                    Index++;
+                    _applyEvent(new RecoverEvent(@event, Index));
+                });
+            }
         }
 
         public async Task PersistEventAsync(object @event)
         {
             Index++;
             await _state.PersistEventAsync(ActorId, Index, @event);
-            _updateState(new PersistedEvent(@event, Index));
+            _applyEvent(new PersistedEvent(@event, Index));
         }
 
         public async Task PersistSnapshotAsync(object snapshot)

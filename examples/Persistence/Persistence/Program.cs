@@ -40,19 +40,6 @@ class Program
             _persistence = new Persistence(provider);
         }
 
-        public void UpdateState(object message)
-        {
-            switch (message)
-            {
-                case Event e:
-                    Apply(e);
-                    break;
-                case Snapshot s:
-                    Apply(s);
-                    break;
-            }
-        }
-
         private void Apply(Event @event)
         {
             switch (@event)
@@ -94,7 +81,7 @@ class Program
             switch (context.Message)
             {
                 case Started msg:
-                    await _persistence.InitAsync(context, UpdateState);
+                    await _persistence.InitAsync(context, Apply, Apply);
                     Console.WriteLine("MyPersistenceActor - Started");
 
                     Console.WriteLine("MyPersistenceActor - Current State: {0}", _state);

@@ -234,19 +234,6 @@ namespace Proto.Persistence.Tests
             _persistence = new Persistence(provider);
         }
 
-        public void UpdateState(object message)
-        {
-            switch (message)
-            {
-                case Event e:
-                    Apply(e);
-                    break;
-                case Snapshot s:
-                    Apply(s);
-                    break;
-            }
-        }
-
         private void Apply(Event @event)
         {
             switch (@event.Data)
@@ -270,7 +257,7 @@ namespace Proto.Persistence.Tests
             switch (context.Message)
             {
                 case Started _:
-                    await _persistence.InitAsync(context, UpdateState);
+                    await _persistence.InitAsync(context, Apply, Apply);
                     break;
                 case GetState msg:
                     context.Sender.Tell(_state.Value);
