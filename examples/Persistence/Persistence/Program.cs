@@ -37,7 +37,7 @@ class Program
 
         public MyPersistenceActor(IProvider provider)
         {
-            _persistence = new Persistence(provider);
+            _persistence = new Persistence(provider, Guid.NewGuid().ToString(), Apply, Apply);
         }
 
         private void Apply(Event @event)
@@ -81,7 +81,7 @@ class Program
             switch (context.Message)
             {
                 case Started msg:
-                    await _persistence.InitAsync(context, Apply, Apply);
+                    
                     Console.WriteLine("MyPersistenceActor - Started");
 
                     Console.WriteLine("MyPersistenceActor - Current State: {0}", _state);
