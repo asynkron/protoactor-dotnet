@@ -258,6 +258,9 @@ namespace Proto.Persistence.Tests
         {
             switch (context.Message)
             {
+                case Started _:
+                    await _persistence.RecoverStateAsync();
+                    break;
                 case GetState msg:
                     context.Sender.Tell(_state.Value);
                     break;

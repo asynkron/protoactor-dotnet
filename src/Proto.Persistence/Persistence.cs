@@ -32,8 +32,6 @@ namespace Proto.Persistence
             _state = provider.GetState();
             _applySnapshot = applySnapshot;
             _applyEvent = applyEvent;
-            
-            RecoverStateAsync().Wait();
         }
 
         public async Task RecoverStateAsync()
