@@ -37,7 +37,7 @@ class Program
 
         public MyPersistenceActor(IProvider provider)
         {
-            _persistence = Persistence.WithEventSourcingAndSnapshotting(provider, Guid.NewGuid().ToString(), Apply, Apply);
+            _persistence = Persistence.WithEventSourcingAndSnapshotting(provider, "demo-app-id", Apply, Apply);
         }
 
         private void Apply(Event @event)
@@ -85,6 +85,8 @@ class Program
                     Console.WriteLine("MyPersistenceActor - Started");
 
                     Console.WriteLine("MyPersistenceActor - Current State: {0}", _state);
+
+                    await _persistence.RecoverStateAsync();
 
                     context.Self.Tell(new StartLoopActor());
 
