@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Dynamic;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Proto.TestFixtures;

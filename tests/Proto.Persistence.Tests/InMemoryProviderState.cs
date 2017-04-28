@@ -19,6 +19,10 @@ namespace Proto.Persistence.Tests
 
         private readonly ConcurrentDictionary<string, Dictionary<long, object>> _snapshots = new ConcurrentDictionary<string, Dictionary<long, object>>();
 
+        public Dictionary<long, object> GetSnapshots(string actorId)
+        {
+            return _snapshots[actorId];
+        }
         public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
             if (!_snapshots.TryGetValue(actorName, out Dictionary<long, object> snapshots))
