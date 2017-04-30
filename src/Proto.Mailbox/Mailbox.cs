@@ -131,7 +131,7 @@ namespace Proto.Mailbox
                         {
                             _suspended = true;
                         }
-                        if (msg is ResumeMailbox)
+                        else if (msg is ResumeMailbox)
                         {
                             _suspended = false;
                         }
