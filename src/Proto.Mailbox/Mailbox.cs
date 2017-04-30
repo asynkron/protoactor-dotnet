@@ -104,7 +104,7 @@ namespace Proto.Mailbox
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
-            if (_systemMessages.HasMessages || !_suspended && _userMailbox.HasMessages)
+            if (_systemMessages.HasMessages || (!_suspended && _userMailbox.HasMessages))
             {
                 Schedule();
             }
@@ -131,7 +131,7 @@ namespace Proto.Mailbox
                         {
                             _suspended = true;
                         }
-                        if (msg is ResumeMailbox)
+                        else if (msg is ResumeMailbox)
                         {
                             _suspended = false;
                         }

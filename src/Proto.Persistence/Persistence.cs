@@ -11,72 +11,107 @@ namespace Proto.Persistence
 {
     public class Persistence
     {
-        private IProviderState _state;
-        private IPersistentActor _actor;
         public long Index { get; private set; }
-        private IContext _context;
-        private string ActorId => _context.Self.Id;
+        private readonly IProviderState _state;
+        private readonly Action<Event> _applyEvent;
+        private readonly Action<Snapshot> _applySnapshot;
+        private bool UsingSnapshotting => _applySnapshot != null;
+        private bool UsingEventSourcing => _applyEvent != null;
+        private readonly string _actorId;
 
-        public async Task InitAsync(IProvider provider, IContext context, IPersistentActor actor)
+        /// <summary>
+        /// Provides Event Sourcing and snapshotting functionality to persist an actor's state.
+        /// </summary>
+        /// <param name="provider">The database provider to use for persistence</param>
+        /// <param name="actorId">The id of the actor. This should be a unique string</param>
+        /// <param name="applyEvent"></param>
+        /// <param name="applySnapshot"></param>
+        private Persistence(IProvider provider, string actorId, Action<Event> applyEvent = null, Action<Snapshot> applySnapshot = null)
         {
+            _actorId = actorId;
             _state = provider.GetState();
-            _context = context;
-            _actor = actor;
-
-            var (snapshot, index) = await _state.GetSnapshotAsync(ActorId);
-
-            if (snapshot != null)
-            {
-                Index = index;
-                _actor.UpdateState(new RecoverSnapshot(snapshot, index));
-            };
-
-            await _state.GetEventsAsync(ActorId, Index, @event =>
-            {
-                Index++;
-                _actor.UpdateState(new RecoverEvent(@event, Index));
-            });
+            _applyEvent = applyEvent;
+            _applySnapshot = applySnapshot;
         }
 
+        public static Persistence WithEventSourcing(IProvider provider, string actorId, Action<Event> applyEvent)
+        {
+            if (applyEvent == null)
+            {
+                throw new ArgumentNullException(nameof(applyEvent));
+            }
+            return new Persistence(provider, actorId, applyEvent, null);
+        }
+
+        public static Persistence WithSnapshotting(IProvider provider, string actorId, Action<Snapshot> applySnapshot)
+        {
+            if (applySnapshot == null)
+            {
+                throw new ArgumentNullException(nameof(applySnapshot));
+            }
+            return new Persistence(provider, actorId, null, applySnapshot);
+        }
+
+        public static Persistence WithEventSourcingAndSnapshotting(IProvider provider, string actorId, Action<Event> applyEvent, Action<Snapshot> applySnapshot)
+        {
+            if (applyEvent == null)
+            {
+                throw new ArgumentNullException(nameof(applyEvent));
+            }
+            if (applySnapshot == null)
+            {
+                throw new ArgumentNullException(nameof(applySnapshot));
+            }
+            return new Persistence(provider, actorId, applyEvent, applySnapshot);
+        }
+
+        public async Task RecoverStateAsync()
+        {
+            if (UsingSnapshotting)
+            {
+                var (snapshot, index) = await _state.GetSnapshotAsync(_actorId);
+
+                if (snapshot != null)
+                {
+                    Index = index;
+                    _applySnapshot(new RecoverSnapshot(snapshot, index));
+                }
+            }
+
+            if (UsingEventSourcing)
+            {
+                await _state.GetEventsAsync(_actorId, Index, @event =>
+                {
+                    Index++;
+                    _applyEvent(new RecoverEvent(@event, Index));
+                });
+            }
+        }
+        
         public async Task PersistEventAsync(object @event)
         {
+            if (!UsingEventSourcing)
+            {
+                throw new Exception("Event cannot be persisted without using Event Sourcing.");
+            }
             Index++;
-            await _state.PersistEventAsync(ActorId, Index, @event);
-            _actor.UpdateState(new PersistedEvent(@event, Index));
+            await _state.PersistEventAsync(_actorId, Index, @event);
+            _applyEvent(new PersistedEvent(@event, Index));
         }
 
         public async Task PersistSnapshotAsync(object snapshot)
         {
-            await _state.PersistSnapshotAsync(ActorId, Index, snapshot);
+            await _state.PersistSnapshotAsync(_actorId, Index, snapshot);
         }
 
         public async Task DeleteSnapshotsAsync(long inclusiveToIndex)
         {
-            await _state.DeleteSnapshotsAsync(ActorId, inclusiveToIndex);
+            await _state.DeleteSnapshotsAsync(_actorId, inclusiveToIndex);
         }
 
         public async Task DeleteEventsAsync(long inclusiveToIndex)
         {
-            await _state.DeleteEventsAsync(ActorId, inclusiveToIndex);
-        }
-
-        public static Func<Receive, Receive> Using(IProvider provider)
-        {
-            return next => async context =>
-            {
-                switch (context.Message)
-                {
-                    case Started _:
-                        if (context.Actor is IPersistentActor actor)
-                        {
-                            actor.Persistence = new Persistence();
-                            await actor.Persistence.InitAsync(provider, context, actor);
-                        }
-                        break;
-                }
-                
-                await next(context);
-            };
+            await _state.DeleteEventsAsync(_actorId, inclusiveToIndex);
         }
     }
 
