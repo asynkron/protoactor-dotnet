@@ -14,7 +14,7 @@ using Proto.Mailbox;
 
 namespace Proto
 {
-    public enum ContextState
+    internal enum ContextState
     {
         None,
         Alive,
@@ -27,19 +27,24 @@ namespace Proto
         private static ILogger Logger { get; } = Log.CreateLogger<Context>();
         public static readonly IReadOnlyCollection<PID> EmptyChildren = new List<PID>();
 
-        private Stack<Receive> _behavior;
         private readonly Receive _receiveMiddleware;
         private readonly Sender _senderMiddleware;
         private readonly Func<IActor> _producer;
         private readonly ISupervisorStrategy _supervisorStrategy;
         private FastSet<PID> _children;
         private object _message;
-        private Receive _receive;
-        private Timer _receiveTimeoutTimer;
         private ContextState _state;
         private RestartStatistics _restartStatistics;
-        private Stack<object> _stash;
         private FastSet<PID> _watchers;
+
+        //TODO: I would like to extract these two as optional components in the future
+        //for ReceiveTimeout we could have an object with the SetReceiveTimeout
+        //and simply let this object subscribe to actor messages so it knows when to reset the timer
+        private Timer _receiveTimeoutTimer;
+        //for Stashing, there could be an object with the Stash, Unstash and UnstashAll
+        //the main concern for this would be how to make the stash survive between actor restarts
+        //if it is injected as a dependency, that would work fine
+        private Stack<object> _stash;
 
         public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
         {
@@ -125,31 +130,6 @@ namespace Proto
             _children.Add(pid);
 
            return pid;
-        }
-
-        public void SetBehavior(Receive receive)
-        {
-            _behavior = null;
-            _receive = receive;
-        }
-
-        public void PushBehavior(Receive receive)
-        {
-            if (_behavior == null)
-            {
-                _behavior = new Stack<Receive>();
-            }
-            _behavior.Push(_receive);
-            _receive = receive;
-        }
-
-        public void PopBehavior()
-        {
-            if (_behavior == null || _behavior.Count == 0)
-            {
-                throw new Exception("Can not unbecome actor base behavior");
-            }
-            _receive = _behavior.Pop();
         }
 
         public void Watch(PID pid)
@@ -307,9 +287,9 @@ namespace Proto
 
         public void ResumeChildren(params PID[] pids)
         {
-            foreach (var t in pids)
+            foreach (var pid in pids)
             {
-                t.SendSystemMessage(ResumeMailbox.Instance);
+                pid.SendSystemMessage(ResumeMailbox.Instance);
             }
         }
 
@@ -321,7 +301,7 @@ namespace Proto
                 c.Self.Stop();
                 return Proto.Actor.Done;
             }
-            return c._receive(context);
+            return c.Actor.ReceiveAsync(context);
         }
 
         internal static Task DefaultSender(ISenderContext context, PID target, MessageEnvelope envelope)
@@ -389,7 +369,6 @@ namespace Proto
         {
             _state = ContextState.Alive;
             Actor = _producer();
-            SetBehavior(ActorReceive);
         }
 
         private async Task HandleRestartAsync()
@@ -534,12 +513,6 @@ namespace Proto
                     await InvokeUserMessageAsync(msg);
                 }
             }
-        }
-
-        private Task ActorReceive(IContext ctx)
-        {
-            var task = Actor.ReceiveAsync(ctx);
-            return task;
         }
 
         private void ResetReceiveTimeout()

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Xunit;
 
 namespace Proto.Tests
@@ -13,21 +10,23 @@ namespace Proto.Tests
         [Fact]
         public async Task PopBehaviorShouldRestorePushedBehavior()
         {
-            PID pid = SpawnActorFromFunc(ctx =>
+            var behavior = new Behavior();
+            behavior.Become(ctx =>
             {
                 if (ctx.Message is string)
                 {
-                    ctx.PushBehavior(ctx2 =>
-                    {                        
+                    behavior.BecomeStacked(ctx2 =>
+                    {
                         ctx2.Respond(42);
-                        ctx2.PopBehavior();
+                        behavior.UnbecomeStacked();
                         return Actor.Done;
                     });
                     ctx.Respond(ctx.Message);
-                }                
+                }
                 return Actor.Done;
             });
-            
+            PID pid = SpawnActorFromFunc(behavior.ReceiveAsync);
+
             var reply = await pid.RequestAsync<string>("number");
             var replyAfterPush = await pid.RequestAsync<int>(null);
             var replyAfterPop = await pid.RequestAsync<string>("answertolifetheuniverseandeverything");

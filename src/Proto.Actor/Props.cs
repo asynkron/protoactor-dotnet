@@ -29,7 +29,9 @@ namespace Proto
         public Sender SenderMiddlewareChain { get; set; }
 
         private Spawner _spawner;
-        public Spawner Spawner {
+
+        public Spawner Spawner
+        {
             get => _spawner ?? DefaultSpawner;
             private set => _spawner = value;
         }
@@ -95,10 +97,7 @@ namespace Proto
             return props;
         }
 
-        internal PID Spawn(string name, PID parent)
-        {
-            return Spawner(name, this, parent);
-        }
+        internal PID Spawn(string name, PID parent) => Spawner(name, this, parent);
     }
 
     public delegate PID Spawner(string id, Props props, PID parent);
