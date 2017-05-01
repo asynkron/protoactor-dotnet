@@ -213,7 +213,7 @@ namespace Proto
             catch (Exception x)
             {
                 Logger.LogError("Error handling SystemMessage {0}", x);
-                return Task.FromResult(0);
+                throw;
             }
         }
 
@@ -247,6 +247,16 @@ namespace Proto
 
         public void EscalateFailure(Exception reason, object message)
         {
+            EscalateFailure(reason);
+        }
+
+        public void EscalateFailure(PID who, Exception reason)
+        {
+            EscalateFailure(reason);
+        }
+
+        private void EscalateFailure(Exception reason)
+        {
             if (_restartStatistics == null)
             {
                 _restartStatistics = new RestartStatistics(0, null);
@@ -261,12 +271,6 @@ namespace Proto
                 Self.SendSystemMessage(SuspendMailbox.Instance);
                 Parent.SendSystemMessage(failure);
             }
-        }
-
-        public void EscalateFailure(PID who, Exception reason)
-        {
-            Self.SendSystemMessage(SuspendMailbox.Instance);
-            Parent.SendSystemMessage(new Failure(who, reason, _restartStatistics));
         }
 
         public void RestartChildren(params PID[] pids)
