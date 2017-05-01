@@ -24,6 +24,7 @@ namespace Proto.Tests
             Assert.Equal(props.MailboxProducer, props2.MailboxProducer);
             Assert.Equal(props.ReceiveMiddleware, props2.ReceiveMiddleware);
             Assert.Equal(props.ReceiveMiddlewareChain, props2.ReceiveMiddlewareChain);
+            Assert.Equal(props.ProcessHost, props2.ProcessHost);
             Assert.Equal(props.Producer, props2.Producer);
             Assert.Equal(props.Spawner, props2.Spawner);
             Assert.Equal(props.SupervisorStrategy, props2.SupervisorStrategy);
@@ -44,6 +45,7 @@ namespace Proto.Tests
             Assert.NotEqual(props.MailboxProducer, props2.MailboxProducer);
             Assert.Equal(props.ReceiveMiddleware, props2.ReceiveMiddleware);
             Assert.Equal(props.ReceiveMiddlewareChain, props2.ReceiveMiddlewareChain);
+            Assert.Equal(props.ProcessHost, props2.ProcessHost);
             Assert.Equal(props.Producer, props2.Producer);
             Assert.Equal(props.Spawner, props2.Spawner);
             Assert.Equal(props.SupervisorStrategy, props2.SupervisorStrategy);
@@ -68,6 +70,28 @@ namespace Proto.Tests
             Assert.Equal(props.MailboxProducer, props2.MailboxProducer);
             Assert.NotEqual(props.ReceiveMiddleware, props2.ReceiveMiddleware);
             Assert.NotEqual(props.ReceiveMiddlewareChain, props2.ReceiveMiddlewareChain);
+            Assert.Equal(props.ProcessHost, props2.ProcessHost);
+            Assert.Equal(props.Producer, props2.Producer);
+            Assert.Equal(props.Spawner, props2.Spawner);
+            Assert.Equal(props.SupervisorStrategy, props2.SupervisorStrategy);
+        }
+
+        [Fact]
+        public void Given_Props_When_WithProcessHost_Then_mutate_ProcessHost()
+        {
+            var processHost = new ProcessHost("");
+
+            var props = new Props();
+            var props2 = props.WithProcessHost(processHost);
+
+            Assert.NotEqual(props, props2);
+            Assert.Equal(processHost, props2.ProcessHost);
+
+            Assert.Equal(props.Dispatcher, props2.Dispatcher);
+            Assert.Equal(props.MailboxProducer, props2.MailboxProducer);
+            Assert.Equal(props.ReceiveMiddleware, props2.ReceiveMiddleware);
+            Assert.Equal(props.ReceiveMiddlewareChain, props2.ReceiveMiddlewareChain);
+            Assert.NotEqual(props.ProcessHost, props2.ProcessHost);
             Assert.Equal(props.Producer, props2.Producer);
             Assert.Equal(props.Spawner, props2.Spawner);
             Assert.Equal(props.SupervisorStrategy, props2.SupervisorStrategy);
@@ -88,6 +112,7 @@ namespace Proto.Tests
             Assert.Equal(props.MailboxProducer, props2.MailboxProducer);
             Assert.Equal(props.ReceiveMiddleware, props2.ReceiveMiddleware);
             Assert.Equal(props.ReceiveMiddlewareChain, props2.ReceiveMiddlewareChain);
+            Assert.Equal(props.ProcessHost, props2.ProcessHost);
             Assert.NotEqual(props.Producer, props2.Producer);
             Assert.Equal(props.Spawner, props2.Spawner);
             Assert.Equal(props.SupervisorStrategy, props2.SupervisorStrategy);
@@ -108,6 +133,7 @@ namespace Proto.Tests
             Assert.Equal(props.MailboxProducer, props2.MailboxProducer);
             Assert.Equal(props.ReceiveMiddleware, props2.ReceiveMiddleware);
             Assert.Equal(props.ReceiveMiddlewareChain, props2.ReceiveMiddlewareChain);
+            Assert.Equal(props.ProcessHost, props2.ProcessHost);
             Assert.Equal(props.Producer, props2.Producer);
             Assert.NotEqual(props.Spawner, props2.Spawner);
             Assert.Equal(props.SupervisorStrategy, props2.SupervisorStrategy);
@@ -128,6 +154,7 @@ namespace Proto.Tests
             Assert.Equal(props.MailboxProducer, props2.MailboxProducer);
             Assert.Equal(props.ReceiveMiddleware, props2.ReceiveMiddleware);
             Assert.Equal(props.ReceiveMiddlewareChain, props2.ReceiveMiddlewareChain);
+            Assert.Equal(props.ProcessHost, props2.ProcessHost);
             Assert.Equal(props.Producer, props2.Producer);
             Assert.Equal(props.Spawner, props2.Spawner);
             Assert.NotEqual(props.SupervisorStrategy, props2.SupervisorStrategy);

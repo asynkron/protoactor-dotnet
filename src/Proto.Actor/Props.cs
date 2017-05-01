@@ -15,6 +15,8 @@ namespace Proto
     {
         public Func<IActor> Producer { get; private set; }
 
+        public IProcessHost ProcessHost { get; private set; } = ProcessRegistry.Instance.DefaultHost;
+
         public Func<IMailbox> MailboxProducer { get; private set; } =
             () => UnboundedMailbox.Create();
 
@@ -40,7 +42,7 @@ namespace Proto
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
             var reff = new LocalProcess(mailbox);
-            var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, reff);
+            var (pid, absent) = props.ProcessHost.TryAdd(name, reff);
             if (!absent)
             {
                 throw new ProcessNameExistException(name);
@@ -57,6 +59,11 @@ namespace Proto
         public Props WithProducer(Func<IActor> producer)
         {
             return Copy(props => props.Producer = producer);
+        }
+
+        public Props WithProcessHost(IProcessHost processHost)
+        {
+            return Copy(props => props.ProcessHost = processHost);
         }
 
         public Props WithDispatcher(IDispatcher dispatcher)

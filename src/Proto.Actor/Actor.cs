@@ -46,13 +46,13 @@ namespace Proto
 
         public static PID Spawn(Props props)
         {
-            var name = ProcessRegistry.Instance.NextId();
+            var name = props.ProcessHost.NextId();
             return SpawnNamed(props, name);
         }
 
         public static PID SpawnPrefix(Props props, string prefix)
         {
-            var name = prefix + ProcessRegistry.Instance.NextId();
+            var name = prefix + props.ProcessHost.NextId();
             return SpawnNamed(props, name);
         }
 

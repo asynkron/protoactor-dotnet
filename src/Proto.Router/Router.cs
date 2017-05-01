@@ -59,12 +59,12 @@ namespace Proto.Router
                 var routerState = config.CreateRouterState();
                 var wg = new AutoResetEvent(false);
                 var routerProps = Actor.FromProducer(() => new RouterActor(routeeProps, config, routerState, wg));
-                var routerId = ProcessRegistry.Instance.NextId();
+                var routerId =  props.ProcessHost.NextId();
                 var router = Props.DefaultSpawner(routerId + "/router" , routerProps, parent);
                 wg.WaitOne(); //wait for the router to start
 
                 var reff = new RouterProcess(router, routerState);
-                var (pid,ok) = ProcessRegistry.Instance.TryAdd(routerId, reff);
+                var (pid,ok) = props.ProcessHost.TryAdd(routerId, reff);
                 return pid;
             };
         }
