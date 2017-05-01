@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace Proto
@@ -35,7 +36,7 @@ namespace Proto
 
     public interface ISupervisorStrategy
     {
-        void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause);
+        Task HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause);
     }
 
     public delegate SupervisorDirective Decider(PID pid, Exception reason);
@@ -54,7 +55,7 @@ namespace Proto
             _withinTimeSpan = withinTimeSpan;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
+        public Task HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
         {
             var directive = _decider(child, reason);
             switch (directive)
@@ -84,6 +85,7 @@ namespace Proto
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+            return Actor.Done;
         }
 
         private bool RequestRestartPermission(RestartStatistics rs)

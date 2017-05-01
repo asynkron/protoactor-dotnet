@@ -175,45 +175,49 @@ namespace Proto
             return ProcessMessageAsync(message);
         }
 
-        public Task InvokeSystemMessageAsync(object msg)
+        public async Task InvokeSystemMessageAsync(object msg)
         {
             try
             {
                 switch (msg)
                 {
                     case Started s:
-                        return InvokeUserMessageAsync(s);
+                        await InvokeUserMessageAsync(s);
+                        break;
                     case Stop _:
-                        return HandleStopAsync();
+                        await HandleStopAsync();
+                        return;
                     case Terminated t:
-                        return HandleTerminatedAsync(t);
+                        await HandleTerminatedAsync(t);
+                        break;
                     case Watch w:
                         HandleWatch(w);
-                        return Task.FromResult(0);
+                        break;
                     case Unwatch uw:
                         HandleUnwatch(uw);
-                        return Task.FromResult(0);
+                        break;
                     case Failure f:
-                        HandleFailure(f);
-                        return Task.FromResult(0);
+                        await HandleFailure(f);
+                        break;
                     case Restart _:
-                        return HandleRestartAsync();
+                        await HandleRestartAsync();
+                        break;
                     case SuspendMailbox _:
-                        return Task.FromResult(0);
+                        break;
                     case ResumeMailbox _:
-                        return Task.FromResult(0);
+                        break;
                     case Continuation cont:
                         _message = cont.Message;
-                        return cont.Action();
+                        await cont.Action();
+                        break;
                     default:
                         Logger.LogWarning("Unknown system message {0}", msg);
-                        return Task.FromResult(0);
+                        break;
                 }
             }
             catch (Exception x)
             {
                 Logger.LogError("Error handling SystemMessage {0}", x);
-                return Task.FromResult(0);
             }
         }
 
@@ -409,15 +413,14 @@ namespace Proto
             }
         }
 
-        private void HandleFailure(Failure msg)
+        private async Task HandleFailure(Failure msg)
         {
             // ReSharper disable once SuspiciousTypeConversion.Global
             if (Actor is ISupervisorStrategy supervisor)
             {
-                supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
-                return;
+                await supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
             }
-            _supervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
+            await _supervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
         }
 
         private async Task HandleTerminatedAsync(Terminated msg)
