@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 
 namespace Proto
@@ -39,6 +40,75 @@ namespace Proto
     }
 
     public delegate SupervisorDirective Decider(PID pid, Exception reason);
+
+    /// <summary>
+    /// AllForOneStrategy returns a new SupervisorStrategy which applies the given fault Directive from the decider to the
+    /// failing child and all its children.
+    ///
+    /// This strategy is appropriate when the children have a strong dependency, such that and any single one failing would
+    /// place them all into a potentially invalid state.
+    /// </summary>
+    public class AllForOneStrategy : ISupervisorStrategy {
+        private readonly Decider _decider;
+        private readonly int _maxNrOfRetries;
+        private readonly TimeSpan? _withinTimeSpan;
+        private static readonly ILogger Logger = Log.CreateLogger<AllForOneStrategy>();
+
+        public AllForOneStrategy(Decider decider, int maxNrOfRetries, TimeSpan? withinTimeSpan)
+        {
+            _decider = decider;
+            _maxNrOfRetries = maxNrOfRetries;
+            _withinTimeSpan = withinTimeSpan;
+        }
+
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
+        {
+            var directive = _decider(child, reason);
+            switch (directive)
+            {
+                case SupervisorDirective.Resume:
+                    Logger.LogInformation($"Resuming {child.ToShortString()} Reason {reason}");
+                    supervisor.ResumeChildren(child);
+                    break;
+                case SupervisorDirective.Restart:
+                    if (RequestRestartPermission(rs))
+                    {
+                        Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
+                        supervisor.RestartChildren(supervisor.Children.ToArray());
+                    }
+                    else
+                    {
+                        Logger.LogInformation($"Stopping {child.ToShortString()} Reason { reason}");
+                        supervisor.StopChildren(supervisor.Children.ToArray());
+                    }
+                    break;
+                case SupervisorDirective.Stop:
+                    Logger.LogInformation($"Stopping {child.ToShortString()} Reason {reason}");
+                    supervisor.StopChildren(supervisor.Children.ToArray());
+                    break;
+                case SupervisorDirective.Escalate:
+                    supervisor.EscalateFailure(child, reason);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private bool RequestRestartPermission(RestartStatistics rs)
+        {
+            if (_maxNrOfRetries == 0)
+            {
+                return false;
+            }
+            rs.Fail();
+            if (_withinTimeSpan == null || rs.IsWithinDuration(_withinTimeSpan.Value))
+            {
+                return rs.FailureCount <= _maxNrOfRetries;
+            }
+            rs.Reset();
+            return true;
+        }
+    }
 
     public class OneForOneStrategy : ISupervisorStrategy
     {

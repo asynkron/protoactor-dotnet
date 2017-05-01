@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace Proto.Tests
 {
-    public class SupervisionTests
+    public class SupervisionTests_OneForOne
     {
         class ParentActor : IActor
         {
