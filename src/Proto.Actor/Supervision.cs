@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace Proto
@@ -169,6 +170,53 @@ namespace Proto
             }
             rs.Reset();
             return true;
+        }
+    }
+
+    public class ExponentialBackoffStrategy : ISupervisorStrategy
+    {
+        private readonly TimeSpan _backoffWindow;
+        private readonly TimeSpan _initialBackoff;
+        private readonly Random _random = new Random();
+
+        public ExponentialBackoffStrategy(TimeSpan backoffWindow, TimeSpan initialBackoff)
+        {
+            _backoffWindow = backoffWindow;
+            _initialBackoff = initialBackoff;
+        }
+
+        private long ToNanoseconds(TimeSpan timeSpan)
+        {
+            return Convert.ToInt64(timeSpan.TotalMilliseconds * 1000000);
+        }
+
+        private long ToMilliseconds(long nanoseconds)
+        {
+            return nanoseconds / 1000000;
+        }
+
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
+        {
+            SetFailureCount(rs);
+            var backoff = rs.FailureCount * ToNanoseconds(_initialBackoff);
+            var noise = _random.Next(500);
+            var duration = TimeSpan.FromMilliseconds(ToMilliseconds(backoff + noise));
+            Task.Delay(duration).ContinueWith(t =>
+            {
+                supervisor.RestartChildren(child);
+            });
+        }
+
+        private void SetFailureCount(RestartStatistics rs)
+        {
+            rs.Fail();
+            // if we are within the backoff window, exit early
+            if (rs.IsWithinDuration(_backoffWindow))
+            {
+                return;
+            }
+            //we are past the backoff limit, reset the failure counter
+            rs.Reset();
         }
     }
 }
