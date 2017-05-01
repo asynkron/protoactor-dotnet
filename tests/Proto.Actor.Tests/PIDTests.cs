@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Google.Protobuf.WellKnownTypes;
 using Proto.TestFixtures;
 using Xunit;
@@ -68,7 +67,6 @@ namespace Proto.Tests
             var host = new ProcessHost("testHost2");
             ProcessRegistry.Instance.RegisterProcessHost(host);
 
-            var strings = new List<string>();
             var props1 = Actor.FromFunc(ctx =>
             {
                 if (ctx.Message is Empty) ctx.Respond("pid1");
