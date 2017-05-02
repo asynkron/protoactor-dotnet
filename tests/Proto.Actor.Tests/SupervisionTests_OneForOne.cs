@@ -46,6 +46,20 @@ namespace Proto.Tests
             }
         }
 
+        class ThrowOnStartedChildActor : IActor
+        {
+
+            public Task ReceiveAsync(IContext context)
+            {
+                switch (context.Message)
+                {
+                    case Started _:
+                        throw new Exception("in started");
+                }
+                return Actor.Done;
+            }
+        }
+
         [Fact]
         public void OneForOneStrategy_Should_ResumeChildOnFailure()
         {
@@ -116,6 +130,22 @@ namespace Proto.Tests
             parentMailboxStats.Reset.Wait(1000);
             var failure = parentMailboxStats.Received.OfType<Failure>().Single();
             Assert.IsType<Exception>(failure.Reason);
+        }
+
+        [Fact]
+        public void OneForOneStrategy_Should_StopChildOnFailureWhenStarted()
+        {
+            var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
+            var childProps = Actor.FromProducer(() => new ThrowOnStartedChildActor())
+                .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
+                .WithSupervisor(strategy);
+            var parent = Actor.Spawn(parentProps);
+
+            childMailboxStats.Reset.Wait(1000);
+            Assert.Contains(Stop.Instance, childMailboxStats.Posted);
+            Assert.Contains(Stop.Instance, childMailboxStats.Received);
         }
     }
 }
