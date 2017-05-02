@@ -247,21 +247,16 @@ namespace Proto
 
         public void EscalateFailure(Exception reason, object message)
         {
-            EscalateFailure(reason);
+            EscalateFailure(Self, reason);
         }
 
         public void EscalateFailure(PID who, Exception reason)
-        {
-            EscalateFailure(reason);
-        }
-
-        private void EscalateFailure(Exception reason)
         {
             if (_restartStatistics == null)
             {
                 _restartStatistics = new RestartStatistics(0, null);
             }
-            var failure = new Failure(Self, reason, _restartStatistics);
+            var failure = new Failure(who, reason, _restartStatistics);
             if (Parent == null)
             {
                 HandleRootFailure(failure);

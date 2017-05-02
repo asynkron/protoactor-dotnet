@@ -115,6 +115,54 @@ namespace Proto.Tests
         }
 
         [Fact]
+        public void OneForOneStrategy_Should_StopChildWhenRestartLimitReached()
+        {
+            var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
+            var childProps = Actor.FromProducer(() => new ChildActor())
+                .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
+                .WithSupervisor(strategy);
+            var parent = Actor.Spawn(parentProps);
+
+            parent.Tell("hello");
+            parent.Tell("hello");
+            childMailboxStats.Reset.Wait(1000);
+            Assert.Contains(Stop.Instance, childMailboxStats.Posted);
+            Assert.Contains(Stop.Instance, childMailboxStats.Received);
+        }
+
+        [Fact]
+        public void OneForOneStrategy_WhenEscalateDirectiveWithoutGrandparent_ShouldRevertToDefaultDirective()
+        {
+            var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
+            var childProps = Actor.FromProducer(() => new ThrowOnStartedChildActor());
+            var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
+                .WithSupervisor(strategy)
+                .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
+            var parent = Actor.Spawn(parentProps);
+
+            parent.Tell("hello");
+            parentMailboxStats.Reset.Wait(1000);
+            // Default directive allows 10 restarts so we expect 11 Failure messages before the child is stopped
+            Assert.Equal(11, parentMailboxStats.Received.OfType<Failure>().Count());
+            var failures = parentMailboxStats.Received.OfType<Failure>();
+            // subsequent failures are wrapped in AggregateException
+            foreach (var failure in failures)
+            {
+                if (failure.Reason is AggregateException ae)
+                {
+                    Assert.IsType<Exception>(ae.InnerException);
+                }
+                else
+                {
+                    Assert.IsType<Exception>(failure.Reason);
+                }
+            }
+        }
+
+        [Fact]
         public void OneForOneStrategy_Should_EscalateFailureToParent()
         {
             var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);

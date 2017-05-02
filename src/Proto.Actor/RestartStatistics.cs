@@ -19,7 +19,11 @@ namespace Proto
             LastFailureTime = lastFailuretime;
         }
 
-        public void Fail() => FailureCount++;
+        public void Fail()
+        {
+            FailureCount++;
+            LastFailureTime = DateTime.Now;
+        }
 
         public void Reset() => FailureCount = 0;
 

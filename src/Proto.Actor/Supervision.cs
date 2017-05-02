@@ -209,10 +209,10 @@ namespace Proto
 
         private void SetFailureCount(RestartStatistics rs)
         {
-            rs.Fail();
             // if we are within the backoff window, exit early
             if (rs.IsWithinDuration(_backoffWindow))
             {
+                rs.Fail();
                 return;
             }
             //we are past the backoff limit, reset the failure counter
