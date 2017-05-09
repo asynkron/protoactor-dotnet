@@ -10,8 +10,7 @@ namespace Proto.Persistence.Tests
         public async void GivenAnIntervalStrategy_ShouldSaveSnapshotAccordingly()
         {
             var state = 1;
-            var inMemoryProviderState = new InMemoryProviderState();
-            var provider = new InMemoryProvider(inMemoryProviderState);
+            var provider = new InMemoryProvider();
             var actorId = Guid.NewGuid().ToString();
             var persistence = Persistence.WithEventSourcingAndSnapshotting(provider, actorId, 
                 @event => { state = state * (@event.Data as Multiplied).Amount; },
@@ -21,7 +20,7 @@ namespace Proto.Persistence.Tests
             await persistence.PersistEventAsync(new Multiplied { Amount = 2 });
             await persistence.PersistEventAsync(new Multiplied { Amount = 2 });
             await persistence.PersistEventAsync(new Multiplied { Amount = 2 });
-            var snapshots = inMemoryProviderState.GetSnapshots(actorId);
+            var snapshots = provider.GetSnapshots(actorId);
             Assert.Equal(3, snapshots.Count);
             Assert.Equal(2, snapshots[1]);
             Assert.Equal(4, snapshots[2]);

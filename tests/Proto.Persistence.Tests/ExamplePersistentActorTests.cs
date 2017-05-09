@@ -187,15 +187,14 @@ namespace Proto.Persistence.Tests
             Assert.Equal(InitialState * 2 * 4, state);
         }
 
-        private (PID pid, Props props, string actorId, IProviderState providerState) CreateTestActor()
+        private (PID pid, Props props, string actorId, IProvider provider) CreateTestActor()
         {
             var actorId = Guid.NewGuid().ToString();
-            var inMemoryProviderState = new InMemoryProviderState();
-            var provider = new InMemoryProvider(inMemoryProviderState);
-            var props = Actor.FromProducer(() => new ExamplePersistentActor(provider, actorId))
+            var inMemoryProvider = new InMemoryProvider();
+            var props = Actor.FromProducer(() => new ExamplePersistentActor(inMemoryProvider, actorId))
                 .WithMailbox(() => new TestMailbox());
             var pid = Actor.Spawn(props);
-            return (pid, props, actorId, inMemoryProviderState);
+            return (pid, props, actorId, inMemoryProvider);
         }
 
         private async Task<int> RestartActorAndGetState(PID pid, Props props)
