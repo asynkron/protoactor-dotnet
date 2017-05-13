@@ -26,13 +26,23 @@ namespace Proto.Persistence.RavenDB
             await IndexCreation.CreateIndexesAsync(typeof(DeleteSnapshotIndex).Assembly(), _store);
         }
 
-        public async Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
+        public Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
+        {
+            return GetEventsAsync(actorName, x => x.Index >= indexStart, callback);
+        }
+
+        public Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        {
+            return GetEventsAsync(actorName, x => x.Index >= indexStart && x.Index <= indexEnd, callback);
+        }
+
+        private async Task GetEventsAsync(string actorName, System.Linq.Expressions.Expression<Func<Event, bool>> filterIndexPredicate, Action<object> callback)
         {
             using (var session = _store.OpenAsyncSession())
             {
                 var events = await session.Query<Event>()
                     .Where(x => x.ActorName == actorName)
-                    .Where(x => x.Index >= indexStart)
+                    .Where(filterIndexPredicate)
                     .OrderBy(x => x.Index)
                     .ToListAsync();
 

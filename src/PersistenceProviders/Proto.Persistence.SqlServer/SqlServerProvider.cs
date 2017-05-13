@@ -148,30 +148,72 @@ namespace Proto.Persistence.SqlServer
             await ExecuteNonQueryAsync(sql, parameters);
         }
 
-        public async Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
+        public Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
         {
-            var sql = $@"SELECT EventData FROM {_tableSchema}.{_tableEvents} WHERE ActorName = @ActorName AND EventIndex >= @EventIndex ORDER BY EventIndex ASC";
+            var sql = GenerateGetEventsSqlString();
+            var sqlParameters = GenerateGetEventsParameters(actorName, indexStart);
 
+            return GetEventsAsync(sql, sqlParameters, callback);
+        }
+
+        public Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        {
+            var sql = GenerateGetEventsSqlString(true);
+            var sqlParameters = GenerateGetEventsParameters(actorName, indexStart, indexEnd);
+
+            return GetEventsAsync(sql, sqlParameters, callback);
+        }
+
+        private string GenerateGetEventsSqlString(bool addEndIndexFilter = false)
+        {
+            var sql = $@"SELECT EventData FROM {_tableSchema}.{_tableEvents} WHERE ActorName = @ActorName AND EventIndex >= @IndexStart ";
+            if (addEndIndexFilter)
+                sql += "AND EventIndex <= @IndexEnd ";
+            sql += "ORDER BY EventIndex ASC";
+            return sql;
+        }
+
+        private List<SqlParameter> GenerateGetEventsParameters(string actorName, long indexStart, long? indexEnd = null)
+        {
+            var sqlParameters = new List<SqlParameter>
+            {
+                new SqlParameter()
+                {
+                    ParameterName = "ActorName",
+                    SqlDbType = System.Data.SqlDbType.NVarChar,
+                    SqlValue = actorName
+                },
+                new SqlParameter()
+                {
+                    ParameterName = "IndexStart",
+                    SqlDbType = System.Data.SqlDbType.BigInt,
+                    SqlValue = indexStart
+                }
+            };
+            if (indexEnd.HasValue)
+            {
+                sqlParameters.Add(new SqlParameter()
+                {
+                    ParameterName = "IndexEnd",
+                    SqlDbType = System.Data.SqlDbType.BigInt,
+                    SqlValue = indexEnd
+                });
+            }
+            return sqlParameters;
+        }
+
+        private async Task GetEventsAsync(string sql, List<SqlParameter> parameters, Action<object> callback)
+        {
             try
             {
                 using (var connection = new SqlConnection(_connectionString))
                 using (var command = new SqlCommand(sql, connection))
                 {
                     await connection.OpenAsync();
-
-                    command.Parameters.Add(new SqlParameter()
+                    foreach (var sqlParameter in parameters)
                     {
-                        ParameterName = "ActorName",
-                        SqlDbType = System.Data.SqlDbType.NVarChar,
-                        SqlValue = actorName
-                    });
-
-                    command.Parameters.Add(new SqlParameter()
-                    {
-                        ParameterName = "EventIndex",
-                        SqlDbType = System.Data.SqlDbType.BigInt,
-                        SqlValue = indexStart
-                    });
+                        command.Parameters.Add(sqlParameter);
+                    }
 
                     var eventReader = await command.ExecuteReaderAsync();
 

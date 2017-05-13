@@ -34,9 +34,20 @@ namespace Proto.Persistence.Tests
 
         public Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
         {
+            return GetEventsAsync(actorName, e => e.Key >= indexStart, callback);
+        }
+
+        public Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        {
+            return GetEventsAsync(actorName, e => e.Key >= indexStart && e.Key <= indexEnd, callback);
+        }
+
+        private Task GetEventsAsync(string actorName, Func<KeyValuePair<long, object>, bool> predicate,
+            Action<object> callback)
+        {
             if (_events.TryGetValue(actorName, out Dictionary<long, object> events))
             {
-                foreach (var e in events.Where(e => e.Key >= indexStart))
+                foreach (var e in events.Where(predicate))
                 {
                     callback(e.Value);
                 }

@@ -187,6 +187,22 @@ namespace Proto.Persistence.Tests
             Assert.Equal(InitialState * 2 * 4, state);
         }
 
+        [Fact]
+        public async void GivenEvents_CanReplayFromStartIndexToEndIndex()
+        {
+            var (pid, props, actorId, providerState) = CreateTestActor();
+
+            pid.Tell(new Multiply { Amount = 2 });
+            pid.Tell(new Multiply { Amount = 2 });
+            pid.Tell(new Multiply { Amount = 4 });
+            pid.Tell(new Multiply { Amount = 8 });
+            var messages = new List<object>();
+            await providerState.GetEventsAsync(actorId, 2, 3, msg => messages.Add(msg));
+            Assert.Equal(2, messages.Count);
+            Assert.Equal(2, (messages[0] as Multiplied).Amount);
+            Assert.Equal(4, (messages[1] as Multiplied).Amount);
+        }
+
         private (PID pid, Props props, string actorId, IProvider provider) CreateTestActor()
         {
             var actorId = Guid.NewGuid().ToString();

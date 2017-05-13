@@ -12,6 +12,7 @@ namespace Proto.Persistence
     public interface IProvider
     {
         Task GetEventsAsync(string actorName, long indexStart, Action<object> callback);
+        Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback);
         Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName);
         Task PersistEventAsync(string actorName, long index, object @event);
         Task PersistSnapshotAsync(string actorName, long index, object snapshot);

@@ -19,13 +19,24 @@ namespace Proto.Persistence.MongoDB
             _mongoDB = mongoDB;
         }
 
-        public async Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
+        public Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
+        {
+            return GetEventsAsync(actorName, e => e.ActorName == actorName && e.EventIndex >= indexStart, callback);
+        }
+
+        public Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        {
+            return GetEventsAsync(actorName,
+                e => e.ActorName == actorName && e.EventIndex >= indexStart && e.EventIndex <= indexEnd, callback);
+        }
+
+        private async Task GetEventsAsync(string actorName, System.Linq.Expressions.Expression<Func<Event, bool>> filterIndexPredicate, Action<object> callback)
         {
             var sort = Builders<Event>.Sort.Ascending("eventIndex");
             var events = await EventCollection
-                                .Find(e => e.ActorName == actorName && e.EventIndex >= indexStart)
-                                .Sort(sort)
-                                .ToListAsync();
+                .Find(filterIndexPredicate)
+                .Sort(sort)
+                .ToListAsync();
 
             foreach (var @event in events)
             {
