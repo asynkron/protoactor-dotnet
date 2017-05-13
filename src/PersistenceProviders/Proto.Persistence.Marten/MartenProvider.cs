@@ -13,24 +13,14 @@ namespace Proto.Persistence.Marten
         {
             _store = store;
         }
-
-        public Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
-        {
-            return GetEventsAsync(actorName, x => x.Index >= indexStart, callback);
-        }
-
-        public Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
-        {
-            return GetEventsAsync(actorName, x => x.Index >= indexStart && x.Index <= indexEnd, callback);
-        }
-
-        private async Task GetEventsAsync(string actorName, System.Linq.Expressions.Expression<Func<Event, bool>> filterIndexPredicate, Action<object> callback)
+        
+        public async Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
             using (var session = _store.OpenSession())
             {
                 var events = await session.Query<Event>()
                     .Where(x => x.ActorName == actorName)
-                    .Where(filterIndexPredicate)
+                    .Where(x => x.Index >= indexStart && x.Index <= indexEnd)
                     .OrderBy(x => x.Index)
                     .ToListAsync();
 
@@ -40,6 +30,7 @@ namespace Proto.Persistence.Marten
                 }
             }
         }
+
         public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
             using (var session = _store.OpenSession())

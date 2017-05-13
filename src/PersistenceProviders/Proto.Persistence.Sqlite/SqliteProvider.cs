@@ -69,17 +69,7 @@ namespace Proto.Persistence.Sqlite
             }
         }
 
-        public Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
-        {
-            return GetEventsAsync(actorName, x => x.EventIndex >= indexStart, callback);
-        }
-
         public Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
-        {
-            return GetEventsAsync(actorName, x => x.EventIndex >= indexStart && x.EventIndex <= indexEnd, callback);
-        }
-
-        private Task GetEventsAsync(string actorName, System.Linq.Expressions.Expression<Func<Event, bool>> indexFilterPredicate, Action<object> callback)
         {
             try
             {
@@ -87,7 +77,7 @@ namespace Proto.Persistence.Sqlite
                 {
                     var items = db.Events
                         .Where(x => x.ActorName == actorName)
-                        .Where(indexFilterPredicate)
+                        .Where(x => x.EventIndex >= indexStart && x.EventIndex <= indexEnd)
                         .ToList();
 
                     foreach (var item in items)

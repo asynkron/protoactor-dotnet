@@ -16,7 +16,7 @@ namespace Proto.Persistence.Tests
             var (pid, _, actorId, providerState) = CreateTestActor();
             pid.Tell(new Multiply { Amount = 2 });
             await providerState
-                .GetEventsAsync(actorId, 0, o =>
+                .GetEventsAsync(actorId, 0, long.MaxValue, o =>
                 {
                     Assert.IsType(typeof(Multiplied), o);
                     Assert.Equal(2, (o as Multiplied).Amount);
@@ -41,7 +41,7 @@ namespace Proto.Persistence.Tests
             pid.Tell(new Multiply { Amount = 10 });
             await providerState.DeleteEventsAsync(actorId, 1);
             var events = new List<object>();
-            await providerState.GetEventsAsync(actorId, 0, v => events.Add(v));
+            await providerState.GetEventsAsync(actorId, 0, long.MaxValue, v => events.Add(v));
 
             Assert.Equal(0, events.Count);
         }

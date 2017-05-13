@@ -20,28 +20,20 @@ namespace Proto.Persistence.Couchbase
         {
             _bucket = bucket;
         }
-
-        public Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
-        {
-            var q = GenerateGetEventsQuery(actorName, indexStart);
-            return ExecuteGetEventsQueryAsync(q, callback);
-        }
-
+        
         public Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
             var q = GenerateGetEventsQuery(actorName, indexStart, indexEnd);
             return ExecuteGetEventsQueryAsync(q, callback);
         }
 
-        private string GenerateGetEventsQuery(string actorName, long indexStart, long? indexEnd = null)
+        private string GenerateGetEventsQuery(string actorName, long indexStart, long indexEnd)
         {
-            var s = $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName = '{actorName}' AND b.type = 'event' AND b.eventIndex >= {indexStart} ";
-            if (indexEnd.HasValue)
-            {
-                s += $"AND b.eventIndex <= {indexEnd.Value} ";
-            } 
-            s += "ORDER BY b.eventIndex ASC";
-            return s;
+            return $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName = '{actorName}' " +
+                   "AND b.type = 'event' " +
+                   $"AND b.eventIndex >= {indexStart} " +
+                   $"AND b.eventIndex <= {indexEnd} " +
+                   "ORDER BY b.eventIndex ASC";
         }
 
         private async Task ExecuteGetEventsQueryAsync(string query, Action<object> callback)

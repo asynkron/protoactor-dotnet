@@ -148,34 +148,48 @@ namespace Proto.Persistence.SqlServer
             await ExecuteNonQueryAsync(sql, parameters);
         }
 
-        public Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
+        public async Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
             var sql = GenerateGetEventsSqlString();
-            var sqlParameters = GenerateGetEventsParameters(actorName, indexStart);
-
-            return GetEventsAsync(sql, sqlParameters, callback);
-        }
-
-        public Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
-        {
-            var sql = GenerateGetEventsSqlString(true);
             var sqlParameters = GenerateGetEventsParameters(actorName, indexStart, indexEnd);
 
-            return GetEventsAsync(sql, sqlParameters, callback);
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                using (var command = new SqlCommand(sql, connection))
+                {
+                    await connection.OpenAsync();
+                    foreach (var sqlParameter in sqlParameters)
+                    {
+                        command.Parameters.Add(sqlParameter);
+                    }
+
+                    var eventReader = await command.ExecuteReaderAsync();
+
+                    while (await eventReader.ReadAsync())
+                    {
+                        callback(JsonConvert.DeserializeObject<object>(eventReader["EventData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
 
-        private string GenerateGetEventsSqlString(bool addEndIndexFilter = false)
+        private string GenerateGetEventsSqlString()
         {
-            var sql = $@"SELECT EventData FROM {_tableSchema}.{_tableEvents} WHERE ActorName = @ActorName AND EventIndex >= @IndexStart ";
-            if (addEndIndexFilter)
-                sql += "AND EventIndex <= @IndexEnd ";
-            sql += "ORDER BY EventIndex ASC";
-            return sql;
+            return $@"SELECT EventData FROM {_tableSchema}.{_tableEvents} " +
+                      "WHERE ActorName = @ActorName " +
+                      "AND EventIndex >= @IndexStart " +
+                      "AND EventIndex <= @IndexEnd " +
+                      "ORDER BY EventIndex ASC";
         }
 
-        private List<SqlParameter> GenerateGetEventsParameters(string actorName, long indexStart, long? indexEnd = null)
+        private List<SqlParameter> GenerateGetEventsParameters(string actorName, long indexStart, long indexEnd)
         {
-            var sqlParameters = new List<SqlParameter>
+            return new List<SqlParameter>
             {
                 new SqlParameter()
                 {
@@ -188,45 +202,14 @@ namespace Proto.Persistence.SqlServer
                     ParameterName = "IndexStart",
                     SqlDbType = System.Data.SqlDbType.BigInt,
                     SqlValue = indexStart
-                }
-            };
-            if (indexEnd.HasValue)
-            {
-                sqlParameters.Add(new SqlParameter()
+                },
+                new SqlParameter()
                 {
                     ParameterName = "IndexEnd",
                     SqlDbType = System.Data.SqlDbType.BigInt,
                     SqlValue = indexEnd
-                });
-            }
-            return sqlParameters;
-        }
-
-        private async Task GetEventsAsync(string sql, List<SqlParameter> parameters, Action<object> callback)
-        {
-            try
-            {
-                using (var connection = new SqlConnection(_connectionString))
-                using (var command = new SqlCommand(sql, connection))
-                {
-                    await connection.OpenAsync();
-                    foreach (var sqlParameter in parameters)
-                    {
-                        command.Parameters.Add(sqlParameter);
-                    }
-
-                    var eventReader = await command.ExecuteReaderAsync();
-
-                    while(await eventReader.ReadAsync())
-                    {
-                        callback(JsonConvert.DeserializeObject<object>(eventReader["EventData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
-                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
+            };
         }
 
         public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
