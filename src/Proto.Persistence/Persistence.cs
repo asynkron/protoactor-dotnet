@@ -76,7 +76,7 @@ namespace Proto.Persistence
 
             if (UsingEventSourcing)
             {
-                await _provider.GetEventsAsync(_actorId, Index, @event =>
+                await _provider.GetEventsAsync(_actorId, Index + 1, @event =>
                 {
                     Index++;
                     _applyEvent(new RecoverEvent(@event, Index));
