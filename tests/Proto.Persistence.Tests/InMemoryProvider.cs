@@ -36,7 +36,7 @@ namespace Proto.Persistence.Tests
         {
             if (_events.TryGetValue(actorName, out Dictionary<long, object> events))
             {
-                foreach (var e in events.Where(e => e.Key > indexStart))
+                foreach (var e in events.Where(e => e.Key >= indexStart))
                 {
                     callback(e.Value);
                 }
