@@ -81,22 +81,7 @@ namespace Proto.Tests
             Assert.True(child1Disposed);
             Assert.True(child2Disposed);
         }
-
-        [Fact]
-        public void WhenExceptionThrownInDispose()
-        {
-            bool disposeCalled = false;
-            var props = Actor.FromProducer(() => new DisposableActor(() =>
-                {
-                    disposeCalled = true;
-                    throw new Exception();
-                }))
-                .WithMailbox(() => new TestMailbox());
-            var pid = Actor.Spawn(props);
-            pid.Stop();
-            Assert.True(disposeCalled);
-        }
-
+        
         private class SupervisingActor : IActor
         {
             private readonly Props _childProps;

@@ -522,14 +522,7 @@ namespace Proto
         {
             if (Actor is IDisposable disposableActor)
             {
-                try
-                {
-                    disposableActor.Dispose();
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError("Error disposing actor", Actor, e);
-                }
+                disposableActor.Dispose();
             }
         }
 
