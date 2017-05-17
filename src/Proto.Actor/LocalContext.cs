@@ -476,6 +476,9 @@ namespace Proto
             ProcessRegistry.Instance.Remove(Self);
             //This is intentional
             await InvokeUserMessageAsync(Stopped.Instance);
+
+            DisposeActorIfDisposable();
+
             //Notify watchers
             if (_watchers != null)
             {
@@ -500,6 +503,7 @@ namespace Proto
 
         private async Task RestartAsync()
         {
+            DisposeActorIfDisposable();
             IncarnateActor();
             Self.SendSystemMessage(ResumeMailbox.Instance);
 
@@ -511,6 +515,14 @@ namespace Proto
                     var msg = _stash.Pop();
                     await InvokeUserMessageAsync(msg);
                 }
+            }
+        }
+
+        private void DisposeActorIfDisposable()
+        {
+            if (Actor is IDisposable disposableActor)
+            {
+                disposableActor.Dispose();
             }
         }
 
