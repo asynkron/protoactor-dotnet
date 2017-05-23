@@ -18,14 +18,14 @@ namespace Proto.Persistence.MongoDB
         {
             _mongoDB = mongoDB;
         }
-
-        public async Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
+        
+        public async Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
             var sort = Builders<Event>.Sort.Ascending("eventIndex");
             var events = await EventCollection
-                                .Find(e => e.ActorName == actorName && e.EventIndex >= indexStart)
-                                .Sort(sort)
-                                .ToListAsync();
+                .Find(e => e.ActorName == actorName && e.EventIndex >= indexStart && e.EventIndex <= indexEnd)
+                .Sort(sort)
+                .ToListAsync();
 
             foreach (var @event in events)
             {

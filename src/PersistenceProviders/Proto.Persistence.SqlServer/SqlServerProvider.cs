@@ -148,9 +148,10 @@ namespace Proto.Persistence.SqlServer
             await ExecuteNonQueryAsync(sql, parameters);
         }
 
-        public async Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
+        public async Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
-            var sql = $@"SELECT EventData FROM {_tableSchema}.{_tableEvents} WHERE ActorName = @ActorName AND EventIndex >= @EventIndex ORDER BY EventIndex ASC";
+            var sql = GenerateGetEventsSqlString();
+            var sqlParameters = GenerateGetEventsParameters(actorName, indexStart, indexEnd);
 
             try
             {
@@ -158,24 +159,14 @@ namespace Proto.Persistence.SqlServer
                 using (var command = new SqlCommand(sql, connection))
                 {
                     await connection.OpenAsync();
-
-                    command.Parameters.Add(new SqlParameter()
+                    foreach (var sqlParameter in sqlParameters)
                     {
-                        ParameterName = "ActorName",
-                        SqlDbType = System.Data.SqlDbType.NVarChar,
-                        SqlValue = actorName
-                    });
-
-                    command.Parameters.Add(new SqlParameter()
-                    {
-                        ParameterName = "EventIndex",
-                        SqlDbType = System.Data.SqlDbType.BigInt,
-                        SqlValue = indexStart
-                    });
+                        command.Parameters.Add(sqlParameter);
+                    }
 
                     var eventReader = await command.ExecuteReaderAsync();
 
-                    while(await eventReader.ReadAsync())
+                    while (await eventReader.ReadAsync())
                     {
                         callback(JsonConvert.DeserializeObject<object>(eventReader["EventData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
                     }
@@ -185,6 +176,40 @@ namespace Proto.Persistence.SqlServer
             {
                 throw ex;
             }
+        }
+
+        private string GenerateGetEventsSqlString()
+        {
+            return $@"SELECT EventData FROM {_tableSchema}.{_tableEvents} " +
+                      "WHERE ActorName = @ActorName " +
+                      "AND EventIndex >= @IndexStart " +
+                      "AND EventIndex <= @IndexEnd " +
+                      "ORDER BY EventIndex ASC";
+        }
+
+        private List<SqlParameter> GenerateGetEventsParameters(string actorName, long indexStart, long indexEnd)
+        {
+            return new List<SqlParameter>
+            {
+                new SqlParameter()
+                {
+                    ParameterName = "ActorName",
+                    SqlDbType = System.Data.SqlDbType.NVarChar,
+                    SqlValue = actorName
+                },
+                new SqlParameter()
+                {
+                    ParameterName = "IndexStart",
+                    SqlDbType = System.Data.SqlDbType.BigInt,
+                    SqlValue = indexStart
+                },
+                new SqlParameter()
+                {
+                    ParameterName = "IndexEnd",
+                    SqlDbType = System.Data.SqlDbType.BigInt,
+                    SqlValue = indexEnd
+                }
+            };
         }
 
         public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)

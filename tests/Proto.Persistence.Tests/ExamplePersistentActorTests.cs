@@ -16,7 +16,7 @@ namespace Proto.Persistence.Tests
             var (pid, _, actorId, providerState) = CreateTestActor();
             pid.Tell(new Multiply { Amount = 2 });
             await providerState
-                .GetEventsAsync(actorId, 0, o =>
+                .GetEventsAsync(actorId, 0, long.MaxValue, o =>
                 {
                     Assert.IsType(typeof(Multiplied), o);
                     Assert.Equal(2, (o as Multiplied).Amount);
@@ -41,7 +41,7 @@ namespace Proto.Persistence.Tests
             pid.Tell(new Multiply { Amount = 10 });
             await providerState.DeleteEventsAsync(actorId, 1);
             var events = new List<object>();
-            await providerState.GetEventsAsync(actorId, 0, v => events.Add(v));
+            await providerState.GetEventsAsync(actorId, 0, long.MaxValue, v => events.Add(v));
 
             Assert.Equal(0, events.Count);
         }
@@ -185,6 +185,22 @@ namespace Proto.Persistence.Tests
             var index = await pid.RequestAsync<long>(new GetIndex(), TimeSpan.FromSeconds(1));
             Assert.Equal(2, index);
             Assert.Equal(InitialState * 2 * 4, state);
+        }
+
+        [Fact]
+        public async void GivenEvents_CanReplayFromStartIndexToEndIndex()
+        {
+            var (pid, props, actorId, providerState) = CreateTestActor();
+
+            pid.Tell(new Multiply { Amount = 2 });
+            pid.Tell(new Multiply { Amount = 2 });
+            pid.Tell(new Multiply { Amount = 4 });
+            pid.Tell(new Multiply { Amount = 8 });
+            var messages = new List<object>();
+            await providerState.GetEventsAsync(actorId, 2, 3, msg => messages.Add(msg));
+            Assert.Equal(2, messages.Count);
+            Assert.Equal(2, (messages[0] as Multiplied).Amount);
+            Assert.Equal(4, (messages[1] as Multiplied).Amount);
         }
 
         private (PID pid, Props props, string actorId, IProvider provider) CreateTestActor()

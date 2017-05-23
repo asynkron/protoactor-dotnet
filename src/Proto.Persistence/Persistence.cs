@@ -60,7 +60,11 @@ namespace Proto.Persistence
             if (getState == null) throw new ArgumentNullException(nameof(getState));
             return new Persistence(provider, actorId, applyEvent, applySnapshot, snapshotStrategy, getState);
         }
-
+        
+        /// <summary>
+        /// Recovers the actor to the latest state
+        /// </summary>
+        /// <returns></returns>
         public async Task RecoverStateAsync()
         {
             if (UsingSnapshotting)
@@ -76,14 +80,32 @@ namespace Proto.Persistence
 
             if (UsingEventSourcing)
             {
-                await _provider.GetEventsAsync(_actorId, Index, @event =>
+                await _provider.GetEventsAsync(_actorId, Index + 1, long.MaxValue, @event =>
                 {
                     Index++;
                     _applyEvent(new RecoverEvent(@event, Index));
                 });
             }
         }
-        
+
+        /// <summary>
+        /// Allows the replaying of events to rebuild state from a range. For example, if we want to replay until just before something happened 
+        /// (i.e. unexpected behavior of the system, bug, crash etc..) then apply some messages and observe what happens.
+        /// </summary>
+        public async Task ReplayEvents(long fromIndex, long toIndex)
+        {
+            if (!UsingEventSourcing)
+            {
+                throw new Exception("Events cannot be replayed without using Event Sourcing.");
+            }
+
+            await _provider.GetEventsAsync(_actorId, fromIndex, toIndex, @event =>
+                {
+                    Index++;
+                    _applyEvent(new RecoverEvent(@event, Index));
+                });
+        }
+
         public async Task PersistEventAsync(object @event)
         {
             if (!UsingEventSourcing)

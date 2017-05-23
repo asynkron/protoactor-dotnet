@@ -78,3 +78,7 @@ pid.Tell(new Hello
 ```
 
 You should see the output `Hello Alex`.
+
+### Support
+
+Many thanks to [JetBrains](https://www.jetbrains.com) for support!
