@@ -15,8 +15,9 @@ namespace Proto
     {
         public Func<IActor> Producer { get; private set; }
 
-        public Func<IMailbox> MailboxProducer { get; private set; } =
-            () => UnboundedMailbox.Create();
+        private static IMailbox ProduceDefaultMailbox() => UnboundedMailbox.Create();
+
+        public Func<IMailbox> MailboxProducer { get; private set; } = ProduceDefaultMailbox;
 
         public ISupervisorStrategy SupervisorStrategy { get; private set; } = Supervision.DefaultStrategy;
 

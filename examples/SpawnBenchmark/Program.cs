@@ -21,7 +21,8 @@ namespace SpawnBenchmark
 
     internal class MyActor : IActor
     {
-        public static Props props = Actor.FromProducer(() => new MyActor());
+        private static MyActor ProduceActor() => new MyActor();
+        public static Props Props = Actor.FromProducer(ProduceActor);
         private long _replies;
         private PID _replyTo;
         private long _sum;
@@ -42,7 +43,7 @@ namespace SpawnBenchmark
                 _replyTo = context.Sender;
                 for (var i = 0; i < r.Div; i++)
                 {
-                    var child = Actor.Spawn(props);
+                    var child = Actor.Spawn(Props);
                     child.Request(new Request
                     {
                         Num = r.Num + i * (r.Size / r.Div),
@@ -53,9 +54,9 @@ namespace SpawnBenchmark
 
                 return Actor.Done;
             }
-            if (msg is Int64)
+            if (msg is Int64 res)
             {
-                _sum += (Int64) msg;
+                _sum += res;
                 _replies--;
                 if (_replies == 0)
                 {
@@ -73,7 +74,7 @@ namespace SpawnBenchmark
         {
             Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
 
-            var pid = Actor.Spawn(MyActor.props);
+            var pid = Actor.Spawn(MyActor.Props);
             var sw = Stopwatch.StartNew();
             var t = pid.RequestAsync<long>(new Request
             {
