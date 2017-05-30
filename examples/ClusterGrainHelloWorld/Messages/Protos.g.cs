@@ -22,11 +22,12 @@ namespace Messages {
     static ProtosReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgxQcm90b3MucHJvdG8SCG1lc3NhZ2VzGhhQcm90by5BY3Rvci9Qcm90b3Mu",
-            "cHJvdG8iDgoMSGVsbG9SZXF1ZXN0IiAKDUhlbGxvUmVzcG9uc2USDwoHTWVz",
-            "c2FnZRgBIAEoCUILqgIITWVzc2FnZXNiBnByb3RvMw=="));
+            "CgxQcm90b3MucHJvdG8SCG1lc3NhZ2VzIg4KDEhlbGxvUmVxdWVzdCIgCg1I",
+            "ZWxsb1Jlc3BvbnNlEg8KB01lc3NhZ2UYASABKAkySwoKSGVsbG9HcmFpbhI9",
+            "CghTYXlIZWxsbxIWLm1lc3NhZ2VzLkhlbGxvUmVxdWVzdBoXLm1lc3NhZ2Vz",
+            "LkhlbGxvUmVzcG9uc2UiAEILqgIITWVzc2FnZXNiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
+          new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Messages.HelloRequest), global::Messages.HelloRequest.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Messages.HelloResponse), global::Messages.HelloResponse.Parser, new[]{ "Message" }, null, null, null)

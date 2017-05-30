@@ -1,39 +1,49 @@
-﻿using System;
+
+using System;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Proto;
 using Proto.Cluster;
+using Proto.Remote;
 
 namespace Messages
 {
-    public static class GrainFactory
+    public static class Grains
     {
-        internal static Func<IHello> _HelloFactory;
+			
+        internal static Func<IHelloGrain> _HelloGrainFactory;
 
-        public static void HelloFactory(Func<IHello> factory) => _HelloFactory = factory;
-
-        public static HelloClient HelloClient(string id)
+        public static void HelloGrainFactory(Func<IHelloGrain> factory) 
         {
-            return new HelloClient(id);
-        }
-    }
-    public interface IHello
-    {
-        Task<HelloResponse> SayHello(HelloRequest request);
+            _HelloGrainFactory = factory;
+            Remote.RegisterKnownKind("HelloGrain", Actor.FromProducer(() => new HelloGrainActor()));
+        } 
+
+        public static HelloGrainClient HelloGrain(string id) => new HelloGrainClient(id);
+			
     }
 
-    public class HelloClient
+		
+    public interface IHelloGrain
+    {
+		
+        Task<HelloResponse> SayHello(HelloRequest request);
+		
+    }
+
+    public class HelloGrainClient
     {
         private readonly string _id;
 
-        public HelloClient(string id)
+        public HelloGrainClient(string id)
         {
             _id = id;
         }
 
-        public async Task<HelloResponse> SayHello(HelloRequest request)
+		
+        public async Task< HelloResponse> SayHello( HelloRequest request)
         {
-            var pid = await Cluster.GetAsync(_id, "Hello");
+            var pid = await Cluster.GetAsync(_id, "HelloGrain");
             var gr = new GrainRequest
             {
                 Method = "SayHello",
@@ -50,11 +60,12 @@ namespace Messages
             }
             throw new NotSupportedException();
         }
+		
     }
 
-    public class HelloActor : IActor
+    public class HelloGrainActor : IActor
     {
-        private IHello _inner;
+        private IHelloGrain _inner;
 
         public async Task ReceiveAsync(IContext context)
         {
@@ -62,13 +73,14 @@ namespace Messages
             {
                 case Started _:
                 {
-                    _inner = GrainFactory._HelloFactory();
+                    _inner = Grains._HelloGrainFactory();
                     break;
                 }
                 case GrainRequest request:
                 {
                     switch (request.Method)
                     {
+						
                         case "SayHello":
                         {
                             var r = HelloRequest.Parser.ParseFrom(request.MessageData);
@@ -92,6 +104,7 @@ namespace Messages
 
                             break;
                         }
+						
                     }
 
                     break;
@@ -99,4 +112,6 @@ namespace Messages
             }
         }
     }
+		
 }
+

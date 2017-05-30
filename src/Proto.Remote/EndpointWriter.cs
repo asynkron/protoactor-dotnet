@@ -38,13 +38,13 @@ namespace Proto.Remote
         {
             switch (context.Message)
             {
-                case Started m:
+                case Started _:
                     await StartedAsync();
                     break;
-                case Stopped m:
+                case Stopped _:
                     await StoppedAsync();
                     break;
-                case Restarting m:
+                case Restarting _:
                     await RestartingAsync();
                     break;
                 case IEnumerable<RemoteDeliver> m:
@@ -106,15 +106,9 @@ namespace Proto.Remote
             }
         }
 
-        private async Task RestartingAsync()
-        {
-            await _channel.ShutdownAsync();
-        }
+        private Task RestartingAsync() => _channel.ShutdownAsync();
 
-        private async Task StoppedAsync()
-        {
-            await _channel.ShutdownAsync();
-        }
+        private Task StoppedAsync() => _channel.ShutdownAsync();
 
         private Task StartedAsync()
         {

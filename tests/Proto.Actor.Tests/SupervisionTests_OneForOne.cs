@@ -11,6 +11,7 @@ namespace Proto.Tests
 {
     public class SupervisionTests_OneForOne
     {
+        private static readonly Exception Exception = new Exception("boo hoo");
         class ParentActor : IActor
         {
             private readonly Props _childProps;
@@ -40,7 +41,7 @@ namespace Proto.Tests
                 switch (context.Message)
                 {
                     case string _:
-                        throw new Exception();
+                        throw Exception;
                 }
                 return Actor.Done;
             }
@@ -110,8 +111,26 @@ namespace Proto.Tests
             parent.Tell("hello");
 
             childMailboxStats.Reset.Wait(1000);
-            Assert.Contains(Restart.Instance, childMailboxStats.Posted);
-            Assert.Contains(Restart.Instance, childMailboxStats.Received);
+            Assert.Contains(childMailboxStats.Posted, msg => msg is Restart);
+            Assert.Contains(childMailboxStats.Received, msg => msg is Restart);
+        }
+        
+        [Fact]
+        public void OneForOneStrategy_Should_PassExceptionOnRestart()
+        {
+            var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
+            var childProps = Actor.FromProducer(() => new ChildActor())
+                .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
+                .WithSupervisor(strategy);
+            var parent = Actor.Spawn(parentProps);
+
+            parent.Tell("hello");
+
+            childMailboxStats.Reset.Wait(1000);
+            Assert.Contains(childMailboxStats.Posted, msg => (msg is Restart r) && r.Reason == Exception);
+            Assert.Contains(childMailboxStats.Received, msg => (msg is Restart r) && r.Reason == Exception);
         }
 
         [Fact]
