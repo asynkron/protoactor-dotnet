@@ -247,10 +247,10 @@ namespace Proto
 
         public void EscalateFailure(Exception reason, object message)
         {
-            EscalateFailure(Self, reason);
+            EscalateFailure(reason, Self);
         }
 
-        public void EscalateFailure(PID who, Exception reason)
+        public void EscalateFailure(Exception reason, PID who)
         {
             if (_restartStatistics == null)
             {
@@ -268,11 +268,11 @@ namespace Proto
             }
         }
 
-        public void RestartChildren(params PID[] pids)
+        public void RestartChildren(Exception reason, params PID[] pids)
         {
             foreach (var pid in pids)
             {
-                pid.SendSystemMessage(Restart.Instance);
+                pid.SendSystemMessage(new Restart(reason));
             }
         }
 

@@ -23,8 +23,8 @@ namespace Proto
     public interface ISupervisor
     {
         IReadOnlyCollection<PID> Children { get; }
-        void EscalateFailure(PID who, Exception reason);
-        void RestartChildren(params PID[] pids);
+        void EscalateFailure(Exception reason, PID who);
+        void RestartChildren(Exception reason, params PID[] pids);
         void StopChildren(params PID[] pids);
         void ResumeChildren(params PID[] pids);
     }
@@ -75,7 +75,7 @@ namespace Proto
                     if (RequestRestartPermission(rs))
                     {
                         Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
-                        supervisor.RestartChildren(supervisor.Children.ToArray());
+                        supervisor.RestartChildren(reason, supervisor.Children.ToArray());
                     }
                     else
                     {
@@ -88,7 +88,7 @@ namespace Proto
                     supervisor.StopChildren(supervisor.Children.ToArray());
                     break;
                 case SupervisorDirective.Escalate:
-                    supervisor.EscalateFailure(child, reason);
+                    supervisor.EscalateFailure(reason, child);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -137,7 +137,7 @@ namespace Proto
                     if (RequestRestartPermission(rs))
                     {
                         Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
-                        supervisor.RestartChildren(child);
+                        supervisor.RestartChildren(reason, child);
                     }
                     else
                     {
@@ -150,7 +150,7 @@ namespace Proto
                     supervisor.StopChildren(child);
                     break;
                 case SupervisorDirective.Escalate:
-                    supervisor.EscalateFailure(child, reason);
+                    supervisor.EscalateFailure(reason, child);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -203,7 +203,7 @@ namespace Proto
             var duration = TimeSpan.FromMilliseconds(ToMilliseconds(backoff + noise));
             Task.Delay(duration).ContinueWith(t =>
             {
-                supervisor.RestartChildren(child);
+                supervisor.RestartChildren(reason, child);
             });
         }
 
