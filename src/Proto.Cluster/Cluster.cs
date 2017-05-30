@@ -17,6 +17,7 @@ namespace Proto.Cluster
 
         public static void Start(string clusterName, IClusterProvider provider)
         {
+            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             _logger.LogInformation("Starting Proto.Actor cluster");
             var (h, p) = ParseAddress(ProcessRegistry.Instance.Address);
             var kinds = Remote.Remote.GetKnownKinds();
