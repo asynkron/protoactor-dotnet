@@ -59,10 +59,10 @@ namespace Proto
 
     public sealed class Restart : SystemMessage
     {
-        public static readonly Restart Instance = new Restart();
-
-        private Restart()
+        public Exception Reason { get; }
+        public Restart(Exception reason)
         {
+            Reason = reason;
         }
     }
 
