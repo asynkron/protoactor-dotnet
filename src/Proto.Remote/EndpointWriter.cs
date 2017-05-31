@@ -56,20 +56,18 @@ namespace Proto.Remote
                     foreach(var rd in m)
                     {
                         var targetName = rd.Target.Id;
-                        if (!targetNames.ContainsKey(targetName))
+                        if (!targetNames.TryGetValue(targetName, out var targetId))
                         {
-                            targetNames.Add(targetName, typeNames.Count);
+                            targetId = targetNames[targetName] = typeNames.Count;
                             targetNameList.Add(targetName);
                         }
-                        var targetId = targetNames[targetName];
 
                         var typeName = rd.Message.Descriptor.File.Package + "." + rd.Message.Descriptor.Name;
-                        if (!typeNames.ContainsKey(typeName))
+                        if (!typeNames.TryGetValue(typeName, out var typeId))
                         {
-                            typeNames.Add(typeName, typeNames.Count);
+                            typeId = typeNames[typeName] = typeNames.Count;
                             typeNameList.Add(typeName);
                         }
-                        var typeId = typeNames[typeName];
 
                         var bytes = Serialization.Serialize(rd.Message);
                         var envelope = new MessageEnvelope

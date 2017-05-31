@@ -8,11 +8,7 @@ namespace Proto
 
         public string GetOrDefault(string key, string @default = null)
         {
-            if (ContainsKey(key))
-            {
-                return this[key];
-            }
-            return @default;
+            return TryGetValue(key, out string value) ? value : @default;
         }
     }
 }
