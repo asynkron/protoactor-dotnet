@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public class ActorClient : ISenderContext    {
+    internal class ActorClient : ISenderContext    {
         private readonly Sender _senderMiddleware;
 
         public ActorClient(MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
