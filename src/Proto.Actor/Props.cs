@@ -13,24 +13,17 @@ namespace Proto
 {
     public sealed class Props
     {
-        public Func<IActor> Producer { get; private set; }
-
         private static IMailbox ProduceDefaultMailbox() => UnboundedMailbox.Create();
-
+        private Spawner _spawner;
+        public Func<IActor> Producer { get; private set; }
         public Func<IMailbox> MailboxProducer { get; private set; } = ProduceDefaultMailbox;
-
         public ISupervisorStrategy SupervisorStrategy { get; private set; } = Supervision.DefaultStrategy;
-
         public IDispatcher Dispatcher { get; private set; } = Dispatchers.DefaultDispatcher;
-
         public IList<Func<Receive, Receive>> ReceiveMiddleware { get; private set; } = new List<Func<Receive, Receive>>();
         public IList<Func<Sender, Sender>> SenderMiddleware { get; private set; } = new List<Func<Sender, Sender>>();
-
         public Receive ReceiveMiddlewareChain { get; set; }
         public Sender SenderMiddlewareChain { get; set; }
-
-        private Spawner _spawner;
-
+        
         public Spawner Spawner
         {
             get => _spawner ?? DefaultSpawner;
