@@ -18,7 +18,7 @@ namespace Proto
 
         private readonly ILogger _logger = Log.CreateLogger<EventStream>();
 
-        public EventStream()
+        internal EventStream()
         {
             Subscribe(msg =>
             {
@@ -36,6 +36,10 @@ namespace Proto
             new ConcurrentDictionary<Guid, Subscription<T>>();
 
         private readonly ILogger _logger = Log.CreateLogger<EventStream<T>>();
+
+        internal EventStream()
+        {
+        }
 
         public Subscription<T> Subscribe(Action<T> action, IDispatcher dispatcher = null)
         {
@@ -69,8 +73,7 @@ namespace Proto
             _subscriptions.TryAdd(sub.Id, sub);
             return sub;
         }
-
-
+        
         public void Publish(T msg)
         {
             foreach (var sub in _subscriptions)
