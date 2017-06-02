@@ -51,7 +51,7 @@ namespace Proto
         public PID Pid { get; }
         public Task<T> Task { get; }
 
-        public override void SendUserMessage(PID pid, object message)
+        protected internal override void SendUserMessage(PID pid, object message)
         {
             var env = MessageEnvelope.Unwrap(message);
             
@@ -70,7 +70,7 @@ namespace Proto
 
         }
 
-        public override void SendSystemMessage(PID pid, object message)
+        protected internal override void SendSystemMessage(PID pid, object message)
         {
         }
     }

@@ -24,13 +24,13 @@ namespace Proto
     {
         public static readonly DeadLetterProcess Instance = new DeadLetterProcess();
 
-        public override void SendUserMessage(PID pid, object message)
+        protected internal override void SendUserMessage(PID pid, object message)
         {
             var (msg,sender, _) = MessageEnvelope.Unwrap(message);
             EventStream.Instance.Publish(new DeadLetterEvent(pid, msg, sender));
         }
 
-        public override void SendSystemMessage(PID pid, object message)
+        protected internal override void SendSystemMessage(PID pid, object message)
         {
             EventStream.Instance.Publish(new DeadLetterEvent(pid, message, null));
         }
