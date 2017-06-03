@@ -11,14 +11,14 @@ namespace Proto
 {
     public abstract class Process
     {
-        public abstract void SendUserMessage(PID pid, object message);
+        protected internal abstract void SendUserMessage(PID pid, object message);
 
         public virtual void Stop(PID pid)
         {
             SendSystemMessage(pid, new Stop());
         }
 
-        public abstract void SendSystemMessage(PID pid, object message);
+        protected internal abstract void SendSystemMessage(PID pid, object message);
     }
 
     public class LocalProcess : Process
@@ -38,12 +38,12 @@ namespace Proto
         }
 
 
-        public override void SendUserMessage(PID pid, object message)
+        protected internal override void SendUserMessage(PID pid, object message)
         {
             Mailbox.PostUserMessage(message);
         }
 
-        public override void SendSystemMessage(PID pid, object message)
+        protected internal override void SendSystemMessage(PID pid, object message)
         {
             Mailbox.PostSystemMessage(message);
         }

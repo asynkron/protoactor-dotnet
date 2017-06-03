@@ -13,23 +13,18 @@ namespace Proto
 
     public delegate Task Sender(ISenderContext ctx, PID target, MessageEnvelope envelope);
 
-    public class EmptyActor : IActor
+    class EmptyActor : IActor
     {
         private readonly Receive _receive;
-
         public EmptyActor(Receive receive) => _receive = receive;
-
         public Task ReceiveAsync(IContext context) => _receive(context);
     }
 
     public static class Actor
     {
         public static readonly Task Done = Task.FromResult(0);
-
         public static EventStream EventStream => EventStream.Instance;
-
         public static Props FromProducer(Func<IActor> producer) => new Props().WithProducer(producer);
-
         public static Props FromFunc(Receive receive) => FromProducer(() => new EmptyActor(receive));
 
         public static PID Spawn(Props props)

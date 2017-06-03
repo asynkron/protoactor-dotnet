@@ -9,12 +9,12 @@ using System.Collections.Generic;
 
 namespace Proto
 {
-    public class HashedConcurrentDictionary
+    internal class HashedConcurrentDictionary
     {
         private const int HashSize = 1024;
         private readonly Partition[] _partitions = new Partition[HashSize];
 
-        public HashedConcurrentDictionary()
+        internal HashedConcurrentDictionary()
         {
             for (var i = 0; i < _partitions.Length; i++)
             {

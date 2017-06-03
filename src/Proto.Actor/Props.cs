@@ -13,24 +13,17 @@ namespace Proto
 {
     public sealed class Props
     {
-        public Func<IActor> Producer { get; private set; }
-
         private static IMailbox ProduceDefaultMailbox() => UnboundedMailbox.Create();
-
+        private Spawner _spawner;
+        public Func<IActor> Producer { get; private set; }
         public Func<IMailbox> MailboxProducer { get; private set; } = ProduceDefaultMailbox;
-
         public ISupervisorStrategy SupervisorStrategy { get; private set; } = Supervision.DefaultStrategy;
-
         public IDispatcher Dispatcher { get; private set; } = Dispatchers.DefaultDispatcher;
-
         public IList<Func<Receive, Receive>> ReceiveMiddleware { get; private set; } = new List<Func<Receive, Receive>>();
         public IList<Func<Sender, Sender>> SenderMiddleware { get; private set; } = new List<Func<Sender, Sender>>();
-
         public Receive ReceiveMiddlewareChain { get; set; }
         public Sender SenderMiddlewareChain { get; set; }
-
-        private Spawner _spawner;
-
+        
         public Spawner Spawner
         {
             get => _spawner ?? DefaultSpawner;
@@ -39,7 +32,7 @@ namespace Proto
 
         public static Spawner DefaultSpawner = (name, props, parent) =>
         {
-            var ctx = new Context(props.Producer, props.SupervisorStrategy, props.ReceiveMiddlewareChain, props.SenderMiddlewareChain, parent);
+            var ctx = new LocalContext(props.Producer, props.SupervisorStrategy, props.ReceiveMiddlewareChain, props.SenderMiddlewareChain, parent);
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
             var reff = new LocalProcess(mailbox);
@@ -68,14 +61,14 @@ namespace Proto
         {
             props.ReceiveMiddleware = ReceiveMiddleware.Concat(middleware).ToList();
             props.ReceiveMiddlewareChain = props.ReceiveMiddleware.Reverse()
-                                                .Aggregate((Receive) Context.DefaultReceive, (inner, outer) => outer(inner));
+                                                .Aggregate((Receive) LocalContext.DefaultReceive, (inner, outer) => outer(inner));
         });
 
         public Props WithSenderMiddleware(params Func<Sender, Sender>[] middleware) => Copy(props =>
         {
             props.SenderMiddleware = SenderMiddleware.Concat(middleware).ToList();
             props.SenderMiddlewareChain = props.SenderMiddleware.Reverse()
-                                               .Aggregate((Sender) Context.DefaultSender, (inner, outer) => outer(inner));
+                                               .Aggregate((Sender) LocalContext.DefaultSender, (inner, outer) => outer(inner));
         });
 
         public Props WithSpawner(Spawner spawner) => Copy(props => props.Spawner = spawner);

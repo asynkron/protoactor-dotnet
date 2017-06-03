@@ -22,9 +22,9 @@ namespace Proto
         Stopping
     }
 
-    public class Context : IMessageInvoker, IContext, ISupervisor
+    internal class LocalContext : IMessageInvoker, IContext, ISupervisor
     {
-        private static ILogger Logger { get; } = Log.CreateLogger<Context>();
+        private static ILogger Logger { get; } = Log.CreateLogger<LocalContext>();
         public static readonly IReadOnlyCollection<PID> EmptyChildren = new List<PID>();
 
         private readonly Receive _receiveMiddleware;
@@ -46,7 +46,7 @@ namespace Proto
         //if it is injected as a dependency, that would work fine
         private Stack<object> _stash;
 
-        public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
+        public LocalContext(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
         {
             _producer = producer;
             _supervisorStrategy = supervisorStrategy;
@@ -294,7 +294,7 @@ namespace Proto
 
         internal static Task DefaultReceive(IContext context)
         {
-            var c = (Context) context;
+            var c = (LocalContext) context;
             if (c.Message is PoisonPill)
             {
                 c.Self.Stop();
