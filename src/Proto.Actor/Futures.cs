@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public class FutureProcess<T> : Process
+    internal class FutureProcess<T> : Process
     {
         private readonly TaskCompletionSource<T> _tcs;
         private readonly CancellationTokenSource _cts;
 
-        public FutureProcess(TimeSpan timeout) : this(new CancellationTokenSource(timeout)) { }
-        public FutureProcess(CancellationToken cancellationToken) : this(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) { }
-        public FutureProcess() : this(null) { }
+        internal FutureProcess(TimeSpan timeout) : this(new CancellationTokenSource(timeout)) { }
+        internal FutureProcess(CancellationToken cancellationToken) : this(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) { }
+        internal FutureProcess() : this(null) { }
 
         FutureProcess(CancellationTokenSource cts)
         {
@@ -51,7 +51,7 @@ namespace Proto
         public PID Pid { get; }
         public Task<T> Task { get; }
 
-        public override void SendUserMessage(PID pid, object message)
+        protected internal override void SendUserMessage(PID pid, object message)
         {
             var env = MessageEnvelope.Unwrap(message);
             
@@ -70,7 +70,7 @@ namespace Proto
 
         }
 
-        public override void SendSystemMessage(PID pid, object message)
+        protected internal override void SendSystemMessage(PID pid, object message)
         {
         }
     }
