@@ -5,20 +5,21 @@
 // -----------------------------------------------------------------------
 
 using System.Threading;
+using System.Threading.Tasks;
 using Proto.Mailbox;
 
 namespace Proto
 {
     public abstract class Process
     {
-        protected internal abstract void SendUserMessage(PID pid, object message);
+        protected internal abstract Task SendUserMessage(PID pid, object message);
 
         public virtual void Stop(PID pid)
         {
             SendSystemMessage(pid, new Stop());
         }
 
-        protected internal abstract void SendSystemMessage(PID pid, object message);
+        protected internal abstract Task SendSystemMessage(PID pid, object message);
     }
 
     public class LocalProcess : Process
@@ -38,14 +39,14 @@ namespace Proto
         }
 
 
-        protected internal override void SendUserMessage(PID pid, object message)
+        protected internal override Task SendUserMessage(PID pid, object message)
         {
-            Mailbox.PostUserMessage(message);
+            return Mailbox.PostUserMessage(message);
         }
 
-        protected internal override void SendSystemMessage(PID pid, object message)
+        protected internal override Task SendSystemMessage(PID pid, object message)
         {
-            Mailbox.PostSystemMessage(message);
+            return Mailbox.PostSystemMessage(message);
         }
 
         public override void Stop(PID pid)

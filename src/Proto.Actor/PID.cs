@@ -44,16 +44,16 @@ namespace Proto
             }
         }
 
-        public void Tell(object message)
+        public Task Tell(object message)
         {
             var reff = Ref ?? ProcessRegistry.Instance.Get(this);
-            reff.SendUserMessage(this, message);
+            return reff.SendUserMessage(this, message);
         }
 
-        public void SendSystemMessage(object sys)
+        public Task SendSystemMessage(object sys)
         {
             var reff = Ref ?? ProcessRegistry.Instance.Get(this);
-            reff.SendSystemMessage(this, sys);
+            return reff.SendSystemMessage(this, sys);
         }
 
         public void Request(object message, PID sender)

@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Google.Protobuf;
 
 namespace Proto.Remote
@@ -18,42 +19,42 @@ namespace Proto.Remote
             _pid = pid;
         }
 
-        protected override void SendUserMessage(PID pid, object message)
+        protected override Task SendUserMessage(PID pid, object message)
         {
-            Send(pid, message);
+            return Send(pid, message);
         }
 
-        protected override void SendSystemMessage(PID pid, object message)
+        protected override Task SendSystemMessage(PID pid, object message)
         {
-            Send(pid, message);
+            return Send(pid, message);
         }
 
-        private void Send(PID _, object msg)
+        private Task Send(PID _, object msg)
         {
             if (msg is Watch w)
             {
                 var rw = new RemoteWatch(w.Watcher, _pid);
-                Remote.EndpointManagerPid.Tell(rw);
+                return Remote.EndpointManagerPid.Tell(rw);
             }
             else if (msg is Unwatch uw)
             {
                 var ruw = new RemoteUnwatch(uw.Watcher, _pid);
-                Remote.EndpointManagerPid.Tell(ruw);
+                return Remote.EndpointManagerPid.Tell(ruw);
             }
             else
             {
-                SendRemoteMessage(_pid, msg);
+                return SendRemoteMessage(_pid, msg);
             }
         }
 
-        public static void SendRemoteMessage(PID pid, object msg)
+        public static Task SendRemoteMessage(PID pid, object msg)
         {
             var (message, sender, _) = Proto.MessageEnvelope.Unwrap(msg);
 
             if (message is IMessage protoMessage)
             {
                 var env = new RemoteDeliver(protoMessage, pid, sender);
-                Remote.EndpointManagerPid.Tell(env);
+                return Remote.EndpointManagerPid.Tell(env);
             }
             else
             {

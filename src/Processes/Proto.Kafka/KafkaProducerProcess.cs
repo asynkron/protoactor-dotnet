@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Confluent.Kafka.Serialization;
 
@@ -30,17 +31,18 @@ namespace Proto.Kafka
             _valueSerializer = valueSerializer;
         }
 
-        protected override void SendUserMessage(PID pid, object message)
+        protected override async Task SendUserMessage(PID pid, object message)
         {
             var key = _keyConstructor?.Invoke(message);
             var value = _valueSerializer(message);
-            var deliveryReport = _producer.ProduceAsync(_topic, key, value).Result;
+            var deliveryReport = await _producer.ProduceAsync(_topic, key, value);
             if(deliveryReport.Error.HasError)
                 throw new Exception(deliveryReport.Error.Reason);
         }
 
-        protected override void SendSystemMessage(PID pid, object message)
+        protected override Task SendSystemMessage(PID pid, object message)
         {
+            return Task.FromResult(0);
         }
 
         public void Dispose()

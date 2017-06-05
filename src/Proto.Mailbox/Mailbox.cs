@@ -18,8 +18,8 @@ namespace Proto.Mailbox
 
     public interface IMailbox
     {
-        void PostUserMessage(object msg);
-        void PostSystemMessage(object msg);
+        Task PostUserMessage(object msg);
+        Task PostSystemMessage(object msg);
         void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher);
         void Start();
     }
@@ -60,7 +60,7 @@ namespace Proto.Mailbox
             _stats = stats ?? new IMailboxStatistics[0];
         }
 
-        public void PostUserMessage(object msg)
+        public Task PostUserMessage(object msg)
         {
             _userMailbox.Push(msg);
             for (var i = 0; i < _stats.Length; i++)
@@ -68,9 +68,10 @@ namespace Proto.Mailbox
                 _stats[i].MessagePosted(msg);
             }
             Schedule();
+            return Task.FromResult(0);
         }
 
-        public void PostSystemMessage(object msg)
+        public Task PostSystemMessage(object msg)
         {
             _systemMessages.Push(msg);
             for (var i = 0; i < _stats.Length; i++)
@@ -78,6 +79,7 @@ namespace Proto.Mailbox
                 _stats[i].MessagePosted(msg);
             }
             Schedule();
+            return Task.FromResult(0);
         }
 
         public void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher)

@@ -51,14 +51,15 @@ namespace Proto
         public PID Pid { get; }
         public Task<T> Task { get; }
 
-        protected internal override void SendUserMessage(PID pid, object message)
+        protected internal override Task SendUserMessage(PID pid, object message)
         {
             var env = MessageEnvelope.Unwrap(message);
             
 
             if (env.message is T || message == null)
             {
-                if (_cts != null && _cts.IsCancellationRequested) return;
+                if (_cts != null && _cts.IsCancellationRequested)
+                    return System.Threading.Tasks.Task.FromResult(0);
 
                 _tcs.TrySetResult((T)env.message);
                 pid.Stop();
@@ -67,11 +68,12 @@ namespace Proto
             {
                 throw new InvalidOperationException($"Unexpected message.  Was type {env.message.GetType()} but expected {typeof(T)}");
             }
-
+            return System.Threading.Tasks.Task.FromResult(0);
         }
 
-        protected internal override void SendSystemMessage(PID pid, object message)
+        protected internal override Task SendSystemMessage(PID pid, object message)
         {
+            return System.Threading.Tasks.Task.FromResult(0);
         }
     }
 }
