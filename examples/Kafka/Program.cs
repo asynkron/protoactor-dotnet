@@ -7,17 +7,52 @@ using Confluent.Kafka.Serialization;
 using Newtonsoft.Json;
 using Proto;
 using Proto.Kafka;
+using Proto.Mailbox;
+using Proto.Router;
 
 namespace Kafka
 {
     class Program
     {
+        private static string _brokerList = "localhost:9092";
+        private static string _topic = "test1";
+
         static void Main(string[] args)
         {
-            var brokerList = "localhost:9092";
-            var topic = "test1";
-            var (producerPid, producerProcess) = StartKafkaProducerProcess(brokerList, topic);
-            var consumer = StartKafkaConsumer(brokerList, topic);
+            //SimpleExample();
+            MulticastExample();
+        }
+
+        private static void MulticastExample()
+        {
+            Console.WriteLine("Multicast example: Message is broadcast to both a Kafka topic and another actor");
+            var (producerPid, producerProcess) = StartKafkaProducerProcess(_brokerList, _topic);
+            var consumer = StartKafkaConsumer(_brokerList, _topic);
+            var targetActor = Actor.Spawn(Actor.FromFunc(c =>
+            {
+                if(!(c.Message is SystemMessage))
+                    Console.WriteLine(c.Message);
+                return Actor.Done;
+            }));
+            var router = Actor.Spawn(Router.NewBroadcastGroup(Actor.FromFunc(c => Actor.Done), targetActor, producerPid));
+            using (producerProcess)
+            using (consumer)
+            {
+                Console.WriteLine("Started. Press ENTER to send test message.");
+
+                while (true)
+                {
+                    Console.ReadLine();
+                    router.Tell(new { Message = "hello" });
+                }
+            }
+        }
+
+        private static void SimpleExample()
+        {
+            Console.WriteLine("Simple example: One actor sends a message to a Kafka topic");
+            var (producerPid, producerProcess) = StartKafkaProducerProcess(_brokerList, _topic);
+            var consumer = StartKafkaConsumer(_brokerList, _topic);
             using (producerProcess)
             using (consumer)
             {
