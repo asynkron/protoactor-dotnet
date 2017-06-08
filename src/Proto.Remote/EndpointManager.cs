@@ -90,7 +90,16 @@ namespace Proto.Remote
                 var watcher = SpawnWatcher(address, context);
 
                 endpoint = new Endpoint(writer, watcher);
-                _connections.Add(address, endpoint);
+
+                try
+                {
+                    _connections.Add(address, endpoint);
+                }
+                catch (ArgumentException)
+                {
+                    return _connections[address];
+                }
+                
             }
 
             return endpoint;
