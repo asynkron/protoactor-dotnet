@@ -39,7 +39,7 @@ namespace Proto.Persistence.MongoDB
             var snapshot = await SnapshotCollection
                                 .Find(s => s.ActorName == actorName)
                                 .Sort(sort)
-                                .FirstAsync();
+                                .FirstOrDefaultAsync();
 
             return snapshot != null ? (snapshot.Data, snapshot.SnapshotIndex) : (null, 0);
         }
