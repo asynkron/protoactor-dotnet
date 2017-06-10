@@ -69,7 +69,7 @@ namespace Proto.Tests
             var childProps = Actor.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
-                .WithSupervisor(strategy);
+                .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
             parent.Tell("hello");
@@ -87,7 +87,7 @@ namespace Proto.Tests
             var childProps = Actor.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
-                .WithSupervisor(strategy);
+                .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
             parent.Tell("hello");
@@ -105,7 +105,7 @@ namespace Proto.Tests
             var childProps = Actor.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
-                .WithSupervisor(strategy);
+                .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
             parent.Tell("hello");
@@ -123,7 +123,7 @@ namespace Proto.Tests
             var childProps = Actor.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
-                .WithSupervisor(strategy);
+                .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
             parent.Tell("hello");
@@ -141,7 +141,7 @@ namespace Proto.Tests
             var childProps = Actor.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
-                .WithSupervisor(strategy);
+                .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
             parent.Tell("hello");
@@ -158,7 +158,7 @@ namespace Proto.Tests
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
             var childProps = Actor.FromProducer(() => new ThrowOnStartedChildActor());
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
-                .WithSupervisor(strategy)
+                .WithChildSupervisorStrategy(strategy)
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
             var parent = Actor.Spawn(parentProps);
 
@@ -188,7 +188,7 @@ namespace Proto.Tests
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
             var childProps = Actor.FromProducer(() => new ChildActor());
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
-                .WithSupervisor(strategy)
+                .WithChildSupervisorStrategy(strategy)
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
             var parent = Actor.Spawn(parentProps);
 
@@ -207,7 +207,7 @@ namespace Proto.Tests
             var childProps = Actor.FromProducer(() => new ThrowOnStartedChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
-                .WithSupervisor(strategy);
+                .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
             childMailboxStats.Reset.Wait(1000);

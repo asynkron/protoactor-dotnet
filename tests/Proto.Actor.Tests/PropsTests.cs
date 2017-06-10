@@ -119,7 +119,7 @@ namespace Proto.Tests
             var supervision = new DoNothingSupervisorStrategy();
 
             var props = new Props();
-            var props2 = props.WithSupervisor(supervision);
+            var props2 = props.WithChildSupervisorStrategy(supervision);
 
             Assert.NotEqual(props, props2);
             Assert.Equal(supervision, props2.SupervisorStrategy);

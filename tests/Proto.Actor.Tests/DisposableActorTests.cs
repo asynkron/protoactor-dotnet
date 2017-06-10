@@ -30,10 +30,10 @@ namespace Proto.Tests
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
             var childProps = Actor.FromProducer(() => new DisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
-                .WithSupervisor(strategy);
+                .WithChildSupervisorStrategy(strategy);
             var props = Actor.FromProducer(() => new SupervisingActor(childProps))
                 .WithMailbox(() => new TestMailbox())
-                .WithSupervisor(strategy);
+                .WithChildSupervisorStrategy(strategy);
             var parentPID = Actor.Spawn(props);
             parentPID.Tell("crash");
             childMailboxStats.Reset.Wait(1000);
@@ -48,10 +48,10 @@ namespace Proto.Tests
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
             var childProps = Actor.FromProducer(() => new DisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
-                .WithSupervisor(strategy);
+                .WithChildSupervisorStrategy(strategy);
             var props = Actor.FromProducer(() => new SupervisingActor(childProps))
                 .WithMailbox(() => new TestMailbox())
-                .WithSupervisor(strategy);
+                .WithChildSupervisorStrategy(strategy);
             var parentPID = Actor.Spawn(props);
             parentPID.Tell("crash");
             childMailboxStats.Reset.Wait(1000);
@@ -71,7 +71,7 @@ namespace Proto.Tests
             var child2Props = Actor.FromProducer(() => new DisposableActor(() => child2Disposed = true))
                 .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentWithMultipleChildrenActor(child1Props, child2Props))
-                .WithSupervisor(strategy);
+                .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
             parent.Tell("crash");
