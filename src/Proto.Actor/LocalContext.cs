@@ -22,7 +22,7 @@ namespace Proto
         Stopping
     }
 
-    internal class LocalContext : IMessageInvoker, IContext, ISupervisor
+    public class LocalContext : IMessageInvoker, IContext, ISupervisor
     {
         private static ILogger Logger { get; } = Log.CreateLogger<LocalContext>();
         public static readonly IReadOnlyCollection<PID> EmptyChildren = new List<PID>();
@@ -64,7 +64,7 @@ namespace Proto
 
         public IActor Actor { get; private set; }
         public PID Parent { get; }
-        public PID Self { get; internal set; }
+        public PID Self { get; set; }
 
         public object Message
         {
