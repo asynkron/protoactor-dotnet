@@ -55,7 +55,7 @@ namespace Proto
 
         public Props WithMailbox(Func<IMailbox> mailboxProducer) => Copy(props => props.MailboxProducer = mailboxProducer);
 
-        public Props WithSupervisor(ISupervisorStrategy supervisor) => Copy(props => props.SupervisorStrategy = supervisor);
+        public Props WithChildSupervisorStrategy(ISupervisorStrategy supervisorStrategy) => Copy(props => props.SupervisorStrategy = supervisorStrategy);
 
         public Props WithReceiveMiddleware(params Func<Receive, Receive>[] middleware) => Copy(props =>
         {
