@@ -4,6 +4,8 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading.Tasks;
+
 namespace Proto
 {
     public class DeadLetterEvent
@@ -24,15 +26,17 @@ namespace Proto
     {
         public static readonly DeadLetterProcess Instance = new DeadLetterProcess();
 
-        protected internal override void SendUserMessage(PID pid, object message)
+        protected internal override Task SendUserMessage(PID pid, object message)
         {
             var (msg,sender, _) = MessageEnvelope.Unwrap(message);
             EventStream.Instance.Publish(new DeadLetterEvent(pid, msg, sender));
+            return Task.FromResult(0);
         }
 
-        protected internal override void SendSystemMessage(PID pid, object message)
+        protected internal override Task SendSystemMessage(PID pid, object message)
         {
             EventStream.Instance.Publish(new DeadLetterEvent(pid, message, null));
+            return Task.FromResult(0);
         }
     }
 }

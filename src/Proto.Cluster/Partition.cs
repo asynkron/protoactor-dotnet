@@ -157,10 +157,10 @@ namespace Proto.Cluster
             var pid = _partition[actorId];
             var owner = Partition.PartitionForKind(address, _kind);
             owner.Tell(new TakeOwnership
-                       {
-                           Name = actorId,
-                           Pid = pid
-                       });
+            {
+                Name = actorId,
+                Pid = pid
+            });
             _partition.Remove(actorId);
         }
 

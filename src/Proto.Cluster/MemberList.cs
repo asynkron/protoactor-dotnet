@@ -17,7 +17,7 @@ namespace Proto.Cluster
 
         public static void SubscribeToEventStream()
         {
-            Actor.EventStream.Subscribe<ClusterTopologyEvent>(Pid.Tell);
+            Actor.EventStream.Subscribe<ClusterTopologyEvent>(message => Pid.Tell(message));
         }
 
         public static void Spawn()

@@ -47,12 +47,18 @@ namespace Proto
             return aref;
         }
 
+        public (PID pid, bool ok) TryAdd(Process aref)
+        {
+            var id = NextId();
+            return TryAdd(id, aref);
+        }
+
         public (PID pid, bool ok) TryAdd(string id, Process aref)
         {
             var pid = new PID
             {
                 Id = id,
-                Address = Address // local
+                Address = Address
             };
             var ok = _localActorRefs.TryAdd(pid.Id, aref);
             return (pid, ok);

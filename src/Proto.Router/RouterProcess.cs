@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading.Tasks;
 using Proto.Router.Messages;
 using Proto.Router.Routers;
 
@@ -20,23 +21,22 @@ namespace Proto.Router
             _state = state;
         }
 
-        protected override void SendUserMessage(PID pid, object message)
+        protected override Task SendUserMessage(PID pid, object message)
         {
             var env = MessageEnvelope.Unwrap(message);
             switch (env.message)
             {
                 case RouterManagementMessage _:
-                    _router.Tell(message);
-                    break;
+                    return _router.Tell(message);
                 default:
                     _state.RouteMessage(message);
-                    break;
+                    return Task.FromResult(0);
             }
         }
 
-        protected override void SendSystemMessage(PID pid, object message)
+        protected override Task SendSystemMessage(PID pid, object message)
         {
-            _router.SendSystemMessage(message);
+            return _router.SendSystemMessage(message);
         }
     }
 }

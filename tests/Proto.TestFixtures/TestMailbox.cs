@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Proto.Mailbox;
 
 namespace Proto.TestFixtures
@@ -15,16 +16,16 @@ namespace Proto.TestFixtures
         public List<object> UserMessages { get; } = new List<object>();
         public List<object> SystemMessages { get; } = new List<object>();
         
-        public void PostUserMessage(object msg)
+        public Task PostUserMessage(object msg)
         {
             UserMessages.Add(msg);
-            _invoker?.InvokeUserMessageAsync(msg).Wait();
+            return _invoker?.InvokeUserMessageAsync(msg);
         }
 
-        public void PostSystemMessage(object msg)
+        public Task PostSystemMessage(object msg)
         {
             SystemMessages.Add(msg);
-            _invoker?.InvokeSystemMessageAsync(msg).Wait();
+            return _invoker?.InvokeSystemMessageAsync(msg);
         }
 
         public void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher)

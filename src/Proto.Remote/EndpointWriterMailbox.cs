@@ -33,16 +33,18 @@ namespace Proto.Remote
             _batchSize = batchSize;
         }
 
-        public void PostUserMessage(object msg)
+        public Task PostUserMessage(object msg)
         {
             _userMessages.Push(msg);
             Schedule();
+            return Task.FromResult(0);
         }
 
-        public void PostSystemMessage(object msg)
+        public Task PostSystemMessage(object msg)
         {
             _systemMessages.Push(msg);
             Schedule();
+            return Task.FromResult(0);
         }
 
         public void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher)
