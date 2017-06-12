@@ -30,7 +30,7 @@ namespace Proto
             private set => _spawner = value;
         }
 
-        public static Spawner DefaultSpawner = (name, props, parent) =>
+        public static PID DefaultSpawner (string name,Props props,PID parent)
         {
             var ctx = new LocalContext(props.Producer, props.SupervisorStrategy, props.ReceiveMiddlewareChain, props.SenderMiddlewareChain, parent);
             var mailbox = props.MailboxProducer();
@@ -47,7 +47,7 @@ namespace Proto
             mailbox.Start();
 
             return pid;
-        };
+        }
 
         public Props WithProducer(Func<IActor> producer) => Copy(props => props.Producer = producer);
 

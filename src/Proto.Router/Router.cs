@@ -64,21 +64,32 @@ namespace Proto.Router
 
         public static Spawner Spawner(IRouterConfig config)
         {
-            return (id, props, parent) =>
+            PID spawnRouterProcess(string name, Props props, PID parent)
             {
                 var routeeProps = props.WithSpawner(null);
                 var routerState = config.CreateRouterState();
                 var wg = new AutoResetEvent(false);
                 var routerProps = Actor.FromProducer(() => new RouterActor(routeeProps, config, routerState, wg))
                                        .WithMailbox(props.MailboxProducer);
-                var routerId = ProcessRegistry.Instance.NextId();
-                var router = Props.DefaultSpawner(routerId + "/router" , routerProps, parent);
-                wg.WaitOne(); //wait for the router to start
-
-                var reff = new RouterProcess(router, routerState);
-                var (pid,ok) = ProcessRegistry.Instance.TryAdd(routerId, reff);
+                
+                var ctx = new LocalContext(routerProps.Producer, props.SupervisorStrategy, props.ReceiveMiddlewareChain, props.SenderMiddlewareChain, parent);
+                var mailbox = routerProps.MailboxProducer();
+                var dispatcher = routerProps.Dispatcher;
+                var reff = new RouterProcess(routerState,mailbox);
+                var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, reff);
+                if (!absent)
+                {
+                    throw new ProcessNameExistException(name);
+                }
+                ctx.Self = pid;
+                mailbox.RegisterHandlers(ctx, dispatcher);
+                mailbox.PostSystemMessage(Started.Instance);
+                mailbox.Start();
+                wg.WaitOne();
                 return pid;
-            };
+            }
+
+            return spawnRouterProcess;
         }
     }
 }
