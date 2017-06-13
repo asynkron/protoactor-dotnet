@@ -19,12 +19,12 @@ namespace Proto.Remote
             _pid = pid;
         }
 
-        public override Task SendUserMessageAsync(PID pid, object message)
+        protected override Task SendUserMessageAsync(PID pid, object message)
         {
             return SendAsync(pid, message);
         }
 
-        public override Task SendSystemMessageAsync(PID pid, object message)
+        protected override Task SendSystemMessageAsync(PID pid, object message)
         {
             return SendAsync(pid, message);
         }

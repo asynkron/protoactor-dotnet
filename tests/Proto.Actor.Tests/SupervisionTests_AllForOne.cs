@@ -127,7 +127,7 @@ namespace Proto.Tests
         }
         
         [Fact]
-        public void AllForOneStrategy_Should_PassExceptionOnRestart()
+        public async Task AllForOneStrategy_Should_PassExceptionOnRestart()
         {
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -140,7 +140,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            await parent.SendAsync("hello");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);

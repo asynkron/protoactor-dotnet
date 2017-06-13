@@ -192,10 +192,10 @@ namespace Proto.Persistence.Tests
         {
             var (pid, props, actorId, providerState) = CreateTestActor();
 
-            pid.Tell(new Multiply { Amount = 2 });
-            pid.Tell(new Multiply { Amount = 2 });
-            pid.Tell(new Multiply { Amount = 4 });
-            pid.Tell(new Multiply { Amount = 8 });
+            await pid.SendAsync(new Multiply { Amount = 2 });
+            await pid.SendAsync(new Multiply { Amount = 2 });
+            await pid.SendAsync(new Multiply { Amount = 4 });
+            await pid.SendAsync(new Multiply { Amount = 8 });
             var messages = new List<object>();
             await providerState.GetEventsAsync(actorId, 2, 3, msg => messages.Add(msg));
             Assert.Equal(2, messages.Count);

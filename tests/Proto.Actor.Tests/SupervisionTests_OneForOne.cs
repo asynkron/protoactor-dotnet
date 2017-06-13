@@ -116,7 +116,7 @@ namespace Proto.Tests
         }
         
         [Fact]
-        public void OneForOneStrategy_Should_PassExceptionOnRestart()
+        public async Task OneForOneStrategy_Should_PassExceptionOnRestart()
         {
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
@@ -126,7 +126,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            await parent.SendAsync("hello");
 
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(childMailboxStats.Posted, msg => (msg is Restart r) && r.Reason == Exception);
