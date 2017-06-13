@@ -91,7 +91,7 @@ namespace Messages
                                 {
                                     MessageData = res.ToByteString(),
                                 };
-                                context.Respond(grainResponse);
+                                await context.RespondAsync(grainResponse);
                             }
                             catch (Exception x)
                             {
@@ -99,7 +99,7 @@ namespace Messages
                                 {
                                     Err = x.ToString()
                                 };
-                                context.Respond(grainErrorResponse);
+                                await context.RespondAsync(grainErrorResponse);
                             }
 
                             break;
