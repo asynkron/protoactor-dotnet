@@ -12,14 +12,14 @@ namespace Proto
 {
     public abstract class Process
     {
-        public abstract Task SendUserMessageAsync(PID pid, object message);
+        protected internal abstract Task SendUserMessageAsync(PID pid, object message);
 
         public virtual async Task StopAsync(PID pid)
         {
             await SendSystemMessageAsync(pid, new Stop());
         }
 
-        public abstract Task SendSystemMessageAsync(PID pid, object message);
+        protected internal abstract Task SendSystemMessageAsync(PID pid, object message);
     }
 
     public class LocalProcess : Process
@@ -39,13 +39,13 @@ namespace Proto
         }
 
 
-        public override Task SendUserMessageAsync(PID pid, object message)
+        protected internal override Task SendUserMessageAsync(PID pid, object message)
         {
             Mailbox.PostUserMessage(message);
             return Actor.Done;
         }
 
-        public override Task SendSystemMessageAsync(PID pid, object message)
+        protected internal override Task SendSystemMessageAsync(PID pid, object message)
         {
             Mailbox.PostSystemMessage(message);
             return Actor.Done;

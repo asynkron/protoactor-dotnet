@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------
-//  <copyright file="RouterProcess.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="RouterProcess.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System.Threading.Tasks;
@@ -10,33 +10,27 @@ using Proto.Router.Routers;
 
 namespace Proto.Router
 {
-    public class RouterProcess : Process
+    public class RouterProcess : LocalProcess
     {
-        private readonly PID _router;
         private readonly RouterState _state;
 
-        public RouterProcess(PID router, RouterState state)
+        public RouterProcess(RouterState state, IMailbox mailbox) : base(mailbox)
         {
-            _router = router;
             _state = state;
         }
 
-        public override Task SendUserMessageAsync(PID pid, object message)
+        protected override void SendUserMessage(PID pid, object message)
         {
-            var env = MessageEnvelope.Unwrap(message);
-            switch (env.message)
+            var (msg,_,_) = MessageEnvelope.Unwrap(message);
+            switch (msg)
             {
                 case RouterManagementMessage _:
-                    var router = ProcessRegistry.Instance.Get(_router);
-                    return router.SendUserMessageAsync(pid, message);
+                    base.SendUserMessage(pid,message);
+                    break;
                 default:
-                    return _state.RouteMessageAsync(message);
+                    _state.RouteMessage(message);
+                    break;
             }
-        }
-
-        public override Task SendSystemMessageAsync(PID pid, object message)
-        {
-            return _router.SendSystemMessageAsync(message);
         }
     }
 }

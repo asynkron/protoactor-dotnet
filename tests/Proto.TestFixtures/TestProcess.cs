@@ -4,12 +4,12 @@ namespace Proto.TestFixtures
 {
     public class TestProcess : Process
     {
-        public override Task SendUserMessageAsync(PID pid, object message)
+        protected override void SendUserMessage(PID pid, object message)
         {
             return Actor.Done;
         }
 
-        public override Task SendSystemMessageAsync(PID pid, object message)
+        protected override void SendSystemMessage(PID pid, object message)
         {
             return Actor.Done;
         }

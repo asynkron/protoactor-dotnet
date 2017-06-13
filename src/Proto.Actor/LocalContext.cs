@@ -22,9 +22,9 @@ namespace Proto
         Stopping
     }
 
-    public class Context : IMessageInvoker, IContext, ISupervisor
+    public class LocalContext : IMessageInvoker, IContext, ISupervisor
     {
-        private static ILogger Logger { get; } = Log.CreateLogger<Context>();
+        private static ILogger Logger { get; } = Log.CreateLogger<LocalContext>();
         public static readonly IReadOnlyCollection<PID> EmptyChildren = new List<PID>();
 
         private readonly Receive _receiveMiddleware;
@@ -46,7 +46,7 @@ namespace Proto
         //if it is injected as a dependency, that would work fine
         private Stack<object> _stash;
 
-        public Context(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
+        public LocalContext(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
         {
             _producer = producer;
             _supervisorStrategy = supervisorStrategy;
@@ -64,7 +64,7 @@ namespace Proto
 
         public IActor Actor { get; private set; }
         public PID Parent { get; }
-        public PID Self { get; internal set; }
+        public PID Self { get; set; }
 
         public object Message
         {
@@ -245,10 +245,10 @@ namespace Proto
 
         public Task EscalateFailureAsync(Exception reason, object message)
         {
-            return EscalateFailureAsync(Self, reason);
+            return EscalateFailureAsync(reason, Self);
         }
 
-        public async Task EscalateFailureAsync(PID who, Exception reason)
+        public async Task EscalateFailureAsync(Exception reason, PID who)
         {
             if (_restartStatistics == null)
             {
@@ -266,9 +266,9 @@ namespace Proto
             }
         }
 
-        public async Task RestartChildrenAsync(params PID[] pids)
+        public async Task RestartChildrenAsync(Exception reason, params PID[] pids)
         {
-            await Task.WhenAll(pids.Select(x => x.SendSystemMessageAsync(Restart.Instance)).ToList());
+            await Task.WhenAll(pids.Select(x => x.SendSystemMessageAsync(new Restart(reason))).ToList());
         }
 
         public async Task StopChildrenAsync(params PID[] pids)
@@ -283,7 +283,7 @@ namespace Proto
 
         internal static Task DefaultReceiveAsync(IContext context)
         {
-            var c = (Context) context;
+            var c = (LocalContext) context;
             if (c.Message is PoisonPill)
             {
                 return c.Self.StopAsync();

@@ -13,14 +13,14 @@ namespace Proto.Persistence.Marten
         {
             _store = store;
         }
-
-        public async Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
+        
+        public async Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
             using (var session = _store.OpenSession())
             {
                 var events = await session.Query<Event>()
                     .Where(x => x.ActorName == actorName)
-                    .Where(x => x.Index >= indexStart)
+                    .Where(x => x.Index >= indexStart && x.Index <= indexEnd)
                     .OrderBy(x => x.Index)
                     .ToListAsync();
 

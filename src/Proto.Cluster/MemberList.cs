@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Proto.Cluster
@@ -26,8 +27,17 @@ namespace Proto.Cluster
 
         public static async Task<string[]> GetMembersAsync(string kind)
         {
-            var res = await Pid.RequestAsync<MemberByKindResponse>(new MemberByKindRequest(kind, true));
-            return res.Kinds;
+            //if there are no nodes holding the requested kind, just wait
+            while (true)
+            {
+                var res = await Pid.RequestAsync<MemberByKindResponse>(new MemberByKindRequest(kind, true));
+                if (res.Kinds.Any())
+                {
+                    return res.Kinds;
+                }
+                await Task.Delay(500);
+            }
+            
         }
 
         public static async Task<string> GetRandomActivatorAsync(string kind)

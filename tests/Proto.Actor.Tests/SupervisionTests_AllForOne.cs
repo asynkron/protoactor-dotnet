@@ -9,6 +9,7 @@ namespace Proto.Tests
 {
     public class SupervisionTests_AllForOne
     {
+        private static readonly Exception Exception = new Exception("boo hoo");
         class ParentActor : IActor
         {
             private readonly Props _child1Props;
@@ -48,7 +49,7 @@ namespace Proto.Tests
                 switch (context.Message)
                 {
                     case string _:
-                        throw new Exception();
+                        throw Exception;
                 }
                 return Actor.Done;
             }
@@ -65,7 +66,7 @@ namespace Proto.Tests
             var child2Props = Actor.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(child1Props, child2Props))
-                .WithSupervisor(strategy);
+                .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
             await parent.SendAsync("hello");
@@ -88,7 +89,7 @@ namespace Proto.Tests
             var child2Props = Actor.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(child1Props, child2Props))
-                .WithSupervisor(strategy);
+                .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
             await parent.SendAsync("hello");
@@ -112,17 +113,41 @@ namespace Proto.Tests
             var child2Props = Actor.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(child1Props, child2Props))
-                .WithSupervisor(strategy);
+                .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
             await parent.SendAsync("hello");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);
-            Assert.Contains(Restart.Instance, child1MailboxStats.Posted);
-            Assert.Contains(Restart.Instance, child1MailboxStats.Received);
-            Assert.Contains(Restart.Instance, child2MailboxStats.Posted);
-            Assert.Contains(Restart.Instance, child2MailboxStats.Received);
+            Assert.Contains(child1MailboxStats.Posted, msg => msg is Restart);
+            Assert.Contains(child1MailboxStats.Received, msg => msg is Restart);
+            Assert.Contains(child2MailboxStats.Posted, msg => msg is Restart);
+            Assert.Contains(child2MailboxStats.Received, msg => msg is Restart);
+        }
+        
+        [Fact]
+        public void AllForOneStrategy_Should_PassExceptionOnRestart()
+        {
+            var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
+            var child1Props = Actor.FromProducer(() => new ChildActor())
+                .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
+            var child2Props = Actor.FromProducer(() => new ChildActor())
+                .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
+            var parentProps = Actor.FromProducer(() => new ParentActor(child1Props, child2Props))
+                .WithChildSupervisorStrategy(strategy);
+            var parent = Actor.Spawn(parentProps);
+
+            parent.Tell("hello");
+
+            child1MailboxStats.Reset.Wait(1000);
+            child2MailboxStats.Reset.Wait(1000);
+            Assert.Contains(child1MailboxStats.Posted, msg => (msg is Restart r) && r.Reason == Exception);
+            Assert.Contains(child1MailboxStats.Received, msg => (msg is Restart r) && r.Reason == Exception);
+            Assert.Contains(child2MailboxStats.Posted, msg => (msg is Restart r) && r.Reason == Exception);
+            Assert.Contains(child2MailboxStats.Received, msg => (msg is Restart r) && r.Reason == Exception);
         }
 
         [Fact]
@@ -132,7 +157,7 @@ namespace Proto.Tests
             var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
             var childProps = Actor.FromProducer(() => new ChildActor());
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps, childProps))
-                .WithSupervisor(strategy)
+                .WithChildSupervisorStrategy(strategy)
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
             var parent = Actor.Spawn(parentProps);
 

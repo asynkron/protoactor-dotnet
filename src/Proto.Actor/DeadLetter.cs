@@ -10,7 +10,7 @@ namespace Proto
 {
     public class DeadLetterEvent
     {
-        public DeadLetterEvent(PID pid, object message, PID sender)
+        internal DeadLetterEvent(PID pid, object message, PID sender)
         {
             Pid = pid;
             Message = message;
@@ -26,13 +26,13 @@ namespace Proto
     {
         public static readonly DeadLetterProcess Instance = new DeadLetterProcess();
 
-        public override async Task SendUserMessageAsync(PID pid, object message)
+        protected internal override async Task SendUserMessageAsync(PID pid, object message)
         {
             var (msg,sender, _) = MessageEnvelope.Unwrap(message);
             await EventStream.Instance.PublishAsync(new DeadLetterEvent(pid, msg, sender));
         }
 
-        public override async Task SendSystemMessageAsync(PID pid, object message)
+        protected internal override async Task SendSystemMessageAsync(PID pid, object message)
         {
             await EventStream.Instance.PublishAsync(new DeadLetterEvent(pid, message, null));
         }

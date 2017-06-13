@@ -23,8 +23,8 @@ namespace Proto
     public interface ISupervisor
     {
         IReadOnlyCollection<PID> Children { get; }
-        Task EscalateFailureAsync(PID who, Exception reason);
-        Task RestartChildrenAsync(params PID[] pids);
+        Task EscalateFailureAsync(Exception reason, PID who);
+        Task RestartChildrenAsync(Exception reason, params PID[] pids);
         Task StopChildrenAsync(params PID[] pids);
         Task ResumeChildrenAsync(params PID[] pids);
     }
@@ -75,7 +75,7 @@ namespace Proto
                     if (RequestRestartPermission(rs))
                     {
                         Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
-                        await supervisor.RestartChildrenAsync(supervisor.Children.ToArray());
+                        await supervisor.RestartChildrenAsync(reason, supervisor.Children.ToArray());
                     }
                     else
                     {
@@ -88,7 +88,7 @@ namespace Proto
                     await supervisor.StopChildrenAsync(supervisor.Children.ToArray());
                     break;
                 case SupervisorDirective.Escalate:
-                    await supervisor.EscalateFailureAsync(child, reason);
+                    await supervisor.EscalateFailureAsync(reason, child);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -137,7 +137,7 @@ namespace Proto
                     if (RequestRestartPermission(rs))
                     {
                         Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
-                        await supervisor.RestartChildrenAsync(child);
+                        await supervisor.RestartChildrenAsync(reason, child);
                     }
                     else
                     {
@@ -150,7 +150,7 @@ namespace Proto
                     await supervisor.StopChildrenAsync(child);
                     break;
                 case SupervisorDirective.Escalate:
-                    await supervisor.EscalateFailureAsync(child, reason);
+                    await supervisor.EscalateFailureAsync(reason, child);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -205,7 +205,7 @@ namespace Proto
             {
                 Task.Delay(duration).ContinueWith(t =>
                 {
-                    supervisor.RestartChildrenAsync(child);
+                    supervisor.RestartChildrenAsync(reason, child);
                 });
             }
             return Actor.Done;

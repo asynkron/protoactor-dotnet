@@ -30,7 +30,7 @@
             {
                 return @default;
             }
-            return Header.ContainsKey(key) ? Header[key] : @default;
+            return Header.TryGetValue(key, out string value) ? value : @default;
         }
 
         public void SetHeader(string key, string value)

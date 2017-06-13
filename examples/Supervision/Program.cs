@@ -18,7 +18,7 @@ class Program
         Proto.Log.SetLoggerFactory(new LoggerFactory()
             .AddConsole(minLevel: LogLevel.Debug));
 
-        var props = Actor.FromProducer(() => new ParentActor()).WithSupervisor(new OneForOneStrategy(Decider.Decide, 1, null));
+        var props = Actor.FromProducer(() => new ParentActor()).WithChildSupervisorStrategy(new OneForOneStrategy(Decider.Decide, 1, null));
 
         var actor = Actor.Spawn(props);
         actor.SendAsync(new Hello

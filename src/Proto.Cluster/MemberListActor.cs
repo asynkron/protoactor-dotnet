@@ -54,11 +54,12 @@ namespace Proto.Cluster
 
                     foreach (var ( address, @new) in tmp)
                     {
-                        if (!_members.TryGetValue(address, out var _))
+                        if (_members.TryGetValue(address, out var _))
                         {
-                            _members[address] = @new;
-                            await NotifyAsync(@new, null);
+                            continue;
                         }
+                        _members[address] = @new;
+                            await NotifyAsync(@new, null);
                     }
                     break;
                 }

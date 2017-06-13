@@ -69,16 +69,16 @@ namespace Proto.Persistence.Sqlite
             }
         }
 
-        public Task GetEventsAsync(string actorName, long indexStart, Action<object> callback)
+        public Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
             try
             {
                 using (var db = new SqlitePersistenceContext(_datasource))
                 {
                     var items = db.Events
-                                    .Where(x => x.ActorName == actorName)
-                                    .Where(x => x.EventIndex >= indexStart)
-                                    .ToList();
+                        .Where(x => x.ActorName == actorName)
+                        .Where(x => x.EventIndex >= indexStart && x.EventIndex <= indexEnd)
+                        .ToList();
 
                     foreach (var item in items)
                     {
