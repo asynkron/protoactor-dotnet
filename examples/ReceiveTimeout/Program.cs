@@ -6,11 +6,16 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Proto;
 
 class Program
 {
     static void Main(string[] args)
+    {
+        Doit().Wait();
+    }
+    public static async Task Doit() 
     {
         var c = 0;
         var props = Actor.FromFunc(context =>
@@ -37,7 +42,7 @@ class Program
         var pid = Actor.Spawn(props);
         for (var i = 0; i < 6; i++)
         {
-            pid.Tell("hello");
+            await pid.SendAsync("hello");
             Thread.Sleep(500);
         }
 
@@ -46,14 +51,14 @@ class Program
 
         for (var i = 0; i < 6; i++)
         {
-            pid.Tell(new NoInfluence());
+            await pid.SendAsync(new NoInfluence());
             Thread.Sleep(500);
         }
 
         Console.WriteLine("Hit [return] to send a message to cancel the timeout");
         Console.ReadLine();
 
-        pid.Tell("cancel");
+        await pid.SendAsync("cancel");
 
         Console.WriteLine("Hit [return] to finish");
         Console.ReadLine();

@@ -85,7 +85,7 @@ namespace SimpleSchedulerDemo
                     {
                         timer.Cancel();
 
-                        context.Self.Tell(new AbortHickUp());
+                        return context.Self.SendAsync(new AbortHickUp());
                     }
 
                     break;
@@ -125,9 +125,7 @@ namespace SimpleSchedulerDemo
 
                     Console.WriteLine($"Hi {msg.Who}!");
 
-                    context.Sender.Tell(new Greet("Roger"));
-
-                    break;
+                    return context.Sender.SendAsync(new Greet("Roger"));
             }
 
             return Actor.Done;

@@ -23,10 +23,10 @@ namespace Proto
     public interface ISupervisor
     {
         IReadOnlyCollection<PID> Children { get; }
-        void EscalateFailure(PID who, Exception reason);
-        void RestartChildren(params PID[] pids);
-        void StopChildren(params PID[] pids);
-        void ResumeChildren(params PID[] pids);
+        Task EscalateFailureAsync(PID who, Exception reason);
+        Task RestartChildrenAsync(params PID[] pids);
+        Task StopChildrenAsync(params PID[] pids);
+        Task ResumeChildrenAsync(params PID[] pids);
     }
 
     public static class Supervision
@@ -37,7 +37,7 @@ namespace Proto
 
     public interface ISupervisorStrategy
     {
-        void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause);
+        Task HandleFailureAsync(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause);
     }
 
     public delegate SupervisorDirective Decider(PID pid, Exception reason);
@@ -62,33 +62,33 @@ namespace Proto
             _withinTimeSpan = withinTimeSpan;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
+        public async Task HandleFailureAsync(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
         {
             var directive = _decider(child, reason);
             switch (directive)
             {
                 case SupervisorDirective.Resume:
                     Logger.LogInformation($"Resuming {child.ToShortString()} Reason {reason}");
-                    supervisor.ResumeChildren(child);
+                    await supervisor.ResumeChildrenAsync(child);
                     break;
                 case SupervisorDirective.Restart:
                     if (RequestRestartPermission(rs))
                     {
                         Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
-                        supervisor.RestartChildren(supervisor.Children.ToArray());
+                        await supervisor.RestartChildrenAsync(supervisor.Children.ToArray());
                     }
                     else
                     {
                         Logger.LogInformation($"Stopping {child.ToShortString()} Reason { reason}");
-                        supervisor.StopChildren(supervisor.Children.ToArray());
+                        await supervisor.StopChildrenAsync(supervisor.Children.ToArray());
                     }
                     break;
                 case SupervisorDirective.Stop:
                     Logger.LogInformation($"Stopping {child.ToShortString()} Reason {reason}");
-                    supervisor.StopChildren(supervisor.Children.ToArray());
+                    await supervisor.StopChildrenAsync(supervisor.Children.ToArray());
                     break;
                 case SupervisorDirective.Escalate:
-                    supervisor.EscalateFailure(child, reason);
+                    await supervisor.EscalateFailureAsync(child, reason);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -125,32 +125,32 @@ namespace Proto
             _withinTimeSpan = withinTimeSpan;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
+        public async Task HandleFailureAsync(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
         {
             var directive = _decider(child, reason);
             switch (directive)
             {
                 case SupervisorDirective.Resume:
-                    supervisor.ResumeChildren(child);
+                    await supervisor.ResumeChildrenAsync(child);
                     break;
                 case SupervisorDirective.Restart:
                     if (RequestRestartPermission(rs))
                     {
                         Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
-                        supervisor.RestartChildren(child);
+                        await supervisor.RestartChildrenAsync(child);
                     }
                     else
                     {
                         Logger.LogInformation($"Stopping {child.ToShortString()} Reason { reason}");
-                        supervisor.StopChildren(child);
+                        await supervisor.StopChildrenAsync(child);
                     }
                     break;
                 case SupervisorDirective.Stop:
                     Logger.LogInformation($"Stopping {child.ToShortString()} Reason {reason}");
-                    supervisor.StopChildren(child);
+                    await supervisor.StopChildrenAsync(child);
                     break;
                 case SupervisorDirective.Escalate:
-                    supervisor.EscalateFailure(child, reason);
+                    await supervisor.EscalateFailureAsync(child, reason);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -195,16 +195,20 @@ namespace Proto
             return nanoseconds / 1000000;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
+        public Task HandleFailureAsync(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
         {
             SetFailureCount(rs);
             var backoff = rs.FailureCount * ToNanoseconds(_initialBackoff);
             var noise = _random.Next(500);
             var duration = TimeSpan.FromMilliseconds(ToMilliseconds(backoff + noise));
-            Task.Delay(duration).ContinueWith(t =>
+            if (supervisor != null)
             {
-                supervisor.RestartChildren(child);
-            });
+                Task.Delay(duration).ContinueWith(t =>
+                {
+                    supervisor.RestartChildrenAsync(child);
+                });
+            }
+            return Actor.Done;
         }
 
         private void SetFailureCount(RestartStatistics rs)

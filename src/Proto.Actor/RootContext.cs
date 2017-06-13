@@ -23,36 +23,35 @@ namespace Proto
 
         private Task DefaultSender(ISenderContext context,PID target, MessageEnvelope message)
         {
-            target.Tell(message);
-            return Actor.Done;
+            return target.SendAsync(message);
         }
 
-        public void Tell(PID target, object message)
+        public Task SendAsync(PID target, object message)
         {
             if (_senderMiddleware != null)
             {
                 if (message is MessageEnvelope messageEnvelope)
                 {
                     //Request based middleware
-                    _senderMiddleware(this, target, messageEnvelope);
+                    return _senderMiddleware(this, target, messageEnvelope);
                 }
                 else
                 {
                     //tell based middleware
-                    _senderMiddleware(this, target, new MessageEnvelope(message,null,null));
+                    return _senderMiddleware(this, target, new MessageEnvelope(message,null,null));
                 }
             }
             else
             {
                 //Default path
-                target.Tell(message);
+                return target.SendAsync(message);
             }
         }
 
-        public void Request(PID target, object message,PID sender)
+        public Task RequestAsync(PID target, object message,PID sender)
         {
             var envelope = new MessageEnvelope(message,sender,null);
-            Tell(target,envelope);
+            return SendAsync(target,envelope);
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)

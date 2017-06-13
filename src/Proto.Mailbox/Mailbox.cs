@@ -94,13 +94,13 @@ namespace Proto.Mailbox
             }
         }
 
-        private Task RunAsync()
+        private async Task RunAsync()
         {
-            var done = ProcessMessages();
+            var done = await ProcessMessages();
 
             if (!done)
                 // mailbox is halted, awaiting completion of a message task, upon which mailbox will be rescheduled
-                return Task.FromResult(0);
+                return;
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
@@ -115,10 +115,9 @@ namespace Proto.Mailbox
                     _stats[i].MailboxEmpty();
                 }
             }
-            return Task.FromResult(0);
         }
 
-        private bool ProcessMessages()
+        private async Task<bool> ProcessMessages()
         {
             object msg = null;
             try
@@ -138,13 +137,15 @@ namespace Proto.Mailbox
                         var t = _invoker.InvokeSystemMessageAsync(msg);
                         if (t.IsFaulted)
                         {
-                            _invoker.EscalateFailure(t.Exception, msg);
+                            await _invoker.EscalateFailureAsync(t.Exception, msg);
                             continue;
                         }
                         if (!t.IsCompleted)
                         {
                             // if task didn't complete immediately, halt processing and reschedule a new run when task completes
+#pragma warning disable 4014
                             t.ContinueWith(RescheduleOnTaskComplete, msg);
+#pragma warning restore 4014
                             return false;
                         }
                         for (var si = 0; si < _stats.Length; si++)
@@ -162,13 +163,15 @@ namespace Proto.Mailbox
                         var t = _invoker.InvokeUserMessageAsync(msg);
                         if (t.IsFaulted)
                         {
-                            _invoker.EscalateFailure(t.Exception, msg);
+                            await _invoker.EscalateFailureAsync(t.Exception, msg);
                             continue;
                         }
                         if (!t.IsCompleted)
                         {
                             // if task didn't complete immediately, halt processing and reschedule a new run when task completes
+#pragma warning disable 4014
                             t.ContinueWith(RescheduleOnTaskComplete, msg);
+#pragma warning restore 4014
                             return false;
                         }
                         for (var si = 0; si < _stats.Length; si++)
@@ -184,16 +187,16 @@ namespace Proto.Mailbox
             }
             catch (Exception e)
             {
-                _invoker.EscalateFailure(e, msg);
+                await _invoker.EscalateFailureAsync(e, msg);
             }
             return true;
         }
 
-        private void RescheduleOnTaskComplete(Task task, object message)
+        private async Task RescheduleOnTaskComplete(Task task, object message)
         {
             if (task.IsFaulted)
             {
-                _invoker.EscalateFailure(task.Exception, message);
+                await _invoker.EscalateFailureAsync(task.Exception, message);
             }
             else
             {

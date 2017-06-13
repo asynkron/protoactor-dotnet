@@ -25,13 +25,13 @@ namespace Proto.Cluster
 
         public static void SubscribeToEventStream()
         {
-            EventStream.Instance.Subscribe<MemberStatusEvent>(msg =>
+            EventStream.Instance.Subscribe<MemberStatusEvent>(async msg =>
             {
                 foreach (var kind in msg.Kinds)
                 {
                     if (KindMap.TryGetValue(kind, out var kindPid))
                     {
-                        kindPid.Tell(msg);
+                        await kindPid.SendAsync(msg);
                     }
                 }
             });
@@ -147,16 +147,16 @@ namespace Proto.Cluster
 
                 if (address != ProcessRegistry.Instance.Address)
                 {
-                    TransferOwnership(actorId, address);
+                    await TransferOwnership(actorId, address);
                 }
             }
         }
 
-        private void TransferOwnership(string actorId, string address)
+        private async Task TransferOwnership(string actorId, string address)
         {
             var pid = _partition[actorId];
             var owner = Partition.PartitionForKind(address, _kind);
-            owner.Tell(new TakeOwnership
+            await owner.SendAsync(new TakeOwnership
                        {
                            Name = actorId,
                            Pid = pid
@@ -173,7 +173,7 @@ namespace Proto.Cluster
                 pid = await Remote.Remote.SpawnNamedAsync(random, msg.Name, msg.Kind, TimeSpan.FromSeconds(5));
                 _partition[msg.Name] = pid;
             }
-            context.Respond(new ActorPidResponse {Pid = pid});
+            await context.RespondAsync(new ActorPidResponse {Pid = pid});
         }
     }
 }

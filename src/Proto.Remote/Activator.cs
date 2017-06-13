@@ -5,7 +5,7 @@ namespace Proto.Remote
 {
     public class Activator : IActor
     {
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
@@ -21,13 +21,12 @@ namespace Proto.Remote
                     {
                         Pid = pid,
                     };
-                    context.Respond(response);
+                    await context.RespondAsync(response);
 
                     break;
                 default:
                     break;
             }
-            return Actor.Done;
         }
     }
 }

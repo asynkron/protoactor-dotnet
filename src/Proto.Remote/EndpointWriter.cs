@@ -136,7 +136,7 @@ namespace Proto.Remote
                     {
                         Address = _address
                     };
-                    Actor.EventStream.Publish(terminated);
+                    await Actor.EventStream.PublishAsync(terminated);
                 }
             });
 

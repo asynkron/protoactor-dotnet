@@ -16,16 +16,16 @@ class Program
     {
         var props = Actor.FromProducer(() => new ChildActor());
         var actor = Actor.Spawn(props);
-        actor.Tell(new Hello
+        actor.SendAsync(new Hello
         {
             Who = "Alex"
-        });
+        }).Wait();
         //why wait?
         //Stop is a system message and is not processed through the user message mailbox
         //thus, it will be handled _before_ any user message
         //we only do this to show the correct order of events in the console
         Thread.Sleep(TimeSpan.FromSeconds(1));
-        actor.Stop();
+        actor.StopAsync().Wait();
 
         Console.ReadLine();
     }    

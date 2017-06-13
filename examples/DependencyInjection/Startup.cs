@@ -34,11 +34,11 @@ namespace DependencyInjection
 
             //This is only for demo purposes done in the service initialization
             var actorManager = app.ApplicationServices.GetRequiredService<IActorManager>();
-            actorManager.Activate();
+            actorManager.ActivateAsync().Wait();
             //never do this
             Thread.Sleep(TimeSpan.FromSeconds(2));
             //notice, there is no second creation!
-            actorManager.Activate();
+            actorManager.ActivateAsync().Wait();
         }
     }
 }

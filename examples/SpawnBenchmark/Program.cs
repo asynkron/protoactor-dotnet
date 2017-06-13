@@ -26,7 +26,7 @@ namespace SpawnBenchmark
         private PID _replyTo;
         private long _sum;
 
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
             var msg = context.Message;
             var r = msg as Request;
@@ -34,24 +34,21 @@ namespace SpawnBenchmark
             {
                 if (r.Size == 1)
                 {
-                    context.Respond(r.Num);
-                    context.Self.Stop();
-                    return Actor.Done;
+                    await context.RespondAsync(r.Num);
+                    await context.Self.StopAsync();
                 }
                 _replies = r.Div;
                 _replyTo = context.Sender;
                 for (var i = 0; i < r.Div; i++)
                 {
                     var child = Actor.Spawn(props);
-                    child.Request(new Request
+                    await child.RequestAsync(new Request
                     {
                         Num = r.Num + i * (r.Size / r.Div),
                         Size = r.Size / r.Div,
                         Div = r.Div
                     }, context.Self);
                 }
-
-                return Actor.Done;
             }
             if (msg is Int64)
             {
@@ -59,11 +56,9 @@ namespace SpawnBenchmark
                 _replies--;
                 if (_replies == 0)
                 {
-                    _replyTo.Tell(_sum);
+                    await _replyTo.SendAsync(_sum);
                 }
-                return Actor.Done;
             }
-            return Actor.Done;
         }
     }
 

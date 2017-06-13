@@ -27,52 +27,50 @@ namespace Proto.Router
             _wg = wg;
         }
 
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
             if (context.Message is Started)
             {
-                _config.OnStarted(context, _routeeProps, _routerState);
+                await _config.OnStartedAsync(context, _routeeProps, _routerState);
                 _wg.Set();
-                return Actor.Done;
+                return;
             }
             if (context.Message is RouterAddRoutee addRoutee)
             {
                 var r = _routerState.GetRoutees();
                 if (r.Contains(addRoutee.PID))
                 {
-                    return Actor.Done;
+                    return;
                 }
-                context.Watch(addRoutee.PID);
+                await context.WatchAsync(addRoutee.PID);
                 r.Add(addRoutee.PID);
                 _routerState.SetRoutees(r);
-                return Actor.Done;
+                return;
             }
             if (context.Message is RouterRemoveRoutee removeRoutee)
             {
                 var r = _routerState.GetRoutees();
                 if (!r.Contains(removeRoutee.PID))
                 {
-                    return Actor.Done;
+                    return;
                 }
-                context.Unwatch(removeRoutee.PID);
+                await context.UnwatchAsync(removeRoutee.PID);
                 r.Remove(removeRoutee.PID);
                 _routerState.SetRoutees(r);
-                return Actor.Done;
+                return;
             }
             if (context.Message is RouterBroadcastMessage broadcastMessage)
             {
                 foreach (var routee in _routerState.GetRoutees())
                 {
-                    routee.Request(broadcastMessage.Message, context.Sender);
+                    await routee.RequestAsync(broadcastMessage.Message, context.Sender);
                 }
-                return Actor.Done;
             }
             if (context.Message is RouterGetRoutees)
             {
                 var r = _routerState.GetRoutees().ToList();
-                context.Sender.Tell(new Routees(r));
+                await context.Sender.SendAsync(new Routees(r));
             }
-            return Actor.Done;
         }
     }
 }

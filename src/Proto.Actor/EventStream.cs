@@ -71,7 +71,7 @@ namespace Proto
         }
 
 
-        public void Publish(T msg)
+        public Task PublishAsync(T msg)
         {
             foreach (var sub in _subscriptions)
             {
@@ -88,6 +88,7 @@ namespace Proto
                     return Actor.Done;
                 });
             }
+            return Actor.Done;
         }
 
         internal void Unsubscribe(Guid id)

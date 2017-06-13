@@ -24,11 +24,9 @@ namespace Node2
                 case StartRemote sr:
                     Console.WriteLine("Starting");
                     _sender = sr.Sender;
-                    context.Respond(new Start());
-                    return Actor.Done;
+                    return context.RespondAsync(new Start());
                 case Ping _:
-                    _sender.Tell(new Pong());
-                    return Actor.Done;
+                    return _sender.SendAsync(new Pong());
                 default:
                     return Actor.Done;
             }

@@ -153,7 +153,7 @@ namespace Proto.Cluster.Consul
                 let passing = Equals(v.Checks[1].Status, HealthStatus.Passing)
                 select new MemberStatus(memberId, v.Service.Address, v.Service.Port, v.Service.Tags, passing);
             var res = new ClusterTopologyEvent(memberStatuses);
-            Actor.EventStream.Publish(res);
+            await Actor.EventStream.PublishAsync(res);
         }
 
         private async Task BlockingUpdateTtlAsync()

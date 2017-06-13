@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Proto.Router.Routers
 {
@@ -40,7 +41,7 @@ namespace Proto.Router.Routers
             _hashRing = new HashRing(nodes, _hash, _replicaCount);
         }
 
-        public override void RouteMessage(object message)
+        public override async Task RouteMessageAsync(object message)
         {
             var env = MessageEnvelope.Unwrap(message);
             if (env.message is IHashable hashable)
@@ -48,7 +49,7 @@ namespace Proto.Router.Routers
                 var key = hashable.HashBy();
                 var node = _hashRing.GetNode(key);
                 var routee = _routeeMap[node];
-                routee.Tell(message);
+                await routee.SendAsync(message);
             }
             else
             {

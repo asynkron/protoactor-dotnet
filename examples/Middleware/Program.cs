@@ -64,7 +64,7 @@ class Program
                                    });
         //just wait for started message to be processed to make the output look less confusing
         Task.Delay(500).Wait();
-        root.Tell(pid, "hello");
+        root.SendAsync(pid, "hello").Wait();
 
         Console.ReadLine();
         Console.ReadLine();

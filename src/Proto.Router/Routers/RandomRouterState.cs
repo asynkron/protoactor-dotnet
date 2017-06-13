@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Proto.Router.Routers
 {
@@ -32,11 +33,11 @@ namespace Proto.Router.Routers
             _values = routees.ToArray();
         }
 
-        public override void RouteMessage(object message)
+        public override async Task RouteMessageAsync(object message)
         {
             var i = _random.Next(_values.Length);
             var pid = _values[i];
-            pid.Tell(message);
+            await pid.SendAsync(message);
         }
     }
 }

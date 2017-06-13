@@ -19,7 +19,7 @@ namespace Proto.Remote
             _address = address;
         }
 
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
@@ -32,7 +32,7 @@ namespace Proto.Remote
                         Who = msg.Watchee
                     };
                     //send the address Terminated event to the Watcher
-                    msg.Watcher.SendSystemMessage(t);
+                    await msg.Watcher.SendSystemMessageAsync(t);
                     break;
                 }
                 case EndpointTerminatedEvent _:
@@ -47,7 +47,7 @@ namespace Proto.Remote
                         };
                         var watcher = new PID(ProcessRegistry.Instance.Address, id);
                         //send the address Terminated event to the Watcher
-                        watcher.SendSystemMessage(t);
+                        await watcher.SendSystemMessageAsync(t);
                     }
                     break;
                 }
@@ -56,7 +56,7 @@ namespace Proto.Remote
                     _watched[msg.Watcher.Id] = null;
 
                     var w = new Unwatch(msg.Watcher);
-                    RemoteProcess.SendRemoteMessage(msg.Watchee, w);
+                    await RemoteProcess.SendRemoteMessageAsync(msg.Watchee, w);
                     break;
                 }
                 case RemoteWatch msg:
@@ -64,14 +64,13 @@ namespace Proto.Remote
                     _watched[msg.Watcher.Id] = msg.Watchee;
 
                     var w = new Watch(msg.Watcher);
-                    RemoteProcess.SendRemoteMessage(msg.Watchee, w);
+                    await RemoteProcess.SendRemoteMessageAsync(msg.Watchee, w);
                     break;
                 }
 
                 default:
                     break;
             }
-            return Actor.Done;
         }
     }
 }

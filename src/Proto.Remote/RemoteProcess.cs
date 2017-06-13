@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Google.Protobuf;
 
 namespace Proto.Remote
@@ -18,42 +19,42 @@ namespace Proto.Remote
             _pid = pid;
         }
 
-        public override void SendUserMessage(PID pid, object message)
+        public override Task SendUserMessageAsync(PID pid, object message)
         {
-            Send(pid, message);
+            return SendAsync(pid, message);
         }
 
-        public override void SendSystemMessage(PID pid, object message)
+        public override Task SendSystemMessageAsync(PID pid, object message)
         {
-            Send(pid, message);
+            return SendAsync(pid, message);
         }
 
-        private void Send(PID _, object msg)
+        private Task SendAsync(PID _, object msg)
         {
             if (msg is Watch w)
             {
                 var rw = new RemoteWatch(w.Watcher, _pid);
-                Remote.EndpointManagerPid.Tell(rw);
+                return Remote.EndpointManagerPid.SendAsync(rw);
             }
             else if (msg is Unwatch uw)
             {
                 var ruw = new RemoteUnwatch(uw.Watcher, _pid);
-                Remote.EndpointManagerPid.Tell(ruw);
+                return Remote.EndpointManagerPid.SendAsync(ruw);
             }
             else
             {
-                SendRemoteMessage(_pid, msg);
+                return SendRemoteMessageAsync(_pid, msg);
             }
         }
 
-        public static void SendRemoteMessage(PID pid, object msg)
+        public static Task SendRemoteMessageAsync(PID pid, object msg)
         {
             var (message, sender, _) = Proto.MessageEnvelope.Unwrap(msg);
 
             if (message is IMessage protoMessage)
             {
                 var env = new RemoteDeliver(protoMessage, pid, sender);
-                Remote.EndpointManagerPid.Tell(env);
+                return Remote.EndpointManagerPid.SendAsync(env);
             }
             else
             {

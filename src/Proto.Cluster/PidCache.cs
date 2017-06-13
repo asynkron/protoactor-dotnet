@@ -58,8 +58,7 @@ namespace Proto.Cluster
                     _logger.LogDebug("Started PidCacheActor");
                     break;
                 case PidCacheRequest msg:
-                    GetPid(context, msg);
-                    break;
+                    return GetPid(context, msg);
                 case Terminated msg:
                     RemoveTerminated(msg);
                     break;
@@ -67,11 +66,11 @@ namespace Proto.Cluster
             return Actor.Done;
         }
 
-        private void GetPid(IContext context, PidCacheRequest msg)
+        private async Task GetPid(IContext context, PidCacheRequest msg)
         {
             if (_cache.TryGetValue(msg.Name, out var pid))
             {
-                context.Respond(new ActorPidResponse
+                await context.RespondAsync(new ActorPidResponse
                                 {
                                     Pid = pid
                                 });
@@ -90,16 +89,15 @@ namespace Proto.Cluster
                               Name = name
                           };
                 var resp = remotePid.RequestAsync<ActorPidResponse>(req);
-                context.ReenterAfter(resp, t =>
+                context.ReenterAfter(resp, async t =>
                 {
                     var res = t.Result;
                     var respid = res.Pid;
                     var key = respid.ToShortString();
                     _cache[name] = respid;
                     _reverseCache[key] = name;
-                    context.Watch(respid);
-                    context.Respond(res);
-                    return Actor.Done;
+                    await context.WatchAsync(respid);
+                    await context.RespondAsync(res);
                 });
                 return Actor.Done;
             });

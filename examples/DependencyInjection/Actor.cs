@@ -34,11 +34,10 @@ namespace DependencyInjection
                 case Ping p:
                 {
                     logger.LogInformation($"Ping! {p.Name} replying on eventstream");
-                    eventStream.Publish(p);
-                    break;
+                    return eventStream.PublishAsync(p);
                 }
             }
-            return Task.CompletedTask;
+            return Actor.Done;
         }
     }
 }

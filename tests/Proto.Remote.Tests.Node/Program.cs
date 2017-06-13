@@ -52,8 +52,7 @@ namespace Proto.Remote.Tests.Node
             switch (context.Message)
             {
                 case Ping ping:
-                    context.Sender.Tell(new Pong{Message= $"{_host}:{_port} {ping.Message}"});
-                    return Actor.Done;
+                    return context.Sender.SendAsync(new Pong{Message= $"{_host}:{_port} {ping.Message}"});
                 default:
                     return Actor.Done;
             }

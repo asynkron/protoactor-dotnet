@@ -15,13 +15,12 @@ namespace Proto.Tests
             {
                 if (ctx.Message is string)
                 {
-                    behavior.BecomeStacked(ctx2 =>
+                    behavior.BecomeStacked(async ctx2 =>
                     {
-                        ctx2.Respond(42);
+                        await ctx2.RespondAsync(42);
                         behavior.UnbecomeStacked();
-                        return Actor.Done;
                     });
-                    ctx.Respond(ctx.Message);
+                    return ctx.RespondAsync(ctx.Message);
                 }
                 return Actor.Done;
             });

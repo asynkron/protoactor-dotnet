@@ -44,23 +44,23 @@ namespace Proto
             }
         }
 
-        public void Tell(object message)
+        public Task SendAsync(object message)
         {
             var reff = Ref ?? ProcessRegistry.Instance.Get(this);
-            reff.SendUserMessage(this, message);
+            return reff.SendUserMessageAsync(this, message);
         }
 
-        public void SendSystemMessage(object sys)
+        public Task SendSystemMessageAsync(object sys)
         {
             var reff = Ref ?? ProcessRegistry.Instance.Get(this);
-            reff.SendSystemMessage(this, sys);
+            return reff.SendSystemMessageAsync(this, sys);
         }
 
-        public void Request(object message, PID sender)
+        public Task RequestAsync(object message, PID sender)
         {
             var reff = Ref ?? ProcessRegistry.Instance.Get(this);
             var messageEnvelope = new MessageEnvelope(message,sender,null);
-            reff.SendUserMessage(this, messageEnvelope);
+            return reff.SendUserMessageAsync(this, messageEnvelope);
         }
         
         public Task<T> RequestAsync<T>(object message, TimeSpan timeout)
@@ -72,16 +72,16 @@ namespace Proto
         public Task<T> RequestAsync<T>(object message)
             => RequestAsync(message, new FutureProcess<T>());
 
-        private Task<T> RequestAsync<T>(object message, FutureProcess<T> future)
+        private async Task<T> RequestAsync<T>(object message, FutureProcess<T> future)
         {
-            Request(message, future.Pid);
-            return future.Task;
+            await RequestAsync(message, future.Pid);
+            return await future.Task;
         }
 
-        public void Stop()
+        public Task StopAsync()
         {
             var reff = ProcessRegistry.Instance.Get(this);
-            reff.Stop(this);
+            return reff.StopAsync(this);
         }
 
         public string ToShortString()

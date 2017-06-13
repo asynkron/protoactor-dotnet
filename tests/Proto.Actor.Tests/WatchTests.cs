@@ -10,14 +10,14 @@ namespace Proto.Tests
     public class WatchTests
     {
         [Fact]
-        public async void CanWatchLocalActors()
+        public async Task CanWatchLocalActors()
         {
             var watchee = Actor.Spawn(Actor.FromProducer(() => new DoNothingActor())
                                            .WithMailbox(() => new TestMailbox()));
             var watcher = Actor.Spawn(Actor.FromProducer(() => new LocalActor(watchee))
                                            .WithMailbox(() => new TestMailbox()));
 
-            watchee.Stop();
+            await watchee.StopAsync();
             var terminatedMessageReceived = await watcher.RequestAsync<bool>("?", TimeSpan.FromSeconds(5));
             Assert.True(terminatedMessageReceived);
         }
@@ -37,11 +37,9 @@ namespace Proto.Tests
                 switch (context.Message)
                 {
                     case Started _:
-                        context.Watch(_watchee);
-                        break;
+                        return context.WatchAsync(_watchee);
                     case string msg when msg == "?":
-                        context.Sender.Tell(_terminateReceived);
-                        break;
+                        return context.Sender.SendAsync(_terminateReceived);
                     case Terminated msg:
                         _terminateReceived = true;
                         break;

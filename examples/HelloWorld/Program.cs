@@ -14,10 +14,10 @@ class Program
     {
         var props = Actor.FromProducer(() => new HelloActor());
         var pid = Actor.Spawn(props);
-        pid.Tell(new Hello
+        pid.SendAsync(new Hello
         {
             Who = "ProtoActor"
-        });
+        }).Wait();
         Console.ReadLine();
     }
 

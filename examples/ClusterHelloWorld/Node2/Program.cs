@@ -24,11 +24,10 @@ namespace Node2
                 switch (ctx.Message)
                 {
                     case HelloRequest _:
-                        ctx.Respond(new HelloResponse
+                        return ctx.RespondAsync(new HelloResponse
                         {
                             Message = "Hello from node 2"
                         });
-                        break;
                 }
                 return Actor.Done;
             });

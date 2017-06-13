@@ -12,11 +12,11 @@ namespace Proto.Router.Tests
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
         [Fact]
-        public async void BroadcastGroupRouter_AllRouteesReceiveMessages()
+        public async Task BroadcastGroupRouter_AllRouteesReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
-            router.Tell("hello");
+            await router.SendAsync("hello");
 
             Assert.Equal("hello", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("hello", await routee2.RequestAsync<string>("received?", _timeout));
@@ -24,35 +24,35 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void BroadcastGroupRouter_WhenOneRouteeIsStopped_AllOtherRouteesReceiveMessages()
+        public async Task BroadcastGroupRouter_WhenOneRouteeIsStopped_AllOtherRouteesReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
-            routee2.Stop();
-            router.Tell("hello");
+            await routee2.StopAsync();
+            await router.SendAsync("hello");
 
             Assert.Equal("hello", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("hello", await routee3.RequestAsync<string>("received?", _timeout));
         }
 
         [Fact]
-        public async void BroadcastGroupRouter_WhenOneRouteeIsSlow_AllOtherRouteesReceiveMessages()
+        public async Task BroadcastGroupRouter_WhenOneRouteeIsSlow_AllOtherRouteesReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
-            routee2.Tell("go slow");
-            router.Tell("hello");
+            await routee2.SendAsync("go slow");
+            await router.SendAsync("hello");
 
             Assert.Equal("hello", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("hello", await routee3.RequestAsync<string>("received?", _timeout));
         }
 
         [Fact]
-        public async void BroadcastGroupRouter_RouteesCanBeRemoved()
+        public async Task BroadcastGroupRouter_RouteesCanBeRemoved()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
-            router.Tell(new RouterRemoveRoutee { PID = routee1 });
+            await router.SendAsync(new RouterRemoveRoutee { PID = routee1 });
 
             var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.PIDs);
@@ -61,11 +61,11 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void BroadcastGroupRouter_RouteesCanBeAdded()
+        public async Task BroadcastGroupRouter_RouteesCanBeAdded()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            router.Tell(new RouterAddRoutee { PID = routee4 });
+            await router.SendAsync(new RouterAddRoutee { PID = routee4 });
 
             var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.PIDs);
@@ -75,13 +75,13 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void BroadcastGroupRouter_RemovedRouteesNoLongerReceiveMessages()
+        public async Task BroadcastGroupRouter_RemovedRouteesNoLongerReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
-            router.Tell("first message");
-            router.Tell(new RouterRemoveRoutee { PID = routee1 });
-            router.Tell("second message");
+            await router.SendAsync("first message");
+            await router.SendAsync(new RouterRemoveRoutee { PID = routee1 });
+            await router.SendAsync("second message");
 
             Assert.Equal("first message", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("second message", await routee2.RequestAsync<string>("received?", _timeout));
@@ -89,12 +89,12 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void BroadcastGroupRouter_AddedRouteesReceiveMessages()
+        public async Task BroadcastGroupRouter_AddedRouteesReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            router.Tell(new RouterAddRoutee { PID = routee4 });
-            router.Tell("a message");
+            await router.SendAsync(new RouterAddRoutee { PID = routee4 });
+            await router.SendAsync("a message");
 
             Assert.Equal("a message", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("a message", await routee2.RequestAsync<string>("received?", _timeout));
@@ -103,11 +103,11 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void BroadcastGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
+        public async Task BroadcastGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
-            router.Tell(new RouterBroadcastMessage { Message = "hello" });
+            await router.SendAsync(new RouterBroadcastMessage { Message = "hello" });
 
             Assert.Equal("hello", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("hello", await routee2.RequestAsync<string>("received?", _timeout));
@@ -134,7 +134,7 @@ namespace Proto.Router.Tests
                 switch (context.Message)
                 {
                     case string msg when msg == "received?":
-                        context.Sender.Tell(_received);
+                        await context.Sender.SendAsync(_received);
                         break;
                     case string msg when msg == "go slow":
                         await Task.Delay(5000);

@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Proto.Router.Routers
 {
@@ -12,11 +13,11 @@ namespace Proto.Router.Routers
     {
         protected HashSet<PID> Routees;
 
-        public virtual void OnStarted(IContext context, Props props, RouterState router)
+        public virtual async Task OnStartedAsync(IContext context, Props props, RouterState router)
         {
             foreach (var pid in Routees)
             {
-                context.Watch(pid);
+                await context.WatchAsync(pid);
             }
             router.SetRoutees(Routees);
         }

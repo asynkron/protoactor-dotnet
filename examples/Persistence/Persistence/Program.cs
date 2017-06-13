@@ -88,10 +88,10 @@ class Program
 
                     await _persistence.RecoverStateAsync();
 
-                    context.Self.Tell(new StartLoopActor());
-
+                    await context.Self.SendAsync(new StartLoopActor());
+                    
                     break;
-     
+                    
                 case RequestSnapshot msg:
 
                     await Handle(context, msg);
@@ -124,7 +124,7 @@ class Program
 
             await _persistence.PersistSnapshotAsync(_state);
             Console.WriteLine("MyPersistenceActor - PersistedSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}", _persistence.Index, _state);
-            context.Self.Tell(new TimeToSnapshot());
+            await context.Self.SendAsync(new TimeToSnapshot());
         }
 
         private Task Handle(IContext context, TimeToSnapshot message)
@@ -135,7 +135,7 @@ class Program
             {
                 await Task.Delay(TimeSpan.FromSeconds(10));
 
-                context.Self.Tell(new RequestSnapshot());
+                await context.Self.SendAsync(new RequestSnapshot());
             });
 
             return Actor.Done;
@@ -153,9 +153,7 @@ class Program
 
             _loopActor = context.Spawn(props);
 
-            context.Self.Tell(new TimeToSnapshot());
-            
-            return Actor.Done;
+            return context.Self.SendAsync(new TimeToSnapshot());
         }
 
         private async Task Handle(RenameCommand message)
@@ -180,18 +178,16 @@ class Program
 
                     Console.WriteLine("LoopActor - Started");
 
-                    context.Self.Tell(new LoopParentMessage());
-
-                    break;
+                    return context.Self.SendAsync(new LoopParentMessage());
                 case LoopParentMessage msg:
 
                     Task.Run(async () => {
                         
-                        context.Parent.Tell(new RenameCommand { Name = GeneratePronounceableName(5) });
+                        await context.Parent.SendAsync(new RenameCommand { Name = GeneratePronounceableName(5) });
 
                         await Task.Delay(TimeSpan.FromSeconds(2));
 
-                        context.Self.Tell(new LoopParentMessage());
+                        await context.Self.SendAsync(new LoopParentMessage());
                     });
 
                     break;

@@ -19,9 +19,10 @@ namespace Proto.TestFixtures
             return ((TestMessage)msg).TaskCompletionSource.Task;
         }
 
-        public void EscalateFailure(Exception reason, object message)
+        public Task EscalateFailureAsync(Exception reason, object message)
         {
             EscalatedFailures.Add(reason);
+            return Actor.Done;
         }
 
         public int Throughput { get; } = 10;

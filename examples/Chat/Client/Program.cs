@@ -29,10 +29,10 @@ class Program
         });
 
         var client = Actor.Spawn(props);
-        server.Tell(new Connect
+        server.SendAsync(new Connect
         {
             Sender = client
-        });
+        }).Wait();
         var nick = "Alex";
         while (true)
         {
@@ -44,20 +44,20 @@ class Program
             if (text.StartsWith("/nick "))
             {
                 var t = text.Split(' ')[1];
-                server.Tell(new NickRequest
+                server.SendAsync(new NickRequest
                 {
                     OldUserName = nick,
                     NewUserName = t
-                });
+                }).Wait();
                 nick = t;
             }
             else
             {
-                server.Tell(new SayRequest
+                server.SendAsync(new SayRequest
                 {
                     UserName = nick,
                     Message = text
-                });
+                }).Wait();
             }
         }
     }

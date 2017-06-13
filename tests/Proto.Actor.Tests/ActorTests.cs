@@ -19,7 +19,7 @@ namespace Proto.Tests
             {
                 if (ctx.Message is string)
                 {
-                    ctx.Respond("hey");
+                    return ctx.RespondAsync("hey");
                 }
                 return Actor.Done;
             });
@@ -45,7 +45,7 @@ namespace Proto.Tests
             {
                 if (ctx.Message is string)
                 {
-                    ctx.Respond("hey");
+                    return ctx.RespondAsync("hey");
                 }
                 return Actor.Done;
             });
@@ -56,7 +56,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void ActorLifeCycle()
+        public async Task ActorLifeCycle()
         {
             var messages = new Queue<object>();
 
@@ -70,8 +70,8 @@ namespace Proto.Tests
                     .WithMailbox(() => new TestMailbox())
                 );
 
-            pid.Tell("hello");
-            pid.Stop();
+            await pid.SendAsync("hello");
+            await pid.StopAsync();
 
             Assert.Equal(4, messages.Count);
             var msgs = messages.ToArray();

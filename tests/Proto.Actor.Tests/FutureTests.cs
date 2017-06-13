@@ -12,7 +12,7 @@ namespace Proto.Tests
             {
                 if (ctx.Message is string)
                 {
-                    ctx.Respond("hey");
+                    return ctx.RespondAsync("hey");
                 }
                 return Actor.Done;
             }));
@@ -29,7 +29,7 @@ namespace Proto.Tests
             {
                 if (ctx.Message is string)
                 {
-                    ctx.Respond("hey");
+                    return ctx.RespondAsync("hey");
                 }
                 return Actor.Done;
             }));
@@ -38,7 +38,7 @@ namespace Proto.Tests
                 if (ctx.Message is string)
                 {
                     var reply1 = await ctx.RequestAsync<string>(pid1, "");
-                    ctx.Respond(ctx.Message + reply1);
+                    await ctx.RespondAsync(ctx.Message + reply1);
                 }
             }));
             
@@ -55,7 +55,7 @@ namespace Proto.Tests
             {
                 if (ctx.Message is string)
                 {
-                    ctx.Respond(null);
+                    return ctx.RespondAsync(null);
                 }
                 return Actor.Done;
             }));

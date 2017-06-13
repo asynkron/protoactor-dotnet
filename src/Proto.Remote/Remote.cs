@@ -75,7 +75,7 @@ namespace Proto.Remote
         {
             var props = Actor.FromProducer(() => new EndpointManager(config));
             EndpointManagerPid = Actor.Spawn(props);
-            EventStream.Instance.Subscribe<EndpointTerminatedEvent>(EndpointManagerPid.Tell);
+            EventStream.Instance.Subscribe<EndpointTerminatedEvent>(x => EndpointManagerPid.SendAsync(x));
         }
 
         public static PID ActivatorForAddress(string address)

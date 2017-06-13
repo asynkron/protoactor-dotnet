@@ -27,7 +27,7 @@ namespace Proto.Tests
                 if (context.Message is Started)
                     Child = context.Spawn(_childProps);
                 if (context.Message is string)
-                    Child.Tell(context.Message);
+                    return Child.SendAsync(context.Message);
                 return Actor.Done;
             }
         }
@@ -61,7 +61,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void OneForOneStrategy_Should_ResumeChildOnFailure()
+        public async Task OneForOneStrategy_Should_ResumeChildOnFailure()
         {
             var childMailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 1, null);
@@ -71,7 +71,7 @@ namespace Proto.Tests
                 .WithSupervisor(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            await parent.SendAsync("hello");
 
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(ResumeMailbox.Instance, childMailboxStats.Posted);
@@ -79,7 +79,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void OneForOneStrategy_Should_StopChildOnFailure()
+        public async Task OneForOneStrategy_Should_StopChildOnFailure()
         {
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
@@ -89,7 +89,7 @@ namespace Proto.Tests
                 .WithSupervisor(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            await parent.SendAsync("hello");
 
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(Stop.Instance, childMailboxStats.Posted);
@@ -97,7 +97,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void OneForOneStrategy_Should_RestartChildOnFailure()
+        public async Task OneForOneStrategy_Should_RestartChildOnFailure()
         {
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
@@ -107,7 +107,7 @@ namespace Proto.Tests
                 .WithSupervisor(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            await parent.SendAsync("hello");
 
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(Restart.Instance, childMailboxStats.Posted);
@@ -115,7 +115,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void OneForOneStrategy_Should_StopChildWhenRestartLimitReached()
+        public async Task OneForOneStrategy_Should_StopChildWhenRestartLimitReached()
         {
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
@@ -125,15 +125,15 @@ namespace Proto.Tests
                 .WithSupervisor(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
-            parent.Tell("hello");
+            await parent.SendAsync("hello");
+            await parent.SendAsync("hello");
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(Stop.Instance, childMailboxStats.Posted);
             Assert.Contains(Stop.Instance, childMailboxStats.Received);
         }
 
         [Fact]
-        public void OneForOneStrategy_WhenEscalateDirectiveWithoutGrandparent_ShouldRevertToDefaultDirective()
+        public async Task OneForOneStrategy_WhenEscalateDirectiveWithoutGrandparent_ShouldRevertToDefaultDirective()
         {
             var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
@@ -143,7 +143,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            await parent.SendAsync("hello");
             parentMailboxStats.Reset.Wait(1000);
             // Default directive allows 10 restarts so we expect 11 Failure messages before the child is stopped
             Assert.Equal(11, parentMailboxStats.Received.OfType<Failure>().Count());
@@ -163,7 +163,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void OneForOneStrategy_Should_EscalateFailureToParent()
+        public async Task OneForOneStrategy_Should_EscalateFailureToParent()
         {
             var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
@@ -173,7 +173,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            await parent.SendAsync("hello");
 
             parentMailboxStats.Reset.Wait(1000);
             var failure = parentMailboxStats.Received.OfType<Failure>().Single();

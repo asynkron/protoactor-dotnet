@@ -21,19 +21,19 @@ class Program
         var props = Actor.FromProducer(() => new ParentActor()).WithSupervisor(new OneForOneStrategy(Decider.Decide, 1, null));
 
         var actor = Actor.Spawn(props);
-        actor.Tell(new Hello
+        actor.SendAsync(new Hello
         {
             Who = "Alex"
-        });
+        }).Wait();
         //why wait?
         //Stop is a system message and is not processed through the user message mailbox
         //thus, it will be handled _before_ any user message
         //we only do this to show the correct order of events in the console
         Thread.Sleep(TimeSpan.FromSeconds(1));
-        actor.Tell(new Recoverable());
-        actor.Tell(new Fatal());
+        actor.SendAsync(new Recoverable()).Wait();
+        actor.SendAsync(new Fatal()).Wait();
 
-        actor.Stop();
+        actor.StopAsync();
         Console.ReadLine();
     }
 
@@ -72,14 +72,11 @@ class Program
             switch (context.Message)
             {
                 case Hello r:
-                    child.Tell(context.Message);
-                    break;
+                    return child.SendAsync(context.Message);
                 case Recoverable r:
-                    child.Tell(context.Message);
-                    break;
+                    return child.SendAsync(context.Message);
                 case Fatal r:
-                    child.Tell(context.Message);
-                    break;
+                    return child.SendAsync(context.Message);
                 case Terminated r:
                     Console.WriteLine("Watched actor was Terminated, {0}", r.Who);
                     break;

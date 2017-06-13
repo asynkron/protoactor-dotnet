@@ -12,18 +12,18 @@ namespace Proto.Tests
     public class DisposableActorTests
     {
         [Fact]
-        public void WhenActorStopped_DisposeIsCalled()
+        public async Task WhenActorStopped_DisposeIsCalled()
         {
             var disposeCalled = false;
             var props = Actor.FromProducer(() => new DisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => new TestMailbox());
             var pid = Actor.Spawn(props);
-            pid.Stop();
+            await pid.StopAsync();
             Assert.True(disposeCalled);
         }
 
         [Fact]
-        public void WhenActorRestarted_DisposeIsCalled()
+        public async Task WhenActorRestarted_DisposeIsCalled()
         {
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
@@ -35,13 +35,13 @@ namespace Proto.Tests
                 .WithMailbox(() => new TestMailbox())
                 .WithSupervisor(strategy);
             var parentPID = Actor.Spawn(props);
-            parentPID.Tell("crash");
+            await parentPID.SendAsync("crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.True(disposeCalled);
         }
 
         [Fact]
-        public void WhenActorResumed_DisposeIsNotCalled()
+        public async Task WhenActorResumed_DisposeIsNotCalled()
         {
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
@@ -53,13 +53,13 @@ namespace Proto.Tests
                 .WithMailbox(() => new TestMailbox())
                 .WithSupervisor(strategy);
             var parentPID = Actor.Spawn(props);
-            parentPID.Tell("crash");
+            await parentPID.SendAsync("crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.False(disposeCalled);
         }
 
         [Fact]
-        public void WhenActorWithChildrenStopped_DisposeIsCalledInEachChild()
+        public async Task WhenActorWithChildrenStopped_DisposeIsCalledInEachChild()
         {
             bool child1Disposed = false;
             bool child2Disposed = false;
@@ -74,7 +74,7 @@ namespace Proto.Tests
                 .WithSupervisor(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("crash");
+            await parent.SendAsync("crash");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);
@@ -97,7 +97,7 @@ namespace Proto.Tests
                 if (context.Message is Started)
                     _childPID = context.Spawn(_childProps);
                 if (context.Message is string)
-                    _childPID.Tell(context.Message);
+                    return _childPID.SendAsync(context.Message);
                 return Actor.Done;
             }
         }
@@ -152,7 +152,7 @@ namespace Proto.Tests
                 if (context.Message is string)
                 {
                     // only tell one child
-                    Child1.Tell(context.Message);
+                    return Child1.SendAsync(context.Message);
                 }
 
                 return Actor.Done;

@@ -1,7 +1,9 @@
-﻿namespace DependencyInjection
+﻿using System.Threading.Tasks;
+
+namespace DependencyInjection
 {
     public interface IActorManager
     {
-        void Activate();
+        Task ActivateAsync();
     }
 }

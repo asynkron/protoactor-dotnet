@@ -18,7 +18,7 @@ namespace Proto.Cluster
         private readonly ILogger _logger = Log.CreateLogger<MemberListActor>();
         private readonly Dictionary<string, MemberStatus> _members = new Dictionary<string, MemberStatus>();
 
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
@@ -33,7 +33,7 @@ namespace Proto.Cluster
                                    where member.Kinds.Contains(msg.Kind)
                                    select address).ToArray();
 
-                    context.Respond(new MemberByKindResponse(members));
+                    await context.RespondAsync(new MemberByKindResponse(members));
                     break;
                 }
                 case ClusterTopologyEvent msg:
@@ -48,7 +48,7 @@ namespace Proto.Cluster
                     {
                         if (!tmp.TryGetValue(address, out var _))
                         {
-                            Notify(null, old);
+                            await NotifyAsync(null, old);
                         }
                     }
 
@@ -57,16 +57,15 @@ namespace Proto.Cluster
                         if (!_members.TryGetValue(address, out var _))
                         {
                             _members[address] = @new;
-                            Notify(@new, null);
+                            await NotifyAsync(@new, null);
                         }
                     }
                     break;
                 }
             }
-            return Actor.Done;
         }
 
-        private void Notify(MemberStatus @new, MemberStatus old)
+        private async Task NotifyAsync(MemberStatus @new, MemberStatus old)
         {
             if (@new == null && old == null)
             {
@@ -77,13 +76,13 @@ namespace Proto.Cluster
             {
                 //notify left
                 var left = new MemberLeftEvent(old.Host, old.Port, old.Kinds);
-                Actor.EventStream.Publish(left);
+                await Actor.EventStream.PublishAsync(left);
                 _members.Remove(old.Address);
                 var endpointTerminated = new EndpointTerminatedEvent
                                          {
                                              Address = old.Address
                                          };
-                Actor.EventStream.Publish(endpointTerminated);
+                await Actor.EventStream.PublishAsync(endpointTerminated);
 
                 return;
             }
@@ -92,28 +91,28 @@ namespace Proto.Cluster
             {
                 //notify joined
                 var joined = new MemberJoinedEvent(@new.Host, @new.Port, @new.Kinds);
-                Actor.EventStream.Publish(joined);
+                await Actor.EventStream.PublishAsync(joined);
                 return;
             }
 
             if (@new.MemberId != old.MemberId)
             {
                 var rejoined = new MemberRejoinedEvent(@new.Host, @new.Port, @new.Kinds);
-                Actor.EventStream.Publish(rejoined);
+                await Actor.EventStream.PublishAsync(rejoined);
                 return;
             }
 
             if (old.Alive && !@new.Alive)
             {
                 var unavailable = new MemberUnavailableEvent(@new.Host, @new.Port, @new.Kinds);
-                Actor.EventStream.Publish(unavailable);
+                await Actor.EventStream.PublishAsync(unavailable);
                 return;
             }
 
             if (@new.Alive && !old.Alive)
             {
                 var available = new MemberAvailableEvent(@new.Host, @new.Port, @new.Kinds);
-                Actor.EventStream.Publish(available);
+                await Actor.EventStream.PublishAsync(available);
             }
         }
     }

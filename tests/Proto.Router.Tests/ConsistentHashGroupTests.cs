@@ -17,13 +17,13 @@ namespace Proto.Router.Tests
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
         [Fact]
-        public async void ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee()
+        public async Task ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            router.Tell(new Message("message1"));
-            router.Tell(new Message("message1"));
-            router.Tell(new Message("message1"));
+            await router.SendAsync(new Message("message1"));
+            await router.SendAsync(new Message("message1"));
+            await router.SendAsync(new Message("message1"));
 
             Assert.Equal(3, await routee1.RequestAsync<int>("received?", _timeout));
             Assert.Equal(0, await routee2.RequestAsync<int>("received?", _timeout));
@@ -31,13 +31,13 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_MessagesWithDifferentHashesGoToDifferentRoutees()
+        public async Task ConsistentHashGroupRouter_MessagesWithDifferentHashesGoToDifferentRoutees()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            router.Tell(new Message("message1"));
-            router.Tell(new Message("message2"));
-            router.Tell(new Message("message3"));
+            await router.SendAsync(new Message("message1"));
+            await router.SendAsync(new Message("message2"));
+            await router.SendAsync(new Message("message3"));
 
             Assert.Equal(1, await routee1.RequestAsync<int>("received?", _timeout));
             Assert.Equal(1, await routee2.RequestAsync<int>("received?", _timeout));
@@ -45,14 +45,14 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee_EvenWhenNewRouteeAdded()
+        public async Task ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee_EvenWhenNewRouteeAdded()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            router.Tell(new Message("message1"));
+            await router.SendAsync(new Message("message1"));
             var routee4 = Actor.Spawn(MyActorProps);
-            router.Tell(new RouterAddRoutee{PID = routee4});
-            router.Tell(new Message("message1"));
+            await router.SendAsync(new RouterAddRoutee{PID = routee4});
+            await router.SendAsync(new Message("message1"));
 
             Assert.Equal(2, await routee1.RequestAsync<int>("received?", _timeout));
             Assert.Equal(0, await routee2.RequestAsync<int>("received?", _timeout));
@@ -60,11 +60,11 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_RouteesCanBeRemoved()
+        public async Task ConsistentHashGroupRouter_RouteesCanBeRemoved()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            router.Tell(new RouterRemoveRoutee { PID = routee1 });
+            await router.SendAsync(new RouterRemoveRoutee { PID = routee1 });
 
             var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.PIDs);
@@ -73,11 +73,11 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_RouteesCanBeAdded()
+        public async Task ConsistentHashGroupRouter_RouteesCanBeAdded()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            router.Tell(new RouterAddRoutee { PID = routee4 });
+            await router.SendAsync(new RouterAddRoutee { PID = routee4 });
 
             var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.PIDs);
@@ -87,47 +87,47 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_RemovedRouteesNoLongerReceiveMessages()
+        public async Task ConsistentHashGroupRouter_RemovedRouteesNoLongerReceiveMessages()
         {
             var (router, routee1, _, _) = CreateRouterWith3Routees();
             
-            router.Tell(new RouterRemoveRoutee { PID = routee1 });
-            router.Tell(new Message("message1"));
+            await router.SendAsync(new RouterRemoveRoutee { PID = routee1 });
+            await router.SendAsync(new Message("message1"));
             Assert.Equal(0, await routee1.RequestAsync<int>("received?", _timeout));
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_AddedRouteesReceiveMessages()
+        public async Task ConsistentHashGroupRouter_AddedRouteesReceiveMessages()
         {
             var (router, _, _, _) = CreateRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            router.Tell(new RouterAddRoutee { PID = routee4 });
-            router.Tell(new Message("message4"));
+            await router.SendAsync(new RouterAddRoutee { PID = routee4 });
+            await router.SendAsync(new Message("message4"));
             Assert.Equal(1, await routee4.RequestAsync<int>("received?", _timeout));
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_MessageIsReassignedWhenRouteeRemoved()
+        public async Task ConsistentHashGroupRouter_MessageIsReassignedWhenRouteeRemoved()
         {
             var (router, routee1, routee2, _) = CreateRouterWith3Routees();
 
-            router.Tell(new Message("message1"));
+            await router.SendAsync(new Message("message1"));
             // routee1 handles "message1"
             Assert.Equal(1, await routee1.RequestAsync<int>("received?", _timeout));
             // remove receiver
-            router.Tell(new RouterRemoveRoutee { PID = routee1 });
+            await router.SendAsync(new RouterRemoveRoutee { PID = routee1 });
             // routee2 should now handle "message1"
-            router.Tell(new Message("message1"));
+            await router.SendAsync(new Message("message1"));
 
             Assert.Equal(1, await routee2.RequestAsync<int>("received?", _timeout));
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
+        public async Task ConsistentHashGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            router.Tell(new RouterBroadcastMessage { Message = new Message("hello") });
+            await router.SendAsync(new RouterBroadcastMessage { Message = new Message("hello") });
 
             Assert.Equal(1, await routee1.RequestAsync<int>("received?", _timeout));
             Assert.Equal(1, await routee2.RequestAsync<int>("received?", _timeout));
@@ -141,13 +141,13 @@ namespace Proto.Router.Tests
             var routee2 = Actor.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee2");
             var routee3 = Actor.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee3");
 
-            var props = Router.NewConsistentHashGroup(MyActorProps, SuperIntelligentDeterministicHash.Hash, 1, routee1, routee2, routee3)
+            var props = Router.NewConsistentHashGroup(MyActorProps, SuperInSendAsyncigentDeterministicHash.Hash, 1, routee1, routee2, routee3)
                 .WithMailbox(() => new TestMailbox());
             var router = Actor.Spawn(props);
             return (router, routee1, routee2, routee3);
         }
         
-        private static class SuperIntelligentDeterministicHash
+        private static class SuperInSendAsyncigentDeterministicHash
         {
             public static uint Hash(string hashKey)
             {
@@ -190,7 +190,7 @@ namespace Proto.Router.Tests
                 switch (context.Message)
                 {
                     case string msg when msg == "received?":
-                        context.Sender.Tell(_receivedMessages.Count);
+                        context.Sender.SendAsync(_receivedMessages.Count);
                         break;
                     case Message msg:
                         _receivedMessages.Add(msg.ToString());

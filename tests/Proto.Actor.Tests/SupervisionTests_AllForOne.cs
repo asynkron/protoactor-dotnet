@@ -34,7 +34,7 @@ namespace Proto.Tests
                 if (context.Message is string)
                 {
                     // only tell one child
-                    Child1.Tell(context.Message);
+                    return Child1.SendAsync(context.Message);
                 }
                     
                 return Actor.Done;
@@ -55,7 +55,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void AllForOneStrategy_Should_ResumeChildOnFailure()
+        public async Task AllForOneStrategy_Should_ResumeChildOnFailure()
         {
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
             var child2MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
@@ -68,7 +68,7 @@ namespace Proto.Tests
                 .WithSupervisor(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            await parent.SendAsync("hello");
 
             child1MailboxStats.Reset.Wait(1000);
             Assert.Contains(ResumeMailbox.Instance, child1MailboxStats.Posted);
@@ -78,7 +78,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void AllForOneStrategy_Should_StopAllChildrenOnFailure()
+        public async Task AllForOneStrategy_Should_StopAllChildrenOnFailure()
         {
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -91,7 +91,7 @@ namespace Proto.Tests
                 .WithSupervisor(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            await parent.SendAsync("hello");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);
@@ -102,7 +102,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void AllForOneStrategy_Should_RestartAllChildrenOnFailure()
+        public async Task AllForOneStrategy_Should_RestartAllChildrenOnFailure()
         {
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -115,7 +115,7 @@ namespace Proto.Tests
                 .WithSupervisor(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            await parent.SendAsync("hello");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);
@@ -126,7 +126,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void AllForOneStrategy_Should_EscalateFailureToParent()
+        public async Task AllForOneStrategy_Should_EscalateFailureToParent()
         {
             var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
@@ -136,7 +136,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            await parent.SendAsync("hello");
 
             parentMailboxStats.Reset.Wait(1000);
             var failure = parentMailboxStats.Received.OfType<Failure>().Single();

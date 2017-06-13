@@ -11,19 +11,19 @@ class Program
         Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
         Remote.Start("127.0.0.1", 8000);
         var clients = new HashSet<PID>();
-        var props = Actor.FromFunc(ctx =>
+        var props = Actor.FromFunc(async ctx =>
         {
             switch (ctx.Message)
             {
                 case Connect connect:
                     Console.WriteLine($"Client {connect.Sender} connected");
                     clients.Add(connect.Sender);
-                    connect.Sender.Tell(new Connected { Message = "Welcome!"});
+                    await connect.Sender.SendAsync(new Connected { Message = "Welcome!"});
                     break;
                 case SayRequest sayRequest:
                     foreach (var client in clients)
                     {
-                        client.Tell(new SayResponse
+                        await client.SendAsync(new SayResponse
                         {
                             UserName = sayRequest.UserName,
                             Message = sayRequest.Message
@@ -33,7 +33,7 @@ class Program
                 case NickRequest nickRequest:
                     foreach (var client in clients)
                     {
-                        client.Tell(new NickResponse
+                        await client.SendAsync(new NickResponse
                         {
                             OldUserName = nickRequest.OldUserName,
                             NewUserName = nickRequest.NewUserName
@@ -41,7 +41,6 @@ class Program
                     }
                     break;
             }
-            return Actor.Done;
         });
         Actor.SpawnNamed(props, "chatserver");
         Console.ReadLine();

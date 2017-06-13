@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Proto.Persistence.SnapshotStrategies;
 using Xunit;
 
@@ -7,7 +8,7 @@ namespace Proto.Persistence.Tests
     public class PersistenceWithSnapshotStrategiesTests
     {
         [Fact]
-        public async void GivenAnIntervalStrategy_ShouldSaveSnapshotAccordingly()
+        public async Task GivenAnIntervalStrategy_ShouldSaveSnapshotAccordingly()
         {
             var state = 1;
             var provider = new InMemoryProvider();

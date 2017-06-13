@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Proto.Router.Routers
 {
@@ -22,11 +23,11 @@ namespace Proto.Router.Routers
             _routees = routees;
         }
 
-        public override void RouteMessage(object message)
+        public override async Task RouteMessageAsync(object message)
         {
             foreach (var pid in _routees)
             {
-                pid.Tell(message);
+                await pid.SendAsync(message);
             }
         }
     }

@@ -47,32 +47,27 @@ namespace Proto.Remote
                 case EndpointTerminatedEvent msg:
                 {
                     var endpoint = EnsureConnected(msg.Address, context);
-                    endpoint.Watcher.Tell(msg);
-                    return Actor.Done;
+                    return endpoint.Watcher.SendAsync(msg);
                 }
                 case RemoteTerminate msg:
                 {
                     var endpoint = EnsureConnected(msg.Watchee.Address, context);
-                    endpoint.Watcher.Tell(msg);
-                    return Actor.Done;
+                    return endpoint.Watcher.SendAsync(msg);
                 }
                 case RemoteWatch msg:
                 {
                     var endpoint = EnsureConnected(msg.Watchee.Address, context);
-                    endpoint.Watcher.Tell(msg);
-                    return Actor.Done;
+                    return endpoint.Watcher.SendAsync(msg);
                 }
                 case RemoteUnwatch msg:
                 {
                     var endpoint = EnsureConnected(msg.Watchee.Address, context);
-                    endpoint.Watcher.Tell(msg);
-                    return Actor.Done;
+                    return endpoint.Watcher.SendAsync(msg);
                 }
                 case RemoteDeliver msg:
                 {
                     var endpoint = EnsureConnected(msg.Target.Address, context);
-                    endpoint.Writer.Tell(msg);
-                    return Actor.Done;
+                    return endpoint.Writer.SendAsync(msg);
                 }
                 default:
                     return Actor.Done;
