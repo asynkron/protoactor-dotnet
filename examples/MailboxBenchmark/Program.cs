@@ -14,13 +14,18 @@ class Program
 {
     static void Main(string[] args)
     {
+        Main2().GetAwaiter().GetResult();
+    }
+    
+    public static async Task Main2()
+    {
         Func<IMailbox> unboundedMailbox =
             () => UnboundedMailbox.Create();
         //Func<IMailbox> boundedMailbox =
         //    () => BoundedMailbox.Create(1024 * 1024);
 
         //RunTest(boundedMailbox, "Bounded mailbox");
-        RunTest(unboundedMailbox, "Unbounded mailbox").Wait();
+        await RunTest(unboundedMailbox, "Unbounded mailbox");
 
         Console.ReadLine();
     }

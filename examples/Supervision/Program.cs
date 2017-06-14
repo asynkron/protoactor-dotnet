@@ -15,25 +15,30 @@ class Program
 {
     static void Main(string[] args)
     {
+        Main2().GetAwaiter().GetResult();
+    }
+    
+    public static async Task Main2()
+    {
         Proto.Log.SetLoggerFactory(new LoggerFactory()
             .AddConsole(minLevel: LogLevel.Debug));
 
         var props = Actor.FromProducer(() => new ParentActor()).WithChildSupervisorStrategy(new OneForOneStrategy(Decider.Decide, 1, null));
 
         var actor = Actor.Spawn(props);
-        actor.SendAsync(new Hello
+        await actor.SendAsync(new Hello
         {
             Who = "Alex"
-        }).Wait();
+        });
         //why wait?
         //Stop is a system message and is not processed through the user message mailbox
         //thus, it will be handled _before_ any user message
         //we only do this to show the correct order of events in the console
         Thread.Sleep(TimeSpan.FromSeconds(1));
-        actor.SendAsync(new Recoverable()).Wait();
-        actor.SendAsync(new Fatal()).Wait();
+        await actor.SendAsync(new Recoverable());
+        await actor.SendAsync(new Fatal());
 
-        actor.StopAsync();
+        await actor.StopAsync();
         Console.ReadLine();
     }
 

@@ -43,9 +43,14 @@ namespace RouterExample
     {
         private static readonly Props MyActorProps = Actor.FromProducer(() => new MyActor());
 
-        private static void Main()
+        public static void Main()
         {
-            TestBroadcastPool().Wait();
+            Main2().GetAwaiter().GetResult();
+        }
+        
+        private static async Task Main2()
+        {
+            await TestBroadcastPool();
             //TestBroadcastGroup();
 
             //TestRandomPool();

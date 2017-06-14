@@ -16,6 +16,11 @@ class Program
 {
     static void Main(string[] args)
     {
+        Main2().GetAwaiter().GetResult();
+    }
+    
+    public static async Task Main2()
+    {
         Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
         Remote.Start("127.0.0.1", 12001);
 
@@ -26,14 +31,14 @@ class Program
 
         var pid = Actor.Spawn(props);
         var remote = new PID("127.0.0.1:12000", "remote");
-        remote.RequestAsync<Start>(new StartRemote {Sender = pid}).Wait();
+        await remote.RequestAsync<Start>(new StartRemote {Sender = pid})
 
         var start = DateTime.Now;
         Console.WriteLine("Starting to send");
         var msg = new Ping();
         for (var i = 0; i < messageCount; i++)
         {
-            remote.SendAsync(msg).Wait();
+            await remote.SendAsync(msg);
         }
         wg.WaitOne();
         var elapsed = DateTime.Now - start;

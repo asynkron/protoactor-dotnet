@@ -14,18 +14,23 @@ class Program
 {
     static void Main(string[] args)
     {
+        Main2().GetAwaiter().GetResult();
+    }
+    
+    public static async Task Main2()
+    {
         var props = Actor.FromProducer(() => new ChildActor());
         var actor = Actor.Spawn(props);
-        actor.SendAsync(new Hello
+        await actor.SendAsync(new Hello
         {
             Who = "Alex"
-        }).Wait();
+        });
         //why wait?
         //Stop is a system message and is not processed through the user message mailbox
         //thus, it will be handled _before_ any user message
         //we only do this to show the correct order of events in the console
-        Thread.Sleep(TimeSpan.FromSeconds(1));
-        actor.StopAsync().Wait();
+        await Task.Delay(TimeSpan.FromSeconds(1));
+        await actor.StopAsync();
 
         Console.ReadLine();
     }    

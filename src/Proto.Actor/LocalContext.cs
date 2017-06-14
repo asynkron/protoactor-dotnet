@@ -268,17 +268,17 @@ namespace Proto
 
         public async Task RestartChildrenAsync(Exception reason, params PID[] pids)
         {
-            await Task.WhenAll(pids.Select(x => x.SendSystemMessageAsync(new Restart(reason))).ToList());
+            await Task.WhenAll(pids.Select(x => x.SendSystemMessageAsync(new Restart(reason))));
         }
 
         public async Task StopChildrenAsync(params PID[] pids)
         {
-                await Task.WhenAll(pids.Select(x => x.SendSystemMessageAsync(Stop.Instance)).ToList());
+                await Task.WhenAll(pids.Select(x => x.SendSystemMessageAsync(Stop.Instance)));
         }
 
         public async Task ResumeChildrenAsync(params PID[] pids)
         {
-            await Task.WhenAll(pids.Select(x => x.SendSystemMessageAsync(ResumeMailbox.Instance)).ToList());
+            await Task.WhenAll(pids.Select(x => x.SendSystemMessageAsync(ResumeMailbox.Instance)));
         }
 
         internal static Task DefaultReceiveAsync(IContext context)

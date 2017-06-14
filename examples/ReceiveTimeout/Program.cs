@@ -13,9 +13,9 @@ class Program
 {
     static void Main(string[] args)
     {
-        Doit().Wait();
+        Main2().GetAwaiter().GetResult();
     }
-    public static async Task Doit() 
+    public static async Task Main2() 
     {
         var c = 0;
         var props = Actor.FromFunc(context =>
