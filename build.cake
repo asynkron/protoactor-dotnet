@@ -71,13 +71,6 @@ Task("Push")
     });
 
 Task("Default")
-    .IsDependentOn("PatchVersion")
-    .IsDependentOn("Restore")
-    .IsDependentOn("Build")
-    .IsDependentOn("UnitTest")
-    .IsDependentOn("Pack");
-
-Task("DevBuild")
     .IsDependentOn("Restore")
     .IsDependentOn("Build")
     .IsDependentOn("UnitTest");
