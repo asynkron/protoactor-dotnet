@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Proto.Mailbox
 {
-    public static class Tasks
+    internal static class Tasks
     {
         public static Task Done = Task.FromResult(0);
     }
@@ -204,6 +204,11 @@ namespace Proto.Mailbox
             if (!task.IsCompleted)
             {
                 task.ContinueWith(RescheduleOnTaskComplete, message);
+            }
+            else if (task.IsFaulted)
+            {
+                //TODO: log?
+                Console.WriteLine($"Warning: unhandled Task exception when trying to process a message exception: {task.Exception}");
             }
         }
 

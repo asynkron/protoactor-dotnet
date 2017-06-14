@@ -23,7 +23,7 @@ namespace Proto
 
     public static class Actor
     {
-        public static readonly Task Done = Tasks.Done;
+        public static readonly Task Done = Task.FromResult(0);
         public static EventStream EventStream => EventStream.Instance;
         public static Props FromProducer(Func<IActor> producer) => new Props().WithProducer(producer);
         public static Props FromFunc(Receive receive) => FromProducer(() => new EmptyActor(receive));
