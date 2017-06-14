@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Messages;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
@@ -15,9 +16,14 @@ class Program
 {
     static void Main(string[] args)
     {
+        Main2().GetAwaiter().GetResult();
+    }
+    
+    public static async Task Main2()
+    {
         Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
         Remote.Start("127.0.0.1", 12001);
-        Cluster.Start("MyCluster", new ConsulProvider(new ConsulProviderOptions()));
+        await Cluster.StartAsync("MyCluster", new ConsulProvider(new ConsulProviderOptions()));
 
         var client = Grains.HelloGrain("TheName");
 
