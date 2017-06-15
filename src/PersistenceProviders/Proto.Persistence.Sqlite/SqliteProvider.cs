@@ -91,7 +91,7 @@ namespace Proto.Persistence.Sqlite
                 throw ex;
             }
 
-            return Task.FromResult(0);
+            return Actor.Done;
         }
 
         public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)

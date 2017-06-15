@@ -191,21 +191,21 @@ namespace Proto
                         return HandleWatchAsync(w);
                     case Unwatch uw:
                         HandleUnwatch(uw);
-                        return Task.FromResult(0);
+                        return Proto.Actor.Done;
                     case Failure f:
                         return HandleFailureAsync(f);
                     case Restart _:
                         return HandleRestartAsync();
                     case SuspendMailbox _:
-                        return Task.FromResult(0);
+                        return Proto.Actor.Done;
                     case ResumeMailbox _:
-                        return Task.FromResult(0);
+                        return Proto.Actor.Done;
                     case Continuation cont:
                         _message = cont.Message;
                         return cont.Action();
                     default:
                         Logger.LogWarning("Unknown system message {0}", msg);
-                        return Task.FromResult(0);
+                        return Proto.Actor.Done;
                 }
             }
             catch (Exception x)
