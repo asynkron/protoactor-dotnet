@@ -15,10 +15,25 @@ namespace Proto.Cluster.Consul
 {
     public class ConsulProviderOptions
     {
-        public TimeSpan? ServiceTtl { get; set; }
-        public TimeSpan? RefreshTtl { get; set; }
-        public TimeSpan? DeregisterCritical { get; set; }
-        public TimeSpan? BlockingWaitTime { get; set; }
+        /// <summary>
+        /// Default value is 3 seconds
+        /// </summary>
+        public TimeSpan? ServiceTtl { get; set; } = TimeSpan.FromSeconds(3);
+
+        /// <summary>
+        /// Default value is 1 second
+        /// </summary>
+        public TimeSpan? RefreshTtl { get; set; } = TimeSpan.FromSeconds(1);
+
+        /// <summary>
+        /// Default value is 10 seconds
+        /// </summary>
+        public TimeSpan? DeregisterCritical { get; set; } = TimeSpan.FromSeconds(10);
+
+        /// <summary>
+        /// Default value is 20 seconds
+        /// </summary>
+        public TimeSpan? BlockingWaitTime { get; set; } = TimeSpan.FromSeconds(20);
     }
 
     public class ConsulProvider : IClusterProvider
@@ -39,10 +54,10 @@ namespace Proto.Cluster.Consul
 
         public ConsulProvider(ConsulProviderOptions options, Action<ConsulClientConfiguration> consulConfig)
         {
-            _serviceTtl = options.ServiceTtl ?? TimeSpan.FromSeconds(3);
-            _refreshTtl = options.RefreshTtl ?? TimeSpan.FromSeconds(1);
-            _deregisterCritical = options.DeregisterCritical ?? TimeSpan.FromSeconds(10);
-            _blockingWaitTime = options.BlockingWaitTime ?? TimeSpan.FromSeconds(20);
+            _serviceTtl = options.ServiceTtl.Value;
+            _refreshTtl = options.RefreshTtl.Value;
+            _deregisterCritical = options.DeregisterCritical.Value;
+            _blockingWaitTime = options.BlockingWaitTime.Value;
 
             _client = new ConsulClient(consulConfig);
         }
