@@ -47,13 +47,12 @@ namespace Proto.Tests
             {
                 if (ctx.Message is string)
                 {
-                    behavior.BecomeStacked(ctx2 =>
+                    behavior.BecomeStacked(async ctx2 =>
                     {
-                        ctx2.Respond(42);
+                        await ctx2.RespondAsync(42);
                         behavior.UnbecomeStacked();
-                        return Actor.Done;
                     });
-                    ctx.Respond(ctx.Message);
+                    return ctx.RespondAsync(ctx.Message);
                 }
                 return Actor.Done;
             });
@@ -77,56 +76,52 @@ namespace Proto.Tests
             _behavior.Become(Off);
         }
 
-        private Task Off(IContext context)
+        private async Task Off(IContext context)
         {
             switch (context.Message)
             {
                 case PressSwitch _:
-                    context.Respond("Turning on");
+                    await context.RespondAsync("Turning on");
                     _behavior.Become(On);
                     break;
                 case Touch _:
-                    context.Respond("Cold");
+                    await context.RespondAsync("Cold");
                     break;
             }
-            
-            return Actor.Done;
         }
         
-        private Task On(IContext context)
+        private async Task On(IContext context)
         {
             switch (context.Message)
             {
                 case PressSwitch _:
-                    context.Respond("Turning off");
+                    await context.RespondAsync("Turning off");
                     _behavior.Become(Off);
                     break;
                 case Touch _:
-                    context.Respond("Hot!");
+                    await context.RespondAsync("Hot!");
                     break;
             }
-            
-            return Actor.Done;
         }
 
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
             // any "global" message handling here
             switch (context.Message)
             {
                 case HitWithHammer _:
-                    context.Respond("Smashed!");
+                    await context.RespondAsync("Smashed!");
                     _smashed = true;
-                    return Actor.Done;
+                    return;
                 case PressSwitch _ when _smashed:
-                    context.Respond("Broken");
-                    return Actor.Done;
+                    await context.RespondAsync("Broken");
+                    return;
                 case Touch _ when _smashed:
-                    context.Respond("OW!");
-                    return Actor.Done;
+                    await context.RespondAsync("OW!");
+                    return;
             }
             // if not handled, use behavior specific
-            return _behavior.ReceiveAsync(context);
+            await _behavior.ReceiveAsync(context);
         }
     }
 

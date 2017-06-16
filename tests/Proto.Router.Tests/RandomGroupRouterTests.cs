@@ -14,13 +14,13 @@ namespace Proto.Router.Tests
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
         [Fact]
-        public async void RandomGroupRouter_RouteesReceiveMessagesInRandomOrder()
+        public async Task RandomGroupRouter_RouteesReceiveMessagesInRandomOrder()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            router.Tell("1");
-            router.Tell("2");
-            router.Tell("3");
+            await router.SendAsync("1");
+            await router.SendAsync("2");
+            await router.SendAsync("3");
 
             Assert.Equal("2", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("3", await routee2.RequestAsync<string>("received?", _timeout));
@@ -28,18 +28,18 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void RandomGroupRouter_NewlyAddedRouteesReceiveMessages()
+        public async Task RandomGroupRouter_NewlyAddedRouteesReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            router.Tell(new RouterAddRoutee
+            await router.SendAsync(new RouterAddRoutee
             {
                 PID = routee4
             });
-            router.Tell("1");
-            router.Tell("2");
-            router.Tell("3");
-            router.Tell("4");
+            await router.SendAsync("1");
+            await router.SendAsync("2");
+            await router.SendAsync("3");
+            await router.SendAsync("4");
 
             // results are random! (but consistent due to seeding) As MyTestActor only stores the most
             // recent message, "1" is overwritten by a subsequent message. 
@@ -50,27 +50,27 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void RandomGroupRouter_RemovedRouteesDoNotReceiveMessages()
+        public async Task RandomGroupRouter_RemovedRouteesDoNotReceiveMessages()
         {
             var (router, routee1, _, _) = CreateRouterWith3Routees();
-            router.Tell(new RouterRemoveRoutee
+            await router.SendAsync(new RouterRemoveRoutee
             {
                 PID = routee1
             });
             for (int i = 0; i < 100; i++)
             {
-                router.Tell(i.ToString());
+                await router.SendAsync(i.ToString());
             }
             
             Assert.Equal(null, await routee1.RequestAsync<string>("received?", _timeout));
         }
 
         [Fact]
-        public async void RandomGroupRouter_RouteesCanBeRemoved()
+        public async Task RandomGroupRouter_RouteesCanBeRemoved()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            router.Tell(new RouterRemoveRoutee { PID = routee1 });
+            await router.SendAsync(new RouterRemoveRoutee { PID = routee1 });
 
             var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.PIDs);
@@ -79,11 +79,11 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void RandomGroupRouter_RouteesCanBeAdded()
+        public async Task RandomGroupRouter_RouteesCanBeAdded()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            router.Tell(new RouterAddRoutee { PID = routee4 });
+            await router.SendAsync(new RouterAddRoutee { PID = routee4 });
 
             var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.PIDs);
@@ -93,11 +93,11 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void RandomGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
+        public async Task RandomGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            router.Tell(new RouterBroadcastMessage { Message = "hello" });
+            await router.SendAsync(new RouterBroadcastMessage { Message = "hello" });
 
             Assert.Equal("hello", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("hello", await routee2.RequestAsync<string>("received?", _timeout));
@@ -124,8 +124,7 @@ namespace Proto.Router.Tests
                 switch (context.Message)
                 {
                     case string msg when msg == "received?":
-                        context.Sender.Tell(_received);
-                        break;
+                        return context.Sender.SendAsync(_received);
                     case string msg:
                         _received = msg;
                         break;

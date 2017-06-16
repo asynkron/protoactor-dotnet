@@ -17,6 +17,10 @@ class Program
 {
     static void Main(string[] args)
     {
+        DoIt().GetAwaiter().GetResult();
+    }
+    public static async Task DoIt()
+    {
         Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
         const int messageCount = 1000000;
         const int batchSize = 100;
@@ -32,15 +36,14 @@ class Program
             var echos = new PID[clientCount];
             var completions = new TaskCompletionSource<bool>[clientCount];
 
-            var echoProps = Actor.FromFunc(ctx =>
+            var echoProps = Actor.FromFunc(async ctx =>
             {
                 switch (ctx.Message)
                 {
                     case Msg msg:
-                        msg.Sender.Tell(msg);
+                        await msg.Sender.SendAsync(msg);
                         break;
                 }
-                return Actor.Done;
             }).WithDispatcher(d);
 
             for (var i = 0; i < clientCount; i++)
@@ -60,7 +63,7 @@ class Program
                 var client = clients[i];
                 var echo = echos[i];
 
-                client.Tell(new Start(echo));
+                await client.SendAsync(new Start(echo));
             }
             Task.WaitAll(tasks);
 
@@ -110,12 +113,12 @@ class Program
             _batchSize = batchSize;
         }
 
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
                 case Start s:
-                    SendBatch(context, s.Sender);
+                    await SendBatch(context, s.Sender);
                     break;
                 case Msg m:
                     _batch--;
@@ -125,16 +128,15 @@ class Program
                         break;
                     }
 
-                    if (!SendBatch(context, m.Sender))
+                    if (!await SendBatch(context, m.Sender))
                     {
                         _wgStop.SetResult(true);
                     }
                     break;
             }
-            return Actor.Done;
         }
 
-        private bool SendBatch(IContext context, PID sender)
+        private async Task<bool> SendBatch(IContext context, PID sender)
         {
             if (_messageCount == 0)
             {
@@ -145,7 +147,7 @@ class Program
             
             for (var i = 0; i < _batchSize; i++)
             {
-                sender.Tell(m);
+                await sender.SendAsync(m);
             }
 
             _messageCount -= _batchSize;

@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Proto.TestFixtures;
 using Xunit;
 
@@ -13,7 +14,7 @@ namespace Proto.Tests
     public class MiddlewareTests
     {
         [Fact]
-        public void Given_ReceiveMiddleware_Should_Call_Middleware_In_Order_Then_Actor_Receive()
+        public async Task Given_ReceiveMiddleware_Should_Call_Middleware_In_Order_Then_Actor_Receive()
         {
             var logs = new List<string>();
             var testMailbox = new TestMailbox();
@@ -39,7 +40,7 @@ namespace Proto.Tests
                 .WithMailbox(() => testMailbox);
             var pid = Actor.Spawn(props);
 
-            pid.Tell("");
+            await pid.SendAsync("");
 
             Assert.Equal(3, logs.Count);
             Assert.Equal("middleware 1", logs[0]);
@@ -48,14 +49,14 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void Given_SenderMiddleware_Should_Call_Middleware_In_Order()
+        public async Task Given_SenderMiddleware_Should_Call_Middleware_In_Order()
         {
             var logs = new List<string>();
             var pid1 = Actor.Spawn(Actor.FromProducer(() => new DoNothingActor()));
             var props = Actor.FromFunc(c =>
                 {
                     if (c.Message is string)
-                        c.Tell(pid1, "hey");
+                        return c.SendAsync(pid1, "hey");
                     return Actor.Done;
                 })
                 .WithSenderMiddleware(
@@ -74,7 +75,7 @@ namespace Proto.Tests
                 .WithMailbox(() => new TestMailbox());
             var pid2 = Actor.Spawn(props);
 
-            pid2.Tell("");
+            await pid2.SendAsync("");
 
             Assert.Equal(2, logs.Count);
             Assert.Equal("middleware 1", logs[0]);

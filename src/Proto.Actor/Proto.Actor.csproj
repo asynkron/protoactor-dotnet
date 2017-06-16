@@ -5,7 +5,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <TargetFrameworks>netstandard1.5;net452</TargetFrameworks>
-    <Version>0.1.6-dev</Version>
+    <Version>0.1.9-dev</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>

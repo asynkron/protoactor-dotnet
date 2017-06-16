@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Proto.Router.Routers
 {
@@ -12,6 +13,6 @@ namespace Proto.Router.Routers
     {
         public abstract HashSet<PID> GetRoutees();
         public abstract void SetRoutees(HashSet<PID> routees);
-        public abstract void RouteMessage(object message);
+        public abstract Task RouteMessageAsync(object message);
     }
 }

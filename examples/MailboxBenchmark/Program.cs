@@ -6,6 +6,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Proto;
 using Proto.Mailbox;
 
@@ -13,18 +14,23 @@ class Program
 {
     static void Main(string[] args)
     {
+        Main2().GetAwaiter().GetResult();
+    }
+    
+    public static async Task Main2()
+    {
         Func<IMailbox> unboundedMailbox =
             () => UnboundedMailbox.Create();
         //Func<IMailbox> boundedMailbox =
         //    () => BoundedMailbox.Create(1024 * 1024);
 
         //RunTest(boundedMailbox, "Bounded mailbox");
-        RunTest(unboundedMailbox, "Unbounded mailbox");
+        await RunTest(unboundedMailbox, "Unbounded mailbox");
 
         Console.ReadLine();
     }
 
-    private static void RunTest(Func<IMailbox> mailbox, string name)
+    private static async Task RunTest(Func<IMailbox> mailbox, string name)
     {
         Stopwatch sendSw = new Stopwatch(), recvSw = new Stopwatch();
         const int n = 10 * 1000 * 1000;
@@ -48,7 +54,7 @@ class Program
         recvSw.Start();
         for (var i = 1; i <= n; i++)
         {
-            pid.Tell(i);
+            await pid.SendAsync(i);
         }
         sendSw.Stop();
         Console.WriteLine($"send {(int) (n / sendSw.Elapsed.TotalSeconds / 1000)}K/sec ({name})");

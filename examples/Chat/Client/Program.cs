@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using chat.messages;
 using Proto;
 using Proto.Remote;
@@ -6,6 +7,11 @@ using Proto.Remote;
 class Program
 {
     static void Main(string[] args)
+    {
+        Main2().GetAwaiter().GetResult();
+    }
+    
+    public static async Task Main2()
     {
         Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
         Remote.Start("127.0.0.1", 0);
@@ -29,7 +35,7 @@ class Program
         });
 
         var client = Actor.Spawn(props);
-        server.Tell(new Connect
+        await server.SendAsync(new Connect
         {
             Sender = client
         });
@@ -44,7 +50,7 @@ class Program
             if (text.StartsWith("/nick "))
             {
                 var t = text.Split(' ')[1];
-                server.Tell(new NickRequest
+                await server.SendAsync(new NickRequest
                 {
                     OldUserName = nick,
                     NewUserName = t
@@ -53,7 +59,7 @@ class Program
             }
             else
             {
-                server.Tell(new SayRequest
+                await server.SendAsync(new SayRequest
                 {
                     UserName = nick,
                     Message = text

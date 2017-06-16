@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading.Tasks;
 using Proto.Mailbox;
 using Proto.Router.Messages;
 using Proto.Router.Routers;
@@ -19,17 +20,15 @@ namespace Proto.Router
             _state = state;
         }
 
-        protected override void SendUserMessage(PID pid, object message)
+        protected override Task SendUserMessageAsync(PID pid, object message)
         {
             var (msg,_,_) = MessageEnvelope.Unwrap(message);
             switch (msg)
             {
                 case RouterManagementMessage _:
-                    base.SendUserMessage(pid,message);
-                    break;
+                    return base.SendUserMessageAsync(pid,message);
                 default:
-                    _state.RouteMessage(message);
-                    break;
+                    return _state.RouteMessageAsync(message);
             }
         }
     }

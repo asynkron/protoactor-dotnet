@@ -12,6 +12,11 @@ class Program
 {
     static void Main(string[] args)
     {
+        Main2().GetAwaiter().GetResult();
+    }
+    
+    public static async Task Main2()
+    {
         var actor = Actor.FromFunc(c =>
                          {
                              if (c.Headers.ContainsKey("TraceID"))
@@ -63,8 +68,8 @@ class Program
                                        Console.WriteLine($"sender middleware 2 exit {envelope.Message.GetType()}:{c.Message}");
                                    });
         //just wait for started message to be processed to make the output look less confusing
-        Task.Delay(500).Wait();
-        root.Tell(pid, "hello");
+        await Task.Delay(500);
+        await root.SendAsync(pid, "hello");
 
         Console.ReadLine();
         Console.ReadLine();

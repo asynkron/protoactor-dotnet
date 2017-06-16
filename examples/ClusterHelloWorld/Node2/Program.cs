@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Messages;
 using Proto;
 using Proto.Cluster;
@@ -18,24 +19,28 @@ namespace Node2
     {
         static void Main(string[] args)
         {
+            Main2().GetAwaiter().GetResult();
+        }
+        
+        public static async Task Main2()
+        {
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             var props = Actor.FromFunc(ctx =>
             {
                 switch (ctx.Message)
                 {
                     case HelloRequest _:
-                        ctx.Respond(new HelloResponse
+                        return ctx.RespondAsync(new HelloResponse
                         {
                             Message = "Hello from node 2"
                         });
-                        break;
                 }
                 return Actor.Done;
             });
 
             Remote.RegisterKnownKind("HelloKind", props);
             Remote.Start("127.0.0.1", 12000);
-            Cluster.Start("MyCluster", new ConsulProvider(new ConsulProviderOptions()));
+            await Cluster.StartAsync("MyCluster", new ConsulProvider(new ConsulProviderOptions()));
 
             Console.ReadLine();
         }

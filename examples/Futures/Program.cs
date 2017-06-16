@@ -11,13 +11,12 @@ class Program
 {
     static void Main(string[] args)
     {
-        var props = Actor.FromFunc(ctx =>
+        var props = Actor.FromFunc(async ctx =>
         {
             if (ctx.Message is string)
             {
-                ctx.Respond("hey");
+                await ctx.RespondAsync("hey");
             }
-            return Actor.Done;
         });
         var pid = Actor.Spawn(props);
 

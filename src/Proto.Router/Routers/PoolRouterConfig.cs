@@ -6,6 +6,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Proto.Router.Routers
 {
@@ -18,10 +19,11 @@ namespace Proto.Router.Routers
             _poolSize = poolSize;
         }
 
-        public virtual void OnStarted(IContext context, Props props, RouterState router)
+        public virtual Task OnStartedAsync(IContext context, Props props, RouterState router)
         {
             var routees = Enumerable.Range(0, _poolSize).Select(x => context.Spawn(props));
             router.SetRoutees(new HashSet<PID>(routees));
+            return Actor.Done;
         }
 
         public abstract RouterState CreateRouterState();

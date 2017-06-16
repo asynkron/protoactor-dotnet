@@ -5,11 +5,17 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto.Mailbox
 {
+    internal static class Tasks
+    {
+        public static Task Done = Task.FromResult(0);
+    }
+    
     internal static class MailboxStatus
     {
         public const int Idle = 0;
@@ -99,8 +105,10 @@ namespace Proto.Mailbox
             var done = ProcessMessages();
 
             if (!done)
+            {
                 // mailbox is halted, awaiting completion of a message task, upon which mailbox will be rescheduled
-                return Task.FromResult(0);
+                return Tasks.Done;
+            }
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
@@ -115,7 +123,7 @@ namespace Proto.Mailbox
                     _stats[i].MailboxEmpty();
                 }
             }
-            return Task.FromResult(0);
+            return Tasks.Done;
         }
 
         private bool ProcessMessages()
@@ -138,7 +146,7 @@ namespace Proto.Mailbox
                         var t = _invoker.InvokeSystemMessageAsync(msg);
                         if (t.IsFaulted)
                         {
-                            _invoker.EscalateFailure(t.Exception, msg);
+                            HandleProcessMessageException(t.Exception, msg);
                             continue;
                         }
                         if (!t.IsCompleted)
@@ -162,7 +170,7 @@ namespace Proto.Mailbox
                         var t = _invoker.InvokeUserMessageAsync(msg);
                         if (t.IsFaulted)
                         {
-                            _invoker.EscalateFailure(t.Exception, msg);
+                            HandleProcessMessageException(t.Exception, msg);
                             continue;
                         }
                         if (!t.IsCompleted)
@@ -184,16 +192,31 @@ namespace Proto.Mailbox
             }
             catch (Exception e)
             {
-                _invoker.EscalateFailure(e, msg);
+                HandleProcessMessageException(e, msg);
             }
             return true;
         }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void HandleProcessMessageException(Exception exception, object message)
+        {
+            var task = _invoker.EscalateFailureAsync(exception, message);
+            if (!task.IsCompleted)
+            {
+                task.ContinueWith(RescheduleOnTaskComplete, message);
+            }
+            else if (task.IsFaulted)
+            {
+                //TODO: log?
+                Console.WriteLine($"Warning: unhandled Task exception when trying to process a message exception: {task.Exception}");
+            }
+        }
 
-        private void RescheduleOnTaskComplete(Task task, object message)
+        private async Task RescheduleOnTaskComplete(Task task, object message)
         {
             if (task.IsFaulted)
             {
-                _invoker.EscalateFailure(task.Exception, message);
+                await _invoker.EscalateFailureAsync(task.Exception, message);
             }
             else
             {

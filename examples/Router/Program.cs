@@ -43,9 +43,14 @@ namespace RouterExample
     {
         private static readonly Props MyActorProps = Actor.FromProducer(() => new MyActor());
 
-        private static void Main()
+        public static void Main()
         {
-            TestBroadcastPool();
+            Main2().GetAwaiter().GetResult();
+        }
+        
+        private static async Task Main2()
+        {
+            await TestBroadcastPool();
             //TestBroadcastGroup();
 
             //TestRandomPool();
@@ -60,7 +65,7 @@ namespace RouterExample
             Console.ReadLine();
         }
 
-        private static void TestBroadcastGroup()
+        private static async Task TestBroadcastGroup()
         {
             var props = Router.NewBroadcastGroup(
                 MyActorProps,
@@ -72,21 +77,21 @@ namespace RouterExample
             for (var i = 0; i < 10; i++)
             {
                 var pid = Actor.Spawn(props);
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                await pid.SendAsync(new Message {Text = $"{i % 4}"});
             }
         }
 
-        private static void TestBroadcastPool()
+        private static async Task TestBroadcastPool()
         {
             var props = Router.NewBroadcastPool(MyActorProps, 5);
             var pid = Actor.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                await pid.SendAsync(new Message {Text = $"{i % 4}"});
             }
         }
 
-        private static void TestConsistentHashGroup()
+        private static async Task TestConsistentHashGroup()
         {
             var props = Router.NewConsistentHashGroup(
                 MyActorProps,
@@ -98,21 +103,21 @@ namespace RouterExample
             var pid = Actor.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                await pid.SendAsync(new Message {Text = $"{i % 4}"});
             }
         }
 
-        private static void TestConsistentHashPool()
+        private static async Task TestConsistentHashPool()
         {
             var props = Router.NewConsistentHashPool(MyActorProps, 5);
             var pid = Actor.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                await pid.SendAsync(new Message {Text = $"{i % 4}"});
             }
         }
 
-        private static void TestRoundRobinGroup()
+        private static async Task TestRoundRobinGroup()
         {
             var props = Router.NewRoundRobinGroup(
                 MyActorProps,
@@ -124,21 +129,21 @@ namespace RouterExample
             var pid = Actor.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                await pid.SendAsync(new Message {Text = $"{i % 4}"});
             }
         }
 
-        private static void TestRoundRobinPool()
+        private static async Task TestRoundRobinPool()
         {
             var props = Router.NewRoundRobinPool(MyActorProps, 5);
             var pid = Actor.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                await pid.SendAsync(new Message {Text = $"{i % 4}"});
             }
         }
 
-        private static void TestRandomGroup()
+        private static async Task TestRandomGroup()
         {
             var props = Router.NewRandomGroup(
                 MyActorProps,
@@ -150,17 +155,17 @@ namespace RouterExample
             var pid = Actor.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                await pid.SendAsync(new Message {Text = $"{i % 4}"});
             }
         }
 
-        private static void TestRandomPool()
+        private static async Task TestRandomPool()
         {
             var props = Router.NewRandomPool(MyActorProps, 5);
             var pid = Actor.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                await pid.SendAsync(new Message {Text = $"{i % 4}"});
             }
         }
     }

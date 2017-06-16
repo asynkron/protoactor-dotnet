@@ -35,12 +35,13 @@ namespace Proto
             if (cts != null)
             {
                 System.Threading.Tasks.Task.Delay(-1, cts.Token)
-                    .ContinueWith(t =>
+                    .ContinueWith(async t =>
                     {
                         if (!_tcs.Task.IsCompleted)
                         {
-                            _tcs.TrySetException(new TimeoutException("Request didn't receive any Response within the expected time."));
-                            pid.Stop();
+                            _tcs.TrySetException(
+                                new TimeoutException("Request didn't receive any Response within the expected time."));
+                            await pid.StopAsync();
                         }
                     });
             }
@@ -51,27 +52,31 @@ namespace Proto
         public PID Pid { get; }
         public Task<T> Task { get; }
 
-        protected internal override void SendUserMessage(PID pid, object message)
+        protected internal override async Task SendUserMessageAsync(PID pid, object message)
         {
             var env = MessageEnvelope.Unwrap(message);
-            
+
 
             if (env.message is T || message == null)
             {
-                if (_cts != null && _cts.IsCancellationRequested) return;
+                if (_cts != null && _cts.IsCancellationRequested)
+                {
+                    return;
+                }
 
-                _tcs.TrySetResult((T)env.message);
-                pid.Stop();
-            }            
+                _tcs.TrySetResult((T) env.message);
+                await pid.StopAsync();
+            }
             else
             {
-                throw new InvalidOperationException($"Unexpected message.  Was type {env.message.GetType()} but expected {typeof(T)}");
+                throw new InvalidOperationException(
+                    $"Unexpected message.  Was type {env.message.GetType()} but expected {typeof(T)}");
             }
-
         }
 
-        protected internal override void SendSystemMessage(PID pid, object message)
+        protected internal override Task SendSystemMessageAsync(PID pid, object message)
         {
+            return Actor.Done;
         }
     }
 }

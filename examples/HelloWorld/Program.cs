@@ -12,9 +12,14 @@ class Program
 {
     static void Main(string[] args)
     {
+        Main2().GetAwaiter().GetResult();
+    }
+    
+    public static async Task Main2()
+    {
         var props = Actor.FromProducer(() => new HelloActor());
         var pid = Actor.Spawn(props);
-        pid.Tell(new Hello
+        await pid.SendAsync(new Hello
         {
             Who = "ProtoActor"
         });

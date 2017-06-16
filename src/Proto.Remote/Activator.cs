@@ -21,9 +21,7 @@ namespace Proto.Remote
                     {
                         Pid = pid,
                     };
-                    context.Respond(response);
-
-                    break;
+                    return context.RespondAsync(response);
                 default:
                     break;
             }

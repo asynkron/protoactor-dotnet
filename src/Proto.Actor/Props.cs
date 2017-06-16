@@ -61,7 +61,7 @@ namespace Proto
         {
             props.ReceiveMiddleware = ReceiveMiddleware.Concat(middleware).ToList();
             props.ReceiveMiddlewareChain = props.ReceiveMiddleware.Reverse()
-                                                .Aggregate((Receive) LocalContext.DefaultReceive, (inner, outer) => outer(inner));
+                                                .Aggregate((Receive) LocalContext.DefaultReceiveAsync, (inner, outer) => outer(inner));
         });
 
         public Props WithSenderMiddleware(params Func<Sender, Sender>[] middleware) => Copy(props =>

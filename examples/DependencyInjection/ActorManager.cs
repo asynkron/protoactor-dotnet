@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto;
 
@@ -14,10 +15,10 @@ namespace DependencyInjection
             subscription = eventStream.Subscribe(x => logger.LogInformation($"EventStream reply: {x.Name}"));
         }
 
-        public void Activate()
+        public async Task ActivateAsync()
         {
-            actorFactory.GetActor<DIActor>().Tell(new DIActor.Ping("no-name"));
-            actorFactory.GetActor<DIActor>("named").Tell(new DIActor.Ping("named"));
+            await actorFactory.GetActor<DIActor>().SendAsync(new DIActor.Ping("no-name"));
+            await actorFactory.GetActor<DIActor>("named").SendAsync(new DIActor.Ping("named"));
         }
     }
 }

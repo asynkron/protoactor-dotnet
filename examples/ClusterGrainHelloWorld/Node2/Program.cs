@@ -28,11 +28,15 @@ namespace Node2
     {
         static void Main(string[] args)
         {
+        }
+        
+        public static async Task Main2()
+        {
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);          
             Grains.HelloGrainFactory(() => new HelloGrain());
            
             Remote.Start("127.0.0.1", 12000);
-            Cluster.Start("MyCluster", new ConsulProvider(new ConsulProviderOptions()));
+            await Cluster.StartAsync("MyCluster", new ConsulProvider(new ConsulProviderOptions()));
 
             Console.ReadLine();
         }

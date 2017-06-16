@@ -103,9 +103,9 @@ namespace Proto
             _stash.Push(Message);
         }
 
-        public void Respond(object message)
+        public Task RespondAsync(object message)
         {
-            Sender.Tell(message);
+            return Sender.SendAsync(message);
         }
 
         public PID Spawn(Props props)
@@ -132,14 +132,14 @@ namespace Proto
            return pid;
         }
 
-        public void Watch(PID pid)
+        public Task WatchAsync(PID pid)
         {
-            pid.SendSystemMessage(new Watch(Self));
+            return pid.SendSystemMessageAsync(new Watch(Self));
         }
 
-        public void Unwatch(PID pid)
+        public Task UnwatchAsync(PID pid)
         {
-            pid.SendSystemMessage(new Unwatch(Self));
+            return pid.SendSystemMessageAsync(new Unwatch(Self));
         }
 
         public void SetReceiveTimeout(TimeSpan duration)
@@ -188,26 +188,24 @@ namespace Proto
                     case Terminated t:
                         return HandleTerminatedAsync(t);
                     case Watch w:
-                        HandleWatch(w);
-                        return Task.FromResult(0);
+                        return HandleWatchAsync(w);
                     case Unwatch uw:
                         HandleUnwatch(uw);
-                        return Task.FromResult(0);
+                        return Proto.Actor.Done;
                     case Failure f:
-                        HandleFailure(f);
-                        return Task.FromResult(0);
+                        return HandleFailureAsync(f);
                     case Restart _:
                         return HandleRestartAsync();
                     case SuspendMailbox _:
-                        return Task.FromResult(0);
+                        return Proto.Actor.Done;
                     case ResumeMailbox _:
-                        return Task.FromResult(0);
+                        return Proto.Actor.Done;
                     case Continuation cont:
                         _message = cont.Message;
                         return cont.Action();
                     default:
                         Logger.LogWarning("Unknown system message {0}", msg);
-                        return Task.FromResult(0);
+                        return Proto.Actor.Done;
                 }
             }
             catch (Exception x)
@@ -245,12 +243,12 @@ namespace Proto
             return res;
         }
 
-        public void EscalateFailure(Exception reason, object message)
+        public Task EscalateFailureAsync(Exception reason, object message)
         {
-            EscalateFailure(reason, Self);
+            return EscalateFailureAsync(reason, Self);
         }
 
-        public void EscalateFailure(Exception reason, PID who)
+        public async Task EscalateFailureAsync(Exception reason, PID who)
         {
             if (_restartStatistics == null)
             {
@@ -259,71 +257,60 @@ namespace Proto
             var failure = new Failure(who, reason, _restartStatistics);
             if (Parent == null)
             {
-                HandleRootFailure(failure);
+                await HandleRootFailureAsync(failure);
             }
             else
             {
-                Self.SendSystemMessage(SuspendMailbox.Instance);
-                Parent.SendSystemMessage(failure);
+                await Self.SendSystemMessageAsync(SuspendMailbox.Instance);
+                await Parent.SendSystemMessageAsync(failure);
             }
         }
 
-        public void RestartChildren(Exception reason, params PID[] pids)
+        public async Task RestartChildrenAsync(Exception reason, params PID[] pids)
         {
-            foreach (var pid in pids)
-            {
-                pid.SendSystemMessage(new Restart(reason));
-            }
+            await Task.WhenAll(pids.Select(x => x.SendSystemMessageAsync(new Restart(reason))));
         }
 
-        public void StopChildren(params PID[] pids)
+        public async Task StopChildrenAsync(params PID[] pids)
         {
-            foreach (var pid in pids)
-            {
-                pid.SendSystemMessage(Stop.Instance);
-            }
+                await Task.WhenAll(pids.Select(x => x.SendSystemMessageAsync(Stop.Instance)));
         }
 
-        public void ResumeChildren(params PID[] pids)
+        public async Task ResumeChildrenAsync(params PID[] pids)
         {
-            foreach (var pid in pids)
-            {
-                pid.SendSystemMessage(ResumeMailbox.Instance);
-            }
+            await Task.WhenAll(pids.Select(x => x.SendSystemMessageAsync(ResumeMailbox.Instance)));
         }
 
-        internal static Task DefaultReceive(IContext context)
+        internal static Task DefaultReceiveAsync(IContext context)
         {
             var c = (LocalContext) context;
             if (c.Message is PoisonPill)
             {
-                c.Self.Stop();
-                return Proto.Actor.Done;
+                return c.Self.StopAsync();
             }
             return c.Actor.ReceiveAsync(context);
         }
 
         internal static Task DefaultSender(ISenderContext context, PID target, MessageEnvelope envelope)
         {
-            target.Ref.SendUserMessage(target, envelope);
-            return Task.FromResult(0);
+            return target.Ref.SendUserMessageAsync(target, envelope);
         }
 
         private Task ProcessMessageAsync(object msg)
         {
             _message = msg;
-            return _receiveMiddleware != null ? _receiveMiddleware(this) : DefaultReceive(this);
+            return _receiveMiddleware != null ? _receiveMiddleware(this) : DefaultReceiveAsync(this);
         }
 
-        public void Tell(PID target, object message)
+        public Task SendAsync(PID target, object message)
         {
-            SendUserMessage(target, message);
+            return SendUserMessageAsync(target, message);
         }
 
-        public void Request(PID target, object message)
+        public Task RequestAsync(PID target, object message)
         {
             var messageEnvelope = new MessageEnvelope(message, Self, null);
-            SendUserMessage(target, messageEnvelope);
+            return SendUserMessageAsync(target, messageEnvelope);
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
@@ -335,32 +322,32 @@ namespace Proto
         public Task<T> RequestAsync<T>(PID target, object message)
             => RequestAsync(target, message, new FutureProcess<T>());
 
-        private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
+        private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
         {
             var messageEnvelope = new MessageEnvelope(message, future.Pid, null);
-            SendUserMessage(target, messageEnvelope);
-            return future.Task;
+            await SendUserMessageAsync(target, messageEnvelope);
+            return await future.Task;
         }
 
-        private void SendUserMessage(PID target, object message)
+        private Task SendUserMessageAsync(PID target, object message)
         {
             if (_senderMiddleware != null)
             {
                 if (message is MessageEnvelope messageEnvelope)
                 {
                     //Request based middleware
-                    _senderMiddleware(this, target, messageEnvelope);
+                    return _senderMiddleware(this, target, messageEnvelope);
                 }
                 else
                 {
                     //tell based middleware
-                    _senderMiddleware(this, target, new MessageEnvelope(message, null, null));
+                    return _senderMiddleware(this, target, new MessageEnvelope(message, null, null));
                 }
             }
             else
             {
                 //Default path
-                target.Tell(message);
+                return target.SendAsync(message);
             }
         }
 
@@ -378,7 +365,7 @@ namespace Proto
             {
                 foreach (var child in _children)
                 {
-                    child.Stop();
+                    await child.StopAsync();
                 }
             }
             await TryRestartOrTerminateAsync();
@@ -389,11 +376,11 @@ namespace Proto
             _watchers?.Remove(uw.Watcher);
         }
 
-        private void HandleWatch(Watch w)
+        private Task HandleWatchAsync(Watch w)
         {
             if (_state == ContextState.Stopping)
             {
-                w.Watcher.SendSystemMessage(new Terminated()
+                return w.Watcher.SendSystemMessageAsync(new Terminated()
                 {
                     Who = Self
                 });
@@ -405,18 +392,18 @@ namespace Proto
                     _watchers = new FastSet<PID>();
                 }
                 _watchers.Add(w.Watcher);
+                return Proto.Actor.Done;
             }
         }
 
-        private void HandleFailure(Failure msg)
+        private Task HandleFailureAsync(Failure msg)
         {
             // ReSharper disable once SuspiciousTypeConversion.Global
             if (Actor is ISupervisorStrategy supervisor)
             {
-                supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
-                return;
+                return supervisor.HandleFailureAsync(this, msg.Who, msg.RestartStatistics, msg.Reason);
             }
-            _supervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
+            return _supervisorStrategy.HandleFailureAsync(this, msg.Who, msg.RestartStatistics, msg.Reason);
         }
 
         private async Task HandleTerminatedAsync(Terminated msg)
@@ -426,9 +413,9 @@ namespace Proto
             await TryRestartOrTerminateAsync();
         }
 
-        private void HandleRootFailure(Failure failure)
+        private Task HandleRootFailureAsync(Failure failure)
         {
-            Supervision.DefaultStrategy.HandleFailure(this, failure.Who, failure.RestartStatistics, failure.Reason);
+            return Supervision.DefaultStrategy.HandleFailureAsync(this, failure.Who, failure.RestartStatistics, failure.Reason);
         }
 
         private async Task HandleStopAsync()
@@ -440,7 +427,7 @@ namespace Proto
             {
                 foreach (var child in _children)
                 {
-                    child.Stop();
+                    await child.StopAsync();
                 }
             }
             await TryRestartOrTerminateAsync();
@@ -488,7 +475,7 @@ namespace Proto
                 };
                 foreach (var watcher in _watchers)
                 {
-                    watcher.SendSystemMessage(terminated);
+                    await watcher.SendSystemMessageAsync(terminated);
                 }
             }
             if (Parent != null)
@@ -497,7 +484,7 @@ namespace Proto
                 {
                     Who = Self
                 };
-                Parent.SendSystemMessage(terminated);
+                await Parent.SendSystemMessageAsync(terminated);
             }
         }
 
@@ -505,7 +492,7 @@ namespace Proto
         {
             DisposeActorIfDisposable();
             IncarnateActor();
-            Self.SendSystemMessage(ResumeMailbox.Instance);
+            await Self.SendSystemMessageAsync(ResumeMailbox.Instance);
 
             await InvokeUserMessageAsync(Started.Instance);
             if (_stash != null)
@@ -538,7 +525,7 @@ namespace Proto
 
         private void ReceiveTimeoutCallback(object state)
         {
-            Self.Request(Proto.ReceiveTimeout.Instance, null);
+            Self.RequestAsync(Proto.ReceiveTimeout.Instance, null).GetAwaiter().GetResult();
         }
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
@@ -546,7 +533,7 @@ namespace Proto
             var msg = _message;
             var cont = new Continuation(() => action(target), msg);
 
-            target.ContinueWith(t => { Self.SendSystemMessage(cont); });
+            target.ContinueWith(t => { Self.SendSystemMessageAsync(cont); });
         }
     }
 }

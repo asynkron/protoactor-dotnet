@@ -15,7 +15,7 @@ namespace Proto.Cluster
     {
         private static readonly ILogger _logger = Log.CreateLogger(typeof(Cluster).FullName);
 
-        public static void Start(string clusterName, IClusterProvider provider)
+        public static async Task StartAsync(string clusterName, IClusterProvider provider)
         {
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             _logger.LogInformation("Starting Proto.Actor cluster");
@@ -26,7 +26,7 @@ namespace Proto.Cluster
             PidCache.Spawn();
             MemberList.Spawn();
             MemberList.SubscribeToEventStream();
-            provider.RegisterMemberAsync(clusterName, h, p, kinds).Wait();
+            await provider.RegisterMemberAsync(clusterName, h, p, kinds);
             provider.MonitorMemberStatusChanges();
             _logger.LogInformation("Cluster started");
         }

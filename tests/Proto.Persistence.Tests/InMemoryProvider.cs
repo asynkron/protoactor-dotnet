@@ -41,7 +41,7 @@ namespace Proto.Persistence.Tests
                     callback(e.Value);
                 }
             }
-            return Task.FromResult(0);
+            return Actor.Done;
         }
 
         public Task PersistEventAsync(string actorName, long index, object @event)
@@ -54,7 +54,7 @@ namespace Proto.Persistence.Tests
             }
             events.Add(nextEventIndex, @event);
 
-            return Task.FromResult(0);
+            return Actor.Done;
         }
 
         public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
@@ -65,7 +65,7 @@ namespace Proto.Persistence.Tests
 
             snapshots.Add(index, copy);
 
-            return Task.FromResult(0);
+            return Actor.Done;
         }
 
         public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
@@ -79,7 +79,7 @@ namespace Proto.Persistence.Tests
 
             eventsToRemove.ForEach(key => events.Remove(key));
 
-            return Task.FromResult(0);
+            return Actor.Done;
         }
 
         public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
@@ -93,7 +93,7 @@ namespace Proto.Persistence.Tests
 
             snapshotsToRemove.ForEach(key => snapshots.Remove(key));
 
-            return Task.FromResult(0);
+            return Actor.Done;
         }
     }
 }
