@@ -61,11 +61,6 @@ namespace Proto.Cluster.Consul
             _id = $"{clusterName}@{host}:{port}";
             _clusterName = clusterName;
             _index = 0;
-            _serviceTtl = TimeSpan.FromSeconds(3);
-            _refreshTtl = TimeSpan.FromSeconds(1);
-            _deregisterCritical = TimeSpan.FromSeconds(10);
-            _blockingWaitTime = TimeSpan.FromSeconds(20);
-
 
             var s = new AgentServiceRegistration
                     {
