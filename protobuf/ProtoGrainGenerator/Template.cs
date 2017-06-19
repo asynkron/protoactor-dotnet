@@ -91,7 +91,7 @@ namespace {{CsNamespace}}
                     switch (request.Method)
                     {
 						{{#each Methods}}
-                        case ""SayHello"":
+                        case ""{{Name}}"":
                         {
                             var r = {{InputName}}.Parser.ParseFrom(request.MessageData);
                             try
