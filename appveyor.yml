@@ -8,9 +8,6 @@ environment:
   # Don't report back to the mothership
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
 
-pull_requests:
-  do_not_increment_build_number: true
-
 branches:
   only:
   - master
