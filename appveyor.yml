@@ -35,8 +35,8 @@ after_test:
 artifacts:
 - path: out\*
 
-deploy:
-- .\Cake\Cake.exe --target=Push --mygetApiKey=%MYGET_API_KEY%
+deploy_script:
+  - .\Cake\Cake.exe --target=Push --mygetApiKey=%MYGET_API_KEY%
 
 notifications:
   - provider: Webhook
