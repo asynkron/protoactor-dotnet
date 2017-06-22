@@ -19,7 +19,7 @@ if (currentBranch != "master") {
 
 bool IsPRBuild()
 {
-    return EnvironmentVariable<string>("APPVEYOR_PULL_REQUEST_TITLE") != null;
+    return EnvironmentVariable("APPVEYOR_PULL_REQUEST_TITLE") != null;
 }
 
 Information("Version: " + packageVersion);
@@ -83,7 +83,7 @@ Task("Pack")
             });
         }
     });
-    
+
 Task("Push")
     .Does(() => 
     {
