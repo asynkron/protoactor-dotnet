@@ -92,10 +92,12 @@ namespace Proto
         /// <summary>
         ///     Sets the receive timeout. If no message is received for the given duration, a ReceiveTimeout message will be sent
         ///     to the actor. If a message is received within the given duration, the timer is reset, unless the message implements
-        ///     INotInfluenceReceiveTimeout. Setting a duration of less than 1ms will disable the timer.
+        ///     INotInfluenceReceiveTimeout.
         /// </summary>
         /// <param name="duration">The receive timeout duration</param>
         void SetReceiveTimeout(TimeSpan duration);
+
+        void CancelReceiveTimeout();
 
         Task ReceiveAsync(object message);
         void Tell(PID target, object message);
