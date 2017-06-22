@@ -8,6 +8,7 @@ environment:
 before_build:
 - nuget install Cake -ExcludeVersion
 build_script:
+- .\Cake\Cake.exe --target=PatchVersion
 - .\Cake\Cake.exe --target=Restore
 - .\Cake\Cake.exe --target=Build --buildNumber=%APPVEYOR_BUILD_NUMBER% --currentBranch=%APPVEYOR_REPO_BRANCH%
 test_script:
