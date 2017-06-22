@@ -144,30 +144,35 @@ namespace Proto
 
         public void SetReceiveTimeout(TimeSpan duration)
         {
+            if (duration <= TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(duration), duration, "Duration must be greater than zero");
+            }
+            
             if (duration == ReceiveTimeout)
             {
                 return;
             }
-            if (duration > TimeSpan.Zero)
-            {
-                StopReceiveTimeout();
-            }
-            if (duration < TimeSpan.FromMilliseconds(1))
-            {
-                duration = TimeSpan.FromMilliseconds(1);
-            }
+            
+            StopReceiveTimeout();
             ReceiveTimeout = duration;
-            if (ReceiveTimeout > TimeSpan.Zero)
+            
+            if (_receiveTimeoutTimer == null)
             {
-                if (_receiveTimeoutTimer == null)
-                {
-                    _receiveTimeoutTimer = new Timer(ReceiveTimeoutCallback, null, ReceiveTimeout, ReceiveTimeout);
-                }
-                else
-                {
-                    ResetReceiveTimeout();
-                }
+                _receiveTimeoutTimer = new Timer(ReceiveTimeoutCallback, null, ReceiveTimeout, ReceiveTimeout);
             }
+            else
+            {
+                ResetReceiveTimeout();
+            }
+        }
+
+        public void CancelReceiveTimeout()
+        {
+            if (_receiveTimeoutTimer == null) return;
+            StopReceiveTimeout();
+            _receiveTimeoutTimer = null;
+            ReceiveTimeout = TimeSpan.Zero;
         }
 
         public Task ReceiveAsync(object message)
@@ -448,12 +453,7 @@ namespace Proto
 
         private async Task TryRestartOrTerminateAsync()
         {
-            if (_receiveTimeoutTimer != null)
-            {
-                StopReceiveTimeout();
-                _receiveTimeoutTimer = null;
-                ReceiveTimeout = TimeSpan.Zero;
-            }
+            CancelReceiveTimeout();
 
             if (_children?.Count > 0)
             {
