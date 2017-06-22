@@ -3,10 +3,8 @@ language: csharp
 solution: ProtoActor.sln
 matrix:
   include:
-    - dotnet: 1.0.0-preview4-004233
+    - dotnet: 1.0.4
       mono: none
       env: DOTNETCORE=1
 script:
-  - dotnet restore
-  - dotnet build
-  - dotnet test ./tests/Proto.Actor.Tests/Proto.Actor.Tests.csproj
+  - ./build.sh

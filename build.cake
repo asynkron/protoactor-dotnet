@@ -26,18 +26,19 @@ Task("PatchVersion")
             XmlPoke(proj, "/Project/PropertyGroup/Version", packageVersion);
         }
     });
+
 Task("Restore")
-    .IsDependentOn("PatchVersion")
     .Does(() => {
         DotNetCoreRestore();
     });
+
 Task("Build")
-    .IsDependentOn("Restore")
     .Does(() => {
         DotNetCoreBuild("ProtoActor.sln", new DotNetCoreBuildSettings {
             Configuration = configuration,
         });
     });
+
 Task("UnitTest")
     .Does(() => {
         foreach(var proj in GetFiles("tests/**/*.Tests.csproj")) {
@@ -47,6 +48,7 @@ Task("UnitTest")
             });
         }
     });
+
 Task("Pack")
     .Does(() => {
         foreach(var proj in GetFiles("src/**/*.csproj")) {
@@ -70,10 +72,7 @@ Task("Push")
 
 Task("Default")
     .IsDependentOn("Restore")
-    .IsDependentOn("PatchVersion")
     .IsDependentOn("Build")
-    .IsDependentOn("UnitTest")
-    .IsDependentOn("Pack")
-    ;
+    .IsDependentOn("UnitTest");
 
 RunTarget(target);
