@@ -62,20 +62,21 @@ namespace Proto.Remote
                             targetNameList.Add(targetName);
                         }
 
-                        var typeName = rd.Message.Descriptor.File.Package + "." + rd.Message.Descriptor.Name;
+                        var typeName = Serialization.GetTypeName(rd.Message, rd.SerializerId);
                         if (!typeNames.TryGetValue(typeName, out var typeId))
                         {
                             typeId = typeNames[typeName] = typeNames.Count;
                             typeNameList.Add(typeName);
                         }
 
-                        var bytes = Serialization.Serialize(rd.Message);
+                        var bytes = Serialization.Serialize(rd.Message,rd.SerializerId);
                         var envelope = new MessageEnvelope
                         {
                             MessageData = bytes,
                             Sender = rd.Sender,
                             Target = targetId,
                             TypeId = typeId,
+                            SerializerId = rd.SerializerId,
                         };
                         envelopes.Add(envelope);
                     }

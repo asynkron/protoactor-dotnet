@@ -42,17 +42,17 @@ namespace Proto.Remote
             }
             else
             {
-                SendRemoteMessage(_pid, msg);
+                SendRemoteMessage(_pid, msg,Serialization.DefaultSerializerId);
             }
         }
 
-        public static void SendRemoteMessage(PID pid, object msg)
+        public static void SendRemoteMessage(PID pid, object msg,int serializerId)
         {
             var (message, sender, _) = Proto.MessageEnvelope.Unwrap(msg);
 
             if (message is IMessage protoMessage)
             {
-                var env = new RemoteDeliver(protoMessage, pid, sender);
+                var env = new RemoteDeliver(protoMessage, pid, sender, serializerId);
                 Remote.EndpointManagerPid.Tell(env);
             }
             else
@@ -64,14 +64,17 @@ namespace Proto.Remote
 
     public class RemoteDeliver
     {
-        public RemoteDeliver(IMessage message, PID target,PID sender)
+        public RemoteDeliver(object message, PID target,PID sender,int serializerId)
         {
             Message = message;
             Target = target;
             Sender = sender;
+            SerializerId = serializerId;
         }
-        public IMessage Message { get;  }
+        public object Message { get;  }
         public PID Target { get;  }
         public PID Sender { get;  }
+
+        public int SerializerId { get; }
     }
 }
