@@ -67,27 +67,24 @@ namespace Proto.Remote
             DefaultSerializerId = 0;
         }
 
+        public static void RegisterSerializer(ISerializer serializer, bool makeDefault = false)
+        {
+            Serializers.Add(serializer);
+            if (makeDefault)
+            {
+                DefaultSerializerId = Serializers.Count - 1;
+            }
+        }
+
         public static int DefaultSerializerId { get; set; }
 
         //TODO: remove from this class and let users register on the protobuf serializer?
-        public static void RegisterFileDescriptor(FileDescriptor fd)
-        {
-            ProtoBufSerializer.RegisterFileDescriptor(fd);
-        }
+        public static void RegisterFileDescriptor(FileDescriptor fd) => ProtoBufSerializer.RegisterFileDescriptor(fd);
 
-        public static ByteString Serialize(object message,int serializerId)
-        {
-            return Serializers[serializerId].Serialize(message);
-        }
+        public static ByteString Serialize(object message,int serializerId) => Serializers[serializerId].Serialize(message);
 
-        public static string GetTypeName(object message, int serializerId)
-        {
-            return Serializers[serializerId].GetTypeName(message);
-        }
+        public static string GetTypeName(object message, int serializerId) => Serializers[serializerId].GetTypeName(message);
 
-        public static object Deserialize(string typeName, ByteString bytes, int serializerId)
-        {
-            return Serializers[serializerId].Deserialize(bytes, typeName);
-        }
+        public static object Deserialize(string typeName, ByteString bytes, int serializerId) => Serializers[serializerId].Deserialize(bytes, typeName);
     }
 }
