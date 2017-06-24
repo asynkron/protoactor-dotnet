@@ -17,32 +17,49 @@ if (currentBranch != "master") {
     packageVersion += versionSuffix;
 }
 
+bool IsPRBuild()
+{
+    return EnvironmentVariable("APPVEYOR_PULL_REQUEST_TITLE") != null;
+}
+
 Information("Version: " + packageVersion);
 
 Task("PatchVersion")
-    .Does(() => {
-        foreach(var proj in GetFiles("src/**/*.csproj")) {
+    .Does(() => 
+    {
+        if (IsPRBuild())
+        {
+            return;
+        }
+        foreach(var proj in GetFiles("src/**/*.csproj")) 
+        {
             Information("Patching " + proj);
             XmlPoke(proj, "/Project/PropertyGroup/Version", packageVersion);
         }
     });
 
 Task("Restore")
-    .Does(() => {
+    .Does(() => 
+    {
         DotNetCoreRestore();
     });
 
 Task("Build")
-    .Does(() => {
-        DotNetCoreBuild("ProtoActor.sln", new DotNetCoreBuildSettings {
+    .Does(() => 
+    {
+        DotNetCoreBuild("ProtoActor.sln", new DotNetCoreBuildSettings 
+        {
             Configuration = configuration,
         });
     });
 
 Task("UnitTest")
-    .Does(() => {
-        foreach(var proj in GetFiles("tests/**/*.Tests.csproj")) {
-            DotNetCoreTest(proj.ToString(), new DotNetCoreTestSettings {
+    .Does(() => 
+    {
+        foreach(var proj in GetFiles("tests/**/*.Tests.csproj")) 
+        {
+            DotNetCoreTest(proj.ToString(), new DotNetCoreTestSettings 
+            {
                 NoBuild = true,
                 Configuration = configuration
             });
@@ -50,20 +67,35 @@ Task("UnitTest")
     });
 
 Task("Pack")
-    .Does(() => {
-        foreach(var proj in GetFiles("src/**/*.csproj")) {
-            DotNetCorePack(proj.ToString(), new DotNetCorePackSettings {
+    .Does(() => 
+    {
+        if (IsPRBuild())
+        {
+            return;
+        }
+        foreach(var proj in GetFiles("src/**/*.csproj")) 
+        {
+            DotNetCorePack(proj.ToString(), new DotNetCorePackSettings 
+            {
                 OutputDirectory = "out",
                 Configuration = configuration,
                 NoBuild = true,
             });
         }
     });
+
 Task("Push")
-    .Does(() => {
+    .Does(() => 
+    {
+        if (IsPRBuild())
+        {
+            return;
+        }
         var pkgs = GetFiles("out/*.nupkg");
-        foreach(var pkg in pkgs) {
-            NuGetPush(pkg, new NuGetPushSettings {
+        foreach(var pkg in pkgs) 
+        {
+            NuGetPush(pkg, new NuGetPushSettings 
+            {
                 Source = "https://www.myget.org/F/protoactor/api/v2/package",
                 ApiKey = mygetApiKey
             });
