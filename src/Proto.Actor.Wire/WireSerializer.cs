@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using Google.Protobuf;
 using Proto.Remote;
 using Wire;
@@ -7,7 +8,12 @@ namespace Proto.Serialization
 {
     public class WireSerializer : ISerializer
     {
-        private readonly Serializer _serializer = new Serializer();
+        private readonly Serializer _serializer;
+
+        public WireSerializer(IEnumerable<System.Type> knownTypes)
+        {
+            _serializer = new Serializer(new SerializerOptions(knownTypes: knownTypes));
+        }
         
         public ByteString Serialize(object obj)
         {

@@ -46,19 +46,12 @@ namespace Proto.Remote
             }
         }
 
-        public static void SendRemoteMessage(PID pid, object msg,int serializerId)
+        public static void SendRemoteMessage(PID pid, object msg, int serializerId)
         {
             var (message, sender, _) = Proto.MessageEnvelope.Unwrap(msg);
 
-            if (message is IMessage protoMessage)
-            {
-                var env = new RemoteDeliver(protoMessage, pid, sender, serializerId);
-                Remote.EndpointManagerPid.Tell(env);
-            }
-            else
-            {
-                throw new NotSupportedException("Non protobuf message");
-            }
+            var env = new RemoteDeliver(message, pid, sender, serializerId);
+            Remote.EndpointManagerPid.Tell(env);
         }
     }
 
