@@ -105,8 +105,10 @@ namespace Proto.Remote
             }
         }
 
+        //shutdown channel before restarting
         private Task RestartingAsync() => _channel.ShutdownAsync();
 
+        //shutdown channel before stopping
         private Task StoppedAsync() => _channel.ShutdownAsync();
 
         private Task StartedAsync()

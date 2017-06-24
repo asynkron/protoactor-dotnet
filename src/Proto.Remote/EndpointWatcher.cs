@@ -13,13 +13,21 @@ namespace Proto.Remote
     {
         private readonly Dictionary<string, PID> _watched = new Dictionary<string, PID>();
         private string _address; //for logging
+        private readonly Behavior _behavior;
 
-        public EndpointWatcher(string address)
+        public EndpointWatcher(string address, Behavior behavior)
         {
             _address = address;
+            _behavior = behavior;
+            _behavior.Become(ConnectedAsync);
         }
 
         public Task ReceiveAsync(IContext context)
+        {
+            return _behavior.ReceiveAsync(context);
+        }
+
+        public Task ConnectedAsync(IContext context)
         {
             switch (context.Message)
             {
@@ -49,6 +57,8 @@ namespace Proto.Remote
                         //send the address Terminated event to the Watcher
                         watcher.SendSystemMessage(t);
                     }
+
+                    _behavior.Become(TerminatedAsync);
                     break;
                 }
                 case RemoteUnwatch msg:
@@ -65,6 +75,35 @@ namespace Proto.Remote
 
                     var w = new Watch(msg.Watcher);
                     RemoteProcess.SendRemoteMessage(msg.Watchee, w, Serialization.DefaultSerializerId);
+                    break;
+                }
+            }
+            return Actor.Done;
+        }
+
+        public Task TerminatedAsync(IContext context)
+        {
+            switch (context.Message)
+            {
+                case RemoteWatch msg:
+                {
+                    msg.Watcher.SendSystemMessage(new Terminated
+                    {
+                        AddressTerminated = true,
+                        Who = msg.Watchee
+                    });
+                    break;
+                }
+                case RemoteUnwatch _:
+                case EndpointTerminatedEvent _:
+                case RemoteTerminate _:
+                {
+                    //pass 
+                    break;
+                }
+                default:
+                {
+                    //TODO: log error
                     break;
                 }
             }

@@ -23,7 +23,7 @@ namespace Proto.Remote
         public PID Watcher { get; }
     }
 
-    public class EndpointManager : IActor
+    public class EndpointManager : IActor, ISupervisorStrategy
     {
         private readonly RemoteConfig _config;
         private readonly Dictionary<string, Endpoint> _connections = new Dictionary<string, Endpoint>();
@@ -98,7 +98,7 @@ namespace Proto.Remote
 
         private static PID SpawnWatcher(string address, IContext context)
         {
-            var watcherProps = Actor.FromProducer(() => new EndpointWatcher(address));
+            var watcherProps = Actor.FromProducer(() => new EndpointWatcher(address, new Behavior()));
             var watcher = context.Spawn(watcherProps);
             return watcher;
         }
@@ -110,6 +110,11 @@ namespace Proto.Remote
                     .WithMailbox(() => new EndpointWriterMailbox(_config.EndpointWriterBatchSize));
             var writer = context.Spawn(writerProps);
             return writer;
+        }
+
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause)
+        {
+            supervisor.RestartChildren(cause,child);
         }
     }
 }
