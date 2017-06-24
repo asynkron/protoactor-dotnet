@@ -58,7 +58,7 @@ namespace Proto.Remote
                         var targetName = rd.Target.Id;
                         if (!targetNames.TryGetValue(targetName, out var targetId))
                         {
-                            targetId = targetNames[targetName] = typeNames.Count;
+                            targetId = targetNames[targetName] = targetNames.Count;
                             targetNameList.Add(targetName);
                         }
 
