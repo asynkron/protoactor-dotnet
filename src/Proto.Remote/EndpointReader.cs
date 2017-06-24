@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
@@ -28,7 +29,8 @@ namespace Proto.Remote
                     var target = new PID(ProcessRegistry.Instance.Address, targetName);
                     var sender = envelope.Sender;
                     var typeName = typeNames[envelope.TypeId];
-                    var message = Serialization.Deserialize(typeName, envelope.MessageData);
+
+                    var message = Serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
 
                     if (message is Terminated msg)
                     {
