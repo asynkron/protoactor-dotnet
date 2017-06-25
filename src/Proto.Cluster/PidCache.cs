@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Remote;
+using Proto.Router;
 
 namespace Proto.Cluster
 {
@@ -27,7 +28,7 @@ namespace Proto.Cluster
         }
     }
 
-    internal class PidCacheRequest : Router.IHashable
+    internal class PidCacheRequest : IHashable
     {
         public PidCacheRequest(string name, string kind)
         {
@@ -46,8 +47,8 @@ namespace Proto.Cluster
 
     internal class PidCachePartitionActor : IActor
     {
-        private readonly ILogger _logger = Log.CreateLogger<PidCachePartitionActor>();
         private readonly Dictionary<string, PID> _cache = new Dictionary<string, PID>();
+        private readonly ILogger _logger = Log.CreateLogger<PidCachePartitionActor>();
         private readonly Dictionary<string, string> _reverseCache = new Dictionary<string, string>();
 
         public Task ReceiveAsync(IContext context)
@@ -72,9 +73,9 @@ namespace Proto.Cluster
             if (_cache.TryGetValue(msg.Name, out var pid))
             {
                 context.Respond(new ActorPidResponse
-                                {
-                                    Pid = pid
-                                });
+                {
+                    Pid = pid
+                });
                 return; //found the pid, replied, exit
             }
 
@@ -85,10 +86,10 @@ namespace Proto.Cluster
             {
                 var remotePid = Partition.PartitionForKind(address.Result, kind);
                 var req = new ActorPidRequest
-                          {
-                              Kind = kind,
-                              Name = name
-                          };
+                {
+                    Kind = kind,
+                    Name = name
+                };
                 var resp = remotePid.RequestAsync<ActorPidResponse>(req);
                 context.ReenterAfter(resp, t =>
                 {
