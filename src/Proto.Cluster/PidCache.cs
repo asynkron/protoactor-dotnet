@@ -12,22 +12,22 @@ using Proto.Remote;
 
 namespace Proto.Cluster
 {
-    public static class PidCache
+    internal static class PidCache
     {
         //arbitrary value, number of partitions used in the PidCache.
         //the intention is just to reduce contention on too few actors when doing Pid lookups
         private const int PartitionCount = 100;
 
-        public static PID Pid { get; private set; }
+        internal static PID Pid { get; private set; }
 
-        public static void Spawn()
+        internal static void Spawn()
         {
             var props = Router.Router.NewConsistentHashPool(Actor.FromProducer(() => new PidCachePartitionActor()), PartitionCount);
             Pid = Actor.SpawnNamed(props, "pidcache");
         }
     }
 
-    public class PidCacheRequest : Router.IHashable
+    internal class PidCacheRequest : Router.IHashable
     {
         public PidCacheRequest(string name, string kind)
         {
@@ -44,7 +44,7 @@ namespace Proto.Cluster
         }
     }
 
-    public class PidCachePartitionActor : IActor
+    internal class PidCachePartitionActor : IActor
     {
         private readonly ILogger _logger = Log.CreateLogger<PidCachePartitionActor>();
         private readonly Dictionary<string, PID> _cache = new Dictionary<string, PID>();
