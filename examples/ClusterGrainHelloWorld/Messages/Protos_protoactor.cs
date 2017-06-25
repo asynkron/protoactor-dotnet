@@ -1,5 +1,6 @@
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Proto;
@@ -10,7 +11,6 @@ namespace Messages
 {
     public static class Grains
     {
-			
         internal static Func<IHelloGrain> _HelloGrainFactory;
 
         public static void HelloGrainFactory(Func<IHelloGrain> factory) 
@@ -20,15 +20,11 @@ namespace Messages
         } 
 
         public static HelloGrainClient HelloGrain(string id) => new HelloGrainClient(id);
-			
     }
 
-		
     public interface IHelloGrain
     {
-		
         Task<HelloResponse> SayHello(HelloRequest request);
-		
     }
 
     public class HelloGrainClient
@@ -40,27 +36,52 @@ namespace Messages
             _id = id;
         }
 
-		
-        public async Task< HelloResponse> SayHello( HelloRequest request)
+        public Task<HelloResponse> SayHello(HelloRequest request) => SayHello(request, CancellationToken.None);
+
+        public async Task<HelloResponse> SayHello(HelloRequest request, CancellationToken ct)
         {
-            var pid = await Cluster.GetAsync(_id, "HelloGrain");
+            
             var gr = new GrainRequest
             {
                 Method = "SayHello",
                 MessageData = request.ToByteString()
             };
-            var res = await pid.RequestAsync<object>(gr);
-            if (res is GrainResponse grainResponse)
+
+            async Task<HelloResponse> Inner() 
             {
-                return HelloResponse.Parser.ParseFrom(grainResponse.MessageData);
+                //resolve the grain
+                var pid = await Cluster.GetAsync(_id, "HelloGrain", ct);
+
+                //request the RPC method to be invoked
+                var res = await pid.RequestAsync<object>(gr, ct);
+
+                //did we get a response?
+                if (res is GrainResponse grainResponse)
+                {
+                    return HelloResponse.Parser.ParseFrom(grainResponse.MessageData);
+                }
+
+                //did we get an error response?
+                if (res is GrainErrorResponse grainErrorResponse)
+                {
+                    throw new Exception(grainErrorResponse.Err);
+                }
+                throw new NotSupportedException();
             }
-            if (res is GrainErrorResponse grainErrorResponse)
+
+            for(int i= 0;i < 4; i++)
             {
-                throw new Exception(grainErrorResponse.Err);
+                try
+                {
+                    return await Inner();
+                }
+                catch(Exception x)
+                {
+                    //ignore, TODO: exponential backoff?
+                }
             }
-            throw new NotSupportedException();
+            return await Inner();
         }
-		
     }
 
     public class HelloGrainActor : IActor
@@ -80,7 +101,6 @@ namespace Messages
                 {
                     switch (request.Method)
                     {
-						
                         case "SayHello":
                         {
                             var r = HelloRequest.Parser.ParseFrom(request.MessageData);
@@ -104,7 +124,6 @@ namespace Messages
 
                             break;
                         }
-						
                     }
 
                     break;
@@ -112,6 +131,5 @@ namespace Messages
             }
         }
     }
-		
 }
 

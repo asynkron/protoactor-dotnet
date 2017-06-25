@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Remote;
@@ -39,10 +40,12 @@ namespace Proto.Cluster
             return (host, port);
         }
 
-        public static async Task<PID> GetAsync(string name, string kind)
+        public static Task<PID> GetAsync(string name, string kind) => GetAsync(name, kind, CancellationToken.None);
+
+        public static async Task<PID> GetAsync(string name, string kind, CancellationToken ct)
         {
             var req = new PidCacheRequest(name, kind);
-            var res = await PidCache.Pid.RequestAsync<ActorPidResponse>(req);
+            var res = await PidCache.Pid.RequestAsync<ActorPidResponse>(req, ct);
             return res.Pid;
         }
     }

@@ -10,6 +10,7 @@ namespace ProtoBuf
     {
         public static string Code = @"
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Proto;
@@ -51,24 +52,51 @@ namespace {{CsNamespace}}
         }
 
 		{{#each Methods}}
-        public async Task<{{OutputName}}> {{Name}}({{InputName}} request)
+        public Task<{{OutputName}}> {{Name}}({{InputName}} request) => {{Name}}(request, CancellationToken.None);
+
+        public async Task<{{OutputName}}> {{Name}}({{InputName}} request, CancellationToken ct)
         {
-            var pid = await Cluster.GetAsync(_id, ""{{../Name}}"");
+            
             var gr = new GrainRequest
             {
                 Method = ""{{Name}}"",
                 MessageData = request.ToByteString()
             };
-            var res = await pid.RequestAsync<object>(gr);
-            if (res is GrainResponse grainResponse)
+
+            async Task<{{OutputName}}> Inner() 
             {
-                return {{OutputName}}.Parser.ParseFrom(grainResponse.MessageData);
+                //resolve the grain
+                var pid = await Cluster.GetAsync(_id, ""{{../Name}}"", ct);
+
+                //request the RPC method to be invoked
+                var res = await pid.RequestAsync<object>(gr, ct);
+
+                //did we get a response?
+                if (res is GrainResponse grainResponse)
+                {
+                    return {{OutputName}}.Parser.ParseFrom(grainResponse.MessageData);
+                }
+
+                //did we get an error response?
+                if (res is GrainErrorResponse grainErrorResponse)
+                {
+                    throw new Exception(grainErrorResponse.Err);
+                }
+                throw new NotSupportedException();
             }
-            if (res is GrainErrorResponse grainErrorResponse)
+
+            for(int i= 0;i < 4; i++)
             {
-                throw new Exception(grainErrorResponse.Err);
+                try
+                {
+                    return await Inner();
+                }
+                catch(Exception x)
+                {
+                    //ignore, TODO: exponential backoff?
+                }
             }
-            throw new NotSupportedException();
+            return await Inner();
         }
 		{{/each}}
     }
