@@ -47,7 +47,7 @@ namespace Messages
                 MessageData = request.ToByteString()
             };
 
-            async Task<HelloResponse> Inner() 
+            async Task<HelloResponse> Inner()
             {
                 //resolve the grain
                 var pid = await Cluster.GetAsync(_id, "HelloGrain", ct);
@@ -60,7 +60,6 @@ namespace Messages
                 {
                     return HelloResponse.Parser.ParseFrom(grainResponse.MessageData);
                 }
-
                 //did we get an error response?
                 if (res is GrainErrorResponse grainErrorResponse)
                 {
@@ -95,6 +94,12 @@ namespace Messages
                 case Started _:
                 {
                     _inner = Grains._HelloGrainFactory();
+                    context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
+                    break;
+                }
+                case ReceiveTimeout _:
+                {
+                    context.Self.Stop();
                     break;
                 }
                 case GrainRequest request:

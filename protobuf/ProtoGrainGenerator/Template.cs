@@ -112,6 +112,12 @@ namespace {{CsNamespace}}
                 case Started _:
                 {
                     _inner = Grains._{{Name}}Factory();
+                    context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
+                    break;
+                }
+                case ReceiveTimeout _:
+                {
+                    context.Self.Stop();
                     break;
                 }
                 case GrainRequest request:
