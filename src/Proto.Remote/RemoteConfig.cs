@@ -26,5 +26,17 @@ namespace Proto.Remote
         /// Gets or sets the ServerCredentials for the gRPC server. The default is Insecure.
         /// </summary>
         public ServerCredentials ServerCredentials { get; set; } = ServerCredentials.Insecure;
+        /// <summary>
+        /// Gets or sets the advertised hostname for the remote system.
+        /// If the remote system is behind e.g. a NAT or reverse proxy, this needs to be set to
+        /// the external hostname in order for other systems to be able to connect to it.
+        /// </summary>
+        public string AdvertisedHostname { get; set; }
+        /// <summary>
+        /// Gets or sets the advertised port for the remote system.
+        /// If the remote system is behind e.g. a NAT or reverse proxy, this needs to be set to
+        /// the external port in order for other systems to be able to connect to it.
+        /// </summary>
+        public int? AdvertisedPort { get; set; }
     }
 }

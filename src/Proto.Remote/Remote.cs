@@ -39,30 +39,31 @@ namespace Proto.Remote
             throw new ArgumentException($"No Props found for kind '{kind}'");
         }
 
-        public static void Start(string host, int port)
+        public static void Start(string hostname, int port)
         {
-            Start(host, port, new RemoteConfig());
+            Start(hostname, port, new RemoteConfig());
         }
 
-        public static void Start(string host, int port, RemoteConfig config)
+        public static void Start(string hostname, int port, RemoteConfig config)
         {
             ProcessRegistry.Instance.RegisterHostResolver(pid => new RemoteProcess(pid));
 
             _server = new Server
             {
                 Services = { Remoting.BindService(new EndpointReader()) },
-                Ports = { new ServerPort(host, port, config.ServerCredentials) },
+                Ports = { new ServerPort(hostname, port, config.ServerCredentials) },
             };
             _server.Start();
 
             var boundPort = _server.Ports.Single().BoundPort;
-            var addr = host + ":" + boundPort;
+            var boundAddr = $"{hostname}:{boundPort}";
+            var addr = $"{config.AdvertisedHostname??hostname}:{config.AdvertisedPort??port}";
             ProcessRegistry.Instance.Address = addr;
 
             SpawnEndpointManager(config);
             SpawnActivator();
 
-            _logger.LogDebug($"Starting Proto.Actor server on {addr}");;
+            _logger.LogDebug($"Starting Proto.Actor server on {boundAddr} ({addr})");
         }
 
         private static void SpawnActivator()
