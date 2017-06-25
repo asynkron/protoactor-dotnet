@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Threading;
+using Proto.Mailbox;
 
 namespace Proto
 {
