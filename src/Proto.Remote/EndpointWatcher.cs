@@ -1,7 +1,7 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="EndpointWatcher.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="EndpointWatcher.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
@@ -11,9 +11,9 @@ namespace Proto.Remote
 {
     public class EndpointWatcher : IActor
     {
+        private readonly Behavior _behavior;
         private readonly Dictionary<string, PID> _watched = new Dictionary<string, PID>();
         private string _address; //for logging
-        private readonly Behavior _behavior;
 
         public EndpointWatcher(string address, Behavior behavior)
         {

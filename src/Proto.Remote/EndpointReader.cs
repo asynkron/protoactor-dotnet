@@ -1,15 +1,13 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="EndpointReader.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="EndpointReader.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
-using System.Collections.Generic;
-using Proto.Mailbox;
 
 namespace Proto.Remote
 {

@@ -1,7 +1,7 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="EndpointWriter.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="EndpointWriter.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
@@ -15,16 +15,15 @@ namespace Proto.Remote
 {
     public class EndpointWriter : IActor
     {
-        private readonly ILogger _logger = Log.CreateLogger<EndpointWriter>();
-
         private readonly string _address;
+        private readonly CallOptions _callOptions;
+        private readonly ChannelCredentials _channelCredentials;
         private readonly IEnumerable<ChannelOption> _channelOptions;
+        private readonly ILogger _logger = Log.CreateLogger<EndpointWriter>();
         private Channel _channel;
         private Remoting.RemotingClient _client;
         private AsyncDuplexStreamingCall<MessageBatch, Unit> _stream;
         private IClientStreamWriter<MessageBatch> _streamWriter;
-        private readonly CallOptions _callOptions;
-        private readonly ChannelCredentials _channelCredentials;
 
         public EndpointWriter(string address, IEnumerable<ChannelOption> channelOptions, CallOptions callOptions, ChannelCredentials channelCredentials)
         {
@@ -76,7 +75,7 @@ namespace Proto.Remote
                             Sender = rd.Sender,
                             Target = targetId,
                             TypeId = typeId,
-                            SerializerId = rd.SerializerId,
+                            SerializerId = rd.SerializerId
                         };
                         envelopes.Add(envelope);
                     }

@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//   <copyright file="Activator.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
+// -----------------------------------------------------------------------
+
 using System.Threading.Tasks;
 
 namespace Proto.Remote
@@ -19,7 +24,7 @@ namespace Proto.Remote
                     var pid = Actor.SpawnNamed(props, name);
                     var response = new ActorPidResponse
                     {
-                        Pid = pid,
+                        Pid = pid
                     };
                     context.Respond(response);
 

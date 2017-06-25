@@ -1,21 +1,21 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="RemotingSystem.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="Remote.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
-using System.Linq;
-using Grpc.Core;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
     public static class Remote
     {
-        private static ILogger _logger = Log.CreateLogger(typeof(Remote).FullName);
+        private static readonly ILogger _logger = Log.CreateLogger(typeof(Remote).FullName);
 
         private static Server _server;
         private static readonly Dictionary<string, Props> Kinds = new Dictionary<string, Props>();
@@ -31,6 +31,7 @@ namespace Proto.Remote
         {
             Kinds.Add(kind, props);
         }
+
         public static Props GetKnownKind(string kind)
         {
             if (Kinds.TryGetValue(kind, out var props)){
@@ -51,7 +52,7 @@ namespace Proto.Remote
             _server = new Server
             {
                 Services = { Remoting.BindService(new EndpointReader()) },
-                Ports = { new ServerPort(hostname, port, config.ServerCredentials) },
+                Ports = { new ServerPort(hostname, port, config.ServerCredentials) }
             };
             _server.Start();
 
@@ -96,7 +97,7 @@ namespace Proto.Remote
             var res = await activator.RequestAsync<ActorPidResponse>(new ActorPidRequest
             {
                 Kind = kind,
-                Name = name,
+                Name = name
             }, timeout);
 
             return res.Pid;

@@ -41,7 +41,9 @@ namespace Proto.Remote
         {
             var message = obj as IMessage;
             if (message == null)
+            {
                 throw new ArgumentException("obj must be of type IMessage", nameof(obj));
+            }
             return message.Descriptor.File.Package + "." + message.Descriptor.Name;
         }
     }
@@ -65,7 +67,9 @@ namespace Proto.Remote
         {
             var message = obj as IMessage;
             if (message == null)
+            {
                 throw new ArgumentException("obj must be of type IMessage", nameof(obj));
+            }
             return message.Descriptor.File.Package + "." + message.Descriptor.Name;
         }
     }
