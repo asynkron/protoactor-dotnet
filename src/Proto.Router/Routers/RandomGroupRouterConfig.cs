@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------
-//  <copyright file="RandomGroupRouterConfig.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="RandomGroupRouterConfig.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;

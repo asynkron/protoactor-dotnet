@@ -4,7 +4,6 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using Proto.Mailbox;
 using Proto.Router.Messages;
 using Proto.Router.Routers;
 
