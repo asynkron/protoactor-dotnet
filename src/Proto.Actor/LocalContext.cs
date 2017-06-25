@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------
-//  <copyright file="LocalContext.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="LocalContext.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
@@ -10,7 +10,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Proto.Mailbox;
 
 namespace Proto
 {
@@ -24,27 +23,29 @@ namespace Proto
 
     public class LocalContext : IMessageInvoker, IContext, ISupervisor
     {
-        private static ILogger Logger { get; } = Log.CreateLogger<LocalContext>();
         public static readonly IReadOnlyCollection<PID> EmptyChildren = new List<PID>();
+        private readonly Func<IActor> _producer;
 
         private readonly Receive _receiveMiddleware;
         private readonly Sender _senderMiddleware;
-        private readonly Func<IActor> _producer;
         private readonly ISupervisorStrategy _supervisorStrategy;
         private FastSet<PID> _children;
         private object _message;
-        private ContextState _state;
-        private RestartStatistics _restartStatistics;
-        private FastSet<PID> _watchers;
 
         //TODO: I would like to extract these two as optional components in the future
         //for ReceiveTimeout we could have an object with the SetReceiveTimeout
         //and simply let this object subscribe to actor messages so it knows when to reset the timer
         private Timer _receiveTimeoutTimer;
+
+        private RestartStatistics _restartStatistics;
+
         //for Stashing, there could be an object with the Stash, Unstash and UnstashAll
         //the main concern for this would be how to make the stash survive between actor restarts
         //if it is injected as a dependency, that would work fine
         private Stack<object> _stash;
+
+        private ContextState _state;
+        private FastSet<PID> _watchers;
 
         public LocalContext(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
         {
@@ -59,6 +60,8 @@ namespace Proto
 
             IncarnateActor();
         }
+
+        private static ILogger Logger { get; } = Log.CreateLogger<LocalContext>();
 
         public IReadOnlyCollection<PID> Children => _children?.ToList() ?? EmptyChildren;
 
@@ -169,7 +172,10 @@ namespace Proto
 
         public void CancelReceiveTimeout()
         {
-            if (_receiveTimeoutTimer == null) return;
+            if (_receiveTimeoutTimer == null)
+            {
+                return;
+            }
             StopReceiveTimeout();
             _receiveTimeoutTimer = null;
             ReceiveTimeout = TimeSpan.Zero;
@@ -178,6 +184,76 @@ namespace Proto
         public Task ReceiveAsync(object message)
         {
             return ProcessMessageAsync(message);
+        }
+
+        public void Tell(PID target, object message)
+        {
+            SendUserMessage(target, message);
+        }
+
+        public void Request(PID target, object message)
+        {
+            var messageEnvelope = new MessageEnvelope(message, Self, null);
+            SendUserMessage(target, messageEnvelope);
+        }
+
+        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
+            => RequestAsync(target, message, new FutureProcess<T>(timeout));
+
+        public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
+            => RequestAsync(target, message, new FutureProcess<T>(cancellationToken));
+
+        public Task<T> RequestAsync<T>(PID target, object message)
+            => RequestAsync(target, message, new FutureProcess<T>());
+
+        public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
+        {
+            var msg = _message;
+            var cont = new Continuation(() => action(target), msg);
+
+            target.ContinueWith(t => { Self.SendSystemMessage(cont); });
+        }
+
+        public void EscalateFailure(Exception reason, PID who)
+        {
+            if (_restartStatistics == null)
+            {
+                _restartStatistics = new RestartStatistics(0, null);
+            }
+            var failure = new Failure(who, reason, _restartStatistics);
+            if (Parent == null)
+            {
+                HandleRootFailure(failure);
+            }
+            else
+            {
+                Self.SendSystemMessage(SuspendMailbox.Instance);
+                Parent.SendSystemMessage(failure);
+            }
+        }
+
+        public void RestartChildren(Exception reason, params PID[] pids)
+        {
+            foreach (var pid in pids)
+            {
+                pid.SendSystemMessage(new Restart(reason));
+            }
+        }
+
+        public void StopChildren(params PID[] pids)
+        {
+            foreach (var pid in pids)
+            {
+                pid.SendSystemMessage(Stop.Instance);
+            }
+        }
+
+        public void ResumeChildren(params PID[] pids)
+        {
+            foreach (var pid in pids)
+            {
+                pid.SendSystemMessage(ResumeMailbox.Instance);
+            }
         }
 
         public Task InvokeSystemMessageAsync(object msg)
@@ -255,48 +331,6 @@ namespace Proto
             EscalateFailure(reason, Self);
         }
 
-        public void EscalateFailure(Exception reason, PID who)
-        {
-            if (_restartStatistics == null)
-            {
-                _restartStatistics = new RestartStatistics(0, null);
-            }
-            var failure = new Failure(who, reason, _restartStatistics);
-            if (Parent == null)
-            {
-                HandleRootFailure(failure);
-            }
-            else
-            {
-                Self.SendSystemMessage(SuspendMailbox.Instance);
-                Parent.SendSystemMessage(failure);
-            }
-        }
-
-        public void RestartChildren(Exception reason, params PID[] pids)
-        {
-            foreach (var pid in pids)
-            {
-                pid.SendSystemMessage(new Restart(reason));
-            }
-        }
-
-        public void StopChildren(params PID[] pids)
-        {
-            foreach (var pid in pids)
-            {
-                pid.SendSystemMessage(Stop.Instance);
-            }
-        }
-
-        public void ResumeChildren(params PID[] pids)
-        {
-            foreach (var pid in pids)
-            {
-                pid.SendSystemMessage(ResumeMailbox.Instance);
-            }
-        }
-
         internal static Task DefaultReceive(IContext context)
         {
             var c = (LocalContext) context;
@@ -319,26 +353,6 @@ namespace Proto
             _message = msg;
             return _receiveMiddleware != null ? _receiveMiddleware(this) : DefaultReceive(this);
         }
-
-        public void Tell(PID target, object message)
-        {
-            SendUserMessage(target, message);
-        }
-
-        public void Request(PID target, object message)
-        {
-            var messageEnvelope = new MessageEnvelope(message, Self, null);
-            SendUserMessage(target, messageEnvelope);
-        }
-
-        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => RequestAsync(target, message, new FutureProcess<T>(timeout));
-
-        public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => RequestAsync(target, message, new FutureProcess<T>(cancellationToken));
-
-        public Task<T> RequestAsync<T>(PID target, object message)
-            => RequestAsync(target, message, new FutureProcess<T>());
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
         {
@@ -398,7 +412,7 @@ namespace Proto
         {
             if (_state == ContextState.Stopping)
             {
-                w.Watcher.SendSystemMessage(new Terminated()
+                w.Watcher.SendSystemMessage(new Terminated
                 {
                     Who = Self
                 });
@@ -482,7 +496,7 @@ namespace Proto
             //Notify watchers
             if (_watchers != null)
             {
-                var terminated = new Terminated()
+                var terminated = new Terminated
                 {
                     Who = Self
                 };
@@ -493,7 +507,7 @@ namespace Proto
             }
             if (Parent != null)
             {
-                var terminated = new Terminated()
+                var terminated = new Terminated
                 {
                     Who = Self
                 };
@@ -539,14 +553,6 @@ namespace Proto
         private void ReceiveTimeoutCallback(object state)
         {
             Self.Request(Proto.ReceiveTimeout.Instance, null);
-        }
-
-        public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
-        {
-            var msg = _message;
-            var cont = new Continuation(() => action(target), msg);
-
-            target.ContinueWith(t => { Self.SendSystemMessage(cont); });
         }
     }
 }

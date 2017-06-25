@@ -1,7 +1,7 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Supervision.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="Supervision.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
@@ -50,10 +50,10 @@ namespace Proto
     /// place them all into a potentially invalid state.
     /// </summary>
     public class AllForOneStrategy : ISupervisorStrategy {
+        private static readonly ILogger Logger = Log.CreateLogger<AllForOneStrategy>();
         private readonly Decider _decider;
         private readonly int _maxNrOfRetries;
         private readonly TimeSpan? _withinTimeSpan;
-        private static readonly ILogger Logger = Log.CreateLogger<AllForOneStrategy>();
 
         public AllForOneStrategy(Decider decider, int maxNrOfRetries, TimeSpan? withinTimeSpan)
         {
@@ -113,10 +113,10 @@ namespace Proto
 
     public class OneForOneStrategy : ISupervisorStrategy
     {
+        private static readonly ILogger Logger = Log.CreateLogger<OneForOneStrategy>();
+        private readonly Decider _decider;
         private readonly int _maxNrOfRetries;
         private readonly TimeSpan? _withinTimeSpan;
-        private readonly Decider _decider;
-        private static readonly ILogger Logger = Log.CreateLogger<OneForOneStrategy>();
 
         public OneForOneStrategy(Decider decider, int maxNrOfRetries, TimeSpan? withinTimeSpan)
         {
@@ -185,16 +185,6 @@ namespace Proto
             _initialBackoff = initialBackoff;
         }
 
-        private long ToNanoseconds(TimeSpan timeSpan)
-        {
-            return Convert.ToInt64(timeSpan.TotalMilliseconds * 1000000);
-        }
-
-        private long ToMilliseconds(long nanoseconds)
-        {
-            return nanoseconds / 1000000;
-        }
-
         public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
         {
             SetFailureCount(rs);
@@ -205,6 +195,16 @@ namespace Proto
             {
                 supervisor.RestartChildren(reason, child);
             });
+        }
+
+        private long ToNanoseconds(TimeSpan timeSpan)
+        {
+            return Convert.ToInt64(timeSpan.TotalMilliseconds * 1000000);
+        }
+
+        private long ToMilliseconds(long nanoseconds)
+        {
+            return nanoseconds / 1000000;
         }
 
         private void SetFailureCount(RestartStatistics rs)

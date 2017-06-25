@@ -1,22 +1,19 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Messages.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="Messages.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
 using System.Threading.Tasks;
-using Proto.Mailbox;
 
 namespace Proto
 {
     public abstract class AutoReceiveMessage
-    {
-    }
+    {}
 
     public sealed partial class Terminated : SystemMessage
-    {
-    }
+    {}
 
     public sealed class Restarting
     {
@@ -59,11 +56,12 @@ namespace Proto
 
     public sealed class Restart : SystemMessage
     {
-        public Exception Reason { get; }
         public Restart(Exception reason)
         {
             Reason = reason;
         }
+
+        public Exception Reason { get; }
     }
 
     public partial class Stop : SystemMessage
@@ -108,8 +106,7 @@ namespace Proto
     }
 
     public interface INotInfluenceReceiveTimeout
-    {
-    }
+    {}
 
     public class Continuation : SystemMessage
     {

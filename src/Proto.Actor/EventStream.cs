@@ -1,14 +1,13 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="EventStream.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="EventStream.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Proto.Mailbox;
 
 namespace Proto
 {
@@ -32,10 +31,10 @@ namespace Proto
     }
     public class EventStream<T>
     {
+        private readonly ILogger _logger = Log.CreateLogger<EventStream<T>>();
+
         private readonly ConcurrentDictionary<Guid, Subscription<T>> _subscriptions =
             new ConcurrentDictionary<Guid, Subscription<T>>();
-
-        private readonly ILogger _logger = Log.CreateLogger<EventStream<T>>();
 
         internal EventStream()
         {
@@ -73,7 +72,7 @@ namespace Proto
             _subscriptions.TryAdd(sub.Id, sub);
             return sub;
         }
-        
+
         public void Publish(T msg)
         {
             foreach (var sub in _subscriptions)
