@@ -58,7 +58,7 @@ namespace Proto.Remote
 
             var boundPort = _server.Ports.Single().BoundPort;
             var boundAddr = $"{hostname}:{boundPort}";
-            var addr = $"{config.AdvertisedHostname??hostname}:{config.AdvertisedPort??port}";
+            var addr = $"{config.AdvertisedHostname??hostname}:{config.AdvertisedPort?? boundPort}";
             ProcessRegistry.Instance.Address = addr;
 
             SpawnEndpointManager(config);
