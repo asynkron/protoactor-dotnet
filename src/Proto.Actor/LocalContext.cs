@@ -474,7 +474,7 @@ namespace Proto
             {
                 return;
             }
-
+            
             switch (_state)
             {
                 case ContextState.Restarting:
