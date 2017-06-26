@@ -15,12 +15,12 @@ namespace Proto.Remote
 {
     public static class Remote
     {
-        private static readonly ILogger _logger = Log.CreateLogger(typeof(Remote).FullName);
+        private static readonly ILogger Logger = Log.CreateLogger(typeof(Remote).FullName);
 
         private static Server _server;
         private static readonly Dictionary<string, Props> Kinds = new Dictionary<string, Props>();
         public static PID EndpointManagerPid { get; private set; }
-        public static PID ActivatorPID { get; private set; }
+        public static PID ActivatorPid { get; private set; }
 
         public static string[] GetKnownKinds()
         {
@@ -64,13 +64,13 @@ namespace Proto.Remote
             SpawnEndpointManager(config);
             SpawnActivator();
 
-            _logger.LogDebug($"Starting Proto.Actor server on {boundAddr} ({addr})");
+            Logger.LogDebug($"Starting Proto.Actor server on {boundAddr} ({addr})");
         }
 
         private static void SpawnActivator()
         {
             var props = Actor.FromProducer(() => new Activator());
-            ActivatorPID = Actor.SpawnNamed(props,"activator");
+            ActivatorPid = Actor.SpawnNamed(props,"activator");
         }
 
         private static void SpawnEndpointManager(RemoteConfig config)
