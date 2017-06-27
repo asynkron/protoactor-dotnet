@@ -4,7 +4,7 @@ var packageVersion = "0.1.10";
 
 var target = Argument("target", "Default");
 var mygetApiKey = Argument<string>("mygetApiKey", null);
-var currentBranch = Argument<string>("currentBranch", GitBranchCurrent("./").FriendlyName);
+var currentBranch = Argument<string>("strong-naming");
 var buildNumber = Argument<string>("buildNumber", null);
 var configuration = "Release";
 
