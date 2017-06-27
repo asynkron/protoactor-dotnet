@@ -49,10 +49,20 @@ Task("Restore")
 Task("Build")
     .Does(() => 
     {
-        DotNetCoreBuild("ProtoActor.sln", new DotNetCoreBuildSettings 
+        if (IsRunningOnWindows())
         {
-            Configuration = configuration,
-        });
+            MSBuild("ProtoActor.sln", new MSBuildSettings 
+            {
+                Configuration = configuration,
+            });
+        }
+        else 
+        {
+            DotNetCoreBuild("ProtoActor.sln", new DotNetCoreBuildSettings 
+            {
+                Configuration = configuration,
+            });
+        }
     });
 
 Task("UnitTest")
