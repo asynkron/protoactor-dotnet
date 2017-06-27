@@ -35,7 +35,7 @@ Task("PatchVersion")
             if (IsRunningOnWindows())
             {
                 Information("Installing Strong Naming " + proj);
-                StartProcess("dotnet", new ProcessSettings{ Arguments = $"add {proj} package StrongNamer" } );
+                StartProcess("dotnet", new ProcessSettings{ Arguments = "add " + proj + " package StrongNamer" } );
             }
         }
     });
