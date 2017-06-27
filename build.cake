@@ -35,6 +35,12 @@ Task("PatchVersion")
         {
             Information("Patching " + proj);
             XmlPoke(proj, "/Project/PropertyGroup/Version", packageVersion);
+
+            if (IsRunningOnWindows())
+            {
+                Information("Installing Strong Naming " + proj);
+                StartProcess("dotnet", new ProcessSettings{ Arguments = $"add {proj} package StrongNamer" } );
+            }
         }
     });
 
