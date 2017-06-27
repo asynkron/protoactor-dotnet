@@ -27,10 +27,6 @@ Information("Version: " + packageVersion);
 Task("PatchVersion")
     .Does(() => 
     {
-        if (IsPRBuild())
-        {
-            return;
-        }
         foreach(var proj in GetFiles("src/**/*.csproj")) 
         {
             Information("Patching " + proj);
