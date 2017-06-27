@@ -16,6 +16,7 @@ before_build:
 
 build_script:
 - .\Cake\Cake.exe --target=PatchVersion
+- .\Cake\Cake.exe --target=StrongName
 - .\Cake\Cake.exe --target=Restore
 - .\Cake\Cake.exe --target=Build --buildNumber=%APPVEYOR_BUILD_NUMBER% --currentBranch=%APPVEYOR_REPO_BRANCH%
 
