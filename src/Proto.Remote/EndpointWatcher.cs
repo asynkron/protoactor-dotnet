@@ -15,11 +15,10 @@ namespace Proto.Remote
         private readonly Dictionary<string, PID> _watched = new Dictionary<string, PID>();
         private string _address; //for logging
 
-        public EndpointWatcher(string address, Behavior behavior)
+        public EndpointWatcher(string address)
         {
             _address = address;
-            _behavior = behavior;
-            _behavior.Become(ConnectedAsync);
+            _behavior = new Behavior(ConnectedAsync);
         }
 
         public Task ReceiveAsync(IContext context)
