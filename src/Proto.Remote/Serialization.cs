@@ -22,7 +22,11 @@ namespace Proto.Remote
     {
         public ByteString Serialize(object obj)
         {
-           
+            if (obj is JsonMessage jsonMessage)
+            {
+                return ByteString.CopyFromUtf8(jsonMessage.Json);
+            }
+
             var message = obj as IMessage;
             var json = JsonFormatter.Default.Format(message);
             return ByteString.CopyFromUtf8(json);
@@ -39,6 +43,11 @@ namespace Proto.Remote
 
         public string GetTypeName(object obj)
         {
+            if (obj is JsonMessage jsonMessage)
+            {
+                return jsonMessage.TypeName;
+            }
+
             var message = obj as IMessage;
             if (message == null)
             {
