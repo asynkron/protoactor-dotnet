@@ -4,9 +4,6 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using Google.Protobuf;
-
 namespace Proto.Remote
 {
     public class RemoteProcess : Process
@@ -18,15 +15,9 @@ namespace Proto.Remote
             _pid = pid;
         }
 
-        protected override void SendUserMessage(PID _, object message)
-        {
-            Send(message);
-        }
+        protected override void SendUserMessage(PID _, object message) => Send(message);
 
-        protected override void SendSystemMessage(PID _, object message)
-        {
-            Send(message);
-        }
+        protected override void SendSystemMessage(PID _, object message) => Send(message);
 
         private void Send(object msg)
         {
@@ -42,22 +33,7 @@ namespace Proto.Remote
             }
             else
             {
-                SendRemoteMessage(_pid, msg,Serialization.DefaultSerializerId);
-            }
-        }
-
-        public static void SendRemoteMessage(PID pid, object msg,int serializerId)
-        {
-            var (message, sender, _) = Proto.MessageEnvelope.Unwrap(msg);
-
-            if (message is IMessage protoMessage)
-            {
-                var env = new RemoteDeliver(protoMessage, pid, sender, serializerId);
-                Remote.EndpointManagerPid.Tell(env);
-            }
-            else
-            {
-                throw new NotSupportedException("Non protobuf message");
+                Remote.SendMessage(_pid, msg,Serialization.DefaultSerializerId);
             }
         }
     }

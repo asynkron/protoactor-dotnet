@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
@@ -101,6 +102,14 @@ namespace Proto.Remote
             }, timeout);
 
             return res.Pid;
+        }
+
+        public static void SendMessage(PID pid, object msg, int serializerId)
+        {
+            var (message, sender, _) = Proto.MessageEnvelope.Unwrap(msg);
+
+            var env = new RemoteDeliver(message, pid, sender, serializerId);
+            EndpointManagerPid.Tell(env);
         }
     }
 }
