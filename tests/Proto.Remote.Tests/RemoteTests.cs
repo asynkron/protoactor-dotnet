@@ -19,6 +19,19 @@ namespace Proto.Remote.Tests
         }
 
         [Fact, DisplayTestMethodName]
+        public void CanSerializeAndDeserializeJsonPID()
+        {
+
+            var typeName = "actor.PID";
+            var json = new JsonMessage(typeName, "{ \"Address\":\"123\", \"Id\":\"456\"}");
+            var bytes = Serialization.Serialize(json, 1);
+            var deserialized = Serialization.Deserialize(typeName, bytes, 1) as PID;
+            Assert.Equal("123", deserialized.Address);
+            Assert.Equal("456", deserialized.Id);
+        }
+
+
+        [Fact, DisplayTestMethodName]
         public void CanSerializeAndDeserializeJson()
         {
 

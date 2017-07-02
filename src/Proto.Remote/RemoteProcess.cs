@@ -33,7 +33,7 @@ namespace Proto.Remote
             }
             else
             {
-                Remote.SendMessage(_pid, msg,Serialization.DefaultSerializerId);
+                Remote.SendMessage(_pid, msg,-1);
             }
         }
     }

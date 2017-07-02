@@ -30,9 +30,12 @@ namespace Proto.Remote {
             "GgoGc2VuZGVyGAQgASgLMgouYWN0b3IuUElEEhUKDXNlcmlhbGl6ZXJfaWQY",
             "BSABKAUiLQoPQWN0b3JQaWRSZXF1ZXN0EgwKBG5hbWUYASABKAkSDAoEa2lu",
             "ZBgCIAEoCSIrChBBY3RvclBpZFJlc3BvbnNlEhcKA3BpZBgBIAEoCzIKLmFj",
-            "dG9yLlBJRCIGCgRVbml0Mj8KCFJlbW90aW5nEjMKB1JlY2VpdmUSFC5yZW1v",
-            "dGUuTWVzc2FnZUJhdGNoGgwucmVtb3RlLlVuaXQiACgBMAFCD6oCDFByb3Rv",
-            "LlJlbW90ZWIGcHJvdG8z"));
+            "dG9yLlBJRCIGCgRVbml0IhAKDkNvbm5lY3RSZXF1ZXN0IjAKD0Nvbm5lY3RS",
+            "ZXNwb25zZRIdChVkZWZhdWx0X3NlcmlhbGl6ZXJfaWQYASABKAUyfQoIUmVt",
+            "b3RpbmcSPAoHQ29ubmVjdBIWLnJlbW90ZS5Db25uZWN0UmVxdWVzdBoXLnJl",
+            "bW90ZS5Db25uZWN0UmVzcG9uc2UiABIzCgdSZWNlaXZlEhQucmVtb3RlLk1l",
+            "c3NhZ2VCYXRjaBoMLnJlbW90ZS5Vbml0IgAoATABQg+qAgxQcm90by5SZW1v",
+            "dGViBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
@@ -40,7 +43,9 @@ namespace Proto.Remote {
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageEnvelope), global::Proto.Remote.MessageEnvelope.Parser, new[]{ "TypeId", "MessageData", "Target", "Sender", "SerializerId" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ActorPidRequest), global::Proto.Remote.ActorPidRequest.Parser, new[]{ "Name", "Kind" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ActorPidResponse), global::Proto.Remote.ActorPidResponse.Parser, new[]{ "Pid" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.Unit), global::Proto.Remote.Unit.Parser, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.Unit), global::Proto.Remote.Unit.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ConnectRequest), global::Proto.Remote.ConnectRequest.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ConnectResponse), global::Proto.Remote.ConnectResponse.Parser, new[]{ "DefaultSerializerId" }, null, null, null)
           }));
     }
     #endregion
@@ -782,6 +787,212 @@ namespace Proto.Remote {
           default:
             input.SkipLastField();
             break;
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class ConnectRequest : pb::IMessage<ConnectRequest> {
+    private static readonly pb::MessageParser<ConnectRequest> _parser = new pb::MessageParser<ConnectRequest>(() => new ConnectRequest());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<ConnectRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[5]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ConnectRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ConnectRequest(ConnectRequest other) : this() {
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ConnectRequest Clone() {
+      return new ConnectRequest(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as ConnectRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(ConnectRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      return true;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(ConnectRequest other) {
+      if (other == null) {
+        return;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class ConnectResponse : pb::IMessage<ConnectResponse> {
+    private static readonly pb::MessageParser<ConnectResponse> _parser = new pb::MessageParser<ConnectResponse>(() => new ConnectResponse());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<ConnectResponse> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[6]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ConnectResponse() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ConnectResponse(ConnectResponse other) : this() {
+      defaultSerializerId_ = other.defaultSerializerId_;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ConnectResponse Clone() {
+      return new ConnectResponse(this);
+    }
+
+    /// <summary>Field number for the "default_serializer_id" field.</summary>
+    public const int DefaultSerializerIdFieldNumber = 1;
+    private int defaultSerializerId_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int DefaultSerializerId {
+      get { return defaultSerializerId_; }
+      set {
+        defaultSerializerId_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as ConnectResponse);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(ConnectResponse other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (DefaultSerializerId != other.DefaultSerializerId) return false;
+      return true;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (DefaultSerializerId != 0) hash ^= DefaultSerializerId.GetHashCode();
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (DefaultSerializerId != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(DefaultSerializerId);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (DefaultSerializerId != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(DefaultSerializerId);
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(ConnectResponse other) {
+      if (other == null) {
+        return;
+      }
+      if (other.DefaultSerializerId != 0) {
+        DefaultSerializerId = other.DefaultSerializerId;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 8: {
+            DefaultSerializerId = input.ReadInt32();
+            break;
+          }
         }
       }
     }

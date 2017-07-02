@@ -65,7 +65,7 @@ namespace Proto.Remote
                     _watched[msg.Watcher.Id] = null;
 
                     var w = new Unwatch(msg.Watcher);
-                    Remote.SendMessage(msg.Watchee, w,Serialization.DefaultSerializerId);
+                    Remote.SendMessage(msg.Watchee, w,-1);
                     break;
                 }
                 case RemoteWatch msg:
@@ -73,7 +73,7 @@ namespace Proto.Remote
                     _watched[msg.Watcher.Id] = msg.Watchee;
 
                     var w = new Watch(msg.Watcher);
-                    Remote.SendMessage(msg.Watchee, w, Serialization.DefaultSerializerId);
+                    Remote.SendMessage(msg.Watchee, w, -1);
                     break;
                 }
             }

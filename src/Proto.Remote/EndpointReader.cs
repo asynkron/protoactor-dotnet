@@ -14,6 +14,14 @@ namespace Proto.Remote
 {
     public class EndpointReader : Remoting.RemotingBase
     {
+        public override async Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
+        {
+            return new ConnectResponse()
+            {
+                DefaultSerializerId = Serialization.DefaultSerializerId
+            };
+        }
+
         public override async Task Receive(IAsyncStreamReader<MessageBatch> requestStream,
             IServerStreamWriter<Unit> responseStream, ServerCallContext context)
         {
