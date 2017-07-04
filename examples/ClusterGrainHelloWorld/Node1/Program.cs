@@ -24,5 +24,8 @@ class Program
         var res = client.SayHello(new HelloRequest()).Result;
         Console.WriteLine(res.Message);
         Console.ReadLine();
+        res = client.SayHello(new HelloRequest()).Result;
+        Console.WriteLine(res.Message);
+        Console.ReadLine();
     }
 }

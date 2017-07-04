@@ -1,13 +1,14 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="EndpointWriterMailbox.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="EndpointWriterMailbox.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
+using Proto.Mailbox;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Proto.Mailbox;
 
 namespace Proto.Remote
 {
@@ -57,38 +58,49 @@ namespace Proto.Remote
 
         private async Task RunAsync()
         {
-            var t = _dispatcher.Throughput;
-            var batch = new List<RemoteDeliver>(_batchSize);
-            var sys = _systemMessages.Pop();
-            if (sys != null)
+            object m = null;
+            try
             {
-                if (sys is SuspendMailbox)
+                var t = _dispatcher.Throughput;
+                var batch = new List<RemoteDeliver>(_batchSize);
+                var sys = _systemMessages.Pop();
+                if (sys != null)
                 {
-                    _suspended = true;
-                }
-                if (sys is ResumeMailbox)
-                {
-                    _suspended = false;
-                }
-                await _invoker.InvokeSystemMessageAsync(sys);
-            }
-            if (!_suspended)
-            {
-                batch.Clear();
-                object msg;
-                while ((msg = _userMessages.Pop()) != null)
-                {
-                    batch.Add((RemoteDeliver) msg);
-                    if (batch.Count >= _batchSize)
+                    if (sys is SuspendMailbox)
                     {
-                        break;
+                        _suspended = true;
+                    }
+                    if (sys is ResumeMailbox)
+                    {
+                        _suspended = false;
+                    }
+                    m = sys;
+                    await _invoker.InvokeSystemMessageAsync(sys);
+                }
+                if (!_suspended)
+                {
+                    batch.Clear();
+                    object msg;
+                    while ((msg = _userMessages.Pop()) != null)
+                    {
+                        batch.Add((RemoteDeliver) msg);
+                        if (batch.Count >= _batchSize)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (batch.Count > 0)
+                    {
+                        m = batch;
+                        await _invoker.InvokeUserMessageAsync(batch);
                     }
                 }
 
-                if (batch.Count > 0)
-                {
-                    await _invoker.InvokeUserMessageAsync(batch);
-                }
+            }
+            catch (Exception x)
+            {
+                _invoker.EscalateFailure(x,m);
             }
 
 

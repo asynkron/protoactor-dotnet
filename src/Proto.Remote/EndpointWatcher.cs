@@ -1,7 +1,7 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="EndpointWatcher.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="EndpointWatcher.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
@@ -11,15 +11,22 @@ namespace Proto.Remote
 {
     public class EndpointWatcher : IActor
     {
+        private readonly Behavior _behavior;
         private readonly Dictionary<string, PID> _watched = new Dictionary<string, PID>();
         private string _address; //for logging
 
         public EndpointWatcher(string address)
         {
             _address = address;
+            _behavior = new Behavior(ConnectedAsync);
         }
 
         public Task ReceiveAsync(IContext context)
+        {
+            return _behavior.ReceiveAsync(context);
+        }
+
+        public Task ConnectedAsync(IContext context)
         {
             switch (context.Message)
             {
@@ -49,6 +56,8 @@ namespace Proto.Remote
                         //send the address Terminated event to the Watcher
                         watcher.SendSystemMessage(t);
                     }
+
+                    _behavior.Become(TerminatedAsync);
                     break;
                 }
                 case RemoteUnwatch msg:
@@ -56,7 +65,7 @@ namespace Proto.Remote
                     _watched[msg.Watcher.Id] = null;
 
                     var w = new Unwatch(msg.Watcher);
-                    RemoteProcess.SendRemoteMessage(msg.Watchee, w,Serialization.DefaultSerializerId);
+                    Remote.SendMessage(msg.Watchee, w,-1);
                     break;
                 }
                 case RemoteWatch msg:
@@ -64,7 +73,36 @@ namespace Proto.Remote
                     _watched[msg.Watcher.Id] = msg.Watchee;
 
                     var w = new Watch(msg.Watcher);
-                    RemoteProcess.SendRemoteMessage(msg.Watchee, w, Serialization.DefaultSerializerId);
+                    Remote.SendMessage(msg.Watchee, w, -1);
+                    break;
+                }
+            }
+            return Actor.Done;
+        }
+
+        public Task TerminatedAsync(IContext context)
+        {
+            switch (context.Message)
+            {
+                case RemoteWatch msg:
+                {
+                    msg.Watcher.SendSystemMessage(new Terminated
+                    {
+                        AddressTerminated = true,
+                        Who = msg.Watchee
+                    });
+                    break;
+                }
+                case RemoteUnwatch _:
+                case EndpointTerminatedEvent _:
+                case RemoteTerminate _:
+                {
+                    //pass 
+                    break;
+                }
+                default:
+                {
+                    //TODO: log error
                     break;
                 }
             }

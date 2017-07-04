@@ -1,7 +1,7 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Futures.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="Futures.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
@@ -12,8 +12,8 @@ namespace Proto
 {
     internal class FutureProcess<T> : Process
     {
-        private readonly TaskCompletionSource<T> _tcs;
         private readonly CancellationTokenSource _cts;
+        private readonly TaskCompletionSource<T> _tcs;
 
         internal FutureProcess(TimeSpan timeout) : this(new CancellationTokenSource(timeout)) { }
         internal FutureProcess(CancellationToken cancellationToken) : this(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) { }
@@ -58,7 +58,10 @@ namespace Proto
 
             if (env.message is T || message == null)
             {
-                if (_cts != null && _cts.IsCancellationRequested) return;
+                if (_cts != null && _cts.IsCancellationRequested)
+                {
+                    return;
+                }
 
                 _tcs.TrySetResult((T)env.message);
                 pid.Stop();

@@ -21,6 +21,9 @@ namespace Proto
             Headers = messageHeader;
         }
 
+        public object Message => null;
+        public MessageHeader Headers { get; }
+
         private Task DefaultSender(ISenderContext context,PID target, MessageEnvelope message)
         {
             target.Tell(message);
@@ -69,8 +72,5 @@ namespace Proto
         {
             throw new NotImplementedException();
         }
-
-        public object Message => null;
-        public MessageHeader Headers { get; }
     }
 }

@@ -1,22 +1,36 @@
 image: Visual Studio 2017
 version: '{branch}-{build}'
+
 configuration:
 - Release
+
 environment:
   # Don't report back to the mothership
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+nuget:
+  disable_publish_on_pr: true
+
 before_build:
 - nuget install Cake -ExcludeVersion
+
 build_script:
+- .\Cake\Cake.exe --target=PatchVersion
 - .\Cake\Cake.exe --target=Restore
 - .\Cake\Cake.exe --target=Build --buildNumber=%APPVEYOR_BUILD_NUMBER% --currentBranch=%APPVEYOR_REPO_BRANCH%
+
 test_script:
 - .\Cake\Cake.exe --target=UnitTest
+
 after_test:
 - .\Cake\Cake.exe --target=Pack --buildNumber=%APPVEYOR_BUILD_NUMBER% --currentBranch=%APPVEYOR_REPO_BRANCH%
-- .\Cake\Cake.exe --target=Push --mygetApiKey=%MYGET_API_KEY%
+
 artifacts:
 - path: out\*
+
+deploy_script:
+  - .\Cake\Cake.exe --target=Push --mygetApiKey=%MYGET_API_KEY%
+
 notifications:
   - provider: Webhook
     url: https://webhooks.gitter.im/e/8d1651e59df7003d4a75

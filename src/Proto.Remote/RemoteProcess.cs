@@ -1,11 +1,8 @@
-﻿// -----------------------------------------------------------------------
-//  <copyright file="RemoteProcess.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
 // -----------------------------------------------------------------------
-
-using System;
-using Google.Protobuf;
+//   <copyright file="RemoteProcess.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
+// -----------------------------------------------------------------------
 
 namespace Proto.Remote
 {
@@ -18,17 +15,11 @@ namespace Proto.Remote
             _pid = pid;
         }
 
-        protected override void SendUserMessage(PID pid, object message)
-        {
-            Send(pid, message);
-        }
+        protected override void SendUserMessage(PID _, object message) => Send(message);
 
-        protected override void SendSystemMessage(PID pid, object message)
-        {
-            Send(pid, message);
-        }
+        protected override void SendSystemMessage(PID _, object message) => Send(message);
 
-        private void Send(PID _, object msg)
+        private void Send(object msg)
         {
             if (msg is Watch w)
             {
@@ -42,32 +33,8 @@ namespace Proto.Remote
             }
             else
             {
-                SendRemoteMessage(_pid, msg,Serialization.DefaultSerializerId);
+                Remote.SendMessage(_pid, msg,-1);
             }
         }
-
-        public static void SendRemoteMessage(PID pid, object msg, int serializerId)
-        {
-            var (message, sender, _) = Proto.MessageEnvelope.Unwrap(msg);
-
-            var env = new RemoteDeliver(message, pid, sender, serializerId);
-            Remote.EndpointManagerPid.Tell(env);
-        }
-    }
-
-    public class RemoteDeliver
-    {
-        public RemoteDeliver(object message, PID target,PID sender,int serializerId)
-        {
-            Message = message;
-            Target = target;
-            Sender = sender;
-            SerializerId = serializerId;
-        }
-        public object Message { get;  }
-        public PID Target { get;  }
-        public PID Sender { get;  }
-
-        public int SerializerId { get; }
     }
 }

@@ -12,8 +12,17 @@ namespace Proto.Remote {
   {
     static readonly string __ServiceName = "remote.Remoting";
 
+    static readonly Marshaller<global::Proto.Remote.ConnectRequest> __Marshaller_ConnectRequest = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Proto.Remote.ConnectRequest.Parser.ParseFrom);
+    static readonly Marshaller<global::Proto.Remote.ConnectResponse> __Marshaller_ConnectResponse = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Proto.Remote.ConnectResponse.Parser.ParseFrom);
     static readonly Marshaller<global::Proto.Remote.MessageBatch> __Marshaller_MessageBatch = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Proto.Remote.MessageBatch.Parser.ParseFrom);
     static readonly Marshaller<global::Proto.Remote.Unit> __Marshaller_Unit = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Proto.Remote.Unit.Parser.ParseFrom);
+
+    static readonly Method<global::Proto.Remote.ConnectRequest, global::Proto.Remote.ConnectResponse> __Method_Connect = new Method<global::Proto.Remote.ConnectRequest, global::Proto.Remote.ConnectResponse>(
+        MethodType.Unary,
+        __ServiceName,
+        "Connect",
+        __Marshaller_ConnectRequest,
+        __Marshaller_ConnectResponse);
 
     static readonly Method<global::Proto.Remote.MessageBatch, global::Proto.Remote.Unit> __Method_Receive = new Method<global::Proto.Remote.MessageBatch, global::Proto.Remote.Unit>(
         MethodType.DuplexStreaming,
@@ -31,6 +40,11 @@ namespace Proto.Remote {
     /// <summary>Base class for server-side implementations of Remoting</summary>
     public abstract class RemotingBase
     {
+      public virtual global::System.Threading.Tasks.Task<global::Proto.Remote.ConnectResponse> Connect(global::Proto.Remote.ConnectRequest request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
       public virtual global::System.Threading.Tasks.Task Receive(IAsyncStreamReader<global::Proto.Remote.MessageBatch> requestStream, IServerStreamWriter<global::Proto.Remote.Unit> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
@@ -61,6 +75,22 @@ namespace Proto.Remote {
       {
       }
 
+      public virtual global::Proto.Remote.ConnectResponse Connect(global::Proto.Remote.ConnectRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return Connect(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual global::Proto.Remote.ConnectResponse Connect(global::Proto.Remote.ConnectRequest request, CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_Connect, null, options, request);
+      }
+      public virtual AsyncUnaryCall<global::Proto.Remote.ConnectResponse> ConnectAsync(global::Proto.Remote.ConnectRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return ConnectAsync(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual AsyncUnaryCall<global::Proto.Remote.ConnectResponse> ConnectAsync(global::Proto.Remote.ConnectRequest request, CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_Connect, null, options, request);
+      }
       public virtual AsyncDuplexStreamingCall<global::Proto.Remote.MessageBatch, global::Proto.Remote.Unit> Receive(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return Receive(new CallOptions(headers, deadline, cancellationToken));
@@ -79,6 +109,7 @@ namespace Proto.Remote {
     public static ServerServiceDefinition BindService(RemotingBase serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder()
+          .AddMethod(__Method_Connect, serviceImpl.Connect)
           .AddMethod(__Method_Receive, serviceImpl.Receive).Build();
     }
 

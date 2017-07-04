@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------
-//  <copyright file="PID.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="PID.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
@@ -62,7 +62,7 @@ namespace Proto
             var messageEnvelope = new MessageEnvelope(message,sender,null);
             reff.SendUserMessage(this, messageEnvelope);
         }
-        
+
         public Task<T> RequestAsync<T>(object message, TimeSpan timeout)
             => RequestAsync(message, new FutureProcess<T>(timeout));
 
