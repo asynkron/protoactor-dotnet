@@ -19,7 +19,6 @@
     <FileVersion>0.1.6.0</FileVersion>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
-    <ProjectReference Include="..\Proto.Mailbox\Proto.Mailbox.csproj" />
+    <PackageReference Include="System.ValueTuple" Version="4.3.1" />
   </ItemGroup>
 </Project>
