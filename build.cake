@@ -4,33 +4,42 @@ var packageVersion = "0.1.10";
 
 var target = Argument("target", "Default");
 var mygetApiKey = Argument<string>("mygetApiKey", null);
+var nugetApiKey = Argument<string>("nugetApiKey", null);
 var currentBranch = Argument<string>("currentBranch", GitBranchCurrent("./").FriendlyName);
 var buildNumber = Argument<string>("buildNumber", null);
+var pullRequestTitle = Argument<string>("pullRequestTitle", null);
 var configuration = "Release";
+var isPullRequestBuild = !string.IsNullOrWhiteSpace(pullRequestTitle);
 
-var versionSuffix = "";
-if (currentBranch != "master") {
-    versionSuffix += "-" + currentBranch;
-    if (buildNumber != null) {
-        versionSuffix += "-build" + buildNumber.PadLeft(5, '0');
-    }
-    packageVersion += versionSuffix;
-}
-
-bool IsPRBuild()
-{
-    return EnvironmentVariable("APPVEYOR_PULL_REQUEST_TITLE") != null;
-}
-
-Information("Version: " + packageVersion);
-
+Task("PrintEnvironment")
+    .Does(() =>
+    {
+        foreach(var envVar in EnvironmentVariables())
+        {
+            Information("{0}: \"{1}\"", envVar.Key, envVar.Value);
+        }
+    });
 Task("PatchVersion")
     .Does(() => 
     {
-        if (IsPRBuild())
+        if (isPullRequestBuild)
         {
+            Information("Pull request build. Skipping version patching.");
             return;
         }
+        var versionSuffix = "";
+        if (currentBranch != "master") {
+            if (buildNumber != null) {
+                versionSuffix += "-build" + buildNumber.PadLeft(5, '0');
+            }
+            versionSuffix += "-" + currentBranch;
+            if (versionSuffix.Length > 20) {
+                versionSuffix = versionSuffix.Substring(0, 20);
+            }
+            packageVersion += versionSuffix;
+        }
+        Information("Version: " + packageVersion);        
+
         foreach(var proj in GetFiles("src/**/*.csproj")) 
         {
             Information("Patching " + proj);
@@ -69,8 +78,9 @@ Task("UnitTest")
 Task("Pack")
     .Does(() => 
     {
-        if (IsPRBuild())
+        if (isPullRequestBuild)
         {
+            Information("Pull request build. Skipping NuGet packing.");
             return;
         }
         foreach(var proj in GetFiles("src/**/*.csproj")) 
@@ -87,18 +97,33 @@ Task("Pack")
 Task("Push")
     .Does(() => 
     {
-        if (IsPRBuild())
+        if (isPullRequestBuild)
         {
+            Information("Pull request build. Skipping NuGet push.");
             return;
         }
-        var pkgs = GetFiles("out/*.nupkg");
-        foreach(var pkg in pkgs) 
-        {
-            NuGetPush(pkg, new NuGetPushSettings 
+        var nuGetPushSettings = new NuGetPushSettings 
+            {
+                Source = "https://www.nuget.org/api/v2/package",
+                ApiKey = nugetApiKey
+            };
+        var myGetPushSettings = new NuGetPushSettings 
             {
                 Source = "https://www.myget.org/F/protoactor/api/v2/package",
                 ApiKey = mygetApiKey
-            });
+            };
+
+        var pkgs = GetFiles("out/*.nupkg");
+        foreach(var pkg in pkgs) 
+        {
+            NuGetPush(pkg, myGetPushSettings);
+        }
+        if (currentBranch == "master")
+        {
+            foreach(var pkg in pkgs) 
+            {
+                NuGetPush(pkg, nuGetPushSettings);
+            }
         }
     });
 
