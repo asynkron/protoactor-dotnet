@@ -16,7 +16,7 @@ before_build:
 
 build_script:
 - .\Cake\Cake.exe --target=PrintEnvironment
-- .\Cake\Cake.exe --target=PatchVersion --buildNumber=%APPVEYOR_BUILD_NUMBER% --currentBranch=%APPVEYOR_REPO_BRANCH% --pullRequestTitle='%APPVEYOR_PULL_REQUEST_TITLE%'
+- .\Cake\Cake.exe --target=PatchVersion --buildNumber=%APPVEYOR_BUILD_NUMBER% --currentBranch=%APPVEYOR_REPO_BRANCH% --pullRequestTitle="%APPVEYOR_PULL_REQUEST_TITLE%"
 - .\Cake\Cake.exe --target=Restore
 - .\Cake\Cake.exe --target=Build
 
@@ -24,13 +24,13 @@ test_script:
 - .\Cake\Cake.exe --target=UnitTest
 
 after_test:
-- .\Cake\Cake.exe --target=Pack --pullRequestTitle='%APPVEYOR_PULL_REQUEST_TITLE%'
+- .\Cake\Cake.exe --target=Pack --pullRequestTitle="%APPVEYOR_PULL_REQUEST_TITLE%"
 
 artifacts:
 - path: out\*
 
 deploy_script:
-  - .\Cake\Cake.exe --target=Push --mygetApiKey=%MYGET_API_KEY% --nugetApiKey=%NUGET_API_KEY% --pullRequestTitle='%APPVEYOR_PULL_REQUEST_TITLE%'
+  - .\Cake\Cake.exe --target=Push --mygetApiKey=%MYGET_API_KEY% --nugetApiKey=%NUGET_API_KEY% --pullRequestTitle="%APPVEYOR_PULL_REQUEST_TITLE%"
 
 notifications:
   - provider: Webhook
