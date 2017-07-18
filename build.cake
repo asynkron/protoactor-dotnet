@@ -67,11 +67,23 @@ Task("UnitTest")
     {
         foreach(var proj in GetFiles("tests/**/*.Tests.csproj")) 
         {
-            DotNetCoreTest(proj.ToString(), new DotNetCoreTestSettings 
+            if (IsRunningOnWindows()) 
             {
-                NoBuild = true,
-                Configuration = configuration
-            });
+                DotNetCoreTest(proj.ToString(), new DotNetCoreTestSettings 
+                {
+                    NoBuild = true,
+                    Configuration = configuration
+                });
+            } 
+            else // dotnet test cannot run full framework tests on mac so ignore them
+            {
+                DotNetCoreTest(proj.ToString(), new DotNetCoreTestSettings 
+                {
+                    NoBuild = true,
+                    Framework = "netcoreapp1.1",
+                    Configuration = configuration
+                });
+            }
         }
     });
 
