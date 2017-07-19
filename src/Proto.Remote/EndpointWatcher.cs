@@ -15,11 +15,10 @@ namespace Proto.Remote
         private readonly Dictionary<string, PID> _watched = new Dictionary<string, PID>();
         private string _address; //for logging
 
-        public EndpointWatcher(string address, Behavior behavior)
+        public EndpointWatcher(string address)
         {
             _address = address;
-            _behavior = behavior;
-            _behavior.Become(ConnectedAsync);
+            _behavior = new Behavior(ConnectedAsync);
         }
 
         public Task ReceiveAsync(IContext context)
@@ -66,7 +65,7 @@ namespace Proto.Remote
                     _watched[msg.Watcher.Id] = null;
 
                     var w = new Unwatch(msg.Watcher);
-                    RemoteProcess.SendRemoteMessage(msg.Watchee, w,Serialization.DefaultSerializerId);
+                    Remote.SendMessage(msg.Watchee, w,-1);
                     break;
                 }
                 case RemoteWatch msg:
@@ -74,7 +73,7 @@ namespace Proto.Remote
                     _watched[msg.Watcher.Id] = msg.Watchee;
 
                     var w = new Watch(msg.Watcher);
-                    RemoteProcess.SendRemoteMessage(msg.Watchee, w, Serialization.DefaultSerializerId);
+                    Remote.SendMessage(msg.Watchee, w, -1);
                     break;
                 }
             }

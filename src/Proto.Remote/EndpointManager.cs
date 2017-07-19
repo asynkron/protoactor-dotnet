@@ -102,7 +102,7 @@ namespace Proto.Remote
 
         private static PID SpawnWatcher(string address, IContext context)
         {
-            var watcherProps = Actor.FromProducer(() => new EndpointWatcher(address, new Behavior()));
+            var watcherProps = Actor.FromProducer(() => new EndpointWatcher(address));
             var watcher = context.Spawn(watcherProps);
             return watcher;
         }

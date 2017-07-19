@@ -15,6 +15,7 @@ namespace Proto.Remote
 {
     public class EndpointWriter : IActor
     {
+        private int _serializerId;
         private readonly string _address;
         private readonly CallOptions _callOptions;
         private readonly ChannelCredentials _channelCredentials;
@@ -55,27 +56,29 @@ namespace Proto.Remote
                     foreach(var rd in m)
                     {
                         var targetName = rd.Target.Id;
+                        var serializerId = rd.SerializerId == -1 ? _serializerId : rd.SerializerId;
+
                         if (!targetNames.TryGetValue(targetName, out var targetId))
                         {
                             targetId = targetNames[targetName] = targetNames.Count;
                             targetNameList.Add(targetName);
                         }
 
-                        var typeName = Serialization.GetTypeName(rd.Message, rd.SerializerId);
+                        var typeName = Serialization.GetTypeName(rd.Message, serializerId);
                         if (!typeNames.TryGetValue(typeName, out var typeId))
                         {
                             typeId = typeNames[typeName] = typeNames.Count;
                             typeNameList.Add(typeName);
                         }
 
-                        var bytes = Serialization.Serialize(rd.Message,rd.SerializerId);
+                        var bytes = Serialization.Serialize(rd.Message, serializerId);
                         var envelope = new MessageEnvelope
                         {
                             MessageData = bytes,
                             Sender = rd.Sender,
                             Target = targetId,
                             TypeId = typeId,
-                            SerializerId = rd.SerializerId
+                            SerializerId = serializerId
                         };
                         envelopes.Add(envelope);
                     }
@@ -110,14 +113,17 @@ namespace Proto.Remote
         //shutdown channel before stopping
         private Task StoppedAsync() => _channel.ShutdownAsync();
 
-        private Task StartedAsync()
+        private async Task StartedAsync()
         {
             _logger.LogDebug($"Connecting to address {_address}");
             _channel = new Channel(_address, _channelCredentials, _channelOptions);
             _client = new Remoting.RemotingClient(_channel);
+            var res = await _client.ConnectAsync(new ConnectRequest());
+            _serializerId = res.DefaultSerializerId;
+
             _stream = _client.Receive(_callOptions);
 
-            Task.Factory.StartNew(async () =>
+            var _ = Task.Factory.StartNew(async () =>
             {
                 try
                 {
@@ -137,7 +143,6 @@ namespace Proto.Remote
             _streamWriter = _stream.RequestStream;
 
             _logger.LogDebug($"Connected to address {_address}");
-            return Actor.Done;
         }
     }
 }

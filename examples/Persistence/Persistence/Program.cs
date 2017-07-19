@@ -37,7 +37,7 @@ class Program
 
         public MyPersistenceActor(IProvider provider)
         {
-            _persistence = Persistence.WithEventSourcingAndSnapshotting(provider, "demo-app-id", Apply, Apply);
+            _persistence = Persistence.WithEventSourcingAndSnapshotting(provider, provider, "demo-app-id", Apply, Apply);
         }
 
         private void Apply(Event @event)

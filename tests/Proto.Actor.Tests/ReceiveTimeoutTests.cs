@@ -25,7 +25,7 @@ namespace Proto.Tests
             });
             Actor.Spawn(props);
             
-            Thread.Sleep(500);
+            Thread.Sleep(1500);
             Assert.True(timeoutReceived);
         }
         
@@ -48,7 +48,7 @@ namespace Proto.Tests
             });
             Actor.Spawn(props);
             
-            Thread.Sleep(500);
+            Thread.Sleep(1500);
             Assert.False(timeoutReceived);
         }
         
@@ -72,7 +72,7 @@ namespace Proto.Tests
             });
             Actor.Spawn(props);
             
-            Thread.Sleep(500);
+            Thread.Sleep(1500);
             Assert.False(timeoutReceived);
         }
         
@@ -97,7 +97,7 @@ namespace Proto.Tests
             });
             Actor.Spawn(props);
             
-            Thread.Sleep(500);
+            Thread.Sleep(1500);
             Assert.True(timeoutReceived);
         }
     }
