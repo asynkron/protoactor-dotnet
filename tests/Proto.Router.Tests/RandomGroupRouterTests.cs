@@ -110,7 +110,7 @@ namespace Proto.Router.Tests
             var routee2 = Actor.Spawn(MyActorProps);
             var routee3 = Actor.Spawn(MyActorProps);
 
-            var props = Router.NewRandomGroup(MyActorProps, 10000, routee1, routee2, routee3)
+            var props = Router.NewRandomGroup(10000, routee1, routee2, routee3)
                 .WithMailbox(() => new TestMailbox());
             var router = Actor.Spawn(props);
             return (router, routee1, routee2, routee3);
