@@ -36,8 +36,8 @@ namespace Proto
             var ctx = new LocalContext(props.Producer, props.SupervisorStrategy, props.ReceiveMiddlewareChain, props.SenderMiddlewareChain, parent);
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
-            var reff = new LocalProcess(mailbox);
-            var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, reff);
+            var process = new LocalProcess(mailbox);
+            var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, process);
             if (!absent)
             {
                 throw new ProcessNameExistException(name);
