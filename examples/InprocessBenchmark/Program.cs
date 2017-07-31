@@ -33,23 +33,17 @@ class Program
             var echos = new PID[clientCount];
             var completions = new TaskCompletionSource<bool>[clientCount];
 
-            var echoProps = FromFunc(ctx =>
-            {
-                switch (ctx.Message)
-                {
-                    case Msg msg:
-                        msg.Sender.Tell(msg);
-                        break;
-                }
-                return Done;
-            }).WithDispatcher(d);
+            var echoProps = FromProducer(() => new EchoActor())
+                .WithDispatcher(d)
+                .WithMailbox(() => BoundedMailbox.Create(2048));
 
             for (var i = 0; i < clientCount; i++)
             {
                 var tsc = new TaskCompletionSource<bool>();
                 completions[i] = tsc;
                 var clientProps = FromProducer(() => new PingActor(tsc, messageCount, batchSize))
-                    .WithDispatcher(d);
+                    .WithDispatcher(d)
+                    .WithMailbox(() => BoundedMailbox.Create(2048));
 
                 clients[i] = Spawn(clientProps);
                 echos[i] = Spawn(echoProps);
@@ -94,6 +88,20 @@ class Program
         }
 
         public PID Sender { get; }
+    }
+
+    public class EchoActor : IActor
+    {
+        public Task ReceiveAsync(IContext context)
+        {
+            switch (context.Message)
+            {
+                case Msg msg:
+                    msg.Sender.Tell(msg);
+                    break;
+            }
+            return Done;
+        }
     }
 
 
