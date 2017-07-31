@@ -8,11 +8,11 @@ using System.Collections.Generic;
 
 namespace Proto.Router.Routers
 {
-    public abstract class GroupRouterConfig : IGroupRouterConfig
+    public abstract class GroupRouterConfig : RouterConfig
     {
         protected HashSet<PID> Routees;
 
-        public virtual void OnStarted(IContext context, Props props, RouterState router)
+        public override void OnStarted(IContext context, RouterState router)
         {
             foreach (var pid in Routees)
             {
@@ -20,7 +20,5 @@ namespace Proto.Router.Routers
             }
             router.SetRoutees(Routees);
         }
-
-        public abstract RouterState CreateRouterState();
     }
 }

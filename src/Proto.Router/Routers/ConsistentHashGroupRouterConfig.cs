@@ -25,9 +25,6 @@ namespace Proto.Router.Routers
             Routees = new HashSet<PID>(routees);
         }
 
-        public override RouterState CreateRouterState()
-        {
-            return new ConsistentHashRouterState(_hash, _replicaCount);
-        }
+        public override RouterState CreateRouterState() => new ConsistentHashRouterState(_hash, _replicaCount);
     }
 }

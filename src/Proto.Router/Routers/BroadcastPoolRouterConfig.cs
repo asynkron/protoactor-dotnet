@@ -7,14 +7,11 @@ namespace Proto.Router.Routers
 {
     internal class BroadcastPoolRouterConfig : PoolRouterConfig
     {
-        public BroadcastPoolRouterConfig(int poolSize)
-            : base(poolSize)
+        public BroadcastPoolRouterConfig(int poolSize, Props routeeProps)
+            : base(poolSize, routeeProps)
         {
         }
 
-        public override RouterState CreateRouterState()
-        {
-            return new BroadcastRouterState();
-        }
+        public override RouterState CreateRouterState() => new BroadcastRouterState();
     }
 }

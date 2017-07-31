@@ -13,8 +13,8 @@ namespace Proto.Router.Routers
         private readonly Func<string, uint> _hash;
         private readonly int _replicaCount;
 
-        public ConsistentHashPoolRouterConfig(int poolSize, Func<string, uint> hash, int replicaCount)
-            : base(poolSize)
+        public ConsistentHashPoolRouterConfig(int poolSize, Props routeeProps, Func<string, uint> hash, int replicaCount)
+            : base(poolSize,routeeProps)
         {
             if (replicaCount <= 0)
             {
@@ -24,9 +24,6 @@ namespace Proto.Router.Routers
             _replicaCount = replicaCount;
         }
 
-        public override RouterState CreateRouterState()
-        {
-            return new ConsistentHashRouterState(_hash, _replicaCount);
-        }
+        public override RouterState CreateRouterState() => new ConsistentHashRouterState(_hash, _replicaCount);
     }
 }

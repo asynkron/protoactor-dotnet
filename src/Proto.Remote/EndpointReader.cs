@@ -34,7 +34,7 @@ namespace Proto.Remote
                     
                     var targetName = targetNames[envelope.Target];
                     var target = new PID(ProcessRegistry.Instance.Address, targetName);
-                    var sender = envelope.Sender;
+                  
                     var typeName = typeNames[envelope.TypeId];
 
                     var message = Serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
@@ -50,7 +50,10 @@ namespace Proto.Remote
                     }
                     else
                     {
-                        target.Request(message, sender);
+                        if (envelope.Sender != null)
+                            target.Request(message, envelope.Sender);
+                        else
+                            target.Tell(message);
                     }
                 }
 
