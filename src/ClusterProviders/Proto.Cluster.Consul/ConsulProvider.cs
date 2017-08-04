@@ -156,12 +156,21 @@ namespace Proto.Cluster.Consul
                 //meaning that it has Re-joined the cluster.
                 memberIds[v.Key] = BitConverter.ToInt64(v.Value, 0);
             }
+
+            long? GetMemberId(string mIdKey)
+            {
+                if (memberIds.TryGetValue(mIdKey, out long v)) return v;
+                else return null;
+            };
+
             var memberStatuses =
                 from v in statuses.Response
                 let memberIdKey = $"{_clusterName}/{v.Service.Address}:{v.Service.Port}"
-                let memberId = memberIds[memberIdKey]
+                let memberId = GetMemberId(memberIdKey)
+                where memberId != null
                 let passing = Equals(v.Checks[1].Status, HealthStatus.Passing)
-                select new MemberStatus(memberId, v.Service.Address, v.Service.Port, v.Service.Tags, passing);
+                select new MemberStatus(memberId.Value, v.Service.Address, v.Service.Port, v.Service.Tags, passing);
+
             var res = new ClusterTopologyEvent(memberStatuses);
             Actor.EventStream.Publish(res);
         }
