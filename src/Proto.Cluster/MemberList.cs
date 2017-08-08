@@ -15,12 +15,12 @@ namespace Proto.Cluster
         private static readonly Random Random = new Random();
         public static PID Pid { get; private set; }
 
-        public static void SubscribeToEventStream()
+        internal static void SubscribeToEventStream()
         {
             Actor.EventStream.Subscribe<ClusterTopologyEvent>(Pid.Tell);
         }
 
-        public static void Spawn()
+        internal static void Spawn()
         {
             Pid = Actor.SpawnNamed(Actor.FromProducer(() => new MemberListActor()), "memberlist");
         }
@@ -37,7 +37,6 @@ namespace Proto.Cluster
                 }
                 await Task.Delay(500);
             }
-            
         }
 
         public static async Task<string> GetRandomActivatorAsync(string kind)
@@ -56,7 +55,7 @@ namespace Proto.Cluster
         }
     }
 
-    public class MemberByKindResponse
+    internal class MemberByKindResponse
     {
         public MemberByKindResponse(string[] kinds)
         {
@@ -66,7 +65,7 @@ namespace Proto.Cluster
         public string[] Kinds { get; set; }
     }
 
-    public class MemberByKindRequest
+    internal class MemberByKindRequest
     {
         public MemberByKindRequest(string kind, bool onlyAlive)
         {

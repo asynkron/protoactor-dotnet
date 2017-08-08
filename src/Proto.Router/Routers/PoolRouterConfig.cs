@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------
-//  <copyright file="PoolRouterConfig.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="PoolRouterConfig.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
@@ -9,21 +9,21 @@ using System.Linq;
 
 namespace Proto.Router.Routers
 {
-    internal abstract class PoolRouterConfig : IPoolRouterConfig
+    internal abstract class PoolRouterConfig : RouterConfig
     {
         private readonly int _poolSize;
+        private readonly Props _routeeProps;
 
-        protected PoolRouterConfig(int poolSize)
+        protected PoolRouterConfig(int poolSize, Props routeeProps)
         {
             _poolSize = poolSize;
+            _routeeProps = routeeProps;
         }
 
-        public virtual void OnStarted(IContext context, Props props, RouterState router)
+        public override void OnStarted(IContext context, RouterState router)
         {
-            var routees = Enumerable.Range(0, _poolSize).Select(x => context.Spawn(props));
+            var routees = Enumerable.Range(0, _poolSize).Select(x => context.Spawn(_routeeProps));
             router.SetRoutees(new HashSet<PID>(routees));
         }
-
-        public abstract RouterState CreateRouterState();
     }
 }

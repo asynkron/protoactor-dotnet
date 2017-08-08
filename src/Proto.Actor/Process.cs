@@ -1,7 +1,7 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Process.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="Process.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System.Threading;
@@ -24,6 +24,12 @@ namespace Proto
     public class LocalProcess : Process
     {
         private long _isDead;
+
+        public LocalProcess(IMailbox mailbox)
+        {
+            Mailbox = mailbox;
+        }
+
         public IMailbox Mailbox { get; }
 
         internal bool IsDead
@@ -31,12 +37,6 @@ namespace Proto
             get => Interlocked.Read(ref _isDead) == 1;
             private set => Interlocked.Exchange(ref _isDead, value ? 1 : 0);
         }
-
-        public LocalProcess(IMailbox mailbox)
-        {
-            Mailbox = mailbox;
-        }
-
 
         protected internal override void SendUserMessage(PID pid, object message)
         {

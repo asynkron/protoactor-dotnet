@@ -16,6 +16,7 @@ message MessageEnvelope {
   bytes message_data = 2;
   int32 target = 3;
   actor.PID sender = 4;
+  int32 serializer_id = 5;
 }
 
 message ActorPidRequest {
@@ -29,6 +30,13 @@ message ActorPidResponse {
 
 message Unit {}
 
+message ConnectRequest {}
+
+message ConnectResponse {
+	int32 default_serializer_id = 1;
+}
+
 service Remoting {
+  rpc Connect(ConnectRequest) returns (ConnectResponse) {}
   rpc Receive (stream MessageBatch) returns (stream Unit) {}
 }

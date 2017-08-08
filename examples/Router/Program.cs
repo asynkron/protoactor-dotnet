@@ -63,7 +63,6 @@ namespace RouterExample
         private static void TestBroadcastGroup()
         {
             var props = Router.NewBroadcastGroup(
-                MyActorProps,
                 Actor.Spawn(MyActorProps),
                 Actor.Spawn(MyActorProps),
                 Actor.Spawn(MyActorProps),
@@ -89,7 +88,6 @@ namespace RouterExample
         private static void TestConsistentHashGroup()
         {
             var props = Router.NewConsistentHashGroup(
-                MyActorProps,
                 Actor.Spawn(MyActorProps),
                 Actor.Spawn(MyActorProps),
                 Actor.Spawn(MyActorProps),
@@ -115,7 +113,6 @@ namespace RouterExample
         private static void TestRoundRobinGroup()
         {
             var props = Router.NewRoundRobinGroup(
-                MyActorProps,
                 Actor.Spawn(MyActorProps),
                 Actor.Spawn(MyActorProps),
                 Actor.Spawn(MyActorProps),
@@ -141,7 +138,6 @@ namespace RouterExample
         private static void TestRandomGroup()
         {
             var props = Router.NewRandomGroup(
-                MyActorProps,
                 Actor.Spawn(MyActorProps),
                 Actor.Spawn(MyActorProps),
                 Actor.Spawn(MyActorProps),

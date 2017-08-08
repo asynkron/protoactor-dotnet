@@ -24,7 +24,7 @@ namespace Proto.Mailbox
         void Start();
     }
 
-    internal static class BoundedMailbox
+    public static class BoundedMailbox
     {
         public static IMailbox Create(int size, params IMailboxStatistics[] stats)
         {
@@ -49,6 +49,7 @@ namespace Proto.Mailbox
         private IMessageInvoker _invoker;
 
         private int _status = MailboxStatus.Idle;
+        private long _systemMessageCount;
         private bool _suspended;
 
         internal int Status => _status;
@@ -63,9 +64,9 @@ namespace Proto.Mailbox
         public void PostUserMessage(object msg)
         {
             _userMailbox.Push(msg);
-            for (var i = 0; i < _stats.Length; i++)
+            foreach (var t in _stats)
             {
-                _stats[i].MessagePosted(msg);
+                t.MessagePosted(msg);
             }
             Schedule();
         }
@@ -73,9 +74,10 @@ namespace Proto.Mailbox
         public void PostSystemMessage(object msg)
         {
             _systemMessages.Push(msg);
-            for (var i = 0; i < _stats.Length; i++)
+            Interlocked.Increment(ref _systemMessageCount);
+            foreach (var t in _stats)
             {
-                _stats[i].MessagePosted(msg);
+                t.MessagePosted(msg);
             }
             Schedule();
         }
@@ -88,9 +90,9 @@ namespace Proto.Mailbox
 
         public void Start()
         {
-            for (var i = 0; i < _stats.Length; i++)
+            foreach (var t in _stats)
             {
-                _stats[i].MailboxStarted();
+                t.MailboxStarted();
             }
         }
 
@@ -104,15 +106,15 @@ namespace Proto.Mailbox
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
-            if (_systemMessages.HasMessages || (!_suspended && _userMailbox.HasMessages))
+            if (_systemMessages.HasMessages || !_suspended && _userMailbox.HasMessages)
             {
                 Schedule();
             }
             else
             {
-                for (var i = 0; i < _stats.Length; i++)
+                foreach (var t in _stats)
                 {
-                    _stats[i].MailboxEmpty();
+                    t.MailboxEmpty();
                 }
             }
             return Task.FromResult(0);
@@ -125,8 +127,9 @@ namespace Proto.Mailbox
             {
                 for (var i = 0; i < _dispatcher.Throughput; i++)
                 {
-                    if ((msg = _systemMessages.Pop()) != null)
+                    if (Interlocked.Read(ref _systemMessageCount) > 0 && (msg = _systemMessages.Pop()) != null)
                     {
+                        Interlocked.Decrement(ref _systemMessageCount);
                         if (msg is SuspendMailbox)
                         {
                             _suspended = true;
@@ -147,9 +150,9 @@ namespace Proto.Mailbox
                             t.ContinueWith(RescheduleOnTaskComplete, msg);
                             return false;
                         }
-                        for (var si = 0; si < _stats.Length; si++)
+                        foreach (var t1 in _stats)
                         {
-                            _stats[si].MessageReceived(msg);
+                            t1.MessageReceived(msg);
                         }
                         continue;
                     }
@@ -171,9 +174,9 @@ namespace Proto.Mailbox
                             t.ContinueWith(RescheduleOnTaskComplete, msg);
                             return false;
                         }
-                        for (var si = 0; si < _stats.Length; si++)
+                        foreach (var t1 in _stats)
                         {
-                            _stats[si].MessageReceived(msg);
+                            t1.MessageReceived(msg);
                         }
                     }
                     else
@@ -197,9 +200,9 @@ namespace Proto.Mailbox
             }
             else
             {
-                for (var si = 0; si < _stats.Length; si++)
+                foreach (var t in _stats)
                 {
-                    _stats[si].MessageReceived(message);
+                    t.MessageReceived(message);
                 }
             }
             _dispatcher.Schedule(RunAsync);

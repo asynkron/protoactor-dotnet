@@ -1,7 +1,7 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="ProcessRegistry.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="ProcessRegistry.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
@@ -40,21 +40,18 @@ namespace Proto
                 throw new NotSupportedException("Unknown host");
             }
 
-            if (!_localActorRefs.TryGetValue(pid.Id, out var aref))
+            if (_localActorRefs.TryGetValue(pid.Id, out var process))
             {
-                return DeadLetterProcess.Instance;
+                return process;
             }
-            return aref;
+            return DeadLetterProcess.Instance;
         }
 
-        public (PID pid, bool ok) TryAdd(string id, Process aref)
+        public (PID pid, bool ok) TryAdd(string id, Process process)
         {
-            var pid = new PID
-            {
-                Id = id,
-                Address = Address // local
-            };
-            var ok = _localActorRefs.TryAdd(pid.Id, aref);
+            var pid = new PID(Address, id, process);
+            
+            var ok = _localActorRefs.TryAdd(pid.Id, process);
             return (pid, ok);
         }
 

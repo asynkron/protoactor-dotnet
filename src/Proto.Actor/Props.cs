@@ -1,19 +1,18 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Props.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="Props.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
+using Proto.Mailbox;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Proto.Mailbox;
 
 namespace Proto
 {
     public sealed class Props
     {
-        private static IMailbox ProduceDefaultMailbox() => UnboundedMailbox.Create();
         private Spawner _spawner;
         public Func<IActor> Producer { get; private set; }
         public Func<IMailbox> MailboxProducer { get; private set; } = ProduceDefaultMailbox;
@@ -23,20 +22,22 @@ namespace Proto
         public IList<Func<Sender, Sender>> SenderMiddleware { get; private set; } = new List<Func<Sender, Sender>>();
         public Receive ReceiveMiddlewareChain { get; set; }
         public Sender SenderMiddlewareChain { get; set; }
-        
+
         public Spawner Spawner
         {
             get => _spawner ?? DefaultSpawner;
             private set => _spawner = value;
         }
 
+        private static IMailbox ProduceDefaultMailbox() => UnboundedMailbox.Create();
+
         public static PID DefaultSpawner (string name,Props props,PID parent)
         {
             var ctx = new LocalContext(props.Producer, props.SupervisorStrategy, props.ReceiveMiddlewareChain, props.SenderMiddlewareChain, parent);
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
-            var reff = new LocalProcess(mailbox);
-            var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, reff);
+            var process = new LocalProcess(mailbox);
+            var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, process);
             if (!absent)
             {
                 throw new ProcessNameExistException(name);

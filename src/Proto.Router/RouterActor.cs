@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------
-//  <copyright file="RouterActor.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="RouterActor.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System.Linq;
@@ -14,14 +14,12 @@ namespace Proto.Router
 {
     public class RouterActor : IActor
     {
-        private readonly IRouterConfig _config;
-        private readonly Props _routeeProps;
+        private readonly RouterConfig _config;
         private readonly RouterState _routerState;
         private readonly AutoResetEvent _wg;
 
-        public RouterActor(Props routeeProps, IRouterConfig config, RouterState routerState, AutoResetEvent wg)
+        public RouterActor(RouterConfig config, RouterState routerState, AutoResetEvent wg)
         {
-            _routeeProps = routeeProps;
             _config = config;
             _routerState = routerState;
             _wg = wg;
@@ -31,7 +29,7 @@ namespace Proto.Router
         {
             if (context.Message is Started)
             {
-                _config.OnStarted(context, _routeeProps, _routerState);
+                _config.OnStarted(context, _routerState);
                 _wg.Set();
                 return Actor.Done;
             }
