@@ -132,10 +132,15 @@ Task("Push")
         }
         if (currentBranch == "master")
         {
+            Information("Master build. Publishing to NuGet.");
             foreach(var pkg in pkgs) 
             {
                 NuGetPush(pkg, nuGetPushSettings);
             }
+        }
+        else
+        {
+            Information("Non-master build. Not publishing to NuGet. Current branch: " + currentBranch);
         }
     });
 
