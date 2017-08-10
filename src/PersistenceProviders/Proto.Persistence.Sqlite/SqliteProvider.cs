@@ -69,7 +69,7 @@ namespace Proto.Persistence.Sqlite
             }
         }
 
-        public Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
             try
             {
@@ -84,14 +84,13 @@ namespace Proto.Persistence.Sqlite
                     {
                         callback(JsonConvert.DeserializeObject<object>(item.EventData, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
                     }
+                    return items.Any() ? items.LastOrDefault().EventIndex : -1;
                 }
             }
             catch (Exception ex)
             {
                 throw ex;
             }
-
-            return Task.FromResult(0);
         }
 
         public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
@@ -123,7 +122,7 @@ namespace Proto.Persistence.Sqlite
             return Task.FromResult((snapshot, index));
         }
 
-        public async Task PersistEventAsync(string actorName, long index, object @event)
+        public async Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
             try
             {
@@ -134,6 +133,8 @@ namespace Proto.Persistence.Sqlite
                     await db.Events.AddAsync(item);
 
                     await db.SaveChangesAsync();
+
+                    return index++;
                 }
             }
             catch (Exception ex)

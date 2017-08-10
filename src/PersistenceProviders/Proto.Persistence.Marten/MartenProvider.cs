@@ -14,7 +14,7 @@ namespace Proto.Persistence.Marten
             _store = store;
         }
         
-        public async Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
             using (var session = _store.OpenSession())
             {
@@ -28,6 +28,8 @@ namespace Proto.Persistence.Marten
                 {
                     callback(@event.Data);
                 }
+                
+                return events.Any() ? events.LastOrDefault().Index : -1;
             }
         }
 
@@ -44,13 +46,15 @@ namespace Proto.Persistence.Marten
             }
         }
 
-        public async Task PersistEventAsync(string actorName, long index, object @event)
+        public async Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
             using (var session = _store.OpenSession())
             {
                 session.Store(new Event(actorName, index, @event));
 
                 await session.SaveChangesAsync();
+
+                return index++;
             }
         }
 

@@ -26,7 +26,7 @@ namespace Proto.Persistence.RavenDB
             await IndexCreation.CreateIndexesAsync(typeof(DeleteSnapshotIndex).Assembly(), _store);
         }
         
-        public async Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
             using (var session = _store.OpenAsyncSession())
             {
@@ -40,6 +40,8 @@ namespace Proto.Persistence.RavenDB
                 {
                     callback(@event.Data);
                 }
+                
+                return events.Any() ? events.LastOrDefault().Index : -1;
             }
         }
 
@@ -56,13 +58,15 @@ namespace Proto.Persistence.RavenDB
             }
         }
 
-        public async Task PersistEventAsync(string actorName, long index, object @event)
+        public async Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
             using (var session = _store.OpenAsyncSession())
             {
                 await session.StoreAsync(new Event(actorName, index, @event));
 
                 await session.SaveChangesAsync();
+
+                return index++;
             }
         }
 

@@ -148,7 +148,7 @@ namespace Proto.Persistence.SqlServer
             await ExecuteNonQueryAsync(sql, parameters);
         }
 
-        public async Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
             var sql = GenerateGetEventsSqlString();
             var sqlParameters = GenerateGetEventsParameters(actorName, indexStart, indexEnd);
@@ -170,6 +170,8 @@ namespace Proto.Persistence.SqlServer
                     {
                         callback(JsonConvert.DeserializeObject<object>(eventReader["EventData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
                     }
+
+                    return eventReader.HasRows ? (long) eventReader["EventIndex"] : -1;
                 }
             }
             catch (Exception ex)
@@ -250,7 +252,7 @@ namespace Proto.Persistence.SqlServer
             return (snapshotData, snapshotIndex);
         }
 
-        public async Task PersistEventAsync(string actorName, long index, object @event)
+        public async Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
             var item = new Event(actorName, index, @event);
 
@@ -285,6 +287,8 @@ namespace Proto.Persistence.SqlServer
             };
 
             await ExecuteNonQueryAsync(sql, parameters);
+
+            return index++;
         }
 
         public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)

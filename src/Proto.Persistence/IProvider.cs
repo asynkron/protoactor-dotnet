@@ -18,11 +18,12 @@ namespace Proto.Persistence
 
     public interface IEventStore
     {
-        Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback);
-        Task PersistEventAsync(string actorName, long index, object @event);
+        Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback);
+        Task<long> PersistEventAsync(string actorName, long index, object @event);
         Task DeleteEventsAsync(string actorName, long inclusiveToIndex);
     }
-    
-    public interface IProvider : IEventStore, ISnapshotStore {}
-    
+
+    public interface IProvider : IEventStore, ISnapshotStore
+    {
+    }
 }
