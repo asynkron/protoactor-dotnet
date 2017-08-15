@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.12
+VisualStudioVersion = 15.0.26430.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{771514F1-12AE-4A26-89CB-2646D3EF7034}"
 EndProject
@@ -128,9 +128,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence.Sqlite", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Schedulers.SimpleScheduler", "src\Schedulers\Proto.Scheduler.SimpleScheduler\Proto.Schedulers.SimpleScheduler.csproj", "{7BF5C7E6-0DE4-45D7-A340-E90272C54E7C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Remote.Tests.Messages", "tests\Proto.Remote.Tests.Messages\Proto.Remote.Tests.Messages.csproj", "{68867B24-B794-4C28-A9FC-BD6D86B19750}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Remote.Tests.Messages", "tests\Proto.Remote.Tests.Messages\Proto.Remote.Tests.Messages.csproj", "{68867B24-B794-4C28-A9FC-BD6D86B19750}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Actor.Extensions", "src\Proto.Actor.Extensions\Proto.Actor.Extensions.csproj", "{525C3F5D-0AF1-4346-8760-7CFF1B71F8A0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Actor.Extensions", "src\Proto.Actor.Extensions\Proto.Actor.Extensions.csproj", "{525C3F5D-0AF1-4346-8760-7CFF1B71F8A0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Remote.Tests", "tests\Proto.Remote.Tests\Proto.Remote.Tests.csproj", "{62D3B49D-F51A-4B80-88C4-76C2CD583DC9}"
 EndProject
@@ -138,7 +138,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DependencyInjection", "Depe
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Contrib", "Contrib", "{F28FACFE-385A-42DB-81BA-595BDD3A87D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyInjection", "examples\DependencyInjection\DependencyInjection.csproj", "{506C2213-CAF6-443E-88C1-B49374AFEE20}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DependencyInjection", "examples\DependencyInjection\DependencyInjection.csproj", "{506C2213-CAF6-443E-88C1-B49374AFEE20}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Node2", "examples\ClusterGrainHelloWorld\Node2\Node2.csproj", "{241E01BD-1766-4CFE-B376-EF9942F40A8B}"
 EndProject
@@ -152,7 +152,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "protobuf", "protobuf", "{6D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProtoGrainGenerator", "protobuf\ProtoGrainGenerator\ProtoGrainGenerator.csproj", "{E686C93C-5853-44CC-A331-958396DADF64}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Serialization.Wire", "src\Proto.Actor.Wire\Proto.Serialization.Wire.csproj", "{A59CCE39-ED01-437A-A669-6D07673862B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Serialization.Wire", "src\Proto.Actor.Wire\Proto.Serialization.Wire.csproj", "{A59CCE39-ED01-437A-A669-6D07673862B4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "RemoteBenchmarkWireSerializer", "RemoteBenchmarkWireSerializer", "{55AA9959-F17A-4656-9468-8D6D55230C81}"
 EndProject

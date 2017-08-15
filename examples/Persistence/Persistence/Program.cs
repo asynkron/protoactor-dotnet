@@ -13,12 +13,13 @@ using Proto.Persistence.Sqlite;
 using Event = Proto.Persistence.Event;
 using Snapshot = Proto.Persistence.Snapshot;
 using System.Text;
+using Microsoft.Data.Sqlite;
 
 class Program
 {
     static void Main(string[] args)
     {
-        var provider = new SqliteProvider();
+        var provider = new SqliteProvider(new SqliteConnectionStringBuilder { DataSource = "states.db" });
 
         var props = Actor.FromProducer(() => new MyPersistenceActor(provider));
 
