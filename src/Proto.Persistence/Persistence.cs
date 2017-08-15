@@ -149,14 +149,14 @@ namespace Proto.Persistence
         
         private class NoEventStore : IEventStore
         {
-            public Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+            public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
             {
-                return Task.FromResult(0);
+                return Task.FromResult(-1L);
             }
 
-            public Task PersistEventAsync(string actorName, long index, object @event)
+            public Task<long> PersistEventAsync(string actorName, long index, object @event)
             {
-                return Task.FromResult(0);
+                return Task.FromResult(0L);
             }
 
             public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
