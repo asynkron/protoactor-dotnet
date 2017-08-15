@@ -1,22 +1,41 @@
 ﻿using System;
 using System.Threading.Tasks;
-using System.Linq;
 using Newtonsoft.Json;
+using Microsoft.Data.Sqlite;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Proto.Persistence.Sqlite
 {
     public class SqliteProvider : IProvider
     {
         private readonly string _datasource;
+        private string _connectionString => $"{new SqliteConnectionStringBuilder { DataSource = _datasource }}";
 
         public SqliteProvider(string datasource = "states.db")
         {
             _datasource = datasource;
+
             try
             {
-                using (var db = new SqlitePersistenceContext(_datasource))
+                using (var connection = new SqliteConnection(_connectionString))
                 {
-                    db.Database.EnsureCreated();
+                    connection.Open();
+
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        var initEventsCommand = connection.CreateCommand();
+                        initEventsCommand.Transaction = transaction;
+                        initEventsCommand.CommandText = "CREATE TABLE IF NOT EXISTS Events (Id TEXT, ActorName TEXT, EventIndex REAL, EventData TEXT)";
+                        initEventsCommand.ExecuteNonQuery();
+
+                        var initSnapshotsCommand = connection.CreateCommand();
+                        initSnapshotsCommand.Transaction = transaction;
+                        initSnapshotsCommand.CommandText = "CREATE TABLE IF NOT EXISTS Snapshots (Id TEXT, ActorName TEXT, SnapshotIndex REAL, SnapshotData TEXT)";
+                        initSnapshotsCommand.ExecuteNonQuery();
+
+                        transaction.Commit();
+                    }
                 }
             }
             catch (Exception ex)
@@ -29,19 +48,24 @@ namespace Proto.Persistence.Sqlite
         {
             try
             {
-                using (var db = new SqlitePersistenceContext(_datasource))
+                using (var connection = new SqliteConnection(_connectionString))
                 {
-                    var items = db.Events
-                                    .Where(x => x.ActorName == actorName)
-                                    .Where(x => x.EventIndex <= inclusiveToIndex)
-                                    .ToList();
+                    connection.Open();
 
-                    db.RemoveRange(items);
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        var deleteCommand = connection.CreateCommand();
+                        deleteCommand.Transaction = transaction;
+                        deleteCommand.CommandText = "DELETE FROM Events WHERE ActorName = $actorName AND EventIndex <= $inclusiveToIndex";
+                        deleteCommand.Parameters.AddWithValue("$actorName", actorName);
+                        deleteCommand.Parameters.AddWithValue("$inclusiveToIndex", inclusiveToIndex);
+                        await deleteCommand.ExecuteNonQueryAsync();
 
-                    await db.SaveChangesAsync();
+                        transaction.Commit();
+                    }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw ex;
             }
@@ -51,16 +75,21 @@ namespace Proto.Persistence.Sqlite
         {
             try
             {
-                using (var db = new SqlitePersistenceContext(_datasource))
+                using (var connection = new SqliteConnection(_connectionString))
                 {
-                    var items = db.Snapshots
-                                    .Where(x => x.ActorName == actorName)
-                                    .Where(x => x.SnapshotIndex <= inclusiveToIndex)
-                                    .ToList();
+                    connection.Open();
 
-                    db.RemoveRange(items);
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        var deleteCommand = connection.CreateCommand();
+                        deleteCommand.Transaction = transaction;
+                        deleteCommand.CommandText = "DELETE FROM Snapshots WHERE ActorName = $actorName AND SnapshotIndex <= $inclusiveToIndex";
+                        deleteCommand.Parameters.AddWithValue("$actorName", actorName);
+                        deleteCommand.Parameters.AddWithValue("$inclusiveToIndex", inclusiveToIndex);
+                        await deleteCommand.ExecuteNonQueryAsync();
 
-                    await db.SaveChangesAsync();
+                        transaction.Commit();
+                    }
                 }
             }
             catch (Exception ex)
@@ -73,18 +102,35 @@ namespace Proto.Persistence.Sqlite
         {
             try
             {
-                using (var db = new SqlitePersistenceContext(_datasource))
+                using (var connection = new SqliteConnection(_connectionString))
                 {
-                    var items = db.Events
-                        .Where(x => x.ActorName == actorName)
-                        .Where(x => x.EventIndex >= indexStart && x.EventIndex <= indexEnd)
-                        .ToList();
+                    connection.Open();
 
-                    foreach (var item in items)
+                    using (var transaction = connection.BeginTransaction())
                     {
-                        callback(JsonConvert.DeserializeObject<object>(item.EventData, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
+                        var selectCommand = connection.CreateCommand();
+                        selectCommand.Transaction = transaction;
+                        selectCommand.CommandText = "SELECT EventIndex, EventData FROM Events WHERE ActorName = $ActorName AND EventIndex >= $IndexStart AND EventIndex <= $IndexEnd ORDER BY EventIndex ASC";
+                        selectCommand.Parameters.AddWithValue("$ActorName", actorName);
+                        selectCommand.Parameters.AddWithValue("$IndexStart", indexStart);
+                        selectCommand.Parameters.AddWithValue("$IndexEnd", indexEnd);
+
+                        var indexes = new List<long>();
+
+                        using (var reader = await selectCommand.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                indexes.Add(Convert.ToInt64(reader["EventIndex"]));
+
+                                callback(JsonConvert.DeserializeObject<object>(reader["EventData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
+                            }
+                        }
+
+                        transaction.Commit();
+
+                        return indexes.Any() ? indexes.LastOrDefault() : -1;
                     }
-                    return items.Any() ? items.LastOrDefault().EventIndex : -1;
                 }
             }
             catch (Exception ex)
@@ -93,24 +139,34 @@ namespace Proto.Persistence.Sqlite
             }
         }
 
-        public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
+        public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
             object snapshot = null;
             long index = 0;
 
             try
             {
-                using (var db = new SqlitePersistenceContext(_datasource))
+                using (var connection = new SqliteConnection(_connectionString))
                 {
-                    var item = db.Snapshots
-                                    .Where(x => x.ActorName == actorName)
-                                    .OrderByDescending(x => x.SnapshotIndex)
-                                    .FirstOrDefault();
+                    connection.Open();
 
-                    if (item != null)
+                    using (var transaction = connection.BeginTransaction())
                     {
-                        snapshot = JsonConvert.DeserializeObject<object>(item.SnapshotData, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-                        index = item.SnapshotIndex;
+                        var selectCommand = connection.CreateCommand();
+                        selectCommand.Transaction = transaction;
+                        selectCommand.CommandText = "SELECT SnapshotIndex, SnapshotData FROM Snapshots WHERE ActorName = $ActorName ORDER BY SnapshotIndex DESC LIMIT 1";
+                        selectCommand.Parameters.AddWithValue("$ActorName", actorName);
+
+                        using (var reader = await selectCommand.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                snapshot = JsonConvert.DeserializeObject<object>(reader["SnapshotData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
+                                index = Convert.ToInt64(reader["SnapshotIndex"]);
+                            }
+                        }
+
+                        transaction.Commit();
                     }
                 }
             }
@@ -119,22 +175,34 @@ namespace Proto.Persistence.Sqlite
                 throw ex;
             }
 
-            return Task.FromResult((snapshot, index));
+            return (snapshot, index);
         }
 
         public async Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
             try
             {
-                using (var db = new SqlitePersistenceContext(_datasource))
+                var item = new Event(actorName, index, JsonConvert.SerializeObject(@event, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All }));
+
+                using (var connection = new SqliteConnection(_connectionString))
                 {
-                    var item = new Event(actorName, index, JsonConvert.SerializeObject(@event, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All }));
+                    connection.Open();
 
-                    await db.Events.AddAsync(item);
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        var insertCommand = connection.CreateCommand();
+                        insertCommand.Transaction = transaction;
+                        insertCommand.CommandText = "INSERT INTO Events (Id, ActorName, EventIndex, EventData) VALUES ($Id, $ActorName, $EventIndex, $EventData)";
+                        insertCommand.Parameters.AddWithValue("$Id", item.Id);
+                        insertCommand.Parameters.AddWithValue("$ActorName", item.ActorName);
+                        insertCommand.Parameters.AddWithValue("$EventIndex", item.EventIndex);
+                        insertCommand.Parameters.AddWithValue("$EventData", item.EventData);
+                        await insertCommand.ExecuteNonQueryAsync();
 
-                    await db.SaveChangesAsync();
+                        transaction.Commit();
 
-                    return index++;
+                        return index++;
+                    }
                 }
             }
             catch (Exception ex)
@@ -147,13 +215,25 @@ namespace Proto.Persistence.Sqlite
         {
             try
             {
-                using (var db = new SqlitePersistenceContext(_datasource))
+                var item = new Snapshot(actorName, index, JsonConvert.SerializeObject(snapshot, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All }));
+
+                using (var connection = new SqliteConnection(_connectionString))
                 {
-                    var item = new Snapshot(actorName, index, JsonConvert.SerializeObject(snapshot, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All }));
+                    connection.Open();
 
-                    await db.Snapshots.AddAsync(item);
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        var insertCommand = connection.CreateCommand();
+                        insertCommand.Transaction = transaction;
+                        insertCommand.CommandText = "INSERT INTO Snapshots (Id, ActorName, SnapshotIndex, SnapshotData) VALUES ($Id, $ActorName, $SnapshotIndex, $SnapshotData)";
+                        insertCommand.Parameters.AddWithValue("$Id", item.Id);
+                        insertCommand.Parameters.AddWithValue("$ActorName", item.ActorName);
+                        insertCommand.Parameters.AddWithValue("$SnapshotIndex", item.SnapshotIndex);
+                        insertCommand.Parameters.AddWithValue("$SnapshotData", item.SnapshotData);
+                        await insertCommand.ExecuteNonQueryAsync();
 
-                    await db.SaveChangesAsync();
+                        transaction.Commit();
+                    }
                 }
             }
             catch (Exception ex)
