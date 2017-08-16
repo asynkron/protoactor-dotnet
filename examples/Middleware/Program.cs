@@ -52,15 +52,15 @@ class Program
                                        envelope.SetHeader("SpanID", c.Headers.GetOrDefault("SpanID"));
                                        envelope.SetHeader("ParentSpanID", c.Headers.GetOrDefault("ParentSpanID"));
 
-                                       Console.WriteLine($"sender middleware 1 enter {envelope.Message.GetType()}:{c.Message}");
+                                       Console.WriteLine($"sender middleware 1 enter {envelope.Message.GetType()}:{envelope.Message}");
                                        await next(c, target, envelope);
-                                       Console.WriteLine($"sender middleware 1 exit {envelope.Message.GetType()}:{c.Message}");
+                                       Console.WriteLine($"sender middleware 1 exit {envelope.Message.GetType()}:{envelope.Message}");
                                    },
                                    next => async (c, target, envelope) =>
                                    {
-                                       Console.WriteLine($"sender middleware 2 enter {envelope.Message.GetType()}:{c.Message}");
+                                       Console.WriteLine($"sender middleware 2 enter {envelope.Message.GetType()}:{envelope.Message}");
                                        await next(c, target, envelope);
-                                       Console.WriteLine($"sender middleware 2 exit {envelope.Message.GetType()}:{c.Message}");
+                                       Console.WriteLine($"sender middleware 2 exit {envelope.Message.GetType()}:{envelope.Message}");
                                    });
         //just wait for started message to be processed to make the output look less confusing
         Task.Delay(500).Wait();
