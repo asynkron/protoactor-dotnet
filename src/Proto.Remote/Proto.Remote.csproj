@@ -20,8 +20,8 @@
     <None Include="Protos.proto" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.3.0" />
     <PackageReference Include="Grpc" Version="1.1.0" />
-    <PackageReference Include="protobuf" Version="2.6.1.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
