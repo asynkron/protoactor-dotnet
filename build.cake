@@ -80,7 +80,7 @@ Task("UnitTest")
                 DotNetCoreTest(proj.ToString(), new DotNetCoreTestSettings 
                 {
                     NoBuild = true,
-                    Framework = "netcoreapp1.1",
+                    Framework = "netcoreapp2.0",
                     Configuration = configuration
                 });
             }
