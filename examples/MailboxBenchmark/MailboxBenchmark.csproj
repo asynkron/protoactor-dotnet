@@ -8,6 +8,6 @@
     <ProjectReference Include="..\..\src\Proto.Mailbox\Proto.Mailbox.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotnet" Version="0.10.8" />
+    <PackageReference Include="BenchmarkDotnet" Version="0.10.9" />
   </ItemGroup>
 </Project>
