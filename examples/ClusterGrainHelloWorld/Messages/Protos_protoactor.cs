@@ -74,7 +74,7 @@ namespace Messages
                 {
                     return await Inner();
                 }
-                catch(Exception x)
+                catch//(Exception x)
                 {
                     //ignore, TODO: exponential backoff?
                 }

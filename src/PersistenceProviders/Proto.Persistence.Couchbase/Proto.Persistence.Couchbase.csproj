@@ -19,7 +19,7 @@
     <FileVersion>0.1.2.0</FileVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CouchbaseNetClient" Version="2.4.0" />
+    <PackageReference Include="CouchbaseNetClient" Version="2.4.8" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Proto.Actor\Proto.Actor.csproj" />
