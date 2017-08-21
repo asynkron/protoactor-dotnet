@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using Proto.TestFixtures;
 using Xunit;
 
@@ -54,9 +53,10 @@ namespace Proto.Mailbox.Tests
 
             mailbox.PostUserMessage(msg1);
             var taskException = new Exception();
-            msg1.TaskCompletionSource.SetException(taskException);
 
-            Thread.Sleep(500);
+            Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetException(taskException);
+            mailboxHandler.ResumeMailboxProcessingAndWait(resumeMailboxTrigger);
+
             Assert.Equal(1, mailboxHandler.EscalatedFailures.Count);
             var e = Assert.IsType<AggregateException>(mailboxHandler.EscalatedFailures[0]);
             Assert.Equal(taskException, e.InnerException);
@@ -73,9 +73,10 @@ namespace Proto.Mailbox.Tests
 
             mailbox.PostSystemMessage(msg1);
             var taskException = new Exception();
-            msg1.TaskCompletionSource.SetException(taskException);
 
-            Thread.Sleep(500);
+            Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetException(taskException);
+            mailboxHandler.ResumeMailboxProcessingAndWait(resumeMailboxTrigger);
+
             Assert.Equal(1, mailboxHandler.EscalatedFailures.Count);
             var e = Assert.IsType<AggregateException>(mailboxHandler.EscalatedFailures[0]);
             Assert.Equal(taskException, e.InnerException);

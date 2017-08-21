@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 using Proto.TestFixtures;
 using Xunit;
 
@@ -69,8 +68,9 @@ namespace Proto.Mailbox.Tests
             mailbox.PostUserMessage(msg1);
             Assert.DoesNotContain(msg1, mailboxStatistics.Received);
 
-            msg1.TaskCompletionSource.SetResult(0);
-            Thread.Sleep(10);
+            Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetResult(0);
+            mailboxHandler.ResumeMailboxProcessingAndWait(resumeMailboxTrigger);
+
             Assert.Contains(msg1, mailboxStatistics.Posted);
         }
 
@@ -104,9 +104,10 @@ namespace Proto.Mailbox.Tests
             var msg1 = new TestMessage();
 
             mailbox.PostUserMessage(msg1);
-            msg1.TaskCompletionSource.SetException(new Exception());
 
-            Thread.Sleep(10);
+            Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetException(new Exception());
+            mailboxHandler.ResumeMailboxProcessingAndWait(resumeMailboxTrigger);
+
             Assert.DoesNotContain(msg1, mailboxStatistics.Received);
         }
 
@@ -141,9 +142,10 @@ namespace Proto.Mailbox.Tests
             var msg1 = new TestMessage();
 
             mailbox.PostSystemMessage(msg1);
-            msg1.TaskCompletionSource.SetException(new Exception());
 
-            Thread.Sleep(10);
+            Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetException(new Exception());
+            mailboxHandler.ResumeMailboxProcessingAndWait(resumeMailboxTrigger);
+
             Assert.DoesNotContain(msg1, mailboxStatistics.Received);
         }
 

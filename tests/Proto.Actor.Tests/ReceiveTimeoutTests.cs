@@ -6,10 +6,13 @@ namespace Proto.Tests
 {
     public class ReceiveTimeoutTests
     {
+        private readonly AutoResetEvent _blockingWaiter = new AutoResetEvent(false);
+
         [Fact]
         public void receive_timeout_received_within_expected_time()
         {
             var timeoutReceived = false;
+        
             var props = Actor.FromFunc((context) =>
             {
                 switch (context.Message)
@@ -19,13 +22,14 @@ namespace Proto.Tests
                             break;
                         case ReceiveTimeout _:
                             timeoutReceived = true;
+                            _blockingWaiter.Set();
                             break;
                 }
                 return Actor.Done;
             });
             Actor.Spawn(props);
-            
-            Thread.Sleep(1500);
+
+            _blockingWaiter.WaitOne();
             Assert.True(timeoutReceived);
         }
         
@@ -39,6 +43,7 @@ namespace Proto.Tests
                 {
                     case Started _:
                         context.SetReceiveTimeout(TimeSpan.FromMilliseconds(1500));
+                        _blockingWaiter.Set();
                         break;
                     case ReceiveTimeout _:
                         timeoutReceived = true;
@@ -47,8 +52,8 @@ namespace Proto.Tests
                 return Actor.Done;
             });
             Actor.Spawn(props);
-            
-            Thread.Sleep(1500);
+
+            _blockingWaiter.WaitOne();
             Assert.False(timeoutReceived);
         }
         
@@ -56,6 +61,9 @@ namespace Proto.Tests
         public void can_cancel_receive_timeout()
         {
             var timeoutReceived = false;
+
+            var endingTimeout = TimeSpan.MaxValue;
+
             var props = Actor.FromFunc((context) =>
             {
                 switch (context.Message)
@@ -63,16 +71,21 @@ namespace Proto.Tests
                     case Started _:
                         context.SetReceiveTimeout(TimeSpan.FromMilliseconds(150));
                         context.CancelReceiveTimeout();
+                        endingTimeout = context.ReceiveTimeout;
                         break;
                     case ReceiveTimeout _:
                         timeoutReceived = true;
+                        _blockingWaiter.Set();
                         break;
                 }
                 return Actor.Done;
             });
             Actor.Spawn(props);
             
-            Thread.Sleep(1500);
+            // this event should not be signaled
+            var signaled = _blockingWaiter.WaitOne(1500);
+            Assert.False(signaled);
+            Assert.Equal(TimeSpan.Zero, endingTimeout);
             Assert.False(timeoutReceived);
         }
         
@@ -91,13 +104,14 @@ namespace Proto.Tests
                         break;
                     case ReceiveTimeout _:
                         timeoutReceived = true;
+                        _blockingWaiter.Set();
                         break;
                 }
                 return Actor.Done;
             });
             Actor.Spawn(props);
-            
-            Thread.Sleep(1500);
+
+            _blockingWaiter.WaitOne();
             Assert.True(timeoutReceived);
         }
     }
