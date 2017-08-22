@@ -7,11 +7,11 @@
     <Content Include="runtimeconfig.template.json" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.2.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.3.0" />
     <PackageReference Include="Microsoft.Extensions.Options">
       <Version>1.1.2</Version>
     </PackageReference>
-    <PackageReference Include="System.ValueTuple" Version="4.3.1" />
+    <PackageReference Include="System.ValueTuple" Version="4.4.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\ClusterProviders\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
