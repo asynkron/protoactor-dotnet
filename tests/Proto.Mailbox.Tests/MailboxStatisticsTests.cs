@@ -1,6 +1,7 @@
 using System;
 using Proto.TestFixtures;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Proto.Mailbox.Tests
 {
@@ -54,7 +55,7 @@ namespace Proto.Mailbox.Tests
         }
 
         [Fact]
-        public void GivenNonCompletedUserMessage_ShouldInvokeMessageReceivedAfterCompletion()
+        public async Task GivenNonCompletedUserMessage_ShouldInvokeMessageReceivedAfterCompletion()
         {
             var mailboxHandler = new TestMailboxHandler();
             var userMailbox = new UnboundedMailboxQueue();
@@ -69,7 +70,8 @@ namespace Proto.Mailbox.Tests
             Assert.DoesNotContain(msg1, mailboxStatistics.Received);
 
             Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetResult(0);
-            mailboxHandler.ResumeMailboxProcessingAndWait(resumeMailboxTrigger);
+            await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
+                .ConfigureAwait(false);
 
             Assert.Contains(msg1, mailboxStatistics.Posted);
         }
@@ -92,7 +94,7 @@ namespace Proto.Mailbox.Tests
         }
 
         [Fact]
-        public void GivenNonCompletedUserMessageThrewException_ShouldNotInvokeMessageReceived()
+        public async Task GivenNonCompletedUserMessageThrewException_ShouldNotInvokeMessageReceived()
         {
             var mailboxHandler = new TestMailboxHandler();
             var userMailbox = new UnboundedMailboxQueue();
@@ -106,7 +108,8 @@ namespace Proto.Mailbox.Tests
             mailbox.PostUserMessage(msg1);
 
             Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetException(new Exception());
-            mailboxHandler.ResumeMailboxProcessingAndWait(resumeMailboxTrigger);
+            await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
+                .ConfigureAwait(false);
 
             Assert.DoesNotContain(msg1, mailboxStatistics.Received);
         }
@@ -130,7 +133,7 @@ namespace Proto.Mailbox.Tests
         }
 
         [Fact]
-        public void GivenNonCompletedSystemMessageThrewException_ShouldNotInvokeMessageReceived()
+        public async Task GivenNonCompletedSystemMessageThrewException_ShouldNotInvokeMessageReceived()
         {
             var mailboxHandler = new TestMailboxHandler();
             var userMailbox = new UnboundedMailboxQueue();
@@ -144,7 +147,8 @@ namespace Proto.Mailbox.Tests
             mailbox.PostSystemMessage(msg1);
 
             Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetException(new Exception());
-            mailboxHandler.ResumeMailboxProcessingAndWait(resumeMailboxTrigger);
+            await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
+                .ConfigureAwait(false);
 
             Assert.DoesNotContain(msg1, mailboxStatistics.Received);
         }

@@ -1,5 +1,6 @@
 ﻿using Proto.TestFixtures;
 using System;
+using System.Threading.Tasks;
 using Xunit;
 using TestMessage = Proto.TestFixtures.TestMessage;
 
@@ -8,7 +9,7 @@ namespace Proto.Mailbox.Tests
     public class MailboxSchedulingTests
     {
         [Fact]
-        public void GivenNonCompletedUserMessage_ShouldHaltProcessingUntilCompletion()
+        public async Task GivenNonCompletedUserMessage_ShouldHaltProcessingUntilCompletion()
         {
             var mailboxHandler = new TestMailboxHandler();
             var userMailbox = new UnboundedMailboxQueue();
@@ -31,8 +32,9 @@ namespace Proto.Mailbox.Tests
                 msg1.TaskCompletionSource.SetResult(0);
             };
 
-            mailboxHandler.ResumeMailboxProcessingAndWait(resumeMailboxTrigger);
-            
+            await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
+                .ConfigureAwait(false);
+
             Assert.False(userMailbox.HasMessages, "Mailbox should have processed msg2 because processing of msg1 is completed.");
         }
 
@@ -56,7 +58,7 @@ namespace Proto.Mailbox.Tests
         }
 
         [Fact]
-        public void GivenNonCompletedSystemMessage_ShouldHaltProcessingUntilCompletion()
+        public async Task GivenNonCompletedSystemMessage_ShouldHaltProcessingUntilCompletion()
         {
             var mailboxHandler = new TestMailboxHandler();
             var userMailbox = new UnboundedMailboxQueue();
@@ -79,8 +81,8 @@ namespace Proto.Mailbox.Tests
                 msg1.TaskCompletionSource.SetResult(0);
             };
 
-            mailboxHandler.ResumeMailboxProcessingAndWait(resumeMailboxTrigger);
-
+            await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
+                .ConfigureAwait(false);
 
             Assert.False(systemMessages.HasMessages, "Mailbox should have processed msg2 because processing of msg1 is completed.");
         }
@@ -105,7 +107,7 @@ namespace Proto.Mailbox.Tests
         }
 
         [Fact]
-        public void GivenNonCompletedUserMessage_ShouldSetMailboxToIdleAfterCompletion()
+        public async Task GivenNonCompletedUserMessage_ShouldSetMailboxToIdleAfterCompletion()
         {
             var mailboxHandler = new TestMailboxHandler();
             var userMailbox = new UnboundedMailboxQueue();
@@ -117,7 +119,8 @@ namespace Proto.Mailbox.Tests
             mailbox.PostUserMessage(msg1);
 
             Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetResult(0);
-            mailboxHandler.ResumeMailboxProcessingAndWait(resumeMailboxTrigger);
+            await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
+                .ConfigureAwait(false);
 
             Assert.True(mailbox.Status == MailboxStatus.Idle, "Mailbox should be set back to Idle after completion of message.");
         }
