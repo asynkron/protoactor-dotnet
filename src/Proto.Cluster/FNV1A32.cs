@@ -4,7 +4,7 @@ namespace System.Security.Cryptography
     {
         protected FNV1A32() { }
 
-        public new static FNV1A32 Create()
+        public static FNV1A32 Create()
         {
             return new Implementation();
         }
