@@ -11,11 +11,11 @@ namespace System.Security.Cryptography
 
         private sealed class Implementation : FNV1A32
         {
-            private const uint fnvPrime = 0x01000193;
+            private const uint FnvPrime = 0x01000193;
 
-            private const uint fnvOffsetBasis = 0x811C9DC5;
+            private const uint FnvOffsetBasis = 0x811C9DC5;
 
-            private uint hash;
+            private uint _hash;
 
             public Implementation()
             {
@@ -25,7 +25,7 @@ namespace System.Security.Cryptography
 
             public override void Initialize()
             {
-                this.hash = fnvOffsetBasis;
+                this._hash = FnvOffsetBasis;
             }
 
             protected override void HashCore(byte[] array, int ibStart, int cbSize)
@@ -39,15 +39,15 @@ namespace System.Security.Cryptography
                 {
                     unchecked
                     {
-                        this.hash ^= array[i];
-                        this.hash *= fnvPrime;
+                        this._hash ^= array[i];
+                        this._hash *= FnvPrime;
                     }
                 }
             }
 
             protected override byte[] HashFinal()
             {
-                return BitConverter.GetBytes(this.hash);
+                return BitConverter.GetBytes(this._hash);
             }
         }
     }
