@@ -52,12 +52,12 @@ namespace Proto.Remote
                             Who = pid,
                             AddressTerminated = true
                         };
-                        var watcher = new PID(ProcessRegistry.Instance.Address, id);
+                            var watcher = new PID(ProcessRegistry.Instance.Address, id);
                         //send the address Terminated event to the Watcher
                         watcher.SendSystemMessage(t);
                     }
 
-                    _behavior.Become(TerminatedAsync);
+                    _behavior.Become(TerminatedAsync); ;
                     break;
                 }
                 case RemoteUnwatch msg:
@@ -93,6 +93,9 @@ namespace Proto.Remote
                     });
                     break;
                 }
+                case EndpointConnectedEvent _:
+                    _behavior.Become(ConnectedAsync);
+                    break;
                 case RemoteUnwatch _:
                 case EndpointTerminatedEvent _:
                 case RemoteTerminate _:
