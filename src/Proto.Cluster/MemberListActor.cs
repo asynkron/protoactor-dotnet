@@ -16,6 +16,7 @@ namespace Proto.Cluster
     {
         private readonly ILogger _logger = Log.CreateLogger<MemberListActor>();
         private readonly Dictionary<string, MemberStatus> _members = new Dictionary<string, MemberStatus>();
+        private readonly List<string> _temp = new List<string>();
 
         public Task ReceiveAsync(IContext context)
         {
@@ -43,22 +44,41 @@ namespace Proto.Cluster
                         tmp[status.Address] = status;
                     }
 
+                    _temp.Clear();
                     foreach (var (address, old) in _members)
                     {
-                        if (!tmp.TryGetValue(address, out var _))
+                        if (tmp.TryGetValue(address, out var status))
                         {
-                            Notify(null, old);
+                            if(!status.Alive)
+                                Notify(null, old, _temp);
+                        }
+                        else
+                        {
+                            Notify(null, old, _temp);
                         }
                     }
 
-                    foreach (var ( address, @new) in tmp)
+                    foreach (var item in _temp)
                     {
-                        if (_members.TryGetValue(address, out var _))
+                        _members.Remove(item);
+                    }
+
+                    _temp.Clear();
+                    foreach (var status in msg.Statuses)
+                    {
+                        if(!_members.TryGetValue(status.Address, out var _))
                         {
-                            continue;
+                            if(status.Alive)
+                            {
+                                _members[status.Address] = status;
+                                Notify(status, null, _temp);
+                            }
                         }
-                        _members[address] = @new;
-                        Notify(@new, null);
+                    }
+
+                    foreach (var item in _temp)
+                    {
+                        _members.Remove(item);
                     }
                     break;
                 }
@@ -66,7 +86,7 @@ namespace Proto.Cluster
             return Actor.Done;
         }
 
-        private void Notify(MemberStatus @new, MemberStatus old)
+        private void Notify(MemberStatus @new, MemberStatus old, List<string> removed)
         {
             if (@new == null && old == null)
             {
@@ -78,7 +98,8 @@ namespace Proto.Cluster
                 //notify left
                 var left = new MemberLeftEvent(old.Host, old.Port, old.Kinds);
                 Actor.EventStream.Publish(left);
-                _members.Remove(old.Address);
+                //_members.Remove(old.Address);
+                removed.Add(old.Address);
                 var endpointTerminated = new EndpointTerminatedEvent
                                          {
                                              Address = old.Address
