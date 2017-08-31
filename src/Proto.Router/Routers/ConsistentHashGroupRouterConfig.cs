@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------
-//  <copyright file="ConsistentHashGroupRouterConfig.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="ConsistentHashGroupRouterConfig.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
@@ -25,9 +25,6 @@ namespace Proto.Router.Routers
             Routees = new HashSet<PID>(routees);
         }
 
-        public override RouterState CreateRouterState()
-        {
-            return new ConsistentHashRouterState(_hash, _replicaCount);
-        }
+        public override RouterState CreateRouterState() => new ConsistentHashRouterState(_hash, _replicaCount);
     }
 }

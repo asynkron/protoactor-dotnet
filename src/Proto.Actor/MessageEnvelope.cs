@@ -1,4 +1,9 @@
-﻿namespace Proto
+﻿// -----------------------------------------------------------------------
+//   <copyright file="MessageEnvelope.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
+// -----------------------------------------------------------------------
+namespace Proto
 {
     public class MessageEnvelope
     {
@@ -12,7 +17,6 @@
         public PID Sender { get; }
         public object Message { get; }
         public MessageHeader Header { get; private set; }
-
 
         public static (object message, PID sender, MessageHeader headers) Unwrap(object message)
         {
@@ -30,7 +34,7 @@
             {
                 return @default;
             }
-            return Header.ContainsKey(key) ? Header[key] : @default;
+            return Header.TryGetValue(key, out string value) ? value : @default;
         }
 
         public void SetHeader(string key, string value)

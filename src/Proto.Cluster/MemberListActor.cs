@@ -4,7 +4,6 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,7 +12,7 @@ using Proto.Remote;
 
 namespace Proto.Cluster
 {
-    public class MemberListActor : IActor
+    internal class MemberListActor : IActor
     {
         private readonly ILogger _logger = Log.CreateLogger<MemberListActor>();
         private readonly Dictionary<string, MemberStatus> _members = new Dictionary<string, MemberStatus>();
@@ -54,11 +53,12 @@ namespace Proto.Cluster
 
                     foreach (var ( address, @new) in tmp)
                     {
-                        if (!_members.TryGetValue(address, out var _))
+                        if (_members.TryGetValue(address, out var _))
                         {
-                            _members[address] = @new;
-                            Notify(@new, null);
+                            continue;
                         }
+                        _members[address] = @new;
+                        Notify(@new, null);
                     }
                     break;
                 }

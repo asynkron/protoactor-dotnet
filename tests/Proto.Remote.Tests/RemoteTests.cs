@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Xunit;
 using System.Threading.Tasks;
 using Proto.Remote.Tests.Messages;
@@ -15,6 +16,58 @@ namespace Proto.Remote.Tests
         public RemoteTests(RemoteManager remoteManager)
         {
             _remoteManager = remoteManager;
+        }
+
+        [Fact, DisplayTestMethodName]
+        public void CanSerializeAndDeserializeJsonPID()
+        {
+
+            var typeName = "actor.PID";
+            var json = new JsonMessage(typeName, "{ \"Address\":\"123\", \"Id\":\"456\"}");
+            var bytes = Serialization.Serialize(json, 1);
+            var deserialized = Serialization.Deserialize(typeName, bytes, 1) as PID;
+            Assert.Equal("123", deserialized.Address);
+            Assert.Equal("456", deserialized.Id);
+        }
+
+
+        [Fact, DisplayTestMethodName]
+        public void CanSerializeAndDeserializeJson()
+        {
+
+            var typeName = "remote_test_messages.Ping";
+            var json = new JsonMessage(typeName, "{ \"message\":\"Hello\"}");
+            var bytes = Serialization.Serialize(json, 1);
+            var deserialized = Serialization.Deserialize(typeName, bytes, 1) as Ping;
+            Assert.Equal("Hello",deserialized.Message);
+        }
+
+        [Fact, DisplayTestMethodName]
+        public async void CanSendJsonAndReceiveToExistingRemote()
+        {
+            var remoteActor = new PID(_remoteManager.DefaultNode.Address, "EchoActorInstance");
+            var ct = new CancellationTokenSource(3000);
+            var tcs = new TaskCompletionSource<bool>();
+            ct.Token.Register(() =>
+            {
+                tcs.TrySetCanceled();
+            });
+            
+            var localActor = Actor.Spawn(Actor.FromFunc(ctx =>
+            {
+                if (ctx.Message is Pong)
+                {
+                    tcs.SetResult(true);
+                    ctx.Self.Stop();
+                }
+
+                return Actor.Done;
+            }));
+            
+            var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
+            var envelope = new Proto.MessageEnvelope(json, localActor, MessageHeader.EmptyHeader);
+            Remote.SendMessage(remoteActor, envelope, 1);
+            await tcs.Task;
         }
 
         [Fact, DisplayTestMethodName]

@@ -12,10 +12,10 @@ namespace Proto.Tests
         {
             var producer = (Func<IActor>)(() => null);
             var supervisorStrategyMock = new DoNothingSupervisorStrategy();
-            var middleware = new Receive(ctx => Task.CompletedTask);
+            var middleware = new Receive(ctx => Actor.Done);
             var parent = new PID("test", "test");
 
-            var context = new Context(producer, supervisorStrategyMock, middleware, null, parent);
+            var context = new LocalContext(producer, supervisorStrategyMock, middleware, null, parent);
 
             Assert.Equal(parent, context.Parent);
 
@@ -24,7 +24,7 @@ namespace Proto.Tests
             Assert.Null(context.Self);
             Assert.Null(context.Actor);
             Assert.NotNull(context.Children);
-            Assert.Same(context.Children, Context.EmptyChildren);
+            Assert.Same(context.Children, LocalContext.EmptyChildren);
 
             Assert.Equal(TimeSpan.Zero, context.ReceiveTimeout);
         }

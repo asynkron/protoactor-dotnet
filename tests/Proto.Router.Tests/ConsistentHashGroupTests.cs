@@ -141,7 +141,7 @@ namespace Proto.Router.Tests
             var routee2 = Actor.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee2");
             var routee3 = Actor.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee3");
 
-            var props = Router.NewConsistentHashGroup(MyActorProps, SuperIntelligentDeterministicHash.Hash, 1, routee1, routee2, routee3)
+            var props = Router.NewConsistentHashGroup(SuperIntelligentDeterministicHash.Hash, 1, routee1, routee2, routee3)
                 .WithMailbox(() => new TestMailbox());
             var router = Actor.Spawn(props);
             return (router, routee1, routee2, routee3);

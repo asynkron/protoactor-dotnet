@@ -1,7 +1,7 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="HashedConcurrentDictionary.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="HashedConcurrentDictionary.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
@@ -9,12 +9,12 @@ using System.Collections.Generic;
 
 namespace Proto
 {
-    public class HashedConcurrentDictionary
+    internal class HashedConcurrentDictionary
     {
         private const int HashSize = 1024;
         private readonly Partition[] _partitions = new Partition[HashSize];
 
-        public HashedConcurrentDictionary()
+        internal HashedConcurrentDictionary()
         {
             for (var i = 0; i < _partitions.Length; i++)
             {
@@ -22,7 +22,7 @@ namespace Proto
             }
         }
 
-        static UInt64 CalculateHash(string read)
+        static ulong CalculateHash(string read)
         {
             var hashedValue = 3074457345618258791ul;
             for (var i = 0; i < read.Length; i++)
@@ -46,7 +46,9 @@ namespace Proto
             lock (p)
             {
                 if (p.ContainsKey(key))
+                {
                     return false;
+                }
                 p.Add(key, reff);
                 return true;
             }
@@ -71,7 +73,6 @@ namespace Proto
         }
 
         public class Partition : Dictionary<string, Process>
-        {
-        }
+        {}
     }
 }

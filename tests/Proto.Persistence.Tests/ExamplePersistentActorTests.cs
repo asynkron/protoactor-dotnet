@@ -203,11 +203,30 @@ namespace Proto.Persistence.Tests
             Assert.Equal(4, (messages[1] as Multiplied).Amount);
         }
 
+        [Fact]
+        public async Task CanUseSeparateStores()
+        {
+            var actorId = Guid.NewGuid().ToString();
+            var eventStore = new InMemoryProvider();
+            var snapshotStore = new InMemoryProvider();
+            var props = Actor.FromProducer(() => new ExamplePersistentActor(eventStore, snapshotStore, actorId))
+                .WithMailbox(() => new TestMailbox());
+            var pid = Actor.Spawn(props);
+            
+            pid.Tell(new Multiply{ Amount = 2 });
+            var eventStoreMessages = new List<object>();
+            var snapshotStoreMessages = new List<object>();
+            await eventStore.GetEventsAsync(actorId, 0, 1, msg => eventStoreMessages.Add(msg));
+            Assert.Equal(1, eventStoreMessages.Count);
+            await snapshotStore.GetEventsAsync(actorId, 0, 1, msg => snapshotStoreMessages.Add(msg));
+            Assert.Equal(0, snapshotStoreMessages.Count);
+        }
+        
         private (PID pid, Props props, string actorId, IProvider provider) CreateTestActor()
         {
             var actorId = Guid.NewGuid().ToString();
             var inMemoryProvider = new InMemoryProvider();
-            var props = Actor.FromProducer(() => new ExamplePersistentActor(inMemoryProvider, actorId))
+            var props = Actor.FromProducer(() => new ExamplePersistentActor(inMemoryProvider, inMemoryProvider, actorId))
                 .WithMailbox(() => new TestMailbox());
             var pid = Actor.Spawn(props);
             return (pid, props, actorId, inMemoryProvider);
@@ -245,9 +264,9 @@ namespace Proto.Persistence.Tests
         private State _state = new State{Value = 1};
         private readonly Persistence _persistence;
 
-        public ExamplePersistentActor(IProvider provider, string persistenceId)
+        public ExamplePersistentActor(IEventStore eventStore, ISnapshotStore snapshotStore, string persistenceId)
         {
-            _persistence = Persistence.WithEventSourcingAndSnapshotting(provider, persistenceId, ApplyEvent, ApplySnapshot);
+            _persistence = Persistence.WithEventSourcingAndSnapshotting(eventStore, snapshotStore, persistenceId, ApplyEvent, ApplySnapshot);
         }
 
         private void ApplyEvent(Event @event)

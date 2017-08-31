@@ -1,79 +1,152 @@
 #addin Cake.Git
 
-var packageVersion = "0.1.9";
+var packageVersion = "0.1.12";
 
 var target = Argument("target", "Default");
 var mygetApiKey = Argument<string>("mygetApiKey", null);
+var nugetApiKey = Argument<string>("nugetApiKey", null);
 var currentBranch = Argument<string>("currentBranch", GitBranchCurrent("./").FriendlyName);
 var buildNumber = Argument<string>("buildNumber", null);
+var pullRequestTitle = Argument<string>("pullRequestTitle", null);
 var configuration = "Release";
+var isPullRequestBuild = !string.IsNullOrWhiteSpace(pullRequestTitle);
 
-var versionSuffix = "";
-if (currentBranch != "master") {
-    versionSuffix += "-" + currentBranch;
-    if (buildNumber != null) {
-        versionSuffix += "-build" + buildNumber.PadLeft(5, '0');
-    }
-    packageVersion += versionSuffix;
-}
-
-Information("Version: " + packageVersion);
-
+Task("PrintEnvironment")
+    .Does(() =>
+    {
+        foreach(var envVar in EnvironmentVariables())
+        {
+            Information("{0}: \"{1}\"", envVar.Key, envVar.Value);
+        }
+    });
 Task("PatchVersion")
-    .Does(() => {
-        foreach(var proj in GetFiles("src/**/*.csproj")) {
+    .Does(() => 
+    {
+        if (isPullRequestBuild)
+        {
+            Information("Pull request build. Skipping version patching.");
+            return;
+        }
+        var versionSuffix = "";
+        if (currentBranch != "master") {
+            if (buildNumber != null) {
+                versionSuffix += "-build" + buildNumber.PadLeft(5, '0');
+            }
+            versionSuffix += "-" + currentBranch;
+            if (versionSuffix.Length > 20) {
+                versionSuffix = versionSuffix.Substring(0, 20);
+            }
+            packageVersion += versionSuffix;
+        }
+        Information("Version: " + packageVersion);        
+
+        foreach(var proj in GetFiles("src/**/*.csproj")) 
+        {
             Information("Patching " + proj);
             XmlPoke(proj, "/Project/PropertyGroup/Version", packageVersion);
         }
     });
+
 Task("Restore")
-    .IsDependentOn("PatchVersion")
-    .Does(() => {
+    .Does(() => 
+    {
         DotNetCoreRestore();
     });
+
 Task("Build")
-    .IsDependentOn("Restore")
-    .Does(() => {
-        DotNetCoreBuild("ProtoActor.sln", new DotNetCoreBuildSettings {
+    .Does(() => 
+    {
+        DotNetCoreBuild("ProtoActor.sln", new DotNetCoreBuildSettings 
+        {
             Configuration = configuration,
         });
     });
+
 Task("UnitTest")
-    .Does(() => {
-        foreach(var proj in GetFiles("tests/**/*.Tests.csproj")) {
-            DotNetCoreTest(proj.ToString(), new DotNetCoreTestSettings {
-                NoBuild = true,
-                Configuration = configuration
-            });
+    .Does(() => 
+    {
+        foreach(var proj in GetFiles("tests/**/*.Tests.csproj")) 
+        {
+            if (IsRunningOnWindows()) 
+            {
+                DotNetCoreTest(proj.ToString(), new DotNetCoreTestSettings 
+                {
+                    NoBuild = true,
+                    Configuration = configuration
+                });
+            } 
+            else // dotnet test cannot run full framework tests on mac so ignore them
+            {
+                DotNetCoreTest(proj.ToString(), new DotNetCoreTestSettings 
+                {
+                    NoBuild = true,
+                    Framework = "netcoreapp1.1",
+                    Configuration = configuration
+                });
+            }
         }
     });
+
 Task("Pack")
-    .Does(() => {
-        foreach(var proj in GetFiles("src/**/*.csproj")) {
-            DotNetCorePack(proj.ToString(), new DotNetCorePackSettings {
+    .Does(() => 
+    {
+        if (isPullRequestBuild)
+        {
+            Information("Pull request build. Skipping NuGet packing.");
+            return;
+        }
+        foreach(var proj in GetFiles("src/**/*.csproj")) 
+        {
+            DotNetCorePack(proj.ToString(), new DotNetCorePackSettings 
+            {
                 OutputDirectory = "out",
                 Configuration = configuration,
                 NoBuild = true,
             });
         }
     });
+
 Task("Push")
-    .Does(() => {
-        var pkgs = GetFiles("out/*.nupkg");
-        foreach(var pkg in pkgs) {
-            NuGetPush(pkg, new NuGetPushSettings {
+    .Does(() => 
+    {
+        if (isPullRequestBuild)
+        {
+            Information("Pull request build. Skipping NuGet push.");
+            return;
+        }
+        var nuGetPushSettings = new NuGetPushSettings 
+            {
+                Source = "https://www.nuget.org/api/v2/package",
+                ApiKey = nugetApiKey
+            };
+        var myGetPushSettings = new NuGetPushSettings 
+            {
                 Source = "https://www.myget.org/F/protoactor/api/v2/package",
                 ApiKey = mygetApiKey
-            });
+            };
+
+        var pkgs = GetFiles("out/*.nupkg");
+        foreach(var pkg in pkgs) 
+        {
+            NuGetPush(pkg, myGetPushSettings);
+        }
+        if (currentBranch == "master")
+        {
+            Information("Master build. Publishing to NuGet.");
+            foreach(var pkg in pkgs) 
+            {
+                NuGetPush(pkg, nuGetPushSettings);
+            }
+        }
+        else
+        {
+            Information("Non-master build. Not publishing to NuGet. Current branch: " + currentBranch);
         }
     });
 
 Task("Default")
     .IsDependentOn("Restore")
-    .IsDependentOn("PatchVersion")
     .IsDependentOn("Build")
-    .IsDependentOn("UnitTest")
-    .IsDependentOn("Pack")
-    ;
+    .IsDependentOn("UnitTest");
 
 RunTarget(target);

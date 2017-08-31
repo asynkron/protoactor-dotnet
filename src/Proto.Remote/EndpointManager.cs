@@ -1,7 +1,7 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="EndpointManager.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="EndpointManager.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
@@ -23,7 +23,7 @@ namespace Proto.Remote
         public PID Watcher { get; }
     }
 
-    public class EndpointManager : IActor
+    public class EndpointManager : IActor, ISupervisorStrategy
     {
         private readonly RemoteConfig _config;
         private readonly Dictionary<string, Endpoint> _connections = new Dictionary<string, Endpoint>();
@@ -40,45 +40,49 @@ namespace Proto.Remote
             switch (context.Message)
             {
                 case Started _:
-                {
-                    _logger.LogDebug("Started EndpointManager");
-                    return Actor.Done;
-                }
+                    {
+                        _logger.LogDebug("Started EndpointManager");
+                        return Actor.Done;
+                    }
                 case EndpointTerminatedEvent msg:
-                {
-                    var endpoint = EnsureConnected(msg.Address, context);
-                    endpoint.Watcher.Tell(msg);
-                    return Actor.Done;
-                }
+                    {
+                        var endpoint = EnsureConnected(msg.Address, context);
+                        endpoint.Watcher.Tell(msg);
+                        return Actor.Done;
+                    }
                 case RemoteTerminate msg:
-                {
-                    var endpoint = EnsureConnected(msg.Watchee.Address, context);
-                    endpoint.Watcher.Tell(msg);
-                    return Actor.Done;
-                }
+                    {
+                        var endpoint = EnsureConnected(msg.Watchee.Address, context);
+                        endpoint.Watcher.Tell(msg);
+                        return Actor.Done;
+                    }
                 case RemoteWatch msg:
-                {
-                    var endpoint = EnsureConnected(msg.Watchee.Address, context);
-                    endpoint.Watcher.Tell(msg);
-                    return Actor.Done;
-                }
+                    {
+                        var endpoint = EnsureConnected(msg.Watchee.Address, context);
+                        endpoint.Watcher.Tell(msg);
+                        return Actor.Done;
+                    }
                 case RemoteUnwatch msg:
-                {
-                    var endpoint = EnsureConnected(msg.Watchee.Address, context);
-                    endpoint.Watcher.Tell(msg);
-                    return Actor.Done;
-                }
+                    {
+                        var endpoint = EnsureConnected(msg.Watchee.Address, context);
+                        endpoint.Watcher.Tell(msg);
+                        return Actor.Done;
+                    }
                 case RemoteDeliver msg:
-                {
-                    var endpoint = EnsureConnected(msg.Target.Address, context);
-                    endpoint.Writer.Tell(msg);
-                    return Actor.Done;
-                }
+                    {
+                        var endpoint = EnsureConnected(msg.Target.Address, context);
+                        endpoint.Writer.Tell(msg);
+                        return Actor.Done;
+                    }
                 default:
                     return Actor.Done;
             }
         }
 
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause)
+        {
+            supervisor.RestartChildren(cause, child);
+        }
 
         private Endpoint EnsureConnected(string address, IContext context)
         {

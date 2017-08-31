@@ -1,7 +1,7 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Supervision.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2016 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="Supervision.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
@@ -23,8 +23,8 @@ namespace Proto
     public interface ISupervisor
     {
         IReadOnlyCollection<PID> Children { get; }
-        void EscalateFailure(PID who, Exception reason);
-        void RestartChildren(params PID[] pids);
+        void EscalateFailure(Exception reason, PID who);
+        void RestartChildren(Exception reason, params PID[] pids);
         void StopChildren(params PID[] pids);
         void ResumeChildren(params PID[] pids);
     }
@@ -50,10 +50,10 @@ namespace Proto
     /// place them all into a potentially invalid state.
     /// </summary>
     public class AllForOneStrategy : ISupervisorStrategy {
+        private static readonly ILogger Logger = Log.CreateLogger<AllForOneStrategy>();
         private readonly Decider _decider;
         private readonly int _maxNrOfRetries;
         private readonly TimeSpan? _withinTimeSpan;
-        private static readonly ILogger Logger = Log.CreateLogger<AllForOneStrategy>();
 
         public AllForOneStrategy(Decider decider, int maxNrOfRetries, TimeSpan? withinTimeSpan)
         {
@@ -75,7 +75,7 @@ namespace Proto
                     if (RequestRestartPermission(rs))
                     {
                         Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
-                        supervisor.RestartChildren(supervisor.Children.ToArray());
+                        supervisor.RestartChildren(reason, supervisor.Children.ToArray());
                     }
                     else
                     {
@@ -88,7 +88,7 @@ namespace Proto
                     supervisor.StopChildren(supervisor.Children.ToArray());
                     break;
                 case SupervisorDirective.Escalate:
-                    supervisor.EscalateFailure(child, reason);
+                    supervisor.EscalateFailure(reason, child);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -113,10 +113,10 @@ namespace Proto
 
     public class OneForOneStrategy : ISupervisorStrategy
     {
+        private static readonly ILogger Logger = Log.CreateLogger<OneForOneStrategy>();
+        private readonly Decider _decider;
         private readonly int _maxNrOfRetries;
         private readonly TimeSpan? _withinTimeSpan;
-        private readonly Decider _decider;
-        private static readonly ILogger Logger = Log.CreateLogger<OneForOneStrategy>();
 
         public OneForOneStrategy(Decider decider, int maxNrOfRetries, TimeSpan? withinTimeSpan)
         {
@@ -137,7 +137,7 @@ namespace Proto
                     if (RequestRestartPermission(rs))
                     {
                         Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
-                        supervisor.RestartChildren(child);
+                        supervisor.RestartChildren(reason, child);
                     }
                     else
                     {
@@ -150,7 +150,7 @@ namespace Proto
                     supervisor.StopChildren(child);
                     break;
                 case SupervisorDirective.Escalate:
-                    supervisor.EscalateFailure(child, reason);
+                    supervisor.EscalateFailure(reason, child);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -185,16 +185,6 @@ namespace Proto
             _initialBackoff = initialBackoff;
         }
 
-        private long ToNanoseconds(TimeSpan timeSpan)
-        {
-            return Convert.ToInt64(timeSpan.TotalMilliseconds * 1000000);
-        }
-
-        private long ToMilliseconds(long nanoseconds)
-        {
-            return nanoseconds / 1000000;
-        }
-
         public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
         {
             SetFailureCount(rs);
@@ -203,8 +193,18 @@ namespace Proto
             var duration = TimeSpan.FromMilliseconds(ToMilliseconds(backoff + noise));
             Task.Delay(duration).ContinueWith(t =>
             {
-                supervisor.RestartChildren(child);
+                supervisor.RestartChildren(reason, child);
             });
+        }
+
+        private long ToNanoseconds(TimeSpan timeSpan)
+        {
+            return Convert.ToInt64(timeSpan.TotalMilliseconds * 1000000);
+        }
+
+        private long ToMilliseconds(long nanoseconds)
+        {
+            return nanoseconds / 1000000;
         }
 
         private void SetFailureCount(RestartStatistics rs)

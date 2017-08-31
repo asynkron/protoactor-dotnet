@@ -47,10 +47,7 @@ namespace Proto.Mailbox
             Throughput = 300;
         }
 
-        public void Schedule(Func<Task> runner)
-        {
-            Task.Factory.StartNew(runner, TaskCreationOptions.None);
-        }
+        public void Schedule(Func<Task> runner) => Task.Factory.StartNew(runner, TaskCreationOptions.None);
 
         public int Throughput { get; set; }
     }
@@ -68,10 +65,7 @@ namespace Proto.Mailbox
             Throughput = 300;
         }
 
-        public void Schedule(Func<Task> runner)
-        {
-            Task.Factory.StartNew(runner, CancellationToken.None, TaskCreationOptions.None, _scheduler);
-        }
+        public void Schedule(Func<Task> runner) => Task.Factory.StartNew(runner, CancellationToken.None, TaskCreationOptions.None, _scheduler);
 
         public int Throughput { get; set; }
     }

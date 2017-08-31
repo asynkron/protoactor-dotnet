@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Proto;
 using Proto.Mailbox;
+using static Proto.Actor;
 
 class Program
 {
@@ -27,31 +28,25 @@ class Program
         {
             var d = new ThreadPoolDispatcher {Throughput = t};
 
-            var clientCount = Environment.ProcessorCount * 2;
+            var clientCount = Environment.ProcessorCount * 1;
             var clients = new PID[clientCount];
             var echos = new PID[clientCount];
             var completions = new TaskCompletionSource<bool>[clientCount];
 
-            var echoProps = Actor.FromFunc(ctx =>
-            {
-                switch (ctx.Message)
-                {
-                    case Msg msg:
-                        msg.Sender.Tell(msg);
-                        break;
-                }
-                return Actor.Done;
-            }).WithDispatcher(d);
+            var echoProps = FromProducer(() => new EchoActor())
+                .WithDispatcher(d)
+                .WithMailbox(() => BoundedMailbox.Create(2048));
 
             for (var i = 0; i < clientCount; i++)
             {
                 var tsc = new TaskCompletionSource<bool>();
                 completions[i] = tsc;
-                var clientProps = Actor.FromProducer(() => new PingActor(tsc, messageCount, batchSize))
-                    .WithDispatcher(d);
+                var clientProps = FromProducer(() => new PingActor(tsc, messageCount, batchSize))
+                    .WithDispatcher(d)
+                    .WithMailbox(() => BoundedMailbox.Create(2048));
 
-                clients[i] = Actor.Spawn(clientProps);
-                echos[i] = Actor.Spawn(echoProps);
+                clients[i] = Spawn(clientProps);
+                echos[i] = Spawn(echoProps);
             }
             var tasks = completions.Select(tsc => tsc.Task).ToArray();
             var sw = Stopwatch.StartNew();
@@ -95,6 +90,20 @@ class Program
         public PID Sender { get; }
     }
 
+    public class EchoActor : IActor
+    {
+        public Task ReceiveAsync(IContext context)
+        {
+            switch (context.Message)
+            {
+                case Msg msg:
+                    msg.Sender.Tell(msg);
+                    break;
+            }
+            return Done;
+        }
+    }
+
 
     public class PingActor : IActor
     {
@@ -131,7 +140,7 @@ class Program
                     }
                     break;
             }
-            return Actor.Done;
+            return Done;
         }
 
         private bool SendBatch(IContext context, PID sender)

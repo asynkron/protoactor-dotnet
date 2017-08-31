@@ -12,7 +12,7 @@ namespace Proto.Persistence.Tests
             var state = 1;
             var provider = new InMemoryProvider();
             var actorId = Guid.NewGuid().ToString();
-            var persistence = Persistence.WithEventSourcingAndSnapshotting(provider, actorId, 
+            var persistence = Persistence.WithEventSourcingAndSnapshotting(provider, provider, actorId, 
                 @event => { state = state * (@event.Data as Multiplied).Amount; },
                 snapshot => { state = (int)snapshot.State; }, 
                 new IntervalStrategy(1), () => state);

@@ -1,19 +1,27 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="EndpointReader.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="EndpointReader.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
-using System.Collections.Generic;
 using Proto.Mailbox;
 
 namespace Proto.Remote
 {
     public class EndpointReader : Remoting.RemotingBase
     {
+        public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
+        {
+            return Task.FromResult(new ConnectResponse()
+            {
+                DefaultSerializerId = Serialization.DefaultSerializerId
+            });
+        }
+
         public override async Task Receive(IAsyncStreamReader<MessageBatch> requestStream,
             IServerStreamWriter<Unit> responseStream, ServerCallContext context)
         {
@@ -26,9 +34,10 @@ namespace Proto.Remote
                     
                     var targetName = targetNames[envelope.Target];
                     var target = new PID(ProcessRegistry.Instance.Address, targetName);
-                    var sender = envelope.Sender;
+                  
                     var typeName = typeNames[envelope.TypeId];
-                    var message = Serialization.Deserialize(typeName, envelope.MessageData);
+
+                    var message = Serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
 
                     if (message is Terminated msg)
                     {
@@ -41,7 +50,10 @@ namespace Proto.Remote
                     }
                     else
                     {
-                        target.Request(message, sender);
+                        if (envelope.Sender != null)
+                            target.Request(message, envelope.Sender);
+                        else
+                            target.Tell(message);
                     }
                 }
 

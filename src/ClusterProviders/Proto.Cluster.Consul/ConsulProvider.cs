@@ -15,10 +15,25 @@ namespace Proto.Cluster.Consul
 {
     public class ConsulProviderOptions
     {
-        public TimeSpan? ServiceTtl { get; set; }
-        public TimeSpan? RefreshTtl { get; set; }
-        public TimeSpan? DeregisterCritical { get; set; }
-        public TimeSpan? BlockingWaitTime { get; set; }
+        /// <summary>
+        /// Default value is 3 seconds
+        /// </summary>
+        public TimeSpan? ServiceTtl { get; set; } = TimeSpan.FromSeconds(3);
+
+        /// <summary>
+        /// Default value is 1 second
+        /// </summary>
+        public TimeSpan? RefreshTtl { get; set; } = TimeSpan.FromSeconds(1);
+
+        /// <summary>
+        /// Default value is 10 seconds
+        /// </summary>
+        public TimeSpan? DeregisterCritical { get; set; } = TimeSpan.FromSeconds(10);
+
+        /// <summary>
+        /// Default value is 20 seconds
+        /// </summary>
+        public TimeSpan? BlockingWaitTime { get; set; } = TimeSpan.FromSeconds(20);
     }
 
     public class ConsulProvider : IClusterProvider
@@ -39,10 +54,10 @@ namespace Proto.Cluster.Consul
 
         public ConsulProvider(ConsulProviderOptions options, Action<ConsulClientConfiguration> consulConfig)
         {
-            _serviceTtl = options.ServiceTtl ?? TimeSpan.FromSeconds(3);
-            _refreshTtl = options.RefreshTtl ?? TimeSpan.FromSeconds(1);
-            _deregisterCritical = options.DeregisterCritical ?? TimeSpan.FromSeconds(10);
-            _blockingWaitTime = options.BlockingWaitTime ?? TimeSpan.FromSeconds(20);
+            _serviceTtl = options.ServiceTtl.Value;
+            _refreshTtl = options.RefreshTtl.Value;
+            _deregisterCritical = options.DeregisterCritical.Value;
+            _blockingWaitTime = options.BlockingWaitTime.Value;
 
             _client = new ConsulClient(consulConfig);
         }
@@ -61,11 +76,6 @@ namespace Proto.Cluster.Consul
             _id = $"{clusterName}@{host}:{port}";
             _clusterName = clusterName;
             _index = 0;
-            _serviceTtl = TimeSpan.FromSeconds(3);
-            _refreshTtl = TimeSpan.FromSeconds(1);
-            _deregisterCritical = TimeSpan.FromSeconds(10);
-            _blockingWaitTime = TimeSpan.FromSeconds(20);
-
 
             var s = new AgentServiceRegistration
                     {
@@ -146,12 +156,21 @@ namespace Proto.Cluster.Consul
                 //meaning that it has Re-joined the cluster.
                 memberIds[v.Key] = BitConverter.ToInt64(v.Value, 0);
             }
+
+            long? GetMemberId(string mIdKey)
+            {
+                if (memberIds.TryGetValue(mIdKey, out long v)) return v;
+                else return null;
+            };
+
             var memberStatuses =
                 from v in statuses.Response
                 let memberIdKey = $"{_clusterName}/{v.Service.Address}:{v.Service.Port}"
-                let memberId = memberIds[memberIdKey]
+                let memberId = GetMemberId(memberIdKey)
+                where memberId != null
                 let passing = Equals(v.Checks[1].Status, HealthStatus.Passing)
-                select new MemberStatus(memberId, v.Service.Address, v.Service.Port, v.Service.Tags, passing);
+                select new MemberStatus(memberId.Value, v.Service.Address, v.Service.Port, v.Service.Tags, passing);
+
             var res = new ClusterTopologyEvent(memberStatuses);
             Actor.EventStream.Publish(res);
         }

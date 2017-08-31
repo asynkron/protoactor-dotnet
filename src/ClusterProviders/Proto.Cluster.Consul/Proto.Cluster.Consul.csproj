@@ -20,10 +20,9 @@
     <FileVersion>0.1.2.0</FileVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Consul" Version="0.7.2.1" />
-    <PackageReference Include="CouchbaseNetClient" Version="2.4.0" />
+    <PackageReference Include="Consul" Version="0.7.2.3" />
     <PackageReference Include="Microsoft.Extensions.Options">
-      <Version>1.1.1</Version>
+      <Version>1.1.2</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>

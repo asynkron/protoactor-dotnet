@@ -12,53 +12,61 @@ namespace Proto.Persistence
     public class Persistence
     {
         public long Index { get; private set; }
-        private readonly IProvider _provider;
         private readonly Action<Event> _applyEvent;
         private readonly Action<Snapshot> _applySnapshot;
         private readonly Func<object> _getState;
         private readonly ISnapshotStrategy _snapshotStrategy;
         private bool UsingSnapshotting => _applySnapshot != null;
         private bool UsingEventSourcing => _applyEvent != null;
+        private readonly IEventStore _eventStore;
+        private readonly ISnapshotStore _snapshotStore;
         private readonly string _actorId;
 
-        private Persistence(IProvider provider, string actorId, Action<Event> applyEvent = null, 
+        private Persistence(IEventStore eventStore, ISnapshotStore snapshotStore, string actorId, Action<Event> applyEvent = null, 
             Action<Snapshot> applySnapshot = null, ISnapshotStrategy snapshotStrategy = null, Func<object> getState = null)
         {
+            _eventStore = eventStore;
+            _snapshotStore = snapshotStore;
             _actorId = actorId;
-            _provider = provider;
             _applyEvent = applyEvent;
             _applySnapshot = applySnapshot;
             _getState = getState;
             _snapshotStrategy = snapshotStrategy ?? new NoSnapshots();
         }
 
-        public static Persistence WithEventSourcing(IProvider provider, string actorId, Action<Event> applyEvent)
+        public static Persistence WithEventSourcing(IEventStore eventStore, string actorId, Action<Event> applyEvent)
         {
+            if (eventStore == null) throw new ArgumentNullException(nameof(eventStore));
             if (applyEvent == null) throw new ArgumentNullException(nameof(applyEvent));
-            return new Persistence(provider, actorId, applyEvent);
+            return new Persistence(eventStore, new NoSnapshotStore(), actorId, applyEvent);
         }
 
-        public static Persistence WithSnapshotting(IProvider provider, string actorId, Action<Snapshot> applySnapshot)
+        public static Persistence WithSnapshotting(ISnapshotStore snapshotStore, string actorId, Action<Snapshot> applySnapshot)
         {
+            if (snapshotStore == null) throw new ArgumentNullException(nameof(snapshotStore));
             if (applySnapshot == null) throw new ArgumentNullException(nameof(applySnapshot));
-            return new Persistence(provider, actorId, null, applySnapshot);
+            return new Persistence(new NoEventStore(), snapshotStore, actorId, null, applySnapshot);
         }
 
-        public static Persistence WithEventSourcingAndSnapshotting(IProvider provider, string actorId, Action<Event> applyEvent, Action<Snapshot> applySnapshot)
+        public static Persistence WithEventSourcingAndSnapshotting(IEventStore eventStore, ISnapshotStore snapshotStore, string actorId, Action<Event> applyEvent, Action<Snapshot> applySnapshot)
         {
+            if (eventStore == null) throw new ArgumentNullException(nameof(eventStore));
+            if (snapshotStore == null) throw new ArgumentNullException(nameof(snapshotStore));
             if (applyEvent == null) throw new ArgumentNullException(nameof(applyEvent));
             if (applySnapshot == null) throw new ArgumentNullException(nameof(applySnapshot));
-            return new Persistence(provider, actorId, applyEvent, applySnapshot);
+            return new Persistence(eventStore, snapshotStore, actorId, applyEvent, applySnapshot);
         }
 
-        public static Persistence WithEventSourcingAndSnapshotting(IProvider provider, string actorId, Action<Event> applyEvent, 
+        public static Persistence WithEventSourcingAndSnapshotting(IEventStore eventStore, ISnapshotStore snapshotStore, string actorId, Action<Event> applyEvent, 
             Action<Snapshot> applySnapshot, ISnapshotStrategy snapshotStrategy, Func<object> getState)
         {
+            if (eventStore == null) throw new ArgumentNullException(nameof(eventStore));
+            if (snapshotStore == null) throw new ArgumentNullException(nameof(snapshotStore));
             if (applyEvent == null) throw new ArgumentNullException(nameof(applyEvent));
             if (applySnapshot == null) throw new ArgumentNullException(nameof(applySnapshot));
             if (snapshotStrategy == null) throw new ArgumentNullException(nameof(snapshotStrategy));
             if (getState == null) throw new ArgumentNullException(nameof(getState));
-            return new Persistence(provider, actorId, applyEvent, applySnapshot, snapshotStrategy, getState);
+            return new Persistence(eventStore, snapshotStore, actorId, applyEvent, applySnapshot, snapshotStrategy, getState);
         }
         
         /// <summary>
@@ -67,25 +75,19 @@ namespace Proto.Persistence
         /// <returns></returns>
         public async Task RecoverStateAsync()
         {
-            if (UsingSnapshotting)
-            {
-                var (snapshot, index) = await _provider.GetSnapshotAsync(_actorId);
+            var (snapshot, index) = await _snapshotStore.GetSnapshotAsync(_actorId);
 
-                if (snapshot != null)
-                {
-                    Index = index;
-                    _applySnapshot(new RecoverSnapshot(snapshot, index));
-                }
-            }
-
-            if (UsingEventSourcing)
+            if (snapshot != null)
             {
-                await _provider.GetEventsAsync(_actorId, Index + 1, long.MaxValue, @event =>
-                {
-                    Index++;
-                    _applyEvent(new RecoverEvent(@event, Index));
-                });
+                Index = index;
+                _applySnapshot(new RecoverSnapshot(snapshot, index));
             }
+            
+            await _eventStore.GetEventsAsync(_actorId, Index + 1, long.MaxValue, @event =>
+            {
+                Index++;
+                _applyEvent(new RecoverEvent(@event, Index));
+            });
         }
 
         /// <summary>
@@ -99,7 +101,7 @@ namespace Proto.Persistence
                 throw new Exception("Events cannot be replayed without using Event Sourcing.");
             }
 
-            await _provider.GetEventsAsync(_actorId, fromIndex, toIndex, @event =>
+            await _eventStore.GetEventsAsync(_actorId, fromIndex, toIndex, @event =>
                 {
                     Index++;
                     _applyEvent(new RecoverEvent(@event, Index));
@@ -113,28 +115,28 @@ namespace Proto.Persistence
                 throw new Exception("Event cannot be persisted without using Event Sourcing.");
             }
             Index++;
-            await _provider.PersistEventAsync(_actorId, Index, @event);
+            await _eventStore.PersistEventAsync(_actorId, Index, @event);
             var persistedEvent = new PersistedEvent(@event, Index);
             _applyEvent(persistedEvent);
             if (_snapshotStrategy.ShouldTakeSnapshot(persistedEvent))
             {
-                await _provider.PersistSnapshotAsync(_actorId, Index, _getState());
+                await _snapshotStore.PersistSnapshotAsync(_actorId, Index, _getState());
             }
         }
 
         public async Task PersistSnapshotAsync(object snapshot)
         {
-            await _provider.PersistSnapshotAsync(_actorId, Index, snapshot);
+            await _snapshotStore.PersistSnapshotAsync(_actorId, Index, snapshot);
         }
 
         public async Task DeleteSnapshotsAsync(long inclusiveToIndex)
         {
-            await _provider.DeleteSnapshotsAsync(_actorId, inclusiveToIndex);
+            await _snapshotStore.DeleteSnapshotsAsync(_actorId, inclusiveToIndex);
         }
 
         public async Task DeleteEventsAsync(long inclusiveToIndex)
         {
-            await _provider.DeleteEventsAsync(_actorId, inclusiveToIndex);
+            await _eventStore.DeleteEventsAsync(_actorId, inclusiveToIndex);
         }
 
         private class NoSnapshots : ISnapshotStrategy
@@ -142,6 +144,42 @@ namespace Proto.Persistence
             public bool ShouldTakeSnapshot(PersistedEvent persistedEvent)
             {
                 return false;
+            }
+        }
+        
+        private class NoEventStore : IEventStore
+        {
+            public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+            {
+                return Task.FromResult(-1L);
+            }
+
+            public Task<long> PersistEventAsync(string actorName, long index, object @event)
+            {
+                return Task.FromResult(0L);
+            }
+
+            public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
+            {
+                return Task.FromResult(0);
+            }
+        }
+
+        private class NoSnapshotStore : ISnapshotStore
+        {
+            public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
+            {
+                return new Task<(object Snapshot, long Index)>(null, 0);
+            }
+
+            public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
+            {
+                return Task.FromResult(0);
+            }
+
+            public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
+            {
+                return Task.FromResult(0);
             }
         }
     }

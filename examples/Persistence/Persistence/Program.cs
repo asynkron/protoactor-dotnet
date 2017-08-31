@@ -13,12 +13,14 @@ using Proto.Persistence.Sqlite;
 using Event = Proto.Persistence.Event;
 using Snapshot = Proto.Persistence.Snapshot;
 using System.Text;
+using Microsoft.Data.Sqlite;
+using Proto.Persistence.SnapshotStrategies;
 
 class Program
 {
     static void Main(string[] args)
     {
-        var provider = new SqliteProvider();
+        var provider = new SqliteProvider(new SqliteConnectionStringBuilder { DataSource = "states.db" });
 
         var props = Actor.FromProducer(() => new MyPersistenceActor(provider));
 
@@ -37,7 +39,7 @@ class Program
 
         public MyPersistenceActor(IProvider provider)
         {
-            _persistence = Persistence.WithEventSourcingAndSnapshotting(provider, "demo-app-id", Apply, Apply);
+            _persistence = Persistence.WithEventSourcingAndSnapshotting(provider, provider, "demo-app-id", Apply, Apply);
         }
 
         private void Apply(Event @event)
@@ -170,7 +172,7 @@ class Program
 
     class LoopActor : IActor
     {
-        internal class LoopParentMessage { }
+        private class LoopParentMessage { }
 
         public Task ReceiveAsync(IContext context)
         {
@@ -189,7 +191,7 @@ class Program
                         
                         context.Parent.Tell(new RenameCommand { Name = GeneratePronounceableName(5) });
 
-                        await Task.Delay(TimeSpan.FromSeconds(2));
+                        await Task.Delay(TimeSpan.FromMilliseconds(500));
 
                         context.Self.Tell(new LoopParentMessage());
                     });

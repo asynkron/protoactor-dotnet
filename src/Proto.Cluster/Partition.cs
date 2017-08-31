@@ -92,6 +92,19 @@ namespace Proto.Cluster
                 case TakeOwnership msg:
                     TakeOwnership(msg);
                     break;
+                case Terminated msg:
+                    Terminated(msg);
+                    break;
+            }
+        }
+
+        private void Terminated(Terminated msg)
+        {
+            //one of the actors we manage died, remove it from the lookup
+            var key = _partition.Where(kvp => Equals(kvp.Value, msg.Who)).Select(kvp => kvp.Key).FirstOrDefault();
+            if (key != null)
+            {
+                _partition.Remove(key);
             }
         }
 
@@ -172,6 +185,7 @@ namespace Proto.Cluster
                 var random = await MemberList.GetRandomActivatorAsync(msg.Kind);
                 pid = await Remote.Remote.SpawnNamedAsync(random, msg.Name, msg.Kind, TimeSpan.FromSeconds(5));
                 _partition[msg.Name] = pid;
+                context.Watch(pid);
             }
             context.Respond(new ActorPidResponse {Pid = pid});
         }

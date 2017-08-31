@@ -1,7 +1,7 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="EventStream.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="EventStream.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
@@ -18,7 +18,7 @@ namespace Proto
 
         private readonly ILogger _logger = Log.CreateLogger<EventStream>();
 
-        public EventStream()
+        internal EventStream()
         {
             Subscribe(msg =>
             {
@@ -32,10 +32,14 @@ namespace Proto
     }
     public class EventStream<T>
     {
+        private readonly ILogger _logger = Log.CreateLogger<EventStream<T>>();
+
         private readonly ConcurrentDictionary<Guid, Subscription<T>> _subscriptions =
             new ConcurrentDictionary<Guid, Subscription<T>>();
 
-        private readonly ILogger _logger = Log.CreateLogger<EventStream<T>>();
+        internal EventStream()
+        {
+        }
 
         public Subscription<T> Subscribe(Action<T> action, IDispatcher dispatcher = null)
         {
@@ -69,7 +73,6 @@ namespace Proto
             _subscriptions.TryAdd(sub.Id, sub);
             return sub;
         }
-
 
         public void Publish(T msg)
         {

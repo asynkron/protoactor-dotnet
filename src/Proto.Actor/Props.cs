@@ -1,34 +1,27 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Props.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//  </copyright>
+//   <copyright file="Props.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
 
+using Proto.Mailbox;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Proto.Mailbox;
 
 namespace Proto
 {
     public sealed class Props
     {
+        private Spawner _spawner;
         public Func<IActor> Producer { get; private set; }
-
-        public Func<IMailbox> MailboxProducer { get; private set; } =
-            () => UnboundedMailbox.Create();
-
+        public Func<IMailbox> MailboxProducer { get; private set; } = ProduceDefaultMailbox;
         public ISupervisorStrategy SupervisorStrategy { get; private set; } = Supervision.DefaultStrategy;
-
         public IDispatcher Dispatcher { get; private set; } = Dispatchers.DefaultDispatcher;
-
         public IList<Func<Receive, Receive>> ReceiveMiddleware { get; private set; } = new List<Func<Receive, Receive>>();
         public IList<Func<Sender, Sender>> SenderMiddleware { get; private set; } = new List<Func<Sender, Sender>>();
-
         public Receive ReceiveMiddlewareChain { get; set; }
         public Sender SenderMiddlewareChain { get; set; }
-
-        private Spawner _spawner;
 
         public Spawner Spawner
         {
@@ -36,13 +29,15 @@ namespace Proto
             private set => _spawner = value;
         }
 
-        public static Spawner DefaultSpawner = (name, props, parent) =>
+        private static IMailbox ProduceDefaultMailbox() => UnboundedMailbox.Create();
+
+        public static PID DefaultSpawner (string name,Props props,PID parent)
         {
-            var ctx = new Context(props.Producer, props.SupervisorStrategy, props.ReceiveMiddlewareChain, props.SenderMiddlewareChain, parent);
+            var ctx = new LocalContext(props.Producer, props.SupervisorStrategy, props.ReceiveMiddlewareChain, props.SenderMiddlewareChain, parent);
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
-            var reff = new LocalProcess(mailbox);
-            var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, reff);
+            var process = new LocalProcess(mailbox);
+            var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, process);
             if (!absent)
             {
                 throw new ProcessNameExistException(name);
@@ -53,7 +48,7 @@ namespace Proto
             mailbox.Start();
 
             return pid;
-        };
+        }
 
         public Props WithProducer(Func<IActor> producer) => Copy(props => props.Producer = producer);
 
@@ -61,20 +56,20 @@ namespace Proto
 
         public Props WithMailbox(Func<IMailbox> mailboxProducer) => Copy(props => props.MailboxProducer = mailboxProducer);
 
-        public Props WithSupervisor(ISupervisorStrategy supervisor) => Copy(props => props.SupervisorStrategy = supervisor);
+        public Props WithChildSupervisorStrategy(ISupervisorStrategy supervisorStrategy) => Copy(props => props.SupervisorStrategy = supervisorStrategy);
 
         public Props WithReceiveMiddleware(params Func<Receive, Receive>[] middleware) => Copy(props =>
         {
             props.ReceiveMiddleware = ReceiveMiddleware.Concat(middleware).ToList();
             props.ReceiveMiddlewareChain = props.ReceiveMiddleware.Reverse()
-                                                .Aggregate((Receive) Context.DefaultReceive, (inner, outer) => outer(inner));
+                                                .Aggregate((Receive) LocalContext.DefaultReceive, (inner, outer) => outer(inner));
         });
 
         public Props WithSenderMiddleware(params Func<Sender, Sender>[] middleware) => Copy(props =>
         {
             props.SenderMiddleware = SenderMiddleware.Concat(middleware).ToList();
             props.SenderMiddlewareChain = props.SenderMiddleware.Reverse()
-                                               .Aggregate((Sender) Context.DefaultSender, (inner, outer) => outer(inner));
+                                               .Aggregate((Sender) LocalContext.DefaultSender, (inner, outer) => outer(inner));
         });
 
         public Props WithSpawner(Spawner spawner) => Copy(props => props.Spawner = spawner);

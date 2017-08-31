@@ -21,12 +21,13 @@ namespace Proto.Cluster
         public HashRing(IEnumerable<string> nodes)
         {
             _ring = nodes
-                .SelectMany(n => Enumerable.Range(0, ReplicaCount)
-                                           .Select(i => new
-                                                        {
-                                                            hashKey = i + n,
-                                                            node = n
-                                                        }))
+                .SelectMany(n => Enumerable
+                                .Range(0, ReplicaCount)
+                                .Select(i => new
+                                {
+                                    hashKey = i + n,
+                                    node = n
+                                }))
                 .Select(a => Tuple.Create(Hash(a.hashKey), a.node))
                 .OrderBy(t => t.Item1)
                 .ToList();
