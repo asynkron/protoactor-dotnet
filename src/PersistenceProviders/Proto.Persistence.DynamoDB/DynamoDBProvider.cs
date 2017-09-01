@@ -167,44 +167,44 @@ namespace Proto.Persistence.DynamoDB
 
         public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
         {
-            // uross: We don't really need to read. Indexes start with one and are sequential.
-            // var config = new QueryOperationConfig { ConsistentRead = true };
-            // config.Filter.AddCondition(_options.SnapshotsTableHashKey, QueryOperator.Equal, actorName);
-            // config.Filter.AddCondition(_options.SnapshotsTableSortKey, QueryOperator.LessThanOrEqual, inclusiveToIndex);
-            // var query = _snapshotsTable.Query(config);
+            // uross: We do query before deletion because snapshots can be rare (just few indexes).
+            var config = new QueryOperationConfig { ConsistentRead = true };
+            config.Filter.AddCondition(_options.SnapshotsTableHashKey, QueryOperator.Equal, actorName);
+            config.Filter.AddCondition(_options.SnapshotsTableSortKey, QueryOperator.LessThanOrEqual, inclusiveToIndex);
+            var query = _snapshotsTable.Query(config);
 
             var write = _snapshotsTable.CreateBatchWrite();
             var writeCount = 0;
-            // while (true)
-            // {
-            //     var results = await query.GetNextSetAsync();
-
-            //     foreach (var doc in results)
-            //     {
-            //         write.AddItemToDelete(doc);
-            //         if (++writeCount >= 25)
-            //         {
-            //             await write.ExecuteAsync();
-            //             write = _snapshotsTable.CreateBatchWrite();
-            //             writeCount = 0;
-            //         }
-            //     }
-
-            //     if (query.IsDone)
-            //     {
-            //         break;
-            //     }
-            // }
-            for (var si = 1; si <= inclusiveToIndex; si++)
+            while (true)
             {
-                write.AddKeyToDelete(actorName, si);
-                if (++writeCount >= 25)
+                var results = await query.GetNextSetAsync();
+
+                foreach (var doc in results)
                 {
-                    await write.ExecuteAsync();
-                    write = _snapshotsTable.CreateBatchWrite();
-                    writeCount = 0;
+                    write.AddItemToDelete(doc);
+                    if (++writeCount >= 25)
+                    {
+                        await write.ExecuteAsync();
+                        write = _snapshotsTable.CreateBatchWrite();
+                        writeCount = 0;
+                    }
+                }
+
+                if (query.IsDone)
+                {
+                    break;
                 }
             }
+            // for (var si = 1; si <= inclusiveToIndex; si++)
+            // {
+            //     write.AddKeyToDelete(actorName, si);
+            //     if (++writeCount >= 25)
+            //     {
+            //         await write.ExecuteAsync();
+            //         write = _snapshotsTable.CreateBatchWrite();
+            //         writeCount = 0;
+            //     }
+            // }
 
             if (writeCount > 0)
             {
