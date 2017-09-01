@@ -15,7 +15,7 @@ namespace Proto.Cluster
     public class HashRing
     {
         private const int ReplicaCount = 100;
-        private static readonly HashAlgorithm HashAlgorithm = MD5.Create();
+        private static readonly HashAlgorithm HashAlgorithm = FNV1A32.Create();
         private readonly List<Tuple<uint, string>> _ring;
 
         public HashRing(IEnumerable<string> nodes)
