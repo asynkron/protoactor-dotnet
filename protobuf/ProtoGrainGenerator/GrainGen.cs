@@ -41,8 +41,9 @@ namespace GrainGenerator
                     .Select(s => new ProtoService
                     {
                         Name = s.Name,
-                        Methods = s.Methods.ToArray().Select(m => new ProtoMethod
+                        Methods = s.Methods.ToArray().Select((m,i) => new ProtoMethod
                         {
+                            Index = i,
                             Name = m.Name,
                             InputName = RemovePackageName(m.InputType),
                             OutputName = RemovePackageName(m.OutputType),

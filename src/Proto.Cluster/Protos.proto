@@ -10,7 +10,7 @@ message TakeOwnership {
 }
 
 message GrainRequest {
-    string method = 1;
+    int32 method_index = 1;
     bytes message_data = 2;
 }
 

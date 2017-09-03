@@ -59,7 +59,7 @@ namespace {{CsNamespace}}
             
             var gr = new GrainRequest
             {
-                Method = ""{{Name}}"",
+                MethodIndex = {{Index}},
                 MessageData = request.ToByteString()
             };
 
@@ -122,10 +122,10 @@ namespace {{CsNamespace}}
                 }
                 case GrainRequest request:
                 {
-                    switch (request.Method)
+                    switch (request.MethodIndex)
                     {
 						{{#each Methods}}
-                        case ""{{Name}}"":
+                        case {{Index}}:
                         {
                             var r = {{InputName}}.Parser.ParseFrom(request.MessageData);
                             try
