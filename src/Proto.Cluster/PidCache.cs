@@ -23,7 +23,7 @@ namespace Proto.Cluster
 
         internal static void Spawn()
         {
-            var props = Router.Router.NewConsistentHashPool(Actor.FromProducer(() => new PidCachePartitionActor()), PartitionCount);
+            var props = Actor.FromProducer(() => new PidCachePartitionActor());
             Pid = Actor.SpawnNamed(props, "pidcache");
         }
     }
