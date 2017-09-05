@@ -17,7 +17,6 @@ namespace Proto.Persistence.DynamoDB
 {
     public class DynamoDBProvider : IProvider, IDisposable
     {
-        // private readonly IAmazonDynamoDB _dynamoDBClient;
         private readonly DynamoDBProviderOptions _options;
         private readonly DynamoDBContext _dynamoDBContext;
         private readonly Table _eventsTable;
@@ -28,7 +27,6 @@ namespace Proto.Persistence.DynamoDB
             if (dynamoDBClient == null) throw new ArgumentNullException("dynamoDBClient");
             if (options == null) throw new ArgumentNullException("options");
 
-            // _dynamoDBClient = dynamoDBClient;
             _options = options;
             _dynamoDBContext = new DynamoDBContext(dynamoDBClient, new DynamoDBContextConfig {Conversion = DynamoDBEntryConversion.V2, ConsistentRead = true});
             _eventsTable = Table.LoadTable(dynamoDBClient, options.EventsTableName, DynamoDBEntryConversion.V2);
@@ -121,37 +119,14 @@ namespace Proto.Persistence.DynamoDB
 
         public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
         {
-            // uross: We don't really need to read. Indexes start with one and are sequential.
-            // var config = new QueryOperationConfig { ConsistentRead = true };
-            // config.Filter.AddCondition(_options.EventsTableHashKey, QueryOperator.Equal, actorName);
-            // config.Filter.AddCondition(_options.EventsTableSortKey, QueryOperator.LessThanOrEqual, inclusiveToIndex);
-            // var query = _eventsTable.Query(config);
-
+            // We don't need to query data. Indexes start with one and are sequential.
             var write = _eventsTable.CreateBatchWrite();
             var writeCount = 0;
-            // while (true) {
-            //     var results = await query.GetNextSetAsync();
-
-            //     foreach (var doc in results)
-            //     {
-            //         write.AddItemToDelete(doc);
-            //         if (++writeCount >= 25)
-            //         {
-            //             await write.ExecuteAsync();
-            //             write = _eventsTable.CreateBatchWrite();
-            //             writeCount = 0;
-            //         }
-            //     }
-
-            //     if (query.IsDone)
-            //     {
-            //         break;
-            //     }
-            // }
+            
             for (var ei = 1; ei <= inclusiveToIndex; ei++)
             {
                 write.AddKeyToDelete(actorName, ei);
-                if (++writeCount >= 25)
+                if (++writeCount >= 25) // 25 is max
                 {
                     await write.ExecuteAsync();
                     write = _eventsTable.CreateBatchWrite();
@@ -167,7 +142,7 @@ namespace Proto.Persistence.DynamoDB
 
         public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
         {
-            // uross: We do query before deletion because snapshots can be rare (just few indexes).
+            // We do query before deletion because snapshots can be rare (just few indexes).
             var config = new QueryOperationConfig { ConsistentRead = true };
             config.Filter.AddCondition(_options.SnapshotsTableHashKey, QueryOperator.Equal, actorName);
             config.Filter.AddCondition(_options.SnapshotsTableSortKey, QueryOperator.LessThanOrEqual, inclusiveToIndex);
@@ -182,7 +157,7 @@ namespace Proto.Persistence.DynamoDB
                 foreach (var doc in results)
                 {
                     write.AddItemToDelete(doc);
-                    if (++writeCount >= 25)
+                    if (++writeCount >= 25) // 25 is max
                     {
                         await write.ExecuteAsync();
                         write = _snapshotsTable.CreateBatchWrite();
@@ -195,16 +170,6 @@ namespace Proto.Persistence.DynamoDB
                     break;
                 }
             }
-            // for (var si = 1; si <= inclusiveToIndex; si++)
-            // {
-            //     write.AddKeyToDelete(actorName, si);
-            //     if (++writeCount >= 25)
-            //     {
-            //         await write.ExecuteAsync();
-            //         write = _snapshotsTable.CreateBatchWrite();
-            //         writeCount = 0;
-            //     }
-            // }
 
             if (writeCount > 0)
             {
@@ -221,33 +186,20 @@ namespace Proto.Persistence.DynamoDB
             {
                 if (disposing)
                 {
-                    // dispose managed state (managed objects).
                     if (_dynamoDBContext != null)
                     {
                         _dynamoDBContext.Dispose();
                     }
                 }
 
-                // free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // set large fields to null.
-
                 disposedValue = true;
             }
         }
 
-        // override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        // ~DynamoDBProvider() {
-        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        //   Dispose(false);
-        // }
-
-        // This code added to correctly implement the disposable pattern.
         void IDisposable.Dispose()
         {
             // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
             Dispose(true);
-            // uncomment the following line if the finalizer is overridden above.
-            // GC.SuppressFinalize(this);
         }
         #endregion
     }
