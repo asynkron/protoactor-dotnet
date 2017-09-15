@@ -44,6 +44,7 @@ namespace Proto.Cluster
 
         private static uint Hash(string s)
         {
+            HashAlgorithm.Initialize();
             var digest = HashAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(s));
             var hash = BitConverter.ToUInt32(digest, 0);
             return hash;
