@@ -49,8 +49,8 @@ namespace Proto.Cluster
         public static async Task<string> GetMemberAsync(string name, string kind)
         {
             var members = await GetMembersAsync(kind);
-            var hashring = new HashRing(members);
-            var member = hashring.GetNode(name);
+            var hdv = new Rendezvous(members);
+            var member = hdv.GetNode(name);
             return member;
         }
     }
