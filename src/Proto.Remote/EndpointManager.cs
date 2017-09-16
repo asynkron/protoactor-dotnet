@@ -50,6 +50,12 @@ namespace Proto.Remote
                         endpoint.Watcher.Tell(msg);
                         return Actor.Done;
                     }
+                case EndpointConnectedEvent msg:
+                    {
+                        var endpoint = EnsureConnected(msg.Address, context);
+                        endpoint.Watcher.Tell(msg);
+                        return Actor.Done;
+                    }
                 case RemoteTerminate msg:
                     {
                         var endpoint = EnsureConnected(msg.Watchee.Address, context);
