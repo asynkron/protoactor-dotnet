@@ -12,5 +12,6 @@ namespace Proto.Cluster
     {
         Task RegisterMemberAsync(string clusterName, string h, int p, string[] kinds);
         void MonitorMemberStatusChanges();
+        Task StopClusterProvider();
     }
 }

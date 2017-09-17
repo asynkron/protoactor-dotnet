@@ -40,6 +40,8 @@ namespace Proto.Cluster.Consul
     {
         private readonly ConsulClient _client;
         private string _clusterName;
+        private string _host;
+        private int _port;
         private TimeSpan _serviceTtl;
         private TimeSpan _blockingWaitTime;
         private TimeSpan _deregisterCritical;
@@ -75,6 +77,8 @@ namespace Proto.Cluster.Consul
         {
             _id = $"{clusterName}@{host}:{port}";
             _clusterName = clusterName;
+            _host = host;
+            _port = port;
             _index = 0;
 
             var s = new AgentServiceRegistration
@@ -107,6 +111,13 @@ namespace Proto.Cluster.Consul
             await BlockingUpdateTtlAsync();
             await BlockingStatusChangeAsync();
             UpdateTtl();
+        }
+
+        public async Task StopClusterProvider()
+        {
+            _shutdown = true;
+            var kvKey = $"{_clusterName}/{_host}:{_port}"; //slash should be present
+            await _client.KV.Delete(kvKey);
         }
 
         public void MonitorMemberStatusChanges()

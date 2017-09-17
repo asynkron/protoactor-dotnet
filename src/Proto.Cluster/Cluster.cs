@@ -15,8 +15,12 @@ namespace Proto.Cluster
     {
         private static readonly ILogger Logger = Log.CreateLogger(typeof(Cluster).FullName);
 
+        private static IClusterProvider cp;
+        
         public static void Start(string clusterName, IClusterProvider provider)
         {
+            cp = provider;
+            
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Logger.LogInformation("Starting Proto.Actor cluster");
             var (h, p) = ParseAddress(ProcessRegistry.Instance.Address);
@@ -26,9 +30,23 @@ namespace Proto.Cluster
             PidCache.Spawn();
             MemberList.Spawn();
             MemberList.SubscribeToEventStream();
-            provider.RegisterMemberAsync(clusterName, h, p, kinds).Wait();
-            provider.MonitorMemberStatusChanges();
-            Logger.LogInformation("Cluster started");
+            cp.RegisterMemberAsync(clusterName, h, p, kinds).Wait();
+            cp.MonitorMemberStatusChanges();
+
+            Logger.LogInformation("Started Cluster");
+        }
+
+        public static void Stop()
+        {
+            cp.StopClusterProvider();
+            
+            MemberList.UnsubEventStream();
+            MemberList.Stop();
+            PidCache.Stop();
+            Partition.UnsubEventStream();
+            Partition.StopPartitionActors();
+
+            Logger.LogInformation("Stopped Cluster");
         }
 
         private static (string host, int port) ParseAddress(string address)

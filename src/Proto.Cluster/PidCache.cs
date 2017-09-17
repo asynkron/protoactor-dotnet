@@ -26,6 +26,11 @@ namespace Proto.Cluster
             var props = Actor.FromProducer(() => new PidCachePartitionActor());
             Pid = Actor.SpawnNamed(props, "pidcache");
         }
+
+        internal static void Stop()
+        {
+            Pid.Stop();
+        }
     }
 
     internal class PidCacheRequest : IHashable

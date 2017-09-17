@@ -17,6 +17,8 @@ namespace Proto.Cluster
     {
         public static Dictionary<string, PID> KindMap = new Dictionary<string, PID>();
 
+        private static Subscription<object> memberStatusSub;
+        
         public static PID SpawnPartitionActor(string kind)
         {
             var pid = Actor.SpawnNamed(Actor.FromProducer(() => new PartitionActor(kind)), "partition-" + kind);
@@ -25,7 +27,7 @@ namespace Proto.Cluster
 
         public static void SubscribeToEventStream()
         {
-            EventStream.Instance.Subscribe<MemberStatusEvent>(msg =>
+            memberStatusSub = EventStream.Instance.Subscribe<MemberStatusEvent>(msg =>
             {
                 foreach (var kind in msg.Kinds)
                 {
@@ -35,6 +37,11 @@ namespace Proto.Cluster
                     }
                 }
             });
+        }
+
+        public static void UnsubEventStream()
+        {
+            EventStream.Instance.Unsubscribe(memberStatusSub.Id);
         }
 
         public static PID PartitionForKind(string address, string kind)
@@ -49,6 +56,15 @@ namespace Proto.Cluster
                 var pid = SpawnPartitionActor(kind);
                 KindMap[kind] = pid;
             }
+        }
+
+        public static void StopPartitionActors()
+        {
+            foreach (var kind in KindMap.Values)
+            {
+                kind.Stop();
+            }
+            KindMap.Clear();
         }
     }
 
