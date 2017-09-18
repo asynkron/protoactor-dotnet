@@ -98,7 +98,7 @@ namespace Proto.Cluster.Consul
 
             //register a semi unique ID for the current process
             _kvKey = $"{_clusterName}/{host}:{port}"; //slash should be present
-            var value = Encoding.UTF8.GetBytes(DateTime.UtcNow.ToString());
+            var value = Encoding.UTF8.GetBytes(DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ssK"));
             await _client.KV.Put(new KVPair(_kvKey)
                                  {
                                      //Write the ID for this member.
