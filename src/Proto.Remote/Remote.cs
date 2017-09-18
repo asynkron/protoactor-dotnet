@@ -79,9 +79,9 @@ namespace Proto.Remote
             {
                 if (gracefull)
                 {
-                    StopActivator();
-                    StopEndPointManager();
                     _endpointReader.Suspend(true);
+                    StopEndPointManager();
+                    StopActivator();
                     _server.ShutdownAsync().Wait(10000);
                     _server.KillAsync().Wait(5000);
                 }
@@ -119,7 +119,7 @@ namespace Proto.Remote
 
         private static void StopEndPointManager()
         {
-            EndpointManagerPid.Stop();
+            EndpointManagerPid.Tell(new StopEndpointManager());
             EventStream.Instance.Unsubscribe(_endpointTermEvnSub.Id);
             EventStream.Instance.Unsubscribe(_endpointConnEvnSub.Id);
         }
