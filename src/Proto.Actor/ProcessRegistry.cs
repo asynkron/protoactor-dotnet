@@ -47,12 +47,31 @@ namespace Proto
             return DeadLetterProcess.Instance;
         }
 
+        public (PID pid, bool ok) TryGet(string id)
+        {
+            return _localActorRefs.TryGetValue(id, out var process) && process is LocalProcess && !((LocalProcess)process).IsDead
+                       ? (new PID(Address, id, process), true)
+                       : (null, false);
+        }
+        
         public (PID pid, bool ok) TryAdd(string id, Process process)
         {
             var pid = new PID(Address, id, process);
             
             var ok = _localActorRefs.TryAdd(pid.Id, process);
             return (pid, ok);
+        }
+        
+        public PID ForceAdd(string id, Process process)
+        {
+            var pid = new PID(Address, id, process);
+
+            if (_localActorRefs.TryAdd(pid.Id, process))
+                return pid;
+
+            _localActorRefs.Remove(pid.Id);
+            _localActorRefs.TryAdd(pid.Id, process);
+            return pid;
         }
 
         public void Remove(PID pid)
