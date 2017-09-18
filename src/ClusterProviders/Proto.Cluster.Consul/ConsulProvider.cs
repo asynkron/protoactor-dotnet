@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Consul;
 using Microsoft.Extensions.Options;
@@ -40,15 +41,15 @@ namespace Proto.Cluster.Consul
     {
         private readonly ConsulClient _client;
         private string _clusterName;
-        private string _host;
-        private int _port;
         private TimeSpan _serviceTtl;
         private TimeSpan _blockingWaitTime;
         private TimeSpan _deregisterCritical;
         private TimeSpan _refreshTtl;
         private string _id;
         private ulong _index;
+        private string _kvKey;
         private bool _shutdown = false;
+        private bool _deregistered = false;
 
         public ConsulProvider(ConsulProviderOptions options) : this(options, config => { })
         {
@@ -77,8 +78,6 @@ namespace Proto.Cluster.Consul
         {
             _id = $"{clusterName}@{host}:{port}";
             _clusterName = clusterName;
-            _host = host;
-            _port = port;
             _index = 0;
 
             var s = new AgentServiceRegistration
@@ -98,9 +97,9 @@ namespace Proto.Cluster.Consul
 
 
             //register a semi unique ID for the current process
-            var kvKey = $"{_clusterName}/{host}:{port}"; //slash should be present
-            var value = BitConverter.GetBytes(DateTime.Now.Ticks);
-            await _client.KV.Put(new KVPair(kvKey)
+            _kvKey = $"{_clusterName}/{host}:{port}"; //slash should be present
+            var value = Encoding.UTF8.GetBytes(DateTime.UtcNow.ToString());
+            await _client.KV.Put(new KVPair(_kvKey)
                                  {
                                      //Write the ID for this member.
                                      //the value is later used to see if an existing node have changed its ID over time
@@ -115,14 +114,19 @@ namespace Proto.Cluster.Consul
 
         public async Task DeregisterMemberAsync()
         {
-            var kvKey = $"{_clusterName}/{_host}:{_port}"; //slash should be present
-            await _client.KV.Delete(kvKey);
+            //Deregister
+            await _client.Agent.ServiceDeregister(_id);
+            //DeleteKeyValue
+            await _client.KV.Delete(_kvKey);
+
+            _deregistered = true;
         }
 
-        public Task StopProvider()
+        public async Task StopProvider()
         {
             _shutdown = true;
-            return Task.FromResult(0);
+            if (!_deregistered)
+                await DeregisterMemberAsync();
         }
 
         public void MonitorMemberStatusChanges()
