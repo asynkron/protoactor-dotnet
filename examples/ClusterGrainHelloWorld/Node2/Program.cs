@@ -30,9 +30,8 @@ namespace Node2
         {
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);          
             Grains.HelloGrainFactory(() => new HelloGrain());
-           
-            Remote.Start("127.0.0.1", 12000);
-            Cluster.Start("MyCluster", new ConsulProvider(new ConsulProviderOptions()));
+
+            Cluster.Start("MyCluster", "127.0.0.1", 12000, new ConsulProvider(new ConsulProviderOptions()));
 
             Console.ReadLine();
         }
