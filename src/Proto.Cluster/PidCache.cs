@@ -21,6 +21,18 @@ namespace Proto.Cluster
 
         internal static PID Pid { get; private set; }
 
+        private static Subscription<object> clusterTopologyEvnSub;
+
+        internal static void SubscribeToEventStream()
+        {
+            clusterTopologyEvnSub = Actor.EventStream.Subscribe<MemberStatusEvent>(Pid.Tell);
+        }
+
+        internal static void UnsubEventStream()
+        {
+            Actor.EventStream.Unsubscribe(clusterTopologyEvnSub.Id);
+        }
+
         internal static void Spawn()
         {
             var props = Actor.FromProducer(() => new PidCachePartitionActor());
@@ -55,7 +67,8 @@ namespace Proto.Cluster
         private readonly Dictionary<string, PID> _cache = new Dictionary<string, PID>();
         private readonly ILogger _logger = Log.CreateLogger<PidCachePartitionActor>();
         private readonly Dictionary<string, string> _reverseCache = new Dictionary<string, string>();
-
+        private readonly Dictionary<string, HashSet<string>> _reverseCacheByMemberAddress = new Dictionary<string, HashSet<string>>();
+        
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
@@ -68,6 +81,10 @@ namespace Proto.Cluster
                     break;
                 case Terminated msg:
                     RemoveTerminated(msg);
+                    break;
+                case MemberLeftEvent _:
+                case MemberRejoinedEvent _:
+                    ClearCacheByMemberAddress(((MemberStatusEvent)context.Message).Address);
                     break;
             }
             return Actor.Done;
@@ -103,6 +120,11 @@ namespace Proto.Cluster
                     var key = respid.ToShortString();
                     _cache[name] = respid;
                     _reverseCache[key] = name;
+                    if (_reverseCacheByMemberAddress.ContainsKey(respid.Address))
+                        _reverseCacheByMemberAddress[respid.Address].Add(key);
+                    else
+                        _reverseCacheByMemberAddress[respid.Address] = new HashSet<string>{key};
+
                     context.Watch(respid);
                     context.Respond(res);
                     return Actor.Done;
@@ -111,12 +133,30 @@ namespace Proto.Cluster
             });
         }
 
+        private void ClearCacheByMemberAddress(string memberAddress)
+        {
+            if (_reverseCacheByMemberAddress.TryGetValue(memberAddress, out var keys))
+            {
+                foreach (var key in keys)
+                {
+                    if (_reverseCache.TryGetValue(key, out var name))
+                    {
+                        _reverseCache.Remove(key);
+                        _cache.Remove(name);
+                    }
+                }
+                _reverseCacheByMemberAddress.Remove(memberAddress);
+                _logger.LogDebug("PidCache cleared cache by member address " + memberAddress);
+            }
+        }
+        
         private void RemoveTerminated(Terminated msg)
         {
             var key = msg.Who.ToShortString();
             if (_reverseCache.TryGetValue(key, out var name))
             {
                 _reverseCache.Remove(key);
+                _reverseCacheByMemberAddress[msg.Who.Address].Remove(key);
                 _cache.Remove(name);
             }
         }

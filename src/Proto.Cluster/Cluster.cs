@@ -30,6 +30,7 @@ namespace Proto.Cluster
             Partition.SpawnPartitionActors(kinds);
             Partition.SubscribeToEventStream();
             PidCache.Spawn();
+            PidCache.SubscribeToEventStream();
             MemberList.Spawn();
             MemberList.SubscribeToEventStream();
             cp.RegisterMemberAsync(clusterName, h, p, kinds).Wait();
@@ -51,6 +52,7 @@ namespace Proto.Cluster
 
                 MemberList.UnsubEventStream();
                 MemberList.Stop();
+                PidCache.UnsubEventStream();
                 PidCache.Stop();
                 Partition.UnsubEventStream();
                 Partition.StopPartitionActors();
