@@ -113,11 +113,16 @@ namespace Proto.Cluster.Consul
             UpdateTtl();
         }
 
-        public async Task StopClusterProvider()
+        public async Task DeregisterMemberAsync()
         {
-            _shutdown = true;
             var kvKey = $"{_clusterName}/{_host}:{_port}"; //slash should be present
             await _client.KV.Delete(kvKey);
+        }
+
+        public Task StopProvider()
+        {
+            _shutdown = true;
+            return Task.FromResult(0);
         }
 
         public void MonitorMemberStatusChanges()
@@ -130,7 +135,7 @@ namespace Proto.Cluster.Consul
                 }
             });
         }
-
+        
         private void UpdateTtl()
         {
             Task.Run(async () =>

@@ -44,6 +44,11 @@ namespace Proto.Remote
                         _logger.LogDebug("Started EndpointManager");
                         return Actor.Done;
                     }
+                case Stopped _:
+                    {
+                        _logger.LogDebug("Stopped EndpointManager");
+                        return Actor.Done;
+                    }
                 case EndpointTerminatedEvent msg:
                     {
                         var endpoint = EnsureConnected(msg.Address, context);

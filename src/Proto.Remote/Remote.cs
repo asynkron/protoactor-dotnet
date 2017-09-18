@@ -23,8 +23,9 @@ namespace Proto.Remote
         public static PID EndpointManagerPid { get; private set; }
         public static PID ActivatorPid { get; private set; }
 
-        private static Subscription<object> endpointTermEvnSub;
-        private static Subscription<object> endpointConnEvnSub;
+        private static EndpointReader _endpointReader;
+        private static Subscription<object> _endpointTermEvnSub;
+        private static Subscription<object> _endpointConnEvnSub;
 
         public static string[] GetKnownKinds()
         {
@@ -53,9 +54,10 @@ namespace Proto.Remote
         {
             ProcessRegistry.Instance.RegisterHostResolver(pid => new RemoteProcess(pid));
 
+            _endpointReader = new EndpointReader();
             _server = new Server
             {
-                Services = { Remoting.BindService(new EndpointReader()) },
+                Services = { Remoting.BindService(_endpointReader) },
                 Ports = { new ServerPort(hostname, port, config.ServerCredentials) }
             };
             _server.Start();
@@ -79,11 +81,13 @@ namespace Proto.Remote
                 {
                     StopActivator();
                     StopEndPointManager();
-                    _server.ShutdownAsync().Wait();
+                    _endpointReader.Suspend(true);
+                    _server.ShutdownAsync().Wait(10000);
+                    _server.KillAsync().Wait(5000);
                 }
                 else
                 {
-                    _server.KillAsync().Wait();
+                    _server.KillAsync().Wait(10000);
                 }
             }
             catch(Exception ex)
@@ -109,15 +113,15 @@ namespace Proto.Remote
         {
             var props = Actor.FromProducer(() => new EndpointManager(config));
             EndpointManagerPid = Actor.Spawn(props);
-            endpointTermEvnSub = EventStream.Instance.Subscribe<EndpointTerminatedEvent>(EndpointManagerPid.Tell);
-            endpointConnEvnSub = EventStream.Instance.Subscribe<EndpointConnectedEvent>(EndpointManagerPid.Tell);
+            _endpointTermEvnSub = EventStream.Instance.Subscribe<EndpointTerminatedEvent>(EndpointManagerPid.Tell);
+            _endpointConnEvnSub = EventStream.Instance.Subscribe<EndpointConnectedEvent>(EndpointManagerPid.Tell);
         }
 
         private static void StopEndPointManager()
         {
             EndpointManagerPid.Stop();
-            EventStream.Instance.Unsubscribe(endpointTermEvnSub.Id);
-            EventStream.Instance.Unsubscribe(endpointConnEvnSub.Id);
+            EventStream.Instance.Unsubscribe(_endpointTermEvnSub.Id);
+            EventStream.Instance.Unsubscribe(_endpointConnEvnSub.Id);
         }
         
         public static PID ActivatorForAddress(string address)
