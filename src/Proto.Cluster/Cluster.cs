@@ -17,8 +17,10 @@ namespace Proto.Cluster
 
         private static IClusterProvider cp;
         
-        public static void Start(string clusterName, IClusterProvider provider)
+        public static void Start(string clusterName, string address, int port, IClusterProvider provider)
         {
+            Remote.Remote.Start(address, port);
+
             cp = provider;
             
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
@@ -41,15 +43,20 @@ namespace Proto.Cluster
             cp.DeregisterMemberAsync();
         }
         
-        public static void Stop()
+        public static void Stop(bool gracefull = true)
         {
-            cp.StopProvider();
-            
-            MemberList.UnsubEventStream();
-            MemberList.Stop();
-            PidCache.Stop();
-            Partition.UnsubEventStream();
-            Partition.StopPartitionActors();
+            if (gracefull)
+            {
+                cp.StopProvider();
+
+                MemberList.UnsubEventStream();
+                MemberList.Stop();
+                PidCache.Stop();
+                Partition.UnsubEventStream();
+                Partition.StopPartitionActors();
+            }
+
+            Remote.Remote.Stop(gracefull);
 
             Logger.LogInformation("Stopped Cluster");
         }
