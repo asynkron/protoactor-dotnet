@@ -122,7 +122,7 @@ namespace Proto.Cluster.Consul
             _deregistered = true;
         }
 
-        public async Task StopProvider()
+        public async Task Shutdown()
         {
             _shutdown = true;
             if (!_deregistered)

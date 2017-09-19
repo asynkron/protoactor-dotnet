@@ -38,17 +38,12 @@ namespace Proto.Cluster
 
             Logger.LogInformation("Started Cluster");
         }
-
-        public static void SetUnavailable()
-        {
-            cp.DeregisterMemberAsync();
-        }
         
         public static void Stop(bool gracefull = true)
         {
             if (gracefull)
             {
-                cp.StopProvider();
+                cp.Shutdown();
 
                 MemberList.UnsubEventStream();
                 MemberList.Stop();
