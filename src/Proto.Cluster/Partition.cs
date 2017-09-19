@@ -126,6 +126,7 @@ namespace Proto.Cluster
 
         private void TakeOwnership(TakeOwnership msg, IContext context)
         {
+            _logger.LogDebug("Take Ownership name: {0}, pid: {1}", msg.Name, msg.Pid);
             _partition[msg.Name] = msg.Pid;
             context.Watch(msg.Pid);
         }
@@ -202,8 +203,12 @@ namespace Proto.Cluster
             {
                 var random = await MemberList.GetRandomActivatorAsync(msg.Kind);
                 pid = await Remote.Remote.SpawnNamedAsync(random, msg.Name, msg.Kind, TimeSpan.FromSeconds(5));
-                _partition[msg.Name] = pid;
-                context.Watch(pid);
+                //Hacky way to workaround blocking partition actor, DO NOT COMMIT TO DEV
+                if (pid != null)
+                {
+                    _partition[msg.Name] = pid;
+                    context.Watch(pid);
+                }
             }
             context.Respond(new ActorPidResponse {Pid = pid});
         }
