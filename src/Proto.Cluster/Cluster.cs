@@ -39,7 +39,7 @@ namespace Proto.Cluster
             Logger.LogInformation("Started Cluster");
         }
         
-        public static void Stop(bool gracefull = true)
+        public static void Shutdown(bool gracefull = true)
         {
             if (gracefull)
             {
@@ -53,7 +53,7 @@ namespace Proto.Cluster
                 Partition.StopPartitionActors();
             }
 
-            Remote.Remote.Stop(gracefull);
+            Remote.Remote.Shutdown(gracefull);
 
             Logger.LogInformation("Stopped Cluster");
         }

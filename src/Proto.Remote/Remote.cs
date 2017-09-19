@@ -73,7 +73,7 @@ namespace Proto.Remote
             Logger.LogDebug($"Starting Proto.Actor server on {boundAddr} ({addr})");
         }
 
-        public static void Stop(bool gracefull = true)
+        public static void Shutdown(bool gracefull = true)
         {
             try
             {
@@ -89,13 +89,13 @@ namespace Proto.Remote
                 {
                     _server.KillAsync().Wait(10000);
                 }
+                
+                Logger.LogDebug($"Proto.Actor server stopped on {ProcessRegistry.Instance.Address}. Graceful:{gracefull}");
             }
             catch(Exception ex)
             {
-                Logger.LogError("Proto.Actor server shut down with error:\n" + ex.Message);
+                Logger.LogError($"Proto.Actor server stopped on {ProcessRegistry.Instance.Address} with error:\n{ex.Message}");
             }
-
-            Logger.LogDebug($"Proto.Actor server stopped on {ProcessRegistry.Instance.Address}. Graceful:{gracefull}");
         }
 
         private static void SpawnActivator()
