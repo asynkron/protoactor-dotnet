@@ -162,6 +162,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Node1", "examples\RemoteBen
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Node2", "examples\RemoteBenchmarkWireSerializer\Node2\Node2.csproj", "{39E5BF1E-EE5A-4986-A9B3-A8EC77C326C5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Persistence.DynamoDB", "src\PersistenceProviders\Proto.Persistence.DynamoDB\Proto.Persistence.DynamoDB.csproj", "{4234384F-5DA4-4EEF-A727-08C67BDB7651}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -819,6 +821,18 @@ Global
 		{39E5BF1E-EE5A-4986-A9B3-A8EC77C326C5}.Release|x64.Build.0 = Release|Any CPU
 		{39E5BF1E-EE5A-4986-A9B3-A8EC77C326C5}.Release|x86.ActiveCfg = Release|Any CPU
 		{39E5BF1E-EE5A-4986-A9B3-A8EC77C326C5}.Release|x86.Build.0 = Release|Any CPU
+		{4234384F-5DA4-4EEF-A727-08C67BDB7651}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4234384F-5DA4-4EEF-A727-08C67BDB7651}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4234384F-5DA4-4EEF-A727-08C67BDB7651}.Debug|x64.ActiveCfg = Debug|x64
+		{4234384F-5DA4-4EEF-A727-08C67BDB7651}.Debug|x64.Build.0 = Debug|x64
+		{4234384F-5DA4-4EEF-A727-08C67BDB7651}.Debug|x86.ActiveCfg = Debug|x86
+		{4234384F-5DA4-4EEF-A727-08C67BDB7651}.Debug|x86.Build.0 = Debug|x86
+		{4234384F-5DA4-4EEF-A727-08C67BDB7651}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4234384F-5DA4-4EEF-A727-08C67BDB7651}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4234384F-5DA4-4EEF-A727-08C67BDB7651}.Release|x64.ActiveCfg = Release|x64
+		{4234384F-5DA4-4EEF-A727-08C67BDB7651}.Release|x64.Build.0 = Release|x64
+		{4234384F-5DA4-4EEF-A727-08C67BDB7651}.Release|x86.ActiveCfg = Release|x86
+		{4234384F-5DA4-4EEF-A727-08C67BDB7651}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -900,5 +914,6 @@ Global
 		{CE2F0C04-4255-4027-9985-D193FAEF354D} = {55AA9959-F17A-4656-9468-8D6D55230C81}
 		{355E7552-BEDB-44DF-8AA1-68AF4188DC36} = {55AA9959-F17A-4656-9468-8D6D55230C81}
 		{39E5BF1E-EE5A-4986-A9B3-A8EC77C326C5} = {55AA9959-F17A-4656-9468-8D6D55230C81}
+		{4234384F-5DA4-4EEF-A727-08C67BDB7651} = {7AF64900-EA34-4A93-9514-FEBC4648E39E}
 	EndGlobalSection
 EndGlobal
