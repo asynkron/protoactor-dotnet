@@ -43,11 +43,11 @@ namespace Messages
             
             var gr = new GrainRequest
             {
-                Method = "SayHello",
+                MethodIndex = 0,
                 MessageData = request.ToByteString()
             };
 
-            async Task<HelloResponse> Inner()
+            async Task<HelloResponse> Inner() 
             {
                 //resolve the grain
                 var pid = await Cluster.GetAsync(_id, "HelloGrain", ct);
@@ -60,6 +60,7 @@ namespace Messages
                 {
                     return HelloResponse.Parser.ParseFrom(grainResponse.MessageData);
                 }
+
                 //did we get an error response?
                 if (res is GrainErrorResponse grainErrorResponse)
                 {
@@ -74,7 +75,7 @@ namespace Messages
                 {
                     return await Inner();
                 }
-                catch//(Exception x)
+                catch(Exception x)
                 {
                     //ignore, TODO: exponential backoff?
                 }
@@ -104,9 +105,9 @@ namespace Messages
                 }
                 case GrainRequest request:
                 {
-                    switch (request.Method)
+                    switch (request.MethodIndex)
                     {
-                        case "SayHello":
+                        case 0:
                         {
                             var r = HelloRequest.Parser.ParseFrom(request.MessageData);
                             try
