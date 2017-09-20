@@ -75,5 +75,11 @@ namespace Proto.Cluster
             var res = await PidCache.Pid.RequestAsync<ActorPidResponse>(req, ct);
             return res.Pid;
         }
+
+        public static void RemoveCache(string name)
+        {
+            var req = new RemoveCachedPidRequest(name);
+            PidCache.Pid.Tell(req);
+        }
     }
 }

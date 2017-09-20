@@ -45,6 +45,16 @@ namespace Proto.Cluster
         }
     }
 
+    internal class RemoveCachedPidRequest
+    {
+        public string Name { get; }
+
+        public RemoveCachedPidRequest(string name)
+        {
+            Name = name;
+        }
+    }
+    
     internal class PidCacheRequest : IHashable
     {
         public PidCacheRequest(string name, string kind)
