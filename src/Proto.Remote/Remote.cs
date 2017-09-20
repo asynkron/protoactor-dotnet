@@ -18,14 +18,14 @@ namespace Proto.Remote
     {
         private static readonly ILogger Logger = Log.CreateLogger(typeof(Remote).FullName);
 
-        private static Server _server;
+        private static Server server;
         private static readonly Dictionary<string, Props> Kinds = new Dictionary<string, Props>();
         public static PID EndpointManagerPid { get; private set; }
         public static PID ActivatorPid { get; private set; }
 
-        private static EndpointReader _endpointReader;
-        private static Subscription<object> _endpointTermEvnSub;
-        private static Subscription<object> _endpointConnEvnSub;
+        private static EndpointReader endpointReader;
+        private static Subscription<object> endpointTermEvnSub;
+        private static Subscription<object> endpointConnEvnSub;
 
         public static string[] GetKnownKinds()
         {
@@ -54,15 +54,15 @@ namespace Proto.Remote
         {
             ProcessRegistry.Instance.RegisterHostResolver(pid => new RemoteProcess(pid));
 
-            _endpointReader = new EndpointReader();
-            _server = new Server
+            endpointReader = new EndpointReader();
+            server = new Server
             {
-                Services = { Remoting.BindService(_endpointReader) },
+                Services = { Remoting.BindService(endpointReader) },
                 Ports = { new ServerPort(hostname, port, config.ServerCredentials) }
             };
-            _server.Start();
+            server.Start();
 
-            var boundPort = _server.Ports.Single().BoundPort;
+            var boundPort = server.Ports.Single().BoundPort;
             var boundAddr = $"{hostname}:{boundPort}";
             var addr = $"{config.AdvertisedHostname??hostname}:{config.AdvertisedPort?? boundPort}";
             ProcessRegistry.Instance.Address = addr;
@@ -79,15 +79,15 @@ namespace Proto.Remote
             {
                 if (gracefull)
                 {
-                    _endpointReader.Suspend(true);
+                    endpointReader.Suspend(true);
                     StopEndPointManager();
                     StopActivator();
-                    _server.ShutdownAsync().Wait(10000);
-                    _server.KillAsync().Wait(5000);
+                    server.ShutdownAsync().Wait(10000);
+                    server.KillAsync().Wait(5000);
                 }
                 else
                 {
-                    _server.KillAsync().Wait(10000);
+                    server.KillAsync().Wait(10000);
                 }
                 
                 Logger.LogDebug($"Proto.Actor server stopped on {ProcessRegistry.Instance.Address}. Graceful:{gracefull}");
@@ -113,15 +113,15 @@ namespace Proto.Remote
         {
             var props = Actor.FromProducer(() => new EndpointManager(config));
             EndpointManagerPid = Actor.Spawn(props);
-            _endpointTermEvnSub = EventStream.Instance.Subscribe<EndpointTerminatedEvent>(EndpointManagerPid.Tell);
-            _endpointConnEvnSub = EventStream.Instance.Subscribe<EndpointConnectedEvent>(EndpointManagerPid.Tell);
+            endpointTermEvnSub = EventStream.Instance.Subscribe<EndpointTerminatedEvent>(EndpointManagerPid.Tell);
+            endpointConnEvnSub = EventStream.Instance.Subscribe<EndpointConnectedEvent>(EndpointManagerPid.Tell);
         }
 
         private static void StopEndPointManager()
         {
             EndpointManagerPid.Tell(new StopEndpointManager());
-            EventStream.Instance.Unsubscribe(_endpointTermEvnSub.Id);
-            EventStream.Instance.Unsubscribe(_endpointConnEvnSub.Id);
+            EventStream.Instance.Unsubscribe(endpointTermEvnSub.Id);
+            EventStream.Instance.Unsubscribe(endpointConnEvnSub.Id);
         }
         
         public static PID ActivatorForAddress(string address)

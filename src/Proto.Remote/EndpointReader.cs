@@ -14,7 +14,7 @@ namespace Proto.Remote
 {
     public class EndpointReader : Remoting.RemotingBase
     {
-        private bool suspended;
+        private bool _suspended;
         
         public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
         {
@@ -29,7 +29,7 @@ namespace Proto.Remote
         {
             await requestStream.ForEachAsync(batch =>
             {
-                if (suspended)
+                if (_suspended)
                     return Actor.Done;
                 
                 var targetNames = new List<string>(batch.TargetNames);
@@ -67,7 +67,7 @@ namespace Proto.Remote
 
         public void Suspend(bool suspended)
         {
-            this.suspended = suspended;
+            this._suspended = suspended;
         }
     }
 }
