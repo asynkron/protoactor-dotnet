@@ -139,7 +139,7 @@ namespace Proto.Cluster.Consul
                 }
             });
         }
-        
+
         private void UpdateTtl()
         {
             Task.Run(async () =>
