@@ -4,8 +4,7 @@ var packageVersion = "0.1.12";
 
 var target = Argument("target", "Default");
 var mygetApiKey = Argument<string>("mygetApiKey", null);
-var nugetApiKey = Argument<string>("nugetApiKey", null);
-var currentBranch = Argument<string>("currentBranch", GitBranchCurrent("./").FriendlyName);
+var currentBranch = "strong-naming";
 var buildNumber = Argument<string>("buildNumber", null);
 var pullRequestTitle = Argument<string>("pullRequestTitle", null);
 var configuration = "Release";
@@ -47,6 +46,19 @@ Task("PatchVersion")
         }
     });
 
+Task("StrongName")
+    .Does(() => 
+    {
+        if (IsRunningOnWindows())
+        {
+            foreach(var proj in GetFiles("**/*.csproj")) 
+            {
+                Information("Installing Strong Naming " + proj);
+                StartProcess("dotnet", new ProcessSettings{ Arguments = "add " + proj + " package StrongNamer" } );
+            }
+        }
+    });
+
 Task("Restore")
     .Does(() => 
     {
@@ -56,10 +68,20 @@ Task("Restore")
 Task("Build")
     .Does(() => 
     {
-        DotNetCoreBuild("ProtoActor.sln", new DotNetCoreBuildSettings 
+        if (IsRunningOnWindows())
         {
-            Configuration = configuration,
-        });
+            MSBuild("ProtoActor.sln", new MSBuildSettings 
+            {
+                Configuration = configuration,
+            });
+        }
+        else 
+        {
+            DotNetCoreBuild("ProtoActor.sln", new DotNetCoreBuildSettings 
+            {
+                Configuration = configuration,
+            });
+        }
     });
 
 Task("UnitTest")
