@@ -13,8 +13,8 @@ namespace Proto.Cluster
 
 		private class NodeScore
 		{
-			public byte[] node;
-			public uint score;
+			public byte[] Node;
+			public uint Score;
 		}
 
 		private NodeScore[] nodes;
@@ -26,8 +26,8 @@ namespace Proto.Cluster
 			{
 				this.nodes[i] = new NodeScore()
 				{
-					node = Encoding.UTF8.GetBytes(nodes[i]),
-					score = 0
+					Node = Encoding.UTF8.GetBytes(nodes[i]),
+					Score = 0
 				};
 			}
 		}
@@ -42,11 +42,11 @@ namespace Proto.Cluster
 
 			for (int i = 0; i < this.nodes.Length; i++)
 			{
-				score = RdvHash(nodes[i].node, keyBytes);
+				score = RdvHash(nodes[i].Node, keyBytes);
 				if (score > maxScore)
 				{
 					maxScore = score;
-					maxNode = nodes[i].node;
+					maxNode = nodes[i].Node;
 				}
 			}
 
@@ -69,15 +69,15 @@ namespace Proto.Cluster
 			for (int i = 0; i < this.nodes.Length; i++)
 			{
 				var ns = this.nodes[i];
-				ns.score = RdvHash(ns.node, keyBytes);
+				ns.Score = RdvHash(ns.Node, keyBytes);
 			}
 
-			Array.Sort<NodeScore>(this.nodes, (n1, n2) => n2.score.CompareTo(n1.score));
+			Array.Sort<NodeScore>(this.nodes, (n1, n2) => n2.Score.CompareTo(n1.Score));
 
 			var nodes = new string[n];
 			for (int i = 0; i < n; i++)
 			{
-				nodes[i] = Encoding.UTF8.GetString(this.nodes[i].node);
+				nodes[i] = Encoding.UTF8.GetString(this.nodes[i].Node);
 			}
 			return nodes;
 		}

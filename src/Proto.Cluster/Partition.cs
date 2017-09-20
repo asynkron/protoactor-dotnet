@@ -17,6 +17,8 @@ namespace Proto.Cluster
     {
         public static Dictionary<string, PID> KindMap = new Dictionary<string, PID>();
 
+        private static Subscription<object> memberStatusSub;
+        
         public static PID SpawnPartitionActor(string kind)
         {
             var pid = Actor.SpawnNamed(Actor.FromProducer(() => new PartitionActor(kind)), "partition-" + kind);
@@ -25,7 +27,7 @@ namespace Proto.Cluster
 
         public static void SubscribeToEventStream()
         {
-            EventStream.Instance.Subscribe<MemberStatusEvent>(msg =>
+            memberStatusSub = EventStream.Instance.Subscribe<MemberStatusEvent>(msg =>
             {
                 foreach (var kind in msg.Kinds)
                 {
@@ -35,6 +37,11 @@ namespace Proto.Cluster
                     }
                 }
             });
+        }
+
+        public static void UnsubEventStream()
+        {
+            EventStream.Instance.Unsubscribe(memberStatusSub.Id);
         }
 
         public static PID PartitionForKind(string address, string kind)
@@ -49,6 +56,15 @@ namespace Proto.Cluster
                 var pid = SpawnPartitionActor(kind);
                 KindMap[kind] = pid;
             }
+        }
+
+        public static void StopPartitionActors()
+        {
+            foreach (var kind in KindMap.Values)
+            {
+                kind.Stop();
+            }
+            KindMap.Clear();
         }
     }
 
@@ -75,7 +91,7 @@ namespace Proto.Cluster
                     await Spawn(msg, context);
                     break;
                 case MemberJoinedEvent msg:
-                    await MemberJoinedAsync(msg);
+                    await MemberJoinedAsync(msg, context);
                     break;
                 case MemberRejoinedEvent msg:
                     MemberRejoined(msg);
@@ -90,7 +106,7 @@ namespace Proto.Cluster
                     MemberUnavailable(msg);
                     break;
                 case TakeOwnership msg:
-                    TakeOwnership(msg);
+                    TakeOwnership(msg, context);
                     break;
                 case Terminated msg:
                     Terminated(msg);
@@ -108,9 +124,10 @@ namespace Proto.Cluster
             }
         }
 
-        private void TakeOwnership(TakeOwnership msg)
+        private void TakeOwnership(TakeOwnership msg, IContext context)
         {
             _partition[msg.Name] = msg.Pid;
+            context.Watch(msg.Pid);
         }
 
         private void MemberUnavailable(MemberUnavailableEvent msg)
@@ -148,7 +165,7 @@ namespace Proto.Cluster
             }
         }
 
-        private async Task MemberJoinedAsync(MemberJoinedEvent msg)
+        private async Task MemberJoinedAsync(MemberJoinedEvent msg, IContext context)
         {
             _logger.LogInformation("Member Joined {0}", msg.Address);
             //TODO: right now we transfer ownership on a per actor basis.
@@ -160,12 +177,12 @@ namespace Proto.Cluster
 
                 if (address != ProcessRegistry.Instance.Address)
                 {
-                    TransferOwnership(actorId, address);
+                    TransferOwnership(actorId, address, context);
                 }
             }
         }
 
-        private void TransferOwnership(string actorId, string address)
+        private void TransferOwnership(string actorId, string address, IContext context)
         {
             var pid = _partition[actorId];
             var owner = Partition.PartitionForKind(address, _kind);
@@ -175,6 +192,7 @@ namespace Proto.Cluster
                            Pid = pid
                        });
             _partition.Remove(actorId);
+            context.Unwatch(pid);
         }
 
         private async Task Spawn(ActorPidRequest msg, IContext context)

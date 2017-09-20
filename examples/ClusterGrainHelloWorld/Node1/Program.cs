@@ -16,8 +16,7 @@ class Program
     static void Main(string[] args)
     {
         Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-        Remote.Start("127.0.0.1", 12001);
-        Cluster.Start("MyCluster", new ConsulProvider(new ConsulProviderOptions()));
+        Cluster.Start("MyCluster", "127.0.0.1", 12001, new ConsulProvider(new ConsulProviderOptions()));
 
         var client = Grains.HelloGrain("TheName");
 

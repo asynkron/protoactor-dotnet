@@ -93,7 +93,7 @@ namespace Proto
             }
         }
 
-        internal void Unsubscribe(Guid id)
+        public void Unsubscribe(Guid id)
         {
             _subscriptions.TryRemove(id, out var _);
         }

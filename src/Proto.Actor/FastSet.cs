@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace Proto
 {
-    internal class FastSet<T> : IEnumerable<T>
+    public class FastSet<T> : IEnumerable<T>
     {
         private T _first;
         private HashSet<T> _set;

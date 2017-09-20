@@ -8,9 +8,11 @@ using System.Threading.Tasks;
 
 namespace Proto.Cluster
 {
-    public interface IClusterProvider
-    {
-        Task RegisterMemberAsync(string clusterName, string h, int p, string[] kinds);
-        void MonitorMemberStatusChanges();
-    }
+	public interface IClusterProvider
+	{
+		Task RegisterMemberAsync(string clusterName, string h, int p, string[] kinds);
+		void MonitorMemberStatusChanges();
+		Task DeregisterMemberAsync();
+		Task Shutdown();
+	}
 }

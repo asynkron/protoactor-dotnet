@@ -25,6 +25,7 @@ namespace Proto.Remote
 
     public class EndpointManager : IActor, ISupervisorStrategy
     {
+        private readonly Behavior _behavior;
         private readonly RemoteConfig _config;
         private readonly Dictionary<string, Endpoint> _connections = new Dictionary<string, Endpoint>();
 
@@ -33,15 +34,33 @@ namespace Proto.Remote
         public EndpointManager(RemoteConfig config)
         {
             _config = config;
+            _behavior = new Behavior(ActiveAsync);
         }
 
         public Task ReceiveAsync(IContext context)
+        {
+            return _behavior.ReceiveAsync(context);
+        }
+
+        public Task ActiveAsync(IContext context)
         {
             switch (context.Message)
             {
                 case Started _:
                     {
                         _logger.LogDebug("Started EndpointManager");
+                        return Actor.Done;
+                    }
+                case StopEndpointManager _:
+                    {
+                        foreach(var endpoint in _connections.Values)
+                        {
+                            endpoint.Watcher.Stop();
+                            endpoint.Writer.Stop();
+                        }
+                        _connections.Clear();
+                        _behavior.Become(TerminatedAsync);
+                        _logger.LogDebug("Stopped EndpointManager");
                         return Actor.Done;
                     }
                 case EndpointTerminatedEvent msg:
@@ -85,6 +104,11 @@ namespace Proto.Remote
             }
         }
 
+        public Task TerminatedAsync(IContext context)
+        {
+            return Actor.Done;
+        }
+        
         public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause)
         {
             supervisor.RestartChildren(cause, child);

@@ -47,6 +47,13 @@ namespace Proto
             return DeadLetterProcess.Instance;
         }
 
+        public (PID pid, bool ok) TryGet(string id)
+        {
+            return _localActorRefs.TryGetValue(id, out var process)
+                       ? (new PID(Address, id, process), true)
+                       : (null, false);
+        }
+        
         public (PID pid, bool ok) TryAdd(string id, Process process)
         {
             var pid = new PID(Address, id, process);

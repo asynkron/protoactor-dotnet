@@ -15,14 +15,26 @@ namespace Proto.Cluster
         private static readonly Random Random = new Random();
         public static PID Pid { get; private set; }
 
+        private static Subscription<object> clusterTopologyEvnSub;
+        
         internal static void SubscribeToEventStream()
         {
-            Actor.EventStream.Subscribe<ClusterTopologyEvent>(Pid.Tell);
+            clusterTopologyEvnSub = Actor.EventStream.Subscribe<ClusterTopologyEvent>(Pid.Tell);
+        }
+
+        internal static void UnsubEventStream()
+        {
+            Actor.EventStream.Unsubscribe(clusterTopologyEvnSub.Id);
         }
 
         internal static void Spawn()
         {
             Pid = Actor.SpawnNamed(Actor.FromProducer(() => new MemberListActor()), "memberlist");
+        }
+
+        internal static void Stop()
+        {
+            Pid.Stop();
         }
 
         public static async Task<string[]> GetMembersAsync(string kind)
