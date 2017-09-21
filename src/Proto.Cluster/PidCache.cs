@@ -45,14 +45,13 @@ namespace Proto.Cluster
         }
     }
 
-    internal class RemoveCachedPidRequest
+    internal class RemovePidCacheRequest : IHashable
     {
         public string Name { get; }
 
-        public RemoveCachedPidRequest(string name)
-        {
-            Name = name;
-        }
+        public RemovePidCacheRequest(string name) => Name = name;
+
+        public string HashBy() => Name;
     }
     
     internal class PidCacheRequest : IHashable
@@ -69,6 +68,18 @@ namespace Proto.Cluster
         public string HashBy()
         {
             return Name;
+        }
+    }
+
+    internal class PidCacheResponse
+    {
+        public PID Pid { get; }
+        public ResponseStatusCode StatusCode { get; }
+
+        public PidCacheResponse(PID pid, ResponseStatusCode statusCode)
+        {
+            Pid = pid;
+            StatusCode = statusCode;
         }
     }
 
@@ -126,9 +137,10 @@ namespace Proto.Cluster
                 context.ReenterAfter(resp, t =>
                 {
                     var res = t.Result;
-                    switch ((ActorPidRequestStatusCode) res.StatusCode)
+                    var status = (ResponseStatusCode) res.StatusCode;
+                    switch (status)
                     {
-                        case ActorPidRequestStatusCode.OK:
+                        case ResponseStatusCode.OK:
                             var respid = res.Pid;
                             var key = respid.ToShortString();
                             _cache[name] = respid;
@@ -139,10 +151,10 @@ namespace Proto.Cluster
                                 _reverseCacheByMemberAddress[respid.Address] = new HashSet<string> {key};
 
                             context.Watch(respid);
-                            context.Respond(res);
+                            context.Respond(new PidCacheResponse(res.Pid, status));
                             break;
                         default:
-                            context.Respond(res);
+                            context.Respond(new PidCacheResponse(res.Pid, status));
                             break;
                     }
                     return Actor.Done;

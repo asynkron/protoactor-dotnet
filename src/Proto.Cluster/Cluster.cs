@@ -67,18 +67,18 @@ namespace Proto.Cluster
             return (host, port);
         }
 
-        public static Task<ActorPidResponse> GetAsync(string name, string kind) => GetAsync(name, kind, CancellationToken.None);
+        public static Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind) => GetAsync(name, kind, CancellationToken.None);
 
-        public static async Task<ActorPidResponse> GetAsync(string name, string kind, CancellationToken ct)
+        public static async Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind, CancellationToken ct)
         {
             var req = new PidCacheRequest(name, kind);
-            var res = await PidCache.Pid.RequestAsync<ActorPidResponse>(req, ct);
-            return res;
+            var res = await PidCache.Pid.RequestAsync<PidCacheResponse>(req, ct);
+            return (res.Pid, res.StatusCode);
         }
 
         public static void RemoveCache(string name)
         {
-            var req = new RemoveCachedPidRequest(name);
+            var req = new RemovePidCacheRequest(name);
             PidCache.Pid.Tell(req);
         }
     }

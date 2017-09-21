@@ -209,15 +209,15 @@ namespace Proto.Cluster
                 var activator = await MemberList.GetNextActivatorAsync(msg.Kind);
                 var pidResp = await Remote.Remote.SpawnNamedAsync(activator, msg.Name, msg.Kind, TimeSpan.FromSeconds(5));
 
-                switch ((ActorPidRequestStatusCode) pidResp.StatusCode)
+                switch ((ResponseStatusCode) pidResp.StatusCode)
                 {
-                    case ActorPidRequestStatusCode.OK:
+                    case ResponseStatusCode.OK:
                         pid = pidResp.Pid;
                         _partition[msg.Name] = pid;
                         context.Watch(pid);
                         context.Respond(pidResp);
                         return;
-                    case ActorPidRequestStatusCode.Unavailable:
+                    case ResponseStatusCode.Unavailable:
                         //Get next activator to spawn
                         if (retry != 0)
                             continue;

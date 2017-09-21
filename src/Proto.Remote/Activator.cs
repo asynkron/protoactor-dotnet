@@ -9,12 +9,6 @@ using System.Threading.Tasks;
 
 namespace Proto.Remote
 {
-    public enum ActorPidRequestStatusCode
-    {
-        OK,
-        Unavailable
-    }
-
     public class Activator : IActor
     {
         public Task ReceiveAsync(IContext context)
@@ -42,7 +36,7 @@ namespace Proto.Remote
                     {
                         var response = new ActorPidResponse
                         {
-                            StatusCode = (int) ActorPidRequestStatusCode.Unavailable
+                            StatusCode = (int) ResponseStatusCode.Unavailable
                         };
                         context.Respond(response);
                     }
