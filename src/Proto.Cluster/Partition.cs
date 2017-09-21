@@ -198,19 +198,37 @@ namespace Proto.Cluster
 
         private async Task Spawn(ActorPidRequest msg, IContext context)
         {
-            PID pid;
-            if (!_partition.TryGetValue(msg.Name, out pid))
+            if (_partition.TryGetValue(msg.Name, out var pid))
             {
-                var random = await MemberList.GetRandomActivatorAsync(msg.Kind);
-                pid = await Remote.Remote.SpawnNamedAsync(random, msg.Name, msg.Kind, TimeSpan.FromSeconds(5));
-                //Hacky way to workaround blocking partition actor, DO NOT COMMIT TO DEV
-                if (pid != null)
+                context.Respond(new ActorPidResponse {Pid = pid});
+                return;
+            }
+            
+            for (int retry = 3; retry >= 0; retry--)
+            {
+                var activator = await MemberList.GetNextActivatorAsync(msg.Kind);
+                var pidResp = await Remote.Remote.SpawnNamedAsync(activator, msg.Name, msg.Kind, TimeSpan.FromSeconds(5));
+
+                switch ((ActorPidRequestStatusCode) pidResp.StatusCode)
                 {
-                    _partition[msg.Name] = pid;
-                    context.Watch(pid);
+                    case ActorPidRequestStatusCode.OK:
+                        pid = pidResp.Pid;
+                        _partition[msg.Name] = pid;
+                        context.Watch(pid);
+                        context.Respond(pidResp);
+                        return;
+                    case ActorPidRequestStatusCode.Unavailable:
+                        //Get next activator to spawn
+                        if (retry != 0)
+                            continue;
+                        context.Respond(pidResp);
+                        break;
+                    default:
+                        //Return to requester to wait
+                        context.Respond(pidResp);
+                        return;
                 }
             }
-            context.Respond(new ActorPidResponse {Pid = pid});
         }
     }
 }

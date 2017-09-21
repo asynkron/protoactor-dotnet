@@ -126,17 +126,25 @@ namespace Proto.Cluster
                 context.ReenterAfter(resp, t =>
                 {
                     var res = t.Result;
-                    var respid = res.Pid;
-                    var key = respid.ToShortString();
-                    _cache[name] = respid;
-                    _reverseCache[key] = name;
-                    if (_reverseCacheByMemberAddress.ContainsKey(respid.Address))
-                        _reverseCacheByMemberAddress[respid.Address].Add(key);
-                    else
-                        _reverseCacheByMemberAddress[respid.Address] = new HashSet<string>{key};
+                    switch ((ActorPidRequestStatusCode) res.StatusCode)
+                    {
+                        case ActorPidRequestStatusCode.OK:
+                            var respid = res.Pid;
+                            var key = respid.ToShortString();
+                            _cache[name] = respid;
+                            _reverseCache[key] = name;
+                            if (_reverseCacheByMemberAddress.ContainsKey(respid.Address))
+                                _reverseCacheByMemberAddress[respid.Address].Add(key);
+                            else
+                                _reverseCacheByMemberAddress[respid.Address] = new HashSet<string> {key};
 
-                    context.Watch(respid);
-                    context.Respond(res);
+                            context.Watch(respid);
+                            context.Respond(res);
+                            break;
+                        default:
+                            context.Respond(res);
+                            break;
+                    }
                     return Actor.Done;
                 });
                 return Actor.Done;

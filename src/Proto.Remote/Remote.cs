@@ -129,12 +129,12 @@ namespace Proto.Remote
             return new PID(address, "activator");
         }
 
-        public static Task<PID> SpawnAsync(string address, string kind, TimeSpan timeout)
+        public static Task<ActorPidResponse> SpawnAsync(string address, string kind, TimeSpan timeout)
         {
             return SpawnNamedAsync(address, "", kind, timeout);
         }
 
-        public static async Task<PID> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
+        public static async Task<ActorPidResponse> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
         {
             var activator = ActivatorForAddress(address);
 
@@ -144,7 +144,7 @@ namespace Proto.Remote
                 Name = name
             }, timeout);
 
-            return res.Pid;
+            return res;
         }
 
         public static void SendMessage(PID pid, object msg, int serializerId)

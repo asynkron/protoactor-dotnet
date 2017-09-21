@@ -13,6 +13,7 @@ namespace Proto.Cluster
     public static class MemberList
     {
         private static readonly Random Random = new Random();
+        private static readonly Counter Counter = new Counter();
         public static PID Pid { get; private set; }
 
         private static Subscription<object> clusterTopologyEvnSub;
@@ -49,6 +50,13 @@ namespace Proto.Cluster
                 }
                 await Task.Delay(500);
             }
+        }
+
+        public static async Task<string> GetNextActivatorAsync(string kind)
+        {
+            var r = Counter.Next();
+            var members = await GetMembersAsync(kind);
+            return members[r % members.Length];
         }
 
         public static async Task<string> GetRandomActivatorAsync(string kind)

@@ -4,10 +4,17 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Threading.Tasks;
 
 namespace Proto.Remote
 {
+    public enum ActorPidRequestStatusCode
+    {
+        OK,
+        Unavailable
+    }
+
     public class Activator : IActor
     {
         public Task ReceiveAsync(IContext context)
@@ -21,18 +28,43 @@ namespace Proto.Remote
                     {
                         name = ProcessRegistry.Instance.NextId();
                     }
-                    var pid = Actor.SpawnNamed(props, name);
-                    var response = new ActorPidResponse
-                    {
-                        Pid = pid
-                    };
-                    context.Respond(response);
 
-                    break;
-                default:
+                    try
+                    {
+                        var pid = Actor.SpawnNamed(props, name);
+                        var response = new ActorPidResponse
+                        {
+                            Pid = pid
+                        };
+                        context.Respond(response);
+                    }
+                    catch (ActivatorUnavailableException)
+                    {
+                        var response = new ActorPidResponse
+                        {
+                            StatusCode = (int) ActorPidRequestStatusCode.Unavailable
+                        };
+                        context.Respond(response);
+                    }
+                    catch (ActivatorCustomException ex)
+                    {
+                        var response = new ActorPidResponse
+                        {
+                            StatusCode = ex.Code
+                        };
+                        context.Respond(response);
+                    }
                     break;
             }
             return Actor.Done;
         }
+    }
+
+    public class ActivatorUnavailableException : Exception { }
+
+    public class ActivatorCustomException : Exception
+    {
+        public int Code { get; }
+        public ActivatorCustomException(int code) => Code = code;
     }
 }
