@@ -4,6 +4,8 @@
 	{
 		OK,
 		Unavailable,
-		Timeout
+		Timeout,
+		ProcessNameAlreadyExist,
+		Error
 	}
 }

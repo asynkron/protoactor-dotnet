@@ -26,27 +26,39 @@ namespace Proto.Remote
                     try
                     {
                         var pid = Actor.SpawnNamed(props, name);
-                        var response = new ActorPidResponse
-                        {
-                            Pid = pid
-                        };
+                        var response = new ActorPidResponse{ Pid = pid };
                         context.Respond(response);
                     }
-                    catch (ActivatorUnavailableException)
-                    {
-                        var response = new ActorPidResponse
-                        {
-                            StatusCode = (int) ResponseStatusCode.Unavailable
-                        };
-                        context.Respond(response);
-                    }
-                    catch (ActivatorCustomException ex)
+                    catch (ActivatorException ex)
                     {
                         var response = new ActorPidResponse
                         {
                             StatusCode = ex.Code
                         };
                         context.Respond(response);
+
+                        if (!ex.DoNotThrow)
+                            throw;
+                    }
+                    catch (ProcessNameExistException)
+                    {
+                        var response = new ActorPidResponse
+                        {
+                            StatusCode = (int) ResponseStatusCode.ProcessNameAlreadyExist
+                        };
+                        context.Respond(response);
+
+                        throw;
+                    }
+                    catch
+                    {
+                        var response = new ActorPidResponse
+                        {
+                            StatusCode = (int) ResponseStatusCode.Error
+                        };
+                        context.Respond(response);
+
+                        throw;
                     }
                     break;
             }
@@ -54,11 +66,20 @@ namespace Proto.Remote
         }
     }
 
-    public class ActivatorUnavailableException : Exception { }
+    public class ActivatorUnavailableException : ActivatorException
+    {
+        public ActivatorUnavailableException() : base((int) ResponseStatusCode.Unavailable, true) { }
+    }
 
-    public class ActivatorCustomException : Exception
+    public class ActivatorException : Exception
     {
         public int Code { get; }
-        public ActivatorCustomException(int code) => Code = code;
+        public bool DoNotThrow { get; }
+
+        public ActivatorException(int code, bool doNotThrow = false)
+        {
+            Code = code;
+            DoNotThrow = doNotThrow;
+        }
     }
 }
