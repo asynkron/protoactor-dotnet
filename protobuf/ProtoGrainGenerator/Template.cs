@@ -66,7 +66,12 @@ namespace {{CsNamespace}}
             async Task<{{OutputName}}> Inner() 
             {
                 //resolve the grain
-                var pid = await Cluster.GetAsync(_id, ""{{../Name}}"", ct);
+                var (pid, statusCode) = await Cluster.GetAsync(_id, ""{{../Name}}"", ct);
+
+                if (statusCode != ResponseStatusCode.OK)
+                {
+                    throw new Exception($""Get PID failed with StatusCode: {statusCode}"");  
+                }
 
                 //request the RPC method to be invoked
                 var res = await pid.RequestAsync<object>(gr, ct);

@@ -50,7 +50,12 @@ namespace Messages
             async Task<HelloResponse> Inner() 
             {
                 //resolve the grain
-                var pid = await Cluster.GetAsync(_id, "HelloGrain", ct);
+                var (pid, statusCode) = await Cluster.GetAsync(_id, "HelloGrain", ct);
+
+                if (statusCode != ResponseStatusCode.OK)
+                {
+                    throw new Exception($"Get PID failed with StatusCode: {statusCode}");  
+                }
 
                 //request the RPC method to be invoked
                 var res = await pid.RequestAsync<object>(gr, ct);
