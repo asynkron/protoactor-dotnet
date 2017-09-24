@@ -1,97 +1,95 @@
 ﻿using System;
 using System.Threading.Tasks;
-using System.Linq;
 using Newtonsoft.Json;
+using Microsoft.Data.Sqlite;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Proto.Persistence.Sqlite
 {
     public class SqliteProvider : IProvider
     {
-        private readonly string _datasource;
+        private readonly SqliteConnectionStringBuilder _connectionStringBuilder;
+        private string _connectionString => $"{_connectionStringBuilder}";
 
-        public SqliteProvider(string datasource = "states.db")
+        public SqliteProvider(SqliteConnectionStringBuilder connectionStringBuilder)
         {
-            _datasource = datasource;
-            try
+            _connectionStringBuilder = connectionStringBuilder;
+
+            using (var connection = new SqliteConnection(_connectionString))
             {
-                using (var db = new SqlitePersistenceContext(_datasource))
-                {
-                    db.Database.EnsureCreated();
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
+                connection.Open();
+
+                var initEventsCommand = connection.CreateCommand();
+                initEventsCommand.CommandText = "CREATE TABLE IF NOT EXISTS Events (Id TEXT, ActorName TEXT, EventIndex REAL, EventData TEXT)";
+                initEventsCommand.ExecuteNonQuery();
+
+                var initSnapshotsCommand = connection.CreateCommand();
+                initSnapshotsCommand.CommandText = "CREATE TABLE IF NOT EXISTS Snapshots (Id TEXT, ActorName TEXT, SnapshotIndex REAL, SnapshotData TEXT)";
+                initSnapshotsCommand.ExecuteNonQuery();
             }
         }
 
-        public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
+        public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
         {
-            try
+            using (var connection = new SqliteConnection(_connectionString))
             {
-                using (var db = new SqlitePersistenceContext(_datasource))
-                {
-                    var items = db.Events
-                                    .Where(x => x.ActorName == actorName)
-                                    .Where(x => x.EventIndex <= inclusiveToIndex)
-                                    .ToList();
+                connection.Open();
 
-                    db.RemoveRange(items);
-
-                    await db.SaveChangesAsync();
-                }
-            }
-            catch(Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-        public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
-        {
-            try
-            {
-                using (var db = new SqlitePersistenceContext(_datasource))
-                {
-                    var items = db.Snapshots
-                                    .Where(x => x.ActorName == actorName)
-                                    .Where(x => x.SnapshotIndex <= inclusiveToIndex)
-                                    .ToList();
-
-                    db.RemoveRange(items);
-
-                    await db.SaveChangesAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-        public Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
-        {
-            try
-            {
-                using (var db = new SqlitePersistenceContext(_datasource))
-                {
-                    var items = db.Events
-                        .Where(x => x.ActorName == actorName)
-                        .Where(x => x.EventIndex >= indexStart && x.EventIndex <= indexEnd)
-                        .ToList();
-
-                    foreach (var item in items)
-                    {
-                        callback(JsonConvert.DeserializeObject<object>(item.EventData, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
+                var deleteCommand = connection.CreateCommand();
+                deleteCommand.CommandText = "DELETE FROM Events WHERE ActorName = $actorName AND EventIndex <= $inclusiveToIndex";
+                deleteCommand.Parameters.AddWithValue("$actorName", actorName);
+                deleteCommand.Parameters.AddWithValue("$inclusiveToIndex", inclusiveToIndex);
+                deleteCommand.ExecuteNonQuery();
             }
 
             return Task.FromResult(0);
+        }
+
+        public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
+        {
+            using (var connection = new SqliteConnection(_connectionString))
+            {
+                connection.Open();
+
+                var deleteCommand = connection.CreateCommand();
+                deleteCommand.CommandText = "DELETE FROM Snapshots WHERE ActorName = $actorName AND SnapshotIndex <= $inclusiveToIndex";
+                deleteCommand.Parameters.AddWithValue("$actorName", actorName);
+                deleteCommand.Parameters.AddWithValue("$inclusiveToIndex", inclusiveToIndex);
+                deleteCommand.ExecuteNonQuery();
+            }
+
+            return Task.FromResult(0);
+        }
+
+        public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        {
+            using (var connection = new SqliteConnection(_connectionString))
+            {
+                connection.Open();
+                    
+                var selectCommand = connection.CreateCommand();
+                selectCommand.CommandText = "SELECT EventIndex, EventData FROM Events WHERE ActorName = $ActorName AND EventIndex >= $IndexStart AND EventIndex <= $IndexEnd ORDER BY EventIndex ASC";
+                selectCommand.Parameters.AddWithValue("$ActorName", actorName);
+                selectCommand.Parameters.AddWithValue("$IndexStart", indexStart);
+                selectCommand.Parameters.AddWithValue("$IndexEnd", indexEnd);
+
+                var indexes = new List<long>();
+
+                using (var reader = selectCommand.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        indexes.Add(Convert.ToInt64(reader["EventIndex"]));
+
+                        callback(JsonConvert.DeserializeObject<object>(reader["EventData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
+                    }
+                }
+
+                var result = indexes.Any() ? indexes.LastOrDefault() : -1;
+                    
+                return Task.FromResult(result);
+            }
         }
 
         public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
@@ -99,66 +97,67 @@ namespace Proto.Persistence.Sqlite
             object snapshot = null;
             long index = 0;
 
-            try
+            using (var connection = new SqliteConnection(_connectionString))
             {
-                using (var db = new SqlitePersistenceContext(_datasource))
-                {
-                    var item = db.Snapshots
-                                    .Where(x => x.ActorName == actorName)
-                                    .OrderByDescending(x => x.SnapshotIndex)
-                                    .FirstOrDefault();
+                connection.Open();
 
-                    if (item != null)
+                var selectCommand = connection.CreateCommand();
+                selectCommand.CommandText = "SELECT SnapshotIndex, SnapshotData FROM Snapshots WHERE ActorName = $ActorName ORDER BY SnapshotIndex DESC LIMIT 1";
+                selectCommand.Parameters.AddWithValue("$ActorName", actorName);
+
+                using (var reader = selectCommand.ExecuteReader())
+                {
+                    while (reader.Read())
                     {
-                        snapshot = JsonConvert.DeserializeObject<object>(item.SnapshotData, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-                        index = item.SnapshotIndex;
+                        snapshot = JsonConvert.DeserializeObject<object>(reader["SnapshotData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
+                        index = Convert.ToInt64(reader["SnapshotIndex"]);
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
             }
 
             return Task.FromResult((snapshot, index));
         }
 
-        public async Task PersistEventAsync(string actorName, long index, object @event)
+        public Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
-            try
-            {
-                using (var db = new SqlitePersistenceContext(_datasource))
-                {
-                    var item = new Event(actorName, index, JsonConvert.SerializeObject(@event, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All }));
+            var item = new Event(actorName, index, JsonConvert.SerializeObject(@event, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All }));
 
-                    await db.Events.AddAsync(item);
-
-                    await db.SaveChangesAsync();
-                }
-            }
-            catch (Exception ex)
+            using (var connection = new SqliteConnection(_connectionString))
             {
-                throw ex;
+                connection.Open();
+
+                var insertCommand = connection.CreateCommand();
+                insertCommand.CommandText = "INSERT INTO Events (Id, ActorName, EventIndex, EventData) VALUES ($Id, $ActorName, $EventIndex, $EventData)";
+                insertCommand.Parameters.AddWithValue("$Id", item.Id);
+                insertCommand.Parameters.AddWithValue("$ActorName", item.ActorName);
+                insertCommand.Parameters.AddWithValue("$EventIndex", item.EventIndex);
+                insertCommand.Parameters.AddWithValue("$EventData", item.EventData);
+                insertCommand.ExecuteNonQuery();
             }
+
+            var result = index++;
+
+            return Task.FromResult(result);
         }
 
-        public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)
+        public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
         {
-            try
-            {
-                using (var db = new SqlitePersistenceContext(_datasource))
-                {
-                    var item = new Snapshot(actorName, index, JsonConvert.SerializeObject(snapshot, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All }));
+            var item = new Snapshot(actorName, index, JsonConvert.SerializeObject(snapshot, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All }));
 
-                    await db.Snapshots.AddAsync(item);
-
-                    await db.SaveChangesAsync();
-                }
-            }
-            catch (Exception ex)
+            using (var connection = new SqliteConnection(_connectionString))
             {
-                throw ex;
+                connection.Open();
+
+                var insertCommand = connection.CreateCommand();
+                insertCommand.CommandText = "INSERT INTO Snapshots (Id, ActorName, SnapshotIndex, SnapshotData) VALUES ($Id, $ActorName, $SnapshotIndex, $SnapshotData)";
+                insertCommand.Parameters.AddWithValue("$Id", item.Id);
+                insertCommand.Parameters.AddWithValue("$ActorName", item.ActorName);
+                insertCommand.Parameters.AddWithValue("$SnapshotIndex", item.SnapshotIndex);
+                insertCommand.Parameters.AddWithValue("$SnapshotData", item.SnapshotData);
+                insertCommand.ExecuteNonQuery();
             }
+
+            return Task.FromResult(0);
         }
     }
 }

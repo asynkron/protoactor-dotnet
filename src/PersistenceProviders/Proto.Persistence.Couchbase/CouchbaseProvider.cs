@@ -21,7 +21,7 @@ namespace Proto.Persistence.Couchbase
             _bucket = bucket;
         }
         
-        public Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
             var q = GenerateGetEventsQuery(actorName, indexStart, indexEnd);
             return ExecuteGetEventsQueryAsync(q, callback);
@@ -36,7 +36,7 @@ namespace Proto.Persistence.Couchbase
                    "ORDER BY b.eventIndex ASC";
         }
 
-        private async Task ExecuteGetEventsQueryAsync(string query, Action<object> callback)
+        private async Task<long> ExecuteGetEventsQueryAsync(string query, Action<object> callback)
         {
             var req = QueryRequest.Create(query);
 
@@ -52,6 +52,7 @@ namespace Proto.Persistence.Couchbase
             {
                 callback(@event.Data);
             }
+            return events.Any() ? events.LastOrDefault().EventIndex : -1;
         }
 
         public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
@@ -71,11 +72,13 @@ namespace Proto.Persistence.Couchbase
             return snapshot != null ? (snapshot.Data, snapshot.SnapshotIndex) : (null, 0);
         }
 
-        public async Task PersistEventAsync(string actorName, long index, object @event)
+        public async Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
             var evnt = new Event(actorName, index, @event);
 
             var res = await _bucket.InsertAsync(evnt.Key, evnt);
+
+            return index + 1;
         }
 
         public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)

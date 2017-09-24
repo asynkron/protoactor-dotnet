@@ -14,12 +14,14 @@ namespace Proto.Remote
 {
     public class EndpointReader : Remoting.RemotingBase
     {
-        public override async Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
+        private bool _suspended;
+        
+        public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
         {
-            return new ConnectResponse()
+            return Task.FromResult(new ConnectResponse()
             {
                 DefaultSerializerId = Serialization.DefaultSerializerId
-            };
+            });
         }
 
         public override async Task Receive(IAsyncStreamReader<MessageBatch> requestStream,
@@ -27,11 +29,13 @@ namespace Proto.Remote
         {
             await requestStream.ForEachAsync(batch =>
             {
+                if (_suspended)
+                    return Actor.Done;
+                
                 var targetNames = new List<string>(batch.TargetNames);
                 var typeNames = new List<string>(batch.TypeNames);
                 foreach (var envelope in batch.Envelopes)
                 {
-                    
                     var targetName = targetNames[envelope.Target];
                     var target = new PID(ProcessRegistry.Instance.Address, targetName);
                   
@@ -59,6 +63,11 @@ namespace Proto.Remote
 
                 return Actor.Done;
             });
+        }
+
+        public void Suspend(bool suspended)
+        {
+            this._suspended = suspended;
         }
     }
 }

@@ -32,7 +32,7 @@ namespace Proto.Persistence.Tests
             return Task.FromResult((snapshot.Value, snapshot.Key));
         }
 
-        public Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
             if (_events.TryGetValue(actorName, out Dictionary<long, object> events))
             {
@@ -41,10 +41,10 @@ namespace Proto.Persistence.Tests
                     callback(e.Value);
                 }
             }
-            return Task.FromResult(0);
+            return Task.FromResult(0L);
         }
 
-        public Task PersistEventAsync(string actorName, long index, object @event)
+        public Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
             var events = _events.GetOrAdd(actorName, new Dictionary<long, object>());
             long nextEventIndex = 1;
@@ -54,7 +54,7 @@ namespace Proto.Persistence.Tests
             }
             events.Add(nextEventIndex, @event);
 
-            return Task.FromResult(0);
+            return Task.FromResult(0L);
         }
 
         public Task PersistSnapshotAsync(string actorName, long index, object snapshot)

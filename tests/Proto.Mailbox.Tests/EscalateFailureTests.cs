@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Threading;
 using Proto.TestFixtures;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Proto.Mailbox.Tests
 {
@@ -44,7 +44,7 @@ namespace Proto.Mailbox.Tests
         }
 
         [Fact]
-        public void GivenNonCompletedUserMessageTaskThrewException_ShouldEscalateFailure()
+        public async Task GivenNonCompletedUserMessageTaskThrewException_ShouldEscalateFailure()
         {
             var mailboxHandler = new TestMailboxHandler();
             var mailbox = UnboundedMailbox.Create();
@@ -54,16 +54,18 @@ namespace Proto.Mailbox.Tests
 
             mailbox.PostUserMessage(msg1);
             var taskException = new Exception();
-            msg1.TaskCompletionSource.SetException(taskException);
 
-            Thread.Sleep(500);
+            Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetException(taskException);
+            await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
+                .ConfigureAwait(false);
+
             Assert.Equal(1, mailboxHandler.EscalatedFailures.Count);
             var e = Assert.IsType<AggregateException>(mailboxHandler.EscalatedFailures[0]);
             Assert.Equal(taskException, e.InnerException);
         }
 
         [Fact]
-        public void GivenNonCompletedSystemMessageTaskThrewException_ShouldEscalateFailure()
+        public async Task GivenNonCompletedSystemMessageTaskThrewException_ShouldEscalateFailure()
         {
             var mailboxHandler = new TestMailboxHandler();
             var mailbox = UnboundedMailbox.Create();
@@ -73,9 +75,11 @@ namespace Proto.Mailbox.Tests
 
             mailbox.PostSystemMessage(msg1);
             var taskException = new Exception();
-            msg1.TaskCompletionSource.SetException(taskException);
 
-            Thread.Sleep(500);
+            Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetException(taskException);
+            await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
+                .ConfigureAwait(false);
+
             Assert.Equal(1, mailboxHandler.EscalatedFailures.Count);
             var e = Assert.IsType<AggregateException>(mailboxHandler.EscalatedFailures[0]);
             Assert.Equal(taskException, e.InnerException);

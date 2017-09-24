@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using MongoDB.Driver;
 
@@ -19,7 +20,7 @@ namespace Proto.Persistence.MongoDB
             _mongoDB = mongoDB;
         }
         
-        public async Task GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
             var sort = Builders<Event>.Sort.Ascending("eventIndex");
             var events = await EventCollection
@@ -31,6 +32,8 @@ namespace Proto.Persistence.MongoDB
             {
                 callback(@event.Data);
             }
+            
+            return events.Any() ? events.LastOrDefault().EventIndex : -1;
         }
 
         public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
@@ -44,9 +47,10 @@ namespace Proto.Persistence.MongoDB
             return snapshot != null ? (snapshot.Data, snapshot.SnapshotIndex) : (null, 0);
         }
 
-        public async Task PersistEventAsync(string actorName, long index, object @event)
+        public async Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
             await EventCollection.InsertOneAsync(new Event(actorName, index, @event));
+            return index++;
         }
 
         public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)

@@ -30,7 +30,7 @@ artifacts:
 - path: out\*
 
 deploy_script:
-  - .\Cake\Cake.exe --target=Push --mygetApiKey=%MYGET_API_KEY% --nugetApiKey=%NUGET_API_KEY% --pullRequestTitle="%APPVEYOR_PULL_REQUEST_TITLE%"
+  - .\Cake\Cake.exe --target=Push --mygetApiKey=%MYGET_API_KEY% --nugetApiKey=%NUGET_API_KEY% --currentBranch=%APPVEYOR_REPO_BRANCH% --pullRequestTitle="%APPVEYOR_PULL_REQUEST_TITLE%"
 
 notifications:
   - provider: Webhook

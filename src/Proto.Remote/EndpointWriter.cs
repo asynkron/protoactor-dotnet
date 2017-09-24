@@ -140,6 +140,12 @@ namespace Proto.Remote
                 }
             });
 
+            var connected = new EndpointConnectedEvent
+            {
+                Address = _address
+            };
+            Actor.EventStream.Publish(connected);
+
             _streamWriter = _stream.RequestStream;
 
             _logger.LogDebug($"Connected to address {_address}");
