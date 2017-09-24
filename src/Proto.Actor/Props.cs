@@ -40,7 +40,7 @@ namespace Proto
             var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, process);
             if (!absent)
             {
-                throw new ProcessNameExistException(name);
+                throw new ProcessNameExistException(name, pid);
             }
             ctx.Self = pid;
             mailbox.RegisterHandlers(ctx, dispatcher);

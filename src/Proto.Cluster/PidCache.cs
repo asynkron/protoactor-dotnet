@@ -133,24 +133,23 @@ namespace Proto.Cluster
                     Kind = kind,
                     Name = name
                 };
-                var resp = remotePid.RequestAsync<ActorPidResponse>(req);
-                context.ReenterAfter(resp, t =>
+                var reqTask = remotePid.RequestAsync<ActorPidResponse>(req);
+                context.ReenterAfter(reqTask, t =>
                 {
                     var res = t.Result;
                     var status = (ResponseStatusCode) res.StatusCode;
                     switch (status)
                     {
                         case ResponseStatusCode.OK:
-                            var respid = res.Pid;
-                            var key = respid.ToShortString();
-                            _cache[name] = respid;
+                            var key = res.Pid.ToShortString();
+                            _cache[name] = res.Pid;
                             _reverseCache[key] = name;
-                            if (_reverseCacheByMemberAddress.ContainsKey(respid.Address))
-                                _reverseCacheByMemberAddress[respid.Address].Add(key);
+                            if (_reverseCacheByMemberAddress.ContainsKey(res.Pid.Address))
+                                _reverseCacheByMemberAddress[res.Pid.Address].Add(key);
                             else
-                                _reverseCacheByMemberAddress[respid.Address] = new HashSet<string> {key};
+                                _reverseCacheByMemberAddress[res.Pid.Address] = new HashSet<string> {key};
 
-                            context.Watch(respid);
+                            context.Watch(res.Pid);
                             context.Respond(new PidCacheResponse(res.Pid, status));
                             break;
                         default:

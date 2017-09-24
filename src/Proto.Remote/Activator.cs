@@ -40,10 +40,11 @@ namespace Proto.Remote
                         if (!ex.DoNotThrow)
                             throw;
                     }
-                    catch (ProcessNameExistException)
+                    catch (ProcessNameExistException ex)
                     {
                         var response = new ActorPidResponse
                         {
+                            Pid = ex.Pid,
                             StatusCode = (int) ResponseStatusCode.ProcessNameAlreadyExist
                         };
                         context.Respond(response);

@@ -28,7 +28,7 @@ namespace Proto
             var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, this);
             if (!absent)
             {
-                throw new ProcessNameExistException(name);
+                throw new ProcessNameExistException(name, pid);
             }
             Pid = pid;
 
