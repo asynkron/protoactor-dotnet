@@ -29,20 +29,20 @@ namespace Proto.Remote {
             "GAEgASgFEhQKDG1lc3NhZ2VfZGF0YRgCIAEoDBIOCgZ0YXJnZXQYAyABKAUS",
             "GgoGc2VuZGVyGAQgASgLMgouYWN0b3IuUElEEhUKDXNlcmlhbGl6ZXJfaWQY",
             "BSABKAUiLQoPQWN0b3JQaWRSZXF1ZXN0EgwKBG5hbWUYASABKAkSDAoEa2lu",
-            "ZBgCIAEoCSIrChBBY3RvclBpZFJlc3BvbnNlEhcKA3BpZBgBIAEoCzIKLmFj",
-            "dG9yLlBJRCIGCgRVbml0IhAKDkNvbm5lY3RSZXF1ZXN0IjAKD0Nvbm5lY3RS",
-            "ZXNwb25zZRIdChVkZWZhdWx0X3NlcmlhbGl6ZXJfaWQYASABKAUyfQoIUmVt",
-            "b3RpbmcSPAoHQ29ubmVjdBIWLnJlbW90ZS5Db25uZWN0UmVxdWVzdBoXLnJl",
-            "bW90ZS5Db25uZWN0UmVzcG9uc2UiABIzCgdSZWNlaXZlEhQucmVtb3RlLk1l",
-            "c3NhZ2VCYXRjaBoMLnJlbW90ZS5Vbml0IgAoATABQg+qAgxQcm90by5SZW1v",
-            "dGViBnByb3RvMw=="));
+            "ZBgCIAEoCSJAChBBY3RvclBpZFJlc3BvbnNlEhcKA3BpZBgBIAEoCzIKLmFj",
+            "dG9yLlBJRBITCgtzdGF0dXNfY29kZRgCIAEoBSIGCgRVbml0IhAKDkNvbm5l",
+            "Y3RSZXF1ZXN0IjAKD0Nvbm5lY3RSZXNwb25zZRIdChVkZWZhdWx0X3Nlcmlh",
+            "bGl6ZXJfaWQYASABKAUyfQoIUmVtb3RpbmcSPAoHQ29ubmVjdBIWLnJlbW90",
+            "ZS5Db25uZWN0UmVxdWVzdBoXLnJlbW90ZS5Db25uZWN0UmVzcG9uc2UiABIz",
+            "CgdSZWNlaXZlEhQucmVtb3RlLk1lc3NhZ2VCYXRjaBoMLnJlbW90ZS5Vbml0",
+            "IgAoATABQg+qAgxQcm90by5SZW1vdGViBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageBatch), global::Proto.Remote.MessageBatch.Parser, new[]{ "TypeNames", "TargetNames", "Envelopes" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageEnvelope), global::Proto.Remote.MessageEnvelope.Parser, new[]{ "TypeId", "MessageData", "Target", "Sender", "SerializerId" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ActorPidRequest), global::Proto.Remote.ActorPidRequest.Parser, new[]{ "Name", "Kind" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ActorPidResponse), global::Proto.Remote.ActorPidResponse.Parser, new[]{ "Pid" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ActorPidResponse), global::Proto.Remote.ActorPidResponse.Parser, new[]{ "Pid", "StatusCode" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.Unit), global::Proto.Remote.Unit.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ConnectRequest), global::Proto.Remote.ConnectRequest.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ConnectResponse), global::Proto.Remote.ConnectResponse.Parser, new[]{ "DefaultSerializerId" }, null, null, null)
@@ -606,6 +606,7 @@ namespace Proto.Remote {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ActorPidResponse(ActorPidResponse other) : this() {
       Pid = other.pid_ != null ? other.Pid.Clone() : null;
+      statusCode_ = other.statusCode_;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -624,6 +625,17 @@ namespace Proto.Remote {
       }
     }
 
+    /// <summary>Field number for the "status_code" field.</summary>
+    public const int StatusCodeFieldNumber = 2;
+    private int statusCode_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int StatusCode {
+      get { return statusCode_; }
+      set {
+        statusCode_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ActorPidResponse);
@@ -638,6 +650,7 @@ namespace Proto.Remote {
         return true;
       }
       if (!object.Equals(Pid, other.Pid)) return false;
+      if (StatusCode != other.StatusCode) return false;
       return true;
     }
 
@@ -645,6 +658,7 @@ namespace Proto.Remote {
     public override int GetHashCode() {
       int hash = 1;
       if (pid_ != null) hash ^= Pid.GetHashCode();
+      if (StatusCode != 0) hash ^= StatusCode.GetHashCode();
       return hash;
     }
 
@@ -659,6 +673,10 @@ namespace Proto.Remote {
         output.WriteRawTag(10);
         output.WriteMessage(Pid);
       }
+      if (StatusCode != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(StatusCode);
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -666,6 +684,9 @@ namespace Proto.Remote {
       int size = 0;
       if (pid_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Pid);
+      }
+      if (StatusCode != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(StatusCode);
       }
       return size;
     }
@@ -680,6 +701,9 @@ namespace Proto.Remote {
           pid_ = new global::Proto.PID();
         }
         Pid.MergeFrom(other.Pid);
+      }
+      if (other.StatusCode != 0) {
+        StatusCode = other.StatusCode;
       }
     }
 
@@ -696,6 +720,10 @@ namespace Proto.Remote {
               pid_ = new global::Proto.PID();
             }
             input.ReadMessage(pid_);
+            break;
+          }
+          case 16: {
+            StatusCode = input.ReadInt32();
             break;
           }
         }

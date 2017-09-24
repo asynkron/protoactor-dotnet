@@ -45,6 +45,15 @@ namespace Proto.Cluster
         }
     }
 
+    internal class RemovePidCacheRequest : IHashable
+    {
+        public string Name { get; }
+
+        public RemovePidCacheRequest(string name) => Name = name;
+
+        public string HashBy() => Name;
+    }
+    
     internal class PidCacheRequest : IHashable
     {
         public PidCacheRequest(string name, string kind)
@@ -59,6 +68,18 @@ namespace Proto.Cluster
         public string HashBy()
         {
             return Name;
+        }
+    }
+
+    internal class PidCacheResponse
+    {
+        public PID Pid { get; }
+        public ResponseStatusCode StatusCode { get; }
+
+        public PidCacheResponse(PID pid, ResponseStatusCode statusCode)
+        {
+            Pid = pid;
+            StatusCode = statusCode;
         }
     }
 
@@ -116,17 +137,26 @@ namespace Proto.Cluster
                 context.ReenterAfter(resp, t =>
                 {
                     var res = t.Result;
-                    var respid = res.Pid;
-                    var key = respid.ToShortString();
-                    _cache[name] = respid;
-                    _reverseCache[key] = name;
-                    if (_reverseCacheByMemberAddress.ContainsKey(respid.Address))
-                        _reverseCacheByMemberAddress[respid.Address].Add(key);
-                    else
-                        _reverseCacheByMemberAddress[respid.Address] = new HashSet<string>{key};
+                    var status = (ResponseStatusCode) res.StatusCode;
+                    switch (status)
+                    {
+                        case ResponseStatusCode.OK:
+                            var respid = res.Pid;
+                            var key = respid.ToShortString();
+                            _cache[name] = respid;
+                            _reverseCache[key] = name;
+                            if (_reverseCacheByMemberAddress.ContainsKey(respid.Address))
+                                _reverseCacheByMemberAddress[respid.Address].Add(key);
+                            else
+                                _reverseCacheByMemberAddress[respid.Address] = new HashSet<string> {key};
 
-                    context.Watch(respid);
-                    context.Respond(res);
+                            context.Watch(respid);
+                            context.Respond(new PidCacheResponse(res.Pid, status));
+                            break;
+                        default:
+                            context.Respond(new PidCacheResponse(res.Pid, status));
+                            break;
+                    }
                     return Actor.Done;
                 });
                 return Actor.Done;

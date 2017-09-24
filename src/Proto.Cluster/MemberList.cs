@@ -12,7 +12,6 @@ namespace Proto.Cluster
 {
     public static class MemberList
     {
-        private static readonly Random Random = new Random();
         public static PID Pid { get; private set; }
 
         private static Subscription<object> clusterTopologyEvnSub;
@@ -49,13 +48,6 @@ namespace Proto.Cluster
                 }
                 await Task.Delay(500);
             }
-        }
-
-        public static async Task<string> GetRandomActivatorAsync(string kind)
-        {
-            var r = Random.Next();
-            var members = await GetMembersAsync(kind);
-            return members[r % members.Length];
         }
 
         public static async Task<string> GetMemberAsync(string name, string kind)

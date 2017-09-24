@@ -18,7 +18,7 @@ namespace Proto.Cluster
         public static Dictionary<string, PID> KindMap = new Dictionary<string, PID>();
 
         private static Subscription<object> memberStatusSub;
-        
+
         public static PID SpawnPartitionActor(string kind)
         {
             var pid = Actor.SpawnNamed(Actor.FromProducer(() => new PartitionActor(kind)), "partition-" + kind);
@@ -72,6 +72,7 @@ namespace Proto.Cluster
     {
         private readonly string _kind;
         private readonly ILogger _logger = Log.CreateLogger<PartitionActor>();
+        private readonly Counter _counter = new Counter();
 
         private readonly Dictionary<string, PID> _partition = new Dictionary<string, PID>(); //actor/grain name to PID
 
@@ -126,23 +127,24 @@ namespace Proto.Cluster
 
         private void TakeOwnership(TakeOwnership msg, IContext context)
         {
+            _logger.LogDebug($"Kind {_kind} Take Ownership name: {msg.Name}, pid: {msg.Pid}");
             _partition[msg.Name] = msg.Pid;
             context.Watch(msg.Pid);
         }
 
         private void MemberUnavailable(MemberUnavailableEvent msg)
         {
-            _logger.LogInformation("Member Unavailable {0}", msg.Address);
+            _logger.LogInformation($"Kind {_kind} Member Unavailable {msg.Address}");
         }
 
         private void MemberAvailable(MemberAvailableEvent msg)
         {
-            _logger.LogInformation("Member Available {0}", msg.Address);
+            _logger.LogInformation($"Kind {_kind} Member Available {msg.Address}");
         }
 
         private void MemberLeft(MemberLeftEvent msg)
         {
-            _logger.LogInformation("Member Left {0}", msg.Address);
+            _logger.LogInformation($"Kind {_kind} Member Left {msg.Address}");
             foreach (var (actorId, pid) in _partition.ToArray())
             {
                 if (pid.Address == msg.Address)
@@ -154,7 +156,7 @@ namespace Proto.Cluster
 
         private void MemberRejoined(MemberRejoinedEvent msg)
         {
-            _logger.LogInformation("Member Rejoined {0}", msg.Address);
+            _logger.LogInformation($"Kind {_kind} Member Rejoined {msg.Address}");
 
             foreach (var (actorId, pid) in _partition.ToArray())
             {
@@ -167,7 +169,7 @@ namespace Proto.Cluster
 
         private async Task MemberJoinedAsync(MemberJoinedEvent msg, IContext context)
         {
-            _logger.LogInformation("Member Joined {0}", msg.Address);
+            _logger.LogInformation($"Kind {_kind} Member Joined {msg.Address}");
             //TODO: right now we transfer ownership on a per actor basis.
             //this could be done in a batch
             //ownership is also racy, new nodes should maybe forward requests to neighbours (?)
@@ -197,15 +199,43 @@ namespace Proto.Cluster
 
         private async Task Spawn(ActorPidRequest msg, IContext context)
         {
-            PID pid;
-            if (!_partition.TryGetValue(msg.Name, out pid))
+            if (_partition.TryGetValue(msg.Name, out var pid))
             {
-                var random = await MemberList.GetRandomActivatorAsync(msg.Kind);
-                pid = await Remote.Remote.SpawnNamedAsync(random, msg.Name, msg.Kind, TimeSpan.FromSeconds(5));
-                _partition[msg.Name] = pid;
-                context.Watch(pid);
+                context.Respond(new ActorPidResponse {Pid = pid});
+                return;
             }
-            context.Respond(new ActorPidResponse {Pid = pid});
+
+            var members = await MemberList.GetMembersAsync(msg.Kind);
+            var retrys = members.Length - 1;
+
+            for (int retry = retrys; retry >= 0; retry--)
+            {
+                members = members ?? await MemberList.GetMembersAsync(msg.Kind);
+                var activator = members[_counter.Next() % members.Length];
+                members = null;
+
+                var pidResp = await Remote.Remote.SpawnNamedAsync(activator, msg.Name, msg.Kind, TimeSpan.FromSeconds(5));
+
+                switch ((ResponseStatusCode) pidResp.StatusCode)
+                {
+                    case ResponseStatusCode.OK:
+                        pid = pidResp.Pid;
+                        _partition[msg.Name] = pid;
+                        context.Watch(pid);
+                        context.Respond(pidResp);
+                        return;
+                    case ResponseStatusCode.Unavailable:
+                        //Get next activator to spawn
+                        if (retry != 0)
+                            continue;
+                        context.Respond(pidResp);
+                        break;
+                    default:
+                        //Return to requester to wait
+                        context.Respond(pidResp);
+                        return;
+                }
+            }
         }
     }
 }
