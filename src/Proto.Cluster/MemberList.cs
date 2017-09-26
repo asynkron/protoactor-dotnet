@@ -39,20 +39,15 @@ namespace Proto.Cluster
         public static async Task<string[]> GetMembersAsync(string kind)
         {
             //if there are no nodes holding the requested kind, just wait
-            while (true)
-            {
-                var res = await Pid.RequestAsync<MemberByKindResponse>(new MemberByKindRequest(kind, true));
-                if (res.Kinds.Any())
-                {
-                    return res.Kinds;
-                }
-                await Task.Delay(500);
-            }
+            var res = await Pid.RequestAsync<MemberByKindResponse>(new MemberByKindRequest(kind, true));
+            return res.Kinds;
         }
 
         public static async Task<string> GetMemberAsync(string name, string kind)
         {
             var members = await GetMembersAsync(kind);
+            if (members == null || members.Length == 0)
+                return null;
             var hdv = new Rendezvous(members);
             var member = hdv.GetNode(name);
             return member;

@@ -127,6 +127,12 @@ namespace Proto.Cluster
 
             context.ReenterAfter(MemberList.GetMemberAsync(name, kind), address =>
             {
+                if (string.IsNullOrEmpty(address.Result))
+                {
+                    context.Respond(new PidCacheResponse(null, ResponseStatusCode.Unavailable));
+                    return Actor.Done;
+                }
+
                 var remotePid = Partition.PartitionForKind(address.Result, kind);
                 var req = new ActorPidRequest
                 {
