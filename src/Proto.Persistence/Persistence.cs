@@ -169,7 +169,7 @@ namespace Proto.Persistence
         {
             public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
             {
-                return new Task<(object Snapshot, long Index)>(null, 0);
+                return Task.FromResult<(object Snapshot, long Index)>((null, 0));
             }
 
             public Task PersistSnapshotAsync(string actorName, long index, object snapshot)

@@ -155,20 +155,23 @@ namespace Proto.Persistence.SqlServer
                     command.Parameters.Add(sqlParameter);
                 }
 
+                long lastIndex = -1;
+
                 var eventReader = await command.ExecuteReaderAsync();
 
                 while (await eventReader.ReadAsync())
                 {
+                    lastIndex = (long)eventReader["EventIndex"];
                     callback(JsonConvert.DeserializeObject<object>(eventReader["EventData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
                 }
 
-                return eventReader.HasRows ? (long) eventReader["EventIndex"] : -1;
+                return lastIndex;
             }
         }
 
         private string GenerateGetEventsSqlString()
         {
-            return $@"SELECT EventData FROM {_tableSchema}.{_tableEvents} " +
+            return $@"SELECT EventIndex, EventData FROM {_tableSchema}.{_tableEvents} " +
                       "WHERE ActorName = @ActorName " +
                       "AND EventIndex >= @IndexStart " +
                       "AND EventIndex <= @IndexEnd " +
