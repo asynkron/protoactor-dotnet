@@ -214,5 +214,23 @@ namespace Proto.Tests
             Assert.Contains(Stop.Instance, childMailboxStats.Posted);
             Assert.Contains(Stop.Instance, childMailboxStats.Received);
         }
+        
+        [Fact]
+        public void OneForOneStrategy_Should_RestartParentOnEscalateFailure()
+        {
+            var parentMailboxStats = new TestMailboxStatistics(msg => msg is Restart);
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 0, null);
+            var childProps = Actor.FromProducer(() => new ThrowOnStartedChildActor());
+            var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
+                .WithChildSupervisorStrategy(strategy)
+                .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
+            var grandParentProps = Actor.FromProducer(() => new ParentActor(parentProps))
+                .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, TimeSpan.FromSeconds(1)));
+            var grandParent = Actor.Spawn(grandParentProps);
+            
+            parentMailboxStats.Reset.Wait(1000);
+            Thread.Sleep(1000); //parentMailboxStats.Received could still be modified without a wait here
+            Assert.Contains(parentMailboxStats.Received, msg => msg is Restart);
+        }
     }
 }
