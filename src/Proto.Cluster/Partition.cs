@@ -177,7 +177,7 @@ namespace Proto.Cluster
             {
                 var address = await MemberList.GetMemberAsync(actorId, _kind);
 
-                if (address != ProcessRegistry.Instance.Address)
+                if (!string.IsNullOrEmpty(address) && address != ProcessRegistry.Instance.Address)
                 {
                     TransferOwnership(actorId, address, context);
                 }
@@ -206,11 +206,24 @@ namespace Proto.Cluster
             }
 
             var members = await MemberList.GetMembersAsync(msg.Kind);
+            if (members == null || members.Length == 0)
+            {
+                //No members currently available, return unavailable
+                context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Unavailable});
+                return;
+            }
+            
             var retrys = members.Length - 1;
 
             for (int retry = retrys; retry >= 0; retry--)
             {
                 members = members ?? await MemberList.GetMembersAsync(msg.Kind);
+                if (members == null || members.Length == 0)
+                {
+                    //No members currently available, return unavailable
+                    context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Unavailable});
+                    return;
+                }
                 var activator = members[_counter.Next() % members.Length];
                 members = null;
 
