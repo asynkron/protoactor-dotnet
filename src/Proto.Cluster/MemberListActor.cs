@@ -29,7 +29,7 @@ namespace Proto.Cluster
                     var members = (from kvp in _members
                                    let address = kvp.Key
                                    let member = kvp.Value
-                                   where member.Kinds.Contains(msg.Kind)
+                                   where (!msg.OnlyAlive || msg.OnlyAlive && member.Alive) && member.Kinds.Contains(msg.Kind)
                                    select address).ToArray();
 
                     context.Respond(new MemberByKindResponse(members));
