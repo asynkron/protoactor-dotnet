@@ -132,14 +132,14 @@ namespace Proto.Cluster
             context.Watch(msg.Pid);
         }
 
-        private void MemberUnavailable(MemberUnavailableEvent msg)
-        {
-            _logger.LogInformation($"Kind {_kind} Member Unavailable {msg.Address}");
-        }
-
         private void MemberAvailable(MemberAvailableEvent msg)
         {
             _logger.LogInformation($"Kind {_kind} Member Available {msg.Address}");
+        }
+
+        private void MemberUnavailable(MemberUnavailableEvent msg)
+        {
+            _logger.LogInformation($"Kind {_kind} Member Unavailable {msg.Address}");
         }
 
         private void MemberLeft(MemberLeftEvent msg)
@@ -212,10 +212,9 @@ namespace Proto.Cluster
                 context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Unavailable});
                 return;
             }
-            
-            var retrys = members.Length - 1;
 
-            for (int retry = retrys; retry >= 0; retry--)
+            var retrys = members.Length - 1;
+            for (var retry = retrys; retry >= 0; retry--)
             {
                 members = members ?? await MemberList.GetMembersAsync(msg.Kind);
                 if (members == null || members.Length == 0)
@@ -227,7 +226,21 @@ namespace Proto.Cluster
                 var activator = members[_counter.Next() % members.Length];
                 members = null;
 
-                var pidResp = await Remote.Remote.SpawnNamedAsync(activator, msg.Name, msg.Kind, TimeSpan.FromSeconds(5));
+                ActorPidResponse pidResp;
+                try
+                {
+                    pidResp = await Remote.Remote.SpawnNamedAsync(activator, msg.Name, msg.Kind, TimeSpan.FromSeconds(5));
+                }
+                catch (TimeoutException)
+                {
+                    context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Timeout});
+                    throw;
+                }
+                catch
+                {
+                    context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Error});
+                    throw;
+                }
 
                 switch ((ResponseStatusCode) pidResp.StatusCode)
                 {
