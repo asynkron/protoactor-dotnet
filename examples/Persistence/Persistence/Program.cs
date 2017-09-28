@@ -14,6 +14,7 @@ using Event = Proto.Persistence.Event;
 using Snapshot = Proto.Persistence.Snapshot;
 using System.Text;
 using Microsoft.Data.Sqlite;
+using Proto.Persistence.SnapshotStrategies;
 
 class Program
 {
@@ -171,7 +172,7 @@ class Program
 
     class LoopActor : IActor
     {
-        internal class LoopParentMessage { }
+        private class LoopParentMessage { }
 
         public Task ReceiveAsync(IContext context)
         {
@@ -190,7 +191,7 @@ class Program
                         
                         context.Parent.Tell(new RenameCommand { Name = GeneratePronounceableName(5) });
 
-                        await Task.Delay(TimeSpan.FromSeconds(2));
+                        await Task.Delay(TimeSpan.FromMilliseconds(500));
 
                         context.Self.Tell(new LoopParentMessage());
                     });

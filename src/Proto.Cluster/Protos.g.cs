@@ -24,15 +24,15 @@ namespace Proto.Cluster {
           string.Concat(
             "CgxQcm90b3MucHJvdG8SB2NsdXN0ZXIaGFByb3RvLkFjdG9yL3Byb3Rvcy5w",
             "cm90byI2Cg1UYWtlT3duZXJzaGlwEhcKA3BpZBgBIAEoCzIKLmFjdG9yLlBJ",
-            "RBIMCgRuYW1lGAIgASgJIjQKDEdyYWluUmVxdWVzdBIOCgZtZXRob2QYASAB",
-            "KAkSFAoMbWVzc2FnZV9kYXRhGAIgASgMIiUKDUdyYWluUmVzcG9uc2USFAoM",
-            "bWVzc2FnZV9kYXRhGAEgASgMIiEKEkdyYWluRXJyb3JSZXNwb25zZRILCgNl",
-            "cnIYASABKAlCEKoCDVByb3RvLkNsdXN0ZXJiBnByb3RvMw=="));
+            "RBIMCgRuYW1lGAIgASgJIjoKDEdyYWluUmVxdWVzdBIUCgxtZXRob2RfaW5k",
+            "ZXgYASABKAUSFAoMbWVzc2FnZV9kYXRhGAIgASgMIiUKDUdyYWluUmVzcG9u",
+            "c2USFAoMbWVzc2FnZV9kYXRhGAEgASgMIiEKEkdyYWluRXJyb3JSZXNwb25z",
+            "ZRILCgNlcnIYASABKAlCEKoCDVByb3RvLkNsdXN0ZXJiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Cluster.TakeOwnership), global::Proto.Cluster.TakeOwnership.Parser, new[]{ "Pid", "Name" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Cluster.GrainRequest), global::Proto.Cluster.GrainRequest.Parser, new[]{ "Method", "MessageData" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Cluster.GrainRequest), global::Proto.Cluster.GrainRequest.Parser, new[]{ "MethodIndex", "MessageData" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Cluster.GrainResponse), global::Proto.Cluster.GrainResponse.Parser, new[]{ "MessageData" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Cluster.GrainErrorResponse), global::Proto.Cluster.GrainErrorResponse.Parser, new[]{ "Err" }, null, null, null)
           }));
@@ -216,7 +216,7 @@ namespace Proto.Cluster {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public GrainRequest(GrainRequest other) : this() {
-      method_ = other.method_;
+      methodIndex_ = other.methodIndex_;
       messageData_ = other.messageData_;
     }
 
@@ -225,14 +225,14 @@ namespace Proto.Cluster {
       return new GrainRequest(this);
     }
 
-    /// <summary>Field number for the "method" field.</summary>
-    public const int MethodFieldNumber = 1;
-    private string method_ = "";
+    /// <summary>Field number for the "method_index" field.</summary>
+    public const int MethodIndexFieldNumber = 1;
+    private int methodIndex_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public string Method {
-      get { return method_; }
+    public int MethodIndex {
+      get { return methodIndex_; }
       set {
-        method_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        methodIndex_ = value;
       }
     }
 
@@ -260,7 +260,7 @@ namespace Proto.Cluster {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (Method != other.Method) return false;
+      if (MethodIndex != other.MethodIndex) return false;
       if (MessageData != other.MessageData) return false;
       return true;
     }
@@ -268,7 +268,7 @@ namespace Proto.Cluster {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (Method.Length != 0) hash ^= Method.GetHashCode();
+      if (MethodIndex != 0) hash ^= MethodIndex.GetHashCode();
       if (MessageData.Length != 0) hash ^= MessageData.GetHashCode();
       return hash;
     }
@@ -280,9 +280,9 @@ namespace Proto.Cluster {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (Method.Length != 0) {
-        output.WriteRawTag(10);
-        output.WriteString(Method);
+      if (MethodIndex != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(MethodIndex);
       }
       if (MessageData.Length != 0) {
         output.WriteRawTag(18);
@@ -293,8 +293,8 @@ namespace Proto.Cluster {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (Method.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(Method);
+      if (MethodIndex != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(MethodIndex);
       }
       if (MessageData.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeBytesSize(MessageData);
@@ -307,8 +307,8 @@ namespace Proto.Cluster {
       if (other == null) {
         return;
       }
-      if (other.Method.Length != 0) {
-        Method = other.Method;
+      if (other.MethodIndex != 0) {
+        MethodIndex = other.MethodIndex;
       }
       if (other.MessageData.Length != 0) {
         MessageData = other.MessageData;
@@ -323,8 +323,8 @@ namespace Proto.Cluster {
           default:
             input.SkipLastField();
             break;
-          case 10: {
-            Method = input.ReadString();
+          case 8: {
+            MethodIndex = input.ReadInt32();
             break;
           }
           case 18: {

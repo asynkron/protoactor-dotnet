@@ -37,28 +37,29 @@ namespace Proto.Cluster
                 }
                 case ClusterTopologyEvent msg:
                 {
-                    var tmp = new Dictionary<string, MemberStatus>();
+                    //get all new members address sets
+                    var newMembersAddress = new HashSet<string>();
                     foreach (var status in msg.Statuses)
                     {
-                        tmp[status.Address] = status;
+                        newMembersAddress.Add(status.Address);
                     }
 
-                    foreach (var (address, old) in _members)
+                    //remove old ones whose address not exist in new address sets
+                    //_members.ToList() duplicates _members, allow _members to be modified in Notify
+                    foreach (var (address, old) in _members.ToList())
                     {
-                        if (!tmp.TryGetValue(address, out var _))
+                        if (!newMembersAddress.Contains(address))
                         {
                             Notify(null, old);
                         }
                     }
 
-                    foreach (var ( address, @new) in tmp)
+                    //find all the entries that exist in the new set
+                    foreach (var @new in msg.Statuses)
                     {
-                        if (_members.TryGetValue(address, out var _))
-                        {
-                            continue;
-                        }
-                        _members[address] = @new;
-                        Notify(@new, null);
+                        _members.TryGetValue(@new.Address, out var old);
+                        _members[@new.Address] = @new;
+                        Notify(@new, old);
                     }
                     break;
                 }

@@ -59,14 +59,19 @@ namespace {{CsNamespace}}
             
             var gr = new GrainRequest
             {
-                Method = ""{{Name}}"",
+                MethodIndex = {{Index}},
                 MessageData = request.ToByteString()
             };
 
             async Task<{{OutputName}}> Inner() 
             {
                 //resolve the grain
-                var pid = await Cluster.GetAsync(_id, ""{{../Name}}"", ct);
+                var (pid, statusCode) = await Cluster.GetAsync(_id, ""{{../Name}}"", ct);
+
+                if (statusCode != ResponseStatusCode.OK)
+                {
+                    throw new Exception($""Get PID failed with StatusCode: {statusCode}"");  
+                }
 
                 //request the RPC method to be invoked
                 var res = await pid.RequestAsync<object>(gr, ct);
@@ -122,10 +127,10 @@ namespace {{CsNamespace}}
                 }
                 case GrainRequest request:
                 {
-                    switch (request.Method)
+                    switch (request.MethodIndex)
                     {
 						{{#each Methods}}
-                        case ""{{Name}}"":
+                        case {{Index}}:
                         {
                             var r = {{InputName}}.Parser.ParseFrom(request.MessageData);
                             try

@@ -6,13 +6,15 @@
 
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
     public class EndpointWatcher : IActor
     {
         private readonly Behavior _behavior;
-        private readonly Dictionary<string, PID> _watched = new Dictionary<string, PID>();
+        private readonly Dictionary<string, FastSet<PID>> _watched = new Dictionary<string, FastSet<PID>>();
+        private readonly ILogger _logger = Log.CreateLogger<EndpointWatcher>();
         private string _address; //for logging
 
         public EndpointWatcher(string address)
@@ -32,7 +34,15 @@ namespace Proto.Remote
             {
                 case RemoteTerminate msg:
                 {
-                    _watched.Remove(msg.Watcher.Id);
+                    if (_watched.TryGetValue(msg.Watcher.Id, out var pidSet))
+                    {
+                        pidSet.Remove(msg.Watchee);
+                        if (pidSet.Count == 0)
+                        {
+                            _watched[msg.Watcher.Id] = null;
+                        }
+                    }
+
                     //create a terminated event for the Watched actor
                     var t = new Terminated
                     {
@@ -44,25 +54,43 @@ namespace Proto.Remote
                 }
                 case EndpointTerminatedEvent _:
                 {
-                    foreach (var (id, pid) in _watched)
+                    _logger.LogDebug($"Handle terminated address {_address}");
+
+                    foreach (var (id, pidSet) in _watched)
                     {
-                        //create a terminated event for the Watched actor
-                        var t = new Terminated
+                        var watcherPid = new PID(ProcessRegistry.Instance.Address, id);
+                        var watcherRef = ProcessRegistry.Instance.Get(watcherPid);
+                        if (watcherRef != DeadLetterProcess.Instance)
                         {
-                            Who = pid,
-                            AddressTerminated = true
-                        };
-                        var watcher = new PID(ProcessRegistry.Instance.Address, id);
-                        //send the address Terminated event to the Watcher
-                        watcher.SendSystemMessage(t);
+                            foreach (var pid in pidSet)
+                            {
+                                //create a terminated event for the Watched actor
+                                var t = new Terminated
+                                {
+                                    Who = pid,
+                                    AddressTerminated = true
+                                };
+
+                                //send the address Terminated event to the Watcher
+                                watcherPid.SendSystemMessage(t);
+                            }
+                        }
                     }
 
+                    _watched.Clear();
                     _behavior.Become(TerminatedAsync);
                     break;
                 }
                 case RemoteUnwatch msg:
                 {
-                    _watched[msg.Watcher.Id] = null;
+                    if (_watched.TryGetValue(msg.Watcher.Id, out var pidSet))
+                    {
+                        pidSet.Remove(msg.Watchee);
+                        if (pidSet.Count == 0)
+                        {
+                            _watched[msg.Watcher.Id] = null;
+                        }
+                    }
 
                     var w = new Unwatch(msg.Watcher);
                     Remote.SendMessage(msg.Watchee, w,-1);
@@ -70,10 +98,22 @@ namespace Proto.Remote
                 }
                 case RemoteWatch msg:
                 {
-                    _watched[msg.Watcher.Id] = msg.Watchee;
+                    if (_watched.TryGetValue(msg.Watcher.Id, out var pidSet))
+                    {
+                        pidSet.Add(msg.Watchee);
+                    }
+                    else
+                    {
+                        _watched[msg.Watcher.Id] = new FastSet<PID>{msg.Watchee}; 
+                    }
 
                     var w = new Watch(msg.Watcher);
                     Remote.SendMessage(msg.Watchee, w, -1);
+                    break;
+                }
+                case Stopped _:
+                {
+                    _logger.LogDebug("Stopped EndpointWatcher");
                     break;
                 }
             }
@@ -91,6 +131,12 @@ namespace Proto.Remote
                         AddressTerminated = true,
                         Who = msg.Watchee
                     });
+                    break;
+                }
+                case EndpointConnectedEvent _:
+                {
+                    _logger.LogDebug($"Handle restart address {_address}");
+                    _behavior.Become(ConnectedAsync);
                     break;
                 }
                 case RemoteUnwatch _:

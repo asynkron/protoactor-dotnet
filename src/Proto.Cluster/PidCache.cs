@@ -21,13 +21,39 @@ namespace Proto.Cluster
 
         internal static PID Pid { get; private set; }
 
+        private static Subscription<object> clusterTopologyEvnSub;
+
+        internal static void SubscribeToEventStream()
+        {
+            clusterTopologyEvnSub = Actor.EventStream.Subscribe<MemberStatusEvent>(Pid.Tell);
+        }
+
+        internal static void UnsubEventStream()
+        {
+            Actor.EventStream.Unsubscribe(clusterTopologyEvnSub.Id);
+        }
+
         internal static void Spawn()
         {
-            var props = Router.Router.NewConsistentHashPool(Actor.FromProducer(() => new PidCachePartitionActor()), PartitionCount);
+            var props = Actor.FromProducer(() => new PidCachePartitionActor());
             Pid = Actor.SpawnNamed(props, "pidcache");
+        }
+
+        internal static void Stop()
+        {
+            Pid.Stop();
         }
     }
 
+    internal class RemovePidCacheRequest : IHashable
+    {
+        public string Name { get; }
+
+        public RemovePidCacheRequest(string name) => Name = name;
+
+        public string HashBy() => Name;
+    }
+    
     internal class PidCacheRequest : IHashable
     {
         public PidCacheRequest(string name, string kind)
@@ -45,12 +71,25 @@ namespace Proto.Cluster
         }
     }
 
+    internal class PidCacheResponse
+    {
+        public PID Pid { get; }
+        public ResponseStatusCode StatusCode { get; }
+
+        public PidCacheResponse(PID pid, ResponseStatusCode statusCode)
+        {
+            Pid = pid;
+            StatusCode = statusCode;
+        }
+    }
+
     internal class PidCachePartitionActor : IActor
     {
         private readonly Dictionary<string, PID> _cache = new Dictionary<string, PID>();
         private readonly ILogger _logger = Log.CreateLogger<PidCachePartitionActor>();
         private readonly Dictionary<string, string> _reverseCache = new Dictionary<string, string>();
-
+        private readonly Dictionary<string, HashSet<string>> _reverseCacheByMemberAddress = new Dictionary<string, HashSet<string>>();
+        
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
@@ -63,6 +102,10 @@ namespace Proto.Cluster
                     break;
                 case Terminated msg:
                     RemoveTerminated(msg);
+                    break;
+                case MemberLeftEvent _:
+                case MemberRejoinedEvent _:
+                    ClearCacheByMemberAddress(((MemberStatusEvent)context.Message).Address);
                     break;
             }
             return Actor.Done;
@@ -84,34 +127,71 @@ namespace Proto.Cluster
 
             context.ReenterAfter(MemberList.GetMemberAsync(name, kind), address =>
             {
+                if (string.IsNullOrEmpty(address.Result))
+                {
+                    context.Respond(new PidCacheResponse(null, ResponseStatusCode.Unavailable));
+                    return Actor.Done;
+                }
+
                 var remotePid = Partition.PartitionForKind(address.Result, kind);
                 var req = new ActorPidRequest
                 {
                     Kind = kind,
                     Name = name
                 };
-                var resp = remotePid.RequestAsync<ActorPidResponse>(req);
-                context.ReenterAfter(resp, t =>
+                var reqTask = remotePid.RequestAsync<ActorPidResponse>(req);
+                context.ReenterAfter(reqTask, t =>
                 {
                     var res = t.Result;
-                    var respid = res.Pid;
-                    var key = respid.ToShortString();
-                    _cache[name] = respid;
-                    _reverseCache[key] = name;
-                    context.Watch(respid);
-                    context.Respond(res);
+                    var status = (ResponseStatusCode) res.StatusCode;
+                    switch (status)
+                    {
+                        case ResponseStatusCode.OK:
+                            var key = res.Pid.ToShortString();
+                            _cache[name] = res.Pid;
+                            _reverseCache[key] = name;
+                            if (_reverseCacheByMemberAddress.ContainsKey(res.Pid.Address))
+                                _reverseCacheByMemberAddress[res.Pid.Address].Add(key);
+                            else
+                                _reverseCacheByMemberAddress[res.Pid.Address] = new HashSet<string> {key};
+
+                            context.Watch(res.Pid);
+                            context.Respond(new PidCacheResponse(res.Pid, status));
+                            break;
+                        default:
+                            context.Respond(new PidCacheResponse(res.Pid, status));
+                            break;
+                    }
                     return Actor.Done;
                 });
                 return Actor.Done;
             });
         }
 
+        private void ClearCacheByMemberAddress(string memberAddress)
+        {
+            if (_reverseCacheByMemberAddress.TryGetValue(memberAddress, out var keys))
+            {
+                foreach (var key in keys)
+                {
+                    if (_reverseCache.TryGetValue(key, out var name))
+                    {
+                        _reverseCache.Remove(key);
+                        _cache.Remove(name);
+                    }
+                }
+                _reverseCacheByMemberAddress.Remove(memberAddress);
+                _logger.LogDebug("PidCache cleared cache by member address " + memberAddress);
+            }
+        }
+        
         private void RemoveTerminated(Terminated msg)
         {
             var key = msg.Who.ToShortString();
             if (_reverseCache.TryGetValue(key, out var name))
             {
                 _reverseCache.Remove(key);
+                _reverseCacheByMemberAddress[msg.Who.Address].Remove(key);
                 _cache.Remove(name);
             }
         }

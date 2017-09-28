@@ -29,34 +29,27 @@ namespace Proto.Persistence.SqlServer
 
         private async Task ExecuteNonQueryAsync(string sql, List<SqlParameter> parameters = null)
         {
-            try
+            using (var connection = new SqlConnection(_connectionString))
+            using (var command = new SqlCommand(sql, connection))
             {
-                using (var connection = new SqlConnection(_connectionString))
-                using (var command = new SqlCommand(sql, connection))
+                await connection.OpenAsync();
+
+                using (var tx = connection.BeginTransaction())
                 {
-                    await connection.OpenAsync();
+                    command.Transaction = tx;
 
-                    using (var tx = connection.BeginTransaction())
+                    if (parameters?.Count > 0)
                     {
-                        command.Transaction = tx;
-
-                        if (parameters?.Count > 0)
+                        foreach (var p in parameters)
                         {
-                            foreach (var p in parameters)
-                            {
-                                command.Parameters.Add(p);
-                            }
+                            command.Parameters.Add(p);
                         }
-
-                        await command.ExecuteNonQueryAsync();
-
-                        tx.Commit();
                     }
+
+                    await command.ExecuteNonQueryAsync();
+
+                    tx.Commit();
                 }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
             }
         }
 
@@ -153,36 +146,32 @@ namespace Proto.Persistence.SqlServer
             var sql = GenerateGetEventsSqlString();
             var sqlParameters = GenerateGetEventsParameters(actorName, indexStart, indexEnd);
 
-            try
+            using (var connection = new SqlConnection(_connectionString))
+            using (var command = new SqlCommand(sql, connection))
             {
-                using (var connection = new SqlConnection(_connectionString))
-                using (var command = new SqlCommand(sql, connection))
+                await connection.OpenAsync();
+                foreach (var sqlParameter in sqlParameters)
                 {
-                    await connection.OpenAsync();
-                    foreach (var sqlParameter in sqlParameters)
-                    {
-                        command.Parameters.Add(sqlParameter);
-                    }
-
-                    var eventReader = await command.ExecuteReaderAsync();
-
-                    while (await eventReader.ReadAsync())
-                    {
-                        callback(JsonConvert.DeserializeObject<object>(eventReader["EventData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
-                    }
-
-                    return eventReader.HasRows ? (long) eventReader["EventIndex"] : -1;
+                    command.Parameters.Add(sqlParameter);
                 }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
+
+                long lastIndex = -1;
+
+                var eventReader = await command.ExecuteReaderAsync();
+
+                while (await eventReader.ReadAsync())
+                {
+                    lastIndex = (long)eventReader["EventIndex"];
+                    callback(JsonConvert.DeserializeObject<object>(eventReader["EventData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
+                }
+
+                return lastIndex;
             }
         }
 
         private string GenerateGetEventsSqlString()
         {
-            return $@"SELECT EventData FROM {_tableSchema}.{_tableEvents} " +
+            return $@"SELECT EventIndex, EventData FROM {_tableSchema}.{_tableEvents} " +
                       "WHERE ActorName = @ActorName " +
                       "AND EventIndex >= @IndexStart " +
                       "AND EventIndex <= @IndexEnd " +
@@ -221,32 +210,25 @@ namespace Proto.Persistence.SqlServer
 
             var sql = $@"SELECT TOP 1 SnapshotIndex, SnapshotData FROM {_tableSchema}.{_tableSnapshots} WHERE ActorName = @ActorName ORDER BY SnapshotIndex DESC";
 
-            try
+            using (var connection = new SqlConnection(_connectionString))
+            using (var command = new SqlCommand(sql, connection))
             {
-                using (var connection = new SqlConnection(_connectionString))
-                using (var command = new SqlCommand(sql, connection))
+                await connection.OpenAsync();
+
+                command.Parameters.Add(new SqlParameter()
                 {
-                    await connection.OpenAsync();
+                    ParameterName = "ActorName",
+                    SqlDbType = System.Data.SqlDbType.NVarChar,
+                    SqlValue = actorName
+                });
 
-                    command.Parameters.Add(new SqlParameter()
-                    {
-                        ParameterName = "ActorName",
-                        SqlDbType = System.Data.SqlDbType.NVarChar,
-                        SqlValue = actorName
-                    });
+                var snapshotReader = await command.ExecuteReaderAsync();
 
-                    var snapshotReader = await command.ExecuteReaderAsync();
-
-                    while (await snapshotReader.ReadAsync())
-                    {
-                        snapshotIndex = Convert.ToInt64(snapshotReader["SnapshotIndex"]);
-                        snapshotData = JsonConvert.DeserializeObject<object>(snapshotReader["SnapshotData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-                    }
+                while (await snapshotReader.ReadAsync())
+                {
+                    snapshotIndex = Convert.ToInt64(snapshotReader["SnapshotIndex"]);
+                    snapshotData = JsonConvert.DeserializeObject<object>(snapshotReader["SnapshotData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
                 }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
             }
 
             return (snapshotData, snapshotIndex);

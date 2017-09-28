@@ -221,14 +221,14 @@ namespace Proto
             {
                 _restartStatistics = new RestartStatistics(0, null);
             }
-            var failure = new Failure(who, reason, _restartStatistics);
+            var failure = new Failure(Self, reason, _restartStatistics);
+            Self.SendSystemMessage(SuspendMailbox.Instance);
             if (Parent == null)
             {
                 HandleRootFailure(failure);
             }
             else
             {
-                Self.SendSystemMessage(SuspendMailbox.Instance);
                 Parent.SendSystemMessage(failure);
             }
         }
@@ -453,6 +453,12 @@ namespace Proto
 
         private async Task HandleStopAsync()
         {
+            if (_state == ContextState.Stopping)
+            {
+                //already stopping
+                return;
+            }
+
             _state = ContextState.Stopping;
             //this is intentional
             await InvokeUserMessageAsync(Stopping.Instance);

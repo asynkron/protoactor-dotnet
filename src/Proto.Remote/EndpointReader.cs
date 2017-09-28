@@ -14,6 +14,8 @@ namespace Proto.Remote
 {
     public class EndpointReader : Remoting.RemotingBase
     {
+        private bool _suspended;
+        
         public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
         {
             return Task.FromResult(new ConnectResponse()
@@ -27,11 +29,13 @@ namespace Proto.Remote
         {
             await requestStream.ForEachAsync(batch =>
             {
+                if (_suspended)
+                    return Actor.Done;
+                
                 var targetNames = new List<string>(batch.TargetNames);
                 var typeNames = new List<string>(batch.TypeNames);
                 foreach (var envelope in batch.Envelopes)
                 {
-                    
                     var targetName = targetNames[envelope.Target];
                     var target = new PID(ProcessRegistry.Instance.Address, targetName);
                   
@@ -59,6 +63,11 @@ namespace Proto.Remote
 
                 return Actor.Done;
             });
+        }
+
+        public void Suspend(bool suspended)
+        {
+            this._suspended = suspended;
         }
     }
 }

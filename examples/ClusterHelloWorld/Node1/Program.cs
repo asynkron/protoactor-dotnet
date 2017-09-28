@@ -17,9 +17,8 @@ class Program
     static void Main(string[] args)
     {
         Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-        Remote.Start("127.0.0.1", 12001);
-        Cluster.Start("MyCluster", new ConsulProvider(new ConsulProviderOptions()));
-        var pid = Cluster.GetAsync("TheName", "HelloKind").Result;
+        Cluster.Start("MyCluster", "127.0.0.1", 12001, new ConsulProvider(new ConsulProviderOptions()));
+        var (pid, _) = Cluster.GetAsync("TheName", "HelloKind").Result;
         var res = pid.RequestAsync<HelloResponse>(new HelloRequest()).Result;
         Console.WriteLine(res.Message);
         Console.ReadLine();

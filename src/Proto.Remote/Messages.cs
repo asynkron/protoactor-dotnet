@@ -8,7 +8,13 @@ using System;
 
 namespace Proto.Remote
 {
+    public sealed class StopEndpointManager { }
+    
     public sealed class EndpointTerminatedEvent
+    {
+        public string Address { get; set; }
+    }
+    public sealed class EndpointConnectedEvent
     {
         public string Address { get; set; }
     }

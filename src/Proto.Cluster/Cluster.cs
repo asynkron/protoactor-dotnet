@@ -15,8 +15,14 @@ namespace Proto.Cluster
     {
         private static readonly ILogger Logger = Log.CreateLogger(typeof(Cluster).FullName);
 
-        public static void Start(string clusterName, IClusterProvider provider)
+        private static IClusterProvider cp;
+        
+        public static void Start(string clusterName, string address, int port, IClusterProvider provider)
         {
+            Remote.Remote.Start(address, port);
+
+            cp = provider;
+            
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Logger.LogInformation("Starting Proto.Actor cluster");
             var (h, p) = ParseAddress(ProcessRegistry.Instance.Address);
@@ -24,11 +30,32 @@ namespace Proto.Cluster
             Partition.SpawnPartitionActors(kinds);
             Partition.SubscribeToEventStream();
             PidCache.Spawn();
+            PidCache.SubscribeToEventStream();
             MemberList.Spawn();
             MemberList.SubscribeToEventStream();
-            provider.RegisterMemberAsync(clusterName, h, p, kinds).Wait();
-            provider.MonitorMemberStatusChanges();
-            Logger.LogInformation("Cluster started");
+            cp.RegisterMemberAsync(clusterName, h, p, kinds).Wait();
+            cp.MonitorMemberStatusChanges();
+
+            Logger.LogInformation("Started Cluster");
+        }
+        
+        public static void Shutdown(bool gracefull = true)
+        {
+            if (gracefull)
+            {
+                cp.Shutdown();
+
+                MemberList.UnsubEventStream();
+                MemberList.Stop();
+                PidCache.UnsubEventStream();
+                PidCache.Stop();
+                Partition.UnsubEventStream();
+                Partition.StopPartitionActors();
+            }
+
+            Remote.Remote.Shutdown(gracefull);
+
+            Logger.LogInformation("Stopped Cluster");
         }
 
         private static (string host, int port) ParseAddress(string address)
@@ -40,13 +67,19 @@ namespace Proto.Cluster
             return (host, port);
         }
 
-        public static Task<PID> GetAsync(string name, string kind) => GetAsync(name, kind, CancellationToken.None);
+        public static Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind) => GetAsync(name, kind, CancellationToken.None);
 
-        public static async Task<PID> GetAsync(string name, string kind, CancellationToken ct)
+        public static async Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind, CancellationToken ct)
         {
             var req = new PidCacheRequest(name, kind);
-            var res = await PidCache.Pid.RequestAsync<ActorPidResponse>(req, ct);
-            return res.Pid;
+            var resp = await PidCache.Pid.RequestAsync<PidCacheResponse>(req, ct);
+            return (resp.Pid, resp.StatusCode);
+        }
+
+        public static void RemoveCache(string name)
+        {
+            var req = new RemovePidCacheRequest(name);
+            PidCache.Pid.Tell(req);
         }
     }
 }
