@@ -54,7 +54,7 @@ namespace Proto.Cluster
 
         public string HashBy() => Name;
     }
-    
+
     internal class PidCacheRequest : IHashable
     {
         public PidCacheRequest(string name, string kind)
@@ -101,11 +101,14 @@ namespace Proto.Cluster
                     GetPid(context, msg);
                     break;
                 case Terminated msg:
-                    RemoveTerminated(msg);
+                    RemoveCacheByPid(msg.Who);
+                    break;
+                case RemovePidCacheRequest msg:
+                    RemoveCacheByName(msg.Name);
                     break;
                 case MemberLeftEvent _:
                 case MemberRejoinedEvent _:
-                    ClearCacheByMemberAddress(((MemberStatusEvent) context.Message).Address);
+                    RemoveCacheByMemberAddress(((MemberStatusEvent) context.Message).Address);
                     break;
             }
             return Actor.Done;
@@ -161,32 +164,34 @@ namespace Proto.Cluster
             });
         }
 
-        private void ClearCacheByMemberAddress(string memberAddress)
+        private void RemoveCacheByPid(PID pid)
         {
-            var cnt = 0;
+            var key = pid.ToShortString();
+            if (_reverseCache.TryGetValue(key, out var name))
+            {
+                _reverseCache.Remove(key);
+                _cache.Remove(name);
+            }
+        }
+
+        private void RemoveCacheByName(string name)
+        {
+            if (_cache.TryGetValue(name, out var pid))
+            {
+                _cache.Remove(name);
+                _reverseCache.Remove(pid.ToShortString());
+            }
+        }
+
+        private void RemoveCacheByMemberAddress(string memberAddress)
+        {
             foreach (var (name, pid) in _cache.ToArray())
             {
                 if (pid.Address == memberAddress)
                 {
                     _cache.Remove(name);
                     _reverseCache.Remove(pid.ToShortString());
-                    cnt++;
                 }
-            }
-
-            if (cnt > 0)
-            {
-                _logger.LogDebug($"PidCache cleared {cnt} cache by member address " + memberAddress);
-            }
-        }
-
-        private void RemoveTerminated(Terminated msg)
-        {
-            var key = msg.Who.ToShortString();
-            if (_reverseCache.TryGetValue(key, out var name))
-            {
-                _reverseCache.Remove(key);
-                _cache.Remove(name);
             }
         }
     }
