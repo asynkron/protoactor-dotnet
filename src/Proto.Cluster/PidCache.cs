@@ -115,11 +115,9 @@ namespace Proto.Cluster
         {
             if (_cache.TryGetValue(msg.Name, out var pid))
             {
-                context.Respond(new ActorPidResponse
-                {
-                    Pid = pid
-                });
-                return; //found the pid, replied, exit
+                //found the pid, replied, exit
+                context.Respond(new PidCacheResponse(pid, ResponseStatusCode.OK));
+                return;
             }
 
             var name = msg.Name;
