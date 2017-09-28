@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Remote;
@@ -85,11 +86,10 @@ namespace Proto.Cluster
 
     internal class PidCachePartitionActor : IActor
     {
-        private readonly Dictionary<string, PID> _cache = new Dictionary<string, PID>();
         private readonly ILogger _logger = Log.CreateLogger<PidCachePartitionActor>();
+        private readonly Dictionary<string, PID> _cache = new Dictionary<string, PID>();
         private readonly Dictionary<string, string> _reverseCache = new Dictionary<string, string>();
-        private readonly Dictionary<string, HashSet<string>> _reverseCacheByMemberAddress = new Dictionary<string, HashSet<string>>();
-        
+
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
@@ -105,7 +105,7 @@ namespace Proto.Cluster
                     break;
                 case MemberLeftEvent _:
                 case MemberRejoinedEvent _:
-                    ClearCacheByMemberAddress(((MemberStatusEvent)context.Message).Address);
+                    ClearCacheByMemberAddress(((MemberStatusEvent) context.Message).Address);
                     break;
             }
             return Actor.Done;
@@ -150,11 +150,6 @@ namespace Proto.Cluster
                             var key = res.Pid.ToShortString();
                             _cache[name] = res.Pid;
                             _reverseCache[key] = name;
-                            if (_reverseCacheByMemberAddress.ContainsKey(res.Pid.Address))
-                                _reverseCacheByMemberAddress[res.Pid.Address].Add(key);
-                            else
-                                _reverseCacheByMemberAddress[res.Pid.Address] = new HashSet<string> {key};
-
                             context.Watch(res.Pid);
                             context.Respond(new PidCacheResponse(res.Pid, status));
                             break;
@@ -170,28 +165,29 @@ namespace Proto.Cluster
 
         private void ClearCacheByMemberAddress(string memberAddress)
         {
-            if (_reverseCacheByMemberAddress.TryGetValue(memberAddress, out var keys))
+            var cnt = 0;
+            foreach (var (name, pid) in _cache.ToArray())
             {
-                foreach (var key in keys)
+                if (pid.Address == memberAddress)
                 {
-                    if (_reverseCache.TryGetValue(key, out var name))
-                    {
-                        _reverseCache.Remove(key);
-                        _cache.Remove(name);
-                    }
+                    _cache.Remove(name);
+                    _reverseCache.Remove(pid.ToShortString());
+                    cnt++;
                 }
-                _reverseCacheByMemberAddress.Remove(memberAddress);
-                _logger.LogDebug("PidCache cleared cache by member address " + memberAddress);
+            }
+
+            if (cnt > 0)
+            {
+                _logger.LogDebug($"PidCache cleared {cnt} cache by member address " + memberAddress);
             }
         }
-        
+
         private void RemoveTerminated(Terminated msg)
         {
             var key = msg.Who.ToShortString();
             if (_reverseCache.TryGetValue(key, out var name))
             {
                 _reverseCache.Remove(key);
-                _reverseCacheByMemberAddress[msg.Who.Address].Remove(key);
                 _cache.Remove(name);
             }
         }
