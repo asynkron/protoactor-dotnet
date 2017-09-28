@@ -453,6 +453,12 @@ namespace Proto
 
         private async Task HandleStopAsync()
         {
+            if (_state == ContextState.Stopping)
+            {
+                //already stopping
+                return;
+            }
+
             _state = ContextState.Stopping;
             //this is intentional
             await InvokeUserMessageAsync(Stopping.Instance);
