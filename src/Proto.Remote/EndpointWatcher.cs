@@ -113,7 +113,7 @@ namespace Proto.Remote
                 }
                 case Stopped _:
                 {
-                    _logger.LogDebug("Stopped EndpointWatcher");
+                    _logger.LogDebug($"Stopped EndpointWatcher at {_address}");
                     break;
                 }
             }

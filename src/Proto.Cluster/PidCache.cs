@@ -140,9 +140,25 @@ namespace Proto.Cluster
                     Kind = kind,
                     Name = name
                 };
-                var reqTask = remotePid.RequestAsync<ActorPidResponse>(req);
+
+                var reqTask = remotePid.RequestAsync<ActorPidResponse>(req, TimeSpan.FromSeconds(5));
                 context.ReenterAfter(reqTask, t =>
                 {
+                    if (t.Exception != null)
+                    {
+                        if (t.Exception.InnerException is TimeoutException)
+                        {
+                            //Timeout
+                            context.Respond(new PidCacheResponse(null, ResponseStatusCode.Timeout));
+                            return Actor.Done;
+                        }
+                        else
+                        {
+                            //Other errors, let it throw
+                            context.Respond(new PidCacheResponse(null, ResponseStatusCode.Error));
+                        }
+                    }
+
                     var res = t.Result;
                     var status = (ResponseStatusCode) res.StatusCode;
                     switch (status)
