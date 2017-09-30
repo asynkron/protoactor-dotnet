@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Diagnostics;
 using Messages;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
@@ -15,6 +16,7 @@ class Program
 {
     static void Main(string[] args)
     {
+        ConsulProvider.StartConsulDevMode(@"..\..\..\dependencies\consul");
         Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
         Cluster.Start("MyCluster", "127.0.0.1", 12001, new ConsulProvider(new ConsulProviderOptions()));
 
