@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Remote;
@@ -53,7 +54,7 @@ namespace Proto.Cluster
 
         public string HashBy() => Name;
     }
-    
+
     internal class PidCacheRequest : IHashable
     {
         public PidCacheRequest(string name, string kind)
@@ -85,11 +86,10 @@ namespace Proto.Cluster
 
     internal class PidCachePartitionActor : IActor
     {
-        private readonly Dictionary<string, PID> _cache = new Dictionary<string, PID>();
         private readonly ILogger _logger = Log.CreateLogger<PidCachePartitionActor>();
+        private readonly Dictionary<string, PID> _cache = new Dictionary<string, PID>();
         private readonly Dictionary<string, string> _reverseCache = new Dictionary<string, string>();
-        private readonly Dictionary<string, HashSet<string>> _reverseCacheByMemberAddress = new Dictionary<string, HashSet<string>>();
-        
+
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
@@ -101,11 +101,14 @@ namespace Proto.Cluster
                     GetPid(context, msg);
                     break;
                 case Terminated msg:
-                    RemoveTerminated(msg);
+                    RemoveCacheByPid(msg.Who);
+                    break;
+                case RemovePidCacheRequest msg:
+                    RemoveCacheByName(msg.Name);
                     break;
                 case MemberLeftEvent _:
                 case MemberRejoinedEvent _:
-                    ClearCacheByMemberAddress(((MemberStatusEvent)context.Message).Address);
+                    RemoveCacheByMemberAddress(((MemberStatusEvent) context.Message).Address);
                     break;
             }
             return Actor.Done;
@@ -137,9 +140,25 @@ namespace Proto.Cluster
                     Kind = kind,
                     Name = name
                 };
-                var reqTask = remotePid.RequestAsync<ActorPidResponse>(req);
+
+                var reqTask = remotePid.RequestAsync<ActorPidResponse>(req, TimeSpan.FromSeconds(5));
                 context.ReenterAfter(reqTask, t =>
                 {
+                    if (t.Exception != null)
+                    {
+                        if (t.Exception.InnerException is TimeoutException)
+                        {
+                            //Timeout
+                            context.Respond(new PidCacheResponse(null, ResponseStatusCode.Timeout));
+                            return Actor.Done;
+                        }
+                        else
+                        {
+                            //Other errors, let it throw
+                            context.Respond(new PidCacheResponse(null, ResponseStatusCode.Error));
+                        }
+                    }
+
                     var res = t.Result;
                     var status = (ResponseStatusCode) res.StatusCode;
                     switch (status)
@@ -148,11 +167,6 @@ namespace Proto.Cluster
                             var key = res.Pid.ToShortString();
                             _cache[name] = res.Pid;
                             _reverseCache[key] = name;
-                            if (_reverseCacheByMemberAddress.ContainsKey(res.Pid.Address))
-                                _reverseCacheByMemberAddress[res.Pid.Address].Add(key);
-                            else
-                                _reverseCacheByMemberAddress[res.Pid.Address] = new HashSet<string> {key};
-
                             context.Watch(res.Pid);
                             context.Respond(new PidCacheResponse(res.Pid, status));
                             break;
@@ -166,31 +180,34 @@ namespace Proto.Cluster
             });
         }
 
-        private void ClearCacheByMemberAddress(string memberAddress)
+        private void RemoveCacheByPid(PID pid)
         {
-            if (_reverseCacheByMemberAddress.TryGetValue(memberAddress, out var keys))
-            {
-                foreach (var key in keys)
-                {
-                    if (_reverseCache.TryGetValue(key, out var name))
-                    {
-                        _reverseCache.Remove(key);
-                        _cache.Remove(name);
-                    }
-                }
-                _reverseCacheByMemberAddress.Remove(memberAddress);
-                _logger.LogDebug("PidCache cleared cache by member address " + memberAddress);
-            }
-        }
-        
-        private void RemoveTerminated(Terminated msg)
-        {
-            var key = msg.Who.ToShortString();
+            var key = pid.ToShortString();
             if (_reverseCache.TryGetValue(key, out var name))
             {
                 _reverseCache.Remove(key);
-                _reverseCacheByMemberAddress[msg.Who.Address].Remove(key);
                 _cache.Remove(name);
+            }
+        }
+
+        private void RemoveCacheByName(string name)
+        {
+            if (_cache.TryGetValue(name, out var pid))
+            {
+                _cache.Remove(name);
+                _reverseCache.Remove(pid.ToShortString());
+            }
+        }
+
+        private void RemoveCacheByMemberAddress(string memberAddress)
+        {
+            foreach (var (name, pid) in _cache.ToArray())
+            {
+                if (pid.Address == memberAddress)
+                {
+                    _cache.Remove(name);
+                    _reverseCache.Remove(pid.ToShortString());
+                }
             }
         }
     }

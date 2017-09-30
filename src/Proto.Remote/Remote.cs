@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Google.Protobuf;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
@@ -83,7 +82,6 @@ namespace Proto.Remote
                     StopEndPointManager();
                     StopActivator();
                     server.ShutdownAsync().Wait(10000);
-                    server.KillAsync().Wait(5000);
                 }
                 else
                 {
@@ -94,6 +92,7 @@ namespace Proto.Remote
             }
             catch(Exception ex)
             {
+                server.KillAsync().Wait(1000);
                 Logger.LogError($"Proto.Actor server stopped on {ProcessRegistry.Instance.Address} with error:\n{ex.Message}");
             }
         }

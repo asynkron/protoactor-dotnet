@@ -47,58 +47,62 @@ namespace Proto.Remote
             switch (context.Message)
             {
                 case Started _:
-                    {
-                        _logger.LogDebug("Started EndpointManager");
-                        return Actor.Done;
-                    }
+                {
+                    _logger.LogDebug("Started EndpointManager");
+                    return Actor.Done;
+                }
                 case StopEndpointManager _:
+                {
+                    foreach (var endpoint in _connections.Values)
                     {
-                        foreach(var endpoint in _connections.Values)
-                        {
-                            endpoint.Watcher.Stop();
-                            endpoint.Writer.Stop();
-                        }
-                        _connections.Clear();
-                        _behavior.Become(TerminatedAsync);
-                        _logger.LogDebug("Stopped EndpointManager");
-                        return Actor.Done;
+                        endpoint.Watcher.Stop();
+                        endpoint.Writer.Stop();
                     }
+                    _connections.Clear();
+                    _behavior.Become(TerminatedAsync);
+                    _logger.LogDebug("Stopped EndpointManager");
+                    return Actor.Done;
+                }
                 case EndpointTerminatedEvent msg:
+                {
+                    var (connected, endpoint) = CheckConnected(msg.Address);
+                    if (connected)
                     {
-                        var endpoint = EnsureConnected(msg.Address, context);
                         endpoint.Watcher.Tell(msg);
-                        return Actor.Done;
+                        RemoveEndpoint(msg.Address);
                     }
+                    return Actor.Done;
+                }
                 case EndpointConnectedEvent msg:
-                    {
-                        var endpoint = EnsureConnected(msg.Address, context);
-                        endpoint.Watcher.Tell(msg);
-                        return Actor.Done;
-                    }
+                {
+                    var endpoint = EnsureConnected(msg.Address, context);
+                    endpoint.Watcher.Tell(msg);
+                    return Actor.Done;
+                }
                 case RemoteTerminate msg:
-                    {
-                        var endpoint = EnsureConnected(msg.Watchee.Address, context);
-                        endpoint.Watcher.Tell(msg);
-                        return Actor.Done;
-                    }
+                {
+                    var endpoint = EnsureConnected(msg.Watchee.Address, context);
+                    endpoint.Watcher.Tell(msg);
+                    return Actor.Done;
+                }
                 case RemoteWatch msg:
-                    {
-                        var endpoint = EnsureConnected(msg.Watchee.Address, context);
-                        endpoint.Watcher.Tell(msg);
-                        return Actor.Done;
-                    }
+                {
+                    var endpoint = EnsureConnected(msg.Watchee.Address, context);
+                    endpoint.Watcher.Tell(msg);
+                    return Actor.Done;
+                }
                 case RemoteUnwatch msg:
-                    {
-                        var endpoint = EnsureConnected(msg.Watchee.Address, context);
-                        endpoint.Watcher.Tell(msg);
-                        return Actor.Done;
-                    }
+                {
+                    var endpoint = EnsureConnected(msg.Watchee.Address, context);
+                    endpoint.Watcher.Tell(msg);
+                    return Actor.Done;
+                }
                 case RemoteDeliver msg:
-                    {
-                        var endpoint = EnsureConnected(msg.Target.Address, context);
-                        endpoint.Writer.Tell(msg);
-                        return Actor.Done;
-                    }
+                {
+                    var endpoint = EnsureConnected(msg.Target.Address, context);
+                    endpoint.Writer.Tell(msg);
+                    return Actor.Done;
+                }
                 default:
                     return Actor.Done;
             }
@@ -108,10 +112,15 @@ namespace Proto.Remote
         {
             return Actor.Done;
         }
-        
+
         public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause)
         {
             supervisor.RestartChildren(cause, child);
+        }
+
+        private (bool, Endpoint) CheckConnected(string address)
+        {
+            return _connections.TryGetValue(address, out var endpoint) ? (true, endpoint) : (false, null);
         }
 
         private Endpoint EnsureConnected(string address, IContext context)
@@ -130,6 +139,16 @@ namespace Proto.Remote
             return endpoint;
         }
 
+        private void RemoveEndpoint(string address)
+        {
+            if (_connections.TryGetValue(address, out var endpoint))
+            {
+                endpoint.Watcher.Stop();
+                endpoint.Writer.Stop();
+                _connections.Remove(address);
+            }
+        }
+
         private static PID SpawnWatcher(string address, IContext context)
         {
             var watcherProps = Actor.FromProducer(() => new EndpointWatcher(address));
@@ -141,7 +160,7 @@ namespace Proto.Remote
         {
             var writerProps =
                 Actor.FromProducer(() => new EndpointWriter(address, _config.ChannelOptions, _config.CallOptions, _config.ChannelCredentials))
-                    .WithMailbox(() => new EndpointWriterMailbox(_config.EndpointWriterBatchSize));
+                     .WithMailbox(() => new EndpointWriterMailbox(_config.EndpointWriterBatchSize));
             var writer = context.Spawn(writerProps);
             return writer;
         }
