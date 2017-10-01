@@ -52,19 +52,6 @@ namespace Proto.Cluster.Consul
         private bool _shutdown = false;
         private bool _deregistered = false;
 
-        public static void StartConsulDevMode(string path)
-        {
-            Console.WriteLine("Consul - Starting");
-            ProcessStartInfo psi =
-                new ProcessStartInfo(path, "agent -server -bootstrap -data-dir /tmp/consul -bind=127.0.0.1 -ui")
-                {
-                    CreateNoWindow = true,
-
-                };
-            System.Diagnostics.Process.Start(psi);
-            Console.WriteLine("Consul - Started");
-        }
-
         public ConsulProvider(ConsulProviderOptions options) : this(options, config => { })
         {
         }

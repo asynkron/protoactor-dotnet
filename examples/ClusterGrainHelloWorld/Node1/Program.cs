@@ -16,7 +16,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        ConsulProvider.StartConsulDevMode(@"..\..\..\dependencies\consul");
+        StartConsulDevMode();
         Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
         Cluster.Start("MyCluster", "127.0.0.1", 12001, new ConsulProvider(new ConsulProviderOptions()));
 
@@ -28,5 +28,18 @@ class Program
         res = client.SayHello(new HelloRequest()).Result;
         Console.WriteLine(res.Message);
         Console.ReadLine();
+    }
+
+    private static void StartConsulDevMode()
+    {
+        Console.WriteLine("Consul - Starting");
+        ProcessStartInfo psi =
+            new ProcessStartInfo(@"..\..\..\dependencies\consul",
+                "agent -server -bootstrap -data-dir /tmp/consul -bind=127.0.0.1 -ui")
+            {
+                CreateNoWindow = true,
+            };
+        Process.Start(psi);
+        Console.WriteLine("Consul - Started");
     }
 }
