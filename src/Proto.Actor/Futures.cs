@@ -55,11 +55,11 @@ namespace Proto
         {
             var env = MessageEnvelope.Unwrap(message);
             
-
             if (env.message is T || message == null)
             {
                 if (_cts != null && _cts.IsCancellationRequested)
                 {
+                    pid.Stop();
                     return;
                 }
 
@@ -70,11 +70,15 @@ namespace Proto
             {
                 throw new InvalidOperationException($"Unexpected message.  Was type {env.message.GetType()} but expected {typeof(T)}");
             }
-
         }
 
         protected internal override void SendSystemMessage(PID pid, object message)
         {
+            if (message is Stop)
+            {
+                ProcessRegistry.Instance.Remove(Pid);
+                _cts?.Dispose();
+            }
         }
     }
 }
