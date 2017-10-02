@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,22 +18,37 @@ namespace Proto.Cluster
         private readonly ILogger _logger = Log.CreateLogger<MemberListActor>();
         private readonly Dictionary<string, MemberStatus> _members = new Dictionary<string, MemberStatus>();
 
+        private readonly Dictionary<string, HashSet<MemberNode>> _aliveMembersByKind = new Dictionary<string, HashSet<MemberNode>>();
+
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
                 case Started _:
+                {
                     _logger.LogDebug("Started MemberListActor");
                     break;
-                case MemberByKindRequest msg:
+                }
+                case MembersByKindRequest msg:
                 {
+                    /*
                     var members = (from kvp in _members
                                    let address = kvp.Key
                                    let member = kvp.Value
                                    where (!msg.OnlyAlive || msg.OnlyAlive && member.Alive) && member.Kinds.Contains(msg.Kind)
                                    select address).ToArray();
-
                     context.Respond(new MemberByKindResponse(members));
+                    */
+                    context.Respond(_aliveMembersByKind.TryGetValue(msg.Kind, out var members)
+                                        ? new MembersByKindResponse(members.Where(m => !msg.OnlyAlive || msg.OnlyAlive && m.Alive).Select(m => m.Name).ToArray())
+                                        : new MembersByKindResponse(new string[0]));
+                    break;
+                }
+                case MemberByDHTRequest msg:
+                {
+                    context.Respond(_aliveMembersByKind.TryGetValue(msg.Kind, out var members)
+                                        ? new MemberByDHTResponse(Rendezvous.GetNode(members, msg.Name))
+                                        : new MemberByDHTResponse(""));
                     break;
                 }
                 case ClusterTopologyEvent msg:
@@ -51,6 +67,7 @@ namespace Proto.Cluster
                         if (!newMembersAddress.Contains(address))
                         {
                             Notify(null, old);
+                            UpdateMembersByKind(null, old);
                         }
                     }
 
@@ -60,6 +77,7 @@ namespace Proto.Cluster
                         _members.TryGetValue(@new.Address, out var old);
                         _members[@new.Address] = @new;
                         Notify(@new, old);
+                        UpdateMembersByKind(@new, old);
                     }
                     break;
                 }
@@ -81,11 +99,10 @@ namespace Proto.Cluster
                 Actor.EventStream.Publish(left);
                 _members.Remove(old.Address);
                 var endpointTerminated = new EndpointTerminatedEvent
-                                         {
-                                             Address = old.Address
-                                         };
+                {
+                    Address = old.Address
+                };
                 Actor.EventStream.Publish(endpointTerminated);
-
                 return;
             }
 
@@ -115,6 +132,32 @@ namespace Proto.Cluster
             {
                 var available = new MemberAvailableEvent(@new.Host, @new.Port, @new.Kinds);
                 Actor.EventStream.Publish(available);
+            }
+        }
+
+        private void UpdateMembersByKind(MemberStatus @new, MemberStatus old)
+        {
+            if (old != null)
+            {
+                foreach (var k in old.Kinds)
+                {
+                    if (_aliveMembersByKind.TryGetValue(k, out var hs))
+                    {
+                        hs.Remove(MemberNode.Create(old.Address));
+                        if (hs.Count == 0)
+                            _aliveMembersByKind.Remove(k);
+                    }
+                }
+            }
+
+            if (@new != null)
+            {
+                foreach (var k in @new.Kinds)
+                {
+                    if (!_aliveMembersByKind.ContainsKey(k))
+                        _aliveMembersByKind[k] = new HashSet<MemberNode>();
+                    _aliveMembersByKind[k].Add(MemberNode.Create(@new.Address, @new.Alive));
+                }
             }
         }
     }

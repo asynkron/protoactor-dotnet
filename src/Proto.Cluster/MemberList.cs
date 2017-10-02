@@ -39,24 +39,20 @@ namespace Proto.Cluster
         public static async Task<string[]> GetMembersAsync(string kind)
         {
             //if there are no nodes holding the requested kind, just wait
-            var res = await Pid.RequestAsync<MemberByKindResponse>(new MemberByKindRequest(kind, true));
+            var res = await Pid.RequestAsync<MembersByKindResponse>(new MembersByKindRequest(kind, true));
             return res.Kinds;
         }
 
         public static async Task<string> GetMemberAsync(string name, string kind)
         {
-            var members = await GetMembersAsync(kind);
-            if (members == null || members.Length == 0)
-                return null;
-            var hdv = new Rendezvous(members);
-            var member = hdv.GetNode(name);
-            return member;
+            var res = await Pid.RequestAsync<MemberByDHTResponse>(new MemberByDHTRequest(name, kind));
+            return res.Address;
         }
     }
 
-    internal class MemberByKindResponse
+    internal class MembersByKindResponse
     {
-        public MemberByKindResponse(string[] kinds)
+        public MembersByKindResponse(string[] kinds)
         {
             Kinds = kinds ?? throw new ArgumentNullException(nameof(kinds));
         }
@@ -64,9 +60,9 @@ namespace Proto.Cluster
         public string[] Kinds { get; set; }
     }
 
-    internal class MemberByKindRequest
+    internal class MembersByKindRequest
     {
-        public MemberByKindRequest(string kind, bool onlyAlive)
+        public MembersByKindRequest(string kind, bool onlyAlive)
         {
             Kind = kind ?? throw new ArgumentNullException(nameof(kind));
             OnlyAlive = onlyAlive;
@@ -74,5 +70,27 @@ namespace Proto.Cluster
 
         public string Kind { get; }
         public bool OnlyAlive { get; }
+    }
+
+    internal class MemberByDHTRequest
+    {
+        public MemberByDHTRequest(string name, string kind)
+        {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Kind = kind ?? throw new ArgumentNullException(nameof(kind));
+        }
+
+        public string Name { get; }
+        public string Kind { get; }
+    }
+
+    internal class MemberByDHTResponse
+    {
+        public MemberByDHTResponse(string address)
+        {
+            Address = address ?? throw new ArgumentNullException(nameof(address));
+        }
+
+        public string Address { get; }
     }
 }

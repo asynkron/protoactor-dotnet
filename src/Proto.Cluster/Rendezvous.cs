@@ -1,88 +1,85 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace Proto.Cluster
 {
+    internal class MemberNode
+    {
+        internal static MemberNode Create(string name, bool alive = false)
+        {
+            return new MemberNode(name, alive);
+        }
+        
+        public string Name { get; }
+        public byte[] NameBytes { get; }
+        public bool Alive { get; }
+
+        private MemberNode(string name, bool alive)
+        {
+            Name = name;
+            NameBytes = Encoding.UTF8.GetBytes(name);
+            Alive = alive;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is MemberNode))
+                return false;
+            var other = (MemberNode) obj;
+            return GetHashCode() == other.GetHashCode();
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hash = 17;
+                for (var i = 0; i < NameBytes.Length; i++)
+                {
+                    hash = hash * 23 + NameBytes[i];
+                }
+                return hash;
+            }
+        }
+    }
+
     /// <summary>
     /// A dotnet port of rendezvous.go
     /// </summary>
-    public class Rendezvous
+    internal static class Rendezvous
     {
         private static readonly HashAlgorithm HashAlgorithm = FNV1A32.Create();
 
-        private class NodeScore
+        internal static string GetNode(HashSet<MemberNode> nodes, string key)
         {
-            public byte[] Node;
-            public uint Score;
-        }
+            if (nodes == null || nodes.Count == 0)
+                return "";
 
-        private NodeScore[] nodes;
-
-        public Rendezvous(string[] nodes)
-        {
-            this.nodes = new NodeScore[nodes.Length];
-            for (int i = 0; i < nodes.Length; i++)
-            {
-                this.nodes[i] = new NodeScore()
-                {
-                    Node = Encoding.UTF8.GetBytes(nodes[i]),
-                    Score = 0
-                };
-            }
-        }
-
-        public string GetNode(string key)
-        {
             var keyBytes = Encoding.UTF8.GetBytes(key);
 
             uint maxScore = 0;
-            byte[] maxNode = new byte[0];
+            MemberNode maxNode = null;
             uint score = 0;
 
-            for (int i = 0; i < this.nodes.Length; i++)
+            foreach (var node in nodes)
             {
-                score = RdvHash(nodes[i].Node, keyBytes);
-                if (score > maxScore)
+                if (node.Alive)
                 {
-                    maxScore = score;
-                    maxNode = nodes[i].Node;
+                    score = RdvHash(node.NameBytes, keyBytes);
+                    if (score > maxScore)
+                    {
+                        maxScore = score;
+                        maxNode = node;
+                    }
                 }
             }
 
-            return Encoding.UTF8.GetString(maxNode);
+            return maxNode == null ? "" : maxNode.Name;
         }
 
-        public string[] GetN(int n, string key)
-        {
-            if (this.nodes.Length == 0 || n == 0)
-            {
-                return new string[0];
-            }
-
-            if (n > this.nodes.Length)
-            {
-                n = this.nodes.Length;
-            }
-
-            var keyBytes = Encoding.UTF8.GetBytes(key);
-            for (int i = 0; i < this.nodes.Length; i++)
-            {
-                var ns = this.nodes[i];
-                ns.Score = RdvHash(ns.Node, keyBytes);
-            }
-
-            Array.Sort<NodeScore>(this.nodes, (n1, n2) => n2.Score.CompareTo(n1.Score));
-
-            var nodes = new string[n];
-            for (int i = 0; i < n; i++)
-            {
-                nodes[i] = Encoding.UTF8.GetString(this.nodes[i].Node);
-            }
-            return nodes;
-        }
-
-        private uint RdvHash(byte[] node, byte[] key)
+        private static uint RdvHash(byte[] node, byte[] key)
         {
             var hashBytes = MergeBytes(key, node);
             var digest = HashAlgorithm.ComputeHash(hashBytes);
@@ -90,7 +87,7 @@ namespace Proto.Cluster
             return hash;
         }
 
-        private byte[] MergeBytes(byte[] front, byte[] back)
+        private static byte[] MergeBytes(byte[] front, byte[] back)
         {
             byte[] combined = new byte[front.Length + back.Length];
             Array.Copy(front, combined, front.Length);
