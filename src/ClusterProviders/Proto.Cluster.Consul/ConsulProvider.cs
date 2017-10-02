@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -41,10 +42,10 @@ namespace Proto.Cluster.Consul
     {
         private readonly ConsulClient _client;
         private string _clusterName;
-        private TimeSpan _serviceTtl;
-        private TimeSpan _blockingWaitTime;
-        private TimeSpan _deregisterCritical;
-        private TimeSpan _refreshTtl;
+        private readonly TimeSpan _serviceTtl;
+        private readonly TimeSpan _blockingWaitTime;
+        private readonly TimeSpan _deregisterCritical;
+        private readonly TimeSpan _refreshTtl;
         private string _id;
         private ulong _index;
         private string _kvKey;

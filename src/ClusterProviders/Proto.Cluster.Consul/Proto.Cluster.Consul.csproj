@@ -31,4 +31,9 @@
     <ProjectReference Include="..\..\Proto.Mailbox\Proto.Mailbox.csproj" />
     <ProjectReference Include="..\..\Proto.Persistence\Proto.Persistence.csproj" />
   </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.5'">
+    <PackageReference Include="System.Diagnostics.Process">
+      <Version>4.3.0</Version>
+    </PackageReference>
+  </ItemGroup>
 </Project>
