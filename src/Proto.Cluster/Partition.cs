@@ -105,7 +105,7 @@ namespace Proto.Cluster
                     MemberRejoined(msg);
                     break;
                 case MemberLeftEvent msg:
-                    MemberLeft(msg);
+                    await MemberLeft(msg, context);
                     break;
                 case MemberAvailableEvent msg:
                     MemberAvailable(msg);
@@ -144,7 +144,7 @@ namespace Proto.Cluster
             _logger.LogInformation($"Kind {_kind} Member Unavailable {msg.Address}");
         }
 
-        private void MemberLeft(MemberLeftEvent msg)
+        private async Task MemberLeft(MemberLeftEvent msg, IContext context)
         {
             _logger.LogInformation($"Kind {_kind} Member Left {msg.Address}");
             foreach (var (actorId, pid) in _partition.ToArray())
@@ -153,6 +153,23 @@ namespace Proto.Cluster
                 {
                     _partition.Remove(actorId);
                     _reversePartition.Remove(pid);
+                }
+            }
+            
+            //If the left member is self, transfer remaining pids to others
+            if (msg.Address == ProcessRegistry.Instance.Address)
+            {
+                //TODO: right now we transfer ownership on a per actor basis.
+                //this could be done in a batch
+                //ownership is also racy, new nodes should maybe forward requests to neighbours (?)
+                foreach (var (actorId, _) in _partition.ToArray())
+                {
+                    var address = await MemberList.GetMemberAsync(actorId, _kind);
+
+                    if (!string.IsNullOrEmpty(address))
+                    {
+                        TransferOwnership(actorId, address, context);
+                    }
                 }
             }
         }
