@@ -164,7 +164,7 @@ namespace Proto.Cluster
                 //ownership is also racy, new nodes should maybe forward requests to neighbours (?)
                 foreach (var (actorId, _) in _partition.ToArray())
                 {
-                    var address = await MemberList.GetMemberAsync(actorId, _kind);
+                    var address = await MemberList.GetMemberByDHTAsync(actorId, _kind);
 
                     if (!string.IsNullOrEmpty(address))
                     {
@@ -196,7 +196,7 @@ namespace Proto.Cluster
             //ownership is also racy, new nodes should maybe forward requests to neighbours (?)
             foreach (var (actorId, _) in _partition.ToArray())
             {
-                var address = await MemberList.GetMemberAsync(actorId, _kind);
+                var address = await MemberList.GetMemberByDHTAsync(actorId, _kind);
 
                 if (!string.IsNullOrEmpty(address) && address != ProcessRegistry.Instance.Address)
                 {

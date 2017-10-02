@@ -126,7 +126,7 @@ namespace Proto.Cluster
             var name = msg.Name;
             var kind = msg.Kind;
 
-            context.ReenterAfter(MemberList.GetMemberAsync(name, kind), address =>
+            context.ReenterAfter(MemberList.GetMemberByDHTAsync(name, kind), address =>
             {
                 if (string.IsNullOrEmpty(address.Result))
                 {

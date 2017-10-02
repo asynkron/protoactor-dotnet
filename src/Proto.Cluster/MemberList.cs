@@ -43,7 +43,7 @@ namespace Proto.Cluster
             return res.Kinds;
         }
 
-        public static async Task<string> GetMemberAsync(string name, string kind)
+        public static async Task<string> GetMemberByDHTAsync(string name, string kind)
         {
             var res = await Pid.RequestAsync<MemberByDHTResponse>(new MemberByDHTRequest(name, kind));
             return res.Address;
