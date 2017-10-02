@@ -30,7 +30,7 @@ namespace Proto
             Mailbox = mailbox;
         }
 
-        public IMailbox Mailbox { get; private set; }
+        public IMailbox Mailbox { get; }
 
         internal bool IsDead
         {
@@ -52,7 +52,6 @@ namespace Proto
         {
             base.Stop(pid);
             IsDead = true;
-            Mailbox = null;
         }
     }
 }
