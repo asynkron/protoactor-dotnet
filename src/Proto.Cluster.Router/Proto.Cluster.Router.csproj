@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard1.5;net452</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj" />
+    <ProjectReference Include="..\Proto.Router\Proto.Router.csproj" />
+  </ItemGroup>
+
+</Project>
