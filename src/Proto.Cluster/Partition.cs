@@ -75,7 +75,8 @@ namespace Proto.Cluster
         private readonly Counter _counter = new Counter();
 
         private readonly Dictionary<string, PID> _partition = new Dictionary<string, PID>(); //actor/grain name to PID
-
+        private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>(); //PID to grain name
+        
         public PartitionActor(string kind)
         {
             _kind = kind;
@@ -90,6 +91,12 @@ namespace Proto.Cluster
                     break;
                 case ActorPidRequest msg:
                     await Spawn(msg, context);
+                    break;
+                case Terminated msg:
+                    Terminated(msg);
+                    break;
+                case TakeOwnership msg:
+                    TakeOwnership(msg, context);
                     break;
                 case MemberJoinedEvent msg:
                     await MemberJoinedAsync(msg, context);
@@ -106,22 +113,16 @@ namespace Proto.Cluster
                 case MemberUnavailableEvent msg:
                     MemberUnavailable(msg);
                     break;
-                case TakeOwnership msg:
-                    TakeOwnership(msg, context);
-                    break;
-                case Terminated msg:
-                    Terminated(msg);
-                    break;
             }
         }
 
         private void Terminated(Terminated msg)
         {
             //one of the actors we manage died, remove it from the lookup
-            var key = _partition.Where(kvp => Equals(kvp.Value, msg.Who)).Select(kvp => kvp.Key).FirstOrDefault();
-            if (key != null)
+            if (_reversePartition.TryGetValue(msg.Who, out var key))
             {
                 _partition.Remove(key);
+                _reversePartition.Remove(msg.Who);
             }
         }
 
@@ -129,6 +130,7 @@ namespace Proto.Cluster
         {
             _logger.LogDebug($"Kind {_kind} Take Ownership name: {msg.Name}, pid: {msg.Pid}");
             _partition[msg.Name] = msg.Pid;
+            _reversePartition[msg.Pid] = msg.Name;
             context.Watch(msg.Pid);
         }
 
@@ -150,6 +152,7 @@ namespace Proto.Cluster
                 if (pid.Address == msg.Address)
                 {
                     _partition.Remove(actorId);
+                    _reversePartition.Remove(pid);
                 }
             }
         }
@@ -163,6 +166,7 @@ namespace Proto.Cluster
                 if (pid.Address == msg.Address)
                 {
                     _partition.Remove(actorId);
+                    _reversePartition.Remove(pid);
                 }
             }
         }
@@ -194,6 +198,7 @@ namespace Proto.Cluster
                            Pid = pid
                        });
             _partition.Remove(actorId);
+            _reversePartition.Remove(pid);
             context.Unwatch(pid);
         }
 
@@ -209,6 +214,7 @@ namespace Proto.Cluster
             if (members == null || members.Length == 0)
             {
                 //No members currently available, return unavailable
+                _logger.LogDebug("No members currently available");
                 context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Unavailable});
                 return;
             }
@@ -220,6 +226,7 @@ namespace Proto.Cluster
                 if (members == null || members.Length == 0)
                 {
                     //No members currently available, return unavailable
+                    _logger.LogDebug("No members currently available");
                     context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Unavailable});
                     return;
                 }
@@ -247,6 +254,7 @@ namespace Proto.Cluster
                     case ResponseStatusCode.OK:
                         pid = pidResp.Pid;
                         _partition[msg.Name] = pid;
+                        _reversePartition[pid] = msg.Name;
                         context.Watch(pid);
                         context.Respond(pidResp);
                         return;
