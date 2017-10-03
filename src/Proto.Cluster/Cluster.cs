@@ -44,7 +44,8 @@ namespace Proto.Cluster
             if (gracefull)
             {
                 cp.Shutdown();
-
+                //This is to wait ownership transfering complete.
+                Task.Delay(2000).Wait();
                 MemberList.UnsubEventStream();
                 MemberList.Stop();
                 PidCache.UnsubEventStream();
