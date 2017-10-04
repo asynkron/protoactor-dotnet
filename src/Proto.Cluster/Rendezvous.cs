@@ -5,65 +5,35 @@ using System.Text;
 
 namespace Proto.Cluster
 {
-    internal class MemberNode
-    {
-        internal static MemberNode Create(string name, bool alive = false)
-        {
-            return new MemberNode(name, alive);
-        }
-        
-        public string Name { get; }
-        public byte[] NameBytes { get; }
-        public bool Alive { get; }
-
-        private MemberNode(string name, bool alive)
-        {
-            Name = name;
-            NameBytes = Encoding.UTF8.GetBytes(name);
-            Alive = alive;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (!(obj is MemberNode))
-                return false;
-            var other = (MemberNode) obj;
-            return GetHashCode() == other.GetHashCode();
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                var hash = 17;
-                for (var i = 0; i < NameBytes.Length; i++)
-                {
-                    hash = hash * 23 + NameBytes[i];
-                }
-                return hash;
-            }
-        }
-    }
-
     /// <summary>
     /// A dotnet port of rendezvous.go
     /// </summary>
-    internal static class Rendezvous
+    internal class Rendezvous
     {
         private static readonly HashAlgorithm HashAlgorithm = FNV1A32.Create();
 
-        internal static string GetNode(HashSet<MemberNode> nodes, string key)
+        private MemberNodeSet m;
+
+        internal Rendezvous(MemberNodeSet m)
         {
-            if (nodes == null || nodes.Count == 0)
+            this.m = m;
+        }
+        
+        internal string GetNode(string key)
+        {
+            if (m.nodes == null || m.nodes.Count == 0)
                 return "";
+
+            if (m.nodes.Count == 1)
+                return m.nodes[0].Name;
 
             var keyBytes = Encoding.UTF8.GetBytes(key);
 
             uint maxScore = 0;
-            MemberNode maxNode = null;
+            string maxNode = "";
             uint score = 0;
 
-            foreach (var node in nodes)
+            foreach (var node in m.nodes)
             {
                 if (node.Alive)
                 {
@@ -71,12 +41,12 @@ namespace Proto.Cluster
                     if (score > maxScore)
                     {
                         maxScore = score;
-                        maxNode = node;
+                        maxNode = node.Name;
                     }
                 }
             }
 
-            return maxNode == null ? "" : maxNode.Name;
+            return maxNode;
         }
 
         private static uint RdvHash(byte[] node, byte[] key)

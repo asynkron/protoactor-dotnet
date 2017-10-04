@@ -99,7 +99,7 @@ namespace Proto.Cluster.Consul
 
             //register a semi unique ID for the current process
             _kvKey = $"{_clusterName}/{host}:{port}"; //slash should be present
-            var value = Encoding.UTF8.GetBytes(DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ssK"));
+            var value = Encoding.UTF8.GetBytes(DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ssK") + Environment.NewLine + 5);
             await _client.KV.Put(new KVPair(_kvKey)
                                  {
                                      //Write the ID for this member.
@@ -169,28 +169,32 @@ namespace Proto.Cluster.Consul
             var kvKey = _clusterName + "/";
             var kv = await _client.KV.List(kvKey);
 
-            var memberIds = new Dictionary<string, long>();
+            var memberIds = new Dictionary<string, string>();
             foreach (var v in kv.Response)
             {
                 //Read the ID per member.
                 //The value is used to see if an existing node have changed its ID over time
                 //meaning that it has Re-joined the cluster.
-                memberIds[v.Key] = BitConverter.ToInt64(v.Value, 0);
+                memberIds[v.Key] = Encoding.UTF8.GetString(v.Value);
             }
 
-            long? GetMemberId(string mIdKey)
+            (string memberId, int weight) DecompileConsulValue(string mIdKey)
             {
-                if (memberIds.TryGetValue(mIdKey, out long v)) return v;
-                else return null;
-            };
+                if (memberIds.TryGetValue(mIdKey, out string v))
+                {
+                    var ps = v.Split('\n');
+                    return (ps[0], ps.Length > 0 ? int.Parse(ps[1]) : 1);
+                }
+                else return (null, 5);
+            }
 
             var memberStatuses =
                 from v in statuses.Response
                 let memberIdKey = $"{_clusterName}/{v.Service.Address}:{v.Service.Port}"
-                let memberId = GetMemberId(memberIdKey)
-                where memberId != null
+                let val = DecompileConsulValue(memberIdKey)
+                where val.memberId != null
                 let passing = Equals(v.Checks[1].Status, HealthStatus.Passing)
-                select new MemberStatus(memberId.Value, v.Service.Address, v.Service.Port, v.Service.Tags, passing);
+                select new MemberStatus(val.memberId, v.Service.Address, v.Service.Port, v.Service.Tags, passing, val.weight);
 
             var res = new ClusterTopologyEvent(memberStatuses);
             Actor.EventStream.Publish(res);

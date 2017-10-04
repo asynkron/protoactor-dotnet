@@ -15,7 +15,7 @@ namespace Proto.Cluster
         public static PID Pid { get; private set; }
 
         private static Subscription<object> clusterTopologyEvnSub;
-        
+
         internal static void SubscribeToEventStream()
         {
             clusterTopologyEvnSub = Actor.EventStream.Subscribe<ClusterTopologyEvent>(Pid.Tell);
@@ -45,7 +45,13 @@ namespace Proto.Cluster
 
         public static async Task<string> GetMemberByDHTAsync(string name, string kind)
         {
-            var res = await Pid.RequestAsync<MemberByDHTResponse>(new MemberByDHTRequest(name, kind));
+            var res = await Pid.RequestAsync<MemberResponse>(new MemberByDHTRequest(name, kind));
+            return res.Address;
+        }
+
+        public static async Task<string> GetMemberByRoundRobinAsync(string kind)
+        {
+            var res = await Pid.RequestAsync<MemberResponse>(new MemberByRoundRobinRequest(kind));
             return res.Address;
         }
     }
@@ -72,6 +78,16 @@ namespace Proto.Cluster
         public bool OnlyAlive { get; }
     }
 
+    internal class MemberResponse
+    {
+        public MemberResponse(string address)
+        {
+            Address = address ?? throw new ArgumentNullException(nameof(address));
+        }
+
+        public string Address { get; }
+    }
+
     internal class MemberByDHTRequest
     {
         public MemberByDHTRequest(string name, string kind)
@@ -84,13 +100,13 @@ namespace Proto.Cluster
         public string Kind { get; }
     }
 
-    internal class MemberByDHTResponse
+    internal class MemberByRoundRobinRequest
     {
-        public MemberByDHTResponse(string address)
+        public MemberByRoundRobinRequest(string kind)
         {
-            Address = address ?? throw new ArgumentNullException(nameof(address));
+            Kind = kind ?? throw new ArgumentNullException(nameof(kind));
         }
 
-        public string Address { get; }
+        public string Kind { get; }
     }
 }

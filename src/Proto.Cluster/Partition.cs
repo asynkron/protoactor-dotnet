@@ -227,28 +227,28 @@ namespace Proto.Cluster
                 return;
             }
 
-            var members = await MemberList.GetMembersAsync(msg.Kind);
-            if (members == null || members.Length == 0)
+            var activator = await MemberList.GetMemberByRoundRobinAsync(msg.Kind);
+            if (string.IsNullOrEmpty(activator))
             {
-                //No members currently available, return unavailable
+                //No activator currently available, return unavailable
                 _logger.LogDebug("No members currently available");
                 context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Unavailable});
                 return;
             }
 
-            var retrys = members.Length - 1;
-            for (var retry = retrys; retry >= 0; retry--)
+            for (var retry = 3; retry >= 0; retry--)
             {
-                members = members ?? await MemberList.GetMembersAsync(msg.Kind);
-                if (members == null || members.Length == 0)
+                if (string.IsNullOrEmpty(activator))
                 {
-                    //No members currently available, return unavailable
-                    _logger.LogDebug("No members currently available");
-                    context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Unavailable});
-                    return;
+                    activator = await MemberList.GetMemberByRoundRobinAsync(msg.Kind);
+                    if (string.IsNullOrEmpty(activator))
+                    {
+                        //No activator currently available, return unavailable
+                        _logger.LogDebug("No activator currently available");
+                        context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Unavailable});
+                        return;
+                    }
                 }
-                var activator = members[_counter.Next() % members.Length];
-                members = null;
 
                 ActorPidResponse pidResp;
                 try
@@ -278,7 +278,10 @@ namespace Proto.Cluster
                     case ResponseStatusCode.Unavailable:
                         //Get next activator to spawn
                         if (retry != 0)
+                        {
+                            activator = null;
                             continue;
+                        }
                         context.Respond(pidResp);
                         break;
                     default:

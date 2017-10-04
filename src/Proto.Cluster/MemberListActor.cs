@@ -18,7 +18,7 @@ namespace Proto.Cluster
         private readonly ILogger _logger = Log.CreateLogger<MemberListActor>();
         private readonly Dictionary<string, MemberStatus> _members = new Dictionary<string, MemberStatus>();
 
-        private readonly Dictionary<string, HashSet<MemberNode>> _aliveMembersByKind = new Dictionary<string, HashSet<MemberNode>>();
+        private readonly Dictionary<string, MemberNodeSet> _aliveMembersByKind = new Dictionary<string, MemberNodeSet>();
 
         public Task ReceiveAsync(IContext context)
         {
@@ -31,24 +31,23 @@ namespace Proto.Cluster
                 }
                 case MembersByKindRequest msg:
                 {
-                    /*
-                    var members = (from kvp in _members
-                                   let address = kvp.Key
-                                   let member = kvp.Value
-                                   where (!msg.OnlyAlive || msg.OnlyAlive && member.Alive) && member.Kinds.Contains(msg.Kind)
-                                   select address).ToArray();
-                    context.Respond(new MemberByKindResponse(members));
-                    */
                     context.Respond(_aliveMembersByKind.TryGetValue(msg.Kind, out var members)
-                                        ? new MembersByKindResponse(members.Where(m => !msg.OnlyAlive || msg.OnlyAlive && m.Alive).Select(m => m.Name).ToArray())
+                                        ? new MembersByKindResponse(members.GetAllMemberAddresses(msg.OnlyAlive))
                                         : new MembersByKindResponse(new string[0]));
                     break;
                 }
                 case MemberByDHTRequest msg:
                 {
-                    context.Respond(_aliveMembersByKind.TryGetValue(msg.Kind, out var members)
-                                        ? new MemberByDHTResponse(Rendezvous.GetNode(members, msg.Name))
-                                        : new MemberByDHTResponse(""));
+                    context.Respond(_aliveMembersByKind.TryGetValue(msg.Kind, out var memberSet)
+                                        ? new MemberResponse(memberSet.GetNodeByRendezvous(msg.Name))
+                                        : new MemberResponse(""));
+                    break;
+                }
+                case MemberByRoundRobinRequest msg:
+                {
+                    context.Respond(_aliveMembersByKind.TryGetValue(msg.Kind, out var memberSet)
+                                        ? new MemberResponse(memberSet.GetNodeByRoundRobin())
+                                        : new MemberResponse(""));
                     break;
                 }
                 case ClusterTopologyEvent msg:
@@ -141,10 +140,10 @@ namespace Proto.Cluster
             {
                 foreach (var k in old.Kinds)
                 {
-                    if (_aliveMembersByKind.TryGetValue(k, out var hs))
+                    if (_aliveMembersByKind.TryGetValue(k, out var ms))
                     {
-                        hs.Remove(MemberNode.Create(old.Address));
-                        if (hs.Count == 0)
+                        ms.Remove(old.Address);
+                        if (ms.Length() == 0)
                             _aliveMembersByKind.Remove(k);
                     }
                 }
@@ -155,8 +154,8 @@ namespace Proto.Cluster
                 foreach (var k in @new.Kinds)
                 {
                     if (!_aliveMembersByKind.ContainsKey(k))
-                        _aliveMembersByKind[k] = new HashSet<MemberNode>();
-                    _aliveMembersByKind[k].Add(MemberNode.Create(@new.Address, @new.Alive));
+                        _aliveMembersByKind[k] = new MemberNodeSet();
+                    _aliveMembersByKind[k].Add(@new.Address, @new.Alive, @new.Weight);
                 }
             }
         }
