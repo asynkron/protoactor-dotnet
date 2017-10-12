@@ -13,6 +13,11 @@ namespace Proto.Cluster.Tests
         {
         }
 
+        public Task UpdateWeight(int weight)
+        {
+            return Task.FromResult(0);
+        }
+
         public Task DeregisterMemberAsync()
         {
             return Task.FromResult(0);

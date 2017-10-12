@@ -17,7 +17,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        //StartConsulDevMode();
+        StartConsulDevMode();
         Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
         Cluster.Start("MyCluster", "127.0.0.1", 12001, new ConsulProvider(new ConsulProviderOptions()));
         var (pid, _) = Cluster.GetAsync("TheName", "HelloKind").Result;
