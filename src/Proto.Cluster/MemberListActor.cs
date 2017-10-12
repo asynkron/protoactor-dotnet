@@ -32,8 +32,8 @@ namespace Proto.Cluster
                 case MembersByKindRequest msg:
                 {
                     context.Respond(_aliveMembersByKind.TryGetValue(msg.Kind, out var members)
-                                        ? new MembersByKindResponse(members.GetAllMemberAddresses(msg.OnlyAlive))
-                                        : new MembersByKindResponse(new string[0]));
+                                        ? new MembersResponse(members.GetAllMemberAddresses(msg.OnlyAlive))
+                                        : new MembersResponse(new string[0]));
                     break;
                 }
                 case MemberByDHTRequest msg:

@@ -39,8 +39,8 @@ namespace Proto.Cluster
         public static async Task<string[]> GetMembersAsync(string kind)
         {
             //if there are no nodes holding the requested kind, just wait
-            var res = await Pid.RequestAsync<MembersByKindResponse>(new MembersByKindRequest(kind, true));
-            return res.Kinds;
+            var res = await Pid.RequestAsync<MembersResponse>(new MembersByKindRequest(kind, true));
+            return res.Members;
         }
 
         public static async Task<string> GetMemberByDHTAsync(string name, string kind)
@@ -56,16 +56,6 @@ namespace Proto.Cluster
         }
     }
 
-    internal class MembersByKindResponse
-    {
-        public MembersByKindResponse(string[] kinds)
-        {
-            Kinds = kinds ?? throw new ArgumentNullException(nameof(kinds));
-        }
-
-        public string[] Kinds { get; set; }
-    }
-
     internal class MembersByKindRequest
     {
         public MembersByKindRequest(string kind, bool onlyAlive)
@@ -76,16 +66,6 @@ namespace Proto.Cluster
 
         public string Kind { get; }
         public bool OnlyAlive { get; }
-    }
-
-    internal class MemberResponse
-    {
-        public MemberResponse(string address)
-        {
-            Address = address ?? throw new ArgumentNullException(nameof(address));
-        }
-
-        public string Address { get; }
     }
 
     internal class MemberByDHTRequest
@@ -108,5 +88,25 @@ namespace Proto.Cluster
         }
 
         public string Kind { get; }
+    }
+
+    internal class MemberResponse
+    {
+        public MemberResponse(string address)
+        {
+            Address = address ?? throw new ArgumentNullException(nameof(address));
+        }
+
+        public string Address { get; }
+    }
+
+    internal class MembersResponse
+    {
+        public MembersResponse(string[] members)
+        {
+            Members = members ?? throw new ArgumentNullException(nameof(members));
+        }
+
+        public string[] Members { get; }
     }
 }
