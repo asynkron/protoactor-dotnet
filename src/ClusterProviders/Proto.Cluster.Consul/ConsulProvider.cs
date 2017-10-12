@@ -1,20 +1,21 @@
-﻿// -----------------------------------------------------------------------
-//   <copyright file="ConsulProvider.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//   </copyright>
-// -----------------------------------------------------------------------
-
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Consul;
 using Microsoft.Extensions.Options;
+using Proto;
+using Proto.Cluster;
 
 namespace Proto.Cluster.Consul
 {
+// -----------------------------------------------------------------------
+//   <copyright file="ConsulProvider.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
+// -----------------------------------------------------------------------
+
     public class ConsulProviderOptions
     {
         /// <summary>
@@ -41,20 +42,21 @@ namespace Proto.Cluster.Consul
     public class ConsulProvider : IClusterProvider
     {
         private readonly ConsulClient _client;
-        private string _clusterName;
-        private readonly TimeSpan _serviceTtl;
-        private readonly TimeSpan _blockingWaitTime;
-        private readonly TimeSpan _deregisterCritical;
-        private readonly TimeSpan _refreshTtl;
         private string _id;
+        private string _clusterName;
+        private string _address;
+        private int _port;
+        private string[] _kinds;
+        private int _weight = 5;
+        private TimeSpan _serviceTtl;
+        private TimeSpan _blockingWaitTime;
+        private TimeSpan _deregisterCritical;
+        private TimeSpan _refreshTtl;
         private ulong _index;
-        private string _kvKey;
         private bool _shutdown = false;
         private bool _deregistered = false;
 
-        public ConsulProvider(ConsulProviderOptions options) : this(options, config => { })
-        {
-        }
+        public ConsulProvider(ConsulProviderOptions options) : this(options, config => { }) { }
 
         public ConsulProvider(ConsulProviderOptions options, Action<ConsulClientConfiguration> consulConfig)
         {
@@ -66,47 +68,22 @@ namespace Proto.Cluster.Consul
             _client = new ConsulClient(consulConfig);
         }
 
-        public ConsulProvider(IOptions<ConsulProviderOptions> options) : this(options.Value, config => { })
-        {
-        }
+        public ConsulProvider(IOptions<ConsulProviderOptions> options) : this(options.Value, config => { }) { }
 
-        public ConsulProvider(IOptions<ConsulProviderOptions> options, Action<ConsulClientConfiguration> consulConfig) : this(options.Value, consulConfig)
-        {
-        }
+        public ConsulProvider(IOptions<ConsulProviderOptions> options, Action<ConsulClientConfiguration> consulConfig) : this(options.Value, consulConfig) { }
 
 
-        public async Task RegisterMemberAsync(string clusterName, string host, int port, string[] kinds)
+        public async Task RegisterMemberAsync(string clusterName, string address, int port, string[] kinds)
         {
-            _id = $"{clusterName}@{host}:{port}";
+            _id = $"{clusterName}@{address}:{port}";
             _clusterName = clusterName;
+            _address = address;
+            _port = port;
+            _kinds = kinds;
             _index = 0;
 
-            var s = new AgentServiceRegistration
-                    {
-                        ID = _id,
-                        Name = clusterName,
-                        Tags = kinds,
-                        Address = host,
-                        Port = port,
-                        Check = new AgentServiceCheck
-                                {
-                                    DeregisterCriticalServiceAfter = _deregisterCritical,
-                                    TTL = _serviceTtl
-                                }
-                    };
-            await _client.Agent.ServiceRegister(s);
-
-
-            //register a semi unique ID for the current process
-            _kvKey = $"{_clusterName}/{host}:{port}"; //slash should be present
-            var value = Encoding.UTF8.GetBytes(DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ssK") + Environment.NewLine + 5);
-            await _client.KV.Put(new KVPair(_kvKey)
-                                 {
-                                     //Write the ID for this member.
-                                     //the value is later used to see if an existing node have changed its ID over time
-                                     //meaning that it has Re-joined the cluster.
-                                     Value = value
-                                 }, new WriteOptions());
+            await RegisterServiceAsync();
+            await RegisterProcessAsync();
 
             await BlockingUpdateTtlAsync();
             await BlockingStatusChangeAsync();
@@ -115,12 +92,27 @@ namespace Proto.Cluster.Consul
 
         public async Task DeregisterMemberAsync()
         {
-            //Deregister
-            await _client.Agent.ServiceDeregister(_id);
-            //DeleteKeyValue
-            await _client.KV.Delete(_kvKey);
+            //DeregisterService
+            await DeregisterServiceAsync();
+            //DeleteProcess
+            await DeregisterProcessAsync();
 
             _deregistered = true;
+        }
+
+        public async Task DeregisterAllKindsAsync()
+        {
+            this._kinds = new string[0];
+            await RegisterServiceAsync();
+        }
+
+        public async Task UpdateWeight(int weight)
+        {
+            if (weight > 10)
+                throw new ArgumentException($"Currently only support maximum weight of 10 instead of {weight}");
+            this._weight = weight;
+            if (!string.IsNullOrEmpty(this._address))
+                await RegisterProcessAsync();
         }
 
         public async Task Shutdown()
@@ -139,6 +131,49 @@ namespace Proto.Cluster.Consul
                     await NotifyStatusesAsync();
                 }
             });
+        }
+
+        private async Task RegisterServiceAsync()
+        {
+            var s = new AgentServiceRegistration
+            {
+                ID = _id,
+                Name = _clusterName,
+                Tags = _kinds.ToArray(),
+                Address = _address,
+                Port = _port,
+                Check = new AgentServiceCheck
+                {
+                    DeregisterCriticalServiceAfter = _deregisterCritical,
+                    TTL = _serviceTtl
+                }
+            };
+            await _client.Agent.ServiceRegister(s);
+        }
+
+        private async Task DeregisterServiceAsync()
+        {
+            await _client.Agent.ServiceDeregister(_id);
+        }
+
+        private async Task RegisterProcessAsync()
+        {
+            //register a semi unique ID for the current process
+            var kvKey = $"{_clusterName}/{_address}:{_port}"; //slash should be present
+            var value = Encoding.UTF8.GetBytes(DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ssK") + Environment.NewLine + _weight);
+            await _client.KV.Put(new KVPair(kvKey)
+            {
+                //Write the ID for this member.
+                //the value is later used to see if an existing node have changed its ID over time
+                //meaning that it has Re-joined the cluster.
+                Value = value
+            }, new WriteOptions());
+        }
+
+        private async Task DeregisterProcessAsync()
+        {
+            var kvKey = $"{_clusterName}/{_address}:{_port}"; //slash should be present
+            await _client.KV.Delete(kvKey);
         }
 
         private void UpdateTtl()
@@ -161,10 +196,10 @@ namespace Proto.Cluster.Consul
         private async Task NotifyStatusesAsync()
         {
             var statuses = await _client.Health.Service(_clusterName, null, false, new QueryOptions
-                                                                                   {
-                                                                                       WaitIndex = _index,
-                                                                                       WaitTime = _blockingWaitTime
-                                                                                   });
+            {
+                WaitIndex = _index,
+                WaitTime = _blockingWaitTime
+            });
             _index = statuses.LastIndex;
             var kvKey = _clusterName + "/";
             var kv = await _client.KV.List(kvKey);
@@ -195,6 +230,16 @@ namespace Proto.Cluster.Consul
                 where val.memberId != null
                 let passing = Equals(v.Checks[1].Status, HealthStatus.Passing)
                 select new MemberStatus(val.memberId, v.Service.Address, v.Service.Port, v.Service.Tags, passing, val.weight);
+
+            //Update Tags for this member
+            foreach (var memStat in memberStatuses)
+            {
+                if (memStat.Address == _address && memStat.Port == _port)
+                {
+                    _kinds = memStat.Kinds.ToArray();
+                    break;
+                }
+            }
 
             var res = new ClusterTopologyEvent(memberStatuses);
             Actor.EventStream.Publish(res);
