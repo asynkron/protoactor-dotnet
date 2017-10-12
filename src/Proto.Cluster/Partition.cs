@@ -283,7 +283,7 @@ namespace Proto.Cluster
                             continue;
                         }
                         context.Respond(pidResp);
-                        break;
+                        return;
                     default:
                         //Return to requester to wait
                         context.Respond(pidResp);
