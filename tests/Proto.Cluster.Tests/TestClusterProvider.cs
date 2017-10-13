@@ -4,7 +4,7 @@ namespace Proto.Cluster.Tests
 {
     public class TestClusterProvider : IClusterProvider
     {
-        public Task RegisterMemberAsync(string clusterName, string h, int p, string[] kinds)
+        public Task RegisterMemberAsync(string clusterName, string h, int p, int weight, string[] kinds)
         {
             return Task.FromResult(0);
         }

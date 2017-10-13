@@ -10,7 +10,7 @@ namespace Proto.Cluster
 {
 	public interface IClusterProvider
 	{
-		Task RegisterMemberAsync(string clusterName, string h, int p, string[] kinds);
+		Task RegisterMemberAsync(string clusterName, string h, int p, int weight, string[] kinds);
 		void MonitorMemberStatusChanges();
 		Task UpdateWeight(int weight);
 		Task DeregisterMemberAsync();

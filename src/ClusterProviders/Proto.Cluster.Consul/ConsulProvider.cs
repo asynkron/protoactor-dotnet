@@ -1,21 +1,19 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//   <copyright file="ConsulProvider.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Consul;
 using Microsoft.Extensions.Options;
-using Proto;
-using Proto.Cluster;
 
 namespace Proto.Cluster.Consul
 {
-// -----------------------------------------------------------------------
-//   <copyright file="ConsulProvider.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
-//   </copyright>
-// -----------------------------------------------------------------------
-
     public class ConsulProviderOptions
     {
         /// <summary>
@@ -46,8 +44,8 @@ namespace Proto.Cluster.Consul
         private string _clusterName;
         private string _address;
         private int _port;
+        private int _weight;
         private string[] _kinds;
-        private int _weight = 5;
         private TimeSpan _serviceTtl;
         private TimeSpan _blockingWaitTime;
         private TimeSpan _deregisterCritical;
@@ -72,13 +70,13 @@ namespace Proto.Cluster.Consul
 
         public ConsulProvider(IOptions<ConsulProviderOptions> options, Action<ConsulClientConfiguration> consulConfig) : this(options.Value, consulConfig) { }
 
-
-        public async Task RegisterMemberAsync(string clusterName, string address, int port, string[] kinds)
+        public async Task RegisterMemberAsync(string clusterName, string address, int port, int weight, string[] kinds)
         {
             _id = $"{clusterName}@{address}:{port}";
             _clusterName = clusterName;
             _address = address;
             _port = port;
+            _weight = weight;
             _kinds = kinds;
             _index = 0;
 
@@ -108,8 +106,6 @@ namespace Proto.Cluster.Consul
 
         public async Task UpdateWeight(int weight)
         {
-            if (weight > 10)
-                throw new ArgumentException($"Currently only support maximum weight of 10 instead of {weight}");
             this._weight = weight;
             if (!string.IsNullOrEmpty(this._address))
                 await RegisterProcessAsync();
