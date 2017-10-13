@@ -189,7 +189,8 @@ namespace Proto.Cluster.Consul
                 let memberIdKey = $"{_clusterName}/{v.Service.Address}:{v.Service.Port}"
                 let memberId = GetMemberId(memberIdKey)
                 where memberId != null
-                let passing = Equals(v.Checks[1].Status, HealthStatus.Passing)
+                //Check #1 is the check we have declared, check 0 is the Consul Serf Status
+                let passing = v.Checks.Length > 1 && Equals(v.Checks[1].Status, HealthStatus.Passing)
                 select new MemberStatus(memberId.Value, v.Service.Address, v.Service.Port, v.Service.Tags, passing);
 
             var res = new ClusterTopologyEvent(memberStatuses);
