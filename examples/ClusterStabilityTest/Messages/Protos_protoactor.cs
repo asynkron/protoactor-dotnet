@@ -89,6 +89,7 @@ retry:
                 }
                 catch(Exception x)
                 {
+                    Console.Write("$");
                     //ignore, TODO: exponential backoff?
                 }
             }

@@ -19,7 +19,7 @@ namespace TestApp
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Cluster.Start("MyCluster", "127.0.0.1", 0, new ConsulProvider(new ConsulProviderOptions()));
 
-            for (int i = 0; i < 40; i++)
+            for (int i = 0; i < 100; i++)
             {
                 var psi = new ProcessStartInfo("dotnet", "bin/debug/netcoreapp1.1/TestApp.dll --foo")
                 {
@@ -28,7 +28,7 @@ namespace TestApp
                 Process.Start(psi);
             }
 
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < 2000; i++)
             {
                 var client = Grains.HelloGrain("name" + i);
                 client.SayHello(new HelloRequest()).ContinueWith(t =>
