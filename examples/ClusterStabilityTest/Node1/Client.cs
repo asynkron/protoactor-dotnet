@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Threading.Tasks;
 using Messages;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
@@ -18,7 +19,7 @@ namespace TestApp
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Cluster.Start("MyCluster", "127.0.0.1", 0, new ConsulProvider(new ConsulProviderOptions()));
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 40; i++)
             {
                 var psi = new ProcessStartInfo("dotnet", "bin/debug/netcoreapp1.1/TestApp.dll --foo")
                 {
@@ -30,8 +31,17 @@ namespace TestApp
             for (int i = 0; i < 1000; i++)
             {
                 var client = Grains.HelloGrain("name" + i);
-                var res = client.SayHello(new HelloRequest()).Result;
-                Console.Write(".");
+                client.SayHello(new HelloRequest()).ContinueWith(t =>
+                {
+                    if (t.Status == TaskStatus.RanToCompletion)
+                    {
+                        Console.Write(".");
+                    }
+                    else
+                    {
+                        Console.Write("#");
+                    }
+                });
             }
            
             Console.ReadLine();

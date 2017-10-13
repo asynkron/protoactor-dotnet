@@ -55,6 +55,7 @@ retry:
                 if (statusCode == ResponseStatusCode.Unavailable)
                 {
                     await Task.Delay(100);
+                    Console.Write(">");
                     goto retry;
                 }
 
