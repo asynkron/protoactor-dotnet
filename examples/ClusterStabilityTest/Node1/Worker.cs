@@ -23,13 +23,13 @@ namespace TestApp
 
     public static class Worker
     {
-        public static void Start()
+        public static void Start(string clusterName)
         {
             Console.WriteLine("Starting worker");
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Grains.HelloGrainFactory(() => new HelloGrain());
 
-            Cluster.Start("MyCluster", "127.0.0.1", 0, new ConsulProvider(new ConsulProviderOptions()));
+            Cluster.Start(clusterName, "127.0.0.1", 0, new ConsulProvider(new ConsulProviderOptions()));
 
             Console.ReadLine();
         }

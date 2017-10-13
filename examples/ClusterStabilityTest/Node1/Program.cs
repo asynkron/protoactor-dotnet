@@ -6,6 +6,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Messages;
 using Proto.Cluster;
@@ -28,7 +29,7 @@ namespace TestApp
             }
             else
             {
-                Worker.Start();
+                Worker.Start(args.First());
             }
         }
     }

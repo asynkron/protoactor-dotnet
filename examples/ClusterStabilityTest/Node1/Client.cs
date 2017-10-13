@@ -15,13 +15,14 @@ namespace TestApp
     {
         public static void Start()
         {
+            var clusterName = "cluster" + DateTime.Now.Ticks;
             StartConsulDevMode();
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-            Cluster.Start("MyCluster", "127.0.0.1", 0, new ConsulProvider(new ConsulProviderOptions()));
+            Cluster.Start(clusterName, "127.0.0.1", 0, new ConsulProvider(new ConsulProviderOptions()));
 
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 50; i++)
             {
-                var psi = new ProcessStartInfo("dotnet", "bin/debug/netcoreapp1.1/TestApp.dll --foo")
+                var psi = new ProcessStartInfo("dotnet", "bin/debug/netcoreapp1.1/TestApp.dll " + clusterName)
                 {
                     UseShellExecute = false
                 };
