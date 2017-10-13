@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Messages;
 using Proto.Cluster;
@@ -28,6 +29,8 @@ namespace TestApp
                 };
                 Process.Start(psi);
             }
+            Console.WriteLine("Waiting for cluster to stabilize");
+            Thread.Sleep(10000);
 
             for (int i = 0; i < 2000; i++)
             {

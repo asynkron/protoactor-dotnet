@@ -89,7 +89,7 @@ retry:
                 }
                 catch(Exception x)
                 {
-                    Console.Write("$");
+                    Console.Write("$"); //Most likely Timeout
                     //ignore, TODO: exponential backoff?
                 }
             }
