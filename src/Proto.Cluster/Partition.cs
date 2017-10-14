@@ -72,7 +72,6 @@ namespace Proto.Cluster
     {
         private readonly string _kind;
         private readonly ILogger _logger = Log.CreateLogger<PartitionActor>();
-        private readonly Counter _counter = new Counter();
 
         private readonly Dictionary<string, PID> _partition = new Dictionary<string, PID>(); //actor/grain name to PID
         private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>(); //PID to grain name

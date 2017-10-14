@@ -44,7 +44,6 @@ namespace Proto.Cluster.Consul
         private string _clusterName;
         private string _address;
         private int _port;
-        private int _weight;
         private string[] _kinds;
         private TimeSpan _serviceTtl;
         private TimeSpan _blockingWaitTime;
@@ -53,6 +52,8 @@ namespace Proto.Cluster.Consul
         private ulong _index;
         private bool _shutdown = false;
         private bool _deregistered = false;
+        private IMemberStatusValue _statusValue;
+        private IMemberStatusValueSerializer _statusValueSerializer;
 
         public ConsulProvider(ConsulProviderOptions options) : this(options, config => { }) { }
 
@@ -66,22 +67,28 @@ namespace Proto.Cluster.Consul
             _client = new ConsulClient(consulConfig);
         }
 
-        public ConsulProvider(IOptions<ConsulProviderOptions> options) : this(options.Value, config => { }) { }
+        public ConsulProvider(IOptions<ConsulProviderOptions> options) : this(options.Value, config => { })
+        {
+        }
 
-        public ConsulProvider(IOptions<ConsulProviderOptions> options, Action<ConsulClientConfiguration> consulConfig) : this(options.Value, consulConfig) { }
+        public ConsulProvider(IOptions<ConsulProviderOptions> options, Action<ConsulClientConfiguration> consulConfig) : this(options.Value, consulConfig)
+        {
+        }
 
-        public async Task RegisterMemberAsync(string clusterName, string address, int port, int weight, string[] kinds)
+        public async Task RegisterMemberAsync(string clusterName, string address, int port, string[] kinds, IMemberStatusValue statusValue, IMemberStatusValueSerializer statusValueSerializer)
         {
             _id = $"{clusterName}@{address}:{port}";
             _clusterName = clusterName;
             _address = address;
             _port = port;
-            _weight = weight;
             _kinds = kinds;
             _index = 0;
 
+            _statusValueSerializer = statusValueSerializer;
+
             await RegisterServiceAsync();
-            await RegisterProcessAsync();
+            await RegisterMemberIDAsync();
+            await UpdateMemberStatusValueAsync(statusValue);
 
             await BlockingUpdateTtlAsync();
             await BlockingStatusChangeAsync();
@@ -93,7 +100,8 @@ namespace Proto.Cluster.Consul
             //DeregisterService
             await DeregisterServiceAsync();
             //DeleteProcess
-            await DeregisterProcessAsync();
+            await DeregisterMemberIDAsync();
+            await DeleteMemberStatusValueAsync();
 
             _deregistered = true;
         }
@@ -102,13 +110,6 @@ namespace Proto.Cluster.Consul
         {
             this._kinds = new string[0];
             await RegisterServiceAsync();
-        }
-
-        public async Task UpdateWeight(int weight)
-        {
-            this._weight = weight;
-            if (!string.IsNullOrEmpty(this._address))
-                await RegisterProcessAsync();
         }
 
         public async Task Shutdown()
@@ -152,11 +153,15 @@ namespace Proto.Cluster.Consul
             await _client.Agent.ServiceDeregister(_id);
         }
 
-        private async Task RegisterProcessAsync()
+        public async Task UpdateMemberStatusValueAsync(IMemberStatusValue statusValue)
         {
+            _statusValue = statusValue;
+
+            if (string.IsNullOrEmpty(_id)) return;
+
             //register a semi unique ID for the current process
-            var kvKey = $"{_clusterName}/{_address}:{_port}"; //slash should be present
-            var value = Encoding.UTF8.GetBytes(DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ssK") + Environment.NewLine + _weight);
+            var kvKey = $"{_clusterName}/{_address}:{_port}/StatusValue"; //slash should be present
+            var value = _statusValueSerializer.ToValueBytes(statusValue);
             await _client.KV.Put(new KVPair(kvKey)
             {
                 //Write the ID for this member.
@@ -166,9 +171,29 @@ namespace Proto.Cluster.Consul
             }, new WriteOptions());
         }
 
-        private async Task DeregisterProcessAsync()
+        private async Task DeleteMemberStatusValueAsync()
         {
-            var kvKey = $"{_clusterName}/{_address}:{_port}"; //slash should be present
+            var kvKey = $"{_clusterName}/{_address}:{_port}/StatusValue"; //slash should be present
+            await _client.KV.Delete(kvKey);
+        }
+
+        private async Task RegisterMemberIDAsync()
+        {
+            //register a semi unique ID for the current process
+            var kvKey = $"{_clusterName}/{_address}:{_port}/ID"; //slash should be present
+            var value = Encoding.UTF8.GetBytes(DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ssK"));
+            await _client.KV.Put(new KVPair(kvKey)
+            {
+                //Write the ID for this member.
+                //the value is later used to see if an existing node have changed its ID over time
+                //meaning that it has Re-joined the cluster.
+                Value = value
+            }, new WriteOptions());
+        }
+
+        private async Task DeregisterMemberIDAsync()
+        {
+            var kvKey = $"{_clusterName}/{_address}:{_port}/ID"; //slash should be present
             await _client.KV.Delete(kvKey);
         }
 
@@ -201,31 +226,45 @@ namespace Proto.Cluster.Consul
             var kv = await _client.KV.List(kvKey);
 
             var memberIds = new Dictionary<string, string>();
+            var memberStatusVals = new Dictionary<string, byte[]>();
             foreach (var v in kv.Response)
             {
-                //Read the ID per member.
-                //The value is used to see if an existing node have changed its ID over time
-                //meaning that it has Re-joined the cluster.
-                memberIds[v.Key] = Encoding.UTF8.GetString(v.Value);
+                var idx = v.Key.LastIndexOf('/');
+                var key = v.Key.Substring(0, idx);
+                var type = v.Key.Substring(idx + 1);
+                if (type == "ID")
+                {
+                    //Read the ID per member.
+                    //The value is used to see if an existing node have changed its ID over time
+                    //meaning that it has Re-joined the cluster.
+                    memberIds[key] = Encoding.UTF8.GetString(v.Value);
+                }
+                else if (type == "StatusValue")
+                {
+                    memberStatusVals[key] = v.Value;
+                }
             }
 
-            (string memberId, int weight) DecompileConsulValue(string mIdKey)
+            string GetMemberId(string mIdKey)
             {
-                if (memberIds.TryGetValue(mIdKey, out string v))
-                {
-                    var ps = v.Split('\n');
-                    return (ps[0], ps.Length > 0 ? int.Parse(ps[1]) : 1);
-                }
-                else return (null, 5);
-            }
+                if (memberIds.TryGetValue(mIdKey, out string v)) return v;
+                else return null;
+            };
+
+            byte[] GetMemberStatusVal(string mIdKey)
+            {
+                if (memberStatusVals.TryGetValue(mIdKey, out byte[] v)) return v;
+                else return null;
+            };
 
             var memberStatuses =
                 from v in statuses.Response
                 let memberIdKey = $"{_clusterName}/{v.Service.Address}:{v.Service.Port}"
-                let val = DecompileConsulValue(memberIdKey)
-                where val.memberId != null
+                let memberId = GetMemberId(memberIdKey)
+                where memberId != null
                 let passing = Equals(v.Checks[1].Status, HealthStatus.Passing)
-                select new MemberStatus(val.memberId, v.Service.Address, v.Service.Port, v.Service.Tags, passing, val.weight);
+                let memberStatusVal = GetMemberStatusVal(memberIdKey)
+                select new MemberStatus(memberId, v.Service.Address, v.Service.Port, v.Service.Tags, passing, _statusValueSerializer.FromValueBytes(memberStatusVal));
 
             //Update Tags for this member
             foreach (var memStat in memberStatuses)

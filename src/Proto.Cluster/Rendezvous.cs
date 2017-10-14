@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -12,41 +13,52 @@ namespace Proto.Cluster
     {
         private static readonly HashAlgorithm HashAlgorithm = FNV1A32.Create();
 
-        private MemberNodeSet m;
+        private IMemberStrategy m;
+        private List<byte[]> memberHashes;
 
-        internal Rendezvous(MemberNodeSet m)
+        internal Rendezvous(IMemberStrategy m)
         {
             this.m = m;
+            UpdateRdv();
         }
-        
+
         internal string GetNode(string key)
         {
-            if (m.nodes == null || m.nodes.Count == 0)
+            var members = m.GetAllMembers();
+            
+            if (members == null || members.Count == 0)
                 return "";
 
-            if (m.nodes.Count == 1)
-                return m.nodes[0].Name;
+            if (members.Count == 1)
+                return members[0].Address;
 
             var keyBytes = Encoding.UTF8.GetBytes(key);
 
             uint maxScore = 0;
-            string maxNode = "";
+            MemberStatus maxNode = null;
             uint score = 0;
 
-            foreach (var node in m.nodes)
+            for(int i = 0; i < members.Count; i++)
             {
-                if (node.Alive)
+                var member = members[i];
+                if (member.Alive)
                 {
-                    score = RdvHash(node.NameBytes, keyBytes);
+                    var hashBytes = memberHashes[i];
+                    score = RdvHash(hashBytes, keyBytes);
                     if (score > maxScore)
                     {
                         maxScore = score;
-                        maxNode = node.Name;
+                        maxNode = member;
                     }
                 }
             }
 
-            return maxNode;
+            return maxNode == null ? "" : maxNode.Address;
+        }
+
+        internal void UpdateRdv()
+        {
+            this.memberHashes = this.m.GetAllMembers().Select(mb => Encoding.UTF8.GetBytes(mb.Address)).ToList();
         }
 
         private static uint RdvHash(byte[] node, byte[] key)

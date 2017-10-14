@@ -1,24 +1,47 @@
 ﻿namespace Proto.Cluster
 {
-    internal class RoundRobin
+    internal class SimpleRoundRobin
     {
-        private int currIndex;
-        private int currWeight;
-        private int maxWeight;
-        private int gcd;
+        private int val;
 
-        private MemberNodeSet m;
+        private IMemberStrategy m;
 
-        internal RoundRobin(MemberNodeSet m)
+        internal SimpleRoundRobin(IMemberStrategy m)
         {
             this.m = m;
         }
 
         internal string GetNode()
         {
-            var l = m.nodes.Count;
+            var members = m.GetAllMembers();
+            var l = members.Count;
             if (l == 0) return "";
-            if (l == 1) return m.nodes[0].Name;
+            if (l == 1) return members[0].Address;
+
+            return members[val++ % l].Address;
+        }
+    }
+
+    internal class WeightedRoundRobin
+    {
+        private int currIndex;
+        private int currWeight;
+        private int maxWeight;
+        private int gcd;
+
+        private IMemberStrategy m;
+
+        internal WeightedRoundRobin(IMemberStrategy m)
+        {
+            this.m = m;
+        }
+
+        internal string GetNode()
+        {
+            var members = m.GetAllMembers();
+            var l = members.Count;
+            if (l == 0) return "";
+            if (l == 1) return members[0].Address;
 
             while (true)
             {
@@ -31,9 +54,9 @@
                         currWeight = maxWeight;
                     }
                 }
-                if (m.nodes[currIndex].Weight >= currWeight)
+                if (((MemberStatusValue) members[currIndex].StatusValue).Weight >= currWeight)
                 {
-                    return m.nodes[currIndex].Name;
+                    return members[currIndex].Address;
                 }
             }
         }
@@ -47,10 +70,11 @@
         private int GetMaxWeight()
         {
             var max = 0;
-            foreach (var n in m.nodes)
+            foreach (var m in m.GetAllMembers())
             {
-                if (n.Weight > max)
-                    max = n.Weight;
+                var statusVal = (MemberStatusValue) m.StatusValue;
+                if (statusVal.Weight > max)
+                    max = statusVal.Weight;
             }
             return max;
         }

@@ -10,27 +10,6 @@ using System.Linq;
 
 namespace Proto.Cluster
 {
-    public class MemberStatus
-    {
-        public MemberStatus(string memberId, string host, int port, IReadOnlyCollection<string> kinds, bool alive, int weight)
-        {
-            MemberId = memberId;
-            Host = host ?? throw new ArgumentNullException(nameof(host));
-            Kinds = kinds ?? throw new ArgumentNullException(nameof(kinds));
-            Port = port;
-            Alive = alive;
-            Weight = weight;
-        }
-
-        public string Address => Host + ":" + Port;
-        public string MemberId { get; }
-        public string Host { get; }
-        public int Port { get; }
-        public IReadOnlyCollection<string> Kinds { get; }
-        public bool Alive { get; }
-        public int Weight { get; }
-    }
-
     public class ClusterTopologyEvent
     {
         public ClusterTopologyEvent(IEnumerable<MemberStatus> statuses)

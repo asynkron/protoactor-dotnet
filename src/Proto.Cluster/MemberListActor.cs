@@ -16,9 +16,9 @@ namespace Proto.Cluster
     internal class MemberListActor : IActor
     {
         private readonly ILogger _logger = Log.CreateLogger<MemberListActor>();
-        private readonly Dictionary<string, MemberStatus> _members = new Dictionary<string, MemberStatus>();
 
-        private readonly Dictionary<string, MemberNodeSet> _aliveMembersByKind = new Dictionary<string, MemberNodeSet>();
+        private readonly Dictionary<string, MemberStatus> _members = new Dictionary<string, MemberStatus>();
+        private readonly Dictionary<string, IMemberStrategy> _aliveMembersByKind = new Dictionary<string, IMemberStrategy>();
 
         public Task ReceiveAsync(IContext context)
         {
@@ -32,21 +32,21 @@ namespace Proto.Cluster
                 case MembersByKindRequest msg:
                 {
                     context.Respond(_aliveMembersByKind.TryGetValue(msg.Kind, out var members)
-                                        ? new MembersResponse(members.GetAllMemberAddresses(msg.OnlyAlive))
+                                        ? new MembersResponse(members.GetAllMembers().FindAll(m => !msg.OnlyAlive || (msg.OnlyAlive && m.Alive)).Select(m => m.Address).ToArray())
                                         : new MembersResponse(new string[0]));
                     break;
                 }
                 case MemberByDHTRequest msg:
                 {
                     context.Respond(_aliveMembersByKind.TryGetValue(msg.Kind, out var memberSet)
-                                        ? new MemberResponse(memberSet.GetNodeByRendezvous(msg.Name))
+                                        ? new MemberResponse(memberSet.GetPartition(msg.Name))
                                         : new MemberResponse(""));
                     break;
                 }
                 case MemberByRoundRobinRequest msg:
                 {
                     context.Respond(_aliveMembersByKind.TryGetValue(msg.Kind, out var memberSet)
-                                        ? new MemberResponse(memberSet.GetNodeByRoundRobin())
+                                        ? new MemberResponse(memberSet.GetActivator())
                                         : new MemberResponse(""));
                     break;
                 }
@@ -142,8 +142,8 @@ namespace Proto.Cluster
                 {
                     if (_aliveMembersByKind.TryGetValue(k, out var ms))
                     {
-                        ms.Remove(old.Address);
-                        if (ms.Length() == 0)
+                        ms.RemoveMember(old);
+                        if (ms.HasNoMember())
                             _aliveMembersByKind.Remove(k);
                     }
                 }
@@ -154,8 +154,8 @@ namespace Proto.Cluster
                 foreach (var k in @new.Kinds)
                 {
                     if (!_aliveMembersByKind.ContainsKey(k))
-                        _aliveMembersByKind[k] = new MemberNodeSet();
-                    _aliveMembersByKind[k].Add(@new.Address, @new.Alive, @new.Weight);
+                        _aliveMembersByKind[k] = Cluster.cfg.MemberStrategyProvider.GetMemberStrategy(k);
+                    _aliveMembersByKind[k].AddMember(@new);
                 }
             }
         }
