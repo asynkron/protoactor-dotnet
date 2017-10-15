@@ -17,9 +17,10 @@ namespace Proto.Cluster
 
         private static IClusterProvider cp;
         
-        public static void Start(string clusterName, string address, int port, IClusterProvider provider)
+        public static void Start(string clusterName, string address, int port, IClusterProvider provider,RemoteConfig config = null)
         {
-            Remote.Remote.Start(address, port);
+            config = config ?? new RemoteConfig();
+            Remote.Remote.Start(address, port,config);
 
             cp = provider;
             
