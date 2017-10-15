@@ -38,8 +38,10 @@ namespace Messages
 
         public Task<HelloResponse> SayHello(HelloRequest request) => SayHello(request, CancellationToken.None);
 
-        public async Task<HelloResponse> SayHello(HelloRequest request, CancellationToken ct)
+        public async Task<HelloResponse> SayHello(HelloRequest request, CancellationToken ct, GrainCallOptions options = null)
         {
+            options = options ?? GrainCallOptions.Default;
+            
             var gr = new GrainRequest
             {
                 MethodIndex = 0,
@@ -73,17 +75,18 @@ namespace Messages
                 throw new NotSupportedException();
             }
 
-            for (int i = 1; i < 10; i++)
+            for(int i= 0;i < options.RetryCount; i++)
             {
                 try
                 {
                     return await Inner();
                 }
-                catch (Exception x)
+                catch(Exception x)
                 {
-                 //   Console.Write("$" + i); //Most likely Timeout
-                    Cluster.RemoveCache(_id);
-                    await Task.Delay(i * i * 50, ct);
+                    if (options.RetryAction != null)
+                    {
+                        await options.RetryAction(i);
+                    }
                 }
             }
             return await Inner();

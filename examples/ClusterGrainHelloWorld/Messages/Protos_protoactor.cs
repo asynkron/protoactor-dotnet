@@ -38,8 +38,9 @@ namespace Messages
 
         public Task<HelloResponse> SayHello(HelloRequest request) => SayHello(request, CancellationToken.None);
 
-        public async Task<HelloResponse> SayHello(HelloRequest request, CancellationToken ct)
+        public async Task<HelloResponse> SayHello(HelloRequest request, CancellationToken ct, GrainCallOptions options = null)
         {
+            options = options ?? GrainCallOptions.Default;
             
             var gr = new GrainRequest
             {
@@ -74,7 +75,7 @@ namespace Messages
                 throw new NotSupportedException();
             }
 
-            for(int i= 0;i < 4; i++)
+            for(int i= 0;i < options.RetryCount; i++)
             {
                 try
                 {
@@ -82,7 +83,10 @@ namespace Messages
                 }
                 catch(Exception x)
                 {
-                    //ignore, TODO: exponential backoff?
+                    if (options.RetryAction != null)
+                    {
+                        await options.RetryAction(i);
+                    }
                 }
             }
             return await Inner();
