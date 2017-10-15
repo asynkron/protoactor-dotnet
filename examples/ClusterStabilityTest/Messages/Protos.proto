@@ -1,0 +1,12 @@
+﻿syntax = "proto3";
+package messages;
+option csharp_namespace = "Messages";
+
+message HelloRequest {}
+message HelloResponse {
+    string Message=1;
+}
+
+service HelloGrain {
+	rpc SayHello(HelloRequest) returns (HelloResponse) {}
+}

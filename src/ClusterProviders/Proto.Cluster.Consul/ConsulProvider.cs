@@ -19,7 +19,7 @@ namespace Proto.Cluster.Consul
         /// <summary>
         /// Default value is 3 seconds
         /// </summary>
-        public TimeSpan? ServiceTtl { get; set; } = TimeSpan.FromSeconds(3);
+        public TimeSpan? ServiceTtl { get; set; } = TimeSpan.FromSeconds(10);
 
         /// <summary>
         /// Default value is 1 second
@@ -258,13 +258,14 @@ namespace Proto.Cluster.Consul
             };
 
             var memberStatuses =
-                from v in statuses.Response
-                let memberIdKey = $"{_clusterName}/{v.Service.Address}:{v.Service.Port}"
-                let memberId = GetMemberId(memberIdKey)
-                where memberId != null
-                let passing = Equals(v.Checks[1].Status, HealthStatus.Passing)
-                let memberStatusVal = GetMemberStatusVal(memberIdKey)
-                select new MemberStatus(memberId, v.Service.Address, v.Service.Port, v.Service.Tags, passing, _statusValueSerializer.FromValueBytes(memberStatusVal));
+                (from v in statuses.Response
+                    let memberIdKey = $"{_clusterName}/{v.Service.Address}:{v.Service.Port}"
+                    let memberId = GetMemberId(memberIdKey)
+                    where memberId != null
+                    let passing = v.Checks.Length > 1 && Equals(v.Checks[1].Status, HealthStatus.Passing)
+                    let memberStatusVal = GetMemberStatusVal(memberIdKey)
+                    select new MemberStatus(memberId, v.Service.Address, v.Service.Port, v.Service.Tags, passing, _statusValueSerializer.FromValueBytes(memberStatusVal)))
+                .ToArray();
 
             //Update Tags for this member
             foreach (var memStat in memberStatuses)
