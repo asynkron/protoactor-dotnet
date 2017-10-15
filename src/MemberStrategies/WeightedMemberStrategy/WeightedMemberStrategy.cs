@@ -1,34 +1,24 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="MemberStrategy.cs" company="Asynkron HB">
+//   <copyright file="WeightedMemberStrategy.cs" company="Asynkron HB">
 //       Copyright (C) 2015-2017 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.WeightedMemberStrategy
 {
-    public interface IMemberStrategy
-    {
-        List<MemberStatus> GetAllMembers();
-        void AddMember(MemberStatus member);
-        void UpdateMember(MemberStatus member);
-        void RemoveMember(MemberStatus member);
-        string GetPartition(string key);
-        string GetActivator();
-    }
-
-    internal class SimpleMemberStrategy : IMemberStrategy
+    public class WeightedMemberStrategy : IMemberStrategy
     {
         internal List<MemberStatus> members;
         private Rendezvous rdv;
-        private RoundRobin rr;
+        private WeightedRoundRobin wrr;
 
-        public SimpleMemberStrategy()
+        public WeightedMemberStrategy()
         {
             members = new List<MemberStatus>();
             rdv = new Rendezvous(this);
-            rr = new RoundRobin(this);
+            wrr = new WeightedRoundRobin(this);
         }
 
         public List<MemberStatus> GetAllMembers() => members;
@@ -36,6 +26,7 @@ namespace Proto.Cluster
         public void AddMember(MemberStatus member)
         {
             members.Add(member);
+            wrr.UpdateRR();
             rdv.UpdateRdv();
         }
 
@@ -58,6 +49,7 @@ namespace Proto.Cluster
                 if (members[i].Address == member.Address)
                 {
                     members.RemoveAt(i);
+                    wrr.UpdateRR();
                     rdv.UpdateRdv();
                     return;
                 }
@@ -66,6 +58,6 @@ namespace Proto.Cluster
 
         public string GetPartition(string key) => rdv.GetNode(key);
 
-        public string GetActivator() => rr.GetNode();
+        public string GetActivator() => wrr.GetNode();
     }
 }

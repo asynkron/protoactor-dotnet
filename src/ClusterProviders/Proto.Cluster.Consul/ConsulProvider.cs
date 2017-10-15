@@ -157,6 +157,8 @@ namespace Proto.Cluster.Consul
         {
             _statusValue = statusValue;
 
+            if (_statusValue == null) return;
+            
             if (string.IsNullOrEmpty(_id)) return;
 
             //register a semi unique ID for the current process
@@ -173,6 +175,7 @@ namespace Proto.Cluster.Consul
 
         private async Task DeleteMemberStatusValueAsync()
         {
+            if (_statusValue == null) return;
             var kvKey = $"{_clusterName}/{_address}:{_port}/StatusValue"; //slash should be present
             await _client.KV.Delete(kvKey);
         }

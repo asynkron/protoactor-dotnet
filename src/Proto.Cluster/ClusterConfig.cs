@@ -28,9 +28,8 @@ namespace Proto.Cluster
             ClusterProvider = cp ?? throw new ArgumentNullException(nameof(cp));
 
             TimeoutTimespan = TimeSpan.FromSeconds(5);
-            InitialMemberStatusValue = DefaultMemberStatusValue.Default;
-            MemberStatusValueSerializer = new DefaultMemberStatusValueSerializer();
-            MemberStrategyBuilder = kind => new DefaultMemberStrategy();
+            MemberStatusValueSerializer = new NullMemberStatusValueSerializer();
+            MemberStrategyBuilder = kind => new SimpleMemberStrategy();
         }
 
         public ClusterConfig WithTimeoutSeconds(int timeoutSeconds)

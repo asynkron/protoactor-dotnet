@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Proto.Cluster
 {
@@ -42,33 +41,16 @@ namespace Proto.Cluster
         IMemberStatusValue FromValueBytes(byte[] val);
     }
 
-    public class DefaultMemberStatusValue : IMemberStatusValue
-    {
-        public static readonly DefaultMemberStatusValue Default = new DefaultMemberStatusValue {Weight = 5};
-
-        public int Weight { get; set; }
-
-        public bool IsSame(IMemberStatusValue val)
-        {
-            return Weight == (val as DefaultMemberStatusValue)?.Weight;
-        }
-    }
-
-    public class DefaultMemberStatusValueSerializer : IMemberStatusValueSerializer
+    internal class NullMemberStatusValueSerializer : IMemberStatusValueSerializer
     {
         public byte[] ToValueBytes(IMemberStatusValue val)
         {
-            var dVal = (DefaultMemberStatusValue) val;
-            return Encoding.UTF8.GetBytes(dVal.Weight.ToString());
+            return null;
         }
 
         public IMemberStatusValue FromValueBytes(byte[] val)
         {
-            var weight =  Encoding.UTF8.GetString(val);
-            return new DefaultMemberStatusValue
-            {
-                Weight = int.Parse(weight)
-            };
+            return null;
         }
     }
 }

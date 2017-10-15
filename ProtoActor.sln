@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -175,6 +175,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "debugging", "debugging", "{D63BF256-6D6C-4ECF-A9A6-F5274DDAF834}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ClusterStabilityTest", "ClusterStabilityTest", "{8C82157C-D677-4C6E-A972-614C4C835460}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MemberStrategies", "MemberStrategies", "{B58BB158-8053-48B3-B2FE-4C6D168D7354}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.WeightedMemberStrategy", "src\MemberStrategies\WeightedMemberStrategy\Proto.Cluster.WeightedMemberStrategy.csproj", "{EBB8268F-095A-49C9-807B-8E7D598C54E7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -893,6 +897,18 @@ Global
 		{53BE6CA9-250A-46A5-8EEC-0FAEFC45244A}.Release|x64.Build.0 = Release|Any CPU
 		{53BE6CA9-250A-46A5-8EEC-0FAEFC45244A}.Release|x86.ActiveCfg = Release|Any CPU
 		{53BE6CA9-250A-46A5-8EEC-0FAEFC45244A}.Release|x86.Build.0 = Release|Any CPU
+		{EBB8268F-095A-49C9-807B-8E7D598C54E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBB8268F-095A-49C9-807B-8E7D598C54E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBB8268F-095A-49C9-807B-8E7D598C54E7}.Debug|x64.ActiveCfg = Debug|x64
+		{EBB8268F-095A-49C9-807B-8E7D598C54E7}.Debug|x64.Build.0 = Debug|x64
+		{EBB8268F-095A-49C9-807B-8E7D598C54E7}.Debug|x86.ActiveCfg = Debug|x86
+		{EBB8268F-095A-49C9-807B-8E7D598C54E7}.Debug|x86.Build.0 = Debug|x86
+		{EBB8268F-095A-49C9-807B-8E7D598C54E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBB8268F-095A-49C9-807B-8E7D598C54E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EBB8268F-095A-49C9-807B-8E7D598C54E7}.Release|x64.ActiveCfg = Release|x64
+		{EBB8268F-095A-49C9-807B-8E7D598C54E7}.Release|x64.Build.0 = Release|x64
+		{EBB8268F-095A-49C9-807B-8E7D598C54E7}.Release|x86.ActiveCfg = Release|x86
+		{EBB8268F-095A-49C9-807B-8E7D598C54E7}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -980,6 +996,8 @@ Global
 		{487A5DE1-FAC2-4807-AAF8-412D0E6ABFD6} = {8C82157C-D677-4C6E-A972-614C4C835460}
 		{53BE6CA9-250A-46A5-8EEC-0FAEFC45244A} = {8C82157C-D677-4C6E-A972-614C4C835460}
 		{8C82157C-D677-4C6E-A972-614C4C835460} = {D63BF256-6D6C-4ECF-A9A6-F5274DDAF834}
+		{B58BB158-8053-48B3-B2FE-4C6D168D7354} = {771514F1-12AE-4A26-89CB-2646D3EF7034}
+		{EBB8268F-095A-49C9-807B-8E7D598C54E7} = {B58BB158-8053-48B3-B2FE-4C6D168D7354}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD0D1E44-8118-4682-8793-6B20ABFA824C}
