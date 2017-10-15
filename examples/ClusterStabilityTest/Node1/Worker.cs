@@ -16,7 +16,7 @@ namespace TestApp
         {
             return Task.FromResult(new HelloResponse
             {
-                Message = "Hello from typed grain"
+                Message = ""
             });
         }
     }
@@ -25,7 +25,7 @@ namespace TestApp
     {
         public static void Start(string clusterName)
         {
-            Console.WriteLine("Starting worker");
+         //   Console.WriteLine("Starting worker");
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Grains.HelloGrainFactory(() => new HelloGrain());
 

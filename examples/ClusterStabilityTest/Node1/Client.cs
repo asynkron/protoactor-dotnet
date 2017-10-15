@@ -20,7 +20,7 @@ namespace TestApp
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Cluster.Start(clusterName, "127.0.0.1", 0, new ConsulProvider(new ConsulProviderOptions()));
 
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 50; i++)
             {
                 var psi = new ProcessStartInfo("dotnet", "bin/" +
                                                          "release" +
@@ -44,7 +44,7 @@ namespace TestApp
             var tasks = new List<Task>();
             for (int i = 0; i < 10000; i++)
             {
-                var client = Grains.HelloGrain("name" + i % 200);
+                var client = Grains.HelloGrain("name" + i % 1000);
                 var task = client.SayHello(new HelloRequest(), CancellationToken.None, debugOptions).ContinueWith(t =>
                 {
                     if (t.Status == TaskStatus.RanToCompletion)
@@ -75,6 +75,7 @@ namespace TestApp
                 };
             Process.Start(psi);
             Console.WriteLine("Consul - Started");
+            Thread.Sleep(3000);
         }
     }
 }
