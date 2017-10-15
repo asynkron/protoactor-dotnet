@@ -141,7 +141,7 @@ namespace Proto.Cluster
                     Name = name
                 };
 
-                var reqTask = remotePid.RequestAsync<ActorPidResponse>(req, TimeSpan.FromSeconds(5));
+                var reqTask = remotePid.RequestAsync<ActorPidResponse>(req, Cluster.cfg.TimeoutTimespan);
                 context.ReenterAfter(reqTask, t =>
                 {
                     if (t.Exception != null)

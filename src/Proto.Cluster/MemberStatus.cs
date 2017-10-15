@@ -31,30 +31,41 @@ namespace Proto.Cluster
         public IMemberStatusValue StatusValue { get; }
     }
 
-    public class MemberStatusValue : IMemberStatusValue
+    public interface IMemberStatusValue
     {
-        public static MemberStatusValue DefaultValue = new MemberStatusValue {Weight = 5};
+        bool IsSame(IMemberStatusValue val);
+    }
+
+    public interface IMemberStatusValueSerializer
+    {
+        byte[] ToValueBytes(IMemberStatusValue val);
+        IMemberStatusValue FromValueBytes(byte[] val);
+    }
+
+    public class DefaultMemberStatusValue : IMemberStatusValue
+    {
+        public static readonly DefaultMemberStatusValue Default = new DefaultMemberStatusValue {Weight = 5};
 
         public int Weight { get; set; }
 
         public bool IsSame(IMemberStatusValue val)
         {
-            return Weight == (val as MemberStatusValue)?.Weight;
+            return Weight == (val as DefaultMemberStatusValue)?.Weight;
         }
     }
 
-    public class MemberStatusValueSerializer : IMemberStatusValueSerializer
+    public class DefaultMemberStatusValueSerializer : IMemberStatusValueSerializer
     {
         public byte[] ToValueBytes(IMemberStatusValue val)
         {
-            var dVal = (MemberStatusValue) val;
+            var dVal = (DefaultMemberStatusValue) val;
             return Encoding.UTF8.GetBytes(dVal.Weight.ToString());
         }
 
         public IMemberStatusValue FromValueBytes(byte[] val)
         {
             var weight =  Encoding.UTF8.GetString(val);
-            return new MemberStatusValue
+            return new DefaultMemberStatusValue
             {
                 Weight = int.Parse(weight)
             };

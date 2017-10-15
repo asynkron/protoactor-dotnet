@@ -252,7 +252,7 @@ namespace Proto.Cluster
                 ActorPidResponse pidResp;
                 try
                 {
-                    pidResp = await Remote.Remote.SpawnNamedAsync(activator, msg.Name, msg.Kind, TimeSpan.FromSeconds(5));
+                    pidResp = await Remote.Remote.SpawnNamedAsync(activator, msg.Name, msg.Kind, Cluster.cfg.TimeoutTimespan);
                 }
                 catch (TimeoutException)
                 {

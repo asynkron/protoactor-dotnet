@@ -14,9 +14,11 @@ namespace Proto.Cluster
         public string Address { get; }
         public int Port { get; }
         public IClusterProvider ClusterProvider { get; }
+
+        public TimeSpan TimeoutTimespan { get; private set; }
         public IMemberStatusValue InitialMemberStatusValue { get; private set; }
-        public IMemberStrategyProvider MemberStrategyProvider { get; private set; }
         public IMemberStatusValueSerializer MemberStatusValueSerializer { get; private set; }
+        public Func<string, IMemberStrategy> MemberStrategyBuilder { get; private set; }
 
         public ClusterConfig(string name, string address, int port, IClusterProvider cp)
         {
@@ -25,9 +27,16 @@ namespace Proto.Cluster
             Port = port;
             ClusterProvider = cp ?? throw new ArgumentNullException(nameof(cp));
 
-            InitialMemberStatusValue = MemberStatusValue.DefaultValue;
-            MemberStrategyProvider = new MemberStrategyProvider();
-            MemberStatusValueSerializer = new MemberStatusValueSerializer();
+            TimeoutTimespan = TimeSpan.FromSeconds(5);
+            InitialMemberStatusValue = DefaultMemberStatusValue.Default;
+            MemberStatusValueSerializer = new DefaultMemberStatusValueSerializer();
+            MemberStrategyBuilder = kind => new DefaultMemberStrategy();
+        }
+
+        public ClusterConfig WithTimeoutSeconds(int timeoutSeconds)
+        {
+            TimeoutTimespan = TimeSpan.FromSeconds(timeoutSeconds);
+            return this;
         }
 
         public ClusterConfig WithInitialMemberStatusValue(IMemberStatusValue statusValue)
@@ -36,15 +45,15 @@ namespace Proto.Cluster
             return this;
         }
 
-        public ClusterConfig WithMemberStrategyProvider(IMemberStrategyProvider provider)
-        {
-            MemberStrategyProvider = provider;
-            return this;
-        }
-
         public ClusterConfig WithMemberStatusValueSerializer(IMemberStatusValueSerializer serializer)
         {
             MemberStatusValueSerializer = serializer;
+            return this;
+        }
+
+        public ClusterConfig WithMemberStrategyBuilder(Func<string, IMemberStrategy> builder)
+        {
+            MemberStrategyBuilder = builder;
             return this;
         }
     }

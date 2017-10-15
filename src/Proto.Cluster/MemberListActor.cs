@@ -120,7 +120,7 @@ namespace Proto.Cluster
                 foreach (var k in @new.Kinds)
                 {
                     if (!_memberStrategyByKind.ContainsKey(k))
-                        _memberStrategyByKind[k] = Cluster.cfg.MemberStrategyProvider.GetMemberStrategy(k);
+                        _memberStrategyByKind[k] = Cluster.cfg.MemberStrategyBuilder(k);
                     _memberStrategyByKind[k].AddMember(@new);
                 }
 

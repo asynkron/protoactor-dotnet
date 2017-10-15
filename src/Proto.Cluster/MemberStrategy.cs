@@ -1,10 +1,9 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="DefaultMemberStrategy.cs" company="Asynkron HB">
+//   <copyright file="MemberStrategy.cs" company="Asynkron HB">
 //       Copyright (C) 2015-2017 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
 
 namespace Proto.Cluster
@@ -19,23 +18,13 @@ namespace Proto.Cluster
         string GetActivator();
     }
 
-    public interface IMemberStrategyProvider
-    {
-        IMemberStrategy GetMemberStrategy(string kind);
-    }
-
-    public class MemberStrategyProvider : IMemberStrategyProvider
-    {
-        public IMemberStrategy GetMemberStrategy(string kind) => new MemberStrategy();
-    }
-
-    public class MemberStrategy : IMemberStrategy
+    internal class DefaultMemberStrategy : IMemberStrategy
     {
         internal List<MemberStatus> members;
         private Rendezvous rdv;
         private WeightedRoundRobin wrr;
 
-        public MemberStrategy()
+        public DefaultMemberStrategy()
         {
             members = new List<MemberStatus>();
             rdv = new Rendezvous(this);

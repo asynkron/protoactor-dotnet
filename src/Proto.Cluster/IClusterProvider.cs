@@ -16,15 +16,4 @@ namespace Proto.Cluster
         Task DeregisterMemberAsync();
         Task Shutdown();
     }
-
-    public interface IMemberStatusValue
-    {
-        bool IsSame(IMemberStatusValue val);
-    }
-
-    public interface IMemberStatusValueSerializer
-    {
-        byte[] ToValueBytes(IMemberStatusValue val);
-        IMemberStatusValue FromValueBytes(byte[] val);
-    }
 }

@@ -56,7 +56,7 @@ namespace Proto.Cluster
                         currWeight = maxWeight;
                     }
                 }
-                if (((MemberStatusValue) members[currIndex].StatusValue).Weight >= currWeight)
+                if (((DefaultMemberStatusValue) members[currIndex].StatusValue).Weight >= currWeight)
                 {
                     return members[currIndex].Address;
                 }
@@ -74,7 +74,7 @@ namespace Proto.Cluster
             var max = 0;
             foreach (var m in m.GetAllMembers())
             {
-                var statusVal = (MemberStatusValue) m.StatusValue;
+                var statusVal = (DefaultMemberStatusValue) m.StatusValue;
                 if (statusVal.Weight > max)
                     max = statusVal.Weight;
             }
@@ -89,7 +89,7 @@ namespace Proto.Cluster
             var ints = new int[members.Count];
             for (int i = 0; i < members.Count; i++)
             {
-                ints[i] = ((MemberStatusValue) members[i].StatusValue).Weight;
+                ints[i] = ((DefaultMemberStatusValue) members[i].StatusValue).Weight;
             }
             return NGCD(ints);
         }
