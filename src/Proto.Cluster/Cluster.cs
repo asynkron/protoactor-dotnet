@@ -17,15 +17,14 @@ namespace Proto.Cluster
 
         internal static ClusterConfig cfg;
 
-        public static void Start(string clusterName, string address, int port, IClusterProvider cp)
-            => StartWithConfig(new ClusterConfig(clusterName, address, port, cp));
+        public static void Start(string clusterName, string address, int port, IClusterProvider cp) => StartWithConfig(new ClusterConfig(clusterName, address, port, cp));
 
         public static void StartWithConfig(ClusterConfig config)
         {
             cfg = config;
 
-            Remote.Remote.Start(cfg.Address, cfg.Port);
-
+            Remote.Remote.Start(cfg.Address, cfg.Port, cfg.RemoteConfig);
+        
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Logger.LogInformation("Starting Proto.Actor cluster");
             var (h, p) = ParseAddress(ProcessRegistry.Instance.Address);
@@ -71,8 +70,7 @@ namespace Proto.Cluster
             return (host, port);
         }
 
-        public static Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind)
-            => GetAsync(name, kind, CancellationToken.None);
+        public static Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind) => GetAsync(name, kind, CancellationToken.None);
 
         public static async Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind, CancellationToken ct)
         {

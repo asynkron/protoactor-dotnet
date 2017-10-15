@@ -75,7 +75,7 @@ namespace Proto.Cluster
 
         private readonly Dictionary<string, PID> _partition = new Dictionary<string, PID>(); //actor/grain name to PID
         private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>(); //PID to grain name
-        
+
         public PartitionActor(string kind)
         {
             _kind = kind;
@@ -106,12 +106,6 @@ namespace Proto.Cluster
                 case MemberLeftEvent msg:
                     await MemberLeft(msg, context);
                     break;
-                case MemberAvailableEvent msg:
-                    MemberAvailable(msg);
-                    break;
-                case MemberUnavailableEvent msg:
-                    MemberUnavailable(msg);
-                    break;
             }
         }
 
@@ -133,16 +127,6 @@ namespace Proto.Cluster
             context.Watch(msg.Pid);
         }
 
-        private void MemberAvailable(MemberAvailableEvent msg)
-        {
-            _logger.LogInformation($"Kind {_kind} Member Available {msg.Address}");
-        }
-
-        private void MemberUnavailable(MemberUnavailableEvent msg)
-        {
-            _logger.LogInformation($"Kind {_kind} Member Unavailable {msg.Address}");
-        }
-
         private async Task MemberLeft(MemberLeftEvent msg, IContext context)
         {
             _logger.LogInformation($"Kind {_kind} Member Left {msg.Address}");
@@ -154,7 +138,7 @@ namespace Proto.Cluster
                     _reversePartition.Remove(pid);
                 }
             }
-            
+
             //If the left member is self, transfer remaining pids to others
             if (msg.Address == ProcessRegistry.Instance.Address)
             {

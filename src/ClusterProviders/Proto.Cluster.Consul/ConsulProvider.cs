@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Consul;
 using Microsoft.Extensions.Options;
@@ -29,7 +30,7 @@ namespace Proto.Cluster.Consul
         /// <summary>
         /// Default value is 10 seconds
         /// </summary>
-        public TimeSpan? DeregisterCritical { get; set; } = TimeSpan.FromSeconds(10);
+        public TimeSpan? DeregisterCritical { get; set; } = TimeSpan.FromSeconds(30);
 
         /// <summary>
         /// Default value is 20 seconds
@@ -90,8 +91,6 @@ namespace Proto.Cluster.Consul
             await RegisterMemberIDAsync();
             await UpdateMemberStatusValueAsync(statusValue);
 
-            await BlockingUpdateTtlAsync();
-            await BlockingStatusChangeAsync();
             UpdateTtl();
         }
 
@@ -121,13 +120,27 @@ namespace Proto.Cluster.Consul
 
         public void MonitorMemberStatusChanges()
         {
-            Task.Run(async () =>
+            var t = new Thread(_ =>
             {
                 while (!_shutdown)
                 {
-                    await NotifyStatusesAsync();
+                    NotifyStatuses();
                 }
-            });
+            }) {IsBackground = true};
+            t.Start();
+        }
+
+        private void UpdateTtl()
+        {
+            var t = new Thread(_ =>
+            {
+                while (!_shutdown)
+                {
+                    BlockingUpdateTtl();
+                    Thread.Sleep(_refreshTtl);
+                }
+            }) {IsBackground = true};
+            t.Start();
         }
 
         private async Task RegisterServiceAsync()
@@ -200,33 +213,16 @@ namespace Proto.Cluster.Consul
             await _client.KV.Delete(kvKey);
         }
 
-        private void UpdateTtl()
+        private void NotifyStatuses()
         {
-            Task.Run(async () =>
-            {
-                while (!_shutdown)
-                {
-                    await BlockingUpdateTtlAsync();
-                    await Task.Delay(_refreshTtl);
-                }
-            });
-        }
-
-        private async Task BlockingStatusChangeAsync()
-        {
-            await NotifyStatusesAsync();
-        }
-
-        private async Task NotifyStatusesAsync()
-        {
-            var statuses = await _client.Health.Service(_clusterName, null, false, new QueryOptions
+            var statuses = _client.Health.Service(_clusterName, null, false, new QueryOptions
             {
                 WaitIndex = _index,
                 WaitTime = _blockingWaitTime
-            });
+            }).Result;
             _index = statuses.LastIndex;
             var kvKey = _clusterName + "/";
-            var kv = await _client.KV.List(kvKey);
+            var kv = _client.KV.List(kvKey).Result;
 
             var memberIds = new Dictionary<string, string>();
             var memberStatusVals = new Dictionary<string, byte[]>();
@@ -284,9 +280,9 @@ namespace Proto.Cluster.Consul
             Actor.EventStream.Publish(res);
         }
 
-        private async Task BlockingUpdateTtlAsync()
+        private void BlockingUpdateTtl()
         {
-            await _client.Agent.PassTTL("service:" + _id, "");
+            _client.Agent.PassTTL("service:" + _id, "").Wait();
         }
     }
 }

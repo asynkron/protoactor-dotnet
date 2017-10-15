@@ -55,19 +55,4 @@ namespace Proto.Cluster
         {
         }
     }
-
-    public class MemberUnavailableEvent : MemberStatusEvent
-    {
-        public MemberUnavailableEvent(string host, int port, IReadOnlyCollection<string> kinds)
-            : base(host, port, kinds)
-        {
-        }
-    }
-
-    public class MemberAvailableEvent : MemberStatusEvent
-    {
-        public MemberAvailableEvent(string host, int port, IReadOnlyCollection<string> kinds) : base(host, port, kinds)
-        {
-        }
-    }
 }

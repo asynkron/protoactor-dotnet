@@ -149,19 +149,6 @@ namespace Proto.Cluster
                 Actor.EventStream.Publish(rejoined);
                 return;
             }
-
-            if (old.Alive && !@new.Alive)
-            {
-                var unavailable = new MemberUnavailableEvent(@new.Host, @new.Port, @new.Kinds);
-                Actor.EventStream.Publish(unavailable);
-                return;
-            }
-
-            if (@new.Alive && !old.Alive)
-            {
-                var available = new MemberAvailableEvent(@new.Host, @new.Port, @new.Kinds);
-                Actor.EventStream.Publish(available);
-            }
         }
     }
 }

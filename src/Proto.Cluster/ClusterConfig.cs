@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using Proto.Remote;
 
 namespace Proto.Cluster
 {
@@ -15,6 +16,7 @@ namespace Proto.Cluster
         public int Port { get; }
         public IClusterProvider ClusterProvider { get; }
 
+        public RemoteConfig RemoteConfig { get; private set; }
         public TimeSpan TimeoutTimespan { get; private set; }
         public IMemberStatusValue InitialMemberStatusValue { get; private set; }
         public IMemberStatusValueSerializer MemberStatusValueSerializer { get; private set; }
@@ -26,10 +28,17 @@ namespace Proto.Cluster
             Address = address ?? throw new ArgumentNullException(nameof(address));
             Port = port;
             ClusterProvider = cp ?? throw new ArgumentNullException(nameof(cp));
-
+            
+            RemoteConfig = new RemoteConfig();
             TimeoutTimespan = TimeSpan.FromSeconds(5);
             MemberStatusValueSerializer = new NullMemberStatusValueSerializer();
             MemberStrategyBuilder = kind => new SimpleMemberStrategy();
+        }
+
+        public ClusterConfig WithRemoteConfig(RemoteConfig remoteConfig)
+        {
+            RemoteConfig = remoteConfig;
+            return this;
         }
 
         public ClusterConfig WithTimeoutSeconds(int timeoutSeconds)
