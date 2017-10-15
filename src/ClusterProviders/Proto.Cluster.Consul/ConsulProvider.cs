@@ -30,7 +30,7 @@ namespace Proto.Cluster.Consul
         /// <summary>
         /// Default value is 10 seconds
         /// </summary>
-        public TimeSpan? DeregisterCritical { get; set; } = TimeSpan.FromSeconds(10);
+        public TimeSpan? DeregisterCritical { get; set; } = TimeSpan.FromSeconds(30);
 
         /// <summary>
         /// Default value is 20 seconds
@@ -143,6 +143,7 @@ namespace Proto.Cluster.Consul
 
         private void UpdateTtl()
         {
+
             Task.Run(async () =>
             {
                 while (!_shutdown)
@@ -190,7 +191,8 @@ namespace Proto.Cluster.Consul
                     let memberId = GetMemberId(memberIdKey)
                     where memberId != null
                     let passing = v.Checks.Length > 1 && Equals(v.Checks[1].Status, HealthStatus.Passing)
-                    select new MemberStatus(memberId.Value, v.Service.Address, v.Service.Port, v.Service.Tags, passing))
+                 where passing
+                 select new MemberStatus(memberId.Value, v.Service.Address, v.Service.Port, v.Service.Tags, passing))
                 .ToArray();
 
             var res = new ClusterTopologyEvent(memberStatuses);

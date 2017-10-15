@@ -107,12 +107,6 @@ namespace Proto.Cluster
                 case MemberLeftEvent msg:
                     MemberLeft(msg);
                     break;
-                case MemberAvailableEvent msg:
-                    MemberAvailable(msg);
-                    break;
-                case MemberUnavailableEvent msg:
-                    MemberUnavailable(msg);
-                    break;
             }
         }
 
@@ -132,16 +126,6 @@ namespace Proto.Cluster
             _partition[msg.Name] = msg.Pid;
             _reversePartition[msg.Pid] = msg.Name;
             context.Watch(msg.Pid);
-        }
-
-        private void MemberAvailable(MemberAvailableEvent msg)
-        {
-            _logger.LogInformation($"Kind {_kind} Member Available {msg.Address}");
-        }
-
-        private void MemberUnavailable(MemberUnavailableEvent msg)
-        {
-            _logger.LogInformation($"Kind {_kind} Member Unavailable {msg.Address}");
         }
 
         private void MemberLeft(MemberLeftEvent msg)
