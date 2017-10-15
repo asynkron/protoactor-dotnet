@@ -1,17 +1,19 @@
-﻿namespace Proto.Cluster
+﻿using System;
+
+namespace Proto.Cluster
 {
-    internal class SimpleRoundRobin
+    public class SimpleRoundRobin
     {
         private int val;
 
         private IMemberStrategy m;
 
-        internal SimpleRoundRobin(IMemberStrategy m)
+        public SimpleRoundRobin(IMemberStrategy m)
         {
             this.m = m;
         }
 
-        internal string GetNode()
+        public string GetNode()
         {
             var members = m.GetAllMembers();
             var l = members.Count;
@@ -22,7 +24,7 @@
         }
     }
 
-    internal class WeightedRoundRobin
+    public class WeightedRoundRobin
     {
         private int currIndex;
         private int currWeight;
@@ -31,12 +33,12 @@
 
         private IMemberStrategy m;
 
-        internal WeightedRoundRobin(IMemberStrategy m)
+        public WeightedRoundRobin(IMemberStrategy m)
         {
             this.m = m;
         }
 
-        internal string GetNode()
+        public string GetNode()
         {
             var members = m.GetAllMembers();
             var l = members.Count;
@@ -48,7 +50,7 @@
                 currIndex = (currIndex + 1) % l;
                 if (currIndex == 0)
                 {
-                    currWeight = currWeight - 1;
+                    currWeight = currWeight - gcd;
                     if (currWeight <= 0)
                     {
                         currWeight = maxWeight;
@@ -61,10 +63,10 @@
             }
         }
 
-        internal void UpdateRR()
+        public void UpdateRR()
         {
             maxWeight = GetMaxWeight();
-            //gcd = GetGCD();
+            gcd = GetGCD();
         }
 
         private int GetMaxWeight()
@@ -79,17 +81,17 @@
             return max;
         }
 
-        /*
         private int GetGCD()
         {
-            if (m.nodes.Count == 0) return 0;
+            var members = m.GetAllMembers();
+            if (members.Count == 0) return 0;
 
-            var ints = new int[m.nodes.Count];
-            for (int i = 0; i < m.nodes.Count; i++)
+            var ints = new int[members.Count];
+            for (int i = 0; i < members.Count; i++)
             {
-                ints[i] = m.nodes[i].Weight;
+                ints[i] = ((MemberStatusValue) members[i].StatusValue).Weight;
             }
-            return
+            return NGCD(ints);
         }
 
         private static int GCD(int a, int b)
@@ -118,6 +120,5 @@
             Array.Copy(data, index, result, 0, length);
             return result;
         }
-        */
     }
 }

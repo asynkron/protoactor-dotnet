@@ -36,6 +36,11 @@ namespace Proto.Cluster
         public static MemberStatusValue DefaultValue = new MemberStatusValue {Weight = 5};
 
         public int Weight { get; set; }
+
+        public bool IsSame(IMemberStatusValue val)
+        {
+            return Weight == (val as MemberStatusValue)?.Weight;
+        }
     }
 
     public class MemberStatusValueSerializer : IMemberStatusValueSerializer

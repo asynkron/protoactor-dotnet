@@ -43,15 +43,15 @@ namespace Proto.Cluster
             return res.Members;
         }
 
-        public static async Task<string> GetMemberByDHTAsync(string name, string kind)
+        public static async Task<string> GetPartitionAsync(string name, string kind)
         {
-            var res = await Pid.RequestAsync<MemberResponse>(new MemberByDHTRequest(name, kind));
+            var res = await Pid.RequestAsync<MemberResponse>(new PartitionMemberRequest(name, kind));
             return res.Address;
         }
 
-        public static async Task<string> GetMemberByRoundRobinAsync(string kind)
+        public static async Task<string> GetActivatorAsync(string kind)
         {
-            var res = await Pid.RequestAsync<MemberResponse>(new MemberByRoundRobinRequest(kind));
+            var res = await Pid.RequestAsync<MemberResponse>(new ActivatorMemberRequest(kind));
             return res.Address;
         }
     }
@@ -68,9 +68,19 @@ namespace Proto.Cluster
         public bool OnlyAlive { get; }
     }
 
-    internal class MemberByDHTRequest
+    internal class MembersResponse
     {
-        public MemberByDHTRequest(string name, string kind)
+        public MembersResponse(string[] members)
+        {
+            Members = members ?? throw new ArgumentNullException(nameof(members));
+        }
+
+        public string[] Members { get; }
+    }
+
+    internal class PartitionMemberRequest
+    {
+        public PartitionMemberRequest(string name, string kind)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Kind = kind ?? throw new ArgumentNullException(nameof(kind));
@@ -80,9 +90,9 @@ namespace Proto.Cluster
         public string Kind { get; }
     }
 
-    internal class MemberByRoundRobinRequest
+    internal class ActivatorMemberRequest
     {
-        public MemberByRoundRobinRequest(string kind)
+        public ActivatorMemberRequest(string kind)
         {
             Kind = kind ?? throw new ArgumentNullException(nameof(kind));
         }
@@ -98,15 +108,5 @@ namespace Proto.Cluster
         }
 
         public string Address { get; }
-    }
-
-    internal class MembersResponse
-    {
-        public MembersResponse(string[] members)
-        {
-            Members = members ?? throw new ArgumentNullException(nameof(members));
-        }
-
-        public string[] Members { get; }
     }
 }

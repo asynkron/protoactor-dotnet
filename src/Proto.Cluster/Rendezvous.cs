@@ -9,20 +9,20 @@ namespace Proto.Cluster
     /// <summary>
     /// A dotnet port of rendezvous.go
     /// </summary>
-    internal class Rendezvous
+    public class Rendezvous
     {
         private static readonly HashAlgorithm HashAlgorithm = FNV1A32.Create();
 
         private IMemberStrategy m;
         private List<byte[]> memberHashes;
 
-        internal Rendezvous(IMemberStrategy m)
+        public Rendezvous(IMemberStrategy m)
         {
             this.m = m;
             UpdateRdv();
         }
 
-        internal string GetNode(string key)
+        public string GetNode(string key)
         {
             var members = m.GetAllMembers();
             
@@ -56,7 +56,7 @@ namespace Proto.Cluster
             return maxNode == null ? "" : maxNode.Address;
         }
 
-        internal void UpdateRdv()
+        public void UpdateRdv()
         {
             this.memberHashes = this.m.GetAllMembers().Select(mb => Encoding.UTF8.GetBytes(mb.Address)).ToList();
         }

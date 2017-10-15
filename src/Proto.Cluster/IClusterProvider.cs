@@ -19,6 +19,7 @@ namespace Proto.Cluster
 
     public interface IMemberStatusValue
     {
+        bool IsSame(IMemberStatusValue val);
     }
 
     public interface IMemberStatusValueSerializer
