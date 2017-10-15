@@ -20,7 +20,7 @@ namespace Proto.Cluster.Consul
         /// <summary>
         /// Default value is 3 seconds
         /// </summary>
-        public TimeSpan? ServiceTtl { get; set; } = TimeSpan.FromSeconds(3);
+        public TimeSpan? ServiceTtl { get; set; } = TimeSpan.FromSeconds(10);
 
         /// <summary>
         /// Default value is 1 second
@@ -185,12 +185,13 @@ namespace Proto.Cluster.Consul
             };
 
             var memberStatuses =
-                from v in statuses.Response
-                let memberIdKey = $"{_clusterName}/{v.Service.Address}:{v.Service.Port}"
-                let memberId = GetMemberId(memberIdKey)
-                where memberId != null
-                let passing = Equals(v.Checks[1].Status, HealthStatus.Passing)
-                select new MemberStatus(memberId.Value, v.Service.Address, v.Service.Port, v.Service.Tags, passing);
+                (from v in statuses.Response
+                    let memberIdKey = $"{_clusterName}/{v.Service.Address}:{v.Service.Port}"
+                    let memberId = GetMemberId(memberIdKey)
+                    where memberId != null
+                    let passing = v.Checks.Length > 1 && Equals(v.Checks[1].Status, HealthStatus.Passing)
+                    select new MemberStatus(memberId.Value, v.Service.Address, v.Service.Port, v.Service.Tags, passing))
+                .ToArray();
 
             var res = new ClusterTopologyEvent(memberStatuses);
             Actor.EventStream.Publish(res);
