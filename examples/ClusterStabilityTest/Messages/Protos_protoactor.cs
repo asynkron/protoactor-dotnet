@@ -40,7 +40,6 @@ namespace Messages
 
         public async Task<HelloResponse> SayHello(HelloRequest request, CancellationToken ct)
         {
-            
             var gr = new GrainRequest
             {
                 MethodIndex = 0,
@@ -49,15 +48,8 @@ namespace Messages
 
             async Task<HelloResponse> Inner() 
             {
-retry:
                 //resolve the grain
                 var (pid, statusCode) = await Cluster.GetAsync(_id, "HelloGrain", ct);
-                if (statusCode == ResponseStatusCode.Unavailable)
-                {
-                    await Task.Delay(100);
-                    Console.Write(">");
-                    goto retry;
-                }
 
                 if (statusCode != ResponseStatusCode.OK)
                 {
@@ -81,7 +73,7 @@ retry:
                 throw new NotSupportedException();
             }
 
-            for(int i= 0;i < 4; i++)
+            for(int i= 1;i < 5; i++)
             {
                 try
                 {
@@ -89,8 +81,11 @@ retry:
                 }
                 catch(Exception x)
                 {
-                    Console.Write("$"); //Most likely Timeout
-                    //ignore, TODO: exponential backoff?
+#if DEBUG
+                    Console.Write("$" + i); //Most likely Timeout
+#endif
+                    Cluster.RemoveCache(_id);
+                    await Task.Delay(i * 50,ct);
                 }
             }
             return await Inner();

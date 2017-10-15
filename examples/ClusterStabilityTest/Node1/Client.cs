@@ -29,12 +29,10 @@ namespace TestApp
                 };
                 Process.Start(psi);
             }
-            Console.WriteLine("Waiting for cluster to stabilize");
-            Thread.Sleep(10000);
 
-            for (int i = 0; i < 2000; i++)
+            for (int i = 0; i < 10000; i++)
             {
-                var client = Grains.HelloGrain("name" + i);
+                var client = Grains.HelloGrain("name" + i % 100);
                 client.SayHello(new HelloRequest()).ContinueWith(t =>
                 {
                     if (t.Status == TaskStatus.RanToCompletion)
