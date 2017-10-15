@@ -73,19 +73,17 @@ namespace Messages
                 throw new NotSupportedException();
             }
 
-            for(int i= 1;i < 5; i++)
+            for (int i = 1; i < 10; i++)
             {
                 try
                 {
                     return await Inner();
                 }
-                catch(Exception x)
+                catch (Exception x)
                 {
-#if DEBUG
-                    Console.Write("$" + i); //Most likely Timeout
-#endif
+                 //   Console.Write("$" + i); //Most likely Timeout
                     Cluster.RemoveCache(_id);
-                    await Task.Delay(i * 50,ct);
+                    await Task.Delay(i * i * 50, ct);
                 }
             }
             return await Inner();
