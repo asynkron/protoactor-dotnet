@@ -17,12 +17,12 @@ namespace TestApp
     {
         public static void Start()
         {
-            var clusterName = "cluster";//+ DateTime.Now.Ticks;
+            var clusterName = "cluster" + DateTime.Now.Ticks;
             StartConsulDevMode();
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Cluster.Start(clusterName, "127.0.0.1", 0, new ConsulProvider(new ConsulProviderOptions()));
 
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 30; i++)
             {
                 var psi = new ProcessStartInfo("dotnet", "bin/" +
                                                          "release" +
