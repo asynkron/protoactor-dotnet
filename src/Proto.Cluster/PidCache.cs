@@ -126,7 +126,7 @@ namespace Proto.Cluster
             var name = msg.Name;
             var kind = msg.Kind;
 
-            context.ReenterAfter(MemberList.GetMemberAsync(name, kind), address =>
+            context.ReenterAfter(MemberList.GetPartitionAsync(name, kind), address =>
             {
                 if (string.IsNullOrEmpty(address.Result))
                 {
@@ -141,7 +141,7 @@ namespace Proto.Cluster
                     Name = name
                 };
 
-                var reqTask = remotePid.RequestAsync<ActorPidResponse>(req, TimeSpan.FromSeconds(5));
+                var reqTask = remotePid.RequestAsync<ActorPidResponse>(req, Cluster.cfg.TimeoutTimespan);
                 context.ReenterAfter(reqTask, t =>
                 {
                     if (t.Exception != null)

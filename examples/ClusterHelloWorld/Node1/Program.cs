@@ -24,6 +24,8 @@ class Program
         var res = pid.RequestAsync<HelloResponse>(new HelloRequest()).Result;
         Console.WriteLine(res.Message);
         Console.ReadLine();
+        Console.WriteLine("Shutting Down...");
+        Cluster.Shutdown();
     }
 
     private static void StartConsulDevMode()

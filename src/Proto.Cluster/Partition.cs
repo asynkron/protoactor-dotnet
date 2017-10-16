@@ -72,11 +72,10 @@ namespace Proto.Cluster
     {
         private readonly string _kind;
         private readonly ILogger _logger = Log.CreateLogger<PartitionActor>();
-        private readonly Counter _counter = new Counter();
 
         private readonly Dictionary<string, PID> _partition = new Dictionary<string, PID>(); //actor/grain name to PID
         private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>(); //PID to grain name
-        
+
         public PartitionActor(string kind)
         {
             _kind = kind;
@@ -105,7 +104,7 @@ namespace Proto.Cluster
                     MemberRejoined(msg);
                     break;
                 case MemberLeftEvent msg:
-                    MemberLeft(msg);
+                    await MemberLeft(msg, context);
                     break;
             }
         }
@@ -128,7 +127,7 @@ namespace Proto.Cluster
             context.Watch(msg.Pid);
         }
 
-        private void MemberLeft(MemberLeftEvent msg)
+        private async Task MemberLeft(MemberLeftEvent msg, IContext context)
         {
             _logger.LogInformation($"Kind {_kind} Member Left {msg.Address}");
             foreach (var (actorId, pid) in _partition.ToArray())
@@ -137,6 +136,23 @@ namespace Proto.Cluster
                 {
                     _partition.Remove(actorId);
                     _reversePartition.Remove(pid);
+                }
+            }
+
+            //If the left member is self, transfer remaining pids to others
+            if (msg.Address == ProcessRegistry.Instance.Address)
+            {
+                //TODO: right now we transfer ownership on a per actor basis.
+                //this could be done in a batch
+                //ownership is also racy, new nodes should maybe forward requests to neighbours (?)
+                foreach (var (actorId, _) in _partition.ToArray())
+                {
+                    var address = await MemberList.GetPartitionAsync(actorId, _kind);
+
+                    if (!string.IsNullOrEmpty(address))
+                    {
+                        TransferOwnership(actorId, address, context);
+                    }
                 }
             }
         }
@@ -163,7 +179,7 @@ namespace Proto.Cluster
             //ownership is also racy, new nodes should maybe forward requests to neighbours (?)
             foreach (var (actorId, _) in _partition.ToArray())
             {
-                var address = await MemberList.GetMemberAsync(actorId, _kind);
+                var address = await MemberList.GetPartitionAsync(actorId, _kind);
 
                 if (!string.IsNullOrEmpty(address) && address != ProcessRegistry.Instance.Address)
                 {
@@ -194,33 +210,33 @@ namespace Proto.Cluster
                 return;
             }
 
-            var members = await MemberList.GetMembersAsync(msg.Kind);
-            if (members == null || members.Length == 0)
+            var activator = await MemberList.GetActivatorAsync(msg.Kind);
+            if (string.IsNullOrEmpty(activator))
             {
-                //No members currently available, return unavailable
+                //No activator currently available, return unavailable
                 _logger.LogDebug("No members currently available");
                 context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Unavailable});
                 return;
             }
 
-            var retrys = members.Length - 1;
-            for (var retry = retrys; retry >= 0; retry--)
+            for (var retry = 3; retry >= 0; retry--)
             {
-                members = members ?? await MemberList.GetMembersAsync(msg.Kind);
-                if (members == null || members.Length == 0)
+                if (string.IsNullOrEmpty(activator))
                 {
-                    //No members currently available, return unavailable
-                    _logger.LogDebug("No members currently available");
-                    context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Unavailable});
-                    return;
+                    activator = await MemberList.GetActivatorAsync(msg.Kind);
+                    if (string.IsNullOrEmpty(activator))
+                    {
+                        //No activator currently available, return unavailable
+                        _logger.LogDebug("No activator currently available");
+                        context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Unavailable});
+                        return;
+                    }
                 }
-                var activator = members[_counter.Next() % members.Length];
-                members = null;
 
                 ActorPidResponse pidResp;
                 try
                 {
-                    pidResp = await Remote.Remote.SpawnNamedAsync(activator, msg.Name, msg.Kind, TimeSpan.FromSeconds(5));
+                    pidResp = await Remote.Remote.SpawnNamedAsync(activator, msg.Name, msg.Kind, Cluster.cfg.TimeoutTimespan);
                 }
                 catch (TimeoutException)
                 {
@@ -245,9 +261,12 @@ namespace Proto.Cluster
                     case ResponseStatusCode.Unavailable:
                         //Get next activator to spawn
                         if (retry != 0)
+                        {
+                            activator = null;
                             continue;
+                        }
                         context.Respond(pidResp);
-                        break;
+                        return;
                     default:
                         //Return to requester to wait
                         context.Respond(pidResp);

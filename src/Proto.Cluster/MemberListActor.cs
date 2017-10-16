@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,24 +16,38 @@ namespace Proto.Cluster
     internal class MemberListActor : IActor
     {
         private readonly ILogger _logger = Log.CreateLogger<MemberListActor>();
+
         private readonly Dictionary<string, MemberStatus> _members = new Dictionary<string, MemberStatus>();
+        private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind = new Dictionary<string, IMemberStrategy>();
 
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
                 case Started _:
+                {
                     _logger.LogDebug("Started MemberListActor");
                     break;
-                case MemberByKindRequest msg:
+                }
+                case MembersByKindRequest msg:
                 {
-                    var members = (from kvp in _members
-                                   let address = kvp.Key
-                                   let member = kvp.Value
-                                   where (!msg.OnlyAlive || msg.OnlyAlive && member.Alive) && member.Kinds.Contains(msg.Kind)
-                                   select address).ToArray();
-
-                    context.Respond(new MemberByKindResponse(members));
+                    context.Respond(_memberStrategyByKind.TryGetValue(msg.Kind, out var members)
+                                        ? new MembersResponse(members.GetAllMembers().FindAll(m => !msg.OnlyAlive || (msg.OnlyAlive && m.Alive)).Select(m => m.Address).ToArray())
+                                        : new MembersResponse(new string[0]));
+                    break;
+                }
+                case PartitionMemberRequest msg:
+                {
+                    context.Respond(_memberStrategyByKind.TryGetValue(msg.Kind, out var memberSet)
+                                        ? new MemberResponse(memberSet.GetPartition(msg.Name))
+                                        : new MemberResponse(""));
+                    break;
+                }
+                case ActivatorMemberRequest msg:
+                {
+                    context.Respond(_memberStrategyByKind.TryGetValue(msg.Kind, out var memberSet)
+                                        ? new MemberResponse(memberSet.GetActivator())
+                                        : new MemberResponse(""));
                     break;
                 }
                 case ClusterTopologyEvent msg:
@@ -50,7 +65,7 @@ namespace Proto.Cluster
                     {
                         if (!newMembersAddress.Contains(address))
                         {
-                            Notify(null, old);
+                            UpdateAndNotify(null, old);
                         }
                     }
 
@@ -59,7 +74,7 @@ namespace Proto.Cluster
                     {
                         _members.TryGetValue(@new.Address, out var old);
                         _members[@new.Address] = @new;
-                        Notify(@new, old);
+                        UpdateAndNotify(@new, old);
                     }
                     break;
                 }
@@ -67,7 +82,7 @@ namespace Proto.Cluster
             return Actor.Done;
         }
 
-        private void Notify(MemberStatus @new, MemberStatus old)
+        private void UpdateAndNotify(MemberStatus @new, MemberStatus old)
         {
             if (@new == null && old == null)
             {
@@ -76,27 +91,58 @@ namespace Proto.Cluster
 
             if (@new == null)
             {
+                //update MemberStrategy
+                foreach (var k in old.Kinds)
+                {
+                    if (_memberStrategyByKind.TryGetValue(k, out var ms))
+                    {
+                        ms.RemoveMember(old);
+                        if (ms.GetAllMembers().Count == 0)
+                            _memberStrategyByKind.Remove(k);
+                    }
+                }
+                
                 //notify left
                 var left = new MemberLeftEvent(old.Host, old.Port, old.Kinds);
                 Actor.EventStream.Publish(left);
                 _members.Remove(old.Address);
                 var endpointTerminated = new EndpointTerminatedEvent
-                                         {
-                                             Address = old.Address
-                                         };
+                {
+                    Address = old.Address
+                };
                 Actor.EventStream.Publish(endpointTerminated);
-
                 return;
             }
 
             if (old == null)
             {
+                //update MemberStrategy
+                foreach (var k in @new.Kinds)
+                {
+                    if (!_memberStrategyByKind.ContainsKey(k))
+                        _memberStrategyByKind[k] = Cluster.cfg.MemberStrategyBuilder(k);
+                    _memberStrategyByKind[k].AddMember(@new);
+                }
+
                 //notify joined
                 var joined = new MemberJoinedEvent(@new.Host, @new.Port, @new.Kinds);
                 Actor.EventStream.Publish(joined);
                 return;
             }
 
+            //update MemberStrategy
+            if (@new.Alive != old.Alive || @new.MemberId != old.MemberId || !@new.StatusValue.IsSame(old.StatusValue))
+            {
+                foreach (var k in @new.Kinds)
+                {
+                    if (_memberStrategyByKind.TryGetValue(k, out var ms))
+                    {
+                        ms.UpdateMember(@new);
+                    }
+                }
+            }
+
+            //notify changes
             if (@new.MemberId != old.MemberId)
             {
                 var rejoined = new MemberRejoinedEvent(@new.Host, @new.Port, @new.Kinds);

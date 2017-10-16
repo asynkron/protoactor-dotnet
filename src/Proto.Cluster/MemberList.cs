@@ -15,7 +15,7 @@ namespace Proto.Cluster
         public static PID Pid { get; private set; }
 
         private static Subscription<object> clusterTopologyEvnSub;
-        
+
         internal static void SubscribeToEventStream()
         {
             clusterTopologyEvnSub = Actor.EventStream.Subscribe<ClusterTopologyEvent>(Pid.Tell);
@@ -39,34 +39,26 @@ namespace Proto.Cluster
         public static async Task<string[]> GetMembersAsync(string kind)
         {
             //if there are no nodes holding the requested kind, just wait
-            var res = await Pid.RequestAsync<MemberByKindResponse>(new MemberByKindRequest(kind, true));
-            return res.Kinds;
+            var res = await Pid.RequestAsync<MembersResponse>(new MembersByKindRequest(kind, true));
+            return res.Members;
         }
 
-        public static async Task<string> GetMemberAsync(string name, string kind)
+        public static async Task<string> GetPartitionAsync(string name, string kind)
         {
-            var members = await GetMembersAsync(kind);
-            if (members == null || members.Length == 0)
-                return null;
-            var hdv = new Rendezvous(members);
-            var member = hdv.GetNode(name);
-            return member;
+            var res = await Pid.RequestAsync<MemberResponse>(new PartitionMemberRequest(name, kind));
+            return res.Address;
+        }
+
+        public static async Task<string> GetActivatorAsync(string kind)
+        {
+            var res = await Pid.RequestAsync<MemberResponse>(new ActivatorMemberRequest(kind));
+            return res.Address;
         }
     }
 
-    internal class MemberByKindResponse
+    internal class MembersByKindRequest
     {
-        public MemberByKindResponse(string[] kinds)
-        {
-            Kinds = kinds ?? throw new ArgumentNullException(nameof(kinds));
-        }
-
-        public string[] Kinds { get; set; }
-    }
-
-    internal class MemberByKindRequest
-    {
-        public MemberByKindRequest(string kind, bool onlyAlive)
+        public MembersByKindRequest(string kind, bool onlyAlive)
         {
             Kind = kind ?? throw new ArgumentNullException(nameof(kind));
             OnlyAlive = onlyAlive;
@@ -74,5 +66,47 @@ namespace Proto.Cluster
 
         public string Kind { get; }
         public bool OnlyAlive { get; }
+    }
+
+    internal class MembersResponse
+    {
+        public MembersResponse(string[] members)
+        {
+            Members = members ?? throw new ArgumentNullException(nameof(members));
+        }
+
+        public string[] Members { get; }
+    }
+
+    internal class PartitionMemberRequest
+    {
+        public PartitionMemberRequest(string name, string kind)
+        {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Kind = kind ?? throw new ArgumentNullException(nameof(kind));
+        }
+
+        public string Name { get; }
+        public string Kind { get; }
+    }
+
+    internal class ActivatorMemberRequest
+    {
+        public ActivatorMemberRequest(string kind)
+        {
+            Kind = kind ?? throw new ArgumentNullException(nameof(kind));
+        }
+
+        public string Kind { get; }
+    }
+
+    internal class MemberResponse
+    {
+        public MemberResponse(string address)
+        {
+            Address = address ?? throw new ArgumentNullException(nameof(address));
+        }
+
+        public string Address { get; }
     }
 }

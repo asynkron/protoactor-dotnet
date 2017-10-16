@@ -32,8 +32,9 @@ namespace Node2
             Grains.HelloGrainFactory(() => new HelloGrain());
 
             Cluster.Start("MyCluster", "127.0.0.1", 12000, new ConsulProvider(new ConsulProviderOptions()));
-
             Console.ReadLine();
+            Console.WriteLine("Shutting Down...");
+            Cluster.Shutdown();
         }
     }
 }

@@ -15,15 +15,16 @@ namespace Proto.Cluster
     {
         private static readonly ILogger Logger = Log.CreateLogger(typeof(Cluster).FullName);
 
-        private static IClusterProvider cp;
-        
-        public static void Start(string clusterName, string address, int port, IClusterProvider provider,RemoteConfig config = null)
-        {
-            config = config ?? new RemoteConfig();
-            Remote.Remote.Start(address, port,config);
+        internal static ClusterConfig cfg;
 
-            cp = provider;
-            
+        public static void Start(string clusterName, string address, int port, IClusterProvider cp) => StartWithConfig(new ClusterConfig(clusterName, address, port, cp));
+
+        public static void StartWithConfig(ClusterConfig config)
+        {
+            cfg = config;
+
+            Remote.Remote.Start(cfg.Address, cfg.Port, cfg.RemoteConfig);
+        
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Logger.LogInformation("Starting Proto.Actor cluster");
             var (h, p) = ParseAddress(ProcessRegistry.Instance.Address);
@@ -34,18 +35,19 @@ namespace Proto.Cluster
             PidCache.SubscribeToEventStream();
             MemberList.Spawn();
             MemberList.SubscribeToEventStream();
-            cp.RegisterMemberAsync(clusterName, h, p, kinds).Wait();
-            cp.MonitorMemberStatusChanges();
+            cfg.ClusterProvider.RegisterMemberAsync(cfg.Name, h, p, kinds, config.InitialMemberStatusValue, config.MemberStatusValueSerializer).Wait();
+            cfg.ClusterProvider.MonitorMemberStatusChanges();
 
             Logger.LogInformation("Started Cluster");
         }
-        
+
         public static void Shutdown(bool gracefull = true)
         {
             if (gracefull)
             {
-                cp.Shutdown();
-
+                cfg.ClusterProvider.Shutdown();
+                //This is to wait ownership transfering complete.
+                Task.Delay(2000).Wait();
                 MemberList.UnsubEventStream();
                 MemberList.Stop();
                 PidCache.UnsubEventStream();
