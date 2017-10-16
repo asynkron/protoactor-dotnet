@@ -261,9 +261,8 @@ namespace Proto.Cluster.Consul
                     let memberIdKey = $"{_clusterName}/{v.Service.Address}:{v.Service.Port}"
                     let memberId = GetMemberId(memberIdKey)
                     where memberId != null
-                    let passing = v.Checks.Length > 1 && Equals(v.Checks[1].Status, HealthStatus.Passing)
                     let memberStatusVal = GetMemberStatusVal(memberIdKey)
-                    select new MemberStatus(memberId, v.Service.Address, v.Service.Port, v.Service.Tags, passing, _statusValueSerializer.FromValueBytes(memberStatusVal)))
+                    select new MemberStatus(memberId, v.Service.Address, v.Service.Port, v.Service.Tags, true, _statusValueSerializer.FromValueBytes(memberStatusVal)))
                 .ToArray();
 
             //Update Tags for this member

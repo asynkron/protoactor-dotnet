@@ -10,7 +10,7 @@ namespace Proto.Cluster.WeightedMemberStrategy
 {
     public class WeightedMemberStrategy : IMemberStrategy
     {
-        internal List<MemberStatus> members;
+        private List<MemberStatus> members;
         private Rendezvous rdv;
         private WeightedRoundRobin wrr;
 
