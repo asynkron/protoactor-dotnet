@@ -31,22 +31,22 @@ namespace Proto.Cluster
                 }
                 case MembersByKindRequest msg:
                 {
-                    context.Respond(_memberStrategyByKind.TryGetValue(msg.Kind, out var members)
-                                        ? new MembersResponse(members.GetAllMembers().FindAll(m => !msg.OnlyAlive || (msg.OnlyAlive && m.Alive)).Select(m => m.Address).ToArray())
+                    context.Respond(_memberStrategyByKind.TryGetValue(msg.Kind, out var memberStrategy)
+                                        ? new MembersResponse(memberStrategy.GetAllMembers().FindAll(m => !msg.OnlyAlive || (msg.OnlyAlive && m.Alive)).Select(m => m.Address).ToArray())
                                         : new MembersResponse(new string[0]));
                     break;
                 }
                 case PartitionMemberRequest msg:
                 {
-                    context.Respond(_memberStrategyByKind.TryGetValue(msg.Kind, out var memberSet)
-                                        ? new MemberResponse(memberSet.GetPartition(msg.Name))
+                    context.Respond(_memberStrategyByKind.TryGetValue(msg.Kind, out var memberStrategy)
+                                        ? new MemberResponse(memberStrategy.GetPartition(msg.Name))
                                         : new MemberResponse(""));
                     break;
                 }
                 case ActivatorMemberRequest msg:
                 {
-                    context.Respond(_memberStrategyByKind.TryGetValue(msg.Kind, out var memberSet)
-                                        ? new MemberResponse(memberSet.GetActivator())
+                    context.Respond(_memberStrategyByKind.TryGetValue(msg.Kind, out var memberStrategy)
+                                        ? new MemberResponse(memberStrategy.GetActivator())
                                         : new MemberResponse(""));
                     break;
                 }
