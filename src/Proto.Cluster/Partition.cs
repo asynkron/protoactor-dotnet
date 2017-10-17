@@ -147,7 +147,7 @@ namespace Proto.Cluster
                 //ownership is also racy, new nodes should maybe forward requests to neighbours (?)
                 foreach (var (actorId, _) in _partition.ToArray())
                 {
-                    var address = await MemberList.GetPartitionAsync(actorId, _kind);
+                    var address = MemberList.GetPartition(actorId, _kind);
 
                     if (!string.IsNullOrEmpty(address))
                     {
@@ -179,7 +179,7 @@ namespace Proto.Cluster
             //ownership is also racy, new nodes should maybe forward requests to neighbours (?)
             foreach (var (actorId, _) in _partition.ToArray())
             {
-                var address = await MemberList.GetPartitionAsync(actorId, _kind);
+                var address = MemberList.GetPartition(actorId, _kind);
 
                 if (!string.IsNullOrEmpty(address) && address != ProcessRegistry.Instance.Address)
                 {
@@ -210,7 +210,7 @@ namespace Proto.Cluster
                 return;
             }
 
-            var activator = await MemberList.GetActivatorAsync(msg.Kind);
+            var activator = MemberList.GetActivator(msg.Kind);
             if (string.IsNullOrEmpty(activator))
             {
                 //No activator currently available, return unavailable
@@ -223,7 +223,7 @@ namespace Proto.Cluster
             {
                 if (string.IsNullOrEmpty(activator))
                 {
-                    activator = await MemberList.GetActivatorAsync(msg.Kind);
+                    activator = MemberList.GetActivator(msg.Kind);
                     if (string.IsNullOrEmpty(activator))
                     {
                         //No activator currently available, return unavailable
