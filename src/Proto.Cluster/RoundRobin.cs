@@ -1,4 +1,6 @@
-﻿namespace Proto.Cluster
+﻿using System.Threading;
+
+namespace Proto.Cluster
 {
     public class RoundRobin
     {
@@ -18,7 +20,9 @@
             if (l == 0) return "";
             if (l == 1) return members[0].Address;
 
-            return members[val++ % l].Address;
+            Interlocked.Increment(ref val);
+
+            return members[val % l].Address;
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace Proto.Cluster.WeightedMemberStrategy
 {
@@ -25,13 +26,16 @@ namespace Proto.Cluster.WeightedMemberStrategy
 
             while (true)
             {
-                currIndex = (currIndex + 1) % l;
+                Interlocked.Exchange(ref currIndex, (currIndex + 1) % l);
                 if (currIndex == 0)
                 {
-                    currWeight = currWeight - gcd;
-                    if (currWeight <= 0)
+                    if (currWeight > gcd)
                     {
-                        currWeight = maxWeight;
+                        Interlocked.Add(ref currWeight, -gcd);
+                    }
+                    else
+                    {
+                        Interlocked.Exchange(ref currWeight, maxWeight);
                     }
                 }
                 if (((WeightedMemberStatusValue) members[currIndex].StatusValue).Weight >= currWeight)
