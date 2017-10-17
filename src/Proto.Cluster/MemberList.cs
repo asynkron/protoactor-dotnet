@@ -4,8 +4,10 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using Proto.Remote;
 
@@ -51,32 +53,45 @@ namespace Proto.Cluster
 
         internal static void UpdateClusterTopology(ClusterTopologyEvent msg)
         {
-            lock (_lock)
+            performUpdate:
+            if (Monitor.TryEnter(_lock, TimeSpan.FromSeconds(1)))
             {
-                //get all new members address sets
-                var newMembersAddress = new HashSet<string>();
-                foreach (var status in msg.Statuses)
+                try
                 {
-                    newMembersAddress.Add(status.Address);
-                }
-
-                //remove old ones whose address not exist in new address sets
-                //_members.ToList() duplicates _members, allow _members to be modified in Notify
-                foreach (var (address, old) in _members.ToList())
-                {
-                    if (!newMembersAddress.Contains(address))
+                    //get all new members address sets
+                    var newMembersAddress = new HashSet<string>();
+                    foreach (var status in msg.Statuses)
                     {
-                        UpdateAndNotify(null, old);
+                        newMembersAddress.Add(status.Address);
+                    }
+
+                    //remove old ones whose address not exist in new address sets
+                    //_members.ToList() duplicates _members, allow _members to be modified in Notify
+                    foreach (var (address, old) in _members.ToList())
+                    {
+                        if (!newMembersAddress.Contains(address))
+                        {
+                            UpdateAndNotify(null, old);
+                        }
+                    }
+
+                    //find all the entries that exist in the new set
+                    foreach (var @new in msg.Statuses)
+                    {
+                        _members.TryGetValue(@new.Address, out var old);
+                        _members[@new.Address] = @new;
+                        UpdateAndNotify(@new, old);
                     }
                 }
-
-                //find all the entries that exist in the new set
-                foreach (var @new in msg.Statuses)
+                finally
                 {
-                    _members.TryGetValue(@new.Address, out var old);
-                    _members[@new.Address] = @new;
-                    UpdateAndNotify(@new, old);
+                    Monitor.Exit(_lock);
                 }
+            }
+            else
+            {
+                _logger.LogDebug("Did not acquire lock within 1 seconds, retry");
+                goto performUpdate;
             }
         }
 
