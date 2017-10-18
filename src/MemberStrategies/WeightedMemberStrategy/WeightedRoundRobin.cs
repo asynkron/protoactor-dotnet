@@ -1,56 +1,64 @@
 ﻿using System;
+using System.Threading;
 
 namespace Proto.Cluster.WeightedMemberStrategy
 {
     public class WeightedRoundRobin
     {
-        private int currIndex;
-        private int currWeight;
-        private int maxWeight;
-        private int gcd;
+        private readonly object _lock = new object();
+        private int _currIndex;
+        private int _currWeight;
+        private int _maxWeight;
+        private int _gcd;
 
-        private IMemberStrategy m;
+        private IMemberStrategy _m;
 
         public WeightedRoundRobin(IMemberStrategy m)
         {
-            this.m = m;
+            this._m = m;
         }
 
         public string GetNode()
         {
-            var members = m.GetAllMembers();
+            var members = _m.GetAllMembers();
             var l = members.Count;
             if (l == 0) return "";
             if (l == 1) return members[0].Address;
 
-            while (true)
+            lock (_lock)
             {
-                currIndex = (currIndex + 1) % l;
-                if (currIndex == 0)
+                while (true)
                 {
-                    currWeight = currWeight - gcd;
-                    if (currWeight <= 0)
+                    _currIndex = (_currIndex + 1) % l;
+                    if (_currIndex == 0)
                     {
-                        currWeight = maxWeight;
+                        if (_currWeight > _gcd)
+                        {
+                            _currWeight -= _gcd;
+                        }
+                        else
+                        {
+                            _currWeight = _maxWeight;
+                        }
                     }
-                }
-                if (((WeightedMemberStatusValue) members[currIndex].StatusValue).Weight >= currWeight)
-                {
-                    return members[currIndex].Address;
+                    if (((WeightedMemberStatusValue) members[_currIndex].StatusValue).Weight >= _currWeight)
+                    {
+                        return members[_currIndex].Address;
+                    }
                 }
             }
         }
 
         public void UpdateRR()
         {
-            maxWeight = GetMaxWeight();
-            gcd = GetGCD();
+            _maxWeight = GetMaxWeight();
+            _gcd = GetGCD();
         }
 
         private int GetMaxWeight()
         {
             var max = 0;
-            foreach (var m in m.GetAllMembers())
+            foreach (var m in _m.GetAllMembers())
             {
                 var statusVal = (WeightedMemberStatusValue) m.StatusValue;
                 if (statusVal.Weight > max)
@@ -61,7 +69,7 @@ namespace Proto.Cluster.WeightedMemberStrategy
 
         private int GetGCD()
         {
-            var members = m.GetAllMembers();
+            var members = _m.GetAllMembers();
             if (members.Count == 0) return 0;
 
             var ints = new int[members.Count];

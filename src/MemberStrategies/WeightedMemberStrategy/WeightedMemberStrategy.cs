@@ -10,33 +10,33 @@ namespace Proto.Cluster.WeightedMemberStrategy
 {
     public class WeightedMemberStrategy : IMemberStrategy
     {
-        private List<MemberStatus> members;
-        private Rendezvous rdv;
-        private WeightedRoundRobin wrr;
+        private List<MemberStatus> _members;
+        private Rendezvous _rdv;
+        private WeightedRoundRobin _wrr;
 
         public WeightedMemberStrategy()
         {
-            members = new List<MemberStatus>();
-            rdv = new Rendezvous(this);
-            wrr = new WeightedRoundRobin(this);
+            _members = new List<MemberStatus>();
+            _rdv = new Rendezvous(this);
+            _wrr = new WeightedRoundRobin(this);
         }
 
-        public List<MemberStatus> GetAllMembers() => members;
+        public List<MemberStatus> GetAllMembers() => _members;
 
         public void AddMember(MemberStatus member)
         {
-            members.Add(member);
-            wrr.UpdateRR();
-            rdv.UpdateRdv();
+            _members.Add(member);
+            _wrr.UpdateRR();
+            _rdv.UpdateRdv();
         }
 
         public void UpdateMember(MemberStatus member)
         {
-            for (int i = 0; i < members.Count; i++)
+            for (int i = 0; i < _members.Count; i++)
             {
-                if (members[i].Address == member.Address)
+                if (_members[i].Address == member.Address)
                 {
-                    members[i] = member;
+                    _members[i] = member;
                     return;
                 }
             }
@@ -44,20 +44,20 @@ namespace Proto.Cluster.WeightedMemberStrategy
 
         public void RemoveMember(MemberStatus member)
         {
-            for (int i = 0; i < members.Count; i++)
+            for (int i = 0; i < _members.Count; i++)
             {
-                if (members[i].Address == member.Address)
+                if (_members[i].Address == member.Address)
                 {
-                    members.RemoveAt(i);
-                    wrr.UpdateRR();
-                    rdv.UpdateRdv();
+                    _members.RemoveAt(i);
+                    _wrr.UpdateRR();
+                    _rdv.UpdateRdv();
                     return;
                 }
             }
         }
 
-        public string GetPartition(string key) => rdv.GetNode(key);
+        public string GetPartition(string key) => _rdv.GetNode(key);
 
-        public string GetActivator() => wrr.GetNode();
+        public string GetActivator() => _wrr.GetNode();
     }
 }

@@ -33,7 +33,6 @@ namespace Proto.Cluster
             Partition.SubscribeToEventStream();
             PidCache.Spawn();
             PidCache.SubscribeToEventStream();
-            MemberList.Spawn();
             MemberList.SubscribeToEventStream();
             cfg.ClusterProvider.RegisterMemberAsync(cfg.Name, h, p, kinds, config.InitialMemberStatusValue, config.MemberStatusValueSerializer).Wait();
             cfg.ClusterProvider.MonitorMemberStatusChanges();
@@ -49,7 +48,6 @@ namespace Proto.Cluster
                 //This is to wait ownership transfering complete.
                 Task.Delay(2000).Wait();
                 MemberList.UnsubEventStream();
-                MemberList.Stop();
                 PidCache.UnsubEventStream();
                 PidCache.Stop();
                 Partition.UnsubEventStream();

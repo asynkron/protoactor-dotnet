@@ -20,32 +20,32 @@ namespace Proto.Cluster
 
     internal class SimpleMemberStrategy : IMemberStrategy
     {
-        private List<MemberStatus> members;
-        private Rendezvous rdv;
-        private RoundRobin rr;
+        private List<MemberStatus> _members;
+        private Rendezvous _rdv;
+        private RoundRobin _rr;
 
         public SimpleMemberStrategy()
         {
-            members = new List<MemberStatus>();
-            rdv = new Rendezvous(this);
-            rr = new RoundRobin(this);
+            _members = new List<MemberStatus>();
+            _rdv = new Rendezvous(this);
+            _rr = new RoundRobin(this);
         }
 
-        public List<MemberStatus> GetAllMembers() => members;
+        public List<MemberStatus> GetAllMembers() => _members;
 
         public void AddMember(MemberStatus member)
         {
-            members.Add(member);
-            rdv.UpdateRdv();
+            _members.Add(member);
+            _rdv.UpdateRdv();
         }
 
         public void UpdateMember(MemberStatus member)
         {
-            for (int i = 0; i < members.Count; i++)
+            for (int i = 0; i < _members.Count; i++)
             {
-                if (members[i].Address == member.Address)
+                if (_members[i].Address == member.Address)
                 {
-                    members[i] = member;
+                    _members[i] = member;
                     return;
                 }
             }
@@ -53,19 +53,19 @@ namespace Proto.Cluster
 
         public void RemoveMember(MemberStatus member)
         {
-            for (int i = 0; i < members.Count; i++)
+            for (int i = 0; i < _members.Count; i++)
             {
-                if (members[i].Address == member.Address)
+                if (_members[i].Address == member.Address)
                 {
-                    members.RemoveAt(i);
-                    rdv.UpdateRdv();
+                    _members.RemoveAt(i);
+                    _rdv.UpdateRdv();
                     return;
                 }
             }
         }
 
-        public string GetPartition(string key) => rdv.GetNode(key);
+        public string GetPartition(string key) => _rdv.GetNode(key);
 
-        public string GetActivator() => rr.GetNode();
+        public string GetActivator() => _rr.GetNode();
     }
 }

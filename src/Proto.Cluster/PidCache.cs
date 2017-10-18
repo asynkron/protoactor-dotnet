@@ -126,56 +126,54 @@ namespace Proto.Cluster
             var name = msg.Name;
             var kind = msg.Kind;
 
-            context.ReenterAfter(MemberList.GetPartitionAsync(name, kind), address =>
+            var address = MemberList.GetPartition(name, kind);
+
+            if (string.IsNullOrEmpty(address))
             {
-                if (string.IsNullOrEmpty(address.Result))
+                context.Respond(new PidCacheResponse(null, ResponseStatusCode.Unavailable));
+                return;
+            }
+
+            var remotePid = Partition.PartitionForKind(address, kind);
+            var req = new ActorPidRequest
+            {
+                Kind = kind,
+                Name = name
+            };
+
+            var reqTask = remotePid.RequestAsync<ActorPidResponse>(req, Cluster.cfg.TimeoutTimespan);
+            context.ReenterAfter(reqTask, t =>
+            {
+                if (t.Exception != null)
                 {
-                    context.Respond(new PidCacheResponse(null, ResponseStatusCode.Unavailable));
-                    return Actor.Done;
+                    if (t.Exception.InnerException is TimeoutException)
+                    {
+                        //Timeout
+                        context.Respond(new PidCacheResponse(null, ResponseStatusCode.Timeout));
+                        return Actor.Done;
+                    }
+                    else
+                    {
+                        //Other errors, let it throw
+                        context.Respond(new PidCacheResponse(null, ResponseStatusCode.Error));
+                    }
                 }
 
-                var remotePid = Partition.PartitionForKind(address.Result, kind);
-                var req = new ActorPidRequest
+                var res = t.Result;
+                var status = (ResponseStatusCode) res.StatusCode;
+                switch (status)
                 {
-                    Kind = kind,
-                    Name = name
-                };
-
-                var reqTask = remotePid.RequestAsync<ActorPidResponse>(req, Cluster.cfg.TimeoutTimespan);
-                context.ReenterAfter(reqTask, t =>
-                {
-                    if (t.Exception != null)
-                    {
-                        if (t.Exception.InnerException is TimeoutException)
-                        {
-                            //Timeout
-                            context.Respond(new PidCacheResponse(null, ResponseStatusCode.Timeout));
-                            return Actor.Done;
-                        }
-                        else
-                        {
-                            //Other errors, let it throw
-                            context.Respond(new PidCacheResponse(null, ResponseStatusCode.Error));
-                        }
-                    }
-
-                    var res = t.Result;
-                    var status = (ResponseStatusCode) res.StatusCode;
-                    switch (status)
-                    {
-                        case ResponseStatusCode.OK:
-                            var key = res.Pid.ToShortString();
-                            _cache[name] = res.Pid;
-                            _reverseCache[key] = name;
-                            context.Watch(res.Pid);
-                            context.Respond(new PidCacheResponse(res.Pid, status));
-                            break;
-                        default:
-                            context.Respond(new PidCacheResponse(res.Pid, status));
-                            break;
-                    }
-                    return Actor.Done;
-                });
+                    case ResponseStatusCode.OK:
+                        var key = res.Pid.ToShortString();
+                        _cache[name] = res.Pid;
+                        _reverseCache[key] = name;
+                        context.Watch(res.Pid);
+                        context.Respond(new PidCacheResponse(res.Pid, status));
+                        break;
+                    default:
+                        context.Respond(new PidCacheResponse(res.Pid, status));
+                        break;
+                }
                 return Actor.Done;
             });
         }
