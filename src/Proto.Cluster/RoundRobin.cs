@@ -20,9 +20,9 @@ namespace Proto.Cluster
             if (l == 0) return "";
             if (l == 1) return members[0].Address;
 
-            Interlocked.Increment(ref _val);
+            var nv = Interlocked.Increment(ref _val);
 
-            return members[_val % l].Address;
+            return members[nv % l].Address;
         }
     }
 }
