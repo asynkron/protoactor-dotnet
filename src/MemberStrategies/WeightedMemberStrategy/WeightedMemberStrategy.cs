@@ -37,6 +37,7 @@ namespace Proto.Cluster.WeightedMemberStrategy
                 if (_members[i].Address == member.Address)
                 {
                     _members[i] = member;
+                    _wrr.UpdateRR();
                     return;
                 }
             }
