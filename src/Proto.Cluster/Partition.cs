@@ -98,13 +98,13 @@ namespace Proto.Cluster
                     TakeOwnership(msg, context);
                     break;
                 case MemberJoinedEvent msg:
-                    await MemberJoinedAsync(msg, context);
+                    MemberJoined(msg, context);
                     break;
                 case MemberRejoinedEvent msg:
                     MemberRejoined(msg);
                     break;
                 case MemberLeftEvent msg:
-                    await MemberLeft(msg, context);
+                    MemberLeft(msg, context);
                     break;
             }
         }
@@ -127,7 +127,7 @@ namespace Proto.Cluster
             context.Watch(msg.Pid);
         }
 
-        private async Task MemberLeft(MemberLeftEvent msg, IContext context)
+        private void MemberLeft(MemberLeftEvent msg, IContext context)
         {
             _logger.LogInformation($"Kind {_kind} Member Left {msg.Address}");
             foreach (var (actorId, pid) in _partition.ToArray())
@@ -171,7 +171,7 @@ namespace Proto.Cluster
             }
         }
 
-        private async Task MemberJoinedAsync(MemberJoinedEvent msg, IContext context)
+        private void MemberJoined(MemberJoinedEvent msg, IContext context)
         {
             _logger.LogInformation($"Kind {_kind} Member Joined {msg.Address}");
             //TODO: right now we transfer ownership on a per actor basis.
