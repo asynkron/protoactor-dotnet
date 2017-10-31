@@ -559,6 +559,11 @@ namespace Proto
 
         private void ReceiveTimeoutCallback(object state)
         {
+            if (_receiveTimeoutTimer == null)
+            {
+                return;
+            }
+            CancelReceiveTimeout();
             Self.Request(Proto.ReceiveTimeout.Instance, null);
         }
     }
