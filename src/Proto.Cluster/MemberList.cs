@@ -16,7 +16,7 @@ namespace Proto.Cluster
     {
         private static readonly ILogger _logger = Log.CreateLogger("MemberList");
 
-		private static readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
+        private static readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
         private static readonly Dictionary<string, MemberStatus> _members = new Dictionary<string, MemberStatus>();
         private static readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind = new Dictionary<string, IMemberStrategy>();
 

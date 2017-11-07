@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -14,7 +13,7 @@ namespace Proto.Cluster
         private static readonly HashAlgorithm HashAlgorithm = FNV1A32.Create();
 
         private IMemberStrategy _m;
-        private List<byte[]> _memberHashes;
+        private byte[][] _memberHashes;
 
         public Rendezvous(IMemberStrategy m)
         {
@@ -25,7 +24,7 @@ namespace Proto.Cluster
         public string GetNode(string key)
         {
             var members = _m.GetAllMembers();
-            
+
             if (members == null || members.Count == 0)
                 return "";
 
@@ -58,7 +57,7 @@ namespace Proto.Cluster
 
         public void UpdateRdv()
         {
-            this._memberHashes = this._m.GetAllMembers().Select(mb => Encoding.UTF8.GetBytes(mb.Address)).ToList();
+            this._memberHashes = this._m.GetAllMembers().Select(mb => Encoding.UTF8.GetBytes(mb.Address)).ToArray();
         }
 
         private static uint RdvHash(byte[] node, byte[] key)
