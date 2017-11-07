@@ -40,7 +40,7 @@ namespace Proto
                         if (!_tcs.Task.IsCompleted)
                         {
                             _tcs.TrySetException(new TimeoutException("Request didn't receive any Response within the expected time."));
-                            pid.Stop();
+                            Stop(pid);
                         }
                     });
             }
@@ -59,12 +59,12 @@ namespace Proto
             {
                 if (_cts != null && _cts.IsCancellationRequested)
                 {
-                    pid.Stop();
+                    Stop(pid);
                     return;
                 }
 
                 _tcs.TrySetResult((T)env.message);
-                pid.Stop();
+                Stop(pid);
             }            
             else
             {

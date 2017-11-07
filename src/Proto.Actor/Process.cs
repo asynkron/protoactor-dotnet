@@ -15,7 +15,7 @@ namespace Proto
 
         public virtual void Stop(PID pid)
         {
-            SendSystemMessage(pid, new Stop());
+            SendSystemMessage(pid, Proto.Stop.Instance);
         }
 
         protected internal abstract void SendSystemMessage(PID pid, object message);
