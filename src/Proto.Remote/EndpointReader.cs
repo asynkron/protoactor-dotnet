@@ -28,19 +28,27 @@ namespace Proto.Remote
         public override async Task Receive(IAsyncStreamReader<MessageBatch> requestStream,
             IServerStreamWriter<Unit> responseStream, ServerCallContext context)
         {
+            var targets = new PID[100];
             await requestStream.ForEachAsync(batch =>
             {
                 if (_suspended)
                     return Actor.Done;
 
-                var targets = batch.TargetNames.Select(n => new PID(ProcessRegistry.Instance.Address, n)).ToList();
-                var typeNames = new List<string>(batch.TypeNames);
+                //only grow pid lookup if needed
+                if (batch.TargetNames.Count > targets.Length)
+                {
+                    targets = new PID[batch.TargetNames.Count];
+                }
+
+                for (int i = 0; i < batch.TargetNames.Count; i++)
+                {
+                    targets[i] = new PID(ProcessRegistry.Instance.Address, batch.TargetNames[i]);
+                }
+                var typeNames = batch.TypeNames.ToArray();
                 foreach (var envelope in batch.Envelopes)
                 {
                     var target = targets[envelope.Target];
-
                     var typeName = typeNames[envelope.TypeId];
-
                     var message = Serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
 
                     if (message is Terminated msg)
