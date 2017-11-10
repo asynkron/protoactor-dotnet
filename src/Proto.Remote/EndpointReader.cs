@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
@@ -15,7 +16,7 @@ namespace Proto.Remote
     public class EndpointReader : Remoting.RemotingBase
     {
         private bool _suspended;
-        
+
         public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
         {
             return Task.FromResult(new ConnectResponse()
@@ -31,14 +32,13 @@ namespace Proto.Remote
             {
                 if (_suspended)
                     return Actor.Done;
-                
-                var targetNames = new List<string>(batch.TargetNames);
+
+                var targets = batch.TargetNames.Select(n => new PID(ProcessRegistry.Instance.Address, n)).ToList();
                 var typeNames = new List<string>(batch.TypeNames);
                 foreach (var envelope in batch.Envelopes)
                 {
-                    var targetName = targetNames[envelope.Target];
-                    var target = new PID(ProcessRegistry.Instance.Address, targetName);
-                  
+                    var target = targets[envelope.Target];
+
                     var typeName = typeNames[envelope.TypeId];
 
                     var message = Serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
