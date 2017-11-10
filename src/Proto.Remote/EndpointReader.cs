@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
@@ -15,7 +16,7 @@ namespace Proto.Remote
     public class EndpointReader : Remoting.RemotingBase
     {
         private bool _suspended;
-        
+
         public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
         {
             return Task.FromResult(new ConnectResponse()
@@ -27,20 +28,27 @@ namespace Proto.Remote
         public override async Task Receive(IAsyncStreamReader<MessageBatch> requestStream,
             IServerStreamWriter<Unit> responseStream, ServerCallContext context)
         {
+            var targets = new PID[100];
             await requestStream.ForEachAsync(batch =>
             {
                 if (_suspended)
                     return Actor.Done;
-                
-                var targetNames = new List<string>(batch.TargetNames);
-                var typeNames = new List<string>(batch.TypeNames);
+
+                //only grow pid lookup if needed
+                if (batch.TargetNames.Count > targets.Length)
+                {
+                    targets = new PID[batch.TargetNames.Count];
+                }
+
+                for (int i = 0; i < batch.TargetNames.Count; i++)
+                {
+                    targets[i] = new PID(ProcessRegistry.Instance.Address, batch.TargetNames[i]);
+                }
+                var typeNames = batch.TypeNames.ToArray();
                 foreach (var envelope in batch.Envelopes)
                 {
-                    var targetName = targetNames[envelope.Target];
-                    var target = new PID(ProcessRegistry.Instance.Address, targetName);
-                  
+                    var target = targets[envelope.Target];
                     var typeName = typeNames[envelope.TypeId];
-
                     var message = Serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
 
                     if (message is Terminated msg)
