@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Remote;
@@ -16,17 +17,17 @@ namespace Proto.Cluster
 {
     internal static class PidCache
     {
-        //arbitrary value, number of partitions used in the PidCache.
-        //the intention is just to reduce contention on too few actors when doing Pid lookups
-        private const int PartitionCount = 100;
-
-        internal static PID Pid { get; private set; }
+        internal static PID WatcherPid { get; private set; }
 
         private static Subscription<object> clusterTopologyEvnSub;
 
+        private static readonly Object _lock = new Object();
+        private static readonly Dictionary<string, PID> _cache = new Dictionary<string, PID>();
+        private static readonly Dictionary<string, string> _reverseCache = new Dictionary<string, string>();
+
         internal static void SubscribeToEventStream()
         {
-            clusterTopologyEvnSub = Actor.EventStream.Subscribe<MemberStatusEvent>(Pid.Tell);
+            clusterTopologyEvnSub = Actor.EventStream.Subscribe<MemberStatusEvent>(OnMemberStatusEvent);
         }
 
         internal static void UnsubEventStream()
@@ -36,102 +37,27 @@ namespace Proto.Cluster
 
         internal static void Spawn()
         {
-            var props = Actor.FromProducer(() => new PidCachePartitionActor());
-            Pid = Actor.SpawnNamed(props, "pidcache");
+            var props = Actor.FromProducer(() => new PidCacheWatcher());
+            WatcherPid = Actor.SpawnNamed(props, "PidCacheWatcher");
         }
 
         internal static void Stop()
         {
-            Pid.Stop();
-        }
-    }
-
-    internal class RemovePidCacheRequest : IHashable
-    {
-        public string Name { get; }
-
-        public RemovePidCacheRequest(string name) => Name = name;
-
-        public string HashBy() => Name;
-    }
-
-    internal class PidCacheRequest : IHashable
-    {
-        public PidCacheRequest(string name, string kind)
-        {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            Kind = kind ?? throw new ArgumentNullException(nameof(kind));
+            WatcherPid.Stop();
         }
 
-        public string Name { get; }
-        public string Kind { get; }
-
-        public string HashBy()
+        internal static async Task<(PID, ResponseStatusCode)> GetPidAsync(string name, string kind, CancellationToken ct)
         {
-            return Name;
-        }
-    }
+            //Check Cache
+            if (TryGetCache(name, out var pid))
+                return (pid, ResponseStatusCode.OK);
 
-    internal class PidCacheResponse
-    {
-        public PID Pid { get; }
-        public ResponseStatusCode StatusCode { get; }
-
-        public PidCacheResponse(PID pid, ResponseStatusCode statusCode)
-        {
-            Pid = pid;
-            StatusCode = statusCode;
-        }
-    }
-
-    internal class PidCachePartitionActor : IActor
-    {
-        private readonly ILogger _logger = Log.CreateLogger<PidCachePartitionActor>();
-        private readonly Dictionary<string, PID> _cache = new Dictionary<string, PID>();
-        private readonly Dictionary<string, string> _reverseCache = new Dictionary<string, string>();
-
-        public Task ReceiveAsync(IContext context)
-        {
-            switch (context.Message)
-            {
-                case Started _:
-                    _logger.LogDebug("Started PidCacheActor");
-                    break;
-                case PidCacheRequest msg:
-                    GetPid(context, msg);
-                    break;
-                case Terminated msg:
-                    RemoveCacheByPid(msg.Who);
-                    break;
-                case RemovePidCacheRequest msg:
-                    RemoveCacheByName(msg.Name);
-                    break;
-                case MemberLeftEvent _:
-                case MemberRejoinedEvent _:
-                    RemoveCacheByMemberAddress(((MemberStatusEvent) context.Message).Address);
-                    break;
-            }
-            return Actor.Done;
-        }
-
-        private void GetPid(IContext context, PidCacheRequest msg)
-        {
-            if (_cache.TryGetValue(msg.Name, out var pid))
-            {
-                //found the pid, replied, exit
-                context.Respond(new PidCacheResponse(pid, ResponseStatusCode.OK));
-                return;
-            }
-
-            var name = msg.Name;
-            var kind = msg.Kind;
-
+            //Get Pid
             var address = MemberList.GetPartition(name, kind);
 
             if (string.IsNullOrEmpty(address))
             {
-                context.Respond(new PidCacheResponse(null, ResponseStatusCode.Unavailable));
-                return;
+                return (null, ResponseStatusCode.Unavailable);
             }
 
             var remotePid = Partition.PartitionForKind(address, kind);
@@ -141,72 +67,125 @@ namespace Proto.Cluster
                 Name = name
             };
 
-            var reqTask = remotePid.RequestAsync<ActorPidResponse>(req, Cluster.cfg.TimeoutTimespan);
-            context.ReenterAfter(reqTask, t =>
+            try
             {
-                if (t.Exception != null)
-                {
-                    if (t.Exception.InnerException is TimeoutException)
-                    {
-                        //Timeout
-                        context.Respond(new PidCacheResponse(null, ResponseStatusCode.Timeout));
-                        return Actor.Done;
-                    }
-                    else
-                    {
-                        //Other errors, let it throw
-                        context.Respond(new PidCacheResponse(null, ResponseStatusCode.Error));
-                    }
-                }
-
-                var res = t.Result;
-                var status = (ResponseStatusCode) res.StatusCode;
+                var resp = await (ct == null || ct == CancellationToken.None
+                           ? remotePid.RequestAsync<ActorPidResponse>(req, Cluster.cfg.TimeoutTimespan)
+                           : remotePid.RequestAsync<ActorPidResponse>(req, ct));
+                var status = (ResponseStatusCode) resp.StatusCode;
                 switch (status)
                 {
                     case ResponseStatusCode.OK:
-                        var key = res.Pid.ToShortString();
-                        _cache[name] = res.Pid;
-                        _reverseCache[key] = name;
-                        context.Watch(res.Pid);
-                        context.Respond(new PidCacheResponse(res.Pid, status));
-                        break;
+                        AddCache(name, resp.Pid);
+                        WatcherPid.Tell(new WatchPidRequest(resp.Pid));
+                        return (resp.Pid, status);
                     default:
-                        context.Respond(new PidCacheResponse(res.Pid, status));
-                        break;
+                        return (resp.Pid, status);
                 }
-                return Actor.Done;
-            });
-        }
-
-        private void RemoveCacheByPid(PID pid)
-        {
-            var key = pid.ToShortString();
-            if (_reverseCache.TryGetValue(key, out var name))
+            }
+            catch(TimeoutException)
             {
-                _reverseCache.Remove(key);
-                _cache.Remove(name);
+                return (null, ResponseStatusCode.Timeout);
+            }
+            catch
+            {
+                return (null, ResponseStatusCode.Error);
             }
         }
 
-        private void RemoveCacheByName(string name)
+        internal static void OnMemberStatusEvent(MemberStatusEvent evn)
         {
-            if (_cache.TryGetValue(name, out var pid))
+            if (evn is MemberLeftEvent || evn is MemberRejoinedEvent)
             {
-                _cache.Remove(name);
-                _reverseCache.Remove(pid.ToShortString());
+                RemoveCacheByMemberAddress(evn.Address);
             }
         }
 
-        private void RemoveCacheByMemberAddress(string memberAddress)
+        internal static bool TryGetCache(string name, out PID pid)
         {
-            foreach (var (name, pid) in _cache.ToArray())
+            lock(_lock)
             {
-                if (pid.Address == memberAddress)
+                return _cache.TryGetValue(name, out pid);
+            }
+        }
+
+        internal static void AddCache(string name, PID pid)
+        {
+            lock(_lock)
+            {
+                var key = pid.ToShortString();
+                _cache[name] = pid;
+                _reverseCache[key] = name;
+            }
+        }
+
+        internal static void RemoveCacheByPid(PID pid)
+        {
+            lock(_lock)
+            {
+                var key = pid.ToShortString();
+                if (_reverseCache.TryGetValue(key, out var name))
+                {
+                    _reverseCache.Remove(key);
+                    _cache.Remove(name);
+                }
+            }
+        }
+
+        internal static void RemoveCacheByName(string name)
+        {
+            lock(_lock)
+            {
+                if (_cache.TryGetValue(name, out var pid))
                 {
                     _cache.Remove(name);
                     _reverseCache.Remove(pid.ToShortString());
                 }
             }
+        }
+
+        internal static void RemoveCacheByMemberAddress(string memberAddress)
+        {
+            lock(_lock)
+            {
+                foreach (var (name, pid) in _cache.ToArray())
+                {
+                    if (pid.Address == memberAddress)
+                    {
+                        _cache.Remove(name);
+                        _reverseCache.Remove(pid.ToShortString());
+                    }
+                }
+            }
+        }
+    }
+
+    internal class WatchPidRequest
+    {
+        internal PID Pid { get; }
+
+        public WatchPidRequest(PID pid) { Pid = pid; }
+    }
+
+    internal class PidCacheWatcher : IActor
+    {
+        private readonly ILogger _logger = Log.CreateLogger<PidCacheWatcher>();
+
+        public Task ReceiveAsync(IContext context)
+        {
+            switch (context.Message)
+            {
+                case Started _:
+                    _logger.LogDebug("Started PidCacheWatcher");
+                    break;
+                case WatchPidRequest msg:
+                    context.Watch(msg.Pid);
+                    break;
+                case Terminated msg:
+                    PidCache.RemoveCacheByPid(msg.Who);
+                    break;
+            }
+            return Actor.Done;
         }
     }
 }

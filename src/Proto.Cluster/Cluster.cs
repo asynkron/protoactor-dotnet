@@ -70,17 +70,8 @@ namespace Proto.Cluster
 
         public static Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind) => GetAsync(name, kind, CancellationToken.None);
 
-        public static async Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind, CancellationToken ct)
-        {
-            var req = new PidCacheRequest(name, kind);
-            var resp = await PidCache.Pid.RequestAsync<PidCacheResponse>(req, ct);
-            return (resp.Pid, resp.StatusCode);
-        }
+        public static Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind, CancellationToken ct) => PidCache.GetPidAsync(name, kind, ct);
 
-        public static void RemoveCache(string name)
-        {
-            var req = new RemovePidCacheRequest(name);
-            PidCache.Pid.Tell(req);
-        }
+        public static void RemoveCache(string name) => PidCache.RemoveCacheByName(name);
     }
 }
