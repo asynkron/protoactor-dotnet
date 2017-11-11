@@ -7,11 +7,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Remote;
-using Proto.Router;
 
 namespace Proto.Cluster
 {
@@ -46,53 +44,6 @@ namespace Proto.Cluster
             WatcherPid.Stop();
         }
 
-        internal static async Task<(PID, ResponseStatusCode)> GetPidAsync(string name, string kind, CancellationToken ct)
-        {
-            //Check Cache
-            if (TryGetCache(name, out var pid))
-                return (pid, ResponseStatusCode.OK);
-
-            //Get Pid
-            var address = MemberList.GetPartition(name, kind);
-
-            if (string.IsNullOrEmpty(address))
-            {
-                return (null, ResponseStatusCode.Unavailable);
-            }
-
-            var remotePid = Partition.PartitionForKind(address, kind);
-            var req = new ActorPidRequest
-            {
-                Kind = kind,
-                Name = name
-            };
-
-            try
-            {
-                var resp = await (ct == null || ct == CancellationToken.None
-                           ? remotePid.RequestAsync<ActorPidResponse>(req, Cluster.cfg.TimeoutTimespan)
-                           : remotePid.RequestAsync<ActorPidResponse>(req, ct));
-                var status = (ResponseStatusCode) resp.StatusCode;
-                switch (status)
-                {
-                    case ResponseStatusCode.OK:
-                        AddCache(name, resp.Pid);
-                        WatcherPid.Tell(new WatchPidRequest(resp.Pid));
-                        return (resp.Pid, status);
-                    default:
-                        return (resp.Pid, status);
-                }
-            }
-            catch(TimeoutException)
-            {
-                return (null, ResponseStatusCode.Timeout);
-            }
-            catch
-            {
-                return (null, ResponseStatusCode.Error);
-            }
-        }
-
         internal static void OnMemberStatusEvent(MemberStatusEvent evn)
         {
             if (evn is MemberLeftEvent || evn is MemberRejoinedEvent)
@@ -109,13 +60,16 @@ namespace Proto.Cluster
             }
         }
 
-        internal static void AddCache(string name, PID pid)
+        internal static bool TryAddCache(string name, PID pid)
         {
             lock(_lock)
             {
+                if (!_cache.ContainsKey(name))
+                    return false;
                 var key = pid.ToShortString();
                 _cache[name] = pid;
                 _reverseCache[key] = name;
+                return true;
             }
         }
 

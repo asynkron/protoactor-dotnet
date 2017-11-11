@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -70,7 +71,52 @@ namespace Proto.Cluster
 
         public static Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind) => GetAsync(name, kind, CancellationToken.None);
 
-        public static Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind, CancellationToken ct) => PidCache.GetPidAsync(name, kind, ct);
+        public static async Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind, CancellationToken ct)
+        {
+            //Check Cache
+            if (PidCache.TryGetCache(name, out var pid))
+                return (pid, ResponseStatusCode.OK);
+
+            //Get Pid
+            var address = MemberList.GetPartition(name, kind);
+
+            if (string.IsNullOrEmpty(address))
+            {
+                return (null, ResponseStatusCode.Unavailable);
+            }
+
+            var remotePid = Partition.PartitionForKind(address, kind);
+            var req = new ActorPidRequest
+            {
+                Kind = kind,
+                Name = name
+            };
+
+            try
+            {
+                var resp = await (ct == null || ct == CancellationToken.None
+                           ? remotePid.RequestAsync<ActorPidResponse>(req, cfg.TimeoutTimespan)
+                           : remotePid.RequestAsync<ActorPidResponse>(req, ct));
+                var status = (ResponseStatusCode) resp.StatusCode;
+                switch (status)
+                {
+                    case ResponseStatusCode.OK:
+                        PidCache.TryAddCache(name, resp.Pid);
+                        PidCache.WatcherPid.Tell(new WatchPidRequest(resp.Pid));
+                        return (resp.Pid, status);
+                    default:
+                        return (resp.Pid, status);
+                }
+            }
+            catch(TimeoutException)
+            {
+                return (null, ResponseStatusCode.Timeout);
+            }
+            catch
+            {
+                return (null, ResponseStatusCode.Error);
+            }
+        }
 
         public static void RemoveCache(string name) => PidCache.RemoveCacheByName(name);
     }
