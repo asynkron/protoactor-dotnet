@@ -70,18 +70,34 @@ namespace Proto.Cluster
 
     internal class PartitionActor : IActor
     {
+        private class SpawningProcess
+        {
+            public TaskCompletionSource<ActorPidResponse> Tcs {get; private set;}
+            public bool Valid {get; private set;}
+
+            public SpawningProcess(TaskCompletionSource<ActorPidResponse> tcs)
+            {
+                Tcs = tcs;
+                Valid = true;
+            }
+
+            public void SetInvalid() => Valid = false;
+        }
+
         private readonly string _kind;
         private readonly ILogger _logger = Log.CreateLogger<PartitionActor>();
 
         private readonly Dictionary<string, PID> _partition = new Dictionary<string, PID>(); //actor/grain name to PID
         private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>(); //PID to grain name
 
+        private readonly Dictionary<string, SpawningProcess> _spawningProcs = new Dictionary<string, SpawningProcess>(); //spawning processes
+
         public PartitionActor(string kind)
         {
             _kind = kind;
         }
 
-        public async Task ReceiveAsync(IContext context)
+        public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
@@ -89,7 +105,7 @@ namespace Proto.Cluster
                     _logger.LogDebug("Started PartitionActor " + _kind);
                     break;
                 case ActorPidRequest msg:
-                    await Spawn(msg, context);
+                    Spawn(msg, context);
                     break;
                 case Terminated msg:
                     Terminated(msg);
@@ -107,6 +123,7 @@ namespace Proto.Cluster
                     MemberLeft(msg, context);
                     break;
             }
+            return Actor.Done;
         }
 
         private void Terminated(Terminated msg)
@@ -130,15 +147,6 @@ namespace Proto.Cluster
         private void MemberLeft(MemberLeftEvent msg, IContext context)
         {
             _logger.LogInformation($"Kind {_kind} Member Left {msg.Address}");
-            foreach (var (actorId, pid) in _partition.ToArray())
-            {
-                if (pid.Address == msg.Address)
-                {
-                    _partition.Remove(actorId);
-                    _reversePartition.Remove(pid);
-                }
-            }
-
             //If the left member is self, transfer remaining pids to others
             if (msg.Address == ProcessRegistry.Instance.Address)
             {
@@ -153,6 +161,26 @@ namespace Proto.Cluster
                     {
                         TransferOwnership(actorId, address, context);
                     }
+                }
+
+                foreach(var (actorId, sp) in _spawningProcs)
+                {
+                    var address = MemberList.GetPartition(actorId, _kind);
+
+                    if (!string.IsNullOrEmpty(address))
+                    {
+                        sp.SetInvalid();
+                        sp.Tcs.TrySetResult(ActorPidResponse.Unavailable);
+                    }
+                }
+            }
+
+            foreach (var (actorId, pid) in _partition.ToArray())
+            {
+                if (pid.Address == msg.Address)
+                {
+                    _partition.Remove(actorId);
+                    _reversePartition.Remove(pid);
                 }
             }
         }
@@ -186,6 +214,17 @@ namespace Proto.Cluster
                     TransferOwnership(actorId, address, context);
                 }
             }
+
+            foreach(var (actorId, sp) in _spawningProcs)
+            {
+                var address = MemberList.GetPartition(actorId, _kind);
+
+                if (!string.IsNullOrEmpty(address) && address != ProcessRegistry.Instance.Address)
+                {
+                    sp.SetInvalid();
+                    sp.Tcs.TrySetResult(ActorPidResponse.Unavailable);
+                }
+            }
         }
 
         private void TransferOwnership(string actorId, string address, IContext context)
@@ -202,11 +241,24 @@ namespace Proto.Cluster
             context.Unwatch(pid);
         }
 
-        private async Task Spawn(ActorPidRequest msg, IContext context)
+        private void Spawn(ActorPidRequest msg, IContext context)
         {
             if (_partition.TryGetValue(msg.Name, out var pid))
             {
                 context.Respond(new ActorPidResponse {Pid = pid});
+                return;
+            }
+
+            SpawningProcess sp;
+            if (_spawningProcs.TryGetValue(msg.Name, out sp))
+            {
+                context.ReenterAfter(sp.Tcs.Task, rst => {
+                    if (!sp.Valid)
+                        context.Respond(ActorPidResponse.Unavailable);
+                    else
+                        context.Respond(rst.Result);
+                    return Actor.Done;
+                });
                 return;
             }
 
@@ -215,64 +267,74 @@ namespace Proto.Cluster
             {
                 //No activator currently available, return unavailable
                 _logger.LogDebug("No members currently available");
-                context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Unavailable});
+                context.Respond(ActorPidResponse.Unavailable);
                 return;
             }
 
-            for (var retry = 3; retry >= 0; retry--)
+            sp = new SpawningProcess(new TaskCompletionSource<ActorPidResponse>());
+            _spawningProcs[msg.Name] = sp;
+
+            context.ReenterAfter(sp.Tcs.Task, rst => {
+                _spawningProcs.Remove(msg.Name);
+                if (!sp.Valid)
+                {
+                    context.Respond(ActorPidResponse.Unavailable);
+                    return Actor.Done;
+                }
+
+                var pidResp = rst.Result;
+                if ((ResponseStatusCode) pidResp.StatusCode == ResponseStatusCode.OK)
+                {
+                    pid = pidResp.Pid;
+                    _partition[msg.Name] = pid;
+                    _reversePartition[pid] = msg.Name;
+                    context.Watch(pid);
+                }
+                context.Respond(pidResp);
+                return Actor.Done;
+            });
+
+            //Spawning
+            Task.Factory.StartNew(() => Spawning(msg, activator, 3, sp.Tcs));
+        }
+
+        private async Task Spawning(ActorPidRequest req, string activator, int retryLeft, TaskCompletionSource<ActorPidResponse> tcs)
+        {
+            if(string.IsNullOrEmpty(activator))
             {
+                activator = MemberList.GetActivator(req.Kind);
                 if (string.IsNullOrEmpty(activator))
                 {
-                    activator = MemberList.GetActivator(msg.Kind);
-                    if (string.IsNullOrEmpty(activator))
-                    {
-                        //No activator currently available, return unavailable
-                        _logger.LogDebug("No activator currently available");
-                        context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Unavailable});
-                        return;
-                    }
-                }
-
-                ActorPidResponse pidResp;
-                try
-                {
-                    pidResp = await Remote.Remote.SpawnNamedAsync(activator, msg.Name, msg.Kind, Cluster.cfg.TimeoutTimespan);
-                }
-                catch (TimeoutException)
-                {
-                    context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Timeout});
-                    throw;
-                }
-                catch
-                {
-                    context.Respond(new ActorPidResponse {StatusCode = (int) ResponseStatusCode.Error});
-                    throw;
-                }
-
-                switch ((ResponseStatusCode) pidResp.StatusCode)
-                {
-                    case ResponseStatusCode.OK:
-                        pid = pidResp.Pid;
-                        _partition[msg.Name] = pid;
-                        _reversePartition[pid] = msg.Name;
-                        context.Watch(pid);
-                        context.Respond(pidResp);
-                        return;
-                    case ResponseStatusCode.Unavailable:
-                        //Get next activator to spawn
-                        if (retry != 0)
-                        {
-                            activator = null;
-                            continue;
-                        }
-                        context.Respond(pidResp);
-                        return;
-                    default:
-                        //Return to requester to wait
-                        context.Respond(pidResp);
-                        return;
+                    //No activator currently available, return unavailable
+                    _logger.LogDebug("No activator currently available");
+                    tcs.TrySetResult(ActorPidResponse.Unavailable);
+                    return;
                 }
             }
+
+            ActorPidResponse pidResp;
+            try
+            {
+                pidResp = await Remote.Remote.SpawnNamedAsync(activator, req.Name, req.Kind, Cluster.cfg.TimeoutTimespan);
+            }
+            catch(TimeoutException)
+            {
+                tcs.TrySetResult(ActorPidResponse.TimeOut);
+                return;
+            }
+            catch
+            {
+                tcs.TrySetResult(ActorPidResponse.Err);
+                return;
+            }
+
+            if ((ResponseStatusCode) pidResp.StatusCode == ResponseStatusCode.Unavailable && retryLeft != 0)
+            { 
+                await Spawning(req, null, --retryLeft, tcs);
+                return;
+            }
+
+            tcs.TrySetResult(pidResp);
         }
     }
 }

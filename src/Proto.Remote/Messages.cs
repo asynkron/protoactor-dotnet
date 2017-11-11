@@ -85,4 +85,12 @@ namespace Proto.Remote
         public string Json { get; set; }
         public string TypeName { get; set; }
     }
+
+    public sealed partial class ActorPidResponse
+    {
+        public static ActorPidResponse TimeOut = new ActorPidResponse() { StatusCode = (int)ResponseStatusCode.Timeout };
+        public static ActorPidResponse Unavailable = new ActorPidResponse() { StatusCode = (int)ResponseStatusCode.Unavailable };
+        public static ActorPidResponse Err = new ActorPidResponse() { StatusCode = (int)ResponseStatusCode.Error };
+    }
+
 }
