@@ -15,33 +15,24 @@ namespace Proto.Cluster
 {
     internal static class PidCache
     {
-        internal static PID WatcherPid { get; private set; }
-
+        private static PID watcher;
         private static Subscription<object> clusterTopologyEvnSub;
 
         private static readonly Object _lock = new Object();
         private static readonly Dictionary<string, PID> _cache = new Dictionary<string, PID>();
         private static readonly Dictionary<string, string> _reverseCache = new Dictionary<string, string>();
 
-        internal static void SubscribeToEventStream()
-        {
-            clusterTopologyEvnSub = Actor.EventStream.Subscribe<MemberStatusEvent>(OnMemberStatusEvent);
-        }
-
-        internal static void UnsubEventStream()
-        {
-            Actor.EventStream.Unsubscribe(clusterTopologyEvnSub.Id);
-        }
-
-        internal static void Spawn()
+        internal static void Setup()
         {
             var props = Actor.FromProducer(() => new PidCacheWatcher());
-            WatcherPid = Actor.SpawnNamed(props, "PidCacheWatcher");
+            watcher = Actor.SpawnNamed(props, "PidCacheWatcher");
+            clusterTopologyEvnSub = Actor.EventStream.Subscribe<MemberStatusEvent>(OnMemberStatusEvent);
         }
 
         internal static void Stop()
         {
-            WatcherPid.Stop();
+            watcher.Stop();
+            Actor.EventStream.Unsubscribe(clusterTopologyEvnSub.Id);
         }
 
         internal static void OnMemberStatusEvent(MemberStatusEvent evn)
@@ -69,6 +60,7 @@ namespace Proto.Cluster
                 var key = pid.ToShortString();
                 _cache[name] = pid;
                 _reverseCache[key] = name;
+                watcher.Tell(new WatchPidRequest(pid));
                 return true;
             }
         }

@@ -30,11 +30,9 @@ namespace Proto.Cluster
             Logger.LogInformation("Starting Proto.Actor cluster");
             var (h, p) = ParseAddress(ProcessRegistry.Instance.Address);
             var kinds = Remote.Remote.GetKnownKinds();
-            Partition.SpawnPartitionActors(kinds);
-            Partition.SubscribeToEventStream();
-            PidCache.Spawn();
-            PidCache.SubscribeToEventStream();
-            MemberList.SubscribeToEventStream();
+            Partition.Setup(kinds);
+            PidCache.Setup();
+            MemberList.Setup();
             cfg.ClusterProvider.RegisterMemberAsync(cfg.Name, h, p, kinds, config.InitialMemberStatusValue, config.MemberStatusValueSerializer).Wait();
             cfg.ClusterProvider.MonitorMemberStatusChanges();
 
@@ -48,11 +46,9 @@ namespace Proto.Cluster
                 cfg.ClusterProvider.Shutdown();
                 //This is to wait ownership transfering complete.
                 Task.Delay(2000).Wait();
-                MemberList.UnsubEventStream();
-                PidCache.UnsubEventStream();
+                MemberList.Stop();
                 PidCache.Stop();
-                Partition.UnsubEventStream();
-                Partition.StopPartitionActors();
+                Partition.Stop();
             }
 
             Remote.Remote.Shutdown(gracefull);
@@ -102,7 +98,6 @@ namespace Proto.Cluster
                 {
                     case ResponseStatusCode.OK:
                         PidCache.TryAddCache(name, resp.Pid);
-                        PidCache.WatcherPid.Tell(new WatchPidRequest(resp.Pid));
                         return (resp.Pid, status);
                     default:
                         return (resp.Pid, status);

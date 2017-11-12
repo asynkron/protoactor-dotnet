@@ -19,14 +19,14 @@ namespace Proto.Cluster
 
         private static Subscription<object> memberStatusSub;
 
-        public static PID SpawnPartitionActor(string kind)
+        public static void Setup(string[] kinds)
         {
-            var pid = Actor.SpawnNamed(Actor.FromProducer(() => new PartitionActor(kind)), "partition-" + kind);
-            return pid;
-        }
+            foreach (var kind in kinds)
+            {
+                var pid = SpawnPartitionActor(kind);
+                KindMap[kind] = pid;
+            }
 
-        public static void SubscribeToEventStream()
-        {
             memberStatusSub = EventStream.Instance.Subscribe<MemberStatusEvent>(msg =>
             {
                 foreach (var kind in msg.Kinds)
@@ -39,32 +39,25 @@ namespace Proto.Cluster
             });
         }
 
-        public static void UnsubEventStream()
+        public static PID SpawnPartitionActor(string kind)
         {
-            EventStream.Instance.Unsubscribe(memberStatusSub.Id);
+            var pid = Actor.SpawnNamed(Actor.FromProducer(() => new PartitionActor(kind)), "partition-" + kind);
+            return pid;
         }
 
-        public static PID PartitionForKind(string address, string kind)
-        {
-            return new PID(address, "partition-" + kind);
-        }
-
-        public static void SpawnPartitionActors(string[] kinds)
-        {
-            foreach (var kind in kinds)
-            {
-                var pid = SpawnPartitionActor(kind);
-                KindMap[kind] = pid;
-            }
-        }
-
-        public static void StopPartitionActors()
+        public static void Stop()
         {
             foreach (var kind in KindMap.Values)
             {
                 kind.Stop();
             }
             KindMap.Clear();
+            EventStream.Instance.Unsubscribe(memberStatusSub.Id);
+        }
+
+        public static PID PartitionForKind(string address, string kind)
+        {
+            return new PID(address, "partition-" + kind);
         }
     }
 
