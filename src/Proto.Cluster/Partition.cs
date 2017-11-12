@@ -236,12 +236,14 @@ namespace Proto.Cluster
 
         private void Spawn(ActorPidRequest msg, IContext context)
         {
+            //Check if exist in current partition dictionary
             if (_partition.TryGetValue(msg.Name, out var pid))
             {
                 context.Respond(new ActorPidResponse {Pid = pid});
                 return;
             }
 
+            //Check if is spawning, if so just await spawning finish.
             SpawningProcess sp;
             if (_spawningProcs.TryGetValue(msg.Name, out sp))
             {
@@ -255,6 +257,7 @@ namespace Proto.Cluster
                 return;
             }
 
+            //Get activator
             var activator = MemberList.GetActivator(msg.Kind);
             if (string.IsNullOrEmpty(activator))
             {
@@ -264,9 +267,11 @@ namespace Proto.Cluster
                 return;
             }
 
+            //Create SpawningProcess and cache it in spawnings dictionary.
             sp = new SpawningProcess(new TaskCompletionSource<ActorPidResponse>());
             _spawningProcs[msg.Name] = sp;
 
+            //Await SpawningProcess
             context.ReenterAfter(sp.Tcs.Task, rst => {
                 _spawningProcs.Remove(msg.Name);
                 if (!sp.Valid)
@@ -287,7 +292,7 @@ namespace Proto.Cluster
                 return Actor.Done;
             });
 
-            //Spawning
+            //Perform Spawning
             Task.Factory.StartNew(() => Spawning(msg, activator, 3, sp.Tcs));
         }
 
