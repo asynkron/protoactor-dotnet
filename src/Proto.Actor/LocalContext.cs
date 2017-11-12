@@ -133,7 +133,7 @@ namespace Proto
             }
             _children.Add(pid);
 
-           return pid;
+            return pid;
         }
 
         public void Watch(PID pid)
@@ -152,15 +152,15 @@ namespace Proto
             {
                 throw new ArgumentOutOfRangeException(nameof(duration), duration, "Duration must be greater than zero");
             }
-            
+
             if (duration == ReceiveTimeout)
             {
                 return;
             }
-            
+
             StopReceiveTimeout();
             ReceiveTimeout = duration;
-            
+
             if (_receiveTimeoutTimer == null)
             {
                 _receiveTimeoutTimer = new Timer(ReceiveTimeoutCallback, null, ReceiveTimeout, ReceiveTimeout);
@@ -208,6 +208,14 @@ namespace Proto
             => RequestAsync(target, message, new FutureProcess<T>());
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
+        {
+            var msg = _message;
+            var cont = new Continuation(() => action(target), msg);
+
+            target.ContinueWith(t => { Self.SendSystemMessage(cont); });
+        }
+
+        public void ReenterAfter(Task target, Func<Task, Task> action)
         {
             var msg = _message;
             var cont = new Continuation(() => action(target), msg);
@@ -334,7 +342,7 @@ namespace Proto
 
         internal static Task DefaultReceive(IContext context)
         {
-            var c = (LocalContext) context;
+            var c = (LocalContext)context;
             if (c.Message is PoisonPill)
             {
                 c.Self.Stop();
@@ -480,7 +488,7 @@ namespace Proto
             {
                 return;
             }
-            
+
             switch (_state)
             {
                 case ContextState.Restarting:
