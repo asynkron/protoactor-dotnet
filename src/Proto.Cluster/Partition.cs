@@ -63,18 +63,8 @@ namespace Proto.Cluster
 
     internal class PartitionActor : IActor
     {
-        private class SpawningProcess
+        private class SpawningProcess : TaskCompletionSource<ActorPidResponse>
         {
-            public TaskCompletionSource<ActorPidResponse> Tcs {get; private set;}
-            public bool Valid {get; private set;}
-
-            public SpawningProcess(TaskCompletionSource<ActorPidResponse> tcs)
-            {
-                Tcs = tcs;
-                Valid = true;
-            }
-
-            public void SetInvalid() => Valid = false;
         }
 
         private readonly string _kind;
@@ -162,8 +152,7 @@ namespace Proto.Cluster
 
                     if (!string.IsNullOrEmpty(address))
                     {
-                        sp.SetInvalid();
-                        sp.Tcs.TrySetResult(ActorPidResponse.Unavailable);
+                        sp.TrySetResult(ActorPidResponse.Unavailable);
                     }
                 }
             }
@@ -214,8 +203,7 @@ namespace Proto.Cluster
 
                 if (!string.IsNullOrEmpty(address) && address != ProcessRegistry.Instance.Address)
                 {
-                    sp.SetInvalid();
-                    sp.Tcs.TrySetResult(ActorPidResponse.Unavailable);
+                    sp.TrySetResult(ActorPidResponse.Unavailable);
                 }
             }
         }
@@ -244,14 +232,12 @@ namespace Proto.Cluster
             }
 
             //Check if is spawning, if so just await spawning finish.
-            SpawningProcess sp;
-            if (_spawningProcs.TryGetValue(msg.Name, out sp))
+            SpawningProcess spawning;
+            if (_spawningProcs.TryGetValue(msg.Name, out spawning))
             {
-                context.ReenterAfter(sp.Tcs.Task, rst => {
-                    if (!sp.Valid)
-                        context.Respond(ActorPidResponse.Unavailable);
-                    else
-                        context.Respond(rst.Result);
+                context.ReenterAfter(spawning.Task, rst =>
+                {
+                    context.Respond(rst.IsFaulted ? ActorPidResponse.Err : rst.Result);
                     return Actor.Done;
                 });
                 return;
@@ -268,15 +254,15 @@ namespace Proto.Cluster
             }
 
             //Create SpawningProcess and cache it in spawnings dictionary.
-            sp = new SpawningProcess(new TaskCompletionSource<ActorPidResponse>());
-            _spawningProcs[msg.Name] = sp;
+            spawning = new SpawningProcess();
+            _spawningProcs[msg.Name] = spawning;
 
             //Await SpawningProcess
-            context.ReenterAfter(sp.Tcs.Task, rst => {
+            context.ReenterAfter(spawning.Task, rst => {
                 _spawningProcs.Remove(msg.Name);
-                if (!sp.Valid)
+                if (rst.IsFaulted)
                 {
-                    context.Respond(ActorPidResponse.Unavailable);
+                    context.Respond(ActorPidResponse.Err);
                     return Actor.Done;
                 }
 
@@ -293,10 +279,10 @@ namespace Proto.Cluster
             });
 
             //Perform Spawning
-            Task.Factory.StartNew(() => Spawning(msg, activator, 3, sp.Tcs));
+            Task.Factory.StartNew(() => Spawning(msg, activator, 3, spawning));
         }
 
-        private async Task Spawning(ActorPidRequest req, string activator, int retryLeft, TaskCompletionSource<ActorPidResponse> tcs)
+        private async Task Spawning(ActorPidRequest req, string activator, int retryLeft, SpawningProcess spawning)
         {
             if(string.IsNullOrEmpty(activator))
             {
@@ -305,7 +291,7 @@ namespace Proto.Cluster
                 {
                     //No activator currently available, return unavailable
                     _logger.LogDebug("No activator currently available");
-                    tcs.TrySetResult(ActorPidResponse.Unavailable);
+                    spawning.TrySetResult(ActorPidResponse.Unavailable);
                     return;
                 }
             }
@@ -317,22 +303,22 @@ namespace Proto.Cluster
             }
             catch(TimeoutException)
             {
-                tcs.TrySetResult(ActorPidResponse.TimeOut);
+                spawning.TrySetResult(ActorPidResponse.TimeOut);
                 return;
             }
             catch
             {
-                tcs.TrySetResult(ActorPidResponse.Err);
+                spawning.TrySetResult(ActorPidResponse.Err);
                 return;
             }
 
             if ((ResponseStatusCode) pidResp.StatusCode == ResponseStatusCode.Unavailable && retryLeft != 0)
             { 
-                await Spawning(req, null, --retryLeft, tcs);
+                await Spawning(req, null, --retryLeft, spawning);
                 return;
             }
 
-            tcs.TrySetResult(pidResp);
+            spawning.TrySetResult(pidResp);
         }
     }
 }
