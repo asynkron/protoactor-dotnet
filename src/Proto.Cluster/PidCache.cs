@@ -5,7 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -18,9 +18,8 @@ namespace Proto.Cluster
         private static PID watcher;
         private static Subscription<object> clusterTopologyEvnSub;
 
-        private static readonly Object _lock = new Object();
-        private static readonly Dictionary<string, PID> _cache = new Dictionary<string, PID>();
-        private static readonly Dictionary<string, string> _reverseCache = new Dictionary<string, string>();
+        private static readonly ConcurrentDictionary<string, PID> _cache = new ConcurrentDictionary<string, PID>();
+        private static readonly ConcurrentDictionary<string, string> _reverseCache = new ConcurrentDictionary<string, string>();
 
         internal static void Setup()
         {
@@ -45,62 +44,46 @@ namespace Proto.Cluster
 
         internal static bool TryGetCache(string name, out PID pid)
         {
-            lock(_lock)
-            {
-                return _cache.TryGetValue(name, out pid);
-            }
+            return _cache.TryGetValue(name, out pid);
         }
 
         internal static bool TryAddCache(string name, PID pid)
         {
-            lock(_lock)
+            if (_cache.TryAdd(name, pid))
             {
-                if (!_cache.ContainsKey(name))
-                    return false;
                 var key = pid.ToShortString();
-                _cache[name] = pid;
-                _reverseCache[key] = name;
+                _reverseCache.TryAdd(key, name);
                 watcher.Tell(new WatchPidRequest(pid));
                 return true;
             }
+            return false;
         }
 
         internal static void RemoveCacheByPid(PID pid)
         {
-            lock(_lock)
+            var key = pid.ToShortString();
+            if (_reverseCache.TryRemove(key, out var name))
             {
-                var key = pid.ToShortString();
-                if (_reverseCache.TryGetValue(key, out var name))
-                {
-                    _reverseCache.Remove(key);
-                    _cache.Remove(name);
-                }
+                _cache.TryRemove(name, out _);
             }
         }
 
         internal static void RemoveCacheByName(string name)
         {
-            lock(_lock)
+            if(_cache.TryRemove(name, out var pid))
             {
-                if (_cache.TryGetValue(name, out var pid))
-                {
-                    _cache.Remove(name);
-                    _reverseCache.Remove(pid.ToShortString());
-                }
+                _reverseCache.TryRemove(pid.ToShortString(), out _);
             }
         }
 
         internal static void RemoveCacheByMemberAddress(string memberAddress)
         {
-            lock(_lock)
+            foreach (var (name, pid) in _cache.ToArray())
             {
-                foreach (var (name, pid) in _cache.ToArray())
+                if (pid.Address == memberAddress)
                 {
-                    if (pid.Address == memberAddress)
-                    {
-                        _cache.Remove(name);
-                        _reverseCache.Remove(pid.ToShortString());
-                    }
+                    _cache.TryRemove(name, out _);
+                    _reverseCache.TryRemove(name, out _);
                 }
             }
         }
