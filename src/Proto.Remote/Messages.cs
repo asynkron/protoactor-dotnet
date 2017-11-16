@@ -8,8 +8,6 @@ using System;
 
 namespace Proto.Remote
 {
-    public sealed class StopEndpointManager { }
-    
     public sealed class EndpointTerminatedEvent
     {
         public string Address { get; set; }
