@@ -90,9 +90,9 @@ namespace Proto.Cluster
 
             try
             {
-                var resp = await (ct == null || ct == CancellationToken.None
-                           ? remotePid.RequestAsync<ActorPidResponse>(req, cfg.TimeoutTimespan)
-                           : remotePid.RequestAsync<ActorPidResponse>(req, ct));
+                var resp = ct == null || ct == CancellationToken.None
+                           ? await remotePid.RequestAsync<ActorPidResponse>(req, cfg.TimeoutTimespan)
+                           : await remotePid.RequestAsync<ActorPidResponse>(req, ct);
                 var status = (ResponseStatusCode) resp.StatusCode;
                 switch (status)
                 {
