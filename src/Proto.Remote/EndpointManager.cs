@@ -39,7 +39,8 @@ namespace Proto.Remote
         {
             _logger.LogDebug("Started EndpointManager");
 
-            var props = Actor.FromProducer(() => new EndpointSupervisor());
+            var props = Actor.FromProducer(() => new EndpointSupervisor())
+                             .WithDispatcher(Proto.Mailbox.Dispatchers.SynchronousDispatcher);
             _endpointSupervisor = Actor.Spawn(props);
             _endpointTermEvnSub = EventStream.Instance.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated);
             _endpointConnEvnSub = EventStream.Instance.Subscribe<EndpointConnectedEvent>(OnEndpointConnected);
