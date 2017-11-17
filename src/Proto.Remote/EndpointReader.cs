@@ -19,6 +19,11 @@ namespace Proto.Remote
 
         public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
         {
+            if (_suspended)
+            {
+                throw new RpcException(Status.DefaultCancelled, "Suspended");
+            }
+
             return Task.FromResult(new ConnectResponse()
             {
                 DefaultSerializerId = Serialization.DefaultSerializerId
@@ -54,7 +59,7 @@ namespace Proto.Remote
                     if (message is Terminated msg)
                     {
                         var rt = new RemoteTerminate(target, msg.Who);
-                        Remote.EndpointManagerPid.Tell(rt);
+                        EndpointManager.RemoteTerminate(rt);
                     }
                     else if (message is SystemMessage sys)
                     {

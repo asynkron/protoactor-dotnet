@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -23,130 +24,104 @@ namespace Proto.Remote
         public PID Watcher { get; }
     }
 
-    public class EndpointManager : IActor, ISupervisorStrategy
+    public static class EndpointManager
     {
-        private readonly Behavior _behavior;
-        private readonly RemoteConfig _config;
-        private readonly Dictionary<string, Endpoint> _connections = new Dictionary<string, Endpoint>();
+        private class ConnectionRegistry : ConcurrentDictionary<string, Lazy<Endpoint>> { }
 
-        private readonly ILogger _logger = Log.CreateLogger<EndpointManager>();
+        private static readonly ILogger _logger = Log.CreateLogger("EndpointManager");
 
-        public EndpointManager(RemoteConfig config)
+        private static readonly ConnectionRegistry _connections = new ConnectionRegistry();
+        private static PID _endpointSupervisor;
+        private static Subscription<object> _endpointTermEvnSub;
+        private static Subscription<object> _endpointConnEvnSub;
+
+        public static void Start()
         {
-            _config = config;
-            _behavior = new Behavior(ActiveAsync);
+            _logger.LogDebug("Started EndpointManager");
+
+            var props = Actor.FromProducer(() => new EndpointSupervisor())
+                             .WithDispatcher(Proto.Mailbox.Dispatchers.SynchronousDispatcher);
+            _endpointSupervisor = Actor.Spawn(props);
+            _endpointTermEvnSub = EventStream.Instance.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated);
+            _endpointConnEvnSub = EventStream.Instance.Subscribe<EndpointConnectedEvent>(OnEndpointConnected);
         }
 
-        public Task ReceiveAsync(IContext context)
+        public static void Stop()
         {
-            return _behavior.ReceiveAsync(context);
+            EventStream.Instance.Unsubscribe(_endpointTermEvnSub.Id);
+            EventStream.Instance.Unsubscribe(_endpointConnEvnSub.Id);
+
+            _connections.Clear();
+            _endpointSupervisor.Stop();
+            _logger.LogDebug("Stopped EndpointManager");
         }
 
-        public Task ActiveAsync(IContext context)
+        private static void OnEndpointTerminated(EndpointTerminatedEvent msg)
         {
-            switch (context.Message)
+            if (_connections.TryRemove(msg.Address, out var v))
             {
-                case Started _:
-                {
-                    _logger.LogDebug("Started EndpointManager");
-                    return Actor.Done;
-                }
-                case StopEndpointManager _:
-                {
-                    foreach (var endpoint in _connections.Values)
-                    {
-                        endpoint.Watcher.Stop();
-                        endpoint.Writer.Stop();
-                    }
-                    _connections.Clear();
-                    _behavior.Become(TerminatedAsync);
-                    _logger.LogDebug("Stopped EndpointManager");
-                    return Actor.Done;
-                }
-                case EndpointTerminatedEvent msg:
-                {
-                    var (connected, endpoint) = CheckConnected(msg.Address);
-                    if (connected)
-                    {
-                        endpoint.Watcher.Tell(msg);
-                        RemoveEndpoint(msg.Address);
-                    }
-                    return Actor.Done;
-                }
-                case EndpointConnectedEvent msg:
-                {
-                    var endpoint = EnsureConnected(msg.Address, context);
-                    endpoint.Watcher.Tell(msg);
-                    return Actor.Done;
-                }
-                case RemoteTerminate msg:
-                {
-                    var endpoint = EnsureConnected(msg.Watchee.Address, context);
-                    endpoint.Watcher.Tell(msg);
-                    return Actor.Done;
-                }
-                case RemoteWatch msg:
-                {
-                    var endpoint = EnsureConnected(msg.Watchee.Address, context);
-                    endpoint.Watcher.Tell(msg);
-                    return Actor.Done;
-                }
-                case RemoteUnwatch msg:
-                {
-                    var endpoint = EnsureConnected(msg.Watchee.Address, context);
-                    endpoint.Watcher.Tell(msg);
-                    return Actor.Done;
-                }
-                case RemoteDeliver msg:
-                {
-                    var endpoint = EnsureConnected(msg.Target.Address, context);
-                    endpoint.Writer.Tell(msg);
-                    return Actor.Done;
-                }
-                default:
-                    return Actor.Done;
+                var endpoint = v.Value;
+                endpoint.Watcher.Tell(msg);
+                endpoint.Watcher.Stop();
+                endpoint.Writer.Stop();
             }
         }
 
-        public Task TerminatedAsync(IContext context)
+        private static void OnEndpointConnected(EndpointConnectedEvent msg)
         {
+            var endpoint = EnsureConnected(msg.Address);
+            endpoint.Watcher.Tell(msg);
+        }
+
+        public static void RemoteTerminate(RemoteTerminate msg)
+        {
+            var endpoint = EnsureConnected(msg.Watchee.Address);
+            endpoint.Watcher.Tell(msg);
+        }
+
+        public static void RemoteWatch(RemoteWatch msg)
+        {
+            var endpoint = EnsureConnected(msg.Watchee.Address);
+            endpoint.Watcher.Tell(msg);
+        }
+
+        public static void RemoteUnwatch(RemoteUnwatch msg)
+        {
+            var endpoint = EnsureConnected(msg.Watchee.Address);
+            endpoint.Watcher.Tell(msg);
+        }
+
+        public static void RemoteDeliver(RemoteDeliver msg)
+        {
+            var endpoint = EnsureConnected(msg.Target.Address);
+            endpoint.Writer.Tell(msg);
+        }
+
+        private static Endpoint EnsureConnected(string address)
+        {
+            var conn = _connections.GetOrAdd(address, v => 
+                new Lazy<Endpoint>(() => _endpointSupervisor.RequestAsync<Endpoint>(v).Result)
+            );
+            return conn.Value;
+        }
+    }
+
+    public class EndpointSupervisor : IActor, ISupervisorStrategy
+    {
+        public Task ReceiveAsync(IContext context)
+        {
+            if (context.Message is string address)
+            {
+                var watcher = SpawnWatcher(address, context);
+                var writer = SpawnWriter(address, context);
+                context.Respond(new Endpoint(writer, watcher));
+            }
             return Actor.Done;
         }
 
         public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause)
         {
             supervisor.RestartChildren(cause, child);
-        }
-
-        private (bool, Endpoint) CheckConnected(string address)
-        {
-            return _connections.TryGetValue(address, out var endpoint) ? (true, endpoint) : (false, null);
-        }
-
-        private Endpoint EnsureConnected(string address, IContext context)
-        {
-            var ok = _connections.TryGetValue(address, out var endpoint);
-            if (!ok)
-            {
-                var writer = SpawnWriter(address, context);
-
-                var watcher = SpawnWatcher(address, context);
-
-                endpoint = new Endpoint(writer, watcher);
-                _connections.Add(address, endpoint);
-            }
-
-            return endpoint;
-        }
-
-        private void RemoveEndpoint(string address)
-        {
-            if (_connections.TryGetValue(address, out var endpoint))
-            {
-                endpoint.Watcher.Stop();
-                endpoint.Writer.Stop();
-                _connections.Remove(address);
-            }
         }
 
         private static PID SpawnWatcher(string address, IContext context)
@@ -159,8 +134,8 @@ namespace Proto.Remote
         private PID SpawnWriter(string address, IContext context)
         {
             var writerProps =
-                Actor.FromProducer(() => new EndpointWriter(address, _config.ChannelOptions, _config.CallOptions, _config.ChannelCredentials))
-                     .WithMailbox(() => new EndpointWriterMailbox(_config.EndpointWriterBatchSize));
+                Actor.FromProducer(() => new EndpointWriter(address, Remote.RemoteConfig.ChannelOptions, Remote.RemoteConfig.CallOptions, Remote.RemoteConfig.ChannelCredentials))
+                     .WithMailbox(() => new EndpointWriterMailbox(Remote.RemoteConfig.EndpointWriterBatchSize));
             var writer = context.Spawn(writerProps);
             return writer;
         }

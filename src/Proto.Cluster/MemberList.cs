@@ -22,12 +22,12 @@ namespace Proto.Cluster
 
         private static Subscription<object> _clusterTopologyEvnSub;
 
-        internal static void SubscribeToEventStream()
+        internal static void Setup()
         {
             _clusterTopologyEvnSub = Actor.EventStream.Subscribe<ClusterTopologyEvent>(UpdateClusterTopology);
         }
 
-        internal static void UnsubEventStream()
+        internal static void Stop()
         {
             Actor.EventStream.Unsubscribe(_clusterTopologyEvnSub.Id);
         }
