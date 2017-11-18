@@ -83,7 +83,8 @@ namespace Proto.Cluster
                 if (pid.Address == memberAddress)
                 {
                     _cache.TryRemove(name, out _);
-                    _reverseCache.TryRemove(name, out _);
+                    var key = pid.ToShortString();
+                    _reverseCache.TryRemove(key, out _);
                 }
             }
         }
