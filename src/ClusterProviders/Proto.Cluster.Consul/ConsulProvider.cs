@@ -84,12 +84,11 @@ namespace Proto.Cluster.Consul
             _port = port;
             _kinds = kinds;
             _index = 0;
-
+            _statusValue = statusValue;
             _statusValueSerializer = statusValueSerializer;
 
             await RegisterServiceAsync();
-            await RegisterMemberIDAsync();
-            await UpdateMemberStatusValueAsync(statusValue);
+            await RegisterMemberValsAsync();
 
             UpdateTtl();
         }
@@ -99,8 +98,7 @@ namespace Proto.Cluster.Consul
             //DeregisterService
             await DeregisterServiceAsync();
             //DeleteProcess
-            await DeregisterMemberIDAsync();
-            await DeleteMemberStatusValueAsync();
+            await DeregisterMemberValsAsync();
 
             _deregistered = true;
         }
@@ -186,31 +184,29 @@ namespace Proto.Cluster.Consul
             }, new WriteOptions());
         }
 
-        private async Task DeleteMemberStatusValueAsync()
+        private async Task RegisterMemberValsAsync()
         {
-            if (_statusValue == null) return;
-            var kvKey = $"{_clusterName}/{_address}:{_port}/StatusValue"; //slash should be present
-            await _client.KV.Delete(kvKey);
-        }
+            var txn = new List<KVTxnOp>();
 
-        private async Task RegisterMemberIDAsync()
-        {
             //register a semi unique ID for the current process
             var kvKey = $"{_clusterName}/{_address}:{_port}/ID"; //slash should be present
             var value = Encoding.UTF8.GetBytes(DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ssK"));
-            await _client.KV.Put(new KVPair(kvKey)
+            txn.Add(new KVTxnOp(kvKey, KVTxnVerb.Set) { Value = value });
+
+            if (_statusValue != null)
             {
-                //Write the ID for this member.
-                //the value is later used to see if an existing node have changed its ID over time
-                //meaning that it has Re-joined the cluster.
-                Value = value
-            }, new WriteOptions());
+                var statusValKey = $"{_clusterName}/{_address}:{_port}/StatusValue"; //slash should be present
+                var statusValValue = _statusValueSerializer.ToValueBytes(_statusValue);
+                txn.Add(new KVTxnOp(statusValKey, KVTxnVerb.Set) { Value = statusValValue });
+            }
+
+            await _client.KV.Txn(txn, new WriteOptions());
         }
 
-        private async Task DeregisterMemberIDAsync()
+        private async Task DeregisterMemberValsAsync()
         {
-            var kvKey = $"{_clusterName}/{_address}:{_port}/ID"; //slash should be present
-            await _client.KV.Delete(kvKey);
+            var kvKey = $"{_clusterName}/{_address}:{_port}"; //slash should be present
+            await _client.KV.DeleteTree(kvKey);
         }
 
         private void NotifyStatuses()

@@ -39,7 +39,7 @@ namespace Proto.Remote
                         pidSet.Remove(msg.Watchee);
                         if (pidSet.Count == 0)
                         {
-                            _watched[msg.Watcher.Id] = null;
+                            _watched.Remove(msg.Watcher.Id);
                         }
                     }
 
@@ -88,7 +88,7 @@ namespace Proto.Remote
                         pidSet.Remove(msg.Watchee);
                         if (pidSet.Count == 0)
                         {
-                            _watched[msg.Watcher.Id] = null;
+                            _watched.Remove(msg.Watcher.Id);
                         }
                     }
 
