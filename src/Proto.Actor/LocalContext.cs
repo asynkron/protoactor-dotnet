@@ -215,26 +215,6 @@ namespace Proto
             target.ContinueWith(t => { Self.SendSystemMessage(cont); });
         }
 
-        public void ReenterAfter(Task target, Func<Task, Task> action)
-        {
-            var msg = _message;
-            var cont = new Continuation(() => action(target), msg);
-
-            target.ContinueWith(t => { Self.SendSystemMessage(cont); });
-        }
-
-        public void ReenterAfter(Task target, Action<Task> action)
-        {
-            var msg = _message;
-            var cont = new Continuation(() =>
-            {
-                action(target);
-                return Task.FromResult(0);
-            }, msg);
-
-            target.ContinueWith(t => { Self.SendSystemMessage(cont); });
-        }
-
         public void ReenterAfter(Task target, Action action)
         {
             var msg = _message;
