@@ -114,14 +114,21 @@ namespace Proto
         /// <param name="action">the continuation to call once the task is completed</param>
         /// <typeparam name="T">The generic type of the task</typeparam>
         void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action);
-
         /// <summary>
         ///     Awaits the given target task and once completed, the given action is then completed within the actors concurrency constraint.
         ///     The concept is called Reentrancy, where an actor can continue to process messages while also awaiting that some asynchronous operation completes.
         /// </summary>
         /// <param name="target">the Task to await</param>
         /// <param name="action">the continuation to call once the task is completed</param>
-        /// <typeparam name="T">The generic type of the task</typeparam>
-        void ReenterAfter(Task target, Func<Task, Task> action);
+        void ReenterAfter(Task target, Action<Task> action);
+        /// <summary>
+        ///     Awaits the given target task and once completed, the given action is then completed within the actors concurrency constraint.
+        ///     The concept is called Reentrancy, where an actor can continue to process messages while also awaiting that some asynchronous operation completes.
+        /// </summary>
+        /// <param name="target">the Task to await</param>
+        /// <param name="action">the continuation to call once the task is completed</param>
+        void ReenterAfter(Task target, Action action);
+
+
     }
 }
