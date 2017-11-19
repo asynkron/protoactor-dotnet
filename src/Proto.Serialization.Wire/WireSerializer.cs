@@ -8,7 +8,7 @@ using Wire;
 using Wire.SerializerFactories;
 using Wire.ValueSerializers;
 
-namespace Proto.Serialization
+namespace Proto.Serialization.Wire
 {
     public class PidValueSerializer : ValueSerializerFactory
     {
