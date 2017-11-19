@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Messages;
 using Proto;
 using Proto.Remote;
-using Proto.Serialization;
+using Proto.Serialization.Wire;
 
 namespace Node2
 {
