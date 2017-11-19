@@ -12,11 +12,12 @@ namespace Proto.Serialization
 {
     public class PidValueSerializer : ValueSerializerFactory
     {
-        public override ValueSerializer BuildSerializer(Serializer serializer, Type type, ConcurrentDictionary<Type, ValueSerializer> typeMapping)
+        public override ValueSerializer BuildSerializer(Serializer serializer, Type type,
+            ConcurrentDictionary<Type, ValueSerializer> typeMapping)
         {
             var x = new ObjectSerializer(type);
             typeMapping.TryAdd(type, x);
-            var preserveObjectReferences = true;// serializer.Options.PreserveObjectReferences;
+            var preserveObjectReferences = true; //serializer.Options.PreserveObjectReferences;
 
             object Reader(Stream stream, DeserializerSession session)
             {
@@ -24,50 +25,48 @@ namespace Proto.Serialization
                 var id = StringSerializer.ReadValueImpl(stream, session);
                 var pid = new PID(address, id);
                 if (preserveObjectReferences)
-                {
                     session.TrackDeserializedObject(pid);
-                }
-                
+
                 return pid;
             }
 
             void Writer(Stream stream, object o, SerializerSession session)
             {
                 if (preserveObjectReferences)
-                {
                     session.TrackSerializedObject(o);
-                }
-                var pid = (PID)o;
+                var pid = (PID) o;
                 StringSerializer.WriteValueImpl(stream, pid.Address, session);
                 StringSerializer.WriteValueImpl(stream, pid.Id, session);
             }
 
             x.Initialize(Reader, Writer);
-           
+
             return x;
         }
 
         public override bool CanDeserialize(Serializer serializer, Type type)
         {
-            return (type == typeof(PID));
+            return type == typeof(PID);
         }
 
         public override bool CanSerialize(Serializer serializer, Type type)
         {
-            return (type == typeof(PID));
+            return type == typeof(PID);
         }
     }
+
     public class WireSerializer : ISerializer
     {
         private readonly Serializer _serializer;
 
-        public WireSerializer() : this (new System.Type[] { })
+        public WireSerializer() : this(new Type[] { })
         {
-
         }
-        public WireSerializer(IEnumerable<System.Type> knownTypes)
+
+        public WireSerializer(IEnumerable<Type> knownTypes)
         {
-            _serializer = new Serializer(new SerializerOptions(false,true,null, new ValueSerializerFactory[] { new PidValueSerializer() } , knownTypes: knownTypes));
+            _serializer = new Serializer(new SerializerOptions(false, true, null,
+                new ValueSerializerFactory[] {new PidValueSerializer()}, knownTypes));
         }
 
         public ByteString Serialize(object obj)
@@ -82,7 +81,7 @@ namespace Proto.Serialization
             }
             catch
             {
-                return null;
+                throw; //for debugging purposes
             }
         }
 
