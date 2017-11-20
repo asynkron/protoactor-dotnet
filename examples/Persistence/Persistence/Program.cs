@@ -29,8 +29,6 @@ class Program
         Console.ReadLine();
     }
 
-    public class RequestSnapshot { }
-
     class MyPersistenceActor : IActor
     {
         private PID _loopActor;
@@ -39,10 +37,16 @@ class Program
 
         public MyPersistenceActor(IProvider provider)
         {
-            _persistence = Persistence.WithEventSourcingAndSnapshotting(provider, provider, "demo-app-id", Apply, Apply);
+            _persistence = Persistence.WithEventSourcingAndSnapshotting(
+                provider, 
+                provider, 
+                "demo-app-id",
+                ApplyEvent, 
+                ApplySnapshot,
+                new IntervalStrategy(20), () => _state);
         }
 
-        private void Apply(Event @event)
+        private void ApplyEvent(Event @event)
         {
             switch (@event)
             {
@@ -53,13 +57,20 @@ class Program
                         Console.WriteLine("MyPersistenceActor - RecoverEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
                     }
                     break;
+                case ReplayEvent msg:
+                    if (msg.Data is RenameEvent rp)
+                    {
+                        _state.Name = rp.Name;
+                        Console.WriteLine("MyPersistenceActor - ReplayEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
+                    }
+                    break;
                 case PersistedEvent msg:
                     Console.WriteLine("MyPersistenceActor - PersistedEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
                     break;
             }
         }
 
-        private void Apply(Snapshot snapshot)
+        private void ApplySnapshot(Snapshot snapshot)
         {
             switch (snapshot)
             {
@@ -70,11 +81,13 @@ class Program
                         Console.WriteLine("MyPersistenceActor - RecoverSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}", _persistence.Index, ss.Name);
                     }
                     break;
+                case PersistedSnapshot msg:
+                    Console.WriteLine("MyPersistenceActor - PersistedSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}", msg.Index, msg.State);
+                    break;
             }
         }
 
         private class StartLoopActor { }
-        private class TimeToSnapshot { }
 
         private bool _timerStarted = false;
 
@@ -87,22 +100,10 @@ class Program
                     Console.WriteLine("MyPersistenceActor - Started");
 
                     Console.WriteLine("MyPersistenceActor - Current State: {0}", _state);
-
+                    
                     await _persistence.RecoverStateAsync();
-
+                    
                     context.Self.Tell(new StartLoopActor());
-
-                    break;
-     
-                case RequestSnapshot msg:
-
-                    await Handle(context, msg);
-
-                    break;
-
-                case TimeToSnapshot msg:
-
-                    await Handle(context, msg);
 
                     break;
 
@@ -120,29 +121,6 @@ class Program
             }
         }
 
-        private async Task Handle(IContext context, RequestSnapshot message)
-        {
-            Console.WriteLine("MyPersistenceActor - RequestSnapshot");
-
-            await _persistence.PersistSnapshotAsync(_state);
-            Console.WriteLine("MyPersistenceActor - PersistedSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}", _persistence.Index, _state);
-            context.Self.Tell(new TimeToSnapshot());
-        }
-
-        private Task Handle(IContext context, TimeToSnapshot message)
-        {
-            Console.WriteLine("MyPersistenceActor - TimeToSnapshot");
-
-            Task.Run(async () =>
-            {
-                await Task.Delay(TimeSpan.FromSeconds(10));
-
-                context.Self.Tell(new RequestSnapshot());
-            });
-
-            return Actor.Done;
-        }
-
         private Task Handle(IContext context, StartLoopActor message)
         {
             if (_timerStarted) return Actor.Done;
@@ -154,8 +132,6 @@ class Program
             var props = Actor.FromProducer(() => new LoopActor());
 
             _loopActor = context.Spawn(props);
-
-            context.Self.Tell(new TimeToSnapshot());
             
             return Actor.Done;
         }
