@@ -101,11 +101,13 @@ namespace Proto.Persistence
                 throw new Exception("Events cannot be replayed without using Event Sourcing.");
             }
 
+            Index = fromIndex;
+
             await _eventStore.GetEventsAsync(_actorId, fromIndex, toIndex, @event =>
-                {
-                    Index++;
-                    _applyEvent(new RecoverEvent(@event, Index));
-                });
+            {
+                _applyEvent(new ReplayEvent(@event, Index));
+                Index++;
+            });
         }
 
         public async Task PersistEventAsync(object @event)
@@ -114,19 +116,32 @@ namespace Proto.Persistence
             {
                 throw new Exception("Event cannot be persisted without using Event Sourcing.");
             }
-            Index++;
-            await _eventStore.PersistEventAsync(_actorId, Index, @event);
+
             var persistedEvent = new PersistedEvent(@event, Index);
+
+            await _eventStore.PersistEventAsync(_actorId, persistedEvent.Index, persistedEvent.Data);
+            
+            Index++;
+
             _applyEvent(persistedEvent);
+
             if (_snapshotStrategy.ShouldTakeSnapshot(persistedEvent))
             {
-                await _snapshotStore.PersistSnapshotAsync(_actorId, Index, _getState());
+                var persistedSnapshot = new PersistedSnapshot(_getState(), persistedEvent.Index);
+
+                await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, persistedSnapshot.State);
+
+                _applySnapshot(persistedSnapshot);
             }
         }
 
         public async Task PersistSnapshotAsync(object snapshot)
         {
-            await _snapshotStore.PersistSnapshotAsync(_actorId, Index, snapshot);
+            var persistedSnapshot = new PersistedSnapshot(snapshot, Index);
+
+            await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, snapshot);
+
+            _applySnapshot(persistedSnapshot);
         }
 
         public async Task DeleteSnapshotsAsync(long inclusiveToIndex)
@@ -223,6 +238,13 @@ namespace Proto.Persistence
     public class RecoverEvent : Event
     {
         public RecoverEvent(object data, long index) : base(data, index)
+        {
+        }
+    }
+
+    public class ReplayEvent : Event
+    {
+        public ReplayEvent(object data, long index) : base(data, index)
         {
         }
     }
