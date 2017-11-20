@@ -43,6 +43,7 @@ namespace Proto.Remote
                     break;
                 case Stopped _:
                     await StoppedAsync();
+                    _logger.LogDebug($"Stopped EndpointWriter at {_address}");
                     break;
                 case Restarting _:
                     await RestartingAsync();
@@ -118,10 +119,22 @@ namespace Proto.Remote
             _logger.LogDebug($"Connecting to address {_address}");
             _channel = new Channel(_address, _channelCredentials, _channelOptions);
             _client = new Remoting.RemotingClient(_channel);
-            var res = await _client.ConnectAsync(new ConnectRequest());
-            _serializerId = res.DefaultSerializerId;
 
-            _stream = _client.Receive(_callOptions);
+            try
+            {
+                var res = await _client.ConnectAsync(new ConnectRequest());
+                _serializerId = res.DefaultSerializerId;
+                _stream = _client.Receive(_callOptions);
+                _streamWriter = _stream.RequestStream;
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError($"GRPC Failed to connect to address {_address}\n{ex}");
+                //Wait for 2 seconds to restart and retry
+                //Replace with Exponential Backoff
+                await Task.Delay(2000);
+                throw;
+            }
 
             var _ = Task.Factory.StartNew(async () =>
             {
@@ -145,8 +158,6 @@ namespace Proto.Remote
                 Address = _address
             };
             Actor.EventStream.Publish(connected);
-
-            _streamWriter = _stream.RequestStream;
 
             _logger.LogDebug($"Connected to address {_address}");
         }

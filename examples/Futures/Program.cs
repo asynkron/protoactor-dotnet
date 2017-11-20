@@ -23,5 +23,6 @@ class Program
 
         var reply = pid.RequestAsync<object>("hello").Result;
         Console.WriteLine(reply);
+        Console.ReadLine();
     }
 }

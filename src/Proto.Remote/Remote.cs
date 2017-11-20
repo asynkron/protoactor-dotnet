@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Google.Protobuf;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
@@ -20,12 +19,10 @@ namespace Proto.Remote
 
         private static Server server;
         private static readonly Dictionary<string, Props> Kinds = new Dictionary<string, Props>();
-        public static PID EndpointManagerPid { get; private set; }
+        public static RemoteConfig RemoteConfig { get; private set; }
         public static PID ActivatorPid { get; private set; }
 
         private static EndpointReader endpointReader;
-        private static Subscription<object> endpointTermEvnSub;
-        private static Subscription<object> endpointConnEvnSub;
 
         public static string[] GetKnownKinds()
         {
@@ -52,8 +49,11 @@ namespace Proto.Remote
 
         public static void Start(string hostname, int port, RemoteConfig config)
         {
+            RemoteConfig = config;
+
             ProcessRegistry.Instance.RegisterHostResolver(pid => new RemoteProcess(pid));
 
+            EndpointManager.Start();
             endpointReader = new EndpointReader();
             server = new Server
             {
@@ -67,7 +67,6 @@ namespace Proto.Remote
             var addr = $"{config.AdvertisedHostname??hostname}:{config.AdvertisedPort?? boundPort}";
             ProcessRegistry.Instance.Address = addr;
 
-            SpawnEndpointManager(config);
             SpawnActivator();
 
             Logger.LogDebug($"Starting Proto.Actor server on {boundAddr} ({addr})");
@@ -79,11 +78,10 @@ namespace Proto.Remote
             {
                 if (gracefull)
                 {
+                    EndpointManager.Stop();
                     endpointReader.Suspend(true);
-                    StopEndPointManager();
                     StopActivator();
                     server.ShutdownAsync().Wait(10000);
-                    server.KillAsync().Wait(5000);
                 }
                 else
                 {
@@ -94,6 +92,7 @@ namespace Proto.Remote
             }
             catch(Exception ex)
             {
+                server.KillAsync().Wait(1000);
                 Logger.LogError($"Proto.Actor server stopped on {ProcessRegistry.Instance.Address} with error:\n{ex.Message}");
             }
         }
@@ -109,32 +108,17 @@ namespace Proto.Remote
             ActivatorPid.Stop();
         }
 
-        private static void SpawnEndpointManager(RemoteConfig config)
-        {
-            var props = Actor.FromProducer(() => new EndpointManager(config));
-            EndpointManagerPid = Actor.Spawn(props);
-            endpointTermEvnSub = EventStream.Instance.Subscribe<EndpointTerminatedEvent>(EndpointManagerPid.Tell);
-            endpointConnEvnSub = EventStream.Instance.Subscribe<EndpointConnectedEvent>(EndpointManagerPid.Tell);
-        }
-
-        private static void StopEndPointManager()
-        {
-            EndpointManagerPid.Tell(new StopEndpointManager());
-            EventStream.Instance.Unsubscribe(endpointTermEvnSub.Id);
-            EventStream.Instance.Unsubscribe(endpointConnEvnSub.Id);
-        }
-        
         public static PID ActivatorForAddress(string address)
         {
             return new PID(address, "activator");
         }
 
-        public static Task<PID> SpawnAsync(string address, string kind, TimeSpan timeout)
+        public static Task<ActorPidResponse> SpawnAsync(string address, string kind, TimeSpan timeout)
         {
             return SpawnNamedAsync(address, "", kind, timeout);
         }
 
-        public static async Task<PID> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
+        public static async Task<ActorPidResponse> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
         {
             var activator = ActivatorForAddress(address);
 
@@ -144,7 +128,7 @@ namespace Proto.Remote
                 Name = name
             }, timeout);
 
-            return res.Pid;
+            return res;
         }
 
         public static void SendMessage(PID pid, object msg, int serializerId)
@@ -152,7 +136,7 @@ namespace Proto.Remote
             var (message, sender, _) = Proto.MessageEnvelope.Unwrap(msg);
 
             var env = new RemoteDeliver(message, pid, sender, serializerId);
-            EndpointManagerPid.Tell(env);
+            EndpointManager.RemoteDeliver(env);
         }
     }
 }

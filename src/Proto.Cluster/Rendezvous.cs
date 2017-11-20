@@ -1,101 +1,79 @@
 ﻿using System;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace Proto.Cluster
 {
-	/// <summary>
-	/// A dotnet port of rendezvous.go
-	/// </summary>
-	public class Rendezvous
-	{
-		private static readonly HashAlgorithm HashAlgorithm = FNV1A32.Create();
+    /// <summary>
+    /// A dotnet port of rendezvous.go
+    /// </summary>
+    public class Rendezvous
+    {
+        private static readonly HashAlgorithm HashAlgorithm = FNV1A32.Create();
 
-		private class NodeScore
-		{
-			public byte[] Node;
-			public uint Score;
-		}
+        private IMemberStrategy _m;
+        private byte[][] _memberHashes;
 
-		private NodeScore[] nodes;
+        public Rendezvous(IMemberStrategy m)
+        {
+            this._m = m;
+            UpdateRdv();
+        }
 
-		public Rendezvous(string[] nodes)
-		{
-			this.nodes = new NodeScore[nodes.Length];
-			for (int i = 0; i < nodes.Length; i++)
-			{
-				this.nodes[i] = new NodeScore()
-				{
-					Node = Encoding.UTF8.GetBytes(nodes[i]),
-					Score = 0
-				};
-			}
-		}
+        public string GetNode(string key)
+        {
+            var members = _m.GetAllMembers();
 
-		public string GetNode(string key)
-		{
-			var keyBytes = Encoding.UTF8.GetBytes(key);
+            if (members == null || members.Count == 0)
+                return "";
 
-			uint maxScore = 0;
-			byte[] maxNode = new byte[0];
-			uint score = 0;
+            if (members.Count == 1)
+                return members[0].Address;
 
-			for (int i = 0; i < this.nodes.Length; i++)
-			{
-				score = RdvHash(nodes[i].Node, keyBytes);
-				if (score > maxScore)
-				{
-					maxScore = score;
-					maxNode = nodes[i].Node;
-				}
-			}
+            var keyBytes = Encoding.UTF8.GetBytes(key);
 
-			return Encoding.UTF8.GetString(maxNode);
-		}
+            uint maxScore = 0;
+            MemberStatus maxNode = null;
+            uint score = 0;
 
-		public string[] GetN(int n, string key)
-		{
-			if (this.nodes.Length == 0 || n == 0)
-			{
-				return new string[0];
-			}
+            for(int i = 0; i < members.Count; i++)
+            {
+                var member = members[i];
+                if (member.Alive)
+                {
+                    var hashBytes = _memberHashes[i];
+                    score = RdvHash(hashBytes, keyBytes);
+                    if (score > maxScore)
+                    {
+                        maxScore = score;
+                        maxNode = member;
+                    }
+                }
+            }
 
-			if (n > this.nodes.Length)
-			{
-				n = this.nodes.Length;
-			}
+            return maxNode == null ? "" : maxNode.Address;
+        }
 
-			var keyBytes = Encoding.UTF8.GetBytes(key);
-			for (int i = 0; i < this.nodes.Length; i++)
-			{
-				var ns = this.nodes[i];
-				ns.Score = RdvHash(ns.Node, keyBytes);
-			}
+        public void UpdateRdv()
+        {
+            this._memberHashes = this._m.GetAllMembers().Select(mb => Encoding.UTF8.GetBytes(mb.Address)).ToArray();
+        }
 
-			Array.Sort<NodeScore>(this.nodes, (n1, n2) => n2.Score.CompareTo(n1.Score));
+        private static uint RdvHash(byte[] node, byte[] key)
+        {
+            var hashBytes = MergeBytes(key, node);
+            var digest = HashAlgorithm.ComputeHash(hashBytes);
+            var hash = BitConverter.ToUInt32(digest, 0);
+            return hash;
+        }
 
-			var nodes = new string[n];
-			for (int i = 0; i < n; i++)
-			{
-				nodes[i] = Encoding.UTF8.GetString(this.nodes[i].Node);
-			}
-			return nodes;
-		}
-
-		private uint RdvHash(byte[] node, byte[] key)
-		{
-			var hashBytes = MergeBytes(key, node);
-			var digest = HashAlgorithm.ComputeHash(hashBytes);
-			var hash = BitConverter.ToUInt32(digest, 0);
-			return hash;
-		}
-
-		private byte[] MergeBytes(byte[] front, byte[] back)
-		{
-			byte[] combined = new byte[front.Length + back.Length];
-			Array.Copy(front, combined, front.Length);
-			Array.Copy(back, 0, combined, front.Length, back.Length);
-			return combined;
-		}
-	}
+        private static byte[] MergeBytes(byte[] front, byte[] back)
+        {
+            byte[] combined = new byte[front.Length + back.Length];
+            Array.Copy(front, combined, front.Length);
+            Array.Copy(back, 0, combined, front.Length, back.Length);
+            return combined;
+        }
+    }
 }

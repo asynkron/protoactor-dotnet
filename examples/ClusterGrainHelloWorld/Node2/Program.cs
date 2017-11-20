@@ -28,12 +28,14 @@ namespace Node2
     {
         static void Main(string[] args)
         {
-            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);          
+            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+
             Grains.HelloGrainFactory(() => new HelloGrain());
 
             Cluster.Start("MyCluster", "127.0.0.1", 12000, new ConsulProvider(new ConsulProviderOptions()));
-
             Console.ReadLine();
+            Console.WriteLine("Shutting Down...");
+            Cluster.Shutdown();
         }
     }
 }

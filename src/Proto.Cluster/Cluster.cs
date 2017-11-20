@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -15,42 +16,39 @@ namespace Proto.Cluster
     {
         private static readonly ILogger Logger = Log.CreateLogger(typeof(Cluster).FullName);
 
-        private static IClusterProvider cp;
-        
-        public static void Start(string clusterName, string address, int port, IClusterProvider provider)
-        {
-            Remote.Remote.Start(address, port);
+        internal static ClusterConfig cfg;
 
-            cp = provider;
-            
+        public static void Start(string clusterName, string address, int port, IClusterProvider cp) => StartWithConfig(new ClusterConfig(clusterName, address, port, cp));
+
+        public static void StartWithConfig(ClusterConfig config)
+        {
+            cfg = config;
+
+            Remote.Remote.Start(cfg.Address, cfg.Port, cfg.RemoteConfig);
+        
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Logger.LogInformation("Starting Proto.Actor cluster");
             var (h, p) = ParseAddress(ProcessRegistry.Instance.Address);
             var kinds = Remote.Remote.GetKnownKinds();
-            Partition.SpawnPartitionActors(kinds);
-            Partition.SubscribeToEventStream();
-            PidCache.Spawn();
-            PidCache.SubscribeToEventStream();
-            MemberList.Spawn();
-            MemberList.SubscribeToEventStream();
-            cp.RegisterMemberAsync(clusterName, h, p, kinds).Wait();
-            cp.MonitorMemberStatusChanges();
+            Partition.Setup(kinds);
+            PidCache.Setup();
+            MemberList.Setup();
+            cfg.ClusterProvider.RegisterMemberAsync(cfg.Name, h, p, kinds, config.InitialMemberStatusValue, config.MemberStatusValueSerializer).Wait();
+            cfg.ClusterProvider.MonitorMemberStatusChanges();
 
             Logger.LogInformation("Started Cluster");
         }
-        
+
         public static void Shutdown(bool gracefull = true)
         {
             if (gracefull)
             {
-                cp.Shutdown();
-
-                MemberList.UnsubEventStream();
+                cfg.ClusterProvider.Shutdown();
+                //This is to wait ownership transfering complete.
+                Task.Delay(2000).Wait();
                 MemberList.Stop();
-                PidCache.UnsubEventStream();
                 PidCache.Stop();
-                Partition.UnsubEventStream();
-                Partition.StopPartitionActors();
+                Partition.Stop();
             }
 
             Remote.Remote.Shutdown(gracefull);
@@ -67,13 +65,54 @@ namespace Proto.Cluster
             return (host, port);
         }
 
-        public static Task<PID> GetAsync(string name, string kind) => GetAsync(name, kind, CancellationToken.None);
+        public static Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind) => GetAsync(name, kind, CancellationToken.None);
 
-        public static async Task<PID> GetAsync(string name, string kind, CancellationToken ct)
+        public static async Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind, CancellationToken ct)
         {
-            var req = new PidCacheRequest(name, kind);
-            var res = await PidCache.Pid.RequestAsync<ActorPidResponse>(req, ct);
-            return res.Pid;
+            //Check Cache
+            if (PidCache.TryGetCache(name, out var pid))
+                return (pid, ResponseStatusCode.OK);
+
+            //Get Pid
+            var address = MemberList.GetPartition(name, kind);
+
+            if (string.IsNullOrEmpty(address))
+            {
+                return (null, ResponseStatusCode.Unavailable);
+            }
+
+            var remotePid = Partition.PartitionForKind(address, kind);
+            var req = new ActorPidRequest
+            {
+                Kind = kind,
+                Name = name
+            };
+
+            try
+            {
+                var resp = ct == null || ct == CancellationToken.None
+                           ? await remotePid.RequestAsync<ActorPidResponse>(req, cfg.TimeoutTimespan)
+                           : await remotePid.RequestAsync<ActorPidResponse>(req, ct);
+                var status = (ResponseStatusCode) resp.StatusCode;
+                switch (status)
+                {
+                    case ResponseStatusCode.OK:
+                        PidCache.TryAddCache(name, resp.Pid);
+                        return (resp.Pid, status);
+                    default:
+                        return (resp.Pid, status);
+                }
+            }
+            catch(TimeoutException)
+            {
+                return (null, ResponseStatusCode.Timeout);
+            }
+            catch
+            {
+                return (null, ResponseStatusCode.Error);
+            }
         }
+
+        public static void RemoveCache(string name) => PidCache.RemoveCacheByName(name);
     }
 }

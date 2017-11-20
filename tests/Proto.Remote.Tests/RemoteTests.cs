@@ -92,7 +92,8 @@ namespace Proto.Remote.Tests
         public async void CanSpawnRemoteActor()
         {
             var remoteActorName = Guid.NewGuid().ToString();
-            var remoteActor = await Remote.SpawnNamedAsync(_remoteManager.DefaultNode.Address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
+            var remoteActorResp = await Remote.SpawnNamedAsync(_remoteManager.DefaultNode.Address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
+            var remoteActor = remoteActorResp.Pid;
             var pong = await remoteActor.RequestAsync<Pong>(new Ping{Message="Hello"}, TimeSpan.FromMilliseconds(5000));
             Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
         }
@@ -180,7 +181,8 @@ namespace Proto.Remote.Tests
         private static async Task<PID> SpawnRemoteActor(string address)
         {
             var remoteActorName = Guid.NewGuid().ToString();
-            return await Remote.SpawnNamedAsync(address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
+            var remoteActorResp = await Remote.SpawnNamedAsync(address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
+            return remoteActorResp.Pid;
         }
 
         private async Task<PID> SpawnLocalActorAndWatch(params PID[] remoteActors)

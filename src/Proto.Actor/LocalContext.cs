@@ -133,7 +133,7 @@ namespace Proto
             }
             _children.Add(pid);
 
-           return pid;
+            return pid;
         }
 
         public void Watch(PID pid)
@@ -152,15 +152,15 @@ namespace Proto
             {
                 throw new ArgumentOutOfRangeException(nameof(duration), duration, "Duration must be greater than zero");
             }
-            
+
             if (duration == ReceiveTimeout)
             {
                 return;
             }
-            
+
             StopReceiveTimeout();
             ReceiveTimeout = duration;
-            
+
             if (_receiveTimeoutTimer == null)
             {
                 _receiveTimeoutTimer = new Timer(ReceiveTimeoutCallback, null, ReceiveTimeout, ReceiveTimeout);
@@ -215,20 +215,33 @@ namespace Proto
             target.ContinueWith(t => { Self.SendSystemMessage(cont); });
         }
 
+        public void ReenterAfter(Task target, Action action)
+        {
+            var msg = _message;
+            var cont = new Continuation(() =>
+            {
+                action();
+                return Task.FromResult(0);
+            }, msg);
+
+            target.ContinueWith(t => { Self.SendSystemMessage(cont); });
+        }
+
+
         public void EscalateFailure(Exception reason, PID who)
         {
             if (_restartStatistics == null)
             {
                 _restartStatistics = new RestartStatistics(0, null);
             }
-            var failure = new Failure(who, reason, _restartStatistics);
+            var failure = new Failure(Self, reason, _restartStatistics);
+            Self.SendSystemMessage(SuspendMailbox.Instance);
             if (Parent == null)
             {
                 HandleRootFailure(failure);
             }
             else
             {
-                Self.SendSystemMessage(SuspendMailbox.Instance);
                 Parent.SendSystemMessage(failure);
             }
         }
@@ -334,7 +347,7 @@ namespace Proto
 
         internal static Task DefaultReceive(IContext context)
         {
-            var c = (LocalContext) context;
+            var c = (LocalContext)context;
             if (c.Message is PoisonPill)
             {
                 c.Self.Stop();
@@ -453,6 +466,12 @@ namespace Proto
 
         private async Task HandleStopAsync()
         {
+            if (_state == ContextState.Stopping)
+            {
+                //already stopping
+                return;
+            }
+
             _state = ContextState.Stopping;
             //this is intentional
             await InvokeUserMessageAsync(Stopping.Instance);
@@ -474,7 +493,7 @@ namespace Proto
             {
                 return;
             }
-            
+
             switch (_state)
             {
                 case ContextState.Restarting:
@@ -553,6 +572,11 @@ namespace Proto
 
         private void ReceiveTimeoutCallback(object state)
         {
+            if (_receiveTimeoutTimer == null)
+            {
+                return;
+            }
+            CancelReceiveTimeout();
             Self.Request(Proto.ReceiveTimeout.Instance, null);
         }
     }

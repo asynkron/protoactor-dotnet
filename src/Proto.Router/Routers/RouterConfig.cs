@@ -28,7 +28,7 @@ namespace Proto.Router.Routers
                 var (self, absent) = ProcessRegistry.Instance.TryAdd(name, process);
                 if (!absent)
                 {
-                    throw new ProcessNameExistException(name);
+                    throw new ProcessNameExistException(name, self);
                 }
                 ctx.Self = self;
                 mailbox.RegisterHandlers(ctx, dispatcher);

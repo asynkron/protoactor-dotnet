@@ -18,6 +18,17 @@ namespace Proto.Persistence.MongoDB
         public MongoDBProvider(IMongoDatabase mongoDB)
         {
             _mongoDB = mongoDB;
+            SetupIndexes();
+        }
+
+        private async void SetupIndexes()
+        {
+            await EventCollection.Indexes.CreateOneAsync(Builders<Event>.IndexKeys
+                .Ascending(_ => _.ActorName)
+                .Ascending(_ => _.EventIndex));
+            await SnapshotCollection.Indexes.CreateOneAsync(Builders<Snapshot>.IndexKeys
+                .Ascending(_ => _.ActorName)
+                .Descending(_ => _.SnapshotIndex));
         }
         
         public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
