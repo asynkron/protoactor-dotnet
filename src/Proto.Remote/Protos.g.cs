@@ -25,22 +25,25 @@ namespace Proto.Remote {
             "CgxQcm90b3MucHJvdG8SBnJlbW90ZRoYUHJvdG8uQWN0b3IvcHJvdG9zLnBy",
             "b3RvImQKDE1lc3NhZ2VCYXRjaBISCgp0eXBlX25hbWVzGAEgAygJEhQKDHRh",
             "cmdldF9uYW1lcxgCIAMoCRIqCgllbnZlbG9wZXMYAyADKAsyFy5yZW1vdGUu",
-            "TWVzc2FnZUVudmVsb3BlInsKD01lc3NhZ2VFbnZlbG9wZRIPCgd0eXBlX2lk",
-            "GAEgASgFEhQKDG1lc3NhZ2VfZGF0YRgCIAEoDBIOCgZ0YXJnZXQYAyABKAUS",
-            "GgoGc2VuZGVyGAQgASgLMgouYWN0b3IuUElEEhUKDXNlcmlhbGl6ZXJfaWQY",
-            "BSABKAUiLQoPQWN0b3JQaWRSZXF1ZXN0EgwKBG5hbWUYASABKAkSDAoEa2lu",
-            "ZBgCIAEoCSJAChBBY3RvclBpZFJlc3BvbnNlEhcKA3BpZBgBIAEoCzIKLmFj",
-            "dG9yLlBJRBITCgtzdGF0dXNfY29kZRgCIAEoBSIGCgRVbml0IhAKDkNvbm5l",
-            "Y3RSZXF1ZXN0IjAKD0Nvbm5lY3RSZXNwb25zZRIdChVkZWZhdWx0X3Nlcmlh",
-            "bGl6ZXJfaWQYASABKAUyfQoIUmVtb3RpbmcSPAoHQ29ubmVjdBIWLnJlbW90",
-            "ZS5Db25uZWN0UmVxdWVzdBoXLnJlbW90ZS5Db25uZWN0UmVzcG9uc2UiABIz",
-            "CgdSZWNlaXZlEhQucmVtb3RlLk1lc3NhZ2VCYXRjaBoMLnJlbW90ZS5Vbml0",
-            "IgAoATABQg+qAgxQcm90by5SZW1vdGViBnByb3RvMw=="));
+            "TWVzc2FnZUVudmVsb3BlIvUBCg9NZXNzYWdlRW52ZWxvcGUSDwoHdHlwZV9p",
+            "ZBgBIAEoBRJCCg5tZXNzYWdlX2hlYWRlchgCIAMoCzIqLnJlbW90ZS5NZXNz",
+            "YWdlRW52ZWxvcGUuTWVzc2FnZUhlYWRlckVudHJ5EhQKDG1lc3NhZ2VfZGF0",
+            "YRgDIAEoDBIOCgZ0YXJnZXQYBCABKAUSGgoGc2VuZGVyGAUgASgLMgouYWN0",
+            "b3IuUElEEhUKDXNlcmlhbGl6ZXJfaWQYBiABKAUaNAoSTWVzc2FnZUhlYWRl",
+            "ckVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiLQoPQWN0",
+            "b3JQaWRSZXF1ZXN0EgwKBG5hbWUYASABKAkSDAoEa2luZBgCIAEoCSJAChBB",
+            "Y3RvclBpZFJlc3BvbnNlEhcKA3BpZBgBIAEoCzIKLmFjdG9yLlBJRBITCgtz",
+            "dGF0dXNfY29kZRgCIAEoBSIGCgRVbml0IhAKDkNvbm5lY3RSZXF1ZXN0IjAK",
+            "D0Nvbm5lY3RSZXNwb25zZRIdChVkZWZhdWx0X3NlcmlhbGl6ZXJfaWQYASAB",
+            "KAUyfQoIUmVtb3RpbmcSPAoHQ29ubmVjdBIWLnJlbW90ZS5Db25uZWN0UmVx",
+            "dWVzdBoXLnJlbW90ZS5Db25uZWN0UmVzcG9uc2UiABIzCgdSZWNlaXZlEhQu",
+            "cmVtb3RlLk1lc3NhZ2VCYXRjaBoMLnJlbW90ZS5Vbml0IgAoATABQg+qAgxQ",
+            "cm90by5SZW1vdGViBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageBatch), global::Proto.Remote.MessageBatch.Parser, new[]{ "TypeNames", "TargetNames", "Envelopes" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageEnvelope), global::Proto.Remote.MessageEnvelope.Parser, new[]{ "TypeId", "MessageData", "Target", "Sender", "SerializerId" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageEnvelope), global::Proto.Remote.MessageEnvelope.Parser, new[]{ "TypeId", "MessageHeader", "MessageData", "Target", "Sender", "SerializerId" }, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ActorPidRequest), global::Proto.Remote.ActorPidRequest.Parser, new[]{ "Name", "Kind" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ActorPidResponse), global::Proto.Remote.ActorPidResponse.Parser, new[]{ "Pid", "StatusCode" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.Unit), global::Proto.Remote.Unit.Parser, null, null, null, null),
@@ -226,6 +229,7 @@ namespace Proto.Remote {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public MessageEnvelope(MessageEnvelope other) : this() {
       typeId_ = other.typeId_;
+      messageHeader_ = other.messageHeader_.Clone();
       messageData_ = other.messageData_;
       target_ = other.target_;
       Sender = other.sender_ != null ? other.Sender.Clone() : null;
@@ -248,8 +252,18 @@ namespace Proto.Remote {
       }
     }
 
+    /// <summary>Field number for the "message_header" field.</summary>
+    public const int MessageHeaderFieldNumber = 2;
+    private static readonly pbc::MapField<string, string>.Codec _map_messageHeader_codec
+        = new pbc::MapField<string, string>.Codec(pb::FieldCodec.ForString(10), pb::FieldCodec.ForString(18), 18);
+    private readonly pbc::MapField<string, string> messageHeader_ = new pbc::MapField<string, string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::MapField<string, string> MessageHeader {
+      get { return messageHeader_; }
+    }
+
     /// <summary>Field number for the "message_data" field.</summary>
-    public const int MessageDataFieldNumber = 2;
+    public const int MessageDataFieldNumber = 3;
     private pb::ByteString messageData_ = pb::ByteString.Empty;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pb::ByteString MessageData {
@@ -260,7 +274,7 @@ namespace Proto.Remote {
     }
 
     /// <summary>Field number for the "target" field.</summary>
-    public const int TargetFieldNumber = 3;
+    public const int TargetFieldNumber = 4;
     private int target_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int Target {
@@ -271,7 +285,7 @@ namespace Proto.Remote {
     }
 
     /// <summary>Field number for the "sender" field.</summary>
-    public const int SenderFieldNumber = 4;
+    public const int SenderFieldNumber = 5;
     private global::Proto.PID sender_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Proto.PID Sender {
@@ -282,7 +296,7 @@ namespace Proto.Remote {
     }
 
     /// <summary>Field number for the "serializer_id" field.</summary>
-    public const int SerializerIdFieldNumber = 5;
+    public const int SerializerIdFieldNumber = 6;
     private int serializerId_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int SerializerId {
@@ -306,6 +320,7 @@ namespace Proto.Remote {
         return true;
       }
       if (TypeId != other.TypeId) return false;
+      if (!MessageHeader.Equals(other.MessageHeader)) return false;
       if (MessageData != other.MessageData) return false;
       if (Target != other.Target) return false;
       if (!object.Equals(Sender, other.Sender)) return false;
@@ -317,6 +332,7 @@ namespace Proto.Remote {
     public override int GetHashCode() {
       int hash = 1;
       if (TypeId != 0) hash ^= TypeId.GetHashCode();
+      hash ^= MessageHeader.GetHashCode();
       if (MessageData.Length != 0) hash ^= MessageData.GetHashCode();
       if (Target != 0) hash ^= Target.GetHashCode();
       if (sender_ != null) hash ^= Sender.GetHashCode();
@@ -335,20 +351,21 @@ namespace Proto.Remote {
         output.WriteRawTag(8);
         output.WriteInt32(TypeId);
       }
+      messageHeader_.WriteTo(output, _map_messageHeader_codec);
       if (MessageData.Length != 0) {
-        output.WriteRawTag(18);
+        output.WriteRawTag(26);
         output.WriteBytes(MessageData);
       }
       if (Target != 0) {
-        output.WriteRawTag(24);
+        output.WriteRawTag(32);
         output.WriteInt32(Target);
       }
       if (sender_ != null) {
-        output.WriteRawTag(34);
+        output.WriteRawTag(42);
         output.WriteMessage(Sender);
       }
       if (SerializerId != 0) {
-        output.WriteRawTag(40);
+        output.WriteRawTag(48);
         output.WriteInt32(SerializerId);
       }
     }
@@ -359,6 +376,7 @@ namespace Proto.Remote {
       if (TypeId != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(TypeId);
       }
+      size += messageHeader_.CalculateSize(_map_messageHeader_codec);
       if (MessageData.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeBytesSize(MessageData);
       }
@@ -382,6 +400,7 @@ namespace Proto.Remote {
       if (other.TypeId != 0) {
         TypeId = other.TypeId;
       }
+      messageHeader_.Add(other.messageHeader_);
       if (other.MessageData.Length != 0) {
         MessageData = other.MessageData;
       }
@@ -412,21 +431,25 @@ namespace Proto.Remote {
             break;
           }
           case 18: {
+            messageHeader_.AddEntriesFrom(input, _map_messageHeader_codec);
+            break;
+          }
+          case 26: {
             MessageData = input.ReadBytes();
             break;
           }
-          case 24: {
+          case 32: {
             Target = input.ReadInt32();
             break;
           }
-          case 34: {
+          case 42: {
             if (sender_ == null) {
               sender_ = new global::Proto.PID();
             }
             input.ReadMessage(sender_);
             break;
           }
-          case 40: {
+          case 48: {
             SerializerId = input.ReadInt32();
             break;
           }

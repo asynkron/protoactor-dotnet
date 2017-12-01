@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
+using Google.Protobuf.Collections;
 using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
@@ -81,6 +82,10 @@ namespace Proto.Remote
                             TypeId = typeId,
                             SerializerId = serializerId
                         };
+
+                        if (rd.Header != null && rd.Header.Count > 0)
+                            envelope.MessageHeader.Add(rd.Header);
+
                         envelopes.Add(envelope);
                     }
 
