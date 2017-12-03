@@ -30,7 +30,7 @@ namespace Proto
 
         public bool NewHeaderIfDefault()
         {
-            if (Header == MessageHeader.EmptyHeader)
+            if (Header == null || Header == MessageHeader.EmptyHeader)
             {
                 Header = new MessageHeader();
                 return true;
