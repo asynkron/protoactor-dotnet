@@ -28,16 +28,6 @@ namespace Proto
             return (message, null, null);
         }
 
-        public bool NewHeaderIfDefault()
-        {
-            if (Header == null || Header == MessageHeader.EmptyHeader)
-            {
-                Header = new MessageHeader();
-                return true;
-            }
-            return false;
-        }
-
         public string GetHeader(string key, string @default = null)
         {
             if (Header == null)

@@ -48,7 +48,6 @@ class Program
 
         var root = new ActorClient(headers, next => async (c, target, envelope) =>
                                    {
-                                       envelope.NewHeaderIfDefault();
                                        envelope.SetHeader("TraceID", c.Headers.GetOrDefault("TraceID"));
                                        envelope.SetHeader("SpanID", c.Headers.GetOrDefault("SpanID"));
                                        envelope.SetHeader("ParentSpanID", c.Headers.GetOrDefault("ParentSpanID"));
