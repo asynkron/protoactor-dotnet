@@ -65,6 +65,8 @@ namespace Proto.Cluster
     {
         private class SpawningProcess : TaskCompletionSource<ActorPidResponse>
         {
+            public string SpawningAddress { get; }
+            public SpawningProcess(string address) => this.SpawningAddress = address;
         }
 
         private readonly string _kind;
@@ -156,16 +158,6 @@ namespace Proto.Cluster
                         TransferOwnership(actorId, address, context);
                     }
                 }
-
-                foreach (var (actorId, sp) in _spawningProcs)
-                {
-                    var address = MemberList.GetPartition(actorId, _kind);
-
-                    if (!string.IsNullOrEmpty(address))
-                    {
-                        sp.TrySetResult(ActorPidResponse.Unavailable);
-                    }
-                }
             }
 
             foreach (var (actorId, pid) in _partition.ToArray())
@@ -174,6 +166,15 @@ namespace Proto.Cluster
                 {
                     _partition.Remove(actorId);
                     _reversePartition.Remove(pid);
+                }
+            }
+
+            //Process Spawning Process
+            foreach (var (actorId, sp) in _spawningProcs)
+            {
+                if (sp.SpawningAddress == msg.Address)
+                {
+                    sp.TrySetResult(ActorPidResponse.Unavailable);
                 }
             }
         }
@@ -188,6 +189,15 @@ namespace Proto.Cluster
                 {
                     _partition.Remove(actorId);
                     _reversePartition.Remove(pid);
+                }
+            }
+
+            //Process Spawning Process
+            foreach (var (actorId, sp) in _spawningProcs)
+            {
+                if (sp.SpawningAddress == msg.Address)
+                {
+                    sp.TrySetResult(ActorPidResponse.Unavailable);
                 }
             }
         }
@@ -265,7 +275,7 @@ namespace Proto.Cluster
             }
 
             //Create SpawningProcess and cache it in spawning dictionary.
-            spawning = new SpawningProcess();
+            spawning = new SpawningProcess(activator);
             _spawningProcs[msg.Name] = spawning;
 
             //Await SpawningProcess
