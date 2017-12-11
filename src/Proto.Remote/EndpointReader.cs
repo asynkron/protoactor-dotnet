@@ -67,10 +67,17 @@ namespace Proto.Remote
                     }
                     else
                     {
-                        if (envelope.Sender != null)
-                            target.Request(message, envelope.Sender);
-                        else
-                            target.Tell(message);
+                        Proto.MessageHeader header = null;
+                        if (envelope.MessageHeader != null)
+                        {
+                            header = new Proto.MessageHeader();
+                            foreach(var (k, v) in envelope.MessageHeader.HeaderData)
+                            {
+                                header.Add(k, v);
+                            }
+                        }
+                        var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
+                        target.Tell(localEnvelope);
                     }
                 }
 

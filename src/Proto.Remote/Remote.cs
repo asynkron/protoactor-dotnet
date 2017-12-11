@@ -133,9 +133,9 @@ namespace Proto.Remote
 
         public static void SendMessage(PID pid, object msg, int serializerId)
         {
-            var (message, sender, _) = Proto.MessageEnvelope.Unwrap(msg);
+            var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
 
-            var env = new RemoteDeliver(message, pid, sender, serializerId);
+            var env = new RemoteDeliver(header, message, pid, sender, serializerId);
             EndpointManager.RemoteDeliver(env);
         }
     }

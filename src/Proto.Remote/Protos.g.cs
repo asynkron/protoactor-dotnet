@@ -25,22 +25,27 @@ namespace Proto.Remote {
             "CgxQcm90b3MucHJvdG8SBnJlbW90ZRoYUHJvdG8uQWN0b3IvcHJvdG9zLnBy",
             "b3RvImQKDE1lc3NhZ2VCYXRjaBISCgp0eXBlX25hbWVzGAEgAygJEhQKDHRh",
             "cmdldF9uYW1lcxgCIAMoCRIqCgllbnZlbG9wZXMYAyADKAsyFy5yZW1vdGUu",
-            "TWVzc2FnZUVudmVsb3BlInsKD01lc3NhZ2VFbnZlbG9wZRIPCgd0eXBlX2lk",
-            "GAEgASgFEhQKDG1lc3NhZ2VfZGF0YRgCIAEoDBIOCgZ0YXJnZXQYAyABKAUS",
-            "GgoGc2VuZGVyGAQgASgLMgouYWN0b3IuUElEEhUKDXNlcmlhbGl6ZXJfaWQY",
-            "BSABKAUiLQoPQWN0b3JQaWRSZXF1ZXN0EgwKBG5hbWUYASABKAkSDAoEa2lu",
-            "ZBgCIAEoCSJAChBBY3RvclBpZFJlc3BvbnNlEhcKA3BpZBgBIAEoCzIKLmFj",
-            "dG9yLlBJRBITCgtzdGF0dXNfY29kZRgCIAEoBSIGCgRVbml0IhAKDkNvbm5l",
-            "Y3RSZXF1ZXN0IjAKD0Nvbm5lY3RSZXNwb25zZRIdChVkZWZhdWx0X3Nlcmlh",
-            "bGl6ZXJfaWQYASABKAUyfQoIUmVtb3RpbmcSPAoHQ29ubmVjdBIWLnJlbW90",
-            "ZS5Db25uZWN0UmVxdWVzdBoXLnJlbW90ZS5Db25uZWN0UmVzcG9uc2UiABIz",
-            "CgdSZWNlaXZlEhQucmVtb3RlLk1lc3NhZ2VCYXRjaBoMLnJlbW90ZS5Vbml0",
-            "IgAoATABQg+qAgxQcm90by5SZW1vdGViBnByb3RvMw=="));
+            "TWVzc2FnZUVudmVsb3BlIqoBCg9NZXNzYWdlRW52ZWxvcGUSDwoHdHlwZV9p",
+            "ZBgBIAEoBRIUCgxtZXNzYWdlX2RhdGEYAiABKAwSDgoGdGFyZ2V0GAMgASgF",
+            "EhoKBnNlbmRlchgEIAEoCzIKLmFjdG9yLlBJRBIVCg1zZXJpYWxpemVyX2lk",
+            "GAUgASgFEi0KDm1lc3NhZ2VfaGVhZGVyGAYgASgLMhUucmVtb3RlLk1lc3Nh",
+            "Z2VIZWFkZXIifgoNTWVzc2FnZUhlYWRlchI6CgtoZWFkZXJfZGF0YRgBIAMo",
+            "CzIlLnJlbW90ZS5NZXNzYWdlSGVhZGVyLkhlYWRlckRhdGFFbnRyeRoxCg9I",
+            "ZWFkZXJEYXRhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4",
+            "ASItCg9BY3RvclBpZFJlcXVlc3QSDAoEbmFtZRgBIAEoCRIMCgRraW5kGAIg",
+            "ASgJIkAKEEFjdG9yUGlkUmVzcG9uc2USFwoDcGlkGAEgASgLMgouYWN0b3Iu",
+            "UElEEhMKC3N0YXR1c19jb2RlGAIgASgFIgYKBFVuaXQiEAoOQ29ubmVjdFJl",
+            "cXVlc3QiMAoPQ29ubmVjdFJlc3BvbnNlEh0KFWRlZmF1bHRfc2VyaWFsaXpl",
+            "cl9pZBgBIAEoBTJ9CghSZW1vdGluZxI8CgdDb25uZWN0EhYucmVtb3RlLkNv",
+            "bm5lY3RSZXF1ZXN0GhcucmVtb3RlLkNvbm5lY3RSZXNwb25zZSIAEjMKB1Jl",
+            "Y2VpdmUSFC5yZW1vdGUuTWVzc2FnZUJhdGNoGgwucmVtb3RlLlVuaXQiACgB",
+            "MAFCD6oCDFByb3RvLlJlbW90ZWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Proto.ProtosReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageBatch), global::Proto.Remote.MessageBatch.Parser, new[]{ "TypeNames", "TargetNames", "Envelopes" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageEnvelope), global::Proto.Remote.MessageEnvelope.Parser, new[]{ "TypeId", "MessageData", "Target", "Sender", "SerializerId" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageEnvelope), global::Proto.Remote.MessageEnvelope.Parser, new[]{ "TypeId", "MessageData", "Target", "Sender", "SerializerId", "MessageHeader" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.MessageHeader), global::Proto.Remote.MessageHeader.Parser, new[]{ "HeaderData" }, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ActorPidRequest), global::Proto.Remote.ActorPidRequest.Parser, new[]{ "Name", "Kind" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.ActorPidResponse), global::Proto.Remote.ActorPidResponse.Parser, new[]{ "Pid", "StatusCode" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Remote.Unit), global::Proto.Remote.Unit.Parser, null, null, null, null),
@@ -230,6 +235,7 @@ namespace Proto.Remote {
       target_ = other.target_;
       Sender = other.sender_ != null ? other.Sender.Clone() : null;
       serializerId_ = other.serializerId_;
+      MessageHeader = other.messageHeader_ != null ? other.MessageHeader.Clone() : null;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -292,6 +298,17 @@ namespace Proto.Remote {
       }
     }
 
+    /// <summary>Field number for the "message_header" field.</summary>
+    public const int MessageHeaderFieldNumber = 6;
+    private global::Proto.Remote.MessageHeader messageHeader_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Proto.Remote.MessageHeader MessageHeader {
+      get { return messageHeader_; }
+      set {
+        messageHeader_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as MessageEnvelope);
@@ -310,6 +327,7 @@ namespace Proto.Remote {
       if (Target != other.Target) return false;
       if (!object.Equals(Sender, other.Sender)) return false;
       if (SerializerId != other.SerializerId) return false;
+      if (!object.Equals(MessageHeader, other.MessageHeader)) return false;
       return true;
     }
 
@@ -321,6 +339,7 @@ namespace Proto.Remote {
       if (Target != 0) hash ^= Target.GetHashCode();
       if (sender_ != null) hash ^= Sender.GetHashCode();
       if (SerializerId != 0) hash ^= SerializerId.GetHashCode();
+      if (messageHeader_ != null) hash ^= MessageHeader.GetHashCode();
       return hash;
     }
 
@@ -351,6 +370,10 @@ namespace Proto.Remote {
         output.WriteRawTag(40);
         output.WriteInt32(SerializerId);
       }
+      if (messageHeader_ != null) {
+        output.WriteRawTag(50);
+        output.WriteMessage(MessageHeader);
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -370,6 +393,9 @@ namespace Proto.Remote {
       }
       if (SerializerId != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(SerializerId);
+      }
+      if (messageHeader_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(MessageHeader);
       }
       return size;
     }
@@ -396,6 +422,12 @@ namespace Proto.Remote {
       }
       if (other.SerializerId != 0) {
         SerializerId = other.SerializerId;
+      }
+      if (other.messageHeader_ != null) {
+        if (messageHeader_ == null) {
+          messageHeader_ = new global::Proto.Remote.MessageHeader();
+        }
+        MessageHeader.MergeFrom(other.MessageHeader);
       }
     }
 
@@ -430,6 +462,122 @@ namespace Proto.Remote {
             SerializerId = input.ReadInt32();
             break;
           }
+          case 50: {
+            if (messageHeader_ == null) {
+              messageHeader_ = new global::Proto.Remote.MessageHeader();
+            }
+            input.ReadMessage(messageHeader_);
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class MessageHeader : pb::IMessage<MessageHeader> {
+    private static readonly pb::MessageParser<MessageHeader> _parser = new pb::MessageParser<MessageHeader>(() => new MessageHeader());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<MessageHeader> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[2]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public MessageHeader() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public MessageHeader(MessageHeader other) : this() {
+      headerData_ = other.headerData_.Clone();
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public MessageHeader Clone() {
+      return new MessageHeader(this);
+    }
+
+    /// <summary>Field number for the "header_data" field.</summary>
+    public const int HeaderDataFieldNumber = 1;
+    private static readonly pbc::MapField<string, string>.Codec _map_headerData_codec
+        = new pbc::MapField<string, string>.Codec(pb::FieldCodec.ForString(10), pb::FieldCodec.ForString(18), 10);
+    private readonly pbc::MapField<string, string> headerData_ = new pbc::MapField<string, string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::MapField<string, string> HeaderData {
+      get { return headerData_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as MessageHeader);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(MessageHeader other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (!HeaderData.Equals(other.HeaderData)) return false;
+      return true;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      hash ^= HeaderData.GetHashCode();
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      headerData_.WriteTo(output, _map_headerData_codec);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      size += headerData_.CalculateSize(_map_headerData_codec);
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(MessageHeader other) {
+      if (other == null) {
+        return;
+      }
+      headerData_.Add(other.headerData_);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 10: {
+            headerData_.AddEntriesFrom(input, _map_headerData_codec);
+            break;
+          }
         }
       }
     }
@@ -443,7 +591,7 @@ namespace Proto.Remote {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -588,7 +736,7 @@ namespace Proto.Remote {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -739,7 +887,7 @@ namespace Proto.Remote {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -828,7 +976,7 @@ namespace Proto.Remote {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -917,7 +1065,7 @@ namespace Proto.Remote {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Proto.Remote.ProtosReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
