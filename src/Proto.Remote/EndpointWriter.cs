@@ -73,6 +73,13 @@ namespace Proto.Remote
                             typeNameList.Add(typeName);
                         }
 
+                        MessageHeader header = null;
+                        if (rd.Header != null && rd.Header.Count > 0)
+                        {
+                            header = new MessageHeader();
+                            header.HeaderData.Add(rd.Header);
+                        }
+
                         var bytes = Serialization.Serialize(rd.Message, serializerId);
                         var envelope = new MessageEnvelope
                         {
@@ -80,11 +87,9 @@ namespace Proto.Remote
                             Sender = rd.Sender,
                             Target = targetId,
                             TypeId = typeId,
-                            SerializerId = serializerId
+                            SerializerId = serializerId,
+                            MessageHeader = header,
                         };
-
-                        if (rd.Header != null && rd.Header.Count > 0)
-                            envelope.MessageHeader.Add(rd.Header);
 
                         envelopes.Add(envelope);
                     }

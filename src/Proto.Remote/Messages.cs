@@ -55,7 +55,7 @@ namespace Proto.Remote
 
     public class RemoteDeliver
     {
-        public RemoteDeliver(MessageHeader header, object message, PID target, PID sender, int serializerId)
+        public RemoteDeliver(Proto.MessageHeader header, object message, PID target, PID sender, int serializerId)
         {
             Header = header;
             Message = message;
@@ -64,7 +64,7 @@ namespace Proto.Remote
             SerializerId = serializerId;
         }
 
-        public MessageHeader Header { get; }
+        public Proto.MessageHeader Header { get; }
         public object Message { get; }
         public PID Target { get; }
         public PID Sender { get; }

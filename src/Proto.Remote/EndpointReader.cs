@@ -67,11 +67,11 @@ namespace Proto.Remote
                     }
                     else
                     {
-                        MessageHeader header = null;
-                        if (envelope.MessageHeader.Count > 0)
+                        Proto.MessageHeader header = null;
+                        if (envelope.MessageHeader != null)
                         {
-                            header = new MessageHeader();
-                            foreach(var (k, v) in envelope.MessageHeader)
+                            header = new Proto.MessageHeader();
+                            foreach(var (k, v) in envelope.MessageHeader.HeaderData)
                             {
                                 header.Add(k, v);
                             }
