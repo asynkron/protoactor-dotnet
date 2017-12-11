@@ -65,6 +65,8 @@ namespace Proto.Cluster
     {
         private class SpawningProcess : TaskCompletionSource<ActorPidResponse>
         {
+            public string SpawningAddress { get; }
+            public SpawningProcess(string address) => this.SpawningAddress = address;
         }
 
         private readonly string _kind;
@@ -121,10 +123,21 @@ namespace Proto.Cluster
 
         private void TakeOwnership(TakeOwnership msg, IContext context)
         {
-            _logger.LogDebug($"Kind {_kind} Take Ownership name: {msg.Name}, pid: {msg.Pid}");
-            _partition[msg.Name] = msg.Pid;
-            _reversePartition[msg.Pid] = msg.Name;
-            context.Watch(msg.Pid);
+            //Check again if I'm the owner
+            var address = MemberList.GetPartition(msg.Name, _kind);
+            if (!string.IsNullOrEmpty(address) && address != ProcessRegistry.Instance.Address)
+            {
+                //if not, forward to the correct owner
+                var owner = Partition.PartitionForKind(address, _kind);
+                owner.Tell(msg);
+            }
+            else
+            {
+                _logger.LogDebug($"Kind {_kind} Take Ownership name: {msg.Name}, pid: {msg.Pid}");
+                _partition[msg.Name] = msg.Pid;
+                _reversePartition[msg.Pid] = msg.Name;
+                context.Watch(msg.Pid);
+            }
         }
 
         private void MemberLeft(MemberLeftEvent msg, IContext context)
@@ -145,16 +158,6 @@ namespace Proto.Cluster
                         TransferOwnership(actorId, address, context);
                     }
                 }
-
-                foreach(var (actorId, sp) in _spawningProcs)
-                {
-                    var address = MemberList.GetPartition(actorId, _kind);
-
-                    if (!string.IsNullOrEmpty(address))
-                    {
-                        sp.TrySetResult(ActorPidResponse.Unavailable);
-                    }
-                }
             }
 
             foreach (var (actorId, pid) in _partition.ToArray())
@@ -163,6 +166,15 @@ namespace Proto.Cluster
                 {
                     _partition.Remove(actorId);
                     _reversePartition.Remove(pid);
+                }
+            }
+
+            //Process Spawning Process
+            foreach (var (actorId, sp) in _spawningProcs)
+            {
+                if (sp.SpawningAddress == msg.Address)
+                {
+                    sp.TrySetResult(ActorPidResponse.Unavailable);
                 }
             }
         }
@@ -177,6 +189,15 @@ namespace Proto.Cluster
                 {
                     _partition.Remove(actorId);
                     _reversePartition.Remove(pid);
+                }
+            }
+
+            //Process Spawning Process
+            foreach (var (actorId, sp) in _spawningProcs)
+            {
+                if (sp.SpawningAddress == msg.Address)
+                {
+                    sp.TrySetResult(ActorPidResponse.Unavailable);
                 }
             }
         }
@@ -197,7 +218,7 @@ namespace Proto.Cluster
                 }
             }
 
-            foreach(var (actorId, sp) in _spawningProcs)
+            foreach (var (actorId, sp) in _spawningProcs)
             {
                 var address = MemberList.GetPartition(actorId, _kind);
 
@@ -227,7 +248,7 @@ namespace Proto.Cluster
             //Check if exist in current partition dictionary
             if (_partition.TryGetValue(msg.Name, out var pid))
             {
-                context.Respond(new ActorPidResponse {Pid = pid});
+                context.Respond(new ActorPidResponse { Pid = pid });
                 return;
             }
 
@@ -253,13 +274,24 @@ namespace Proto.Cluster
                 return;
             }
 
-            //Create SpawningProcess and cache it in spawnings dictionary.
-            spawning = new SpawningProcess();
+            //Create SpawningProcess and cache it in spawning dictionary.
+            spawning = new SpawningProcess(activator);
             _spawningProcs[msg.Name] = spawning;
 
             //Await SpawningProcess
-            context.ReenterAfter(spawning.Task, rst => {
+            context.ReenterAfter(spawning.Task, rst =>
+            {
                 _spawningProcs.Remove(msg.Name);
+
+                //Check if exist in current partition dictionary
+                //This is necessary to avoid race condition during partition map transfering.
+                if (_partition.TryGetValue(msg.Name, out pid))
+                {
+                    context.Respond(new ActorPidResponse { Pid = pid });
+                    return Actor.Done;
+                }
+
+                //Check if process is faulted
                 if (rst.IsFaulted)
                 {
                     context.Respond(ActorPidResponse.Err);
@@ -267,7 +299,7 @@ namespace Proto.Cluster
                 }
 
                 var pidResp = rst.Result;
-                if ((ResponseStatusCode) pidResp.StatusCode == ResponseStatusCode.OK)
+                if ((ResponseStatusCode)pidResp.StatusCode == ResponseStatusCode.OK)
                 {
                     pid = pidResp.Pid;
                     _partition[msg.Name] = pid;
@@ -284,7 +316,7 @@ namespace Proto.Cluster
 
         private async Task Spawning(ActorPidRequest req, string activator, int retryLeft, SpawningProcess spawning)
         {
-            if(string.IsNullOrEmpty(activator))
+            if (string.IsNullOrEmpty(activator))
             {
                 activator = MemberList.GetActivator(req.Kind);
                 if (string.IsNullOrEmpty(activator))
@@ -301,7 +333,7 @@ namespace Proto.Cluster
             {
                 pidResp = await Remote.Remote.SpawnNamedAsync(activator, req.Name, req.Kind, Cluster.cfg.TimeoutTimespan);
             }
-            catch(TimeoutException)
+            catch (TimeoutException)
             {
                 spawning.TrySetResult(ActorPidResponse.TimeOut);
                 return;
@@ -312,8 +344,8 @@ namespace Proto.Cluster
                 return;
             }
 
-            if ((ResponseStatusCode) pidResp.StatusCode == ResponseStatusCode.Unavailable && retryLeft != 0)
-            { 
+            if ((ResponseStatusCode)pidResp.StatusCode == ResponseStatusCode.Unavailable && retryLeft != 0)
+            {
                 await Spawning(req, null, --retryLeft, spawning);
                 return;
             }
