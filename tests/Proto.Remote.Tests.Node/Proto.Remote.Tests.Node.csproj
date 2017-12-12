@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>netcoreapp1.1</TargetFramework>
+        <TargetFramework>netcoreapp2.0</TargetFramework>
         <RuntimeIdentifiers>win10-x64;osx.10.11-x64</RuntimeIdentifiers>
         <AssemblyName>Proto.Remote.Tests.Node</AssemblyName>
         <RootNamespace>Proto.Remote.Tests.Node</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.3.0" />
+        <PackageReference Include="Google.Protobuf" Version="3.4.1" />
         <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
         <PackageReference Include="System.ValueTuple" Version="4.4.0" />
     </ItemGroup>
