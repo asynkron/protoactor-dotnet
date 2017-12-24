@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: node2
+spec:
+  selector:
+    name: node2
+  clusterIP: None
+  ports:
+  - name: nodeport
+    port: 12000
+    targetPort: 12000
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: node2
+  labels:
+    name: node2
+spec:
+  containers:
+  - image: gcr.io/uc-prox-core-dev/protodemonode2:v1
+    name: node2
+    args: ["node2", "consul", "false"]
+    ports:
+      - containerPort: 12000

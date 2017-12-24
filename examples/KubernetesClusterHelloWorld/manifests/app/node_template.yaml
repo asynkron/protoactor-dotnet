@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{name}}
+spec:
+  selector:
+    name: {{name}}
+  clusterIP: None
+  ports:
+  - name: nodeport
+    port: {{port}}
+    targetPort: {{port}}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{name}}
+  labels:
+    name: {{name}}
+spec:
+  containers:
+  - image: gcr.io/{{project_id}}/protodemo{{name}}:v1
+    name: {{name}}
+    args: ["{{name}}", "consul", "false"]
+    ports:
+      - containerPort: {{port}}
