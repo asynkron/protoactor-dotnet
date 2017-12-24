@@ -1,16 +1,18 @@
 version: '3'
 services:
   node1:
-    build: ./Node1
+    build: ../ClusterHelloWorld/Node1
     container_name: "node1"
     hostname: "node1"
     depends_on:
       - consul
+    command: "node1 consul false"
   node2:
-    build: ./Node2
+    build: ../ClusterHelloWorld/Node2
     hostname: "node2"
     depends_on:
       - consul
+    command: "node2 consul false"
   consul:
     image: "consul:latest"
     container_name: "consul"
