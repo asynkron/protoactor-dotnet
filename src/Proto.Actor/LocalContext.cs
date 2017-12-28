@@ -126,6 +126,11 @@ namespace Proto
 
         public PID SpawnNamed(Props props, string name)
         {
+            if (props.GuardianStrategy != null)
+            {
+                throw new ArgumentException("Props used to spawn child cannot have GuardianStrategy.");
+            }
+
             var pid = props.Spawn($"{Self.Id}/{name}", Self);
             if (_children == null)
             {

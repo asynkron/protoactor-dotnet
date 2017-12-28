@@ -23,7 +23,7 @@ namespace Proto.Cluster
 
         internal static void Setup()
         {
-            var props = Actor.FromProducer(() => new PidCacheWatcher());
+            var props = Actor.FromProducer(() => new PidCacheWatcher()).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
             watcher = Actor.SpawnNamed(props, "PidCacheWatcher");
             clusterTopologyEvnSub = Actor.EventStream.Subscribe<MemberStatusEvent>(OnMemberStatusEvent);
         }

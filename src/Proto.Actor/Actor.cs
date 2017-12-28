@@ -41,7 +41,8 @@ namespace Proto
 
         public static PID SpawnNamed(Props props, string name)
         {
-            return props.Spawn(name, null);
+            var parent = props.GuardianStrategy != null ? Guardians.GetGuardianPID(props.GuardianStrategy) : null;
+            return props.Spawn(name, parent);
         }
     }
 
