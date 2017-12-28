@@ -30,7 +30,7 @@ namespace Proto
     {
         public PID Pid { get; }
 
-        public IReadOnlyCollection<PID> Children => throw new NotSupportedException("Guardian does not hold its children PIDs.");
+        public IReadOnlyCollection<PID> Children => throw new MemberAccessException("Guardian does not hold its children PIDs.");
 
         private readonly ISupervisorStrategy _supervisorStrategy;
 
@@ -49,7 +49,7 @@ namespace Proto
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
-            throw new InvalidOperationException($"Guardian actor cannot receive any messages.");
+            throw new InvalidOperationException($"Guardian actor cannot receive any user messages.");
         }
 
         protected internal override void SendSystemMessage(PID pid, object message)
@@ -61,7 +61,10 @@ namespace Proto
             }
         }
 
-        public void EscalateFailure(Exception reason, PID who) => throw new NotSupportedException("Guardian cannot escalate failure.");
+        public void EscalateFailure(Exception reason, PID who)
+        {
+            throw new InvalidOperationException("Guardian cannot escalate failure.");
+        }
 
         public void RestartChildren(Exception reason, params PID[] pids)
         {
