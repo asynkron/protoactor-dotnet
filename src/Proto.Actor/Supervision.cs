@@ -33,8 +33,7 @@ namespace Proto
     {
         public static ISupervisorStrategy DefaultStrategy { get; } =
             new OneForOneStrategy((who, reason) => SupervisorDirective.Restart, 10, TimeSpan.FromSeconds(10));
-        public static ISupervisorStrategy AlwaysRestartStrategy { get; } =
-            new OneForOneStrategy((who, reason) => SupervisorDirective.Restart, -1, TimeSpan.MinValue);
+        public static ISupervisorStrategy AlwaysRestartStrategy { get; } = new AlwaysRestartStrategy();
     }
 
     public interface ISupervisorStrategy
@@ -219,6 +218,15 @@ namespace Proto
             }
             //we are past the backoff limit, reset the failure counter
             rs.Reset();
+        }
+    }
+
+    public class AlwaysRestartStrategy : ISupervisorStrategy
+    {
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
+        {
+            //always restart
+            supervisor.RestartChildren(reason, child);
         }
     }
 }
