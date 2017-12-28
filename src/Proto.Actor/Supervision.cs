@@ -33,7 +33,7 @@ namespace Proto
     {
         public static ISupervisorStrategy DefaultStrategy { get; } =
             new OneForOneStrategy((who, reason) => SupervisorDirective.Restart, 10, TimeSpan.FromSeconds(10));
-        public static ISupervisorStrategy KeepAliveStrategy { get; } =
+        public static ISupervisorStrategy AlwaysRestartStrategy { get; } =
             new OneForOneStrategy((who, reason) => SupervisorDirective.Restart, -1, TimeSpan.MinValue);
     }
 

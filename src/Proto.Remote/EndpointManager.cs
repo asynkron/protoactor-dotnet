@@ -40,7 +40,7 @@ namespace Proto.Remote
             _logger.LogDebug("Started EndpointManager");
 
             var props = Actor.FromProducer(() => new EndpointSupervisor())
-                             .WithGuardianSupervisorStrategy(Supervision.KeepAliveStrategy)
+                             .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
                              .WithDispatcher(Proto.Mailbox.Dispatchers.SynchronousDispatcher);
             _endpointSupervisor = Actor.SpawnNamed(props, "EndpointSupervisor");
             _endpointTermEvnSub = EventStream.Instance.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated);
