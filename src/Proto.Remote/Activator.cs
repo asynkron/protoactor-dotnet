@@ -29,6 +29,15 @@ namespace Proto.Remote
                         var response = new ActorPidResponse{ Pid = pid };
                         context.Respond(response);
                     }
+                    catch (ProcessNameExistException ex)
+                    {
+                        var response = new ActorPidResponse
+                        {
+                            Pid = ex.Pid,
+                            StatusCode = (int) ResponseStatusCode.ProcessNameAlreadyExist
+                        };
+                        context.Respond(response);
+                    }
                     catch (ActivatorException ex)
                     {
                         var response = new ActorPidResponse
@@ -39,17 +48,6 @@ namespace Proto.Remote
 
                         if (!ex.DoNotThrow)
                             throw;
-                    }
-                    catch (ProcessNameExistException ex)
-                    {
-                        var response = new ActorPidResponse
-                        {
-                            Pid = ex.Pid,
-                            StatusCode = (int) ResponseStatusCode.ProcessNameAlreadyExist
-                        };
-                        context.Respond(response);
-
-                        throw;
                     }
                     catch
                     {
