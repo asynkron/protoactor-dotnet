@@ -33,6 +33,8 @@ namespace Proto
     {
         public static ISupervisorStrategy DefaultStrategy { get; } =
             new OneForOneStrategy((who, reason) => SupervisorDirective.Restart, 10, TimeSpan.FromSeconds(10));
+        public static ISupervisorStrategy KeepAliveStrategy { get; } =
+            new OneForOneStrategy((who, reason) => SupervisorDirective.Restart, -1, TimeSpan.MinValue);
     }
 
     public interface ISupervisorStrategy
@@ -102,7 +104,7 @@ namespace Proto
                 return false;
             }
             rs.Fail();
-            if (_withinTimeSpan == null || rs.IsWithinDuration(_withinTimeSpan.Value))
+            if (_maxNrOfRetries > 0 && (_withinTimeSpan == null || rs.IsWithinDuration(_withinTimeSpan.Value)))
             {
                 return rs.FailureCount <= _maxNrOfRetries;
             }
@@ -164,7 +166,7 @@ namespace Proto
                 return false;
             }
             rs.Fail();
-            if (_withinTimeSpan == null || rs.IsWithinDuration(_withinTimeSpan.Value))
+            if (_maxNrOfRetries > 0 && (_withinTimeSpan == null || rs.IsWithinDuration(_withinTimeSpan.Value)))
             {
                 return rs.FailureCount <= _maxNrOfRetries;
             }
