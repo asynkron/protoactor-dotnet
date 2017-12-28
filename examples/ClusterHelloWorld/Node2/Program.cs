@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading;
 using Messages;
 using Proto;
 using Proto.Cluster;
@@ -33,11 +34,32 @@ namespace Node2
                 return Actor.Done;
             });
 
+            var parsedArgs = parseArgs(args);
             Remote.RegisterKnownKind("HelloKind", props);
-            Cluster.Start("MyCluster", "127.0.0.1", 12000, new ConsulProvider(new ConsulProviderOptions()));
-            Console.ReadLine();
+            Cluster.Start("MyCluster", parsedArgs.ServerName, 12000, new ConsulProvider(new ConsulProviderOptions(), c => c.Address = new Uri("http://" + parsedArgs.ConsulUrl + ":8500/")));
+            Thread.Sleep(System.Threading.Timeout.Infinite);
             Console.WriteLine("Shutting Down...");
             Cluster.Shutdown();
+        }
+
+        private static Node2Config parseArgs(string[] args)
+        {
+            if(args.Length > 0) 
+            {
+                return new Node2Config(args[0], args[1]);
+            }
+            return new Node2Config("127.0.0.1", "127.0.0.1");
+        }
+
+        class Node2Config
+        {
+            public string ServerName { get; }
+            public string ConsulUrl { get; }
+            public Node2Config(string serverName, string consulUrl) 
+            {
+                ServerName = serverName;
+                ConsulUrl = consulUrl;
+            }
         }
     }
 }
