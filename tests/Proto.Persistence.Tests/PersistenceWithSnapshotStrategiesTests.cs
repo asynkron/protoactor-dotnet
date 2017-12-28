@@ -22,9 +22,9 @@ namespace Proto.Persistence.Tests
             await persistence.PersistEventAsync(new Multiplied { Amount = 2 });
             var snapshots = provider.GetSnapshots(actorId);
             Assert.Equal(3, snapshots.Count);
-            Assert.Equal(2, snapshots[1]);
-            Assert.Equal(4, snapshots[2]);
-            Assert.Equal(8, snapshots[3]);
+            Assert.Equal(2, snapshots[0]);
+            Assert.Equal(4, snapshots[1]);
+            Assert.Equal(8, snapshots[2]);
         }
     }
 }

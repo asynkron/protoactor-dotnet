@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
@@ -15,9 +16,14 @@ namespace Proto.Remote
     public class EndpointReader : Remoting.RemotingBase
     {
         private bool _suspended;
-        
+
         public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
         {
+            if (_suspended)
+            {
+                throw new RpcException(Status.DefaultCancelled, "Suspended");
+            }
+
             return Task.FromResult(new ConnectResponse()
             {
                 DefaultSerializerId = Serialization.DefaultSerializerId
@@ -27,26 +33,33 @@ namespace Proto.Remote
         public override async Task Receive(IAsyncStreamReader<MessageBatch> requestStream,
             IServerStreamWriter<Unit> responseStream, ServerCallContext context)
         {
+            var targets = new PID[100];
             await requestStream.ForEachAsync(batch =>
             {
                 if (_suspended)
                     return Actor.Done;
-                
-                var targetNames = new List<string>(batch.TargetNames);
-                var typeNames = new List<string>(batch.TypeNames);
+
+                //only grow pid lookup if needed
+                if (batch.TargetNames.Count > targets.Length)
+                {
+                    targets = new PID[batch.TargetNames.Count];
+                }
+
+                for (int i = 0; i < batch.TargetNames.Count; i++)
+                {
+                    targets[i] = new PID(ProcessRegistry.Instance.Address, batch.TargetNames[i]);
+                }
+                var typeNames = batch.TypeNames.ToArray();
                 foreach (var envelope in batch.Envelopes)
                 {
-                    var targetName = targetNames[envelope.Target];
-                    var target = new PID(ProcessRegistry.Instance.Address, targetName);
-                  
+                    var target = targets[envelope.Target];
                     var typeName = typeNames[envelope.TypeId];
-
                     var message = Serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
 
                     if (message is Terminated msg)
                     {
                         var rt = new RemoteTerminate(target, msg.Who);
-                        Remote.EndpointManagerPid.Tell(rt);
+                        EndpointManager.RemoteTerminate(rt);
                     }
                     else if (message is SystemMessage sys)
                     {
@@ -54,10 +67,17 @@ namespace Proto.Remote
                     }
                     else
                     {
-                        if (envelope.Sender != null)
-                            target.Request(message, envelope.Sender);
-                        else
-                            target.Tell(message);
+                        Proto.MessageHeader header = null;
+                        if (envelope.MessageHeader != null)
+                        {
+                            header = new Proto.MessageHeader();
+                            foreach(var (k, v) in envelope.MessageHeader.HeaderData)
+                            {
+                                header.Add(k, v);
+                            }
+                        }
+                        var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
+                        target.Tell(localEnvelope);
                     }
                 }
 

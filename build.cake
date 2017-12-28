@@ -1,6 +1,6 @@
 #addin Cake.Git
 
-var packageVersion = "0.1.14";
+var packageVersion = "0.1.15";
 
 var target = Argument("target", "Default");
 var mygetApiKey = Argument<string>("mygetApiKey", null);
@@ -80,7 +80,7 @@ Task("UnitTest")
                 DotNetCoreTest(proj.ToString(), new DotNetCoreTestSettings 
                 {
                     NoBuild = true,
-                    Framework = "netcoreapp1.1",
+                    Framework = "netcoreapp2.0",
                     Configuration = configuration
                 });
             }

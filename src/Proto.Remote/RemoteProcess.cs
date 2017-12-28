@@ -24,12 +24,12 @@ namespace Proto.Remote
             if (msg is Watch w)
             {
                 var rw = new RemoteWatch(w.Watcher, _pid);
-                Remote.EndpointManagerPid.Tell(rw);
+                EndpointManager.RemoteWatch(rw);
             }
             else if (msg is Unwatch uw)
             {
                 var ruw = new RemoteUnwatch(uw.Watcher, _pid);
-                Remote.EndpointManagerPid.Tell(ruw);
+                EndpointManager.RemoteUnwatch(ruw);
             }
             else
             {

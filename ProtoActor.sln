@@ -153,7 +153,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "protobuf", "protobuf", "{6D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProtoGrainGenerator", "protobuf\ProtoGrainGenerator\ProtoGrainGenerator.csproj", "{E686C93C-5853-44CC-A331-958396DADF64}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Serialization.Wire", "src\Proto.Actor.Wire\Proto.Serialization.Wire.csproj", "{A59CCE39-ED01-437A-A669-6D07673862B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Serialization.Wire", "src\Proto.Serialization.Wire\Proto.Serialization.Wire.csproj", "{A59CCE39-ED01-437A-A669-6D07673862B4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "RemoteBenchmarkWireSerializer", "RemoteBenchmarkWireSerializer", "{55AA9959-F17A-4656-9468-8D6D55230C81}"
 EndProject

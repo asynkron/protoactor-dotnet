@@ -18,9 +18,10 @@ class Program
     {
         StartConsulDevMode();
         Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+
         Cluster.Start("MyCluster", "127.0.0.1", 12001, new ConsulProvider(new ConsulProviderOptions()));
 
-        var client = Grains.HelloGrain("TheName");
+        var client = Grains.HelloGrain("Roger");
 
         var res = client.SayHello(new HelloRequest()).Result;
         Console.WriteLine(res.Message);

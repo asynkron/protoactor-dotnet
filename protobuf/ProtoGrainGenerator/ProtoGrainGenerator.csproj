@@ -1,16 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
     <AssemblyName>protograin</AssemblyName>
     <RuntimeIdentifiers>win10-x64</RuntimeIdentifiers>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Handlebars.Net" Version="1.9.0" />
     <PackageReference Include="protobuf-net" Version="2.3.2" />
     <PackageReference Include="protobuf-net.Reflection" Version="0.9.0" />
   </ItemGroup>
-
 </Project>

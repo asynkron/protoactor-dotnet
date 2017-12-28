@@ -4,7 +4,6 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -17,81 +16,121 @@ namespace Proto.Cluster
     {
         private static readonly ILogger _logger = Log.CreateLogger("MemberList");
 
-        private static readonly object _lock = new object();
+        private static readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
         private static readonly Dictionary<string, MemberStatus> _members = new Dictionary<string, MemberStatus>();
         private static readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind = new Dictionary<string, IMemberStrategy>();
 
         private static Subscription<object> _clusterTopologyEvnSub;
 
-        internal static void SubscribeToEventStream()
+        internal static void Setup()
         {
             _clusterTopologyEvnSub = Actor.EventStream.Subscribe<ClusterTopologyEvent>(UpdateClusterTopology);
         }
 
-        internal static void UnsubEventStream()
+        internal static void Stop()
         {
             Actor.EventStream.Unsubscribe(_clusterTopologyEvnSub.Id);
         }
 
         internal static string[] GetMembers(string kind)
         {
-            return _memberStrategyByKind.TryGetValue(kind, out var memberStrategy)
-                       ? memberStrategy.GetAllMembers().FindAll(m => m.Alive).Select(m => m.Address).ToArray() : new string[0];
+            bool locked = _rwLock.TryEnterReadLock(1000);
+            while (!locked)
+            {
+                _logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
+                locked = _rwLock.TryEnterReadLock(1000);
+            }
+
+            try
+            {
+                return _memberStrategyByKind.TryGetValue(kind, out var memberStrategy)
+                           ? memberStrategy.GetAllMembers().FindAll(m => m.Alive).Select(m => m.Address).ToArray() : new string[0];
+            }
+            finally
+            {
+                _rwLock.ExitReadLock();
+            }
         }
 
         internal static string GetPartition(string name, string kind)
         {
-            return _memberStrategyByKind.TryGetValue(kind, out var memberStrategy)
-                       ? memberStrategy.GetPartition(name) : "";
+            bool locked = _rwLock.TryEnterReadLock(1000);
+            while (!locked)
+            {
+                _logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
+                locked = _rwLock.TryEnterReadLock(1000);
+            }
+
+            try
+            {
+                return _memberStrategyByKind.TryGetValue(kind, out var memberStrategy)
+                           ? memberStrategy.GetPartition(name) : "";
+            }
+            finally
+            {
+                _rwLock.ExitReadLock();
+            }
         }
 
         internal static string GetActivator(string kind)
         {
-            return _memberStrategyByKind.TryGetValue(kind, out var memberStrategy)
-                       ? memberStrategy.GetActivator() : "";
+            bool locked = _rwLock.TryEnterReadLock(1000);
+            while (!locked)
+            {
+                _logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
+                locked = _rwLock.TryEnterReadLock(1000);
+            }
+
+            try
+            {
+                return _memberStrategyByKind.TryGetValue(kind, out var memberStrategy)
+                           ? memberStrategy.GetActivator() : "";
+            }
+            finally
+            {
+                _rwLock.ExitReadLock();
+            }
         }
 
         internal static void UpdateClusterTopology(ClusterTopologyEvent msg)
         {
-            performUpdate:
-            if (Monitor.TryEnter(_lock, TimeSpan.FromSeconds(1)))
+            bool locked = _rwLock.TryEnterWriteLock(1000);
+            while (!locked)
             {
-                try
+                _logger.LogDebug("MemberList did not acquire writer lock within 1 seconds, retry");
+                locked = _rwLock.TryEnterWriteLock(1000);
+            }
+
+            try
+            {
+                //get all new members address sets
+                var newMembersAddress = new HashSet<string>();
+                foreach (var status in msg.Statuses)
                 {
-                    //get all new members address sets
-                    var newMembersAddress = new HashSet<string>();
-                    foreach (var status in msg.Statuses)
-                    {
-                        newMembersAddress.Add(status.Address);
-                    }
+                    newMembersAddress.Add(status.Address);
+                }
 
-                    //remove old ones whose address not exist in new address sets
-                    //_members.ToList() duplicates _members, allow _members to be modified in Notify
-                    foreach (var (address, old) in _members.ToList())
+                //remove old ones whose address not exist in new address sets
+                //_members.ToList() duplicates _members, allow _members to be modified in Notify
+                foreach (var (address, old) in _members.ToList())
+                {
+                    if (!newMembersAddress.Contains(address))
                     {
-                        if (!newMembersAddress.Contains(address))
-                        {
-                            UpdateAndNotify(null, old);
-                        }
-                    }
-
-                    //find all the entries that exist in the new set
-                    foreach (var @new in msg.Statuses)
-                    {
-                        _members.TryGetValue(@new.Address, out var old);
-                        _members[@new.Address] = @new;
-                        UpdateAndNotify(@new, old);
+                        UpdateAndNotify(null, old);
                     }
                 }
-                finally
+
+                //find all the entries that exist in the new set
+                foreach (var @new in msg.Statuses)
                 {
-                    Monitor.Exit(_lock);
+                    _members.TryGetValue(@new.Address, out var old);
+                    _members[@new.Address] = @new;
+                    UpdateAndNotify(@new, old);
                 }
             }
-            else
+            finally
             {
-                _logger.LogDebug("Did not acquire lock within 1 seconds, retry");
-                goto performUpdate;
+                _rwLock.ExitWriteLock();
             }
         }
 
@@ -114,7 +153,7 @@ namespace Proto.Cluster
                             _memberStrategyByKind.Remove(k);
                     }
                 }
-                
+
                 //notify left
                 var left = new MemberLeftEvent(old.Host, old.Port, old.Kinds);
                 Actor.EventStream.Publish(left);
