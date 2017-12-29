@@ -3,7 +3,6 @@ using System;
 using System.Threading.Tasks;
 using Proto;
 using Xunit;
-using System.IO;
 
 namespace protobug
 {
@@ -13,7 +12,6 @@ namespace protobug
 
         public SampleActor()
         {
-            File.AppendAllText("Test.txt", "Create!" + Environment.NewLine);
             Created = true;
         }
 
@@ -35,8 +33,6 @@ namespace protobug
             var factory = provider.GetRequiredService<IActorFactory>();
 
             var pid = factory.GetActor<SampleActor>();
-
-            File.AppendAllText("Test.txt", pid.ToShortString() + Environment.NewLine);
 
             pid.Tell("hello");
             pid.Stop();
