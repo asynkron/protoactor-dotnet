@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Proto;
 using Xunit;
 
-namespace protobug
+namespace Proto.ActorExtensions.Tests
 {
     public class SampleActor : IActor
     {
