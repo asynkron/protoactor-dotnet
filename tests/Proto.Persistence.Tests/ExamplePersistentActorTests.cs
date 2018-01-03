@@ -84,7 +84,8 @@ namespace Proto.Persistence.Tests
             pid.Tell(new Multiply { Amount = 2 });
             pid.Tell(new RequestSnapshot());
             var state = await RestartActorAndGetState(pid, props);
-            Assert.Equal(InitialState * 2 * 2, state);
+            var expectedState = InitialState * 2 * 2;
+            Assert.Equal(expectedState, state);
         }
 
         [Fact]
@@ -97,7 +98,8 @@ namespace Proto.Persistence.Tests
             pid.Tell(new Multiply { Amount = 4 });
             pid.Tell(new Multiply { Amount = 8 });
             var state = await RestartActorAndGetState(pid, props);
-            Assert.Equal(InitialState * 2 * 2 * 4 * 8, state);
+            var expectedState = InitialState * 2 * 2 * 4 * 8;
+            Assert.Equal(expectedState, state);
         }
 
         [Fact]
@@ -123,11 +125,11 @@ namespace Proto.Persistence.Tests
             pid.Tell(new RequestSnapshot());
             pid.Tell(new Multiply { Amount = 4 });
             pid.Tell(new RequestSnapshot());
-            await providerState.DeleteSnapshotsAsync(actorId, 1);
-            await providerState.DeleteEventsAsync(actorId, 2);
-
+            await providerState.DeleteSnapshotsAsync(actorId, 0);
+            await providerState.DeleteEventsAsync(actorId, 1);
             var state = await RestartActorAndGetState(pid, props);
-            Assert.Equal(InitialState * 2 * 4, state);
+            var expectedState = InitialState * 2 * 4;
+            Assert.Equal(expectedState, state);
         }
 
         [Fact]
@@ -153,10 +155,10 @@ namespace Proto.Persistence.Tests
 
             pid.Tell(new Multiply { Amount = 2 });
             var index = await pid.RequestAsync<long>(new GetIndex(), TimeSpan.FromSeconds(1));
-            Assert.Equal(1, index);
+            Assert.Equal(0, index);
             pid.Tell(new Multiply { Amount = 4 });
             index = await pid.RequestAsync<long>(new GetIndex(), TimeSpan.FromSeconds(1));
-            Assert.Equal(2, index);
+            Assert.Equal(1, index);
         }
 
         [Fact]
@@ -168,7 +170,7 @@ namespace Proto.Persistence.Tests
             pid.Tell(new RequestSnapshot());
             pid.Tell(new Multiply { Amount = 4 });
             var index = await pid.RequestAsync<long>(new GetIndex(), TimeSpan.FromSeconds(1));
-            Assert.Equal(2, index);
+            Assert.Equal(1, index);
         }
 
         [Fact]
@@ -183,7 +185,7 @@ namespace Proto.Persistence.Tests
             pid = Actor.Spawn(props);
             var state = await pid.RequestAsync<int>(new GetState(), TimeSpan.FromSeconds(1));
             var index = await pid.RequestAsync<long>(new GetIndex(), TimeSpan.FromSeconds(1));
-            Assert.Equal(2, index);
+            Assert.Equal(1, index);
             Assert.Equal(InitialState * 2 * 4, state);
         }
 
@@ -197,7 +199,7 @@ namespace Proto.Persistence.Tests
             pid.Tell(new Multiply { Amount = 4 });
             pid.Tell(new Multiply { Amount = 8 });
             var messages = new List<object>();
-            await providerState.GetEventsAsync(actorId, 2, 3, msg => messages.Add(msg));
+            await providerState.GetEventsAsync(actorId, 1, 2, msg => messages.Add(msg));
             Assert.Equal(2, messages.Count);
             Assert.Equal(2, (messages[0] as Multiplied).Amount);
             Assert.Equal(4, (messages[1] as Multiplied).Amount);
@@ -261,7 +263,7 @@ namespace Proto.Persistence.Tests
 
     internal class ExamplePersistentActor : IActor
     {
-        private State _state = new State{Value = 1};
+        private State _state = new State { Value = 1 };
         private readonly Persistence _persistence;
 
         public ExamplePersistentActor(IEventStore eventStore, ISnapshotStore snapshotStore, string persistenceId)

@@ -47,12 +47,8 @@ namespace Proto.Persistence.Tests
         public Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
             var events = _events.GetOrAdd(actorName, new Dictionary<long, object>());
-            long nextEventIndex = 1;
-            if (events.Any())
-            {
-                nextEventIndex = events.Last().Key + 1;
-            }
-            events.Add(nextEventIndex, @event);
+
+            events.Add(index, @event);
 
             return Task.FromResult(0L);
         }

@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Persistence.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -11,7 +11,7 @@ namespace Proto.Persistence
 {
     public class Persistence
     {
-        public long Index { get; private set; }
+        public long Index { get; private set; } = -1;
         private readonly Action<Event> _applyEvent;
         private readonly Action<Snapshot> _applySnapshot;
         private readonly Func<object> _getState;
@@ -75,15 +75,17 @@ namespace Proto.Persistence
         /// <returns></returns>
         public async Task RecoverStateAsync()
         {
-            var (snapshot, index) = await _snapshotStore.GetSnapshotAsync(_actorId);
+            var (snapshot, lastSnapshotIndex) = await _snapshotStore.GetSnapshotAsync(_actorId);
 
             if (snapshot != null)
             {
-                Index = index;
-                _applySnapshot(new RecoverSnapshot(snapshot, index));
+                Index = lastSnapshotIndex;
+                _applySnapshot(new RecoverSnapshot(snapshot, lastSnapshotIndex));
             }
+
+            var fromEventIndex = Index + 1;
             
-            await _eventStore.GetEventsAsync(_actorId, Index + 1, long.MaxValue, @event =>
+            await _eventStore.GetEventsAsync(_actorId, fromEventIndex, long.MaxValue, @event =>
             {
                 Index++;
                 _applyEvent(new RecoverEvent(@event, Index));
@@ -117,7 +119,7 @@ namespace Proto.Persistence
                 throw new Exception("Event cannot be persisted without using Event Sourcing.");
             }
 
-            var persistedEvent = new PersistedEvent(@event, Index);
+            var persistedEvent = new PersistedEvent(@event, (Index + 1));
 
             await _eventStore.PersistEventAsync(_actorId, persistedEvent.Index, persistedEvent.Data);
             
