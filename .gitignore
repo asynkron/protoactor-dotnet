@@ -257,3 +257,4 @@ paket-files/
 tools/
 Cake/
 Addins/
+examples/Persistence/Persistence/states.db
