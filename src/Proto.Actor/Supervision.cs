@@ -74,15 +74,15 @@ namespace Proto
                     supervisor.ResumeChildren(child);
                     break;
                 case SupervisorDirective.Restart:
-                    if (RequestRestartPermission(rs))
-                    {
-                        Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
-                        supervisor.RestartChildren(reason, supervisor.Children.ToArray());
-                    }
-                    else
+                    if (ShouldStop(rs))
                     {
                         Logger.LogInformation($"Stopping {child.ToShortString()} Reason { reason}");
                         supervisor.StopChildren(supervisor.Children.ToArray());
+                    }
+                    else
+                    {
+                        Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
+                        supervisor.RestartChildren(reason, supervisor.Children.ToArray());
                     }
                     break;
                 case SupervisorDirective.Stop:
@@ -97,19 +97,21 @@ namespace Proto
             }
         }
 
-        private bool RequestRestartPermission(RestartStatistics rs)
+        private bool ShouldStop(RestartStatistics rs)
         {
             if (_maxNrOfRetries == 0)
             {
-                return false;
+                return true;
             }
             rs.Fail();
-            if (_maxNrOfRetries > 0 && (_withinTimeSpan == null || rs.IsWithinDuration(_withinTimeSpan.Value)))
+            
+            if (rs.NumberOfFailures(_withinTimeSpan) > _maxNrOfRetries)
             {
-                return rs.FailureCount <= _maxNrOfRetries;
+                rs.Reset();
+                return true;
             }
-            rs.Reset();
-            return true;
+            
+            return false;
         }
     }
 
@@ -136,15 +138,15 @@ namespace Proto
                     supervisor.ResumeChildren(child);
                     break;
                 case SupervisorDirective.Restart:
-                    if (RequestRestartPermission(rs))
-                    {
-                        Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
-                        supervisor.RestartChildren(reason, child);
-                    }
-                    else
+                    if (ShouldStop(rs))
                     {
                         Logger.LogInformation($"Stopping {child.ToShortString()} Reason { reason}");
                         supervisor.StopChildren(child);
+                    }
+                    else
+                    {
+                        Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
+                        supervisor.RestartChildren(reason, child);
                     }
                     break;
                 case SupervisorDirective.Stop:
@@ -159,19 +161,21 @@ namespace Proto
             }
         }
 
-        private bool RequestRestartPermission(RestartStatistics rs)
+        private bool ShouldStop(RestartStatistics rs)
         {
             if (_maxNrOfRetries == 0)
             {
-                return false;
+                return true;
             }
             rs.Fail();
-            if (_maxNrOfRetries > 0 && (_withinTimeSpan == null || rs.IsWithinDuration(_withinTimeSpan.Value)))
+            
+            if (rs.NumberOfFailures(_withinTimeSpan) > _maxNrOfRetries)
             {
-                return rs.FailureCount <= _maxNrOfRetries;
+                rs.Reset();
+                return true;
             }
-            rs.Reset();
-            return true;
+            
+            return false;
         }
     }
 
@@ -189,7 +193,13 @@ namespace Proto
 
         public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
         {
-            SetFailureCount(rs);
+            if (rs.NumberOfFailures(_backoffWindow) == 0)
+            {
+                rs.Reset();
+            }
+
+            rs.Fail();
+            
             var backoff = rs.FailureCount * ToNanoseconds(_initialBackoff);
             var noise = _random.Next(500);
             var duration = TimeSpan.FromMilliseconds(ToMilliseconds(backoff + noise));
@@ -207,18 +217,6 @@ namespace Proto
         private long ToMilliseconds(long nanoseconds)
         {
             return nanoseconds / 1000000;
-        }
-
-        private void SetFailureCount(RestartStatistics rs)
-        {
-            // if we are within the backoff window, exit early
-            if (rs.IsWithinDuration(_backoffWindow))
-            {
-                rs.Fail();
-                return;
-            }
-            //we are past the backoff limit, reset the failure counter
-            rs.Reset();
         }
     }
 }

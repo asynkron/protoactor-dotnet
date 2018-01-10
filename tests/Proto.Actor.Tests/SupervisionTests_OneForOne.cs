@@ -96,7 +96,7 @@ namespace Proto.Tests
             Assert.Contains(Stop.Instance, childMailboxStats.Posted);
             Assert.Contains(Stop.Instance, childMailboxStats.Received);
         }
-
+        
         [Fact]
         public void OneForOneStrategy_Should_RestartChildOnFailure()
         {
@@ -113,6 +113,54 @@ namespace Proto.Tests
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(childMailboxStats.Posted, msg => msg is Restart);
             Assert.Contains(childMailboxStats.Received, msg => msg is Restart);
+        }
+        
+        [Fact]
+        public void OneForOneStrategy_WhenRestartedLessThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldNotStopChild()
+        {
+            var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 3, TimeSpan.FromMilliseconds(100));
+            var childProps = Actor.FromProducer(() => new ChildActor())
+                .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
+                .WithChildSupervisorStrategy(strategy);
+            var parent = Actor.Spawn(parentProps);
+
+            parent.Tell("1st restart");
+            parent.Tell("2nd restart");
+            parent.Tell("3rd restart");
+            
+            // wait more than the time period 
+            Thread.Sleep(500);
+            Assert.DoesNotContain(Stop.Instance, childMailboxStats.Posted);
+            Assert.DoesNotContain(Stop.Instance, childMailboxStats.Received);
+            
+            parent.Tell("4th restart");
+            
+            childMailboxStats.Reset.Wait(500); 
+            Assert.DoesNotContain(Stop.Instance, childMailboxStats.Posted);
+            Assert.DoesNotContain(Stop.Instance, childMailboxStats.Received);
+        }
+        
+        [Fact]
+        public void OneForOneStrategy_WhenRestartedMoreThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldStopChild()
+        {
+            var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 3, TimeSpan.FromMilliseconds(100));
+            var childProps = Actor.FromProducer(() => new ChildActor())
+                .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
+                .WithChildSupervisorStrategy(strategy);
+            var parent = Actor.Spawn(parentProps);
+
+            parent.Tell("1st restart");
+            parent.Tell("2nd restart");
+            parent.Tell("3rd restart");
+            parent.Tell("4th restart");
+            
+            childMailboxStats.Reset.Wait(1000); 
+            Assert.Contains(Stop.Instance, childMailboxStats.Posted);
+            Assert.Contains(Stop.Instance, childMailboxStats.Received);
         }
         
         [Fact]
