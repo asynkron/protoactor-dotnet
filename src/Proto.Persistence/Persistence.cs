@@ -132,8 +132,6 @@ namespace Proto.Persistence
                 var persistedSnapshot = new PersistedSnapshot(_getState(), persistedEvent.Index);
 
                 await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, persistedSnapshot.State);
-
-                _applySnapshot(persistedSnapshot);
             }
         }
 
@@ -142,8 +140,6 @@ namespace Proto.Persistence
             var persistedSnapshot = new PersistedSnapshot(snapshot, Index);
 
             await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, snapshot);
-
-            _applySnapshot(persistedSnapshot);
         }
 
         public async Task DeleteSnapshotsAsync(long inclusiveToIndex)
