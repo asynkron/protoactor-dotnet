@@ -73,8 +73,8 @@ namespace Proto.Mailbox
                 var cell = buffer[index];
                 if (cell.Sequence == pos && Interlocked.CompareExchange(ref _enqueuePos, pos + 1, pos) == pos)
                 {
-                    Volatile.Write(ref buffer[index].Element, item);
-                    buffer[index].Sequence = pos + 1;
+                    buffer[index].Element = item;
+                    Volatile.Write(ref buffer[index].Sequence, pos + 1);
                     return true;
                 }
 
@@ -106,8 +106,9 @@ namespace Proto.Mailbox
                 var cell = buffer[index];
                 if (cell.Sequence == pos + 1 && Interlocked.CompareExchange(ref _dequeuePos, pos + 1, pos) == pos)
                 {
-                    result = Volatile.Read(ref cell.Element);
-                    buffer[index] = new Cell(pos + bufferMask + 1, null);
+                    result = cell.Element;
+                    buffer[index].Element = null;
+                    Volatile.Write(ref buffer[index].Sequence, pos + bufferMask + 1);
                     return true;
                 }
 
