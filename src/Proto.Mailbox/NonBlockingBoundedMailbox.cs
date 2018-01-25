@@ -43,6 +43,6 @@ namespace Proto.Mailbox
             return _messages.TryDequeue(out message) ? message : null;
         }
 
-        public bool HasMessages => _messages.Count > 0;
+        public bool HasMessages => !_messages.IsEmpty;
     }
 }
