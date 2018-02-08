@@ -6,12 +6,11 @@ namespace DependencyInjection
     public class ActorManager : IActorManager
     {
         private readonly IActorFactory actorFactory;
-        private readonly Subscription<DIActor.Ping> subscription;
 
-        public ActorManager(IActorFactory actorFactory, EventStream<DIActor.Ping> eventStream, ILogger<ActorManager> logger)
+        public ActorManager(IActorFactory actorFactory, ILogger<ActorManager> logger)
         {
             this.actorFactory = actorFactory;
-            subscription = eventStream.Subscribe(x => logger.LogInformation($"EventStream reply: {x.Name}"));
+            EventStream.Instance.Subscribe<DIActor.Ping>(x => logger.LogInformation($"EventStream reply: {x.Name}"));
         }
 
         public void Activate()
