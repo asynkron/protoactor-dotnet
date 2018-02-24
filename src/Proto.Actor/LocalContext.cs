@@ -197,6 +197,17 @@ namespace Proto
             SendUserMessage(target, message);
         }
 
+        public void Forward(PID target)
+        {
+            if (this._message is SystemMessage)
+            {
+                //SystemMessage cannot be forwarded
+                Logger.LogWarning("SystemMessage cannot be forwarded. {0}", this._message);
+                return;
+            }
+            SendUserMessage(target, _message);
+        }
+
         public void Request(PID target, object message)
         {
             var messageEnvelope = new MessageEnvelope(message, Self, null);

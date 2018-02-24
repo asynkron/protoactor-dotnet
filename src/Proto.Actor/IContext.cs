@@ -101,6 +101,7 @@ namespace Proto
 
         Task ReceiveAsync(object message);
         void Tell(PID target, object message);
+        void Forward(PID target);
         void Request(PID target, object message);
         Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout);
         Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken);
