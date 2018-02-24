@@ -26,7 +26,7 @@ namespace TestApp
             {
                 var psi = new ProcessStartInfo("dotnet", "bin/" +
                                                          "release" +
-                                                         "/netcoreapp1.1/TestApp.dll " + clusterName)
+                                                         "/netcoreapp2.0/TestApp.dll " + clusterName)
                 {
                  //   UseShellExecute = false
                 };
