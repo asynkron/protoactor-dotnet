@@ -15,5 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Actor.Extensions\Proto.Actor.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
   </ItemGroup>
 </Project>
