@@ -80,5 +80,33 @@ namespace Proto.Tests
             Assert.IsType(typeof(Stopping), msgs[2]);
             Assert.IsType(typeof(Stopped), msgs[3]);
         }
+
+        public static PID SpawnForwarderFromFunc(Receive forwarder) => Actor.Spawn(Actor.FromFunc(forwarder));
+
+        [Fact]
+        public async Task ForwardActorAsync()
+        {
+            PID pid = SpawnActorFromFunc(ctx =>
+            {
+                if (ctx.Message is string)
+                {
+                    ctx.Respond("hey");
+                }
+                return Actor.Done;
+            });
+
+            PID forwarder = SpawnForwarderFromFunc(ctx =>
+            {
+                if (ctx.Message is string)
+                {
+                    ctx.Forward(pid);
+                }
+                return Actor.Done;
+            });
+
+            var reply = await forwarder.RequestAsync<object>("hello");
+
+            Assert.Equal("hey", reply);
+        }
     }
 }
