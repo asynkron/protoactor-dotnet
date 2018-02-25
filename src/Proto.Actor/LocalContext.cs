@@ -386,6 +386,9 @@ namespace Proto
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
         {
+            if (_receiveMiddleware != null)
+                future.SetReceiveMiddleware(_receiveMiddleware);
+
             var messageEnvelope = new MessageEnvelope(message, future.Pid, null);
             SendUserMessage(target, messageEnvelope);
             return future.Task;
