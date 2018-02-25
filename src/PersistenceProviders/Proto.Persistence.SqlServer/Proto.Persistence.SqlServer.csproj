@@ -14,8 +14,7 @@
     <FileVersion>0.1.6.0</FileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG;NETSTANDARD1_5</DefineConstants>
-    <OutputPath>bin\Debug\netstandard1.5\</OutputPath>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
