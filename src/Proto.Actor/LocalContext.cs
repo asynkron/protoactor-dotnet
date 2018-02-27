@@ -334,7 +334,7 @@ namespace Proto
             if (_state == ContextState.Stopped)
             {
                 //already stopped
-                return Task.CompletedTask;
+                return Proto.Actor.Done;
             }
 
             var influenceTimeout = true;
