@@ -334,6 +334,7 @@ namespace Proto
             if (_state == ContextState.Stopped)
             {
                 //already stopped
+                Logger.LogError("Actor already stopped, ignore user message {0}", msg);
                 return Proto.Actor.Done;
             }
 
