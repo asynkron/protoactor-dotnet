@@ -289,12 +289,6 @@ namespace Proto
 
         public Task InvokeSystemMessageAsync(object msg)
         {
-            if (_state == ContextState.Stopped)
-            {
-                //already stopped
-                return Task.CompletedTask;
-            }
-
             try
             {
                 switch (msg)
