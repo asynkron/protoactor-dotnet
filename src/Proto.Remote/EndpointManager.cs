@@ -63,8 +63,7 @@ namespace Proto.Remote
             {
                 var endpoint = v.Value;
                 endpoint.Watcher.Tell(msg);
-                endpoint.Watcher.Stop();
-                endpoint.Writer.Stop();
+                endpoint.Writer.Tell(msg);
             }
         }
 

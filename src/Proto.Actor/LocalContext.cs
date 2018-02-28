@@ -19,7 +19,8 @@ namespace Proto
         None,
         Alive,
         Restarting,
-        Stopping
+        Stopping,
+        Stopped,
     }
 
     public class LocalContext : IMessageInvoker, IContext, ISupervisor
@@ -330,6 +331,13 @@ namespace Proto
 
         public Task InvokeUserMessageAsync(object msg)
         {
+            if (_state == ContextState.Stopped)
+            {
+                //already stopped
+                Logger.LogError("Actor already stopped, ignore user message {0}", msg);
+                return Proto.Actor.Done;
+            }
+
             var influenceTimeout = true;
             if (ReceiveTimeout > TimeSpan.Zero)
             {
@@ -440,7 +448,7 @@ namespace Proto
 
         private void HandleWatch(Watch w)
         {
-            if (_state == ContextState.Stopping)
+            if (_state >= ContextState.Stopping)
             {
                 w.Watcher.SendSystemMessage(new Terminated
                 {
@@ -482,9 +490,9 @@ namespace Proto
 
         private async Task HandleStopAsync()
         {
-            if (_state == ContextState.Stopping)
+            if (_state >= ContextState.Stopping)
             {
-                //already stopping
+                //already stopping or stopped
                 return;
             }
 
@@ -549,6 +557,8 @@ namespace Proto
                 };
                 Parent.SendSystemMessage(terminated);
             }
+
+            _state = ContextState.Stopped;
         }
 
         private async Task RestartAsync()

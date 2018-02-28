@@ -56,7 +56,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void ActorLifeCycle()
+        public async void ActorLifeCycle()
         {
             var messages = new Queue<object>();
 
@@ -71,6 +71,9 @@ namespace Proto.Tests
                 );
 
             pid.Tell("hello");
+
+            await Task.Delay(100);
+
             pid.Stop();
 
             Assert.Equal(4, messages.Count);

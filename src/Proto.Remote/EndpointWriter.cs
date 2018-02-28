@@ -49,6 +49,9 @@ namespace Proto.Remote
                 case Restarting _:
                     await RestartingAsync();
                     break;
+                case EndpointTerminatedEvent _:
+                    context.Self.Stop();
+                    break;
                 case IEnumerable<RemoteDeliver> m:
                     var envelopes = new List<MessageEnvelope>();
                     var typeNames = new Dictionary<string,int>();
