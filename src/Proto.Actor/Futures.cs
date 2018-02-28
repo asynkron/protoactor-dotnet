@@ -65,7 +65,7 @@ namespace Proto
 
                 _tcs.TrySetResult((T)env.message);
                 Stop(pid);
-            }            
+            }
             else
             {
                 throw new InvalidOperationException($"Unexpected message.  Was type {env.message.GetType()} but expected {typeof(T)}");
@@ -78,7 +78,15 @@ namespace Proto
             {
                 ProcessRegistry.Instance.Remove(Pid);
                 _cts?.Dispose();
+                return;
             }
+
+            if (_cts == null || !_cts.IsCancellationRequested)
+            {
+                _tcs.TrySetResult(default(T));
+            }
+
+            Stop(pid);
         }
     }
 }
