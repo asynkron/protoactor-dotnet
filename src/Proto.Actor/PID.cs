@@ -83,14 +83,14 @@ namespace Proto
             return future.Task;
         }
 
-        /// <summary> Stop will tell Actor to stop immediately, regardless of existing user messages in mailbox. </summary>
+        /// <summary> Stop will tell actor to stop immediately, regardless of existing user messages in mailbox. </summary>
         public void Stop()
         {
             var reff = ProcessRegistry.Instance.Get(this);
             reff.Stop(this);
         }
 
-        /// <summary> StopAsync will tell and wait Actor to stop immediately, regardless of existing user messages in mailbox. </summary>
+        /// <summary> StopAsync will tell and wait actor to stop immediately, regardless of existing user messages in mailbox. </summary>
         public Task StopAsync()
         {
             var future = new FutureProcess<object>();
@@ -101,10 +101,10 @@ namespace Proto
             return future.Task;
         }
 
-        /// <summary> Poison will tell Actor to stop after processing current user messages in mailbox. </summary>
+        /// <summary> Poison will tell actor to stop after processing current user messages in mailbox. </summary>
         public void Poison() => Tell(new PoisonPill());
 
-        /// <summary> PoisonAsync will tell and wait Actor to stop after processing current user messages in mailbox. </summary>
+        /// <summary> PoisonAsync will tell and wait actor to stop after processing current user messages in mailbox. </summary>
         public Task PoisonAsync()
         {
             var future = new FutureProcess<object>();
