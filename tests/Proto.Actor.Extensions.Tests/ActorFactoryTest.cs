@@ -21,15 +21,13 @@ namespace Proto.ActorExtensions.Tests
 
             pid.Tell("hello");
 
-            await Task.Delay(100);
-
-            pid.Stop();
+            await pid.StopAsync();
 
             Assert.True(SampleActor.Created);
         }
 
         [Fact]
-        public void should_register_by_type()
+        public async void should_register_by_type()
         {
             var services = new ServiceCollection();
             var created = false;
@@ -47,7 +45,7 @@ namespace Proto.ActorExtensions.Tests
 
             var pid = factory.GetActor<SampleActor>();
 
-            pid.Stop();
+            await pid.StopAsync();
 
             Assert.True(created);
         }

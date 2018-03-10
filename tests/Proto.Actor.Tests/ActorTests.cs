@@ -72,9 +72,7 @@ namespace Proto.Tests
 
             pid.Tell("hello");
 
-            await Task.Delay(100);
-
-            pid.Stop();
+            await pid.StopAsync();
 
             Assert.Equal(4, messages.Count);
             var msgs = messages.ToArray();

@@ -52,7 +52,7 @@ namespace Proto.Tests
             var watcher = Actor.Spawn(Actor.FromProducer(() => new LocalActor(watchee))
                                            .WithMailbox(() => new TestMailbox()));
 
-            watchee.Stop();
+            await watchee.StopAsync();
             var terminatedMessageReceived = await watcher.RequestAsync<bool>("?", TimeSpan.FromSeconds(5));
             Assert.True(terminatedMessageReceived);
         }

@@ -28,7 +28,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
-            routee2.Stop();
+            await routee2.StopAsync();
             router.Tell("hello");
 
             Assert.Equal("hello", await routee1.RequestAsync<string>("received?", _timeout));

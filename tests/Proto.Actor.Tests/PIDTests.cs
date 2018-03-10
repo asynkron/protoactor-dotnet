@@ -19,10 +19,10 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void Given_ActorDied_Ref_ShouldNotReturnIt()
+        public async void Given_ActorDied_Ref_ShouldNotReturnIt()
         {
             var pid = Actor.Spawn(Actor.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
-            pid.Stop();
+            await pid.StopAsync();
 
             var p = pid.Ref;
 
