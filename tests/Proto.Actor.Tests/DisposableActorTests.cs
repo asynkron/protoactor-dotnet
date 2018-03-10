@@ -12,13 +12,13 @@ namespace Proto.Tests
     public class DisposableActorTests
     {
         [Fact]
-        public void WhenActorStopped_DisposeIsCalled()
+        public async void WhenActorStopped_DisposeIsCalled()
         {
             var disposeCalled = false;
             var props = Actor.FromProducer(() => new DisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => new TestMailbox());
             var pid = Actor.Spawn(props);
-            pid.Stop();
+            await pid.StopAsync();
             Assert.True(disposeCalled);
         }
 

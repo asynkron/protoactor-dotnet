@@ -20,11 +20,11 @@
   <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
   </PropertyGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.5' ">
-    <PackageReference Include="RavenDB.Client" Version="3.5.4" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'net452' ">
+    <PackageReference Include="RavenDB.Client" Version="3.5.5" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net452' ">
-    <PackageReference Include="RavenDB.Client" Version="3.5.4" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.5' Or '$(TargetFramework)' == 'netstandard2.0' ">
+    <PackageReference Include="RavenDB.Client" Version="4.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Proto.Actor\Proto.Actor.csproj" />
