@@ -14,8 +14,8 @@ namespace Proto
             Header = header;
         }
 
-        public PID Sender { get; }
-        public object Message { get; }
+        public PID Sender { get; set; }
+        public object Message { get; set; }
         public MessageHeader Header { get; private set; }
 
         public static (object message, PID sender, MessageHeader headers) Unwrap(object message)
