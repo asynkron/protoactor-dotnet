@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="RootContext.cs" company="Asynkron HB">
+//   <copyright file="ActorClient.cs" company="Asynkron HB">
 //       Copyright (C) 2015-2017 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
@@ -11,7 +11,8 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public class ActorClient : ISenderContext    {
+    public class ActorClient : ISenderContext
+    {
         private readonly Sender _senderMiddleware;
 
         public ActorClient(MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
@@ -24,7 +25,7 @@ namespace Proto
         public object Message => null;
         public MessageHeader Headers { get; }
 
-        private Task DefaultSender(ISenderContext context,PID target, MessageEnvelope message)
+        private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
         {
             target.Tell(message);
             return Actor.Done;
@@ -42,7 +43,7 @@ namespace Proto
                 else
                 {
                     //tell based middleware
-                    _senderMiddleware(this, target, new MessageEnvelope(message,null,null));
+                    _senderMiddleware(this, target, new MessageEnvelope(message, null, null));
                 }
             }
             else
@@ -52,10 +53,10 @@ namespace Proto
             }
         }
 
-        public void Request(PID target, object message,PID sender)
+        public void Request(PID target, object message, PID sender)
         {
-            var envelope = new MessageEnvelope(message,sender,null);
-            Tell(target,envelope);
+            var envelope = new MessageEnvelope(message, sender, null);
+            Tell(target, envelope);
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
