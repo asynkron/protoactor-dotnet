@@ -31,9 +31,18 @@ namespace Proto
             return Actor.Done;
         }
 
-        public void Tell(PID target, object message) 
+        public void Tell(PID target, object message)
             => SendUserMessage(target, message);
-        
+
+        public void Request(PID target, object message)
+            => SendUserMessage(target, message);
+
+        public void Request(PID target, object message, PID sender)
+        {
+            var envelope = new MessageEnvelope(message, sender, null);
+            Tell(target, envelope);
+        }
+
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
             => RequestAsync(target, message, new FutureProcess<T>(timeout));
 
