@@ -75,8 +75,12 @@ namespace Proto
         {
             get
             {
-                var r = _message as MessageEnvelope;
-                return r != null ? r.Message : _message;
+                return _message is MessageEnvelope r ? r.Message : _message;
+            }
+            set
+            {
+                if (_message is MessageEnvelope r) r.Message = value;
+                else _message = value;
             }
         }
 
