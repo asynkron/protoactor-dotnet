@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="RootContext.cs" company="Asynkron HB">
+//   <copyright file="ActorClient.cs" company="Asynkron HB">
 //       Copyright (C) 2015-2017 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
@@ -33,6 +33,34 @@ namespace Proto
         }
 
         public void Tell(PID target, object message)
+            => SendUserMessage(target, message);
+
+        public void Request(PID target, object message)
+            => SendUserMessage(target, message);
+
+        public void Request(PID target, object message, PID sender)
+        {
+            var envelope = new MessageEnvelope(message, sender, null);
+            Tell(target, envelope);
+        }
+
+        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
+            => RequestAsync(target, message, new FutureProcess<T>(timeout));
+
+        public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
+            => RequestAsync(target, message, new FutureProcess<T>(cancellationToken));
+
+        public Task<T> RequestAsync<T>(PID target, object message)
+            => RequestAsync(target, message, new FutureProcess<T>());
+
+        private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
+        {
+            var messageEnvelope = new MessageEnvelope(message, future.Pid, null);
+            SendUserMessage(target, messageEnvelope);
+            return future.Task;
+        }
+
+        private void SendUserMessage(PID target, object message)
         {
             if (_senderMiddleware != null)
             {
@@ -52,27 +80,6 @@ namespace Proto
                 //Default path
                 target.Tell(message);
             }
-        }
-
-        public void Request(PID target, object message, PID sender)
-        {
-            var envelope = new MessageEnvelope(message, sender, null);
-            Tell(target, envelope);
-        }
-
-        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<T> RequestAsync<T>(PID target, object message)
-        {
-            throw new NotImplementedException();
         }
     }
 }
