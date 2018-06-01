@@ -27,12 +27,14 @@ class Program
                              next => async c =>
                              {
                                  Console.WriteLine($"middleware 1 enter {c.Message.GetType()}:{c.Message}");
+                                 c.Message = c.Message + ".";
                                  await next(c);
                                  Console.WriteLine($"middleware 1 exit {c.Message.GetType()}:{c.Message}");
                              },
                              next => async c =>
                              {
                                  Console.WriteLine($"middleware 2 enter {c.Message.GetType()}:{c.Message}");
+                                 c.Message = c.Message + "$";
                                  await next(c);
                                  Console.WriteLine($"middleware 2 exit {c.Message.GetType()}:{c.Message}");
                              });
@@ -53,12 +55,14 @@ class Program
                                        envelope.SetHeader("ParentSpanID", c.Headers.GetOrDefault("ParentSpanID"));
 
                                        Console.WriteLine($"sender middleware 1 enter {envelope.Message.GetType()}:{envelope.Message}");
+                                       envelope.Message = envelope.Message + "!";
                                        await next(c, target, envelope);
                                        Console.WriteLine($"sender middleware 1 exit {envelope.Message.GetType()}:{envelope.Message}");
                                    },
                                    next => async (c, target, envelope) =>
                                    {
                                        Console.WriteLine($"sender middleware 2 enter {envelope.Message.GetType()}:{envelope.Message}");
+                                       envelope.Message = envelope.Message + "?";
                                        await next(c, target, envelope);
                                        Console.WriteLine($"sender middleware 2 exit {envelope.Message.GetType()}:{envelope.Message}");
                                    });
