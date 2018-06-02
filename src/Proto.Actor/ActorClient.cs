@@ -22,7 +22,8 @@ namespace Proto
             Headers = messageHeader;
         }
 
-        public object Message => null;
+        public object Message { get => null; set { /* ActorClient is not used to receive messages */ } }
+
         public MessageHeader Headers { get; }
 
         private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)

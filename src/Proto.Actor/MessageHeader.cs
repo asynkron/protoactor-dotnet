@@ -10,7 +10,7 @@ namespace Proto
 {
     public class MessageHeader : Dictionary<string, string>
     {
-        public static readonly MessageHeader EmptyHeader = new MessageHeader();
+        public static MessageHeader EmptyHeader => new MessageHeader();
 
         public string GetOrDefault(string key, string @default = null)
         {
