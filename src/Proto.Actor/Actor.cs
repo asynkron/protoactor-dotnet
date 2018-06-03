@@ -13,7 +13,7 @@ namespace Proto
 
     public delegate Task Sender(ISenderContext ctx, PID target, MessageEnvelope envelope);
 
-    class EmptyActor : IActor
+    internal class EmptyActor : IActor
     {
         private readonly Receive _receive;
         public EmptyActor(Receive receive) => _receive = receive;

@@ -20,11 +20,11 @@ namespace Proto.Schedulers.SimpleScheduler
 
         public ISimpleScheduler ScheduleTellRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message, out CancellationTokenSource cancellationTokenSource)
         {
-            CancellationTokenSource cts = new CancellationTokenSource();
+            var cts = new CancellationTokenSource();
 
-            var task = Task.Run(async () =>
+            var _ = Task.Run(async () =>
             {
-                await Task.Delay(delay);
+                await Task.Delay(delay, cts.Token);
 
                 async void Trigger()
                 {
@@ -35,7 +35,7 @@ namespace Proto.Schedulers.SimpleScheduler
 
                         target.Send(message);
 
-                        await Task.Delay(interval);
+                        await Task.Delay(interval, cts.Token);
                     }
                 }
 
@@ -64,23 +64,24 @@ namespace Proto.Schedulers.SimpleScheduler
         {
             CancellationTokenSource cts = new CancellationTokenSource();
 
-            var task = Task.Run(async () =>
+            var _ = Task.Run(async () =>
             {
-                await Task.Delay(delay);
+                await Task.Delay(delay, cts.Token);
 
-                async void Trigger(object _message)
+                async void Trigger()
                 {
-                    if (cts.IsCancellationRequested)
-                        return;
+                    while (true)
+                    {
+                        if (cts.IsCancellationRequested)
+                            return;
 
-                    target.Request(message, sender);
+                        target.Request(message, sender);
 
-                    await Task.Delay(interval);
-
-                    Trigger(_message);
+                        await Task.Delay(interval, cts.Token);
+                    }
                 }
 
-                Trigger(message);
+                Trigger();
 
             }, cts.Token);
 

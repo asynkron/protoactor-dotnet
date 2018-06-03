@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
@@ -13,7 +12,7 @@ namespace Proto
 {
     internal static class Guardians
     {
-        private static ConcurrentDictionary<ISupervisorStrategy, GuardianProcess> _guardians = new ConcurrentDictionary<ISupervisorStrategy, GuardianProcess>();
+        private static readonly ConcurrentDictionary<ISupervisorStrategy, GuardianProcess> _guardians = new ConcurrentDictionary<ISupervisorStrategy, GuardianProcess>();
 
         internal static PID GetGuardianPID(ISupervisorStrategy strategy)
         {
@@ -54,9 +53,8 @@ namespace Proto
 
         protected internal override void SendSystemMessage(PID pid, object message)
         {
-            if (message is Failure)
+            if (message is Failure msg)
             {
-                var msg = message as Failure;
                 _supervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
             }
         }
@@ -86,7 +84,7 @@ namespace Proto
         {
             foreach (var pid in pids)
             {
-                pid.SendSystemMessage(Proto.Mailbox.ResumeMailbox.Instance);
+                pid.SendSystemMessage(Mailbox.ResumeMailbox.Instance);
             }
         }
     }

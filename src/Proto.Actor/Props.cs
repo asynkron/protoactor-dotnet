@@ -32,7 +32,7 @@ namespace Proto
 
         private static IMailbox ProduceDefaultMailbox() => UnboundedMailbox.Create();
 
-        public static PID DefaultSpawner (string name,Props props,PID parent)
+        private static PID DefaultSpawner (string name,Props props,PID parent)
         {
             var ctx = new ActorContext(props.Producer, props.SupervisorStrategy, props.ReceiveMiddlewareChain, props.SenderMiddlewareChain, parent);
             var mailbox = props.MailboxProducer();
