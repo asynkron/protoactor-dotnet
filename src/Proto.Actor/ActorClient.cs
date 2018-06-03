@@ -28,7 +28,7 @@ namespace Proto
 
         private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
         {
-            target.Tell(message);
+            target.Send(message);
             return Actor.Done;
         }
 
@@ -78,7 +78,7 @@ namespace Proto
             else
             {
                 //Default path
-                target.Tell(message);
+                target.Send(message);
             }
         }
     }

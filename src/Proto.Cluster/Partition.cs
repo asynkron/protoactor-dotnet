@@ -33,7 +33,7 @@ namespace Proto.Cluster
                 {
                     if (KindMap.TryGetValue(kind, out var kindPid))
                     {
-                        kindPid.Tell(msg);
+                        kindPid.Send(msg);
                     }
                 }
             });
@@ -130,7 +130,7 @@ namespace Proto.Cluster
             {
                 //if not, forward to the correct owner
                 var owner = Partition.PartitionForKind(address, _kind);
-                owner.Tell(msg);
+                owner.Send(msg);
             }
             else
             {
@@ -234,7 +234,7 @@ namespace Proto.Cluster
         {
             var pid = _partition[actorId];
             var owner = Partition.PartitionForKind(address, _kind);
-            owner.Tell(new TakeOwnership
+            owner.Send(new TakeOwnership
                        {
                            Name = actorId,
                            Pid = pid

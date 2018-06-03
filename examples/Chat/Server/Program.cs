@@ -18,12 +18,12 @@ class Program
                 case Connect connect:
                     Console.WriteLine($"Client {connect.Sender} connected");
                     clients.Add(connect.Sender);
-                    connect.Sender.Tell(new Connected { Message = "Welcome!"});
+                    connect.Sender.Send(new Connected { Message = "Welcome!"});
                     break;
                 case SayRequest sayRequest:
                     foreach (var client in clients)
                     {
-                        client.Tell(new SayResponse
+                        client.Send(new SayResponse
                         {
                             UserName = sayRequest.UserName,
                             Message = sayRequest.Message
@@ -33,7 +33,7 @@ class Program
                 case NickRequest nickRequest:
                     foreach (var client in clients)
                     {
-                        client.Tell(new NickResponse
+                        client.Send(new NickResponse
                         {
                             OldUserName = nickRequest.OldUserName,
                             NewUserName = nickRequest.NewUserName

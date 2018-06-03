@@ -48,7 +48,7 @@ namespace Proto.Router.Routers
                 var key = hashable.HashBy();
                 var node = _hashRing.GetNode(key);
                 var routee = _routeeMap[node];
-                routee.Tell(message);
+                routee.Send(message);
             }
             else
             {

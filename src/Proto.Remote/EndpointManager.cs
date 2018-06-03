@@ -62,39 +62,39 @@ namespace Proto.Remote
             if (_connections.TryRemove(msg.Address, out var v))
             {
                 var endpoint = v.Value;
-                endpoint.Watcher.Tell(msg);
-                endpoint.Writer.Tell(msg);
+                endpoint.Watcher.Send(msg);
+                endpoint.Writer.Send(msg);
             }
         }
 
         private static void OnEndpointConnected(EndpointConnectedEvent msg)
         {
             var endpoint = EnsureConnected(msg.Address);
-            endpoint.Watcher.Tell(msg);
+            endpoint.Watcher.Send(msg);
         }
 
         public static void RemoteTerminate(RemoteTerminate msg)
         {
             var endpoint = EnsureConnected(msg.Watchee.Address);
-            endpoint.Watcher.Tell(msg);
+            endpoint.Watcher.Send(msg);
         }
 
         public static void RemoteWatch(RemoteWatch msg)
         {
             var endpoint = EnsureConnected(msg.Watchee.Address);
-            endpoint.Watcher.Tell(msg);
+            endpoint.Watcher.Send(msg);
         }
 
         public static void RemoteUnwatch(RemoteUnwatch msg)
         {
             var endpoint = EnsureConnected(msg.Watchee.Address);
-            endpoint.Watcher.Tell(msg);
+            endpoint.Watcher.Send(msg);
         }
 
         public static void RemoteDeliver(RemoteDeliver msg)
         {
             var endpoint = EnsureConnected(msg.Target.Address);
-            endpoint.Writer.Tell(msg);
+            endpoint.Writer.Send(msg);
         }
 
         private static Endpoint EnsureConnected(string address)

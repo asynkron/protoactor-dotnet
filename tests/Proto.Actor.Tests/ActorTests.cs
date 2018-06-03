@@ -70,16 +70,16 @@ namespace Proto.Tests
                     .WithMailbox(() => new TestMailbox())
                 );
 
-            pid.Tell("hello");
+            pid.Send("hello");
 
             await pid.StopAsync();
 
             Assert.Equal(4, messages.Count);
             var msgs = messages.ToArray();
-            Assert.IsType(typeof(Started), msgs[0]);
-            Assert.IsType(typeof(string), msgs[1]);
-            Assert.IsType(typeof(Stopping), msgs[2]);
-            Assert.IsType(typeof(Stopped), msgs[3]);
+            Assert.IsType<Started>(msgs[0]);
+            Assert.IsType<string>(msgs[1]);
+            Assert.IsType<Stopping>(msgs[2]);
+            Assert.IsType<Stopped>(msgs[3]);
         }
 
         public static PID SpawnForwarderFromFunc(Receive forwarder) => Actor.Spawn(Actor.FromFunc(forwarder));

@@ -62,7 +62,7 @@ namespace Proto.Tests
 
             var reply = pid.RequestAsync<object>("hello", TimeSpan.FromSeconds(1)).Result;
 
-            Assert.Equal(null, reply);
+            Assert.Null(reply);
         }
     }
 }

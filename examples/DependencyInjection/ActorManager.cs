@@ -15,8 +15,8 @@ namespace DependencyInjection
 
         public void Activate()
         {
-            actorFactory.GetActor<DIActor>().Tell(new DIActor.Ping("no-name"));
-            actorFactory.GetActor<DIActor>("named").Tell(new DIActor.Ping("named"));
+            actorFactory.GetActor<DIActor>().Send(new DIActor.Ping("no-name"));
+            actorFactory.GetActor<DIActor>("named").Send(new DIActor.Ping("named"));
         }
     }
 }

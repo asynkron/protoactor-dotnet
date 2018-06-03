@@ -81,7 +81,7 @@ namespace Messages
                 {
                     return await Inner();
                 }
-                catch(Exception x)
+                catch(Exception)
                 {
                     if (options.RetryAction != null)
                     {

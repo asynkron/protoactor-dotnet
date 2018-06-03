@@ -41,7 +41,7 @@ public class MailboxBenchmark
         var pid = Actor.Spawn(props);
         for (var i = 1; i <= n; i++)
         {
-            pid.Tell(i);
+            pid.Send(i);
         }
         await pid.RequestAsync<string>("stop");
     }

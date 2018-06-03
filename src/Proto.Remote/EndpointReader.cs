@@ -77,7 +77,7 @@ namespace Proto.Remote
                             }
                         }
                         var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
-                        target.Tell(localEnvelope);
+                        target.Send(localEnvelope);
                     }
                 }
 

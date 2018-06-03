@@ -29,7 +29,7 @@ class Program
         });
 
         var client = Actor.Spawn(props);
-        server.Tell(new Connect
+        server.Send(new Connect
         {
             Sender = client
         });
@@ -44,7 +44,7 @@ class Program
             if (text.StartsWith("/nick "))
             {
                 var t = text.Split(' ')[1];
-                server.Tell(new NickRequest
+                server.Send(new NickRequest
                 {
                     OldUserName = nick,
                     NewUserName = t
@@ -53,7 +53,7 @@ class Program
             }
             else
             {
-                server.Tell(new SayRequest
+                server.Send(new SayRequest
                 {
                     UserName = nick,
                     Message = text

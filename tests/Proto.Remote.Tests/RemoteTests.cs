@@ -150,7 +150,7 @@ namespace Proto.Remote.Tests
             var remoteActor = await SpawnRemoteActor(_remoteManager.DefaultNode.Address);
             var localActor1 = await SpawnLocalActorAndWatch(remoteActor);
             var localActor2 = await SpawnLocalActorAndWatch(remoteActor);
-            localActor2.Tell(new Unwatch(remoteActor));
+            localActor2.Send(new Unwatch(remoteActor));
             await Task.Delay(TimeSpan.FromSeconds(3)); // wait for unwatch to propagate...
             remoteActor.Stop();
 
@@ -267,14 +267,14 @@ namespace Proto.Remote.Tests
 
         private void HandleCountOfMessagesReceived(IContext context)
         {
-            context.Sender.Tell(_terminatedMessages.Count);
+            context.Sender.Send(_terminatedMessages.Count);
         }
 
         private void HandleTerminatedMessageReceived(IContext context, TerminatedMessageReceived msg)
         {
             var messageReceived = _terminatedMessages.Any(tm => tm.Who.Address == msg.Address &&
                                                                 tm.Who.Id == msg.ActorId);
-            context.Sender.Tell(messageReceived);
+            context.Sender.Send(messageReceived);
         }
 
         private void HandleTerminated(Terminated msg)

@@ -21,12 +21,12 @@ class Program
         var props = Actor.FromProducer(() => new ParentActor()).WithChildSupervisorStrategy(new OneForOneStrategy(Decider.Decide, 1, null));
 
         var actor = Actor.Spawn(props);
-        actor.Tell(new Hello
+        actor.Send(new Hello
         {
             Who = "Alex"
         });
-        actor.Tell(new Recoverable());
-        actor.Tell(new Fatal());
+        actor.Send(new Recoverable());
+        actor.Send(new Fatal());
         //why wait?
         //Stop is a system message and is not processed through the user message mailbox
         //thus, it will be handled _before_ any user message
@@ -71,13 +71,13 @@ class Program
             switch (context.Message)
             {
                 case Hello r:
-                    child.Tell(context.Message);
+                    child.Send(context.Message);
                     break;
                 case Recoverable r:
-                    child.Tell(context.Message);
+                    child.Send(context.Message);
                     break;
                 case Fatal r:
-                    child.Tell(context.Message);
+                    child.Send(context.Message);
                     break;
                 case Terminated r:
                     Console.WriteLine("Watched actor was Terminated, {0}", r.Who);

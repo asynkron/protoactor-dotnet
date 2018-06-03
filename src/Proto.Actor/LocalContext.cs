@@ -114,7 +114,7 @@ namespace Proto
 
         public void Respond(object message)
         {
-            Sender.Tell(message);
+            Sender.Send(message);
         }
 
         public PID Spawn(Props props)
@@ -421,7 +421,7 @@ namespace Proto
             else
             {
                 //Default path
-                target.Tell(message);
+                target.Send(message);
             }
         }
 

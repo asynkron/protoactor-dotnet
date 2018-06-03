@@ -35,7 +35,7 @@ namespace Proto.Tests
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
             var parentPID = Actor.Spawn(props);
-            parentPID.Tell("crash");
+            parentPID.Send("crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.True(disposeCalled);
         }
@@ -53,7 +53,7 @@ namespace Proto.Tests
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
             var parentPID = Actor.Spawn(props);
-            parentPID.Tell("crash");
+            parentPID.Send("crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.False(disposeCalled);
         }
@@ -74,7 +74,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("crash");
+            parent.Send("crash");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);
@@ -97,7 +97,7 @@ namespace Proto.Tests
                 if (context.Message is Started)
                     _childPID = context.Spawn(_childProps);
                 if (context.Message is string)
-                    _childPID.Tell(context.Message);
+                    _childPID.Send(context.Message);
                 return Actor.Done;
             }
         }
@@ -152,7 +152,7 @@ namespace Proto.Tests
                 if (context.Message is string)
                 {
                     // only tell one child
-                    Child1.Tell(context.Message);
+                    Child1.Send(context.Message);
                 }
 
                 return Actor.Done;

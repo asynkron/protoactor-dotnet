@@ -14,7 +14,7 @@ class Program
     {
         var props = Actor.FromProducer(() => new HelloActor());
         var pid = Actor.Spawn(props);
-        pid.Tell(new Hello
+        pid.Send(new Hello
         {
             Who = "ProtoActor"
         });

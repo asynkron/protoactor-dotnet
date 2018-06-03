@@ -16,7 +16,7 @@ class Program
     {
         var props = Actor.FromProducer(() => new ChildActor());
         var actor = Actor.Spawn(props);
-        actor.Tell(new Hello
+        actor.Send(new Hello
         {
             Who = "Alex"
         });

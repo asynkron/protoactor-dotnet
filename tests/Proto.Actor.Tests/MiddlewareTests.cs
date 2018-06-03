@@ -39,7 +39,7 @@ namespace Proto.Tests
                 .WithMailbox(() => testMailbox);
             var pid = Actor.Spawn(props);
 
-            pid.Tell("");
+            pid.Send("");
 
             Assert.Equal(3, logs.Count);
             Assert.Equal("middleware 1", logs[0]);
@@ -74,7 +74,7 @@ namespace Proto.Tests
                 .WithMailbox(() => new TestMailbox());
             var pid2 = Actor.Spawn(props);
 
-            pid2.Tell("");
+            pid2.Send("");
 
             Assert.Equal(2, logs.Count);
             Assert.Equal("middleware 1", logs[0]);

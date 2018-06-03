@@ -60,7 +60,7 @@ namespace SpawnBenchmark
                 _replies--;
                 if (_replies == 0)
                 {
-                    _replyTo.Tell(_sum);
+                    _replyTo.Send(_sum);
                 }
                 return Actor.Done;
             }

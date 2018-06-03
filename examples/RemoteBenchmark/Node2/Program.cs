@@ -27,7 +27,7 @@ namespace Node2
                     context.Respond(new Start());
                     return Actor.Done;
                 case Ping _:
-                    _sender.Tell(new Pong());
+                    _sender.Send(new Pong());
                     return Actor.Done;
                 default:
                     return Actor.Done;

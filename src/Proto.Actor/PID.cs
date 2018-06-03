@@ -49,7 +49,9 @@ namespace Proto
             }
         }
 
-        public void Tell(object message)
+        public void Send(object message) => SendUserMessage(message);
+
+        private void SendUserMessage(object message)
         {
             var reff = Ref ?? ProcessRegistry.Instance.Get(this);
             reff.SendUserMessage(this, message);
@@ -102,7 +104,7 @@ namespace Proto
         }
 
         /// <summary> Poison will tell actor to stop after processing current user messages in mailbox. </summary>
-        public void Poison() => Tell(new PoisonPill());
+        public void Poison() => Send(new PoisonPill());
 
         /// <summary> PoisonAsync will tell and wait actor to stop after processing current user messages in mailbox. </summary>
         public Task PoisonAsync()

@@ -37,7 +37,7 @@ class Program
         var pid = Actor.Spawn(props);
         for (var i = 0; i < 6; i++)
         {
-            pid.Tell("hello");
+            pid.Send("hello");
             Thread.Sleep(500);
         }
 
@@ -46,14 +46,14 @@ class Program
 
         for (var i = 0; i < 6; i++)
         {
-            pid.Tell(new NoInfluence());
+            pid.Send(new NoInfluence());
             Thread.Sleep(500);
         }
 
         Console.WriteLine("Hit [return] to send a message to cancel the timeout");
         Console.ReadLine();
 
-        pid.Tell("cancel");
+        pid.Send("cancel");
 
         Console.WriteLine("Hit [return] to finish");
         Console.ReadLine();

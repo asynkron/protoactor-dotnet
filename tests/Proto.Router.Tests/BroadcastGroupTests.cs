@@ -16,7 +16,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
-            router.Tell("hello");
+            router.Send("hello");
 
             Assert.Equal("hello", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("hello", await routee2.RequestAsync<string>("received?", _timeout));
@@ -29,7 +29,7 @@ namespace Proto.Router.Tests
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
             await routee2.StopAsync();
-            router.Tell("hello");
+            router.Send("hello");
 
             Assert.Equal("hello", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("hello", await routee3.RequestAsync<string>("received?", _timeout));
@@ -40,8 +40,8 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
-            routee2.Tell("go slow");
-            router.Tell("hello");
+            routee2.Send("go slow");
+            router.Send("hello");
 
             Assert.Equal("hello", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("hello", await routee3.RequestAsync<string>("received?", _timeout));
@@ -52,7 +52,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
-            router.Tell(new RouterRemoveRoutee { PID = routee1 });
+            router.Send(new RouterRemoveRoutee { PID = routee1 });
 
             var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.PIDs);
@@ -65,7 +65,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            router.Tell(new RouterAddRoutee { PID = routee4 });
+            router.Send(new RouterAddRoutee { PID = routee4 });
 
             var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.PIDs);
@@ -79,9 +79,9 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
-            router.Tell("first message");
-            router.Tell(new RouterRemoveRoutee { PID = routee1 });
-            router.Tell("second message");
+            router.Send("first message");
+            router.Send(new RouterRemoveRoutee { PID = routee1 });
+            router.Send("second message");
 
             Assert.Equal("first message", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("second message", await routee2.RequestAsync<string>("received?", _timeout));
@@ -93,8 +93,8 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            router.Tell(new RouterAddRoutee { PID = routee4 });
-            router.Tell("a message");
+            router.Send(new RouterAddRoutee { PID = routee4 });
+            router.Send("a message");
 
             Assert.Equal("a message", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("a message", await routee2.RequestAsync<string>("received?", _timeout));
@@ -107,7 +107,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
-            router.Tell(new RouterBroadcastMessage { Message = "hello" });
+            router.Send(new RouterBroadcastMessage { Message = "hello" });
 
             Assert.Equal("hello", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("hello", await routee2.RequestAsync<string>("received?", _timeout));
@@ -134,7 +134,7 @@ namespace Proto.Router.Tests
                 switch (context.Message)
                 {
                     case string msg when msg == "received?":
-                        context.Sender.Tell(_received);
+                        context.Sender.Send(_received);
                         break;
                     case string msg when msg == "go slow":
                         await Task.Delay(5000);

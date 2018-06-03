@@ -75,7 +75,7 @@ namespace Proto.Tests
                         context.Watch(_watchee);
                         break;
                     case string msg when msg == "?":
-                        context.Sender.Tell(_terminateReceived);
+                        context.Sender.Send(_terminateReceived);
                         break;
                     case Terminated msg:
                         _terminateReceived = true;

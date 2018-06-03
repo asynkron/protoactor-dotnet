@@ -12,7 +12,7 @@ namespace Proto.Schedulers.SimpleScheduler
             {
                 await Task.Delay(delay);
 
-                target.Tell(message);
+                target.Send(message);
             });
 
             return this;
@@ -33,7 +33,7 @@ namespace Proto.Schedulers.SimpleScheduler
                         if (cts.IsCancellationRequested)
                             return;
 
-                        target.Tell(message);
+                        target.Send(message);
 
                         await Task.Delay(interval);
                     }

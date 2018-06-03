@@ -71,7 +71,7 @@ namespace RouterExample
             for (var i = 0; i < 10; i++)
             {
                 var pid = Actor.Spawn(props);
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                pid.Send(new Message {Text = $"{i % 4}"});
             }
         }
 
@@ -81,7 +81,7 @@ namespace RouterExample
             var pid = Actor.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                pid.Send(new Message {Text = $"{i % 4}"});
             }
         }
 
@@ -96,7 +96,7 @@ namespace RouterExample
             var pid = Actor.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                pid.Send(new Message {Text = $"{i % 4}"});
             }
         }
 
@@ -106,7 +106,7 @@ namespace RouterExample
             var pid = Actor.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                pid.Send(new Message {Text = $"{i % 4}"});
             }
         }
 
@@ -121,7 +121,7 @@ namespace RouterExample
             var pid = Actor.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                pid.Send(new Message {Text = $"{i % 4}"});
             }
         }
 
@@ -131,7 +131,7 @@ namespace RouterExample
             var pid = Actor.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                pid.Send(new Message {Text = $"{i % 4}"});
             }
         }
 
@@ -146,7 +146,7 @@ namespace RouterExample
             var pid = Actor.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                pid.Send(new Message {Text = $"{i % 4}"});
             }
         }
 
@@ -156,7 +156,7 @@ namespace RouterExample
             var pid = Actor.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                pid.Tell(new Message {Text = $"{i % 4}"});
+                pid.Send(new Message {Text = $"{i % 4}"});
             }
         }
     }
