@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
+    // ReSharper disable once InconsistentNaming
     public partial class PID
     {
         private Process _process;
@@ -48,10 +49,14 @@ namespace Proto
                 return _process;
             }
         }
+        
+        [Obsolete("Replaced with PID.Send(msg)", false)]
+        public void Tell(object message) => this.Send(message);
 
-        public void Send(object message) => SendUserMessage(message);
 
-        private void SendUserMessage(object message)
+        //public void Send(object message) => SendUserMessage(message);
+
+        internal void SendUserMessage(object message)
         {
             var reff = Ref ?? ProcessRegistry.Instance.Get(this);
             reff.SendUserMessage(this, message);
@@ -104,7 +109,7 @@ namespace Proto
         }
 
         /// <summary> Poison will tell actor to stop after processing current user messages in mailbox. </summary>
-        public void Poison() => Send(new PoisonPill());
+        public void Poison() => this.Send(new PoisonPill());
 
         /// <summary> PoisonAsync will tell and wait actor to stop after processing current user messages in mailbox. </summary>
         public Task PoisonAsync()
@@ -112,7 +117,7 @@ namespace Proto
             var future = new FutureProcess<object>();
 
             SendSystemMessage(new Watch(future.Pid));
-            Poison();
+            Poison();            
 
             return future.Task;
         }
