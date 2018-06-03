@@ -73,10 +73,7 @@ namespace Proto
 
         public object Message
         {
-            get
-            {
-                return _message is MessageEnvelope r ? r.Message : _message;
-            }
+            get => _message is MessageEnvelope r ? r.Message : _message;
             set
             {
                 if (_message is MessageEnvelope r) r.Message = value;
@@ -90,12 +87,9 @@ namespace Proto
         {
             get
             {
-                if (_message is MessageEnvelope messageEnvelope)
+                if (_message is MessageEnvelope messageEnvelope && messageEnvelope.Header != null)
                 {
-                    if (messageEnvelope.Header != null)
-                    {
-                        return messageEnvelope.Header;
-                    }
+                    return messageEnvelope.Header;
                 }
                 return MessageHeader.EmptyHeader;
             }
@@ -204,10 +198,10 @@ namespace Proto
 
         public void Forward(PID target)
         {
-            if (this._message is SystemMessage)
+            if (_message is SystemMessage)
             {
                 //SystemMessage cannot be forwarded
-                Logger.LogWarning("SystemMessage cannot be forwarded. {0}", this._message);
+                Logger.LogWarning("SystemMessage cannot be forwarded. {0}", _message);
                 return;
             }
             SendUserMessage(target, _message);
