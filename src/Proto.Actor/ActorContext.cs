@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 //   <copyright file="ActorContext.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -191,7 +191,7 @@ namespace Proto
             return ProcessMessageAsync(message);
         }
 
-        public void Tell(PID target, object message)
+        public void Send(PID target, object message)
         {
             SendUserMessage(target, message);
         }

@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 //   <copyright file="Program.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -60,10 +60,10 @@ class Program
 
         //just wait for started message to be processed to make the output look less confusing
         Task.Delay(500).Wait();
-        root.Tell(pid, "hello");
+        root.Send(pid, "hello");
 
         Task.Delay(500).Wait();
-        Console.WriteLine(nameof(root.Tell) + " done. Press [Enter] to try " + nameof(root.RequestAsync) + ".");
+        Console.WriteLine(nameof(root.Send) + " done. Press [Enter] to try " + nameof(root.RequestAsync) + ".");
         Console.ReadLine();
 
         var response = root.RequestAsync<string>(pid, "hello_requested").Result;

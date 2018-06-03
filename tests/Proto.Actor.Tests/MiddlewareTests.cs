@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="MiddlewareTests.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ namespace Proto.Tests
             var props = Actor.FromFunc(c =>
                 {
                     if (c.Message is string)
-                        c.Tell(pid1, "hey");
+                        c.Send(pid1, "hey");
                     return Actor.Done;
                 })
                 .WithSenderMiddleware(

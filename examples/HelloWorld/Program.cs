@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Program.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -14,19 +14,23 @@ class Program
     {
         var props = Actor.FromProducer(() => new HelloActor());
         var pid = Actor.Spawn(props);
-        pid.Send(new Hello
-        {
-            Who = "ProtoActor"
-        });
+        pid.Send(new Hello("ProtoActor"));
         Console.ReadLine();
     }
 
-    internal class Hello
+    //Messages should be immutable to prvent race conditions between multiple actors
+    private class Hello
     {
-        public string Who;
+        public string Who { get; }
+
+        public Hello(string who)
+        {
+            Who = who;
+        }
     }
 
-    internal class HelloActor : IActor
+    //This is a standard actor
+    private class HelloActor : IActor
     {
         public Task ReceiveAsync(IContext context)
         {

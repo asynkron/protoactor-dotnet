@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="ActorClient.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -10,9 +10,10 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto
-{
+{   
     public class ActorClient : ISenderContext
     {
+        public static readonly ActorClient DefaultContext = new ActorClient(MessageHeader.EmptyHeader);
         private readonly Sender _senderMiddleware;
 
         public ActorClient(MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
@@ -32,7 +33,7 @@ namespace Proto
             return Actor.Done;
         }
 
-        public void Tell(PID target, object message)
+        public void Send(PID target, object message)
             => SendUserMessage(target, message);
 
         public void Request(PID target, object message)
@@ -41,7 +42,7 @@ namespace Proto
         public void Request(PID target, object message, PID sender)
         {
             var envelope = new MessageEnvelope(message, sender, null);
-            Tell(target, envelope);
+            Send(target, envelope);
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
