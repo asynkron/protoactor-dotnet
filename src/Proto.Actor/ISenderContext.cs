@@ -11,7 +11,7 @@ namespace Proto
 {
     public interface ISenderContext
     {
-        object Message { get; set; }
+        object Message { get; }
 
         MessageHeader Headers { get; }
 

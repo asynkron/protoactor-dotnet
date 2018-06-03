@@ -26,22 +26,7 @@ class Program
                 if (c.Sender != null) c.Respond("World !");
 
                 return Actor.Done;
-            })
-            .WithReceiveMiddleware(
-                next => async c =>
-                {
-                    Console.WriteLine($"middleware 1 enter {c.Message.GetType()}:{c.Message}");
-                    c.Message = c.Message + ".";
-                    await next(c);
-                    Console.WriteLine($"middleware 1 exit {c.Message.GetType()}:{c.Message}");
-                },
-                next => async c =>
-                {
-                    Console.WriteLine($"middleware 2 enter {c.Message.GetType()}:{c.Message}");
-                    c.Message = c.Message + "$";
-                    await next(c);
-                    Console.WriteLine($"middleware 2 exit {c.Message.GetType()}:{c.Message}");
-                });
+            });
 
         var pid = Actor.Spawn(actor);
 

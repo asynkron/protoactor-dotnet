@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------
-//   <copyright file="LocalContext.cs" company="Asynkron HB">
+//   <copyright file="ActorContext.cs" company="Asynkron HB">
 //       Copyright (C) 2015-2017 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
@@ -23,7 +23,7 @@ namespace Proto
         Stopped,
     }
 
-    public class LocalContext : IMessageInvoker, IContext, ISupervisor
+    public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         public static readonly IReadOnlyCollection<PID> EmptyChildren = new List<PID>();
         private readonly Func<IActor> _producer;
@@ -49,7 +49,7 @@ namespace Proto
         private ContextState _state;
         private FastSet<PID> _watchers;
 
-        public LocalContext(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
+        public ActorContext(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
         {
             _producer = producer;
             _supervisorStrategy = supervisorStrategy;
@@ -63,7 +63,7 @@ namespace Proto
             IncarnateActor();
         }
 
-        private static ILogger Logger { get; } = Log.CreateLogger<LocalContext>();
+        private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
 
         public IReadOnlyCollection<PID> Children => _children?.ToList() ?? EmptyChildren;
 
@@ -369,7 +369,7 @@ namespace Proto
 
         internal static Task DefaultReceive(IContext context)
         {
-            var c = (LocalContext)context;
+            var c = (ActorContext)context;
             if (c.Message is PoisonPill)
             {
                 c.Self.Stop();

@@ -34,7 +34,7 @@ namespace Proto
 
         public static PID DefaultSpawner (string name,Props props,PID parent)
         {
-            var ctx = new LocalContext(props.Producer, props.SupervisorStrategy, props.ReceiveMiddlewareChain, props.SenderMiddlewareChain, parent);
+            var ctx = new ActorContext(props.Producer, props.SupervisorStrategy, props.ReceiveMiddlewareChain, props.SenderMiddlewareChain, parent);
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
             var process = new LocalProcess(mailbox);
@@ -65,14 +65,14 @@ namespace Proto
         {
             props.ReceiveMiddleware = ReceiveMiddleware.Concat(middleware).ToList();
             props.ReceiveMiddlewareChain = props.ReceiveMiddleware.Reverse()
-                                                .Aggregate((Receive) LocalContext.DefaultReceive, (inner, outer) => outer(inner));
+                                                .Aggregate((Receive) ActorContext.DefaultReceive, (inner, outer) => outer(inner));
         });
 
         public Props WithSenderMiddleware(params Func<Sender, Sender>[] middleware) => Copy(props =>
         {
             props.SenderMiddleware = SenderMiddleware.Concat(middleware).ToList();
             props.SenderMiddlewareChain = props.SenderMiddleware.Reverse()
-                                               .Aggregate((Sender) LocalContext.DefaultSender, (inner, outer) => outer(inner));
+                                               .Aggregate((Sender) ActorContext.DefaultSender, (inner, outer) => outer(inner));
         });
 
         public Props WithSpawner(Spawner spawner) => Copy(props => props.Spawner = spawner);

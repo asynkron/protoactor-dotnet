@@ -18,7 +18,7 @@ namespace Proto.Tests
             var middleware = new Receive(ctx => Actor.Done);
             var parent = new PID("test", "test");
 
-            var context = new LocalContext(producer, supervisorStrategyMock, middleware, null, parent);
+            var context = new ActorContext(producer, supervisorStrategyMock, middleware, null, parent);
 
             Assert.Equal(parent, context.Parent);
 
@@ -27,7 +27,7 @@ namespace Proto.Tests
             Assert.Null(context.Self);
             Assert.Null(context.Actor);
             Assert.NotNull(context.Children);
-            Assert.Same(context.Children, LocalContext.EmptyChildren);
+            Assert.Same(context.Children, ActorContext.EmptyChildren);
 
             Assert.Equal(TimeSpan.Zero, context.ReceiveTimeout);
         }

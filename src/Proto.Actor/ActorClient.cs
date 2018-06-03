@@ -22,7 +22,7 @@ namespace Proto
             Headers = messageHeader;
         }
 
-        public object Message { get => null; set { /* ActorClient is not used to receive messages */ } }
+        public object Message => null;
 
         public MessageHeader Headers { get; }
 
