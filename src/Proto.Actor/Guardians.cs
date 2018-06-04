@@ -16,11 +16,9 @@ namespace Proto
 
         internal static PID GetGuardianPID(ISupervisorStrategy strategy)
         {
-            if (!_guardians.TryGetValue(strategy, out var guardian))
-            {
-                guardian = new GuardianProcess(strategy);
-                _guardians[strategy] = guardian;
-            }
+            GuardianProcess ValueFactory(ISupervisorStrategy s) => new GuardianProcess(s);
+
+            var guardian = _guardians.GetOrAdd(strategy, ValueFactory);
             return guardian.Pid;
         }
     }
@@ -38,8 +36,8 @@ namespace Proto
             _supervisorStrategy = strategy;
 
             var name = $"Guardian{ProcessRegistry.Instance.NextId()}";
-            var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, this);
-            if (!absent)
+            var (pid, ok) = ProcessRegistry.Instance.TryAdd(name, this);
+            if (!ok)
             {
                 throw new ProcessNameExistException(name, pid);
             }

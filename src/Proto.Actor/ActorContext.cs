@@ -71,15 +71,7 @@ namespace Proto
         public PID Parent { get; }
         public PID Self { get; set; }
 
-        public object Message
-        {
-            get => _message is MessageEnvelope r ? r.Message : _message;
-            set
-            {
-                if (_message is MessageEnvelope r) r.Message = value;
-                else _message = value;
-            }
-        }
+        public object Message => _message is MessageEnvelope r ? r.Message : _message;
 
         public PID Sender => (_message as MessageEnvelope)?.Sender;
 
