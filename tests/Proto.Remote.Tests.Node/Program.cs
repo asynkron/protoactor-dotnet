@@ -52,7 +52,7 @@ namespace Proto.Remote.Tests.Node
             switch (context.Message)
             {
                 case Ping ping:
-                    context.Sender.Send(new Pong{Message= $"{_host}:{_port} {ping.Message}"});
+                    context.Respond(new Pong{Message= $"{_host}:{_port} {ping.Message}"});
                     return Actor.Done;
                 default:
                     return Actor.Done;
