@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="ActorClient.cs" company="Asynkron HB">
+//   <copyright file="RootContext.cs" company="Asynkron HB">
 //       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
@@ -11,12 +11,16 @@ using System.Threading.Tasks;
 
 namespace Proto
 {   
-    public class ActorClient : ISenderContext
+    public class RootContext : ISenderContext
     {
-        public static readonly ActorClient DefaultContext = new ActorClient(MessageHeader.EmptyHeader);
+        public static readonly RootContext DefaultContext = new RootContext(MessageHeader.EmptyHeader);
         private readonly Sender _senderMiddleware;
 
-        public ActorClient(MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
+        public RootContext()
+        {
+            Headers = MessageHeader.EmptyHeader;
+        }
+        public RootContext(MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
         {
             _senderMiddleware = middleware.Reverse()
                     .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner));
