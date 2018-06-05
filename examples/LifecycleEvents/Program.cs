@@ -16,10 +16,11 @@ class Program
     {
         var props = Actor.FromProducer(() => new ChildActor());
         var actor = Actor.Spawn(props);
-        actor.Send(new Hello
+        ActorClient.DefaultContext.Send(actor, new Hello
         {
             Who = "Alex"
         });
+
         //why wait?
         //Stop is a system message and is not processed through the user message mailbox
         //thus, it will be handled _before_ any user message
@@ -34,8 +35,6 @@ class Program
     {
         public Task ReceiveAsync(IContext context)
         {
-            var msg = context.Message;
-
             switch (context.Message)
             {
                 case Hello r:

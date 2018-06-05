@@ -37,7 +37,7 @@ class Program
         var pid = Actor.Spawn(props);
         for (var i = 0; i < 6; i++)
         {
-            pid.Send("hello");
+            ActorClient.DefaultContext.Send(pid, "hello");
             Thread.Sleep(500);
         }
 
@@ -46,14 +46,14 @@ class Program
 
         for (var i = 0; i < 6; i++)
         {
-            pid.Send(new NoInfluence());
+            ActorClient.DefaultContext.Send(pid, new NoInfluence());
             Thread.Sleep(500);
         }
 
         Console.WriteLine("Hit [return] to send a message to cancel the timeout");
         Console.ReadLine();
 
-        pid.Send("cancel");
+        ActorClient.DefaultContext.Send(pid, "cancel");
 
         Console.WriteLine("Hit [return] to finish");
         Console.ReadLine();

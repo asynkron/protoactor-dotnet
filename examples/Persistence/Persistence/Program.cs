@@ -100,7 +100,7 @@ class Program
                     
                     await _persistence.RecoverStateAsync();
                     
-                    context.Self.Send(new StartLoopActor());
+                    context.Send(context.Self, new StartLoopActor());
 
                     break;
 
@@ -155,18 +155,18 @@ class Program
 
                     Console.WriteLine("LoopActor - Started");
 
-                    context.Self.Send(new LoopParentMessage());
+                    context.Send(context.Self, new LoopParentMessage());
 
                     break;
-                case LoopParentMessage msg:
+                case LoopParentMessage _:
 
                     Task.Run(async () => {
                         
-                        context.Parent.Send(new RenameCommand { Name = GeneratePronounceableName(5) });
+                        context.Send(context.Parent, new RenameCommand { Name = GeneratePronounceableName(5) });
 
                         await Task.Delay(TimeSpan.FromMilliseconds(500));
 
-                        context.Self.Send(new LoopParentMessage());
+                        context.Send(context.Self ,new LoopParentMessage());
                     });
 
                     break;
