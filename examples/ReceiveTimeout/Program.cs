@@ -12,6 +12,7 @@ class Program
 {
     static void Main(string[] args)
     {
+        var rootContext = new RootContext();
         var c = 0;
         var props = Actor.FromFunc(context =>
         {
@@ -37,7 +38,7 @@ class Program
         var pid = Actor.Spawn(props);
         for (var i = 0; i < 6; i++)
         {
-            ActorClient.DefaultContext.Send(pid, "hello");
+            rootContext.Send(pid, "hello");
             Thread.Sleep(500);
         }
 
@@ -46,14 +47,14 @@ class Program
 
         for (var i = 0; i < 6; i++)
         {
-            ActorClient.DefaultContext.Send(pid, new NoInfluence());
+            rootContext.Send(pid, new NoInfluence());
             Thread.Sleep(500);
         }
 
         Console.WriteLine("Hit [return] to send a message to cancel the timeout");
         Console.ReadLine();
 
-        ActorClient.DefaultContext.Send(pid, "cancel");
+        rootContext.Send(pid, "cancel");
 
         Console.WriteLine("Hit [return] to finish");
         Console.ReadLine();

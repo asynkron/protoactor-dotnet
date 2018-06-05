@@ -37,7 +37,7 @@ class Program
             {"SpanID", "2000"}
         };
 
-        var root = new ActorClient(
+        var root = new RootContext(
             headers,
             next => async (c, target, envelope) =>
             {

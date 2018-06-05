@@ -17,22 +17,22 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees();
 
-            ActorClient.DefaultContext.Send(router, "1");
+            RootContext.DefaultContext.Send(router, "1");
 
             // only routee1 has received the message
             Assert.Equal("1", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal(null, await routee2.RequestAsync<string>("received?", _timeout));
             Assert.Equal(null, await routee3.RequestAsync<string>("received?", _timeout));
 
-            ActorClient.DefaultContext.Send(router, "2");
-            ActorClient.DefaultContext.Send(router, "3");
+            RootContext.DefaultContext.Send(router, "2");
+            RootContext.DefaultContext.Send(router, "3");
 
             // routees 2 and 3 receive next messages
             Assert.Equal("1", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("2", await routee2.RequestAsync<string>("received?", _timeout));
             Assert.Equal("3", await routee3.RequestAsync<string>("received?", _timeout));
 
-            ActorClient.DefaultContext.Send(router, "4");
+            RootContext.DefaultContext.Send(router, "4");
 
             // Round robin kicks in and routee1 recevies next message
             Assert.Equal("4", await routee1.RequestAsync<string>("received?", _timeout));
@@ -45,7 +45,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees();
 
-            ActorClient.DefaultContext.Send(router, new RouterRemoveRoutee { PID = routee1 });
+            RootContext.DefaultContext.Send(router, new RouterRemoveRoutee { PID = routee1 });
 
             var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.PIDs);
@@ -58,7 +58,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            ActorClient.DefaultContext.Send(router, new RouterAddRoutee { PID = routee4 });
+            RootContext.DefaultContext.Send(router, new RouterAddRoutee { PID = routee4 });
 
             var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.PIDs);
@@ -72,14 +72,14 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees();
 
-            ActorClient.DefaultContext.Send(router, "0");
-            ActorClient.DefaultContext.Send(router, "0");
-            ActorClient.DefaultContext.Send(router, "0");
-            ActorClient.DefaultContext.Send(router, new RouterRemoveRoutee { PID = routee1 });
+            RootContext.DefaultContext.Send(router, "0");
+            RootContext.DefaultContext.Send(router, "0");
+            RootContext.DefaultContext.Send(router, "0");
+            RootContext.DefaultContext.Send(router, new RouterRemoveRoutee { PID = routee1 });
             // we should have 2 routees, so send 3 messages to ensure round robin happens
-            ActorClient.DefaultContext.Send(router, "3");
-            ActorClient.DefaultContext.Send(router, "3");
-            ActorClient.DefaultContext.Send(router, "3");
+            RootContext.DefaultContext.Send(router, "3");
+            RootContext.DefaultContext.Send(router, "3");
+            RootContext.DefaultContext.Send(router, "3");
 
             Assert.Equal("0", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("3", await routee2.RequestAsync<string>("received?", _timeout));
@@ -91,12 +91,12 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            ActorClient.DefaultContext.Send(router, new RouterAddRoutee { PID = routee4 });
+            RootContext.DefaultContext.Send(router, new RouterAddRoutee { PID = routee4 });
             // should now have 4 routees, so need to send 4 messages to ensure all get them
-            ActorClient.DefaultContext.Send(router, "1");
-            ActorClient.DefaultContext.Send(router, "1");
-            ActorClient.DefaultContext.Send(router, "1");
-            ActorClient.DefaultContext.Send(router, "1");
+            RootContext.DefaultContext.Send(router, "1");
+            RootContext.DefaultContext.Send(router, "1");
+            RootContext.DefaultContext.Send(router, "1");
+            RootContext.DefaultContext.Send(router, "1");
 
             Assert.Equal("1", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("1", await routee2.RequestAsync<string>("received?", _timeout));
@@ -109,7 +109,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees();
             
-            ActorClient.DefaultContext.Send(router, new RouterBroadcastMessage { Message = "hello" });
+            RootContext.DefaultContext.Send(router, new RouterBroadcastMessage { Message = "hello" });
 
             Assert.Equal("hello", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("hello", await routee2.RequestAsync<string>("received?", _timeout));

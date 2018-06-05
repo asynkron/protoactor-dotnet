@@ -14,9 +14,10 @@ class Program
 {
     static void Main(string[] args)
     {
+        var context = new RootContext();
         var props = Actor.FromProducer(() => new ChildActor());
         var actor = Actor.Spawn(props);
-        ActorClient.DefaultContext.Send(actor, new Hello
+        context.Send(actor, new Hello
         {
             Who = "Alex"
         });

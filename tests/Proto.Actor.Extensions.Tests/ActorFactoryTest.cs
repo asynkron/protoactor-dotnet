@@ -17,7 +17,7 @@ namespace Proto.ActorExtensions.Tests
 
             var pid = factory.GetActor<SampleActor>();
 
-            ActorClient.DefaultContext.Send(pid, "hello");
+            RootContext.DefaultContext.Send(pid, "hello");
 
             await pid.StopAsync();
 

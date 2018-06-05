@@ -72,11 +72,12 @@ namespace SpawnBenchmark
     {
         private static void Main()
         {
+            var context = new RootContext();
             Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
 
             var pid = Actor.Spawn(MyActor.Props);
             var sw = Stopwatch.StartNew();
-            var t = pid.RequestAsync<long>(new Request
+            var t = context.RequestAsync<long>(pid, new Request
             {
                 Num = 0,
                 Size = 1000000,

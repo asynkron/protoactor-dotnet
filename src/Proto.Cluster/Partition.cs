@@ -33,7 +33,7 @@ namespace Proto.Cluster
                 {
                     if (KindMap.TryGetValue(kind, out var kindPid))
                     {
-                        ActorClient.DefaultContext.Send(kindPid, msg);
+                        RootContext.DefaultContext.Send(kindPid, msg);
                     }
                 }
             });

@@ -70,7 +70,7 @@ namespace Proto.Tests
                     .WithMailbox(() => new TestMailbox())
                 );
 
-            ActorClient.DefaultContext.Send(pid, "hello");
+            RootContext.DefaultContext.Send(pid, "hello");
             
             await pid.StopAsync();
 

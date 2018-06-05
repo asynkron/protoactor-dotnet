@@ -18,6 +18,7 @@ class Program
 {
     static void Main(string[] args)
     {
+        var context = new RootContext();
         Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
         const int messageCount = 1000000;
         const int batchSize = 100;
@@ -55,7 +56,7 @@ class Program
                 var client = clients[i];
                 var echo = echos[i];
 
-                ActorClient.DefaultContext.Send(client, new Start(echo));
+                context.Send(client, new Start(echo));
             }
             Task.WaitAll(tasks);
 

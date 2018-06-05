@@ -12,9 +12,10 @@ class Program
 {
     static void Main(string[] args)
     {
+        var context = new RootContext();
         var props = Actor.FromProducer(() => new HelloActor());
         var pid = Actor.Spawn(props);
-        ActorClient.DefaultContext.Send(pid, new Hello("ProtoActor"));
+        context.Send(pid, new Hello("ProtoActor"));
         Console.ReadLine();
     }
 

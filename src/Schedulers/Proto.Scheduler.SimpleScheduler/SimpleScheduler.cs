@@ -10,7 +10,7 @@ namespace Proto.Schedulers.SimpleScheduler
 
         public SimpleScheduler()
         {
-            _context = ActorClient.DefaultContext;
+            _context = RootContext.DefaultContext;
         }
 
         public SimpleScheduler(ISenderContext context)

@@ -15,6 +15,7 @@ class Program
 {
     static void Main(string[] args)
     {
+        var context = new RootContext();
         Log.SetLoggerFactory(new LoggerFactory()
             .AddConsole(LogLevel.Debug));
 
@@ -22,12 +23,12 @@ class Program
 
         var actor = Actor.Spawn(props);
         
-        ActorClient.DefaultContext.Send(actor,new Hello
+        context.Send(actor,new Hello
         {
             Who = "Alex"
         });
-        ActorClient.DefaultContext.Send(actor,new Recoverable());
-        ActorClient.DefaultContext.Send(actor,new Fatal());
+        context.Send(actor,new Recoverable());
+        context.Send(actor,new Fatal());
         //why wait?
         //Stop is a system message and is not processed through the user message mailbox
         //thus, it will be handled _before_ any user message

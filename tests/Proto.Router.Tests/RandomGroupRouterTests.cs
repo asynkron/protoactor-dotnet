@@ -18,9 +18,9 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            ActorClient.DefaultContext.Send(router, "1");
-            ActorClient.DefaultContext.Send(router, "2");
-            ActorClient.DefaultContext.Send(router, "3");
+            RootContext.DefaultContext.Send(router, "1");
+            RootContext.DefaultContext.Send(router, "2");
+            RootContext.DefaultContext.Send(router, "3");
 
             Assert.Equal("2", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("3", await routee2.RequestAsync<string>("received?", _timeout));
@@ -32,14 +32,14 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            ActorClient.DefaultContext.Send(router, new RouterAddRoutee
+            RootContext.DefaultContext.Send(router, new RouterAddRoutee
             {
                 PID = routee4
             });
-            ActorClient.DefaultContext.Send(router, "1");
-            ActorClient.DefaultContext.Send(router, "2");
-            ActorClient.DefaultContext.Send(router, "3");
-            ActorClient.DefaultContext.Send(router, "4");
+            RootContext.DefaultContext.Send(router, "1");
+            RootContext.DefaultContext.Send(router, "2");
+            RootContext.DefaultContext.Send(router, "3");
+            RootContext.DefaultContext.Send(router, "4");
 
             // results are random! (but consistent due to seeding) As MyTestActor only stores the most
             // recent message, "1" is overwritten by a subsequent message. 
@@ -53,13 +53,13 @@ namespace Proto.Router.Tests
         public async void RandomGroupRouter_RemovedRouteesDoNotReceiveMessages()
         {
             var (router, routee1, _, _) = CreateRouterWith3Routees();
-            ActorClient.DefaultContext.Send(router, new RouterRemoveRoutee
+            RootContext.DefaultContext.Send(router, new RouterRemoveRoutee
             {
                 PID = routee1
             });
             for (int i = 0; i < 100; i++)
             {
-                ActorClient.DefaultContext.Send(router, i.ToString());
+                RootContext.DefaultContext.Send(router, i.ToString());
             }
             Assert.Null(await routee1.RequestAsync<string>("received?", _timeout));
         }
@@ -69,7 +69,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            ActorClient.DefaultContext.Send(router, new RouterRemoveRoutee { PID = routee1 });
+            RootContext.DefaultContext.Send(router, new RouterRemoveRoutee { PID = routee1 });
 
             var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.PIDs);
@@ -82,7 +82,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            ActorClient.DefaultContext.Send(router, new RouterAddRoutee { PID = routee4 });
+            RootContext.DefaultContext.Send(router, new RouterAddRoutee { PID = routee4 });
 
             var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.PIDs);
@@ -96,7 +96,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            ActorClient.DefaultContext.Send(router, new RouterBroadcastMessage { Message = "hello" });
+            RootContext.DefaultContext.Send(router, new RouterBroadcastMessage { Message = "hello" });
 
             Assert.Equal("hello", await routee1.RequestAsync<string>("received?", _timeout));
             Assert.Equal("hello", await routee2.RequestAsync<string>("received?", _timeout));

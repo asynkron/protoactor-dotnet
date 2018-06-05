@@ -36,7 +36,7 @@ namespace Proto.Router.Routers
         {
             var i = _random.Next(_values.Length);
             var pid = _values[i];
-            ActorClient.DefaultContext.Send(pid, message);
+            RootContext.DefaultContext.Send(pid, message);
         }
     }
 }

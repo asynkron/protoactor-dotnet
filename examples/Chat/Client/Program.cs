@@ -10,6 +10,7 @@ class Program
         Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
         Remote.Start("127.0.0.1", 0);
         var server = new PID("127.0.0.1:8000", "chatserver");
+        var context = new RootContext();
 
         var props = Actor.FromFunc(ctx =>
         {
@@ -29,7 +30,7 @@ class Program
         });
 
         var client = Actor.Spawn(props);
-        server.Send(new Connect
+        context.Send(server, new Connect
         {
             Sender = client
         });
@@ -44,7 +45,7 @@ class Program
             if (text.StartsWith("/nick "))
             {
                 var t = text.Split(' ')[1];
-                server.Send(new NickRequest
+                context.Send(server, new NickRequest
                 {
                     OldUserName = nick,
                     NewUserName = t
@@ -53,7 +54,7 @@ class Program
             }
             else
             {
-                server.Send(new SayRequest
+                context.Send(server, new SayRequest
                 {
                     UserName = nick,
                     Message = text
