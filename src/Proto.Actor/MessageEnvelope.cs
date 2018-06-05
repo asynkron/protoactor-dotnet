@@ -3,6 +3,9 @@
 //       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
+
+using System.Runtime.CompilerServices;
+
 namespace Proto
 {
     public class MessageEnvelope
@@ -14,7 +17,7 @@ namespace Proto
             Header = header;
         }
 
-        public PID Sender { get; set; }
+        public PID Sender { get; }
         public object Message { get; set; }
         public MessageHeader Header { get; private set; }
 
@@ -46,5 +49,21 @@ namespace Proto
 
             Header[key] = value;
         }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static MessageHeader UnwrapHeader(object message)
+        {
+            if (message is MessageEnvelope messageEnvelope && messageEnvelope.Header != null)
+            {
+                return messageEnvelope.Header;
+            }
+            return MessageHeader.EmptyHeader;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static object UnwrapMessage(object message) => message is MessageEnvelope r ? r.Message : message;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PID UnwrapSender(object message) => (message as MessageEnvelope)?.Sender;
     }
 }

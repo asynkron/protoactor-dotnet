@@ -34,14 +34,16 @@ namespace Proto
 
             if (cts != null)
             {
+                //TODO: I don't think this is correct, there is probably a more kosher way to do this
                 System.Threading.Tasks.Task.Delay(-1, cts.Token)
                     .ContinueWith(t =>
                     {
-                        if (!_tcs.Task.IsCompleted)
+                        if (_tcs.Task.IsCompleted)
                         {
-                            _tcs.TrySetException(new TimeoutException("Request didn't receive any Response within the expected time."));
-                            Stop(pid);
+                            return;
                         }
+                        _tcs.TrySetException(new TimeoutException("Request didn't receive any Response within the expected time."));
+                        Stop(pid);
                     });
             }
 

@@ -72,21 +72,11 @@ namespace Proto
         public PID Parent { get; }
         public PID Self { get; set; }
 
-        public object Message => _message is MessageEnvelope r ? r.Message : _message;
+        public object Message => MessageEnvelope.UnwrapMessage(_message);
 
-        public PID Sender => (_message as MessageEnvelope)?.Sender;
+        public PID Sender => MessageEnvelope.UnwrapSender(_message);
 
-        public MessageHeader Headers
-        {
-            get
-            {
-                if (_message is MessageEnvelope messageEnvelope && messageEnvelope.Header != null)
-                {
-                    return messageEnvelope.Header;
-                }
-                return MessageHeader.EmptyHeader;
-            }
-        }
+        public MessageHeader Headers => MessageEnvelope.UnwrapHeader(_message);
 
         public TimeSpan ReceiveTimeout { get; private set; }
 
@@ -263,7 +253,7 @@ namespace Proto
                     case Started s:
                         return InvokeUserMessageAsync(s);
                     case Stop _:
-                        return HandleStopAsync();
+                        return InitiateStopAsync();
                     case Terminated t:
                         return HandleTerminatedAsync(t);
                     case Watch w:
@@ -409,10 +399,7 @@ namespace Proto
         {
             if (_state >= ContextState.Stopping)
             {
-                w.Watcher.SendSystemMessage(new Terminated
-                {
-                    Who = Self
-                });
+                w.Watcher.SendSystemMessage(Terminated.From(Self));
             }
             else
             {
@@ -426,13 +413,15 @@ namespace Proto
 
         private void HandleFailure(Failure msg)
         {
-            // ReSharper disable once SuspiciousTypeConversion.Global
-            if (Actor is ISupervisorStrategy supervisor)
+            switch (Actor)
             {
-                supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
-                return;
+                case ISupervisorStrategy supervisor:
+                    supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
+                    break;
+                default:
+                    _supervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
+                    break;
             }
-            _supervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
         }
 
         private async Task HandleTerminatedAsync(Terminated msg)
@@ -441,7 +430,7 @@ namespace Proto
             await InvokeUserMessageAsync(msg);
             if (_state == ContextState.Stopping || _state == ContextState.Restarting)
             {
-                await TryRestartOrTerminateAsync();
+                await TryRestartOrStopAsync();
             }
         }
 
@@ -451,7 +440,7 @@ namespace Proto
         }
         
         //Initiate stopping, not final
-        private async Task HandleStopAsync()
+        private async Task InitiateStopAsync()
         {
             if (_state >= ContextState.Stopping)
             {
@@ -469,11 +458,11 @@ namespace Proto
         private async Task StopAllChildren()
         {
             _children?.Stop();
-            await TryRestartOrTerminateAsync();
+            await TryRestartOrStopAsync();
         }
 
         //intermediate stopping stage, waiting for children to stop
-        private Task TryRestartOrTerminateAsync()
+        private Task TryRestartOrStopAsync()
         {
             if (_children?.Count > 0)
             {
@@ -485,13 +474,13 @@ namespace Proto
                 case ContextState.Restarting:
                     return RestartAsync();
                 case ContextState.Stopping:
-                    return StopAsync();
+                    return FinalizeStopAsync();
                 default: return Done;
             }
         }
 
         //Last and final termination step
-        private async Task StopAsync()
+        private async Task FinalizeStopAsync()
         {
             ProcessRegistry.Instance.Remove(Self);
             //This is intentional
@@ -500,22 +489,10 @@ namespace Proto
             DisposeActorIfDisposable();
 
             //Notify watchers
-            if (_watchers != null)
-            {
-                var terminated = new Terminated
-                {
-                    Who = Self
-                };
-                _watchers.SendSystemNessage(terminated);
-            }
-            if (Parent != null)
-            {
-                var terminated = new Terminated
-                {
-                    Who = Self
-                };
-                Parent.SendSystemMessage(terminated);
-            }
+            _watchers?.SendSystemNessage(Terminated.From(Self));
+
+            //Notify parent
+            Parent?.SendSystemMessage(Terminated.From(Self));
 
             _state = ContextState.Stopped;
         }

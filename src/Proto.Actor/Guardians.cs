@@ -12,13 +12,13 @@ namespace Proto
 {
     internal static class Guardians
     {
-        private static readonly ConcurrentDictionary<ISupervisorStrategy, GuardianProcess> _guardians = new ConcurrentDictionary<ISupervisorStrategy, GuardianProcess>();
+        private static readonly ConcurrentDictionary<ISupervisorStrategy, GuardianProcess> GuardianStrategies = new ConcurrentDictionary<ISupervisorStrategy, GuardianProcess>();
 
         internal static PID GetGuardianPID(ISupervisorStrategy strategy)
         {
             GuardianProcess ValueFactory(ISupervisorStrategy s) => new GuardianProcess(s);
 
-            var guardian = _guardians.GetOrAdd(strategy, ValueFactory);
+            var guardian = GuardianStrategies.GetOrAdd(strategy, ValueFactory);
             return guardian.Pid;
         }
     }
@@ -62,28 +62,10 @@ namespace Proto
             throw new InvalidOperationException("Guardian cannot escalate failure.");
         }
 
-        public void RestartChildren(Exception reason, params PID[] pids)
-        {
-            foreach (var pid in pids)
-            {
-                pid.SendSystemMessage(new Restart(reason));
-            }
-        }
+        public void RestartChildren(Exception reason, params PID[] pids) => pids?.SendSystemNessage(new Restart(reason));
 
-        public void StopChildren(params PID[] pids)
-        {
-            foreach (var pid in pids)
-            {
-                pid.SendSystemMessage(Proto.Stop.Instance);
-            }
-        }
+        public void StopChildren(params PID[] pids) => pids?.Stop();
 
-        public void ResumeChildren(params PID[] pids)
-        {
-            foreach (var pid in pids)
-            {
-                pid.SendSystemMessage(Mailbox.ResumeMailbox.Instance);
-            }
-        }
+        public void ResumeChildren(params PID[] pids) => pids?.SendSystemNessage(Mailbox.ResumeMailbox.Instance);
     }
 }
