@@ -59,7 +59,7 @@ namespace Messages
                 }
 
                 //request the RPC method to be invoked
-                var res = await pid.RequestAsync<object>(gr, ct);
+                var res = await RootContext.Empty.RequestAsync<object>(pid, gr, ct);
 
                 //did we get a response?
                 if (res is GrainResponse grainResponse)

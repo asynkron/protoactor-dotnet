@@ -15,8 +15,8 @@ namespace DependencyInjection
 
         public void Activate()
         {
-            RootContext.DefaultContext.Send( actorFactory.GetActor<DIActor>(), new DIActor.Ping("no-name"));
-            RootContext.DefaultContext.Send(actorFactory.GetActor<DIActor>("named"), new DIActor.Ping("named"));
+            RootContext.Empty.Send( actorFactory.GetActor<DIActor>(), new DIActor.Ping("no-name"));
+            RootContext.Empty.Send(actorFactory.GetActor<DIActor>("named"), new DIActor.Ping("named"));
         }
     }
 }

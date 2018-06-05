@@ -50,7 +50,7 @@ namespace Proto.Cluster
             {
                 var key = pid.ToShortString();
                 ReverseCache.TryAdd(key, name);
-                RootContext.DefaultContext.Send(_watcher, new WatchPidRequest(pid));
+                RootContext.Empty.Send(_watcher, new WatchPidRequest(pid));
                 return true;
             }
             return false;

@@ -7,7 +7,6 @@ namespace EscalateSupervision
     {
         static void Main(string[] args)
         {
-
             var childProps = Actor.FromFunc(context =>
             {
                 Console.WriteLine($"{context.Self.Id}: MSG: {context.Message.GetType()}");

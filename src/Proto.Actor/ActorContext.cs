@@ -533,7 +533,7 @@ namespace Proto
                 return;
             }
             CancelReceiveTimeout();
-            Self.Request(Proto.ReceiveTimeout.Instance, null);
+            Send(Self,Proto.ReceiveTimeout.Instance);
         }
     }
 }

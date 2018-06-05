@@ -44,12 +44,12 @@ namespace SpawnBenchmark
                 for (var i = 0; i < r.Div; i++)
                 {
                     var child = Actor.Spawn(Props);
-                    child.Request(new Request
+                    context.Request(child, new Request
                     {
                         Num = r.Num + i * (r.Size / r.Div),
                         Size = r.Size / r.Div,
                         Div = r.Div
-                    }, context.Self);
+                    });
                 }
 
                 return Actor.Done;

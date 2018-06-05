@@ -53,7 +53,7 @@ namespace Proto.Tests
                                            .WithMailbox(() => new TestMailbox()));
 
             await watchee.StopAsync();
-            var terminatedMessageReceived = await watcher.RequestAsync<bool>("?", TimeSpan.FromSeconds(5));
+            var terminatedMessageReceived = await RootContext.Empty.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
             Assert.True(terminatedMessageReceived);
         }
 

@@ -16,6 +16,7 @@ class Program
 {
     static void Main(string[] args)
     {
+        var context = new RootContext();
         //Registering "knownTypes" is not required, but improves performance as those messages
         //do not need to pass any typename manifest
         var wire = new WireSerializer(new []{typeof(Ping), typeof(Pong), typeof(StartRemote),typeof(Start)});
@@ -30,7 +31,7 @@ class Program
 
         var pid = Actor.Spawn(props);
         var remote = new PID("127.0.0.1:12000", "remote");
-        remote.RequestAsync<Start>(new StartRemote {Sender = pid}).Wait();
+        context.RequestAsync<Start>(remote, new StartRemote {Sender = pid}).Wait();
 
         var start = DateTime.Now;
         Console.WriteLine("Starting to send");

@@ -61,7 +61,7 @@ namespace Proto.Router
             {
                 foreach (var routee in _routerState.GetRoutees())
                 {
-                    routee.Request(broadcastMessage.Message, context.Sender);
+                    context.Request(routee, broadcastMessage.Message);
                 }
                 return Actor.Done;
             }

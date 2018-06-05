@@ -32,7 +32,7 @@ namespace Proto.Router.Routers
             var i = _currentIndex % _values.Count;
             var pid = _values[i];
             Interlocked.Add(ref _currentIndex, 1);
-            RootContext.DefaultContext.Send(pid, message);
+            RootContext.Empty.Send(pid, message);
         }
     }
 }

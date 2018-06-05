@@ -18,7 +18,7 @@ namespace Proto.Router.Tests
             var props = Router.NewBroadcastPool(MyActorProps, 3)
                 .WithMailbox(() => new TestMailbox());
             var router = Actor.Spawn(props);
-            var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
+            var routees = await RootContext.Empty.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.Equal(3, routees.PIDs.Count);
         }
 
@@ -28,7 +28,7 @@ namespace Proto.Router.Tests
             var props = Router.NewRoundRobinPool(MyActorProps, 3)
                 .WithMailbox(() => new TestMailbox());
             var router = Actor.Spawn(props);
-            var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
+            var routees = await RootContext.Empty.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.Equal(3, routees.PIDs.Count);
         }
 
@@ -38,7 +38,7 @@ namespace Proto.Router.Tests
             var props = Router.NewConsistentHashPool(MyActorProps, 3)
                 .WithMailbox(() => new TestMailbox());
             var router = Actor.Spawn(props);
-            var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
+            var routees = await RootContext.Empty.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.Equal(3, routees.PIDs.Count);
         }
 
@@ -48,7 +48,7 @@ namespace Proto.Router.Tests
             var props = Router.NewRandomPool(MyActorProps, 3)
                 .WithMailbox(() => new TestMailbox());
             var router = Actor.Spawn(props);
-            var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
+            var routees = await RootContext.Empty.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.Equal(3, routees.PIDs.Count);
         }
     }

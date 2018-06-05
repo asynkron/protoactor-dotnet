@@ -24,7 +24,7 @@ namespace Proto.Tests
                 return Actor.Done;
             });
 
-            var reply = await pid.RequestAsync<object>("hello");
+            var reply = await RootContext.Empty.RequestAsync<object>(pid, "hello");
 
             Assert.Equal("hey", reply);
         }
@@ -34,7 +34,10 @@ namespace Proto.Tests
         {
             PID pid = SpawnActorFromFunc(EmptyReceive);
 
-            var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(() => pid.RequestAsync<object>("", TimeSpan.FromMilliseconds(20)));
+            var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(() =>
+            {
+                return RootContext.Empty.RequestAsync<object>(pid, "", TimeSpan.FromMilliseconds(20));
+            });
             Assert.Equal("Request didn't receive any Response within the expected time.", timeoutEx.Message);
         }
 
@@ -50,7 +53,7 @@ namespace Proto.Tests
                 return Actor.Done;
             });
 
-            var reply = await pid.RequestAsync<object>("hello", TimeSpan.FromMilliseconds(100));
+            var reply = await RootContext.Empty.RequestAsync<object>(pid, "hello", TimeSpan.FromMilliseconds(100));
 
             Assert.Equal("hey", reply);
         }
@@ -70,7 +73,7 @@ namespace Proto.Tests
                     .WithMailbox(() => new TestMailbox())
                 );
 
-            RootContext.DefaultContext.Send(pid, "hello");
+            RootContext.Empty.Send(pid, "hello");
             
             await pid.StopAsync();
 
@@ -105,7 +108,7 @@ namespace Proto.Tests
                 return Actor.Done;
             });
 
-            var reply = await forwarder.RequestAsync<object>("hello");
+            var reply = await RootContext.Empty.RequestAsync<object>(forwarder, "hello");
 
             Assert.Equal("hey", reply);
         }

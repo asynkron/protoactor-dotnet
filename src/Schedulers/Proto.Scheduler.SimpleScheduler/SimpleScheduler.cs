@@ -10,7 +10,7 @@ namespace Proto.Schedulers.SimpleScheduler
 
         public SimpleScheduler()
         {
-            _context = RootContext.DefaultContext;
+            _context = RootContext.Empty;
         }
 
         public SimpleScheduler(ISenderContext context)
@@ -66,7 +66,8 @@ namespace Proto.Schedulers.SimpleScheduler
             {
                 await Task.Delay(delay);
 
-                target.Request(message, sender);
+                //TODO: allow custom sender
+                _context.Request(target, message);
             });
 
             return this;
@@ -87,7 +88,8 @@ namespace Proto.Schedulers.SimpleScheduler
                         if (cts.IsCancellationRequested)
                             return;
 
-                        target.Request(message, sender);
+                        //TODO: allow useing sender
+                        _context.Request(target,message);                       
 
                         await Task.Delay(interval, cts.Token);
                     }

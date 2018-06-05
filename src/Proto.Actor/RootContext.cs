@@ -13,7 +13,7 @@ namespace Proto
 {   
     public class RootContext : ISenderContext
     {
-        public static readonly RootContext DefaultContext = new RootContext(MessageHeader.EmptyHeader);
+        public static readonly RootContext Empty = new RootContext(MessageHeader.EmptyHeader);
         private readonly Sender _senderMiddleware;
 
         public RootContext()

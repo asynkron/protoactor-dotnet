@@ -99,8 +99,9 @@ namespace Proto.Remote
 
         private static Endpoint EnsureConnected(string address)
         {
-            var conn = _connections.GetOrAdd(address, v => 
-                new Lazy<Endpoint>(() => _endpointSupervisor.RequestAsync<Endpoint>(v).Result)
+            var conn = _connections.GetOrAdd(address, v =>
+                new Lazy<Endpoint>(() =>
+                    RootContext.Empty.RequestAsync<Endpoint>(_endpointSupervisor, v).Result)
             );
             return conn.Value;
         }

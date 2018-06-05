@@ -97,7 +97,7 @@ namespace Proto.Tests
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(props);
-            RootContext.DefaultContext.Send(parent, "crash");
+            RootContext.Empty.Send(parent, "crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.True(disposeCalled);
         }
@@ -115,7 +115,7 @@ namespace Proto.Tests
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(props);
-            RootContext.DefaultContext.Send(parent, "crash");
+            RootContext.Empty.Send(parent, "crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.False(disposeCalled);
         }
@@ -147,7 +147,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            RootContext.DefaultContext.Send(parent, "crash");
+            RootContext.Empty.Send(parent, "crash");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);

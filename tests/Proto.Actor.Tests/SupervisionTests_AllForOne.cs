@@ -69,7 +69,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            RootContext.DefaultContext.Send(parent, "hello");
+            RootContext.Empty.Send(parent, "hello");
 
             child1MailboxStats.Reset.Wait(1000);
             Assert.Contains(ResumeMailbox.Instance, child1MailboxStats.Posted);
@@ -92,7 +92,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            RootContext.DefaultContext.Send(parent, "hello");
+            RootContext.Empty.Send(parent, "hello");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);
@@ -116,7 +116,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            RootContext.DefaultContext.Send(parent, "hello");
+            RootContext.Empty.Send(parent, "hello");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);
@@ -140,7 +140,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            RootContext.DefaultContext.Send(parent, "hello");
+            RootContext.Empty.Send(parent, "hello");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);
@@ -161,7 +161,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
             var parent = Actor.Spawn(parentProps);
 
-            RootContext.DefaultContext.Send(parent, "hello");
+            RootContext.Empty.Send(parent, "hello");
 
             parentMailboxStats.Reset.Wait(1000);
             var failure = parentMailboxStats.Received.OfType<Failure>().Single();

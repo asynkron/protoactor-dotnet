@@ -33,7 +33,7 @@ namespace Proto.Cluster
                 {
                     if (KindMap.TryGetValue(kind, out var kindPid))
                     {
-                        RootContext.DefaultContext.Send(kindPid, msg);
+                        RootContext.Empty.Send(kindPid, msg);
                     }
                 }
             });

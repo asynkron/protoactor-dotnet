@@ -18,13 +18,13 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            RootContext.DefaultContext.Send(router, new Message("message1"));
-            RootContext.DefaultContext.Send(router, new Message("message1"));
-            RootContext.DefaultContext.Send(router, new Message("message1"));
+            RootContext.Empty.Send(router, new Message("message1"));
+            RootContext.Empty.Send(router, new Message("message1"));
+            RootContext.Empty.Send(router, new Message("message1"));
 
-            Assert.Equal(3, await routee1.RequestAsync<int>("received?", _timeout));
-            Assert.Equal(0, await routee2.RequestAsync<int>("received?", _timeout));
-            Assert.Equal(0, await routee3.RequestAsync<int>("received?", _timeout));
+            Assert.Equal(3, await RootContext.Empty.RequestAsync<int>(routee1, "received?", _timeout));
+            Assert.Equal(0, await RootContext.Empty.RequestAsync<int>(routee2, "received?", _timeout));
+            Assert.Equal(0, await RootContext.Empty.RequestAsync<int>(routee3, "received?", _timeout));
         }
 
         [Fact]
@@ -32,13 +32,13 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            RootContext.DefaultContext.Send(router, new Message("message1"));
-            RootContext.DefaultContext.Send(router, new Message("message2"));
-            RootContext.DefaultContext.Send(router, new Message("message3"));
+            RootContext.Empty.Send(router, new Message("message1"));
+            RootContext.Empty.Send(router, new Message("message2"));
+            RootContext.Empty.Send(router, new Message("message3"));
 
-            Assert.Equal(1, await routee1.RequestAsync<int>("received?", _timeout));
-            Assert.Equal(1, await routee2.RequestAsync<int>("received?", _timeout));
-            Assert.Equal(1, await routee3.RequestAsync<int>("received?", _timeout));
+            Assert.Equal(1, await RootContext.Empty.RequestAsync<int>(routee1, "received?", _timeout));
+            Assert.Equal(1, await RootContext.Empty.RequestAsync<int>(routee2, "received?", _timeout));
+            Assert.Equal(1, await RootContext.Empty.RequestAsync<int>(routee3, "received?", _timeout));
         }
 
         [Fact]
@@ -46,14 +46,14 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            RootContext.DefaultContext.Send(router, new Message("message1"));
+            RootContext.Empty.Send(router, new Message("message1"));
             var routee4 = Actor.Spawn(MyActorProps);
-            RootContext.DefaultContext.Send(router, new RouterAddRoutee{PID = routee4});
-            RootContext.DefaultContext.Send(router, new Message("message1"));
+            RootContext.Empty.Send(router, new RouterAddRoutee{PID = routee4});
+            RootContext.Empty.Send(router, new Message("message1"));
 
-            Assert.Equal(2, await routee1.RequestAsync<int>("received?", _timeout));
-            Assert.Equal(0, await routee2.RequestAsync<int>("received?", _timeout));
-            Assert.Equal(0, await routee3.RequestAsync<int>("received?", _timeout));
+            Assert.Equal(2, await RootContext.Empty.RequestAsync<int>(routee1, "received?", _timeout));
+            Assert.Equal(0, await RootContext.Empty.RequestAsync<int>(routee2, "received?", _timeout));
+            Assert.Equal(0, await RootContext.Empty.RequestAsync<int>(routee3, "received?", _timeout));
         }
 
         [Fact]
@@ -61,9 +61,9 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            RootContext.DefaultContext.Send(router, new RouterRemoveRoutee { PID = routee1 });
+            RootContext.Empty.Send(router, new RouterRemoveRoutee { PID = routee1 });
 
-            var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
+            var routees = await RootContext.Empty.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.PIDs);
             Assert.Contains(routee2, routees.PIDs);
             Assert.Contains(routee3, routees.PIDs);
@@ -74,9 +74,9 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            RootContext.DefaultContext.Send(router, new RouterAddRoutee { PID = routee4 });
+            RootContext.Empty.Send(router, new RouterAddRoutee { PID = routee4 });
 
-            var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
+            var routees = await RootContext.Empty.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.PIDs);
             Assert.Contains(routee2, routees.PIDs);
             Assert.Contains(routee3, routees.PIDs);
@@ -88,9 +88,9 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, _, _) = CreateRouterWith3Routees();
             
-            RootContext.DefaultContext.Send(router, new RouterRemoveRoutee { PID = routee1 });
-            RootContext.DefaultContext.Send(router, new Message("message1"));
-            Assert.Equal(0, await routee1.RequestAsync<int>("received?", _timeout));
+            RootContext.Empty.Send(router, new RouterRemoveRoutee { PID = routee1 });
+            RootContext.Empty.Send(router, new Message("message1"));
+            Assert.Equal(0, await RootContext.Empty.RequestAsync<int>(routee1, "received?", _timeout));
         }
 
         [Fact]
@@ -98,9 +98,9 @@ namespace Proto.Router.Tests
         {
             var (router, _, _, _) = CreateRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            RootContext.DefaultContext.Send(router, new RouterAddRoutee { PID = routee4 });
-            RootContext.DefaultContext.Send(router, new Message("message4"));
-            Assert.Equal(1, await routee4.RequestAsync<int>("received?", _timeout));
+            RootContext.Empty.Send(router, new RouterAddRoutee { PID = routee4 });
+            RootContext.Empty.Send(router, new Message("message4"));
+            Assert.Equal(1, await RootContext.Empty.RequestAsync<int>(routee4, "received?", _timeout));
         }
 
         [Fact]
@@ -108,15 +108,15 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, _) = CreateRouterWith3Routees();
 
-            RootContext.DefaultContext.Send(router, new Message("message1"));
+            RootContext.Empty.Send(router, new Message("message1"));
             // routee1 handles "message1"
-            Assert.Equal(1, await routee1.RequestAsync<int>("received?", _timeout));
+            Assert.Equal(1, await RootContext.Empty.RequestAsync<int>(routee1, "received?", _timeout));
             // remove receiver
-            RootContext.DefaultContext.Send(router, new RouterRemoveRoutee { PID = routee1 });
+            RootContext.Empty.Send(router, new RouterRemoveRoutee { PID = routee1 });
             // routee2 should now handle "message1"
-            RootContext.DefaultContext.Send(router, new Message("message1"));
+            RootContext.Empty.Send(router, new Message("message1"));
 
-            Assert.Equal(1, await routee2.RequestAsync<int>("received?", _timeout));
+            Assert.Equal(1, await RootContext.Empty.RequestAsync<int>(routee2, "received?", _timeout));
         }
 
         [Fact]
@@ -124,11 +124,11 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            RootContext.DefaultContext.Send(router, new RouterBroadcastMessage { Message = new Message("hello") });
+            RootContext.Empty.Send(router, new RouterBroadcastMessage { Message = new Message("hello") });
 
-            Assert.Equal(1, await routee1.RequestAsync<int>("received?", _timeout));
-            Assert.Equal(1, await routee2.RequestAsync<int>("received?", _timeout));
-            Assert.Equal(1, await routee3.RequestAsync<int>("received?", _timeout));
+            Assert.Equal(1, await RootContext.Empty.RequestAsync<int>(routee1, "received?", _timeout));
+            Assert.Equal(1, await RootContext.Empty.RequestAsync<int>(routee2, "received?", _timeout));
+            Assert.Equal(1, await RootContext.Empty.RequestAsync<int>(routee3, "received?", _timeout));
         }
 
         private (PID router, PID routee1, PID routee2, PID routee3) CreateRouterWith3Routees()
