@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -180,15 +179,9 @@ namespace Proto
             ReceiveTimeout = TimeSpan.Zero;
         }
 
-        public Task ReceiveAsync(object message)
-        {
-            return ProcessMessageAsync(message);
-        }
+        public Task ReceiveAsync(object message) => ProcessMessageAsync(message);
 
-        public void Send(PID target, object message)
-        {
-            SendUserMessage(target, message);
-        }
+        public void Send(PID target, object message) => SendUserMessage(target, message);
 
         public void Forward(PID target)
         {
@@ -255,29 +248,11 @@ namespace Proto
             }
         }
 
-        public void RestartChildren(Exception reason, params PID[] pids)
-        {
-            foreach (var pid in pids)
-            {
-                pid.SendSystemMessage(new Restart(reason));
-            }
-        }
+        public void RestartChildren(Exception reason, params PID[] pids) => pids.SendSystemNessage(new Restart(reason));
 
-        public void StopChildren(params PID[] pids)
-        {
-            foreach (var pid in pids)
-            {
-                pid.SendSystemMessage(Stop.Instance);
-            }
-        }
+        public void StopChildren(params PID[] pids) => pids.SendSystemNessage(Stop.Instance);
 
-        public void ResumeChildren(params PID[] pids)
-        {
-            foreach (var pid in pids)
-            {
-                pid.SendSystemMessage(ResumeMailbox.Instance);
-            }
-        }
+        public void ResumeChildren(params PID[] pids) => pids.SendSystemNessage(ResumeMailbox.Instance);
 
         public Task InvokeSystemMessageAsync(object msg)
         {
@@ -356,10 +331,7 @@ namespace Proto
             return res;
         }
 
-        public void EscalateFailure(Exception reason, object message)
-        {
-            EscalateFailure(reason, Self);
-        }
+        public void EscalateFailure(Exception reason, object message) => EscalateFailure(reason, Self);
 
         internal static Task DefaultReceive(IContext context)
         {
@@ -381,7 +353,11 @@ namespace Proto
         private Task ProcessMessageAsync(object msg)
         {
             _message = msg;
-            return _receiveMiddleware != null ? _receiveMiddleware(this) : DefaultReceive(this);
+            if (_receiveMiddleware != null)
+            {
+                return _receiveMiddleware(this);
+            }
+            return DefaultReceive(this);
         }
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
@@ -427,10 +403,7 @@ namespace Proto
             await StopAllChildren();
         }
 
-        private void HandleUnwatch(Unwatch uw)
-        {
-            _watchers?.Remove(uw.Watcher);
-        }
+        private void HandleUnwatch(Unwatch uw) => _watchers?.Remove(uw.Watcher);
 
         private void HandleWatch(Watch w)
         {
@@ -495,13 +468,7 @@ namespace Proto
 
         private async Task StopAllChildren()
         {
-            if (_children != null)
-            {
-                foreach (var child in _children)
-                {
-                    child.Stop();
-                }
-            }
+            _children?.Stop();
             await TryRestartOrTerminateAsync();
         }
 
@@ -539,10 +506,7 @@ namespace Proto
                 {
                     Who = Self
                 };
-                foreach (var watcher in _watchers)
-                {
-                    watcher.SendSystemMessage(terminated);
-                }
+                _watchers.SendSystemNessage(terminated);
             }
             if (Parent != null)
             {
@@ -581,15 +545,9 @@ namespace Proto
             }
         }
 
-        private void ResetReceiveTimeout()
-        {
-            _receiveTimeoutTimer?.Change(ReceiveTimeout, ReceiveTimeout);
-        }
+        private void ResetReceiveTimeout() => _receiveTimeoutTimer?.Change(ReceiveTimeout, ReceiveTimeout);
 
-        private void StopReceiveTimeout()
-        {
-            _receiveTimeoutTimer?.Change(-1, -1);
-        }
+        private void StopReceiveTimeout() => _receiveTimeoutTimer?.Change(-1, -1);
 
         private void ReceiveTimeoutCallback(object state)
         {

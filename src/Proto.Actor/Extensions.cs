@@ -5,11 +5,27 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using Proto.Mailbox;
 
 namespace Proto
 {
     public static class Extensions
     {
+        public static void Stop(this IEnumerable<PID> self)
+        {   
+            foreach (var pid in self)
+            {
+                pid.Stop();
+            }
+        }
+        
+        public static void SendSystemNessage(this IEnumerable<PID> self, SystemMessage message)
+        {
+            foreach (var pid in self)
+            {
+                pid.SendSystemMessage(message);
+            }
+        }
         public static void Send(this PID self, object message)
         {
             self.SendUserMessage(message);
