@@ -50,8 +50,6 @@ namespace Proto
             }
         }
 
-        //public void Send(object message) => SendUserMessage(message);
-
         internal void SendUserMessage(object message)
         {
             var reff = Ref ?? ProcessRegistry.Instance.Get(this);
@@ -63,30 +61,6 @@ namespace Proto
             var reff = Ref ?? ProcessRegistry.Instance.Get(this);
             reff.SendSystemMessage(this, sys);
         }
-
-//        [Obsolete("Use Context.Request",true)]
-//        public void Request(object message, PID sender)
-//        {
-//            var reff = Ref ?? ProcessRegistry.Instance.Get(this);
-//            var messageEnvelope = new MessageEnvelope(message,sender,null);
-//            reff.SendUserMessage(this, messageEnvelope);
-//        }
-//
-//        
-//        public Task<T> RequestAsync<T>(object message, TimeSpan timeout)
-//            => RequestAsync(message, new FutureProcess<T>(timeout));
-//
-//        public Task<T> RequestAsync<T>(object message, CancellationToken cancellationToken)
-//            => RequestAsync(message, new FutureProcess<T>(cancellationToken));
-//
-//        public Task<T> RequestAsync<T>(object message)
-//            => RequestAsync(message, new FutureProcess<T>());
-//
-//        private Task<T> RequestAsync<T>(object message, FutureProcess<T> future)
-//        {
-//            Request(message, future.Pid);
-//            return future.Task;
-//        }
 
         /// <summary> Stop will tell actor to stop immediately, regardless of existing user messages in mailbox. </summary>
         public void Stop()
