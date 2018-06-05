@@ -34,7 +34,7 @@ class Program
         var msg = new Ping();
         for (var i = 0; i < messageCount; i++)
         {
-            remote.Send(msg);
+            context.Send(remote, msg);
         }
         wg.WaitOne();
         var elapsed = DateTime.Now - start;

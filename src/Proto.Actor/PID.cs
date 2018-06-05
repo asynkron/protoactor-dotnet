@@ -49,10 +49,6 @@ namespace Proto
                 return _process;
             }
         }
-        
-        [Obsolete("Replaced with PID.Send(msg)", false)]
-        public void Tell(object message) => this.Send(message);
-
 
         //public void Send(object message) => SendUserMessage(message);
 

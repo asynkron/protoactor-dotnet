@@ -152,7 +152,7 @@ namespace Proto.Remote.Tests
             var remoteActor = await SpawnRemoteActor(_remoteManager.DefaultNode.Address);
             var localActor1 = await SpawnLocalActorAndWatch(remoteActor);
             var localActor2 = await SpawnLocalActorAndWatch(remoteActor);
-            localActor2.Send(new Unwatch(remoteActor));
+            Context.Send(localActor2, new Unwatch(remoteActor));
             await Task.Delay(TimeSpan.FromSeconds(3)); // wait for unwatch to propagate...
             remoteActor.Stop();
 
