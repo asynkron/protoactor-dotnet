@@ -28,7 +28,7 @@ namespace Proto
             }
         }
 
-        [Obsolete("Use Context to send",true)]
+        [Obsolete("Use Context to send",false)]
         public static void Send(this PID self, object message)
         {
             self.SendUserMessage(message);
