@@ -6,11 +6,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
+using static Proto.Actor;
 
 namespace Proto
 {
@@ -228,7 +230,7 @@ namespace Proto
             var cont = new Continuation(() =>
             {
                 action();
-                return Task.FromResult(0);
+                return Done;
             }, msg);
 
             target.ContinueWith(t => { Self.SendSystemMessage(cont); });
@@ -291,25 +293,25 @@ namespace Proto
                         return HandleTerminatedAsync(t);
                     case Watch w:
                         HandleWatch(w);
-                        return Task.FromResult(0);
+                        return Done;
                     case Unwatch uw:
                         HandleUnwatch(uw);
-                        return Task.FromResult(0);
+                        return Done;
                     case Failure f:
                         HandleFailure(f);
-                        return Task.FromResult(0);
+                        return Done;
                     case Restart _:
                         return HandleRestartAsync();
                     case SuspendMailbox _:
-                        return Task.FromResult(0);
+                        return Done;
                     case ResumeMailbox _:
-                        return Task.FromResult(0);
+                        return Done;
                     case Continuation cont:
                         _message = cont.Message;
                         return cont.Action();
                     default:
                         Logger.LogWarning("Unknown system message {0}", msg);
-                        return Task.FromResult(0);
+                        return Done;
                 }
             }
             catch (Exception x)
@@ -325,7 +327,7 @@ namespace Proto
             {
                 //already stopped
                 Logger.LogError("Actor already stopped, ignore user message {0}", msg);
-                return Proto.Actor.Done;
+                return Done;
             }
 
             var influenceTimeout = true;
@@ -365,7 +367,7 @@ namespace Proto
             if (c.Message is PoisonPill)
             {
                 c.Self.Stop();
-                return Proto.Actor.Done;
+                return Done;
             }
             return c.Actor.ReceiveAsync(context);
         }
@@ -373,7 +375,7 @@ namespace Proto
         internal static Task DefaultSender(ISenderContext context, PID target, MessageEnvelope envelope)
         {
             target.Ref.SendUserMessage(target, envelope);
-            return Task.FromResult(0);
+            return Done;
         }
 
         private Task ProcessMessageAsync(object msg)
@@ -420,15 +422,9 @@ namespace Proto
         private async Task HandleRestartAsync()
         {
             _state = ContextState.Restarting;
+            CancelReceiveTimeout();
             await InvokeUserMessageAsync(Restarting.Instance);
-            if (_children != null)
-            {
-                foreach (var child in _children)
-                {
-                    child.Stop();
-                }
-            }
-            await TryRestartOrTerminateAsync();
+            await StopAllChildren();
         }
 
         private void HandleUnwatch(Unwatch uw)
@@ -470,14 +466,18 @@ namespace Proto
         {
             _children?.Remove(msg.Who);
             await InvokeUserMessageAsync(msg);
-            await TryRestartOrTerminateAsync();
+            if (_state == ContextState.Stopping || _state == ContextState.Restarting)
+            {
+                await TryRestartOrTerminateAsync();
+            }
         }
 
         private void HandleRootFailure(Failure failure)
         {
             Supervision.DefaultStrategy.HandleFailure(this, failure.Who, failure.RestartStatistics, failure.Reason);
         }
-
+        
+        //Initiate stopping, not final
         private async Task HandleStopAsync()
         {
             if (_state >= ContextState.Stopping)
@@ -487,8 +487,14 @@ namespace Proto
             }
 
             _state = ContextState.Stopping;
+            CancelReceiveTimeout();
             //this is intentional
             await InvokeUserMessageAsync(Stopping.Instance);
+            await StopAllChildren();
+        }
+
+        private async Task StopAllChildren()
+        {
             if (_children != null)
             {
                 foreach (var child in _children)
@@ -499,26 +505,25 @@ namespace Proto
             await TryRestartOrTerminateAsync();
         }
 
-        private async Task TryRestartOrTerminateAsync()
+        //intermediate stopping stage, waiting for children to stop
+        private Task TryRestartOrTerminateAsync()
         {
-            CancelReceiveTimeout();
-
             if (_children?.Count > 0)
             {
-                return;
+                return Done;
             }
 
             switch (_state)
             {
                 case ContextState.Restarting:
-                    await RestartAsync();
-                    return;
+                    return RestartAsync();
                 case ContextState.Stopping:
-                    await StopAsync();
-                    break;
+                    return StopAsync();
+                default: return Done;
             }
         }
 
+        //Last and final termination step
         private async Task StopAsync()
         {
             ProcessRegistry.Instance.Remove(Self);
