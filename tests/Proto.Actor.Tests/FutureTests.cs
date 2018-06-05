@@ -5,6 +5,8 @@ namespace Proto.Tests
 {
     public class FutureTests
     {
+        private static readonly ISenderContext Context = new RootContext();
+        
         [Fact]
         public void Given_Actor_When_AwaitRequestAsync_Should_ReturnReply()
         {
@@ -17,7 +19,7 @@ namespace Proto.Tests
                 return Actor.Done;
             }));
 
-            var reply = RootContext.Empty.RequestAsync<object>(pid, "hello").Result;
+            var reply = Context.RequestAsync<object>(pid, "hello").Result;
 
             Assert.Equal("hey", reply);
         }
@@ -43,7 +45,7 @@ namespace Proto.Tests
             }));
             
 
-            var reply2 = RootContext.Empty.RequestAsync<string>(pid2, "hello").Result;
+            var reply2 = Context.RequestAsync<string>(pid2, "hello").Result;
 
             Assert.Equal("hellohey", reply2);
         }
@@ -60,7 +62,7 @@ namespace Proto.Tests
                 return Actor.Done;
             }));
 
-            var reply = RootContext.Empty.RequestAsync<object>(pid, "hello", TimeSpan.FromSeconds(1)).Result;
+            var reply = Context.RequestAsync<object>(pid, "hello", TimeSpan.FromSeconds(1)).Result;
 
             Assert.Null(reply);
         }

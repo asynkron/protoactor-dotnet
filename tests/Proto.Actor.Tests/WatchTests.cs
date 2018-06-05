@@ -10,6 +10,8 @@ namespace Proto.Tests
 {
     public class WatchTests
     {
+        private static readonly ISenderContext Context = new RootContext();
+        
         [Fact]
         public async Task MultipleStopsTriggerSingleTerminated()
         {
@@ -53,7 +55,7 @@ namespace Proto.Tests
                                            .WithMailbox(() => new TestMailbox()));
 
             await watchee.StopAsync();
-            var terminatedMessageReceived = await RootContext.Empty.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
+            var terminatedMessageReceived = await Context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
             Assert.True(terminatedMessageReceived);
         }
 

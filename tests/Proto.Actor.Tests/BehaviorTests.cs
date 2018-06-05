@@ -6,19 +6,21 @@ namespace Proto.Tests
 {
     public class BehaviorTests
     {
+        private static readonly ISenderContext Context = new RootContext();
+        
         [Fact]
         public async void can_change_states()
         {
             var testActorProps = Actor.FromProducer(() => new LightBulb());
             var actor = Actor.Spawn(testActorProps);
             
-            var response = await RootContext.Empty.RequestAsync<string>(actor, new PressSwitch());
+            var response = await Context.RequestAsync<string>(actor, new PressSwitch());
             Assert.Equal("Turning on", response);
-            response = await RootContext.Empty.RequestAsync<string>(actor, new Touch());
+            response = await Context.RequestAsync<string>(actor, new Touch());
             Assert.Equal("Hot!", response);
-            response = await RootContext.Empty.RequestAsync<string>(actor, new PressSwitch());
+            response = await Context.RequestAsync<string>(actor, new PressSwitch());
             Assert.Equal("Turning off", response);
-            response = await RootContext.Empty.RequestAsync<string>(actor, new Touch());
+            response = await Context.RequestAsync<string>(actor, new Touch());
             Assert.Equal("Cold", response);
         }
         
@@ -27,12 +29,12 @@ namespace Proto.Tests
         {
             var testActorProps = Actor.FromProducer(() => new LightBulb());
             var actor = Actor.Spawn(testActorProps);
-            var response = await RootContext.Empty.RequestAsync<string>(actor, new PressSwitch());
-            response = await RootContext.Empty.RequestAsync<string>(actor, new HitWithHammer());
+            var response = await Context.RequestAsync<string>(actor, new PressSwitch());
+            response = await Context.RequestAsync<string>(actor, new HitWithHammer());
             Assert.Equal("Smashed!", response);
-            response = await RootContext.Empty.RequestAsync<string>(actor, new PressSwitch());
+            response = await Context.RequestAsync<string>(actor, new PressSwitch());
             Assert.Equal("Broken", response);
-            response = await RootContext.Empty.RequestAsync<string>(actor, new Touch());
+            response = await Context.RequestAsync<string>(actor, new Touch());
             Assert.Equal("OW!", response);
         }
         
@@ -58,9 +60,9 @@ namespace Proto.Tests
             });
             PID pid = SpawnActorFromFunc(behavior.ReceiveAsync);
 
-            var reply = await RootContext.Empty.RequestAsync<string>(pid, "number");
-            var replyAfterPush = await RootContext.Empty.RequestAsync<int>(pid, null);
-            var replyAfterPop = await RootContext.Empty.RequestAsync<string>(pid, "answertolifetheuniverseandeverything");
+            var reply = await Context.RequestAsync<string>(pid, "number");
+            var replyAfterPush = await Context.RequestAsync<int>(pid, null);
+            var replyAfterPop = await Context.RequestAsync<string>(pid, "answertolifetheuniverseandeverything");
 
             Assert.Equal("number42answertolifetheuniverseandeverything", $"{reply}{replyAfterPush}{replyAfterPop}");
         }

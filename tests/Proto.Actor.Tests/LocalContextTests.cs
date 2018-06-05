@@ -8,6 +8,7 @@ namespace Proto.Tests
 {
     public class LocalContextTests
     {
+        private static readonly ISenderContext Context = new RootContext();
         public static PID SpawnActorFromFunc(Receive receive) => Actor.Spawn(Actor.FromFunc(receive));
 
         [Fact]
@@ -60,8 +61,8 @@ namespace Proto.Tests
                 return Actor.Done;
             });
 
-            var task1 = RootContext.Empty.RequestAsync<object>(pid, "hello1");
-            var task2 = RootContext.Empty.RequestAsync<object>(pid, "hello2");
+            var task1 = Context.RequestAsync<object>(pid, "hello1");
+            var task2 = Context.RequestAsync<object>(pid, "hello2");
             await Task.Yield();
             var reply1 = await task1;
             var reply2 = await task2;

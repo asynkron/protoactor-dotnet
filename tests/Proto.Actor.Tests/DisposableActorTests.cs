@@ -8,6 +8,8 @@ namespace Proto.Tests
 {
     public class DisposableActorTests
     {
+        private static readonly ISenderContext Context = new RootContext();
+        
         private class SupervisingActor : IActor
         {
             private readonly Props _childProps;
@@ -97,7 +99,7 @@ namespace Proto.Tests
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(props);
-            RootContext.Empty.Send(parent, "crash");
+            Context.Send(parent, "crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.True(disposeCalled);
         }
@@ -115,7 +117,7 @@ namespace Proto.Tests
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(props);
-            RootContext.Empty.Send(parent, "crash");
+            Context.Send(parent, "crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.False(disposeCalled);
         }
@@ -147,7 +149,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            RootContext.Empty.Send(parent, "crash");
+            Context.Send(parent, "crash");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);
