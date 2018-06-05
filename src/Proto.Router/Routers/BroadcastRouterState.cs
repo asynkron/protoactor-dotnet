@@ -26,7 +26,7 @@ namespace Proto.Router.Routers
         {
             foreach (var pid in _routees)
             {
-                pid.Send(message);
+                ActorClient.DefaultContext.Send(pid, message);
             }
         }
     }

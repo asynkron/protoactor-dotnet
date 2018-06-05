@@ -17,7 +17,7 @@ namespace Proto.Cluster
     {
         public static Dictionary<string, PID> KindMap = new Dictionary<string, PID>();
 
-        private static Subscription<object> memberStatusSub;
+        private static Subscription<object> _memberStatusSub;
 
         public static void Setup(string[] kinds)
         {
@@ -27,13 +27,13 @@ namespace Proto.Cluster
                 KindMap[kind] = pid;
             }
 
-            memberStatusSub = EventStream.Instance.Subscribe<MemberStatusEvent>(msg =>
+            _memberStatusSub = EventStream.Instance.Subscribe<MemberStatusEvent>(msg =>
             {
                 foreach (var kind in msg.Kinds)
                 {
                     if (KindMap.TryGetValue(kind, out var kindPid))
                     {
-                        kindPid.Send(msg);
+                        ActorClient.DefaultContext.Send(kindPid, msg);
                     }
                 }
             });
@@ -53,7 +53,7 @@ namespace Proto.Cluster
                 kind.Stop();
             }
             KindMap.Clear();
-            EventStream.Instance.Unsubscribe(memberStatusSub.Id);
+            EventStream.Instance.Unsubscribe(_memberStatusSub.Id);
         }
 
         public static PID PartitionForKind(string address, string kind)
@@ -130,7 +130,8 @@ namespace Proto.Cluster
             {
                 //if not, forward to the correct owner
                 var owner = Partition.PartitionForKind(address, _kind);
-                owner.Send(msg);
+                
+                context.Send(owner, msg);
             }
             else
             {
@@ -234,7 +235,7 @@ namespace Proto.Cluster
         {
             var pid = _partition[actorId];
             var owner = Partition.PartitionForKind(address, _kind);
-            owner.Send(new TakeOwnership
+            context.Send(owner, new TakeOwnership
                        {
                            Name = actorId,
                            Pid = pid

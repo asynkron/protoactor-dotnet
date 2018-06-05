@@ -29,7 +29,7 @@ namespace Proto
 
         private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
         {
-            target.Send(message);
+            target.SendUserMessage(message);
             return Actor.Done;
         }
 
@@ -79,7 +79,7 @@ namespace Proto
             else
             {
                 //Default path
-                target.Send(message);
+                target.SendUserMessage(message);
             }
         }
     }

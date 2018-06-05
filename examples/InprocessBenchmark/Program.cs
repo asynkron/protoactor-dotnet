@@ -55,7 +55,7 @@ class Program
                 var client = clients[i];
                 var echo = echos[i];
 
-                client.Send(new Start(echo));
+                ActorClient.DefaultContext.Send(client, new Start(echo));
             }
             Task.WaitAll(tasks);
 
@@ -97,7 +97,7 @@ class Program
             switch (context.Message)
             {
                 case Msg msg:
-                    msg.Sender.Send(msg);
+                    context.Send(msg.Sender, msg);
                     break;
             }
             return Done;
@@ -154,7 +154,7 @@ class Program
             
             for (var i = 0; i < _batchSize; i++)
             {
-                sender.Send(m);
+                context.Send(sender, m);
             }
 
             _messageCount -= _batchSize;

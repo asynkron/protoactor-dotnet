@@ -68,7 +68,7 @@ namespace Proto.Router
             if (context.Message is RouterGetRoutees)
             {
                 var r = _routerState.GetRoutees().ToList();
-                context.Sender.Send(new Routees(r));
+                context.Respond(new Routees(r));
             }
             return Actor.Done;
         }

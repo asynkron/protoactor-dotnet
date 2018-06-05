@@ -6,13 +6,25 @@ namespace Proto.Schedulers.SimpleScheduler
 {
     public class SimpleScheduler : ISimpleScheduler
     {
+        private readonly ISenderContext _context;
+
+        public SimpleScheduler()
+        {
+            _context = ActorClient.DefaultContext;
+        }
+
+        public SimpleScheduler(ISenderContext context)
+        {
+            _context = context;
+        }
+        
         public ISimpleScheduler ScheduleTellOnce(TimeSpan delay, PID target, object message)
         {
             Task.Run(async () =>
             {
                 await Task.Delay(delay);
 
-                target.Send(message);
+                _context.Send(target, message);
             });
 
             return this;
@@ -33,8 +45,8 @@ namespace Proto.Schedulers.SimpleScheduler
                         if (cts.IsCancellationRequested)
                             return;
 
-                        target.Send(message);
-
+                        _context.Send(target, message);
+                        
                         await Task.Delay(interval, cts.Token);
                     }
                 }

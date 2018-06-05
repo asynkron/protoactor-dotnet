@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
 using Proto.Router.Messages;
 using Proto.TestFixtures;
@@ -21,9 +18,9 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            router.Send(new Message("message1"));
-            router.Send(new Message("message1"));
-            router.Send(new Message("message1"));
+            ActorClient.DefaultContext.Send(router, new Message("message1"));
+            ActorClient.DefaultContext.Send(router, new Message("message1"));
+            ActorClient.DefaultContext.Send(router, new Message("message1"));
 
             Assert.Equal(3, await routee1.RequestAsync<int>("received?", _timeout));
             Assert.Equal(0, await routee2.RequestAsync<int>("received?", _timeout));
@@ -35,9 +32,9 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            router.Send(new Message("message1"));
-            router.Send(new Message("message2"));
-            router.Send(new Message("message3"));
+            ActorClient.DefaultContext.Send(router, new Message("message1"));
+            ActorClient.DefaultContext.Send(router, new Message("message2"));
+            ActorClient.DefaultContext.Send(router, new Message("message3"));
 
             Assert.Equal(1, await routee1.RequestAsync<int>("received?", _timeout));
             Assert.Equal(1, await routee2.RequestAsync<int>("received?", _timeout));
@@ -49,10 +46,10 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            router.Send(new Message("message1"));
+            ActorClient.DefaultContext.Send(router, new Message("message1"));
             var routee4 = Actor.Spawn(MyActorProps);
-            router.Send(new RouterAddRoutee{PID = routee4});
-            router.Send(new Message("message1"));
+            ActorClient.DefaultContext.Send(router, new RouterAddRoutee{PID = routee4});
+            ActorClient.DefaultContext.Send(router, new Message("message1"));
 
             Assert.Equal(2, await routee1.RequestAsync<int>("received?", _timeout));
             Assert.Equal(0, await routee2.RequestAsync<int>("received?", _timeout));
@@ -64,7 +61,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            router.Send(new RouterRemoveRoutee { PID = routee1 });
+            ActorClient.DefaultContext.Send(router, new RouterRemoveRoutee { PID = routee1 });
 
             var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.PIDs);
@@ -77,7 +74,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            router.Send(new RouterAddRoutee { PID = routee4 });
+            ActorClient.DefaultContext.Send(router, new RouterAddRoutee { PID = routee4 });
 
             var routees = await router.RequestAsync<Routees>(new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.PIDs);
@@ -91,8 +88,8 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, _, _) = CreateRouterWith3Routees();
             
-            router.Send(new RouterRemoveRoutee { PID = routee1 });
-            router.Send(new Message("message1"));
+            ActorClient.DefaultContext.Send(router, new RouterRemoveRoutee { PID = routee1 });
+            ActorClient.DefaultContext.Send(router, new Message("message1"));
             Assert.Equal(0, await routee1.RequestAsync<int>("received?", _timeout));
         }
 
@@ -101,8 +98,8 @@ namespace Proto.Router.Tests
         {
             var (router, _, _, _) = CreateRouterWith3Routees();
             var routee4 = Actor.Spawn(MyActorProps);
-            router.Send(new RouterAddRoutee { PID = routee4 });
-            router.Send(new Message("message4"));
+            ActorClient.DefaultContext.Send(router, new RouterAddRoutee { PID = routee4 });
+            ActorClient.DefaultContext.Send(router, new Message("message4"));
             Assert.Equal(1, await routee4.RequestAsync<int>("received?", _timeout));
         }
 
@@ -111,13 +108,13 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, _) = CreateRouterWith3Routees();
 
-            router.Send(new Message("message1"));
+            ActorClient.DefaultContext.Send(router, new Message("message1"));
             // routee1 handles "message1"
             Assert.Equal(1, await routee1.RequestAsync<int>("received?", _timeout));
             // remove receiver
-            router.Send(new RouterRemoveRoutee { PID = routee1 });
+            ActorClient.DefaultContext.Send(router, new RouterRemoveRoutee { PID = routee1 });
             // routee2 should now handle "message1"
-            router.Send(new Message("message1"));
+            ActorClient.DefaultContext.Send(router, new Message("message1"));
 
             Assert.Equal(1, await routee2.RequestAsync<int>("received?", _timeout));
         }
@@ -127,7 +124,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
-            router.Send(new RouterBroadcastMessage { Message = new Message("hello") });
+            ActorClient.DefaultContext.Send(router, new RouterBroadcastMessage { Message = new Message("hello") });
 
             Assert.Equal(1, await routee1.RequestAsync<int>("received?", _timeout));
             Assert.Equal(1, await routee2.RequestAsync<int>("received?", _timeout));
@@ -190,7 +187,7 @@ namespace Proto.Router.Tests
                 switch (context.Message)
                 {
                     case string msg when msg == "received?":
-                        context.Sender.Send(_receivedMessages.Count);
+                        context.Respond(_receivedMessages.Count);
                         break;
                     case Message msg:
                         _receivedMessages.Add(msg.ToString());

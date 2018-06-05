@@ -1,7 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Threading.Tasks;
-using Proto;
 using Xunit;
 
 namespace Proto.ActorExtensions.Tests
@@ -19,7 +17,7 @@ namespace Proto.ActorExtensions.Tests
 
             var pid = factory.GetActor<SampleActor>();
 
-            pid.Send("hello");
+            ActorClient.DefaultContext.Send(pid, "hello");
 
             await pid.StopAsync();
 

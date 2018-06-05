@@ -33,7 +33,7 @@ namespace Proto.Tests
                     case Started _:
                         context.Spawn(childProps);
                         break;
-                    case Terminated t:
+                    case Terminated _:
                         Interlocked.Increment(ref counter);
                         break;
                 }
@@ -75,9 +75,9 @@ namespace Proto.Tests
                         context.Watch(_watchee);
                         break;
                     case string msg when msg == "?":
-                        context.Sender.Send(_terminateReceived);
+                        context.Respond(_terminateReceived);
                         break;
-                    case Terminated msg:
+                    case Terminated _:
                         _terminateReceived = true;
                         break;
                 }

@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using Proto.Mailbox;
 
@@ -26,6 +27,8 @@ namespace Proto
                 pid.SendSystemMessage(message);
             }
         }
+
+        [Obsolete("Use Context to send",true)]
         public static void Send(this PID self, object message)
         {
             self.SendUserMessage(message);

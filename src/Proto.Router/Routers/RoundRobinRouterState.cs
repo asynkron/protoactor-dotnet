@@ -32,7 +32,7 @@ namespace Proto.Router.Routers
             var i = _currentIndex % _values.Count;
             var pid = _values[i];
             Interlocked.Add(ref _currentIndex, 1);
-            pid.Send(message);
+            ActorClient.DefaultContext.Send(pid, message);
         }
     }
 }

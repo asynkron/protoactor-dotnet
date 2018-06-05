@@ -21,8 +21,8 @@ namespace Proto
         public IDispatcher Dispatcher { get; private set; } = Dispatchers.DefaultDispatcher;
         public IList<Func<Receive, Receive>> ReceiveMiddleware { get; private set; } = new List<Func<Receive, Receive>>();
         public IList<Func<Sender, Sender>> SenderMiddleware { get; private set; } = new List<Func<Sender, Sender>>();
-        public Receive ReceiveMiddlewareChain { get; set; }
-        public Sender SenderMiddlewareChain { get; set; }
+        public Receive ReceiveMiddlewareChain { get; private set; }
+        public Sender SenderMiddlewareChain { get; private set; }
 
         public Spawner Spawner
         {

@@ -23,7 +23,7 @@ namespace Proto.Tests
                 if (context.Message is Started)
                     _childPID = context.Spawn(_childProps);
                 if (context.Message is string)
-                    _childPID.Send(context.Message);
+                    context.Send(_childPID, context.Message);
                 return Actor.Done;
             }
         }
@@ -41,7 +41,7 @@ namespace Proto.Tests
             {
                 switch (context.Message)
                 {
-                    case string msg:
+                    case string _:
                         throw new Exception();
                 }
                 return Actor.Done;
@@ -64,8 +64,8 @@ namespace Proto.Tests
                 _child2Props = child2Props;
             }
 
-            public PID Child1 { get; set; }
-            public PID Child2 { get; set; }
+            private PID Child1 { get; set; }
+            private PID Child2 { get; set; }
 
             public Task ReceiveAsync(IContext context)
             {
@@ -76,7 +76,7 @@ namespace Proto.Tests
                         Child2 = context.Spawn(_child2Props);
                         break;
                     case string _:
-                        Child1.Send(context.Message);
+                        context.Send(Child1, context.Message);
                         break;
                 }
 
@@ -96,8 +96,8 @@ namespace Proto.Tests
             var props = Actor.FromProducer(() => new SupervisingActor(childProps))
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
-            var parentPID = Actor.Spawn(props);
-            parentPID.Send("crash");
+            var parent = Actor.Spawn(props);
+            ActorClient.DefaultContext.Send(parent, "crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.True(disposeCalled);
         }
@@ -114,8 +114,8 @@ namespace Proto.Tests
             var props = Actor.FromProducer(() => new SupervisingActor(childProps))
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
-            var parentPID = Actor.Spawn(props);
-            parentPID.Send("crash");
+            var parent = Actor.Spawn(props);
+            ActorClient.DefaultContext.Send(parent, "crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.False(disposeCalled);
         }
@@ -147,7 +147,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Send("crash");
+            ActorClient.DefaultContext.Send(parent, "crash");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);

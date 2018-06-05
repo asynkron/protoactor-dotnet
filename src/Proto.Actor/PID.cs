@@ -109,7 +109,7 @@ namespace Proto
         }
 
         /// <summary> Poison will tell actor to stop after processing current user messages in mailbox. </summary>
-        public void Poison() => this.Send(new PoisonPill());
+        public void Poison() => SendUserMessage(new PoisonPill());
 
         /// <summary> PoisonAsync will tell and wait actor to stop after processing current user messages in mailbox. </summary>
         public Task PoisonAsync()
