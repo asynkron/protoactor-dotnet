@@ -8,9 +8,11 @@ using Proto.Remote.Tests.Messages;
 
 namespace Proto.Remote.Tests
 {
+    
     [Collection("RemoteTests"), Trait("Category", "Remote")]
     public class RemoteTests
     {
+        private static readonly ISenderContext Context = new RootContext();
         private readonly RemoteManager _remoteManager;
 
         public RemoteTests(RemoteManager remoteManager)
@@ -74,7 +76,7 @@ namespace Proto.Remote.Tests
         public async void CanSendAndReceiveToExistingRemote()
         {
             var remoteActor = new PID(_remoteManager.DefaultNode.Address, "EchoActorInstance");
-            var pong = await RootContext.Empty.RequestAsync<Pong>(remoteActor, new Ping { Message = "Hello" }, TimeSpan.FromMilliseconds(5000));
+            var pong = await Context.RequestAsync<Pong>(remoteActor, new Ping { Message = "Hello" }, TimeSpan.FromMilliseconds(5000));
             Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
         }
 
@@ -84,7 +86,7 @@ namespace Proto.Remote.Tests
             var unknownRemoteActor = new PID(_remoteManager.DefaultNode.Address, "doesn't exist");
             await Assert.ThrowsAsync<TimeoutException>(async () =>
             {
-                await RootContext.Empty.RequestAsync<Pong>(unknownRemoteActor, new Ping { Message = "Hello" }, TimeSpan.FromMilliseconds(2000));
+                await Context.RequestAsync<Pong>(unknownRemoteActor, new Ping { Message = "Hello" }, TimeSpan.FromMilliseconds(2000));
             });
         }
 
@@ -94,7 +96,7 @@ namespace Proto.Remote.Tests
             var remoteActorName = Guid.NewGuid().ToString();
             var remoteActorResp = await Remote.SpawnNamedAsync(_remoteManager.DefaultNode.Address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
             var remoteActor = remoteActorResp.Pid;
-            var pong = await RootContext.Empty.RequestAsync<Pong>(remoteActor, new Ping{Message="Hello"}, TimeSpan.FromMilliseconds(5000));
+            var pong = await Context.RequestAsync<Pong>(remoteActor, new Ping{Message="Hello"}, TimeSpan.FromMilliseconds(5000));
             Assert.Equal($"{_remoteManager.DefaultNode.Address} Hello", pong.Message);
         }
 
@@ -106,7 +108,7 @@ namespace Proto.Remote.Tests
             
             remoteActor.Stop();
             Assert.True(await PollUntilTrue(() => 
-                    RootContext.Empty.RequestAsync<bool>(localActor, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor.Id), TimeSpan.FromSeconds(5))), 
+                    Context.RequestAsync<bool>(localActor, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor.Id), TimeSpan.FromSeconds(5))), 
                 "Watching actor did not receive Termination message");
         }
 
@@ -120,10 +122,10 @@ namespace Proto.Remote.Tests
             remoteActor1.Stop();
             remoteActor2.Stop();
             Assert.True(await PollUntilTrue(() => 
-                    RootContext.Empty.RequestAsync<bool>(localActor, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor1.Id), TimeSpan.FromSeconds(5))),
+                    Context.RequestAsync<bool>(localActor, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor1.Id), TimeSpan.FromSeconds(5))),
                 "Watching actor did not receive Termination message");
             Assert.True(await PollUntilTrue(() =>
-                    RootContext.Empty.RequestAsync<bool>(localActor, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor2.Id), TimeSpan.FromSeconds(5))),
+                    Context.RequestAsync<bool>(localActor, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor2.Id), TimeSpan.FromSeconds(5))),
                 "Watching actor did not receive Termination message");
         }
 
@@ -137,10 +139,10 @@ namespace Proto.Remote.Tests
             remoteActor.Stop();
 
             Assert.True(await PollUntilTrue(() =>
-                    RootContext.Empty.RequestAsync<bool>(localActor1, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor.Id), TimeSpan.FromSeconds(5))),
+                    Context.RequestAsync<bool>(localActor1, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor.Id), TimeSpan.FromSeconds(5))),
                 "Watching actor did not receive Termination message");
             Assert.True(await PollUntilTrue(() =>
-                    RootContext.Empty.RequestAsync<bool>(localActor2, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor.Id), TimeSpan.FromSeconds(5))),
+                    Context.RequestAsync<bool>(localActor2, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor.Id), TimeSpan.FromSeconds(5))),
                 "Watching actor did not receive Termination message");
         }
 
@@ -156,10 +158,10 @@ namespace Proto.Remote.Tests
 
             // localActor1 is still watching so should get notified
             Assert.True(await PollUntilTrue(() => 
-                    RootContext.Empty.RequestAsync<bool>(localActor1, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor.Id), TimeSpan.FromSeconds(5))), 
+                    Context.RequestAsync<bool>(localActor1, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor.Id), TimeSpan.FromSeconds(5))), 
                 "Watching actor did not receive Termination message");
             // localActor2 is NOT watching so should not get notified
-            Assert.False(await RootContext.Empty.RequestAsync<bool>(localActor2, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor.Id), TimeSpan.FromSeconds(5)), 
+            Assert.False(await Context.RequestAsync<bool>(localActor2, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor.Id), TimeSpan.FromSeconds(5)), 
                 "Unwatch did not succeed.");
         }
 
@@ -173,9 +175,9 @@ namespace Proto.Remote.Tests
             Console.WriteLine($"Killing remote process {address}!");
             process.Kill();
             Assert.True(await PollUntilTrue(() => 
-                    RootContext.Empty.RequestAsync<bool>(localActor, new TerminatedMessageReceived(address, remoteActor.Id), TimeSpan.FromSeconds(5))), 
+                    Context.RequestAsync<bool>(localActor, new TerminatedMessageReceived(address, remoteActor.Id), TimeSpan.FromSeconds(5))), 
                 "Watching actor did not receive Termination message");
-            Assert.Equal(1, await RootContext.Empty.RequestAsync<int>(localActor, new GetTerminatedMessagesCount(), TimeSpan.FromSeconds(5)));
+            Assert.Equal(1, await Context.RequestAsync<int>(localActor, new GetTerminatedMessagesCount(), TimeSpan.FromSeconds(5)));
         }
 
         private static async Task<PID> SpawnRemoteActor(string address)
