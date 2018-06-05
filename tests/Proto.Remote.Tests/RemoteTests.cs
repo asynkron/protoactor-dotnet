@@ -267,14 +267,14 @@ namespace Proto.Remote.Tests
 
         private void HandleCountOfMessagesReceived(IContext context)
         {
-            context.Sender.Send(_terminatedMessages.Count);
+            context.Respond(_terminatedMessages.Count);
         }
 
         private void HandleTerminatedMessageReceived(IContext context, TerminatedMessageReceived msg)
         {
             var messageReceived = _terminatedMessages.Any(tm => tm.Who.Address == msg.Address &&
                                                                 tm.Who.Id == msg.ActorId);
-            context.Sender.Send(messageReceived);
+            context.Respond(messageReceived);
         }
 
         private void HandleTerminated(Terminated msg)
