@@ -39,7 +39,7 @@ namespace Proto
 
         public MessageEnvelope WithHeader(string key, string value)
         {
-            var header = Header.With(key, value);
+            var header = (Header ?? new MessageHeader()).With(key, value);
             return new MessageEnvelope(Message, Sender, header);
         }
         

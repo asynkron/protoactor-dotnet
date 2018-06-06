@@ -33,9 +33,10 @@ class Program
 
         //Set headers, e.g. Zipkin trace headers
         var headers = new MessageHeader(
-        new Dictionary<string, string>{
-            {"TraceID", "1000"},
-            {"SpanID", "2000"}
+            new Dictionary<string, string>
+            {
+                {"TraceID", "1000"},
+                {"SpanID", "2000"}
             }
         );
 
@@ -48,30 +49,28 @@ class Program
                     .WithHeader("SpanID", c.Headers.GetOrDefault("SpanID"))
                     .WithHeader("ParentSpanID", c.Headers.GetOrDefault("ParentSpanID"))
                     .WithMessage(envelope.Message + "!");
-                    
+
                 Console.WriteLine($"sender middleware 1 enter {envelope.Message.GetType()}:{envelope.Message}");
 
                 await next(c, target, newEnvelope);
-                
-                Console.WriteLine($"sender middleware 1 exit {envelope.Message.GetType()}:{envelope.Message}");
+
+                Console.WriteLine("sender middleware 1 exit");
             },
             next => async (c, target, envelope) =>
             {
                 Console.WriteLine($"sender middleware 2 enter {envelope.Message.GetType()}:{envelope.Message}");
-                
+
                 var newEnvelope = envelope
                     .WithMessage(envelope.Message + "?");
 
                 await next(c, target, newEnvelope);
-                Console.WriteLine($"sender middleware 2 exit {envelope.Message.GetType()}:{envelope.Message}");
+                Console.WriteLine($"sender middleware 2 exit");
             });
 
-        //just wait for started message to be processed to make the output look less confusing
-        Task.Delay(500).Wait();
         root.Send(pid, "hello");
 
         Task.Delay(500).Wait();
-        Console.WriteLine(nameof(root.Send) + " done. Press [Enter] to try " + nameof(root.RequestAsync) + ".");
+        Console.WriteLine("Send done. Press [Enter] to try " + nameof(root.RequestAsync) + ".");
         Console.ReadLine();
 
         var response = root.RequestAsync<string>(pid, "hello_requested").Result;
