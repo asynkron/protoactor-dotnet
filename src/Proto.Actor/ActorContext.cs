@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -191,13 +192,13 @@ namespace Proto
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => RequestAsync(target, message, new FutureProcess<T>(timeout));
+            => RequestAsync(target, message, new FutureProcess<T>(timeout, _receiveMiddleware));
 
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => RequestAsync(target, message, new FutureProcess<T>(cancellationToken));
+            => RequestAsync(target, message, new FutureProcess<T>(cancellationToken, _receiveMiddleware));
 
         public Task<T> RequestAsync<T>(PID target, object message)
-            => RequestAsync(target, message, new FutureProcess<T>());
+            => RequestAsync(target, message, new FutureProcess<T>(_receiveMiddleware));
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
@@ -323,12 +324,13 @@ namespace Proto
 
         public void EscalateFailure(Exception reason, object message) => EscalateFailure(reason, Self);
 
-        public Task Receive(MessageEnvelope envelope)
+        Task IReceiverContext.Receive(MessageEnvelope envelope)
         {
             _message = envelope;
             return DefaultReceive();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Task DefaultReceive()
         {
             if (Message is PoisonPill)
@@ -337,17 +339,6 @@ namespace Proto
                 return Done;
             }
             return Actor.ReceiveAsync(this);
-        }
-        
-        internal static Task DefaultReceive(IReceiverContext context, MessageEnvelope envelope)
-        {
-            return context.Receive(envelope);
-        }
-
-        internal static Task DefaultSender(ISenderContext context, PID target, MessageEnvelope envelope)
-        {
-            target.SendUserMessage(envelope);
-            return Done;
         }
 
         private Task ProcessMessageAsync(object msg)

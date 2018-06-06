@@ -10,17 +10,23 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    internal class FutureProcess<T> : Process
+    internal class FutureProcess<T> : Process, IReceiverContext
     {
+        private readonly Receiver _receiveMiddleware;
         private readonly CancellationTokenSource _cts;
         private readonly TaskCompletionSource<T> _tcs;
 
-        internal FutureProcess(TimeSpan timeout) : this(new CancellationTokenSource(timeout)) { }
-        internal FutureProcess(CancellationToken cancellationToken) : this(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) { }
-        internal FutureProcess() : this(null) { }
+        internal FutureProcess(TimeSpan timeout,Receiver receiveMiddleware) : this(new CancellationTokenSource(timeout), receiveMiddleware) { }
+        internal FutureProcess(CancellationToken cancellationToken,Receiver receiveMiddleware) : this(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken), receiveMiddleware) { }
 
-        private FutureProcess(CancellationTokenSource cts)
+        internal FutureProcess(TimeSpan timeout) : this(new CancellationTokenSource(timeout), null) { }
+        internal FutureProcess(CancellationToken cancellationToken) : this(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken), null) { }
+        internal FutureProcess() : this(null, null) { }
+        internal FutureProcess(Receiver receiveMiddleware) : this(null, receiveMiddleware) { }
+
+        private FutureProcess(CancellationTokenSource cts, Receiver receiveMiddleware)
         {
+            _receiveMiddleware = receiveMiddleware;
             _tcs = new TaskCompletionSource<T>();
             _cts = cts;
 
@@ -55,22 +61,33 @@ namespace Proto
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
-            var env = MessageEnvelope.Unwrap(message);
+            if (_receiveMiddleware != null)
+            {
+                var env = MessageEnvelope.Wrap(message);
+                _receiveMiddleware(this, env);
+            }
+            var msg = MessageEnvelope.UnwrapMessage(message);
             
-            if (env.message is T || message == null)
+            Complete(msg);
+        }
+
+        private void Complete(object msg)
+        {
+            if (msg is T || msg == null)
             {
                 if (_cts != null && _cts.IsCancellationRequested)
                 {
-                    Stop(pid);
+                    Stop(Pid);
                     return;
                 }
 
-                _tcs.TrySetResult((T)env.message);
-                Stop(pid);
+                _tcs.TrySetResult((T) msg);
+                Stop(Pid);
             }
             else
             {
-                throw new InvalidOperationException($"Unexpected message.  Was type {env.message.GetType()} but expected {typeof(T)}");
+                Stop(Pid);
+                _tcs.SetException(new InvalidOperationException($"Unexpected message. Was type {msg.GetType()} but expected {typeof(T)}"));
             }
         }
 
@@ -89,6 +106,13 @@ namespace Proto
             }
 
             Stop(pid);
+        }
+
+        Task IReceiverContext.Receive(MessageEnvelope envelope)
+        {
+            var msg = envelope.Message;
+            Complete(msg);
+            return Task;
         }
     }
 }

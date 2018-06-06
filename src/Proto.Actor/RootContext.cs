@@ -62,6 +62,7 @@ namespace Proto
         {
             var messageEnvelope = new MessageEnvelope(message, future.Pid, null);
             SendUserMessage(target, messageEnvelope);
+            
             return future.Task;
         }
 

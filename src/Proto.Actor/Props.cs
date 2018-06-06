@@ -8,9 +8,23 @@ using Proto.Mailbox;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Proto
 {
+    static class Middleware
+    {
+        internal static Task Receive(IReceiverContext context, MessageEnvelope envelope)
+        {
+            return context.Receive(envelope);
+        }
+
+        internal static Task Sender(ISenderContext context, PID target, MessageEnvelope envelope)
+        {
+            target.SendUserMessage(envelope);
+            return Actor.Done;
+        }
+    }
     public sealed class Props
     {
         private Spawner _spawner;
@@ -65,14 +79,14 @@ namespace Proto
         {
             props.ReceiveMiddleware = ReceiveMiddleware.Concat(middleware).ToList();
             props.ReceiveMiddlewareChain = props.ReceiveMiddleware.Reverse()
-                                                .Aggregate((Receiver) ActorContext.DefaultReceive, (inner, outer) => outer(inner));
+                                                .Aggregate((Receiver) Middleware.Receive, (inner, outer) => outer(inner));
         });
 
         public Props WithSenderMiddleware(params Func<Sender, Sender>[] middleware) => Copy(props =>
         {
             props.SenderMiddleware = SenderMiddleware.Concat(middleware).ToList();
             props.SenderMiddlewareChain = props.SenderMiddleware.Reverse()
-                                               .Aggregate((Sender) ActorContext.DefaultSender, (inner, outer) => outer(inner));
+                                               .Aggregate((Sender) Middleware.Sender, (inner, outer) => outer(inner));
         });
 
         public Props WithSpawner(Spawner spawner) => Copy(props => props.Spawner = spawner);
