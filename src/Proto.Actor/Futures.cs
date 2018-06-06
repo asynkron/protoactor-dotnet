@@ -19,7 +19,7 @@ namespace Proto
         internal FutureProcess(CancellationToken cancellationToken) : this(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) { }
         internal FutureProcess() : this(null) { }
 
-        FutureProcess(CancellationTokenSource cts)
+        private FutureProcess(CancellationTokenSource cts)
         {
             _tcs = new TaskCompletionSource<T>();
             _cts = cts;

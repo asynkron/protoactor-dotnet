@@ -9,12 +9,8 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public interface ISenderContext
+    public interface ISenderContext : IMessageContext
     {
-        object Message { get; }
-
-        MessageHeader Headers { get; }
-
         void Send(PID target, object message);
 
         void Request(PID target, object message);
