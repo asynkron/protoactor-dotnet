@@ -19,9 +19,9 @@ namespace Proto
         public ISupervisorStrategy GuardianStrategy { get; private set; }
         public ISupervisorStrategy SupervisorStrategy { get; private set; } = Supervision.DefaultStrategy;
         public IDispatcher Dispatcher { get; private set; } = Dispatchers.DefaultDispatcher;
-        public IList<Func<Receive, Receive>> ReceiveMiddleware { get; private set; } = new List<Func<Receive, Receive>>();
+        public IList<Func<Receiver, Receiver>> ReceiveMiddleware { get; private set; } = new List<Func<Receiver, Receiver>>();
         public IList<Func<Sender, Sender>> SenderMiddleware { get; private set; } = new List<Func<Sender, Sender>>();
-        public Receive ReceiveMiddlewareChain { get; private set; }
+        public Receiver ReceiveMiddlewareChain { get; private set; }
         public Sender SenderMiddlewareChain { get; private set; }
 
         public Spawner Spawner
@@ -61,11 +61,11 @@ namespace Proto
 
         public Props WithChildSupervisorStrategy(ISupervisorStrategy supervisorStrategy) => Copy(props => props.SupervisorStrategy = supervisorStrategy);
 
-        public Props WithReceiveMiddleware(params Func<Receive, Receive>[] middleware) => Copy(props =>
+        public Props WithReceiveMiddleware(params Func<Receiver, Receiver>[] middleware) => Copy(props =>
         {
             props.ReceiveMiddleware = ReceiveMiddleware.Concat(middleware).ToList();
             props.ReceiveMiddlewareChain = props.ReceiveMiddleware.Reverse()
-                                                .Aggregate((Receive) ActorContext.DefaultReceive, (inner, outer) => outer(inner));
+                                                .Aggregate((Receiver) ActorContext.DefaultReceive, (inner, outer) => outer(inner));
         });
 
         public Props WithSenderMiddleware(params Func<Sender, Sender>[] middleware) => Copy(props =>

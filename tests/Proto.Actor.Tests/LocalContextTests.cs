@@ -16,7 +16,7 @@ namespace Proto.Tests
         {
             var producer = (Func<IActor>)(() => null);
             var supervisorStrategyMock = new DoNothingSupervisorStrategy();
-            var middleware = new Receive(ctx => Actor.Done);
+            var middleware = new Receiver((ctx,env) => Actor.Done);
             var parent = new PID("test", "test");
 
             var context = new ActorContext(producer, supervisorStrategyMock, middleware, null, parent);

@@ -29,7 +29,7 @@ namespace Proto
         public static readonly IReadOnlyCollection<PID> EmptyChildren = new List<PID>();
         private readonly Func<IActor> _producer;
 
-        private readonly Receive _receiveMiddleware;
+        private readonly Receiver _receiveMiddleware;
         private readonly Sender _senderMiddleware;
         private readonly ISupervisorStrategy _supervisorStrategy;
         private FastSet<PID> _children;
@@ -50,7 +50,7 @@ namespace Proto
         private ContextState _state;
         private FastSet<PID> _watchers;
 
-        public ActorContext(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receive receiveMiddleware, Sender senderMiddleware, PID parent)
+        public ActorContext(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receiver receiveMiddleware, Sender senderMiddleware, PID parent)
         {
             _producer = producer;
             _supervisorStrategy = supervisorStrategy;
@@ -323,15 +323,21 @@ namespace Proto
 
         public void EscalateFailure(Exception reason, object message) => EscalateFailure(reason, Self);
 
-        internal static Task DefaultReceive(IContext context)
+        internal static Task DefaultReceive(IContext context, MessageEnvelope envelope)
         {
             var c = (ActorContext)context;
-            if (c.Message is PoisonPill)
+            c._message = envelope;
+            return c.DefaultReceive();
+        }
+
+        private Task DefaultReceive()
+        {
+            if (Message is PoisonPill)
             {
-                c.Self.Stop();
+                Self.Stop();
                 return Done;
             }
-            return c.Actor.ReceiveAsync(context);
+            return Actor.ReceiveAsync(this);
         }
 
         internal static Task DefaultSender(ISenderContext context, PID target, MessageEnvelope envelope)
@@ -342,12 +348,18 @@ namespace Proto
 
         private Task ProcessMessageAsync(object msg)
         {
-            _message = msg;
             if (_receiveMiddleware != null)
             {
-                return _receiveMiddleware(this);
+                switch (msg)
+                {
+                    case MessageEnvelope env:
+                        return _receiveMiddleware(this, env);
+                    default:
+                        return _receiveMiddleware(this, new MessageEnvelope(msg,null,null));
+                }
             }
-            return DefaultReceive(this);
+            _message = msg;
+            return DefaultReceive();
         }
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)

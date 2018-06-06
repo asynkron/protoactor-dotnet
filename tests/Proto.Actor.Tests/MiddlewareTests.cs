@@ -25,17 +25,17 @@ namespace Proto.Tests
                     return Actor.Done;
                 })
                 .WithReceiveMiddleware(
-                    next => async c =>
+                    next => async (c,env) =>
                     {
-                        if (c.Message is string)
+                        if (env.Message is string)
                             logs.Add("middleware 1");
-                        await next(c);
+                        await next(c, env);
                     },
-                    next => async c =>
+                    next => async (c, env) =>
                     {
-                        if (c.Message is string)
+                        if (env.Message is string)
                             logs.Add("middleware 2");
-                        await next(c);
+                        await next(c, env);
                     })
                 .WithMailbox(() => testMailbox);
             var pid = Actor.Spawn(props);
