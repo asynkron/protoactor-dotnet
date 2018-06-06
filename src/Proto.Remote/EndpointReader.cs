@@ -4,7 +4,6 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -70,11 +69,7 @@ namespace Proto.Remote
                         Proto.MessageHeader header = null;
                         if (envelope.MessageHeader != null)
                         {
-                            header = new Proto.MessageHeader();
-                            foreach(var (k, v) in envelope.MessageHeader.HeaderData)
-                            {
-                                header.Add(k, v);
-                            }
+                            header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
                         }
                         var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
                         RootContext.Empty.Send(target, localEnvelope);

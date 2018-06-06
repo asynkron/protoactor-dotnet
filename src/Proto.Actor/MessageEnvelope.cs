@@ -8,18 +8,41 @@ using System.Runtime.CompilerServices;
 
 namespace Proto
 {
+    //TODO: make immutable as the same envelope can be sent to multiple targets
     public class MessageEnvelope
     {
         public MessageEnvelope(object message, PID sender, MessageHeader header)
         {
-            Sender = sender; // ?? throw new ArgumentNullException(nameof(sender));
-            Message = message; // ?? throw new ArgumentNullException(nameof(message));
+            Sender = sender; 
+            Message = message;
             Header = header;
         }
 
         public PID Sender { get; }
-        public object Message { get; set; }
-        public MessageHeader Header { get; private set; }
+        public object Message { get; }
+        public MessageHeader Header { get; }
+
+        public MessageEnvelope WithSender(PID sender)
+        {
+            return new MessageEnvelope(Message, sender, Header);
+        }
+        
+        public MessageEnvelope WithMessage(object message)
+        {
+            return new MessageEnvelope(message, Sender, Header);
+        }
+        
+        public MessageEnvelope WithHeader(MessageHeader header)
+        {
+            return new MessageEnvelope(Message, Sender, header);
+        }
+
+        public MessageEnvelope WithHeader(string key, string value)
+        {
+            var header = Header.With(key, value);
+            return new MessageEnvelope(Message, Sender, header);
+        }
+        
 
         public static (object message, PID sender, MessageHeader headers) Unwrap(object message)
         {
@@ -29,25 +52,6 @@ namespace Proto
             }
 
             return (message, null, null);
-        }
-
-        public string GetHeader(string key, string @default = null)
-        {
-            if (Header == null)
-            {
-                return @default;
-            }
-            return Header.TryGetValue(key, out string value) ? value : @default;
-        }
-
-        public void SetHeader(string key, string value)
-        {
-            if (Header == null)
-            {
-                Header = new MessageHeader();
-            }
-
-            Header[key] = value;
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

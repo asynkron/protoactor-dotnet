@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
@@ -80,7 +81,7 @@ namespace Proto.Remote
                         if (rd.Header != null && rd.Header.Count > 0)
                         {
                             header = new MessageHeader();
-                            header.HeaderData.Add(rd.Header);
+                            header.HeaderData.Add(rd.Header.ToDictionary());
                         }
 
                         var bytes = Serialization.Serialize(rd.Message, serializerId);

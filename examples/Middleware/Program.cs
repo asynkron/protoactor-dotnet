@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Proto;
 
@@ -31,30 +32,37 @@ class Program
         var pid = Actor.Spawn(actor);
 
         //Set headers, e.g. Zipkin trace headers
-        var headers = new MessageHeader
-        {
+        var headers = new MessageHeader(
+        new Dictionary<string, string>{
             {"TraceID", "1000"},
             {"SpanID", "2000"}
-        };
+            }
+        );
 
         var root = new RootContext(
             headers,
             next => async (c, target, envelope) =>
             {
-                envelope.SetHeader("TraceID", c.Headers.GetOrDefault("TraceID"));
-                envelope.SetHeader("SpanID", c.Headers.GetOrDefault("SpanID"));
-                envelope.SetHeader("ParentSpanID", c.Headers.GetOrDefault("ParentSpanID"));
-
+                var newEnvelope = envelope
+                    .WithHeader("TraceID", c.Headers.GetOrDefault("TraceID"))
+                    .WithHeader("SpanID", c.Headers.GetOrDefault("SpanID"))
+                    .WithHeader("ParentSpanID", c.Headers.GetOrDefault("ParentSpanID"))
+                    .WithMessage(envelope.Message + "!");
+                    
                 Console.WriteLine($"sender middleware 1 enter {envelope.Message.GetType()}:{envelope.Message}");
-                envelope.Message = envelope.Message + "!";
-                await next(c, target, envelope);
+
+                await next(c, target, newEnvelope);
+                
                 Console.WriteLine($"sender middleware 1 exit {envelope.Message.GetType()}:{envelope.Message}");
             },
             next => async (c, target, envelope) =>
             {
                 Console.WriteLine($"sender middleware 2 enter {envelope.Message.GetType()}:{envelope.Message}");
-                envelope.Message = envelope.Message + "?";
-                await next(c, target, envelope);
+                
+                var newEnvelope = envelope
+                    .WithMessage(envelope.Message + "?");
+
+                await next(c, target, newEnvelope);
                 Console.WriteLine($"sender middleware 2 exit {envelope.Message.GetType()}:{envelope.Message}");
             });
 
