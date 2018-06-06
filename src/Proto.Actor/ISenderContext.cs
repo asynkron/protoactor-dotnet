@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public interface ISenderContext : IMessageContext
+    public interface ISenderContext
     {
         void Send(PID target, object message);
 
@@ -17,5 +17,8 @@ namespace Proto
         Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout);
         Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken);
         Task<T> RequestAsync<T>(PID target, object message);
+        object Message { get; }
+
+        MessageHeader Headers { get; }
     }
 }

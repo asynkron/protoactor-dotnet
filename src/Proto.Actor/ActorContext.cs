@@ -323,11 +323,10 @@ namespace Proto
 
         public void EscalateFailure(Exception reason, object message) => EscalateFailure(reason, Self);
 
-        internal static Task DefaultReceive(IContext context, MessageEnvelope envelope)
+        public Task Receive(MessageEnvelope envelope)
         {
-            var c = (ActorContext)context;
-            c._message = envelope;
-            return c.DefaultReceive();
+            _message = envelope;
+            return DefaultReceive();
         }
 
         private Task DefaultReceive()
@@ -339,10 +338,15 @@ namespace Proto
             }
             return Actor.ReceiveAsync(this);
         }
+        
+        internal static Task DefaultReceive(IReceiverContext context, MessageEnvelope envelope)
+        {
+            return context.Receive(envelope);
+        }
 
         internal static Task DefaultSender(ISenderContext context, PID target, MessageEnvelope envelope)
         {
-            target.Ref.SendUserMessage(target, envelope);
+            target.SendUserMessage(envelope);
             return Done;
         }
 
