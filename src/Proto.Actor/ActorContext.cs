@@ -348,16 +348,12 @@ namespace Proto
 
         private Task ProcessMessageAsync(object msg)
         {
+            //slow path, there is middleware, message must be wrapped in an envelop
             if (_receiveMiddleware != null)
             {
-                switch (msg)
-                {
-                    case MessageEnvelope env:
-                        return _receiveMiddleware(this, env);
-                    default:
-                        return _receiveMiddleware(this, new MessageEnvelope(msg,null,null));
-                }
+                return _receiveMiddleware(this, MessageEnvelope.Wrap(msg));
             }
+            //fast path, 0 alloc invocation of actor receive
             _message = msg;
             return DefaultReceive();
         }
@@ -373,20 +369,12 @@ namespace Proto
         {
             if (_senderMiddleware != null)
             {
-                if (message is MessageEnvelope messageEnvelope)
-                {
-                    //Request based middleware
-                    _senderMiddleware(this, target, messageEnvelope);
-                }
-                else
-                {
-                    //tell based middleware
-                    _senderMiddleware(this, target, new MessageEnvelope(message, null, null));
-                }
+                //slow path
+                _senderMiddleware(this, target, MessageEnvelope.Wrap(message));
             }
             else
             {
-                //Default path
+                //fast path, 0 alloc
                 target.SendUserMessage(message);
             }
         }

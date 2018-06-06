@@ -22,6 +22,15 @@ namespace Proto
             Header = header;
         }
 
+        public static MessageEnvelope Wrap(object message)
+        {
+            if (message is MessageEnvelope env)
+            {
+                return env;
+            }
+            return new MessageEnvelope(message, null, null);
+        }
+
         public PID Sender { get; }
         public object Message { get; }
         public MessageHeader Header { get; }
