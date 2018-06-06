@@ -11,6 +11,10 @@ namespace Proto
     //TODO: make immutable as the same envelope can be sent to multiple targets
     public class MessageEnvelope
     {
+        public MessageEnvelope()
+        {
+        }
+
         public MessageEnvelope(object message, PID sender, MessageHeader header)
         {
             Sender = sender; 
@@ -22,20 +26,11 @@ namespace Proto
         public object Message { get; }
         public MessageHeader Header { get; }
 
-        public MessageEnvelope WithSender(PID sender)
-        {
-            return new MessageEnvelope(Message, sender, Header);
-        }
-        
-        public MessageEnvelope WithMessage(object message)
-        {
-            return new MessageEnvelope(message, Sender, Header);
-        }
-        
-        public MessageEnvelope WithHeader(MessageHeader header)
-        {
-            return new MessageEnvelope(Message, Sender, header);
-        }
+        public MessageEnvelope WithSender(PID sender) => new MessageEnvelope(Message, sender, Header);
+
+        public MessageEnvelope WithMessage(object message) => new MessageEnvelope(message, Sender, Header);
+
+        public MessageEnvelope WithHeader(MessageHeader header) => new MessageEnvelope(Message, Sender, header);
 
         public MessageEnvelope WithHeader(string key, string value)
         {

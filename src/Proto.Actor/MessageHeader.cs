@@ -6,37 +6,27 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Proto
 {
     public class MessageHeader : IReadOnlyDictionary<string, string>
     {
-        private readonly Dictionary<string, string> _inner;
+        
+        private readonly ImmutableDictionary<string, string> _inner;
         public static MessageHeader Empty => new MessageHeader();
 
-        public IDictionary<string, string> ToDictionary()
-        {
-            return _inner;
-        }
+        public IDictionary<string, string> ToDictionary() => _inner;
 
-        public MessageHeader()
-        {
-            _inner = new Dictionary<string, string>();
-        }
+        public MessageHeader() => _inner = ImmutableDictionary<string, string>.Empty;
 
-        public MessageHeader(IDictionary<string,string> headers)
-        {
-            _inner = new Dictionary<string, string>(headers);
-        }
+        public MessageHeader(IDictionary<string,string> headers) => _inner = headers.ToImmutableDictionary();
 
-        public string GetOrDefault(string key, string @default = null)
-        {
-            return TryGetValue(key, out var value) ? value : @default;
-        }
+        public string GetOrDefault(string key, string @default = null) => TryGetValue(key, out var value) ? value : @default;
 
         public MessageHeader With(string key, string value)
         {
-            var copy = new Dictionary<string, string>(_inner) {[key] = value};
+            var copy = _inner.SetItem(key, value);
             return new MessageHeader(copy);
         }
 
