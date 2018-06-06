@@ -57,7 +57,7 @@ namespace Proto
             {
                 return messageEnvelope.Header;
             }
-            return MessageHeader.EmptyHeader;
+            return MessageHeader.Empty;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

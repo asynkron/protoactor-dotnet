@@ -13,12 +13,12 @@ namespace Proto
 {   
     public class RootContext : ISenderContext
     {
-        public static readonly RootContext Empty = new RootContext(MessageHeader.EmptyHeader);
+        public static readonly RootContext Empty = new RootContext(MessageHeader.Empty);
         private readonly Sender _senderMiddleware;
 
         public RootContext()
         {
-            Headers = MessageHeader.EmptyHeader;
+            Headers = MessageHeader.Empty;
         }
         public RootContext(MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
         {
@@ -55,7 +55,7 @@ namespace Proto
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => RequestAsync(target, message, new FutureProcess<T>(cancellationToken));
 
-        public Task<T> RequestAsync<T>(PID target, object message)
+        public Task<T>    RequestAsync<T>(PID target, object message)
             => RequestAsync(target, message, new FutureProcess<T>());
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)

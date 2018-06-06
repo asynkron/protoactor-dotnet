@@ -8,13 +8,14 @@ namespace Proto.Persistence.Tests
 {
     public class ExamplePersistentActorTests
     {
+        private static readonly RootContext Context = new RootContext();
         private const int InitialState = 1;
 
         [Fact]
         public async void EventsAreSavedToPersistence()
         {
             var (pid, _, actorId, providerState) = CreateTestActor();
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
+            Context.Send(pid, new Multiply { Amount = 2 });
             await providerState
                 .GetEventsAsync(actorId, 0, long.MaxValue, o =>
                 {
@@ -27,8 +28,8 @@ namespace Proto.Persistence.Tests
         public async void SnapshotsAreSavedToPersistence()
         {
             var (pid, _, actorId, providerState) = CreateTestActor();
-            RootContext.Empty.Send(pid, new Multiply { Amount = 10 });
-            RootContext.Empty.Send(pid, new RequestSnapshot());
+            Context.Send(pid, new Multiply { Amount = 10 });
+            Context.Send(pid, new RequestSnapshot());
             var (snapshot, _) = await providerState.GetSnapshotAsync(actorId);
             var snapshotState = snapshot as State;
             Assert.Equal(10, snapshotState.Value);
@@ -38,7 +39,7 @@ namespace Proto.Persistence.Tests
         public async void EventsCanBeDeleted()
         {
             var (pid, _, actorId, providerState) = CreateTestActor();
-            RootContext.Empty.Send(pid, new Multiply { Amount = 10 });
+            Context.Send(pid, new Multiply { Amount = 10 });
             await providerState.DeleteEventsAsync(actorId, 1);
             var events = new List<object>();
             await providerState.GetEventsAsync(actorId, 0, long.MaxValue, v => events.Add(v));
@@ -50,8 +51,8 @@ namespace Proto.Persistence.Tests
         public async void SnapshotsCanBeDeleted()
         {
             var (pid, _, actorId, providerState) = CreateTestActor();
-            RootContext.Empty.Send(pid, new Multiply { Amount = 10 });
-            RootContext.Empty.Send(pid, new RequestSnapshot());
+            Context.Send(pid, new Multiply { Amount = 10 });
+            Context.Send(pid, new RequestSnapshot());
             await providerState.DeleteSnapshotsAsync(actorId, 1);
             var (snapshot, _) = await providerState.GetSnapshotAsync(actorId);
             Assert.Null(snapshot);
@@ -60,9 +61,9 @@ namespace Proto.Persistence.Tests
         [Fact]
         public async void GivenEventsOnly_StateIsRestoredFromEvents()
         {
-            var (pid, props, actorId, _) = CreateTestActor();
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
+            var (pid, props, _, _) = CreateTestActor();
+            Context.Send(pid, new Multiply { Amount = 2 });
+            Context.Send(pid, new Multiply { Amount = 2 });
             var state = await RestartActorAndGetState(pid, props);
             Assert.Equal(InitialState * 2 * 2, state);
         }
@@ -79,10 +80,10 @@ namespace Proto.Persistence.Tests
         [Fact]
         public async void GivenEventsThenASnapshot_StateShouldBeRestoredFromTheSnapshot()
         {
-            var (pid, props, actorId, _) = CreateTestActor();
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
-            RootContext.Empty.Send(pid, new RequestSnapshot());
+            var (pid, props, _, _) = CreateTestActor();
+            Context.Send(pid, new Multiply { Amount = 2 });
+            Context.Send(pid, new Multiply { Amount = 2 });
+            Context.Send(pid, new RequestSnapshot());
             var state = await RestartActorAndGetState(pid, props);
             var expectedState = InitialState * 2 * 2;
             Assert.Equal(expectedState, state);
@@ -91,12 +92,12 @@ namespace Proto.Persistence.Tests
         [Fact]
         public async void GivenASnapshotAndSubsequentEvents_StateShouldBeRestoredFromSnapshotAndSubsequentEvents()
         {
-            var (pid, props, actorId, _) = CreateTestActor();
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
-            RootContext.Empty.Send(pid, new RequestSnapshot());
-            RootContext.Empty.Send(pid, new Multiply { Amount = 4 });
-            RootContext.Empty.Send(pid, new Multiply { Amount = 8 });
+            var (pid, props, _, _) = CreateTestActor();
+            Context.Send(pid, new Multiply { Amount = 2 });
+            Context.Send(pid, new Multiply { Amount = 2 });
+            Context.Send(pid, new RequestSnapshot());
+            Context.Send(pid, new Multiply { Amount = 4 });
+            Context.Send(pid, new Multiply { Amount = 8 });
             var state = await RestartActorAndGetState(pid, props);
             var expectedState = InitialState * 2 * 2 * 4 * 8;
             Assert.Equal(expectedState, state);
@@ -107,10 +108,10 @@ namespace Proto.Persistence.Tests
         {
             var (pid, props, actorId, providerState) = CreateTestActor();
 
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
-            RootContext.Empty.Send(pid, new RequestSnapshot());
-            RootContext.Empty.Send(pid, new Multiply { Amount = 4 });
-            RootContext.Empty.Send(pid, new RequestSnapshot());
+            Context.Send(pid, new Multiply { Amount = 2 });
+            Context.Send(pid, new RequestSnapshot());
+            Context.Send(pid, new Multiply { Amount = 4 });
+            Context.Send(pid, new RequestSnapshot());
             await providerState.DeleteEventsAsync(actorId, 2); // just to be sure state isn't recovered from events
             var state = await RestartActorAndGetState(pid, props);
             Assert.Equal(InitialState * 2 * 4, state);
@@ -121,10 +122,10 @@ namespace Proto.Persistence.Tests
         {
             var (pid, props, actorId, providerState) = CreateTestActor();
 
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
-            RootContext.Empty.Send(pid, new RequestSnapshot());
-            RootContext.Empty.Send(pid, new Multiply { Amount = 4 });
-            RootContext.Empty.Send(pid, new RequestSnapshot());
+            Context.Send(pid, new Multiply { Amount = 2 });
+            Context.Send(pid, new RequestSnapshot());
+            Context.Send(pid, new Multiply { Amount = 4 });
+            Context.Send(pid, new RequestSnapshot());
             await providerState.DeleteSnapshotsAsync(actorId, 0);
             await providerState.DeleteEventsAsync(actorId, 1);
             var state = await RestartActorAndGetState(pid, props);
@@ -137,11 +138,11 @@ namespace Proto.Persistence.Tests
         {
             var (pid, props, actorId, providerState) = CreateTestActor();
 
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
-            RootContext.Empty.Send(pid, new RequestSnapshot());
-            RootContext.Empty.Send(pid, new Multiply { Amount = 4 });
-            RootContext.Empty.Send(pid, new Multiply { Amount = 8 });
+            Context.Send(pid, new Multiply { Amount = 2 });
+            Context.Send(pid, new Multiply { Amount = 2 });
+            Context.Send(pid, new RequestSnapshot());
+            Context.Send(pid, new Multiply { Amount = 4 });
+            Context.Send(pid, new Multiply { Amount = 8 });
             await providerState.DeleteSnapshotsAsync(actorId, 3);
             
             var state = await RestartActorAndGetState(pid, props);
@@ -153,11 +154,11 @@ namespace Proto.Persistence.Tests
         {
             var (pid, _, _, _) = CreateTestActor();
 
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
-            var index = await RootContext.Empty.RequestAsync<long>(pid, new GetIndex(), TimeSpan.FromSeconds(1));
+            Context.Send(pid, new Multiply { Amount = 2 });
+            var index = await Context.RequestAsync<long>(pid, new GetIndex(), TimeSpan.FromSeconds(1));
             Assert.Equal(0, index);
-            RootContext.Empty.Send(pid, new Multiply { Amount = 4 });
-            index = await RootContext.Empty.RequestAsync<long>(pid, new GetIndex(), TimeSpan.FromSeconds(1));
+            Context.Send(pid, new Multiply { Amount = 4 });
+            index = await Context.RequestAsync<long>(pid, new GetIndex(), TimeSpan.FromSeconds(1));
             Assert.Equal(1, index);
         }
 
@@ -166,10 +167,10 @@ namespace Proto.Persistence.Tests
         {
             var (pid, _, _, _) = CreateTestActor();
 
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
-            RootContext.Empty.Send(pid, new RequestSnapshot());
-            RootContext.Empty.Send(pid, new Multiply { Amount = 4 });
-            var index = await RootContext.Empty.RequestAsync<long>(pid, new GetIndex(), TimeSpan.FromSeconds(1));
+            Context.Send(pid, new Multiply { Amount = 2 });
+            Context.Send(pid, new RequestSnapshot());
+            Context.Send(pid, new Multiply { Amount = 4 });
+            var index = await Context.RequestAsync<long>(pid, new GetIndex(), TimeSpan.FromSeconds(1));
             Assert.Equal(1, index);
         }
 
@@ -178,13 +179,13 @@ namespace Proto.Persistence.Tests
         {
             var (pid, props, _, _) = CreateTestActor();
 
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
-            RootContext.Empty.Send(pid, new Multiply { Amount = 4 });
+            Context.Send(pid, new Multiply { Amount = 2 });
+            Context.Send(pid, new Multiply { Amount = 4 });
 
             await pid.StopAsync();
             pid = Actor.Spawn(props);
-            var state = await RootContext.Empty.RequestAsync<int>(pid, new GetState(), TimeSpan.FromSeconds(1));
-            var index = await RootContext.Empty.RequestAsync<long>(pid, new GetIndex(), TimeSpan.FromSeconds(1));
+            var state = await Context.RequestAsync<int>(pid, new GetState(), TimeSpan.FromSeconds(1));
+            var index = await Context.RequestAsync<long>(pid, new GetIndex(), TimeSpan.FromSeconds(1));
             Assert.Equal(1, index);
             Assert.Equal(InitialState * 2 * 4, state);
         }
@@ -192,17 +193,17 @@ namespace Proto.Persistence.Tests
         [Fact]
         public async void GivenEvents_CanReplayFromStartIndexToEndIndex()
         {
-            var (pid, props, actorId, providerState) = CreateTestActor();
+            var (pid, _, actorId, providerState) = CreateTestActor();
 
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
-            RootContext.Empty.Send(pid, new Multiply { Amount = 2 });
-            RootContext.Empty.Send(pid, new Multiply { Amount = 4 });
-            RootContext.Empty.Send(pid, new Multiply { Amount = 8 });
+            Context.Send(pid, new Multiply { Amount = 2 });
+            Context.Send(pid, new Multiply { Amount = 2 });
+            Context.Send(pid, new Multiply { Amount = 4 });
+            Context.Send(pid, new Multiply { Amount = 8 });
             var messages = new List<object>();
             await providerState.GetEventsAsync(actorId, 1, 2, msg => messages.Add(msg));
             Assert.Equal(2, messages.Count);
-            Assert.Equal(2, (messages[0] as Multiplied).Amount);
-            Assert.Equal(4, (messages[1] as Multiplied).Amount);
+            Assert.Equal(2, ((Multiplied) messages[0]).Amount);
+            Assert.Equal(4, ((Multiplied) messages[1]).Amount);
         }
 
         [Fact]
@@ -215,7 +216,7 @@ namespace Proto.Persistence.Tests
                 .WithMailbox(() => new TestMailbox());
             var pid = Actor.Spawn(props);
             
-            RootContext.Empty.Send(pid, new Multiply{ Amount = 2 });
+            Context.Send(pid, new Multiply{ Amount = 2 });
             var eventStoreMessages = new List<object>();
             var snapshotStoreMessages = new List<object>();
             await eventStore.GetEventsAsync(actorId, 0, 1, msg => eventStoreMessages.Add(msg));
@@ -238,7 +239,7 @@ namespace Proto.Persistence.Tests
         {
             await pid.StopAsync();
             pid = Actor.Spawn(props);
-            return await RootContext.Empty.RequestAsync<int>(pid, new GetState(), TimeSpan.FromMilliseconds(500));
+            return await Context.RequestAsync<int>(pid, new GetState(), TimeSpan.FromMilliseconds(500));
         }
     }
 

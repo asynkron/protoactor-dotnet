@@ -10,11 +10,11 @@ namespace Proto
 {
     public class MessageHeader : Dictionary<string, string>
     {
-        public static MessageHeader EmptyHeader => new MessageHeader();
+        public static MessageHeader Empty => new MessageHeader();
 
         public string GetOrDefault(string key, string @default = null)
         {
-            return TryGetValue(key, out string value) ? value : @default;
+            return TryGetValue(key, out var value) ? value : @default;
         }
     }
 }
