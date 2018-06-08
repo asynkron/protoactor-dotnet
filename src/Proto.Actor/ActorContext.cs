@@ -25,6 +25,7 @@ namespace Proto
         Stopped,
     }
 
+    //Angels cry over this code, but it serves a purpose, lazily init of less frequently used features
     public class ActorContextExtras
     {
         public ActorContextExtras(Receiver receiveMiddleware, Sender senderMiddleware, IContext contextDecorator)
@@ -47,38 +48,52 @@ namespace Proto
         
         public FastSet<PID> Children { get; private set; }
 
-        public FastSet<PID> EnsureChildren()
+        public FastSet<PID> EnsureChildren() => Children ?? (Children = new FastSet<PID>());
+
+        public Timer ReceiveTimeoutTimer { get; private set; }
+
+        public RestartStatistics RestartStatistics { get; private set; }
+
+        //for Stashing, there could be an object with the Stash, Unstash and UnstashAll
+        //the main concern for this would be how to make the stash survive between actor restarts
+        //if it is injected as a dependency, that would work fine
+        public Stack<object> Stash { get; private set; }
+
+        public Stack<object>  EnsureStash() => Stash ?? (Stash = new Stack<object>());
+
+        public void InitReceiveTimeoutTimer(Timer timer)
         {
-            if (Children == null)
+            ReceiveTimeoutTimer = timer;
+        }
+
+        public void KillreceiveTimeoutTimer()
+        {
+            ReceiveTimeoutTimer.Dispose();
+            ReceiveTimeoutTimer = null;
+        }
+
+        public RestartStatistics EnsureRestartStatistics()
+        {
+            if (RestartStatistics == null)
             {
-                Children = new FastSet<PID>();
+                RestartStatistics = new RestartStatistics(0, null);
             }
 
-            return Children;
+            return RestartStatistics;
         }
     }
 
     public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         public static readonly IReadOnlyCollection<PID> EmptyChildren = new List<PID>();
+        
+        private readonly ISupervisorStrategy _supervisorStrategy;
         private readonly Func<IActor> _producer;
 
         private ActorContextExtras _extras;
-        private readonly ISupervisorStrategy _supervisorStrategy;
+        
         
         private object _message;
-
-        //TODO: I would like to extract these two as optional components in the future
-        //for ReceiveTimeout we could have an object with the SetReceiveTimeout
-        //and simply let this object subscribe to actor messages so it knows when to reset the timer
-        private Timer _receiveTimeoutTimer;
-
-        private RestartStatistics _restartStatistics;
-
-        //for Stashing, there could be an object with the Stash, Unstash and UnstashAll
-        //the main concern for this would be how to make the stash survive between actor restarts
-        //if it is injected as a dependency, that would work fine
-        private Stack<object> _stash;
 
         private ContextState _state;
         private FastSet<PID> _watchers;
@@ -125,19 +140,9 @@ namespace Proto
 
         public TimeSpan ReceiveTimeout { get; private set; }
 
-        public void Stash()
-        {
-            if (_stash == null)
-            {
-                _stash = new Stack<object>();
-            }
-            _stash.Push(Message);
-        }
+        public void Stash() => EnsureExtras().EnsureStash().Push(Message);
 
-        public void Respond(object message)
-        {
-            Send(Sender, message);
-        }
+        public void Respond(object message) => Send(Sender, message);
 
         public PID Spawn(Props props)
         {
@@ -166,15 +171,9 @@ namespace Proto
             return pid;
         }
 
-        public void Watch(PID pid)
-        {
-            pid.SendSystemMessage(new Watch(Self));
-        }
+        public void Watch(PID pid) => pid.SendSystemMessage(new Watch(Self));
 
-        public void Unwatch(PID pid)
-        {
-            pid.SendSystemMessage(new Unwatch(Self));
-        }
+        public void Unwatch(PID pid) => pid.SendSystemMessage(new Unwatch(Self));
 
         public void SetReceiveTimeout(TimeSpan duration)
         {
@@ -191,9 +190,11 @@ namespace Proto
             StopReceiveTimeout();
             ReceiveTimeout = duration;
 
-            if (_receiveTimeoutTimer == null)
+            EnsureExtras();
+            if (_extras.ReceiveTimeoutTimer == null)
             {
-                _receiveTimeoutTimer = new Timer(ReceiveTimeoutCallback, null, ReceiveTimeout, ReceiveTimeout);
+                _extras.InitReceiveTimeoutTimer(new Timer(ReceiveTimeoutCallback, null, ReceiveTimeout,
+                    ReceiveTimeout));
             }
             else
             {
@@ -203,12 +204,13 @@ namespace Proto
 
         public void CancelReceiveTimeout()
         {
-            if (_receiveTimeoutTimer == null)
+            if (_extras?.ReceiveTimeoutTimer == null)
             {
                 return;
             }
             StopReceiveTimeout();
-            _receiveTimeoutTimer = null;
+            _extras.KillreceiveTimeoutTimer();
+
             ReceiveTimeout = TimeSpan.Zero;
         }
 
@@ -265,11 +267,7 @@ namespace Proto
 
         public void EscalateFailure(Exception reason, PID who)
         {
-            if (_restartStatistics == null)
-            {
-                _restartStatistics = new RestartStatistics(0, null);
-            }
-            var failure = new Failure(Self, reason, _restartStatistics);
+            var failure = new Failure(Self, reason, EnsureExtras().EnsureRestartStatistics());
             Self.SendSystemMessage(SuspendMailbox.Instance);
             if (Parent == null)
             {
@@ -541,11 +539,11 @@ namespace Proto
             Self.SendSystemMessage(ResumeMailbox.Instance);
 
             await InvokeUserMessageAsync(Started.Instance);
-            if (_stash != null)
+            if (_extras?.Stash != null)
             {
-                while (_stash.Any())
+                while (_extras.Stash.Any())
                 {
-                    var msg = _stash.Pop();
+                    var msg = _extras.Stash.Pop();
                     await InvokeUserMessageAsync(msg);
                 }
             }
@@ -559,13 +557,13 @@ namespace Proto
             }
         }
 
-        private void ResetReceiveTimeout() => _receiveTimeoutTimer?.Change(ReceiveTimeout, ReceiveTimeout);
+        private void ResetReceiveTimeout() => _extras?.ReceiveTimeoutTimer?.Change(ReceiveTimeout, ReceiveTimeout);
 
-        private void StopReceiveTimeout() => _receiveTimeoutTimer?.Change(-1, -1);
+        private void StopReceiveTimeout() => _extras?.ReceiveTimeoutTimer?.Change(-1, -1);
 
         private void ReceiveTimeoutCallback(object state)
         {
-            if (_receiveTimeoutTimer == null)
+            if (_extras?.ReceiveTimeoutTimer == null)
             {
                 return;
             }
