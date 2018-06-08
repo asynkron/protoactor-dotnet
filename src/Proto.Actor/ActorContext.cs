@@ -25,15 +25,47 @@ namespace Proto
         Stopped,
     }
 
+    public class ActorContextExtras
+    {
+        public ActorContextExtras(Receiver receiveMiddleware, Sender senderMiddleware, IContext contextDecorator)
+        {
+            ReceiveMiddleware = receiveMiddleware;
+            SenderMiddleware = senderMiddleware;
+            ContextDecorator = contextDecorator;
+        }
+
+        public ActorContextExtras()
+        {
+            ReceiveMiddleware = null;
+            SenderMiddleware = null;
+            ContextDecorator = null;
+        }
+
+        public Receiver ReceiveMiddleware { get; }
+        public Sender SenderMiddleware { get; }
+        public IContext ContextDecorator { get; }
+        
+        public FastSet<PID> Children { get; private set; }
+
+        public FastSet<PID> EnsureChildren()
+        {
+            if (Children == null)
+            {
+                Children = new FastSet<PID>();
+            }
+
+            return Children;
+        }
+    }
+
     public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         public static readonly IReadOnlyCollection<PID> EmptyChildren = new List<PID>();
         private readonly Func<IActor> _producer;
 
-        private readonly Receiver _receiveMiddleware;
-        private readonly Sender _senderMiddleware;
+        private ActorContextExtras _extras;
         private readonly ISupervisorStrategy _supervisorStrategy;
-        private FastSet<PID> _children;
+        
         private object _message;
 
         //TODO: I would like to extract these two as optional components in the future
@@ -51,12 +83,24 @@ namespace Proto
         private ContextState _state;
         private FastSet<PID> _watchers;
 
+        private ActorContextExtras EnsureExtras()
+        {
+            return _extras ?? (_extras = new ActorContextExtras());
+        }
+
         public ActorContext(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receiver receiveMiddleware, Sender senderMiddleware, PID parent)
         {
             _producer = producer;
             _supervisorStrategy = supervisorStrategy;
-            _receiveMiddleware = receiveMiddleware;
-            _senderMiddleware = senderMiddleware;
+
+            if (receiveMiddleware != null || senderMiddleware != null)
+            {
+                _extras = new ActorContextExtras(receiveMiddleware, senderMiddleware, null);
+            }
+            else
+            {
+                _extras = null;
+            }
 
             //Parents are implicitly watching the child
             //The parent is not part of the Watchers set
@@ -67,7 +111,7 @@ namespace Proto
 
         private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
 
-        public IReadOnlyCollection<PID> Children => _children?.ToList() ?? EmptyChildren;
+        public IReadOnlyCollection<PID> Children => EnsureExtras().Children?.ToList() ?? EmptyChildren;
 
         public IActor Actor { get; private set; }
         public PID Parent { get; }
@@ -115,12 +159,10 @@ namespace Proto
             }
 
             var pid = props.Spawn($"{Self.Id}/{name}", Self);
-            if (_children == null)
-            {
-                _children = new FastSet<PID>();
-            }
-            _children.Add(pid);
-
+            EnsureExtras()
+                .EnsureChildren()
+                .Add(pid);
+            
             return pid;
         }
 
@@ -192,13 +234,13 @@ namespace Proto
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => RequestAsync(target, message, new FutureProcess<T>(timeout, _receiveMiddleware));
+            => RequestAsync(target, message, new FutureProcess<T>(timeout));
 
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => RequestAsync(target, message, new FutureProcess<T>(cancellationToken, _receiveMiddleware));
+            => RequestAsync(target, message, new FutureProcess<T>(cancellationToken));
 
         public Task<T> RequestAsync<T>(PID target, object message)
-            => RequestAsync(target, message, new FutureProcess<T>(_receiveMiddleware));
+            => RequestAsync(target, message, new FutureProcess<T>());
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
@@ -344,9 +386,9 @@ namespace Proto
         private Task ProcessMessageAsync(object msg)
         {
             //slow path, there is middleware, message must be wrapped in an envelop
-            if (_receiveMiddleware != null)
+            if (_extras?.ReceiveMiddleware != null)
             {
-                return _receiveMiddleware(this, MessageEnvelope.Wrap(msg));
+                return _extras.ReceiveMiddleware(this, MessageEnvelope.Wrap(msg));
             }
             //fast path, 0 alloc invocation of actor receive
             _message = msg;
@@ -362,10 +404,10 @@ namespace Proto
 
         private void SendUserMessage(PID target, object message)
         {
-            if (_senderMiddleware != null)
+            if (_extras?.SenderMiddleware != null)
             {
                 //slow path
-                _senderMiddleware(this, target, MessageEnvelope.Wrap(message));
+                _extras.SenderMiddleware(this, target, MessageEnvelope.Wrap(message));
             }
             else
             {
@@ -421,7 +463,7 @@ namespace Proto
 
         private async Task HandleTerminatedAsync(Terminated msg)
         {
-            _children?.Remove(msg.Who);
+            _extras?.Children?.Remove(msg.Who);
             await InvokeUserMessageAsync(msg);
             if (_state == ContextState.Stopping || _state == ContextState.Restarting)
             {
@@ -452,14 +494,14 @@ namespace Proto
 
         private async Task StopAllChildren()
         {
-            _children?.Stop();
+            _extras?.Children?.Stop();
             await TryRestartOrStopAsync();
         }
 
         //intermediate stopping stage, waiting for children to stop
         private Task TryRestartOrStopAsync()
         {
-            if (_children?.Count > 0)
+            if (_extras?.Children?.Count > 0)
             {
                 return Done;
             }

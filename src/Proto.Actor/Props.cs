@@ -37,12 +37,15 @@ namespace Proto
         public IList<Func<Sender, Sender>> SenderMiddleware { get; private set; } = new List<Func<Sender, Sender>>();
         public Receiver ReceiveMiddlewareChain { get; private set; }
         public Sender SenderMiddlewareChain { get; private set; }
+        public Func<IContext, IContext> ContextDecorator { get; private set; } = DefaultContextDecorator;
 
         public Spawner Spawner
         {
             get => _spawner ?? DefaultSpawner;
             private set => _spawner = value;
         }
+
+        private static IContext DefaultContextDecorator(IContext context) => context;
 
         private static IMailbox ProduceDefaultMailbox() => UnboundedMailbox.Create();
 
@@ -71,6 +74,9 @@ namespace Proto
 
         public Props WithMailbox(Func<IMailbox> mailboxProducer) => Copy(props => props.MailboxProducer = mailboxProducer);
 
+        public Props WithContextDecorator(Func<IContext, IContext> contextDecorator) =>
+            Copy(props => props.ContextDecorator = contextDecorator);
+        
         public Props WithGuardianSupervisorStrategy(ISupervisorStrategy guardianStrategy) => Copy(props => props.GuardianStrategy = guardianStrategy);
 
         public Props WithChildSupervisorStrategy(ISupervisorStrategy supervisorStrategy) => Copy(props => props.SupervisorStrategy = supervisorStrategy);
