@@ -73,20 +73,25 @@ namespace SpawnBenchmark
         private static void Main()
         {
             var context = new RootContext();
-            Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
-
-            var pid = Actor.Spawn(MyActor.Props);
-            var sw = Stopwatch.StartNew();
-            var t = context.RequestAsync<long>(pid, new Request
+            while (true)
             {
-                Num = 0,
-                Size = 1000000,
-                Div = 10
-            });
-            t.ConfigureAwait(false);
-            var res = t.Result;
-            Console.WriteLine(sw.Elapsed);
-            Console.WriteLine(res);
+                Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
+
+                var pid = Actor.Spawn(MyActor.Props);
+                var sw = Stopwatch.StartNew();
+                var t = context.RequestAsync<long>(pid, new Request
+                {
+                    Num = 0,
+                    Size = 1000000,
+                    Div = 10
+                });
+                t.ConfigureAwait(false);
+                var res = t.Result;
+                Console.WriteLine(sw.Elapsed);
+                Console.WriteLine(res);
+                pid.StopAsync().Wait();
+                Task.Delay(500).Wait();
+            }
             //   Console.ReadLine();
         }
     }
