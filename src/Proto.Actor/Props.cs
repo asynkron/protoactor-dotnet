@@ -51,10 +51,10 @@ namespace Proto
 
         private static PID DefaultSpawner (string name,Props props,PID parent)
         {
-            var ctx = new ActorContext(props.Producer, props.SupervisorStrategy, props.ReceiveMiddlewareChain, props.SenderMiddlewareChain, parent);
+            var ctx = new ActorContext(props, parent);
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
-            var process = new LocalProcess(mailbox);
+            var process = new ActorProcess(mailbox);
             var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, process);
             if (!absent)
             {

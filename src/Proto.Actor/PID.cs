@@ -33,7 +33,7 @@ namespace Proto
                 var p = _process;
                 if (p != null)
                 {
-                    if (p is LocalProcess lp && lp.IsDead)
+                    if (p is ActorProcess lp && lp.IsDead)
                     {
                         _process = null;
                     }

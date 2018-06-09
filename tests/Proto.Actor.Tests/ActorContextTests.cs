@@ -14,12 +14,13 @@ namespace Proto.Tests
         [Fact]
         public void Given_Context_ctor_should_set_some_fields()
         {
-            var producer = (Func<IActor>)(() => null);
-            var supervisorStrategyMock = new DoNothingSupervisorStrategy();
-            var middleware = new Receiver((ctx,env) => Actor.Done);
             var parent = new PID("test", "test");
-
-            var context = new ActorContext(producer, supervisorStrategyMock, middleware, null, parent);
+            var props = new Props()
+                .WithProducer(() => null)
+                .WithChildSupervisorStrategy(new DoNothingSupervisorStrategy())
+                .WithReceiveMiddleware(next => (ctx,env) => Actor.Done);
+            
+            var context = new ActorContext(props, parent);
 
             Assert.Equal(parent, context.Parent);
 
@@ -28,7 +29,7 @@ namespace Proto.Tests
             Assert.Null(context.Self);
             Assert.Null(context.Actor);
             Assert.NotNull(context.Children);
-            Assert.Same(context.Children, ActorContext.EmptyChildren);
+            Assert.NotNull(context.Children);
 
             Assert.Equal(TimeSpan.Zero, context.ReceiveTimeout);
         }

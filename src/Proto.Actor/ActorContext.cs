@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -28,38 +29,12 @@ namespace Proto
     //Angels cry over this code, but it serves a purpose, lazily init of less frequently used features
     public class ActorContextExtras
     {
-        public ActorContextExtras(Receiver receiveMiddleware, Sender senderMiddleware, IContext contextDecorator)
-        {
-            ReceiveMiddleware = receiveMiddleware;
-            SenderMiddleware = senderMiddleware;
-            ContextDecorator = contextDecorator;
-        }
 
-        public ActorContextExtras()
-        {
-            ReceiveMiddleware = null;
-            SenderMiddleware = null;
-            ContextDecorator = null;
-        }
-
-        public Receiver ReceiveMiddleware { get; }
-        public Sender SenderMiddleware { get; }
-        public IContext ContextDecorator { get; }
-        
-        public FastSet<PID> Children { get; private set; }
-
-        public FastSet<PID> EnsureChildren() => Children ?? (Children = new FastSet<PID>());
-
+        public ImmutableHashSet<PID> Children { get; private set; } = ActorContext.EmptyChildren;
         public Timer ReceiveTimeoutTimer { get; private set; }
-
-        public RestartStatistics RestartStatistics { get; private set; }
-
-        //for Stashing, there could be an object with the Stash, Unstash and UnstashAll
-        //the main concern for this would be how to make the stash survive between actor restarts
-        //if it is injected as a dependency, that would work fine
-        public Stack<object> Stash { get; private set; }
-
-        public Stack<object>  EnsureStash() => Stash ?? (Stash = new Stack<object>());
+        public RestartStatistics RestartStatistics { get; } = new RestartStatistics(0, null);
+        public Stack<object> Stash { get; } = new Stack<object>();
+        public FastSet<PID> Watchers { get; } = new FastSet<PID>();
 
         public void InitReceiveTimeoutTimer(Timer timer)
         {
@@ -72,43 +47,26 @@ namespace Proto
             ReceiveTimeoutTimer = null;
         }
 
-        public RestartStatistics EnsureRestartStatistics() => RestartStatistics ?? (RestartStatistics = new RestartStatistics(0, null));
+        public void AddChild(PID pid) => Children = Children.Add(pid);
 
-        public FastSet<PID> Watchers { get; private set; }
-        
-        public FastSet<PID> EnsureWatchers() => Watchers ?? (Watchers = new  FastSet<PID>());
-
+        public void RemoveChild(PID msgWho) => Children = Children.Remove(msgWho);
     }
 
     public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
-        public static readonly IReadOnlyCollection<PID> EmptyChildren = new List<PID>();
-        
-        private readonly ISupervisorStrategy _supervisorStrategy;
-        private readonly Func<IActor> _producer;
+        public static readonly ImmutableHashSet<PID> EmptyChildren = ImmutableHashSet<PID>.Empty;
+        private readonly Props _props;
+
         private ActorContextExtras _extras;
         private object _messageOrEnvelope;
         private ContextState _state;
-        
 
-        private ActorContextExtras EnsureExtras()
+
+        private ActorContextExtras EnsureExtras() => _extras ?? (_extras = new ActorContextExtras());
+
+        public ActorContext(Props props, PID parent)
         {
-            return _extras ?? (_extras = new ActorContextExtras());
-        }
-
-        public ActorContext(Func<IActor> producer, ISupervisorStrategy supervisorStrategy, Receiver receiveMiddleware, Sender senderMiddleware, PID parent)
-        {
-            _producer = producer;
-            _supervisorStrategy = supervisorStrategy;
-
-            if (receiveMiddleware != null || senderMiddleware != null)
-            {
-                _extras = new ActorContextExtras(receiveMiddleware, senderMiddleware, null);
-            }
-            else
-            {
-                _extras = null;
-            }
+            _props = props;
 
             //Parents are implicitly watching the child
             //The parent is not part of the Watchers set
@@ -119,7 +77,7 @@ namespace Proto
 
         private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
 
-        public IReadOnlyCollection<PID> Children => EnsureExtras().Children?.ToList() ?? EmptyChildren;
+        public IImmutableSet<PID> Children => _extras?.Children ?? EmptyChildren;
 
         public IActor Actor { get; private set; }
         public PID Parent { get; }
@@ -132,8 +90,12 @@ namespace Proto
         public MessageHeader Headers => MessageEnvelope.UnwrapHeader(_messageOrEnvelope);
 
         public TimeSpan ReceiveTimeout { get; private set; }
+        IReadOnlyCollection<PID> IContext.Children
+        {
+            get { return Children; }
+        }
 
-        public void Stash() => EnsureExtras().EnsureStash().Push(Message);
+        public void Stash() => EnsureExtras().Stash.Push(Message);
 
         public void Respond(object message) => Send(Sender, message);
 
@@ -157,10 +119,9 @@ namespace Proto
             }
 
             var pid = props.Spawn($"{Self.Id}/{name}", Self);
-            EnsureExtras()
-                .EnsureChildren()
-                .Add(pid);
-            
+            EnsureExtras().AddChild(pid);
+
+
             return pid;
         }
 
@@ -260,7 +221,7 @@ namespace Proto
 
         public void EscalateFailure(Exception reason, PID who)
         {
-            var failure = new Failure(Self, reason, EnsureExtras().EnsureRestartStatistics());
+            var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics);
             Self.SendSystemMessage(SuspendMailbox.Instance);
             if (Parent == null)
             {
@@ -377,9 +338,9 @@ namespace Proto
         private Task ProcessMessageAsync(object msg)
         {
             //slow path, there is middleware, message must be wrapped in an envelop
-            if (_extras?.ReceiveMiddleware != null)
+            if (_props.ReceiveMiddlewareChain != null)
             {
-                return _extras.ReceiveMiddleware(this, MessageEnvelope.Wrap(msg));
+                return _props.ReceiveMiddlewareChain(this, MessageEnvelope.Wrap(msg));
             }
             //fast path, 0 alloc invocation of actor receive
             _messageOrEnvelope = msg;
@@ -395,10 +356,10 @@ namespace Proto
 
         private void SendUserMessage(PID target, object message)
         {
-            if (_extras?.SenderMiddleware != null)
+            if (_props.SenderMiddlewareChain != null)
             {
                 //slow path
-                _extras.SenderMiddleware(this, target, MessageEnvelope.Wrap(message));
+                _props.SenderMiddlewareChain(this, target, MessageEnvelope.Wrap(message));
             }
             else
             {
@@ -410,7 +371,7 @@ namespace Proto
         private void IncarnateActor()
         {
             _state = ContextState.Alive;
-            Actor = _producer();
+            Actor = _props.Producer();
         }
 
         private async Task HandleRestartAsync()
@@ -431,7 +392,9 @@ namespace Proto
             }
             else
             {
-                EnsureExtras().EnsureWatchers().Add(w.Watcher);
+                EnsureExtras()
+                    .Watchers
+                    .Add(w.Watcher);
             }
         }
 
@@ -443,14 +406,14 @@ namespace Proto
                     supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
                     break;
                 default:
-                    _supervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
+                    _props.SupervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
                     break;
             }
         }
 
         private async Task HandleTerminatedAsync(Terminated msg)
         {
-            _extras?.Children?.Remove(msg.Who);
+            _extras?.RemoveChild(msg.Who);
             await InvokeUserMessageAsync(msg);
             if (_state == ContextState.Stopping || _state == ContextState.Restarting)
             {
@@ -462,7 +425,7 @@ namespace Proto
         {
             Supervision.DefaultStrategy.HandleFailure(this, failure.Who, failure.RestartStatistics, failure.Reason);
         }
-        
+
         //Initiate stopping, not final
         private async Task InitiateStopAsync()
         {
@@ -557,7 +520,7 @@ namespace Proto
                 return;
             }
             CancelReceiveTimeout();
-            Send(Self,Proto.ReceiveTimeout.Instance);
+            Send(Self, Proto.ReceiveTimeout.Instance);
         }
     }
 }

@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Proto
 {
@@ -27,7 +28,7 @@ namespace Proto
     {
         public PID Pid { get; }
 
-        public IReadOnlyCollection<PID> Children => throw new MemberAccessException("Guardian does not hold its children PIDs.");
+        public IImmutableSet<PID> Children => throw new MemberAccessException("Guardian does not hold its children PIDs.");
 
         private readonly ISupervisorStrategy _supervisorStrategy;
 

@@ -19,9 +19,9 @@ namespace Proto.Router.Routers
             {
                 var routerState = CreateRouterState();
                 var wg = new AutoResetEvent(false);
+                var p = props.WithProducer(() => new RouterActor(this, routerState, wg));
    
-
-                var ctx = new ActorContext(()=> new RouterActor(this,routerState,wg), props.SupervisorStrategy, props.ReceiveMiddlewareChain, props.SenderMiddlewareChain, parent);
+                var ctx = new ActorContext(p, parent);
                 var mailbox = props.MailboxProducer();
                 var dispatcher = props.Dispatcher;
                 var process = new RouterProcess(routerState, mailbox);

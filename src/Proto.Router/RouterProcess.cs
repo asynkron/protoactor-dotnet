@@ -10,7 +10,7 @@ using Proto.Mailbox;
 
 namespace Proto.Router
 {
-    public class RouterProcess : LocalProcess
+    public class RouterProcess : ActorProcess
     {
         private readonly RouterState _state;
 
