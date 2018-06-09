@@ -109,7 +109,8 @@ namespace Proto
                 SenderMiddleware = SenderMiddleware,
                 SenderMiddlewareChain = SenderMiddlewareChain,
                 Spawner = Spawner,
-                SupervisorStrategy = SupervisorStrategy
+                SupervisorStrategy = SupervisorStrategy,
+                ContextDecorator =  ContextDecorator,
             };
             mutator(props);
             return props;

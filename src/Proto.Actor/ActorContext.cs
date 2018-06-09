@@ -16,7 +16,7 @@ using static Proto.Actor;
 
 namespace Proto
 {
-    internal enum ContextState
+    internal enum ContextState : byte
     {
         None,
         Alive,
@@ -72,15 +72,12 @@ namespace Proto
             ReceiveTimeoutTimer = null;
         }
 
-        public RestartStatistics EnsureRestartStatistics()
-        {
-            if (RestartStatistics == null)
-            {
-                RestartStatistics = new RestartStatistics(0, null);
-            }
+        public RestartStatistics EnsureRestartStatistics() => RestartStatistics ?? (RestartStatistics = new RestartStatistics(0, null));
 
-            return RestartStatistics;
-        }
+        public FastSet<PID> Watchers { get; private set; }
+        
+        public FastSet<PID> EnsureWatchers() => Watchers ?? (Watchers = new  FastSet<PID>());
+
     }
 
     public class ActorContext : IMessageInvoker, IContext, ISupervisor
@@ -89,14 +86,10 @@ namespace Proto
         
         private readonly ISupervisorStrategy _supervisorStrategy;
         private readonly Func<IActor> _producer;
-
         private ActorContextExtras _extras;
-        
-        
-        private object _message;
-
+        private object _messageOrEnvelope;
         private ContextState _state;
-        private FastSet<PID> _watchers;
+        
 
         private ActorContextExtras EnsureExtras()
         {
@@ -132,11 +125,11 @@ namespace Proto
         public PID Parent { get; }
         public PID Self { get; set; }
 
-        public object Message => MessageEnvelope.UnwrapMessage(_message);
+        public object Message => MessageEnvelope.UnwrapMessage(_messageOrEnvelope);
 
-        public PID Sender => MessageEnvelope.UnwrapSender(_message);
+        public PID Sender => MessageEnvelope.UnwrapSender(_messageOrEnvelope);
 
-        public MessageHeader Headers => MessageEnvelope.UnwrapHeader(_message);
+        public MessageHeader Headers => MessageEnvelope.UnwrapHeader(_messageOrEnvelope);
 
         public TimeSpan ReceiveTimeout { get; private set; }
 
@@ -220,13 +213,13 @@ namespace Proto
 
         public void Forward(PID target)
         {
-            if (_message is SystemMessage)
+            if (_messageOrEnvelope is SystemMessage)
             {
                 //SystemMessage cannot be forwarded
-                Logger.LogWarning("SystemMessage cannot be forwarded. {0}", _message);
+                Logger.LogWarning("SystemMessage cannot be forwarded. {0}", _messageOrEnvelope);
                 return;
             }
-            SendUserMessage(target, _message);
+            SendUserMessage(target, _messageOrEnvelope);
         }
 
         public void Request(PID target, object message)
@@ -246,7 +239,7 @@ namespace Proto
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
-            var msg = _message;
+            var msg = _messageOrEnvelope;
             var cont = new Continuation(() => action(target), msg);
 
             target.ContinueWith(t => { Self.SendSystemMessage(cont); });
@@ -254,7 +247,7 @@ namespace Proto
 
         public void ReenterAfter(Task target, Action action)
         {
-            var msg = _message;
+            var msg = _messageOrEnvelope;
             var cont = new Continuation(() =>
             {
                 action();
@@ -313,7 +306,7 @@ namespace Proto
                     case ResumeMailbox _:
                         return Done;
                     case Continuation cont:
-                        _message = cont.Message;
+                        _messageOrEnvelope = cont.Message;
                         return cont.Action();
                     default:
                         Logger.LogWarning("Unknown system message {0}", msg);
@@ -366,7 +359,7 @@ namespace Proto
 
         Task IReceiverContext.Receive(MessageEnvelope envelope)
         {
-            _message = envelope;
+            _messageOrEnvelope = envelope;
             return DefaultReceive();
         }
 
@@ -389,7 +382,7 @@ namespace Proto
                 return _extras.ReceiveMiddleware(this, MessageEnvelope.Wrap(msg));
             }
             //fast path, 0 alloc invocation of actor receive
-            _message = msg;
+            _messageOrEnvelope = msg;
             return DefaultReceive();
         }
 
@@ -428,7 +421,7 @@ namespace Proto
             await StopAllChildren();
         }
 
-        private void HandleUnwatch(Unwatch uw) => _watchers?.Remove(uw.Watcher);
+        private void HandleUnwatch(Unwatch uw) => _extras?.Watchers?.Remove(uw.Watcher);
 
         private void HandleWatch(Watch w)
         {
@@ -438,11 +431,7 @@ namespace Proto
             }
             else
             {
-                if (_watchers == null)
-                {
-                    _watchers = new FastSet<PID>();
-                }
-                _watchers.Add(w.Watcher);
+                EnsureExtras().EnsureWatchers().Add(w.Watcher);
             }
         }
 
@@ -524,7 +513,7 @@ namespace Proto
             DisposeActorIfDisposable();
 
             //Notify watchers
-            _watchers?.SendSystemNessage(Terminated.From(Self));
+            _extras?.Watchers?.SendSystemNessage(Terminated.From(Self));
 
             //Notify parent
             Parent?.SendSystemMessage(Terminated.From(Self));
