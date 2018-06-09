@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.5;netstandard2.0;net461</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     <Version>0.1.2</Version>
     <Authors>Proto.Actor Team</Authors>
     <Company>Proto.Actor Team</Company>

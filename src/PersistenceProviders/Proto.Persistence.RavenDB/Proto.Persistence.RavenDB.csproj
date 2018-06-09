@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.5;net452</TargetFrameworks>
+    <TargetFrameworks>net452</TargetFrameworks>
     <Version>0.1.6</Version>
     <Authors>Proto.Actor Team</Authors>
     <Company>Proto.Actor Team</Company>
@@ -23,7 +23,7 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net452' ">
     <PackageReference Include="RavenDB.Client" Version="3.5.5" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.5' Or '$(TargetFramework)' == 'netstandard2.0' ">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' ">
     <PackageReference Include="RavenDB.Client" Version="4.0.0" />
   </ItemGroup>
   <ItemGroup>
