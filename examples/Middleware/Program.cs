@@ -1,10 +1,11 @@
 // -----------------------------------------------------------------------
 //   <copyright file="Program.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Proto;
 
@@ -13,76 +14,94 @@ class Program
     static void Main(string[] args)
     {
         var actor = Actor.FromFunc(
-            c =>
+                c =>
+                {
+                    if (c.Message is string)
+                    {
+                        Console.WriteLine("   3 Enter Actor");
+                        Console.WriteLine($"   3 TraceID = {c.Headers.GetOrDefault("TraceID")}");
+                        Console.WriteLine($"   3 SpanID = {c.Headers.GetOrDefault("SpanID")}");
+                        Console.WriteLine($"   3 ParentSpanID = {c.Headers.GetOrDefault("ParentSpanID")}");
+                        Console.WriteLine($"   3 actor got {c.Message.GetType()}:{c.Message}");
+                        c.Respond("World !");
+                        Console.WriteLine("   3 Exit Actor");
+                    }
+
+                    return Actor.Done;
+                })
+            .WithReceiveMiddleware(next => async (context, envelope) =>
             {
-                if (c.Headers.ContainsKey("TraceID"))
+                if (envelope.Message is string)
                 {
-                    Console.WriteLine($"TraceID = {c.Headers.GetOrDefault("TraceID")}");
-                    Console.WriteLine($"SpanID = {c.Headers.GetOrDefault("SpanID")}");
-                    Console.WriteLine($"ParentSpanID = {c.Headers.GetOrDefault("ParentSpanID")}");
+                    var newEnvelope = envelope
+                        .WithHeader("TraceID", envelope.Header.GetOrDefault("TraceID"))
+                        .WithHeader("SpanID", Guid.NewGuid().ToString())
+                        .WithHeader("ParentSpanID", envelope.Header.GetOrDefault("SpanID"));
+
+                    Console.WriteLine("  2 Enter Actor ReceiverMiddleware");
+                    Console.WriteLine("  2 TraceID: " + newEnvelope.Header.GetOrDefault("TraceID"));
+                    Console.WriteLine("  2 SpanID: " + newEnvelope.Header.GetOrDefault("SpanID"));
+                    Console.WriteLine("  2 ParentSpanID: " + newEnvelope.Header.GetOrDefault("ParentSpanID"));
+                    await next(context, newEnvelope);
+                    Console.WriteLine("  2 Exit Actor ReceiverMiddleware");
                 }
-                Console.WriteLine($"actor got {c.Message.GetType()}:{c.Message}");
+                else
+                {  
+                    await next(context, envelope);   
+                }
+            }).WithSenderMiddleware(next => async (context, target, envelope) =>
+            {
+                var newEnvelope = envelope
+                    .WithHeader("TraceID", context.Headers.GetOrDefault("TraceID"))
+                    .WithHeader("SpanID", Guid.NewGuid().ToString())
+                    .WithHeader("ParentSpanID", context.Headers.GetOrDefault("SpanID"));
 
-                if (c.Sender != null) c.Respond("World !");
-
-                return Actor.Done;
-            })
-            .WithReceiveMiddleware(
-                next => async c =>
-                {
-                    Console.WriteLine($"middleware 1 enter {c.Message.GetType()}:{c.Message}");
-                    c.Message = c.Message + ".";
-                    await next(c);
-                    Console.WriteLine($"middleware 1 exit {c.Message.GetType()}:{c.Message}");
-                },
-                next => async c =>
-                {
-                    Console.WriteLine($"middleware 2 enter {c.Message.GetType()}:{c.Message}");
-                    c.Message = c.Message + "$";
-                    await next(c);
-                    Console.WriteLine($"middleware 2 exit {c.Message.GetType()}:{c.Message}");
-                });
-
+                Console.WriteLine("    4 Enter Actor SenderMiddleware");
+                Console.WriteLine("    4 TraceID: " + newEnvelope.Header.GetOrDefault("TraceID"));
+                Console.WriteLine("    4 SpanID: " + newEnvelope.Header.GetOrDefault("SpanID"));
+                Console.WriteLine("    4 ParentSpanID: " + newEnvelope.Header.GetOrDefault("ParentSpanID"));
+                await next(context, target, envelope);
+                Console.WriteLine("    4 Exit Actor SenderMiddleware");
+            });
         var pid = Actor.Spawn(actor);
 
         //Set headers, e.g. Zipkin trace headers
-        var headers = new MessageHeader
-        {
-            {"TraceID", "1000"},
-            {"SpanID", "2000"}
-        };
+        var headers = new MessageHeader(
+            new Dictionary<string, string>
+            {
+                {"TraceID", Guid.NewGuid().ToString()},
+                {"SpanID", Guid.NewGuid().ToString()}
+            }
+        );
 
-        var root = new ActorClient(
+        var root = new RootContext(
             headers,
             next => async (c, target, envelope) =>
             {
-                envelope.SetHeader("TraceID", c.Headers.GetOrDefault("TraceID"));
-                envelope.SetHeader("SpanID", c.Headers.GetOrDefault("SpanID"));
-                envelope.SetHeader("ParentSpanID", c.Headers.GetOrDefault("ParentSpanID"));
+                var newEnvelope = envelope
+                    .WithHeader("TraceID", c.Headers.GetOrDefault("TraceID"))
+                    .WithHeader("SpanID", Guid.NewGuid().ToString())
+                    .WithHeader("ParentSpanID", c.Headers.GetOrDefault("SpanID"));
 
-                Console.WriteLine($"sender middleware 1 enter {envelope.Message.GetType()}:{envelope.Message}");
-                envelope.Message = envelope.Message + "!";
-                await next(c, target, envelope);
-                Console.WriteLine($"sender middleware 1 exit {envelope.Message.GetType()}:{envelope.Message}");
-            },
-            next => async (c, target, envelope) =>
-            {
-                Console.WriteLine($"sender middleware 2 enter {envelope.Message.GetType()}:{envelope.Message}");
-                envelope.Message = envelope.Message + "?";
-                await next(c, target, envelope);
-                Console.WriteLine($"sender middleware 2 exit {envelope.Message.GetType()}:{envelope.Message}");
+                Console.WriteLine(" 1 Enter RootContext SenderMiddleware");
+                Console.WriteLine(" 1 TraceID: " + newEnvelope.Header.GetOrDefault("TraceID"));
+                Console.WriteLine(" 1 SpanID: " + newEnvelope.Header.GetOrDefault("SpanID"));
+                Console.WriteLine(" 1 ParentSpanID: " + newEnvelope.Header.GetOrDefault("ParentSpanID"));
+                await next(c, target, newEnvelope);
+                //this line might look confusing at first when reading the console output
+                //it looks like this finishes before the actor receive middleware kicks in
+                //which is exactly what it does, due to the actor mailbox.
+                //that is, the sender side of things just put the message on the mailbox and exits
+                Console.WriteLine(" 1 Exit RootContext SenderMiddleware - Send is async, this is out of order by design");
             });
-
-        //just wait for started message to be processed to make the output look less confusing
+        
         Task.Delay(500).Wait();
-        root.Tell(pid, "hello");
+        Console.WriteLine("0 TraceID: " + root.Headers.GetOrDefault("TraceID"));
+        Console.WriteLine("0 SpanID: " + root.Headers.GetOrDefault("SpanID"));
+        Console.WriteLine("0 ParentSpanID: " + root.Headers.GetOrDefault("ParentSpanID"));
 
-        Task.Delay(500).Wait();
-        Console.WriteLine(nameof(root.Tell) + " done. Press [Enter] to try " + nameof(root.RequestAsync) + ".");
-        Console.ReadLine();
-
-        var response = root.RequestAsync<string>(pid, "hello_requested").Result;
-        Console.WriteLine("Response was : " + response);
+        var res = root.RequestAsync<string>(pid, "hello").Result;
+        Console.WriteLine("Got result " + res);
 
         Console.ReadLine();
     }

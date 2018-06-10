@@ -15,11 +15,11 @@ namespace DependencyInjection
             services.AddProtoActor(props =>
             {
                 //attached console tracing
-                props.RegisterProps<DIActor>(p => p.WithReceiveMiddleware(next => async c =>
+                props.RegisterProps<DIActor>(p => p.WithReceiveMiddleware(next => async (c,env) =>
                 {
-                    Console.WriteLine($"enter {c.Actor.GetType().FullName} {c.Message.GetType().FullName}");
-                    await next(c);
-                    Console.WriteLine($"exit {c.Actor.GetType().FullName} {c.Message.GetType().FullName}");
+                    Console.WriteLine($"enter {env.Message.GetType().FullName}");
+                    await next(c, env);
+                    Console.WriteLine($"exit {env.Message.GetType().FullName}");
                 }));
             });
             services.AddTransient<IActorManager, ActorManager>();

@@ -10,6 +10,8 @@ namespace Proto.Tests
 {
     public class WatchTests
     {
+        private static readonly ISenderContext Context = new RootContext();
+        
         [Fact]
         public async Task MultipleStopsTriggerSingleTerminated()
         {
@@ -33,7 +35,7 @@ namespace Proto.Tests
                     case Started _:
                         context.Spawn(childProps);
                         break;
-                    case Terminated t:
+                    case Terminated _:
                         Interlocked.Increment(ref counter);
                         break;
                 }
@@ -53,7 +55,7 @@ namespace Proto.Tests
                                            .WithMailbox(() => new TestMailbox()));
 
             await watchee.StopAsync();
-            var terminatedMessageReceived = await watcher.RequestAsync<bool>("?", TimeSpan.FromSeconds(5));
+            var terminatedMessageReceived = await Context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
             Assert.True(terminatedMessageReceived);
         }
 
@@ -75,9 +77,9 @@ namespace Proto.Tests
                         context.Watch(_watchee);
                         break;
                     case string msg when msg == "?":
-                        context.Sender.Tell(_terminateReceived);
+                        context.Respond(_terminateReceived);
                         break;
-                    case Terminated msg:
+                    case Terminated _:
                         _terminateReceived = true;
                         break;
                 }

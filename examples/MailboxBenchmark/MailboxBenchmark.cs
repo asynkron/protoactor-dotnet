@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 //  <copyright file="MailboxBenchmark.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -26,6 +26,7 @@ public class MailboxBenchmark
 
     public static async Task RunTest(Func<IMailbox> mailbox)
     {
+        var context = new RootContext();
         const int n = 10 * 1000;
         var props = Actor.FromFunc(c =>
             {
@@ -41,8 +42,8 @@ public class MailboxBenchmark
         var pid = Actor.Spawn(props);
         for (var i = 1; i <= n; i++)
         {
-            pid.Tell(i);
+            RootContext.Empty.Send(pid, i);
         }
-        await pid.RequestAsync<string>("stop");
+        await context.RequestAsync<string>(pid, "stop");
     }
 }

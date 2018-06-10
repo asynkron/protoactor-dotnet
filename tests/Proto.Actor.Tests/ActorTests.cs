@@ -9,6 +9,7 @@ namespace Proto.Tests
 {
     public class ActorTests
     {
+        private static readonly ISenderContext Context = new RootContext();
         public static PID SpawnActorFromFunc(Receive receive) => Actor.Spawn(Actor.FromFunc(receive));
 
 
@@ -24,7 +25,7 @@ namespace Proto.Tests
                 return Actor.Done;
             });
 
-            var reply = await pid.RequestAsync<object>("hello");
+            var reply = await Context.RequestAsync<object>(pid, "hello");
 
             Assert.Equal("hey", reply);
         }
@@ -34,7 +35,10 @@ namespace Proto.Tests
         {
             PID pid = SpawnActorFromFunc(EmptyReceive);
 
-            var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(() => pid.RequestAsync<object>("", TimeSpan.FromMilliseconds(20)));
+            var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(() =>
+            {
+                return Context.RequestAsync<object>(pid, "", TimeSpan.FromMilliseconds(20));
+            });
             Assert.Equal("Request didn't receive any Response within the expected time.", timeoutEx.Message);
         }
 
@@ -50,7 +54,7 @@ namespace Proto.Tests
                 return Actor.Done;
             });
 
-            var reply = await pid.RequestAsync<object>("hello", TimeSpan.FromMilliseconds(100));
+            var reply = await Context.RequestAsync<object>(pid, "hello", TimeSpan.FromMilliseconds(100));
 
             Assert.Equal("hey", reply);
         }
@@ -70,16 +74,16 @@ namespace Proto.Tests
                     .WithMailbox(() => new TestMailbox())
                 );
 
-            pid.Tell("hello");
-
+            Context.Send(pid, "hello");
+            
             await pid.StopAsync();
 
             Assert.Equal(4, messages.Count);
             var msgs = messages.ToArray();
-            Assert.IsType(typeof(Started), msgs[0]);
-            Assert.IsType(typeof(string), msgs[1]);
-            Assert.IsType(typeof(Stopping), msgs[2]);
-            Assert.IsType(typeof(Stopped), msgs[3]);
+            Assert.IsType<Started>(msgs[0]);
+            Assert.IsType<string>(msgs[1]);
+            Assert.IsType<Stopping>(msgs[2]);
+            Assert.IsType<Stopped>(msgs[3]);
         }
 
         public static PID SpawnForwarderFromFunc(Receive forwarder) => Actor.Spawn(Actor.FromFunc(forwarder));
@@ -105,7 +109,7 @@ namespace Proto.Tests
                 return Actor.Done;
             });
 
-            var reply = await forwarder.RequestAsync<object>("hello");
+            var reply = await Context.RequestAsync<object>(forwarder, "hello");
 
             Assert.Equal("hey", reply);
         }

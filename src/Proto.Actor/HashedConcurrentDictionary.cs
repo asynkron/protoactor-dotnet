@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="HashedConcurrentDictionary.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -22,16 +22,16 @@ namespace Proto
             }
         }
 
-        static ulong CalculateHash(string read)
-        {
-            var hashedValue = 3074457345618258791ul;
-            for (var i = 0; i < read.Length; i++)
-            {
-                hashedValue += read[i];
-                hashedValue *= 3074457345618258799ul;
-            }
-            return hashedValue;
-        }
+//        static ulong CalculateHash(string read)
+//        {
+//            var hashedValue = 3074457345618258791ul;
+//            for (var i = 0; i < read.Length; i++)
+//            {
+//                hashedValue += read[i];
+//                hashedValue *= 3074457345618258799ul;
+//            }
+//            return hashedValue;
+//        }
 
         private Partition GetPartition(string key)
         {

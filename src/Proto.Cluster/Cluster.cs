@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="Cluster.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -90,9 +90,9 @@ namespace Proto.Cluster
 
             try
             {
-                var resp = ct == null || ct == CancellationToken.None
-                           ? await remotePid.RequestAsync<ActorPidResponse>(req, cfg.TimeoutTimespan)
-                           : await remotePid.RequestAsync<ActorPidResponse>(req, ct);
+                var resp = ct == CancellationToken.None
+                           ? await RootContext.Empty.RequestAsync<ActorPidResponse>(remotePid, req, cfg.TimeoutTimespan)
+                           : await RootContext.Empty.RequestAsync<ActorPidResponse>(remotePid, req, ct);
                 var status = (ResponseStatusCode) resp.StatusCode;
                 switch (status)
                 {

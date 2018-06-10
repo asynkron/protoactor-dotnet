@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="ActorClient.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//   <copyright file="RootContext.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -10,29 +10,34 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto
-{
-    public class ActorClient : ISenderContext
+{   
+    public class RootContext : ISenderContext
     {
+        public static readonly RootContext Empty = new RootContext(MessageHeader.Empty);
         private readonly Sender _senderMiddleware;
 
-        public ActorClient(MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
+        public RootContext()
+        {
+            Headers = MessageHeader.Empty;
+        }
+        public RootContext(MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
         {
             _senderMiddleware = middleware.Reverse()
                     .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner));
             Headers = messageHeader;
         }
 
-        public object Message { get => null; set { /* ActorClient is not used to receive messages */ } }
+        public object Message => null;
 
         public MessageHeader Headers { get; }
 
         private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
         {
-            target.Tell(message);
+            target.SendUserMessage(message);
             return Actor.Done;
         }
 
-        public void Tell(PID target, object message)
+        public void Send(PID target, object message)
             => SendUserMessage(target, message);
 
         public void Request(PID target, object message)
@@ -41,7 +46,7 @@ namespace Proto
         public void Request(PID target, object message, PID sender)
         {
             var envelope = new MessageEnvelope(message, sender, null);
-            Tell(target, envelope);
+            Send(target, envelope);
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
@@ -50,13 +55,14 @@ namespace Proto
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => RequestAsync(target, message, new FutureProcess<T>(cancellationToken));
 
-        public Task<T> RequestAsync<T>(PID target, object message)
+        public Task<T>    RequestAsync<T>(PID target, object message)
             => RequestAsync(target, message, new FutureProcess<T>());
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
         {
             var messageEnvelope = new MessageEnvelope(message, future.Pid, null);
             SendUserMessage(target, messageEnvelope);
+            
             return future.Task;
         }
 
@@ -78,7 +84,7 @@ namespace Proto
             else
             {
                 //Default path
-                target.Tell(message);
+                target.SendUserMessage(message);
             }
         }
     }

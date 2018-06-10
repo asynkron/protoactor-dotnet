@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="Remote.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -122,7 +122,7 @@ namespace Proto.Remote
         {
             var activator = ActivatorForAddress(address);
 
-            var res = await activator.RequestAsync<ActorPidResponse>(new ActorPidRequest
+            var res = await RootContext.Empty.RequestAsync<ActorPidResponse>(activator, new ActorPidRequest
             {
                 Kind = kind,
                 Name = name

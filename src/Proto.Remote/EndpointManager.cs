@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="EndpointManager.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -62,45 +62,46 @@ namespace Proto.Remote
             if (_connections.TryRemove(msg.Address, out var v))
             {
                 var endpoint = v.Value;
-                endpoint.Watcher.Tell(msg);
-                endpoint.Writer.Tell(msg);
+                endpoint.Watcher.Send(msg);
+                endpoint.Writer.Send(msg);
             }
         }
 
         private static void OnEndpointConnected(EndpointConnectedEvent msg)
         {
             var endpoint = EnsureConnected(msg.Address);
-            endpoint.Watcher.Tell(msg);
+            endpoint.Watcher.Send(msg);
         }
 
         public static void RemoteTerminate(RemoteTerminate msg)
         {
             var endpoint = EnsureConnected(msg.Watchee.Address);
-            endpoint.Watcher.Tell(msg);
+            endpoint.Watcher.Send(msg);
         }
 
         public static void RemoteWatch(RemoteWatch msg)
         {
             var endpoint = EnsureConnected(msg.Watchee.Address);
-            endpoint.Watcher.Tell(msg);
+            endpoint.Watcher.Send(msg);
         }
 
         public static void RemoteUnwatch(RemoteUnwatch msg)
         {
             var endpoint = EnsureConnected(msg.Watchee.Address);
-            endpoint.Watcher.Tell(msg);
+            endpoint.Watcher.Send(msg);
         }
 
         public static void RemoteDeliver(RemoteDeliver msg)
         {
             var endpoint = EnsureConnected(msg.Target.Address);
-            endpoint.Writer.Tell(msg);
+            endpoint.Writer.Send(msg);
         }
 
         private static Endpoint EnsureConnected(string address)
         {
-            var conn = _connections.GetOrAdd(address, v => 
-                new Lazy<Endpoint>(() => _endpointSupervisor.RequestAsync<Endpoint>(v).Result)
+            var conn = _connections.GetOrAdd(address, v =>
+                new Lazy<Endpoint>(() =>
+                    RootContext.Empty.RequestAsync<Endpoint>(_endpointSupervisor, v).Result)
             );
             return conn.Value;
         }

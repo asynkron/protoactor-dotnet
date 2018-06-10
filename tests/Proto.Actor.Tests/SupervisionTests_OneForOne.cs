@@ -11,6 +11,7 @@ namespace Proto.Tests
 {
     public class SupervisionTests_OneForOne
     {
+        private static readonly ISenderContext Context = new RootContext();
         private static readonly Exception Exception = new Exception("boo hoo");
         class ParentActor : IActor
         {
@@ -25,10 +26,15 @@ namespace Proto.Tests
 
             public Task ReceiveAsync(IContext context)
             {
-                if (context.Message is Started)
-                    Child = context.Spawn(_childProps);
-                if (context.Message is string)
-                    Child.Tell(context.Message);
+                switch (context.Message)
+                {
+                    case Started _:
+                        Child = context.Spawn(_childProps);
+                        break;
+                    case string _:
+                        context.Forward(Child);
+                        break;
+                }
                 return Actor.Done;
             }
         }
@@ -72,7 +78,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            Context.Send(parent, "hello");
 
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(ResumeMailbox.Instance, childMailboxStats.Posted);
@@ -90,7 +96,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            Context.Send(parent, "hello");
 
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(Stop.Instance, childMailboxStats.Posted);
@@ -108,7 +114,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            Context.Send(parent, "hello");
 
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(childMailboxStats.Posted, msg => msg is Restart);
@@ -126,16 +132,16 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("1st restart");
-            parent.Tell("2nd restart");
-            parent.Tell("3rd restart");
+            Context.Send(parent, "1st restart");
+            Context.Send(parent, "2nd restart");
+            Context.Send(parent, "3rd restart");
             
             // wait more than the time period 
             Thread.Sleep(500);
             Assert.DoesNotContain(Stop.Instance, childMailboxStats.Posted);
             Assert.DoesNotContain(Stop.Instance, childMailboxStats.Received);
             
-            parent.Tell("4th restart");
+            Context.Send(parent, "4th restart");
             
             childMailboxStats.Reset.Wait(500); 
             Assert.DoesNotContain(Stop.Instance, childMailboxStats.Posted);
@@ -153,10 +159,11 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("1st restart");
-            parent.Tell("2nd restart");
-            parent.Tell("3rd restart");
-            parent.Tell("4th restart");
+            Context.Send(parent, "1st restart");
+            Context.Send(parent, "2nd restart");
+            Context.Send(parent, "3rd restart");
+            Context.Send(parent, "4th restart");
+            
             
             childMailboxStats.Reset.Wait(1000); 
             Assert.Contains(Stop.Instance, childMailboxStats.Posted);
@@ -174,8 +181,8 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
-
+            Context.Send(parent, "hello");
+            
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(childMailboxStats.Posted, msg => (msg is Restart r) && r.Reason == Exception);
             Assert.Contains(childMailboxStats.Received, msg => (msg is Restart r) && r.Reason == Exception);
@@ -192,8 +199,9 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
-            parent.Tell("hello");
+            Context.Send(parent, "hello");
+            Context.Send(parent, "hello");
+            
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(Stop.Instance, childMailboxStats.Posted);
             Assert.Contains(Stop.Instance, childMailboxStats.Received);
@@ -210,7 +218,8 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            Context.Send(parent, "hello");
+            
             parentMailboxStats.Reset.Wait(1000);
             // Default directive allows 10 restarts so we expect 11 Failure messages before the child is stopped
             Assert.Equal(11, parentMailboxStats.Received.OfType<Failure>().Count());
@@ -240,7 +249,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            Context.Send(parent, "hello");
 
             parentMailboxStats.Reset.Wait(1000);
             var failure = parentMailboxStats.Received.OfType<Failure>().Single();

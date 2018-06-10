@@ -18,6 +18,7 @@ class Program
 {
     static void Main(string[] args)
     {
+        var context = new RootContext();
         Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
         const int messageCount = 1000000;
         const int batchSize = 100;
@@ -55,7 +56,7 @@ class Program
                 var client = clients[i];
                 var echo = echos[i];
 
-                client.Tell(new Start(echo));
+                context.Send(client, new Start(echo));
             }
             Task.WaitAll(tasks);
 
@@ -97,7 +98,7 @@ class Program
             switch (context.Message)
             {
                 case Msg msg:
-                    msg.Sender.Tell(msg);
+                    context.Send(msg.Sender, msg);
                     break;
             }
             return Done;
@@ -154,7 +155,7 @@ class Program
             
             for (var i = 0; i < _batchSize; i++)
             {
-                sender.Tell(m);
+                context.Send(sender, m);
             }
 
             _messageCount -= _batchSize;

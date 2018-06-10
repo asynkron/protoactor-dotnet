@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Program.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -16,6 +16,7 @@ class Program
 {
     static void Main(string[] args)
     {
+        var context = new RootContext();
         Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
         Remote.Start("127.0.0.1", 12001);
 
@@ -26,14 +27,14 @@ class Program
 
         var pid = Actor.Spawn(props);
         var remote = new PID("127.0.0.1:12000", "remote");
-        remote.RequestAsync<Start>(new StartRemote {Sender = pid}).Wait();
+        context.RequestAsync<Start>(remote, new StartRemote {Sender = pid}).Wait();
 
         var start = DateTime.Now;
         Console.WriteLine("Starting to send");
         var msg = new Ping();
         for (var i = 0; i < messageCount; i++)
         {
-            remote.Tell(msg);
+            context.Send(remote, msg);
         }
         wg.WaitOne();
         var elapsed = DateTime.Now - start;

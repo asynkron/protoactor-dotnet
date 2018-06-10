@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 //   <copyright file="RouterActor.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -61,14 +61,14 @@ namespace Proto.Router
             {
                 foreach (var routee in _routerState.GetRoutees())
                 {
-                    routee.Request(broadcastMessage.Message, context.Sender);
+                    context.Request(routee, broadcastMessage.Message);
                 }
                 return Actor.Done;
             }
             if (context.Message is RouterGetRoutees)
             {
                 var r = _routerState.GetRoutees().ToList();
-                context.Sender.Tell(new Routees(r));
+                context.Respond(new Routees(r));
             }
             return Actor.Done;
         }

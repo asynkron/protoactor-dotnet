@@ -9,6 +9,7 @@ namespace Proto.Tests
 {
     public class SupervisionTests_AllForOne
     {
+        private static readonly ISenderContext Context = new RootContext();
         private static readonly Exception Exception = new Exception("boo hoo");
         class ParentActor : IActor
         {
@@ -35,7 +36,7 @@ namespace Proto.Tests
                 if (context.Message is string)
                 {
                     // only tell one child
-                    Child1.Tell(context.Message);
+                    context.Forward(Child1);
                 }
                     
                 return Actor.Done;
@@ -69,7 +70,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            Context.Send(parent, "hello");
 
             child1MailboxStats.Reset.Wait(1000);
             Assert.Contains(ResumeMailbox.Instance, child1MailboxStats.Posted);
@@ -92,7 +93,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            Context.Send(parent, "hello");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);
@@ -116,7 +117,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            Context.Send(parent, "hello");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);
@@ -140,7 +141,7 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy);
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            Context.Send(parent, "hello");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);
@@ -161,7 +162,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
             var parent = Actor.Spawn(parentProps);
 
-            parent.Tell("hello");
+            Context.Send(parent, "hello");
 
             parentMailboxStats.Reset.Wait(1000);
             var failure = parentMailboxStats.Received.OfType<Failure>().Single();

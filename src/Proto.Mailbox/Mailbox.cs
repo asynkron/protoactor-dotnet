@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Mailbox.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -26,18 +26,12 @@ namespace Proto.Mailbox
 
     public static class BoundedMailbox
     {
-        public static IMailbox Create(int size, params IMailboxStatistics[] stats)
-        {
-            return new DefaultMailbox(new UnboundedMailboxQueue(), new BoundedMailboxQueue(size), stats);
-        }
+        public static IMailbox Create(int size, params IMailboxStatistics[] stats) => new DefaultMailbox(new UnboundedMailboxQueue(), new BoundedMailboxQueue(size), stats);
     }
 
     public static class UnboundedMailbox
     {
-        public static IMailbox Create(params IMailboxStatistics[] stats)
-        {
-            return new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue(), stats);
-        }
+        public static IMailbox Create(params IMailboxStatistics[] stats) => new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue(), stats);
     }
 
     internal class DefaultMailbox : IMailbox

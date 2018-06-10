@@ -1,11 +1,12 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="Supervision.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -22,7 +23,7 @@ namespace Proto
 
     public interface ISupervisor
     {
-        IReadOnlyCollection<PID> Children { get; }
+        IImmutableSet<PID> Children { get; }
         void EscalateFailure(Exception reason, PID who);
         void RestartChildren(Exception reason, params PID[] pids);
         void StopChildren(params PID[] pids);

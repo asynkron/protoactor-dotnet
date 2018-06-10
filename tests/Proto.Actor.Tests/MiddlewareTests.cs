@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="MiddlewareTests.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -12,6 +12,7 @@ namespace Proto.Tests
 {
     public class MiddlewareTests
     {
+        private static readonly ISenderContext Context = new RootContext();
         [Fact]
         public void Given_ReceiveMiddleware_Should_Call_Middleware_In_Order_Then_Actor_Receive()
         {
@@ -24,22 +25,22 @@ namespace Proto.Tests
                     return Actor.Done;
                 })
                 .WithReceiveMiddleware(
-                    next => async c =>
+                    next => async (c,env) =>
                     {
-                        if (c.Message is string)
+                        if (env.Message is string)
                             logs.Add("middleware 1");
-                        await next(c);
+                        await next(c, env);
                     },
-                    next => async c =>
+                    next => async (c, env) =>
                     {
-                        if (c.Message is string)
+                        if (env.Message is string)
                             logs.Add("middleware 2");
-                        await next(c);
+                        await next(c, env);
                     })
                 .WithMailbox(() => testMailbox);
             var pid = Actor.Spawn(props);
 
-            pid.Tell("");
+            Context.Send(pid,"");
 
             Assert.Equal(3, logs.Count);
             Assert.Equal("middleware 1", logs[0]);
@@ -55,7 +56,7 @@ namespace Proto.Tests
             var props = Actor.FromFunc(c =>
                 {
                     if (c.Message is string)
-                        c.Tell(pid1, "hey");
+                        c.Send(pid1, "hey");
                     return Actor.Done;
                 })
                 .WithSenderMiddleware(
@@ -74,7 +75,7 @@ namespace Proto.Tests
                 .WithMailbox(() => new TestMailbox());
             var pid2 = Actor.Spawn(props);
 
-            pid2.Tell("");
+            Context.Send(pid2, "");
 
             Assert.Equal(2, logs.Count);
             Assert.Equal("middleware 1", logs[0]);

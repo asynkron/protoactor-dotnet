@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="Process.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -21,11 +21,11 @@ namespace Proto
         protected internal abstract void SendSystemMessage(PID pid, object message);
     }
 
-    public class LocalProcess : Process
+    public class ActorProcess : Process
     {
         private long _isDead;
 
-        public LocalProcess(IMailbox mailbox)
+        public ActorProcess(IMailbox mailbox)
         {
             Mailbox = mailbox;
         }
