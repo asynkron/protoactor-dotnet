@@ -9,7 +9,7 @@ namespace Proto.Router.Tests
     public class RoundRobinGroupTests
     {
         private static readonly RootContext Context = new RootContext();
-        private static readonly Props MyActorProps = Actor.FromProducer(() => new MyTestActor())
+        private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor())
                                                           .WithMailbox(() => new TestMailbox());
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 

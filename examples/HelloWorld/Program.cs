@@ -13,7 +13,7 @@ class Program
     static void Main(string[] args)
     {
         var context = new RootContext();
-        var props = Actor.FromProducer(() => new HelloActor());
+        var props = Props.FromProducer(() => new HelloActor());
         var pid = context.Spawn(props);
         context.Send(pid, new Hello("ProtoActor"));
         Console.ReadLine();

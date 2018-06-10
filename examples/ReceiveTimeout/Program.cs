@@ -14,7 +14,7 @@ class Program
     {
         var rootContext = new RootContext();
         var c = 0;
-        var props = Actor.FromFunc(context =>
+        var props = Props.FromFunc(context =>
         {
             switch (context.Message)
             {

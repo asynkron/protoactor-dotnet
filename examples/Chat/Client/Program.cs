@@ -12,7 +12,7 @@ class Program
         var server = new PID("127.0.0.1:8000", "chatserver");
         var context = new RootContext();
 
-        var props = Actor.FromFunc(ctx =>
+        var props = Props.FromFunc(ctx =>
         {
             switch (ctx.Message)
             {

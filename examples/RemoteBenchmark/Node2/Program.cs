@@ -42,7 +42,7 @@ namespace Node2
             var context = new RootContext();
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Remote.Start("127.0.0.1", 12000);
-            context.SpawnNamed(Actor.FromProducer(() => new EchoActor()), "remote");
+            context.SpawnNamed(Props.FromProducer(() => new EchoActor()), "remote");
             Console.ReadLine();
         }
     }

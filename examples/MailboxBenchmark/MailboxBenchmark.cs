@@ -28,7 +28,7 @@ public class MailboxBenchmark
     {
         var context = new RootContext();
         const int n = 10 * 1000;
-        var props = Actor.FromFunc(c =>
+        var props = Props.FromFunc(c =>
             {
                 switch (c.Message)
                 {

@@ -212,7 +212,7 @@ namespace Proto.Persistence.Tests
             var actorId = Guid.NewGuid().ToString();
             var eventStore = new InMemoryProvider();
             var snapshotStore = new InMemoryProvider();
-            var props = Actor.FromProducer(() => new ExamplePersistentActor(eventStore, snapshotStore, actorId))
+            var props = Props.FromProducer(() => new ExamplePersistentActor(eventStore, snapshotStore, actorId))
                 .WithMailbox(() => new TestMailbox());
             var pid = Context.Spawn(props);
             
@@ -229,7 +229,7 @@ namespace Proto.Persistence.Tests
         {
             var actorId = Guid.NewGuid().ToString();
             var inMemoryProvider = new InMemoryProvider();
-            var props = Actor.FromProducer(() => new ExamplePersistentActor(inMemoryProvider, inMemoryProvider, actorId))
+            var props = Props.FromProducer(() => new ExamplePersistentActor(inMemoryProvider, inMemoryProvider, actorId))
                 .WithMailbox(() => new TestMailbox());
             var pid = Context.Spawn(props);
             return (pid, props, actorId, inMemoryProvider);

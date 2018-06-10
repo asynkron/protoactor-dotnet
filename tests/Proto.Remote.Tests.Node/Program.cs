@@ -26,7 +26,7 @@ namespace Proto.Remote.Tests.Node
 
                 Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
                 Remote.Start(host, port);
-                var props = Actor.FromProducer(() => new EchoActor(host, port));
+                var props = Props.FromProducer(() => new EchoActor(host, port));
                 Remote.RegisterKnownKind("EchoActor", props);
                 context.SpawnNamed(props, "EchoActorInstance");
                 Console.ReadLine();

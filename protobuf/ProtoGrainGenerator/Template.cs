@@ -27,7 +27,7 @@ namespace {{CsNamespace}}
         public static void {{Name}}Factory(Func<I{{Name}}> factory) 
         {
             _{{Name}}Factory = factory;
-            Remote.RegisterKnownKind(""{{Name}}"", Actor.FromProducer(() => new {{Name}}Actor()));
+            Remote.RegisterKnownKind(""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor()));
         } 
 
         public static {{Name}}Client {{Name}}(string id) => new {{Name}}Client(id);

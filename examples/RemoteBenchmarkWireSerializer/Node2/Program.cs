@@ -45,7 +45,7 @@ namespace Node2
             var wire = new WireSerializer(new[] { typeof(Ping), typeof(Pong), typeof(StartRemote), typeof(Start) });
             Serialization.RegisterSerializer(wire, true);
             Remote.Start("127.0.0.1", 12000);
-            context.SpawnNamed(Actor.FromProducer(() => new EchoActor()), "remote");
+            context.SpawnNamed(Props.FromProducer(() => new EchoActor()), "remote");
             Console.ReadLine();
         }
     }

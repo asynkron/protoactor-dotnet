@@ -117,6 +117,8 @@ namespace Proto
         }
 
         internal PID Spawn(string name, PID parent) => Spawner(name, this, parent);
+        public static Props FromProducer(Func<IActor> producer) => new Props().WithProducer(producer);
+        public static Props FromFunc(Receive receive) => FromProducer(() => new EmptyActor(receive));
     }
 
     public delegate PID Spawner(string id, Props props, PID parent);

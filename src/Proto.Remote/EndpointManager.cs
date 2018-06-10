@@ -39,7 +39,7 @@ namespace Proto.Remote
         {
             Logger.LogDebug("Started EndpointManager");
 
-            var props = Actor.FromProducer(() => new EndpointSupervisor())
+            var props = Props.FromProducer(() => new EndpointSupervisor())
                              .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
                              .WithDispatcher(Mailbox.Dispatchers.SynchronousDispatcher);
             _endpointSupervisor = RootContext.Empty.SpawnNamed(props, "EndpointSupervisor");
@@ -127,7 +127,7 @@ namespace Proto.Remote
 
         private static PID SpawnWatcher(string address, IContext context)
         {
-            var watcherProps = Actor.FromProducer(() => new EndpointWatcher(address));
+            var watcherProps = Props.FromProducer(() => new EndpointWatcher(address));
             var watcher = context.Spawn(watcherProps);
             return watcher;
         }
@@ -135,7 +135,7 @@ namespace Proto.Remote
         private PID SpawnWriter(string address, IContext context)
         {
             var writerProps =
-                Actor.FromProducer(() => new EndpointWriter(address, Remote.RemoteConfig.ChannelOptions, Remote.RemoteConfig.CallOptions, Remote.RemoteConfig.ChannelCredentials))
+                Props.FromProducer(() => new EndpointWriter(address, Remote.RemoteConfig.ChannelOptions, Remote.RemoteConfig.CallOptions, Remote.RemoteConfig.ChannelCredentials))
                      .WithMailbox(() => new EndpointWriterMailbox(Remote.RemoteConfig.EndpointWriterBatchSize));
             var writer = context.Spawn(writerProps);
             return writer;

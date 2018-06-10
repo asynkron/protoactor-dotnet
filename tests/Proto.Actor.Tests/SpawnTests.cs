@@ -18,7 +18,7 @@ namespace Proto.Tests
         public void Given_PropsWithSpawner_SpawnShouldReturnPidCreatedBySpawner()
         {
             var spawnedPid = new PID("test", "test");
-            var props = Actor.FromFunc(EmptyReceive)
+            var props = Props.FromFunc(EmptyReceive)
                 .WithSpawner((id, p, parent) => spawnedPid);
 
             var pid = Context.Spawn(props);
@@ -29,7 +29,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_Existing_Name_SpawnNamedShouldThrow()
         {
-            var props = Actor.FromFunc(EmptyReceive);
+            var props = Props.FromFunc(EmptyReceive);
 
             var uniqueName = Guid.NewGuid().ToString();
             Context.SpawnNamed(props,uniqueName);
@@ -43,7 +43,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_Existing_Name_SpawnPrefixShouldReturnPID()
         {
-            var props = Actor.FromFunc(EmptyReceive);
+            var props = Props.FromFunc(EmptyReceive);
 
             Context.SpawnNamed(props,"existing");
             var pid = Context.SpawnPrefix(props, "existing");

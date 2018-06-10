@@ -23,7 +23,7 @@ namespace SpawnBenchmark
     internal class MyActor : IActor
     {
         private static MyActor ProduceActor() => new MyActor();
-        public static Props Props = Actor.FromProducer(ProduceActor);
+        public static Props Props = Props.FromProducer(ProduceActor);
         private long _replies;
         private PID _replyTo;
         private long _sum;

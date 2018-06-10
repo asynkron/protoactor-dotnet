@@ -20,7 +20,7 @@ namespace Node2
         static void Main(string[] args)
         {
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-            var props = Actor.FromFunc(ctx =>
+            var props = Props.FromFunc(ctx =>
             {
                 switch (ctx.Message)
                 {

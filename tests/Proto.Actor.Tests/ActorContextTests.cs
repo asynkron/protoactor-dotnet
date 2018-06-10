@@ -9,7 +9,7 @@ namespace Proto.Tests
     public class LocalContextTests
     {
         private static readonly RootContext Context = new RootContext();
-        public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Actor.FromFunc(receive));
+        public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
 
         [Fact]
         public void Given_Context_ctor_should_set_some_fields()

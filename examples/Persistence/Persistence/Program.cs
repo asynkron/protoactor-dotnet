@@ -23,7 +23,7 @@ class Program
         var context = new RootContext();
         var provider = new SqliteProvider(new SqliteConnectionStringBuilder { DataSource = "states.db" });
 
-        var props = Actor.FromProducer(() => new MyPersistenceActor(provider));
+        var props = Props.FromProducer(() => new MyPersistenceActor(provider));
 
         var pid = context.Spawn(props);
 
@@ -127,7 +127,7 @@ class Program
 
             Console.WriteLine("MyPersistenceActor - StartLoopActor");
 
-            var props = Actor.FromProducer(() => new LoopActor());
+            var props = Props.FromProducer(() => new LoopActor());
 
             _loopActor = context.Spawn(props);
             

@@ -13,29 +13,5 @@ namespace Proto
     {
         public static readonly Task Done = Task.FromResult(0);
         public static EventStream EventStream => EventStream.Instance;
-        public static Props FromProducer(Func<IActor> producer) => new Props().WithProducer(producer);
-        public static Props FromFunc(Receive receive) => FromProducer(() => new EmptyActor(receive));
-
-        [Obsolete("Use Context.Spawn", true)]
-        public static PID Spawn(Props props)
-        {
-            var name = ProcessRegistry.Instance.NextId();
-            return SpawnNamed(props, name);
-        }
-
-        [Obsolete("Use Context.SpawnPrefix", true)]
-        public static PID SpawnPrefix(Props props, string prefix)
-        {
-            var name = prefix + ProcessRegistry.Instance.NextId();
-            return SpawnNamed(props, name);
-        }
-
-        
-        [Obsolete("Use Context.SpawnNamed", true)]
-        public static PID SpawnNamed(Props props, string name)
-        {
-            var parent = props.GuardianStrategy != null ? Guardians.GetGuardianPID(props.GuardianStrategy) : null;
-            return props.Spawn(name, parent);
-        }
     }
 }

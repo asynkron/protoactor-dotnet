@@ -99,7 +99,7 @@ namespace Proto.Remote
 
         private static void SpawnActivator()
         {
-            var props = Actor.FromProducer(() => new Activator()).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+            var props = Props.FromProducer(() => new Activator()).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
             ActivatorPid = RootContext.Empty.SpawnNamed(props, "activator");
         }
 

@@ -16,7 +16,7 @@ namespace Proto.Tests
         public async Task MultipleStopsTriggerSingleTerminated()
         {
             int counter = 0;
-            var childProps = Actor.FromFunc(context =>
+            var childProps = Props.FromFunc(context =>
             {
                 switch (context.Message)
                 {
@@ -28,7 +28,7 @@ namespace Proto.Tests
                 return Actor.Done;
             });
 
-            Context.Spawn(Actor.FromFunc(context =>
+            Context.Spawn(Props.FromFunc(context =>
             {
                 switch (context.Message)
                 {
@@ -49,9 +49,9 @@ namespace Proto.Tests
         [Fact]
         public async void CanWatchLocalActors()
         {
-            var watchee = Context.Spawn(Actor.FromProducer(() => new DoNothingActor())
+            var watchee = Context.Spawn(Props.FromProducer(() => new DoNothingActor())
                                            .WithMailbox(() => new TestMailbox()));
-            var watcher = Context.Spawn(Actor.FromProducer(() => new LocalActor(watchee))
+            var watcher = Context.Spawn(Props.FromProducer(() => new LocalActor(watchee))
                                            .WithMailbox(() => new TestMailbox()));
 
             await watchee.StopAsync();

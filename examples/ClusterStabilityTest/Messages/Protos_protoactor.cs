@@ -16,7 +16,7 @@ namespace Messages
         public static void HelloGrainFactory(Func<IHelloGrain> factory) 
         {
             _HelloGrainFactory = factory;
-            Remote.RegisterKnownKind("HelloGrain", Actor.FromProducer(() => new HelloGrainActor()));
+            Remote.RegisterKnownKind("HelloGrain", Props.FromProducer(() => new HelloGrainActor()));
         } 
 
         public static HelloGrainClient HelloGrain(string id) => new HelloGrainClient(id);

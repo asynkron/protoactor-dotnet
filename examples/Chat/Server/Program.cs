@@ -13,7 +13,7 @@ class Program
         Remote.Start("127.0.0.1", 8000);
         
         var clients = new HashSet<PID>();
-        var props = Actor.FromFunc(ctx =>
+        var props = Props.FromFunc(ctx =>
         {
             switch (ctx.Message)
             {

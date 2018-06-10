@@ -26,8 +26,7 @@ class Program
 
         var messageCount = 1000000;
         var wg = new AutoResetEvent(false);
-        var props = Actor
-            .FromProducer(() => new LocalActor(0, messageCount, wg));
+        var props = Props.FromProducer(() => new LocalActor(0, messageCount, wg));
 
         var pid = context.Spawn(props);
         var remote = new PID("127.0.0.1:12000", "remote");

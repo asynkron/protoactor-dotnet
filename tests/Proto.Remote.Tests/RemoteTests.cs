@@ -55,7 +55,7 @@ namespace Proto.Remote.Tests
                 tcs.TrySetCanceled();
             });
             
-            var localActor = Context.Spawn(Actor.FromFunc(ctx =>
+            var localActor = Context.Spawn(Props.FromFunc(ctx =>
             {
                 if (ctx.Message is Pong)
                 {
@@ -189,7 +189,7 @@ namespace Proto.Remote.Tests
 
         private async Task<PID> SpawnLocalActorAndWatch(params PID[] remoteActors)
         {
-            var props = Actor.FromProducer(() => new LocalActor(remoteActors));
+            var props = Props.FromProducer(() => new LocalActor(remoteActors));
             var actor = Context.Spawn(props);
             // The local actor watches the remote one - we wait here for the RemoteWatch 
             // message to propagate to the remote actor

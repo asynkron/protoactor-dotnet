@@ -10,7 +10,7 @@ namespace Proto.Router.Tests
     public class PoolRouterTests
     {
         private static readonly RootContext Context = new RootContext();
-        private static readonly Props MyActorProps = Actor.FromProducer(() => new DoNothingActor());
+        private static readonly Props MyActorProps = Props.FromProducer(() => new DoNothingActor());
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
         [Fact]

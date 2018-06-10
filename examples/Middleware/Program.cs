@@ -43,7 +43,7 @@ class Program
                 Console.WriteLine(" 1 Exit RootContext SenderMiddleware - Send is async, this is out of order by design");
             });
         
-        var actor = Actor.FromFunc(
+        var actor = Props.FromFunc(
                 c =>
                 {
                     if (c.Message is string)

@@ -19,7 +19,7 @@ class Program
         Log.SetLoggerFactory(new LoggerFactory()
             .AddConsole(LogLevel.Debug));
 
-        var props = Actor.FromProducer(() => new ParentActor()).WithChildSupervisorStrategy(new OneForOneStrategy(Decider.Decide, 1, null));
+        var props = Props.FromProducer(() => new ParentActor()).WithChildSupervisorStrategy(new OneForOneStrategy(Decider.Decide, 1, null));
 
         var actor = context.Spawn(props);
         
@@ -62,7 +62,7 @@ class Program
             PID child;
             if (context.Children == null || context.Children.Count == 0)
             {
-                var props = Actor.FromProducer(() => new ChildActor());
+                var props = Props.FromProducer(() => new ChildActor());
                 child = context.Spawn(props);
             }
             else

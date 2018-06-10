@@ -15,7 +15,7 @@ namespace Proto.Tests
             var timeoutReceived = false;
             var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Actor.FromFunc((context) =>
+            var props = Props.FromFunc((context) =>
             {
                 switch (context.Message)
                 {
@@ -41,7 +41,7 @@ namespace Proto.Tests
             var timeoutReceived = false;
             var actorStartedWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Actor.FromFunc((context) =>
+            var props = Props.FromFunc((context) =>
             {
                 switch (context.Message)
                 {
@@ -68,7 +68,7 @@ namespace Proto.Tests
             var endingTimeout = TimeSpan.MaxValue;
             var autoExpiringWaiter = GetExpiringTaskCompletionSource(1500);
 
-            var props = Actor.FromFunc((context) =>
+            var props = Props.FromFunc((context) =>
             {
                 switch (context.Message)
                 {
@@ -100,7 +100,7 @@ namespace Proto.Tests
             var timeoutReceived = false;
             var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Actor.FromFunc((context) =>
+            var props = Props.FromFunc((context) =>
             {
                 switch (context.Message)
                 {

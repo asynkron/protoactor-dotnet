@@ -34,7 +34,7 @@ class Program
             var echos = new PID[clientCount];
             var completions = new TaskCompletionSource<bool>[clientCount];
 
-            var echoProps = FromProducer(() => new EchoActor())
+            var echoProps = Props.FromProducer(() => new EchoActor())
                 .WithDispatcher(d)
                 .WithMailbox(() => BoundedMailbox.Create(2048));
 
@@ -42,7 +42,7 @@ class Program
             {
                 var tsc = new TaskCompletionSource<bool>();
                 completions[i] = tsc;
-                var clientProps = FromProducer(() => new PingActor(tsc, messageCount, batchSize))
+                var clientProps = Props.FromProducer(() => new PingActor(tsc, messageCount, batchSize))
                     .WithDispatcher(d)
                     .WithMailbox(() => BoundedMailbox.Create(2048));
 

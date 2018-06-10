@@ -12,7 +12,7 @@ class Program
     static void Main(string[] args)
     {
         var context = new RootContext();
-        var props = Actor.FromFunc(ctx =>
+        var props = Props.FromFunc(ctx =>
         {
             if (ctx.Message is string)
             {

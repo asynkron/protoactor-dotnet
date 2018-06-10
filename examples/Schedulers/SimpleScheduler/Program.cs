@@ -11,7 +11,7 @@ namespace SimpleSchedulerDemo
         static void Main(string[] args)
         {
             var context = new RootContext();
-            var props = Actor.FromProducer(() => new ScheduleActor());
+            var props = Props.FromProducer(() => new ScheduleActor());
 
             var pid = context.Spawn(props);
 
@@ -55,7 +55,7 @@ namespace SimpleSchedulerDemo
             {
                 case Started _:
 
-                    var pid = context.Spawn(Actor.FromProducer(() => new ScheduleGreetActor()));
+                    var pid = context.Spawn(Props.FromProducer(() => new ScheduleGreetActor()));
                     
                     _scheduler
                         .ScheduleTellOnce(TimeSpan.FromMilliseconds(100), context.Self, new SimpleMessage("test 1"))

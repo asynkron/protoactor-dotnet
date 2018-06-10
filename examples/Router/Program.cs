@@ -40,7 +40,7 @@ namespace RouterExample
 
     internal class Program
     {
-        private static readonly Props MyActorProps = Actor.FromProducer(() => new MyActor());
+        private static readonly Props MyActorProps = Props.FromProducer(() => new MyActor());
 
         private static void Main()
         {
