@@ -25,7 +25,7 @@ namespace Proto.Remote
 
                     try
                     {
-                        var pid = Actor.SpawnNamed(props, name);
+                        var pid = RootContext.Empty.SpawnNamed(props, name);
                         var response = new ActorPidResponse{ Pid = pid };
                         context.Respond(response);
                     }

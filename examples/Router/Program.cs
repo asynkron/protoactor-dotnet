@@ -63,14 +63,14 @@ namespace RouterExample
         {
             var context = new RootContext();
             var props = Router.NewBroadcastGroup(
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps)
+                context.Spawn(MyActorProps),
+                context.Spawn(MyActorProps),
+                context.Spawn(MyActorProps),
+                context.Spawn(MyActorProps)
             );
             for (var i = 0; i < 10; i++)
             {
-                var pid = Actor.Spawn(props);
+                var pid = context.Spawn(props);
                 context.Send(pid, new Message {Text = $"{i % 4}"});
             }
         }
@@ -79,7 +79,7 @@ namespace RouterExample
         {
             var context = new RootContext();
             var props = Router.NewBroadcastPool(MyActorProps, 5);
-            var pid = Actor.Spawn(props);
+            var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
@@ -90,12 +90,12 @@ namespace RouterExample
         {
             var context = new RootContext();
             var props = Router.NewConsistentHashGroup(
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps)
+                context.Spawn(MyActorProps),
+                context.Spawn(MyActorProps),
+                context.Spawn(MyActorProps),
+                context.Spawn(MyActorProps)
             );
-            var pid = Actor.Spawn(props);
+            var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
@@ -106,7 +106,7 @@ namespace RouterExample
         {
             var context = new RootContext();
             var props = Router.NewConsistentHashPool(MyActorProps, 5);
-            var pid = Actor.Spawn(props);
+            var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
@@ -117,12 +117,12 @@ namespace RouterExample
         {
             var context = new RootContext();
             var props = Router.NewRoundRobinGroup(
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps)
+                context.Spawn(MyActorProps),
+                context.Spawn(MyActorProps),
+                context.Spawn(MyActorProps),
+                context.Spawn(MyActorProps)
             );
-            var pid = Actor.Spawn(props);
+            var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
@@ -133,7 +133,7 @@ namespace RouterExample
         {
             var context = new RootContext();
             var props = Router.NewRoundRobinPool(MyActorProps, 5);
-            var pid = Actor.Spawn(props);
+            var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
@@ -144,12 +144,12 @@ namespace RouterExample
         {
             var context = new RootContext();
             var props = Router.NewRandomGroup(
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps),
-                Actor.Spawn(MyActorProps)
+                context.Spawn(MyActorProps),
+                context.Spawn(MyActorProps),
+                context.Spawn(MyActorProps),
+                context.Spawn(MyActorProps)
             );
-            var pid = Actor.Spawn(props);
+            var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
@@ -160,7 +160,7 @@ namespace RouterExample
         {
             var context = new RootContext();
             var props = Router.NewRandomPool(MyActorProps, 5);
-            var pid = Actor.Spawn(props);
+            var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});

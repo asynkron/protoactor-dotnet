@@ -34,15 +34,15 @@ namespace Node2
                 return Actor.Done;
             });
 
-            var parsedArgs = parseArgs(args);
+            var parsedArgs = ParseArgs(args);
             Remote.RegisterKnownKind("HelloKind", props);
             Cluster.Start("MyCluster", parsedArgs.ServerName, 12000, new ConsulProvider(new ConsulProviderOptions(), c => c.Address = new Uri("http://" + parsedArgs.ConsulUrl + ":8500/")));
-            Thread.Sleep(System.Threading.Timeout.Infinite);
+            Thread.Sleep(Timeout.Infinite);
             Console.WriteLine("Shutting Down...");
             Cluster.Shutdown();
         }
 
-        private static Node2Config parseArgs(string[] args)
+        private static Node2Config ParseArgs(string[] args)
         {
             if(args.Length > 0) 
             {

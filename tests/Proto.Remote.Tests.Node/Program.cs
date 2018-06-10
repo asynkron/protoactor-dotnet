@@ -9,6 +9,7 @@ namespace Proto.Remote.Tests.Node
     {
         static void Main(string[] args)
         {
+            var context = new RootContext();
             var app = new CommandLineApplication();
             var hostOption = app.Option("-h|--host", "host", CommandOptionType.SingleValue);
             var portArgument = app.Option("-p|--port", "port", CommandOptionType.SingleValue);
@@ -27,7 +28,7 @@ namespace Proto.Remote.Tests.Node
                 Remote.Start(host, port);
                 var props = Actor.FromProducer(() => new EchoActor(host, port));
                 Remote.RegisterKnownKind("EchoActor", props);
-                Actor.SpawnNamed(props, "EchoActorInstance");
+                context.SpawnNamed(props, "EchoActorInstance");
                 Console.ReadLine();
                 return 0;
             });

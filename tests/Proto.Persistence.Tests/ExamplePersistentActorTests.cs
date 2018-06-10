@@ -183,7 +183,7 @@ namespace Proto.Persistence.Tests
             Context.Send(pid, new Multiply { Amount = 4 });
 
             await pid.StopAsync();
-            pid = Actor.Spawn(props);
+            pid = Context.Spawn(props);
             var state = await Context.RequestAsync<int>(pid, new GetState(), TimeSpan.FromSeconds(1));
             var index = await Context.RequestAsync<long>(pid, new GetIndex(), TimeSpan.FromSeconds(1));
             Assert.Equal(1, index);
@@ -214,7 +214,7 @@ namespace Proto.Persistence.Tests
             var snapshotStore = new InMemoryProvider();
             var props = Actor.FromProducer(() => new ExamplePersistentActor(eventStore, snapshotStore, actorId))
                 .WithMailbox(() => new TestMailbox());
-            var pid = Actor.Spawn(props);
+            var pid = Context.Spawn(props);
             
             Context.Send(pid, new Multiply{ Amount = 2 });
             var eventStoreMessages = new List<object>();
@@ -231,14 +231,14 @@ namespace Proto.Persistence.Tests
             var inMemoryProvider = new InMemoryProvider();
             var props = Actor.FromProducer(() => new ExamplePersistentActor(inMemoryProvider, inMemoryProvider, actorId))
                 .WithMailbox(() => new TestMailbox());
-            var pid = Actor.Spawn(props);
+            var pid = Context.Spawn(props);
             return (pid, props, actorId, inMemoryProvider);
         }
 
         private async Task<int> RestartActorAndGetState(PID pid, Props props)
         {
             await pid.StopAsync();
-            pid = Actor.Spawn(props);
+            pid = Context.Spawn(props);
             return await Context.RequestAsync<int>(pid, new GetState(), TimeSpan.FromMilliseconds(500));
         }
     }

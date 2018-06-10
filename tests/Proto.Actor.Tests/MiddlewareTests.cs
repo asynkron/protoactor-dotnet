@@ -12,7 +12,7 @@ namespace Proto.Tests
 {
     public class MiddlewareTests
     {
-        private static readonly ISenderContext Context = new RootContext();
+        private static readonly RootContext Context = new RootContext();
         [Fact]
         public void Given_ReceiveMiddleware_Should_Call_Middleware_In_Order_Then_Actor_Receive()
         {
@@ -38,7 +38,7 @@ namespace Proto.Tests
                         await next(c, env);
                     })
                 .WithMailbox(() => testMailbox);
-            var pid = Actor.Spawn(props);
+            var pid = Context.Spawn(props);
 
             Context.Send(pid,"");
 
@@ -52,7 +52,7 @@ namespace Proto.Tests
         public void Given_SenderMiddleware_Should_Call_Middleware_In_Order()
         {
             var logs = new List<string>();
-            var pid1 = Actor.Spawn(Actor.FromProducer(() => new DoNothingActor()));
+            var pid1 = Context.Spawn(Actor.FromProducer(() => new DoNothingActor()));
             var props = Actor.FromFunc(c =>
                 {
                     if (c.Message is string)
@@ -73,7 +73,7 @@ namespace Proto.Tests
                         return next(c, t, e);
                     })
                 .WithMailbox(() => new TestMailbox());
-            var pid2 = Actor.Spawn(props);
+            var pid2 = Context.Spawn(props);
 
             Context.Send(pid2, "");
 

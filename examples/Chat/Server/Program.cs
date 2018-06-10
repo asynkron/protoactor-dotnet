@@ -8,6 +8,7 @@ class Program
 {
     static void Main(string[] args)
     {
+        var context = new RootContext();
         Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
         Remote.Start("127.0.0.1", 8000);
         
@@ -44,7 +45,7 @@ class Program
             }
             return Actor.Done;
         });
-        Actor.SpawnNamed(props, "chatserver");
+        context.SpawnNamed(props, "chatserver");
         Console.ReadLine();
     }
 }

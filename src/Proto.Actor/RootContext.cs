@@ -16,6 +16,24 @@ namespace Proto
         public static readonly RootContext Empty = new RootContext();
         private readonly Sender _senderMiddleware;
 
+        public PID Spawn(Props props)
+        {
+            var name = ProcessRegistry.Instance.NextId();
+            return SpawnNamed(props, name);
+        }
+
+        public PID SpawnNamed(Props props, string name)
+        {
+            var parent = props.GuardianStrategy != null ? Guardians.GetGuardianPID(props.GuardianStrategy) : null;
+            return props.Spawn(name, parent);
+        }
+
+        public PID SpawnPrefix(Props props, string prefix)
+        {
+            var name = prefix + ProcessRegistry.Instance.NextId();
+            return SpawnNamed(props, name);
+        }
+
         public RootContext()
         {
             _senderMiddleware = null;

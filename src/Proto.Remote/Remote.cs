@@ -100,7 +100,7 @@ namespace Proto.Remote
         private static void SpawnActivator()
         {
             var props = Actor.FromProducer(() => new Activator()).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-            ActivatorPid = Actor.SpawnNamed(props, "activator");
+            ActivatorPid = RootContext.Empty.SpawnNamed(props, "activator");
         }
 
         private static void StopActivator()

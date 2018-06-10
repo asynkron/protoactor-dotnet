@@ -12,6 +12,7 @@ using Proto;
 
 namespace SpawnBenchmark
 {
+    
     internal class Request
     {
         public long Div;
@@ -43,7 +44,7 @@ namespace SpawnBenchmark
                 _replyTo = context.Sender;
                 for (var i = 0; i < r.Div; i++)
                 {
-                    var child = Actor.Spawn(Props);
+                    var child = RootContext.Empty.Spawn(Props);
                     context.Request(child, new Request
                     {
                         Num = r.Num + i * (r.Size / r.Div),
@@ -77,7 +78,7 @@ namespace SpawnBenchmark
             {
                 Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
 
-                var pid = Actor.Spawn(MyActor.Props);
+                var pid = context.Spawn(MyActor.Props);
                 var sw = Stopwatch.StartNew();
                 var t = context.RequestAsync<long>(pid, new Request
                 {

@@ -5,13 +5,13 @@ namespace Proto
 {
     public class ActorFactory : IActorFactory
     {
-        private readonly IServiceProvider serviceProvider;
-        private readonly ActorPropsRegistry actorPropsRegistry;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ActorPropsRegistry _actorPropsRegistry;
 
         public ActorFactory(IServiceProvider serviceProvider, ActorPropsRegistry actorPropsRegistry)
         {
-            this.serviceProvider = serviceProvider;
-            this.actorPropsRegistry = actorPropsRegistry;
+            _serviceProvider = serviceProvider;
+            _actorPropsRegistry = actorPropsRegistry;
         }
 
         public PID RegisterActor<T>(T actor, string id = null, string address = null, IContext parent = null)
@@ -30,7 +30,7 @@ namespace Proto
             where T : IActor
         {
             id = id ?? typeof(T).FullName;
-            return GetActor(id, address, parent, () => CreateActor<T>(id, parent, () => new Props().WithProducer(() => ActivatorUtilities.CreateInstance<T>(serviceProvider))));
+            return GetActor(id, address, parent, () => CreateActor<T>(id, parent, () => new Props().WithProducer(() => ActivatorUtilities.CreateInstance<T>(_serviceProvider))));
         }
 
         public PID GetActor(string id, string address, IContext parent, Func<PID> create)
@@ -55,8 +55,7 @@ namespace Proto
         private PID CreateActor<T>(string id, IContext parent, Func<Props> producer)
             where T : IActor
         {
-            Func<Props, Props> props;
-            if (!actorPropsRegistry.RegisteredProps.TryGetValue(typeof(T), out props))
+            if (!_actorPropsRegistry.RegisteredProps.TryGetValue(typeof(T), out var props))
             {
                 props = x => x;
             }
@@ -64,7 +63,7 @@ namespace Proto
             var props2 = props(producer());
             if (parent == null)
             {
-                return Actor.SpawnNamed(props2, id);
+                return RootContext.Empty.SpawnNamed(props2, id);
             }
             return parent.SpawnNamed(props2, id);
         }

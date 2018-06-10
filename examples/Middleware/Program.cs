@@ -13,6 +13,36 @@ class Program
 {
     static void Main(string[] args)
     {
+        //Set headers, e.g. Zipkin trace headers
+        var headers = new MessageHeader(
+            new Dictionary<string, string>
+            {
+                {"TraceID", Guid.NewGuid().ToString()},
+                {"SpanID", Guid.NewGuid().ToString()}
+            }
+        );
+
+        var root = new RootContext(
+            headers,
+            next => async (c, target, envelope) =>
+            {
+                var newEnvelope = envelope
+                    .WithHeader("TraceID", c.Headers.GetOrDefault("TraceID"))
+                    .WithHeader("SpanID", Guid.NewGuid().ToString())
+                    .WithHeader("ParentSpanID", c.Headers.GetOrDefault("SpanID"));
+
+                Console.WriteLine(" 1 Enter RootContext SenderMiddleware");
+                Console.WriteLine(" 1 TraceID: " + newEnvelope.Header.GetOrDefault("TraceID"));
+                Console.WriteLine(" 1 SpanID: " + newEnvelope.Header.GetOrDefault("SpanID"));
+                Console.WriteLine(" 1 ParentSpanID: " + newEnvelope.Header.GetOrDefault("ParentSpanID"));
+                await next(c, target, newEnvelope);
+                //this line might look confusing at first when reading the console output
+                //it looks like this finishes before the actor receive middleware kicks in
+                //which is exactly what it does, due to the actor mailbox.
+                //that is, the sender side of things just put the message on the mailbox and exits
+                Console.WriteLine(" 1 Exit RootContext SenderMiddleware - Send is async, this is out of order by design");
+            });
+        
         var actor = Actor.FromFunc(
                 c =>
                 {
@@ -63,37 +93,7 @@ class Program
                 await next(context, target, envelope);
                 Console.WriteLine("    4 Exit Actor SenderMiddleware");
             });
-        var pid = Actor.Spawn(actor);
-
-        //Set headers, e.g. Zipkin trace headers
-        var headers = new MessageHeader(
-            new Dictionary<string, string>
-            {
-                {"TraceID", Guid.NewGuid().ToString()},
-                {"SpanID", Guid.NewGuid().ToString()}
-            }
-        );
-
-        var root = new RootContext(
-            headers,
-            next => async (c, target, envelope) =>
-            {
-                var newEnvelope = envelope
-                    .WithHeader("TraceID", c.Headers.GetOrDefault("TraceID"))
-                    .WithHeader("SpanID", Guid.NewGuid().ToString())
-                    .WithHeader("ParentSpanID", c.Headers.GetOrDefault("SpanID"));
-
-                Console.WriteLine(" 1 Enter RootContext SenderMiddleware");
-                Console.WriteLine(" 1 TraceID: " + newEnvelope.Header.GetOrDefault("TraceID"));
-                Console.WriteLine(" 1 SpanID: " + newEnvelope.Header.GetOrDefault("SpanID"));
-                Console.WriteLine(" 1 ParentSpanID: " + newEnvelope.Header.GetOrDefault("ParentSpanID"));
-                await next(c, target, newEnvelope);
-                //this line might look confusing at first when reading the console output
-                //it looks like this finishes before the actor receive middleware kicks in
-                //which is exactly what it does, due to the actor mailbox.
-                //that is, the sender side of things just put the message on the mailbox and exits
-                Console.WriteLine(" 1 Exit RootContext SenderMiddleware - Send is async, this is out of order by design");
-            });
+        var pid = root.Spawn(actor);
         
         Task.Delay(500).Wait();
         Console.WriteLine("0 TraceID: " + root.Headers.GetOrDefault("TraceID"));

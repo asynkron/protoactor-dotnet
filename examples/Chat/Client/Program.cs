@@ -29,7 +29,7 @@ class Program
             return Actor.Done;
         });
 
-        var client = Actor.Spawn(props);
+        var client = context.Spawn(props);
         context.Send(server, new Connect
         {
             Sender = client

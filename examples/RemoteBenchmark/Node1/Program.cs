@@ -25,7 +25,7 @@ class Program
         var props = Actor
             .FromProducer(() => new LocalActor(0, messageCount, wg));
 
-        var pid = Actor.Spawn(props);
+        var pid = context.Spawn(props);
         var remote = new PID("127.0.0.1:12000", "remote");
         context.RequestAsync<Start>(remote, new StartRemote {Sender = pid}).Wait();
 

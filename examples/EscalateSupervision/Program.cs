@@ -34,7 +34,8 @@ namespace EscalateSupervision
             })
             .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 0, null));
 
-            Actor.SpawnNamed(rootProps, "root");
+            var rootContext = new RootContext();
+            rootContext.SpawnNamed(rootProps, "root");
 
             Console.ReadLine();
         }

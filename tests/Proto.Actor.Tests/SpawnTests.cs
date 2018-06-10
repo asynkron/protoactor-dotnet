@@ -6,12 +6,14 @@
 
 using System;
 using Xunit;
+using Xunit.Sdk;
 using static Proto.TestFixtures.Receivers;
 
 namespace Proto.Tests
 {
     public class SpawnTests
     {
+        private static readonly RootContext Context = new RootContext();
         [Fact]
         public void Given_PropsWithSpawner_SpawnShouldReturnPidCreatedBySpawner()
         {
@@ -19,7 +21,7 @@ namespace Proto.Tests
             var props = Actor.FromFunc(EmptyReceive)
                 .WithSpawner((id, p, parent) => spawnedPid);
 
-            var pid = Actor.Spawn(props);
+            var pid = Context.Spawn(props);
 
             Assert.Same(spawnedPid, pid);
         }
@@ -30,10 +32,10 @@ namespace Proto.Tests
             var props = Actor.FromFunc(EmptyReceive);
 
             var uniqueName = Guid.NewGuid().ToString();
-            Actor.SpawnNamed(props,uniqueName);
+            Context.SpawnNamed(props,uniqueName);
             var x = Assert.Throws<ProcessNameExistException>(() =>
             {
-                Actor.SpawnNamed(props, uniqueName);
+                Context.SpawnNamed(props, uniqueName);
             });
             Assert.Equal(uniqueName,x.Name);
         }
@@ -43,8 +45,8 @@ namespace Proto.Tests
         {
             var props = Actor.FromFunc(EmptyReceive);
 
-            Actor.SpawnNamed(props,"existing");
-            var pid = Actor.SpawnPrefix(props, "existing");
+            Context.SpawnNamed(props,"existing");
+            var pid = Context.SpawnPrefix(props, "existing");
             Assert.NotNull(pid);
         }
     }

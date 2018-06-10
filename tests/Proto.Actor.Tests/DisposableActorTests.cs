@@ -8,12 +8,12 @@ namespace Proto.Tests
 {
     public class DisposableActorTests
     {
-        private static readonly ISenderContext Context = new RootContext();
+        private static readonly RootContext Context = new RootContext();
         
         private class SupervisingActor : IActor
         {
             private readonly Props _childProps;
-            private PID _childPID;
+            private PID _childPid;
 
             public SupervisingActor(Props childProps)
             {
@@ -23,9 +23,9 @@ namespace Proto.Tests
             public Task ReceiveAsync(IContext context)
             {
                 if (context.Message is Started)
-                    _childPID = context.Spawn(_childProps);
+                    _childPid = context.Spawn(_childProps);
                 if (context.Message is string)
-                    context.Send(_childPID, context.Message);
+                    context.Send(_childPid, context.Message);
                 return Actor.Done;
             }
         }
@@ -98,7 +98,7 @@ namespace Proto.Tests
             var props = Actor.FromProducer(() => new SupervisingActor(childProps))
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Actor.Spawn(props);
+            var parent = Context.Spawn(props);
             Context.Send(parent, "crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.True(disposeCalled);
@@ -116,7 +116,7 @@ namespace Proto.Tests
             var props = Actor.FromProducer(() => new SupervisingActor(childProps))
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Actor.Spawn(props);
+            var parent = Context.Spawn(props);
             Context.Send(parent, "crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.False(disposeCalled);
@@ -128,7 +128,7 @@ namespace Proto.Tests
             var disposeCalled = false;
             var props = Actor.FromProducer(() => new DisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => new TestMailbox());
-            var pid = Actor.Spawn(props);
+            var pid = Context.Spawn(props);
             await pid.StopAsync();
             Assert.True(disposeCalled);
         }
@@ -147,7 +147,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentWithMultipleChildrenActor(child1Props, child2Props))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "crash");
 

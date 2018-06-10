@@ -5,12 +5,12 @@ namespace Proto.Tests
 {
     public class FutureTests
     {
-        private static readonly ISenderContext Context = new RootContext();
+        private static readonly RootContext Context = new RootContext();
         
         [Fact]
         public void Given_Actor_When_AwaitRequestAsync_Should_ReturnReply()
         {
-            var pid = Actor.Spawn(Actor.FromFunc(ctx =>
+            var pid = Context.Spawn(Actor.FromFunc(ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -27,7 +27,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_Actor_When_AwaitContextRequestAsync_Should_GetReply()
         {
-            var pid1 = Actor.Spawn(Actor.FromFunc(ctx =>
+            var pid1 = Context.Spawn(Actor.FromFunc(ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -35,7 +35,7 @@ namespace Proto.Tests
                 }
                 return Actor.Done;
             }));
-            var pid2 = Actor.Spawn(Actor.FromFunc(async ctx =>
+            var pid2 = Context.Spawn(Actor.FromFunc(async ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -53,7 +53,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_Actor_When_ReplyIsNull_Should_Return()
         {
-            var pid = Actor.Spawn(Actor.FromFunc(ctx =>
+            var pid = Context.Spawn(Actor.FromFunc(ctx =>
             {
                 if (ctx.Message is string)
                 {

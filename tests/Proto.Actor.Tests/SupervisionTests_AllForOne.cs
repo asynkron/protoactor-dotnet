@@ -9,7 +9,7 @@ namespace Proto.Tests
 {
     public class SupervisionTests_AllForOne
     {
-        private static readonly ISenderContext Context = new RootContext();
+        private static readonly RootContext Context = new RootContext();
         private static readonly Exception Exception = new Exception("boo hoo");
         class ParentActor : IActor
         {
@@ -68,7 +68,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(child1Props, child2Props))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
 
@@ -91,7 +91,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(child1Props, child2Props))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
 
@@ -115,7 +115,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(child1Props, child2Props))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
 
@@ -139,7 +139,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(child1Props, child2Props))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
 
@@ -160,7 +160,7 @@ namespace Proto.Tests
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps, childProps))
                 .WithChildSupervisorStrategy(strategy)
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
 

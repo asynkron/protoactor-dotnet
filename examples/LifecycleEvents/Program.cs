@@ -16,7 +16,7 @@ class Program
     {
         var context = new RootContext();
         var props = Actor.FromProducer(() => new ChildActor());
-        var actor = Actor.Spawn(props);
+        var actor = context.Spawn(props);
         context.Send(actor, new Hello
         {
             Who = "Alex"
@@ -41,16 +41,16 @@ class Program
                 case Hello r:
                     Console.WriteLine($"Hello {r.Who}");
                     break;
-                case Started r:
+                case Started _:
                     Console.WriteLine("Started, initialize actor here");
                     break;
-                case Stopping r:
+                case Stopping _:
                     Console.WriteLine("Stopping, actor is about shut down");
                     break;
-                case Stopped r:
+                case Stopped _:
                     Console.WriteLine("Stopped, actor and it's children are stopped");
                     break;
-                case Restarting r:
+                case Restarting _:
                     Console.WriteLine("Restarting, actor is about restart");
                     break;
             }

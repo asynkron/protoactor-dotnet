@@ -39,9 +39,10 @@ namespace Node2
     {
         static void Main(string[] args)
         {
+            var context = new RootContext();
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Remote.Start("127.0.0.1", 12000);
-            Actor.SpawnNamed(Actor.FromProducer(() => new EchoActor()), "remote");
+            context.SpawnNamed(Actor.FromProducer(() => new EchoActor()), "remote");
             Console.ReadLine();
         }
     }

@@ -12,7 +12,7 @@ namespace Proto.Remote.Tests
     [Collection("RemoteTests"), Trait("Category", "Remote")]
     public class RemoteTests
     {
-        private static readonly ISenderContext Context = new RootContext();
+        private static readonly RootContext Context = new RootContext();
         private readonly RemoteManager _remoteManager;
 
         public RemoteTests(RemoteManager remoteManager)
@@ -55,7 +55,7 @@ namespace Proto.Remote.Tests
                 tcs.TrySetCanceled();
             });
             
-            var localActor = Actor.Spawn(Actor.FromFunc(ctx =>
+            var localActor = Context.Spawn(Actor.FromFunc(ctx =>
             {
                 if (ctx.Message is Pong)
                 {
@@ -190,7 +190,7 @@ namespace Proto.Remote.Tests
         private async Task<PID> SpawnLocalActorAndWatch(params PID[] remoteActors)
         {
             var props = Actor.FromProducer(() => new LocalActor(remoteActors));
-            var actor = Actor.Spawn(props);
+            var actor = Context.Spawn(props);
             // The local actor watches the remote one - we wait here for the RemoteWatch 
             // message to propagate to the remote actor
             Console.WriteLine("Waiting for RemoteWatch to propagate...");

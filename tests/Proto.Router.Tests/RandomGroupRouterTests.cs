@@ -10,7 +10,7 @@ namespace Proto.Router.Tests
 {
     public class RandomGroupRouterTests
     {
-        private static readonly ISenderContext Context = new RootContext();
+        private static readonly RootContext Context = new RootContext();
         private static readonly Props MyActorProps = Actor.FromProducer(() => new MyTestActor());
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
@@ -32,7 +32,7 @@ namespace Proto.Router.Tests
         public async void RandomGroupRouter_NewlyAddedRouteesReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
-            var routee4 = Actor.Spawn(MyActorProps);
+            var routee4 = Context.Spawn(MyActorProps);
             Context.Send(router, new RouterAddRoutee
             {
                 PID = routee4
@@ -82,7 +82,7 @@ namespace Proto.Router.Tests
         public async void RandomGroupRouter_RouteesCanBeAdded()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
-            var routee4 = Actor.Spawn(MyActorProps);
+            var routee4 = Context.Spawn(MyActorProps);
             Context.Send(router, new RouterAddRoutee { PID = routee4 });
 
             var routees = await Context.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
@@ -106,13 +106,13 @@ namespace Proto.Router.Tests
 
         private (PID router, PID routee1, PID routee2, PID routee3) CreateRouterWith3Routees()
         {
-            var routee1 = Actor.Spawn(MyActorProps);
-            var routee2 = Actor.Spawn(MyActorProps);
-            var routee3 = Actor.Spawn(MyActorProps);
+            var routee1 = Context.Spawn(MyActorProps);
+            var routee2 = Context.Spawn(MyActorProps);
+            var routee3 = Context.Spawn(MyActorProps);
 
             var props = Router.NewRandomGroup(10000, routee1, routee2, routee3)
                 .WithMailbox(() => new TestMailbox());
-            var router = Actor.Spawn(props);
+            var router = Context.Spawn(props);
             return (router, routee1, routee2, routee3);
         }
 

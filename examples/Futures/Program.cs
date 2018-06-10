@@ -20,7 +20,7 @@ class Program
             }
             return Actor.Done;
         });
-        var pid = Actor.Spawn(props);
+        var pid = context.Spawn(props);
 
         var reply = context.RequestAsync<object>(pid ,"hello").Result;
         Console.WriteLine(reply);

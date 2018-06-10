@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -6,13 +5,13 @@ namespace Proto.Tests
 {
     public class BehaviorTests
     {
-        private static readonly ISenderContext Context = new RootContext();
+        private static readonly RootContext Context = new RootContext();
         
         [Fact]
         public async void can_change_states()
         {
             var testActorProps = Actor.FromProducer(() => new LightBulb());
-            var actor = Actor.Spawn(testActorProps);
+            var actor = Context.Spawn(testActorProps);
             
             var response = await Context.RequestAsync<string>(actor, new PressSwitch());
             Assert.Equal("Turning on", response);
@@ -28,9 +27,9 @@ namespace Proto.Tests
         public async void can_use_global_behaviour()
         {
             var testActorProps = Actor.FromProducer(() => new LightBulb());
-            var actor = Actor.Spawn(testActorProps);
-            var response = await Context.RequestAsync<string>(actor, new PressSwitch());
-            response = await Context.RequestAsync<string>(actor, new HitWithHammer());
+            var actor = Context.Spawn(testActorProps);
+            var _ = await Context.RequestAsync<string>(actor, new PressSwitch());
+            var response = await Context.RequestAsync<string>(actor, new HitWithHammer());
             Assert.Equal("Smashed!", response);
             response = await Context.RequestAsync<string>(actor, new PressSwitch());
             Assert.Equal("Broken", response);
@@ -38,7 +37,7 @@ namespace Proto.Tests
             Assert.Equal("OW!", response);
         }
         
-        public static PID SpawnActorFromFunc(Receive receive) => Actor.Spawn(Actor.FromFunc(receive));
+        public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Actor.FromFunc(receive));
 
         [Fact]
         public async Task pop_behavior_should_restore_pushed_behavior()

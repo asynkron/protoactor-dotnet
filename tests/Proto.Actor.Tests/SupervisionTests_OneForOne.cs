@@ -11,7 +11,7 @@ namespace Proto.Tests
 {
     public class SupervisionTests_OneForOne
     {
-        private static readonly ISenderContext Context = new RootContext();
+        private static readonly RootContext Context = new RootContext();
         private static readonly Exception Exception = new Exception("boo hoo");
         class ParentActor : IActor
         {
@@ -76,7 +76,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
 
@@ -94,7 +94,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
 
@@ -112,7 +112,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
 
@@ -130,7 +130,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "1st restart");
             Context.Send(parent, "2nd restart");
@@ -157,7 +157,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "1st restart");
             Context.Send(parent, "2nd restart");
@@ -179,7 +179,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
             
@@ -197,7 +197,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
             Context.Send(parent, "hello");
@@ -216,7 +216,7 @@ namespace Proto.Tests
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
                 .WithChildSupervisorStrategy(strategy)
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
             
@@ -247,7 +247,7 @@ namespace Proto.Tests
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
                 .WithChildSupervisorStrategy(strategy)
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
 
@@ -265,7 +265,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Actor.FromProducer(() => new ParentActor(childProps))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Actor.Spawn(parentProps);
+            var parent = Context.Spawn(parentProps);
 
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(Stop.Instance, childMailboxStats.Posted);
@@ -283,7 +283,7 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
             var grandParentProps = Actor.FromProducer(() => new ParentActor(parentProps))
                 .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, TimeSpan.FromSeconds(1)));
-            var grandParent = Actor.Spawn(grandParentProps);
+            var grandParent = Context.Spawn(grandParentProps);
             
             parentMailboxStats.Reset.Wait(1000);
             Thread.Sleep(1000); //parentMailboxStats.Received could still be modified without a wait here

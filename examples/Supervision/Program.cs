@@ -21,7 +21,7 @@ class Program
 
         var props = Actor.FromProducer(() => new ParentActor()).WithChildSupervisorStrategy(new OneForOneStrategy(Decider.Decide, 1, null));
 
-        var actor = Actor.Spawn(props);
+        var actor = context.Spawn(props);
         
         context.Send(actor,new Hello
         {

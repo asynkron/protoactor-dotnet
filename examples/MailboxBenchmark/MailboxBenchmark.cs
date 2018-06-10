@@ -39,7 +39,7 @@ public class MailboxBenchmark
                 return Actor.Done;
             })
             .WithMailbox(mailbox);
-        var pid = Actor.Spawn(props);
+        var pid = context.Spawn(props);
         for (var i = 1; i <= n; i++)
         {
             context.Send(pid, i);

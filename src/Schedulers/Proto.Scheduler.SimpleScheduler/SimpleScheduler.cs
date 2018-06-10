@@ -88,7 +88,7 @@ namespace Proto.Schedulers.SimpleScheduler
                         if (cts.IsCancellationRequested)
                             return;
 
-                        //TODO: allow useing sender
+                        //TODO: allow using sender
                         _context.Request(target,message);                       
 
                         await Task.Delay(interval, cts.Token);

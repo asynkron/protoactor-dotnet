@@ -46,8 +46,8 @@ class Program
                     .WithDispatcher(d)
                     .WithMailbox(() => BoundedMailbox.Create(2048));
 
-                clients[i] = Spawn(clientProps);
-                echos[i] = Spawn(echoProps);
+                clients[i] = context.Spawn(clientProps);
+                echos[i] = context.Spawn(echoProps);
             }
             var tasks = completions.Select(tsc => tsc.Task).ToArray();
             var sw = Stopwatch.StartNew();

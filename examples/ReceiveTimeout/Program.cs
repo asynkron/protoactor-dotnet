@@ -35,7 +35,7 @@ class Program
             }
             return Actor.Done;
         });
-        var pid = Actor.Spawn(props);
+        var pid = rootContext.Spawn(props);
         for (var i = 0; i < 6; i++)
         {
             rootContext.Send(pid, "hello");

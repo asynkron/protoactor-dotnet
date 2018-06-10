@@ -20,11 +20,12 @@ class Program
 {
     static void Main(string[] args)
     {
+        var context = new RootContext();
         var provider = new SqliteProvider(new SqliteConnectionStringBuilder { DataSource = "states.db" });
 
         var props = Actor.FromProducer(() => new MyPersistenceActor(provider));
 
-        var pid = Actor.Spawn(props);
+        var pid = context.Spawn(props);
 
         Console.ReadLine();
     }

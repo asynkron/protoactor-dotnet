@@ -10,9 +10,10 @@ namespace SimpleSchedulerDemo
     {
         static void Main(string[] args)
         {
+            var context = new RootContext();
             var props = Actor.FromProducer(() => new ScheduleActor());
 
-            var pid = Actor.Spawn(props);
+            var pid = context.Spawn(props);
 
             Console.ReadLine();
         }

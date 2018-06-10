@@ -8,7 +8,7 @@ namespace Proto.Router.Tests
 {
     public class RoundRobinGroupTests
     {
-        private static readonly ISenderContext Context = new RootContext();
+        private static readonly RootContext Context = new RootContext();
         private static readonly Props MyActorProps = Actor.FromProducer(() => new MyTestActor())
                                                           .WithMailbox(() => new TestMailbox());
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
@@ -58,7 +58,7 @@ namespace Proto.Router.Tests
         public async void RoundRobinGroupRouter_RouteesCanBeAdded()
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees();
-            var routee4 = Actor.Spawn(MyActorProps);
+            var routee4 = Context.Spawn(MyActorProps);
             Context.Send(router, new RouterAddRoutee { PID = routee4 });
 
             var routees = await Context.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
@@ -91,7 +91,7 @@ namespace Proto.Router.Tests
         public async void RoundRobinGroupRouter_AddedRouteesReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees();
-            var routee4 = Actor.Spawn(MyActorProps);
+            var routee4 = Context.Spawn(MyActorProps);
             Context.Send(router, new RouterAddRoutee { PID = routee4 });
             // should now have 4 routees, so need to send 4 messages to ensure all get them
             Context.Send(router, "1");
@@ -119,13 +119,13 @@ namespace Proto.Router.Tests
         
         private (PID router, PID routee1, PID routee2, PID routee3) CreateRoundRobinRouterWith3Routees()
         {
-            var routee1 = Actor.Spawn(MyActorProps);
-            var routee2 = Actor.Spawn(MyActorProps);
-            var routee3 = Actor.Spawn(MyActorProps);
+            var routee1 = Context.Spawn(MyActorProps);
+            var routee2 = Context.Spawn(MyActorProps);
+            var routee3 = Context.Spawn(MyActorProps);
 
             var props = Router.NewRoundRobinGroup(routee1, routee2, routee3)
                 .WithMailbox(() => new TestMailbox());
-            var router = Actor.Spawn(props);
+            var router = Context.Spawn(props);
             return (router, routee1, routee2, routee3);
         }
 

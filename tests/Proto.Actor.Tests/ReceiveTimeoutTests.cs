@@ -8,6 +8,7 @@ namespace Proto.Tests
 {
     public class ReceiveTimeoutTests
     {
+        private static readonly RootContext Context = new RootContext();
         [Fact]
         public async Task receive_timeout_received_within_expected_time()
         {
@@ -28,7 +29,7 @@ namespace Proto.Tests
                 }
                 return Actor.Done;
             });
-            Actor.Spawn(props);
+            Context.Spawn(props);
 
             await GetSafeAwaitableTask(receiveTimeoutWaiter);
             Assert.True(timeoutReceived);
@@ -54,7 +55,7 @@ namespace Proto.Tests
                 }
                 return Actor.Done;
             });
-            Actor.Spawn(props);
+            Context.Spawn(props);
 
             await GetSafeAwaitableTask(actorStartedWaiter);
             Assert.False(timeoutReceived);
@@ -83,7 +84,7 @@ namespace Proto.Tests
                 }
                 return Actor.Done;
             });
-            Actor.Spawn(props);
+            Context.Spawn(props);
 
             // this task should auto cancel
             await GetSafeAwaitableTask(autoExpiringWaiter);
@@ -115,7 +116,7 @@ namespace Proto.Tests
                 }
                 return Actor.Done;
             });
-            Actor.Spawn(props);
+            Context.Spawn(props);
 
             await GetSafeAwaitableTask(receiveTimeoutWaiter);
             Assert.True(timeoutReceived);

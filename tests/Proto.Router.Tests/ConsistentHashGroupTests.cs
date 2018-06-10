@@ -9,7 +9,7 @@ namespace Proto.Router.Tests
 {
     public class ConsistentHashGroupTests
     {
-        private static readonly ISenderContext Context = new RootContext();
+        private static readonly RootContext Context = new RootContext();
         private static readonly Props MyActorProps = Actor.FromProducer(() => new MyTestActor())
             .WithMailbox(() => new TestMailbox());
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
@@ -48,7 +48,7 @@ namespace Proto.Router.Tests
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
             Context.Send(router, new Message("message1"));
-            var routee4 = Actor.Spawn(MyActorProps);
+            var routee4 = Context.Spawn(MyActorProps);
             Context.Send(router, new RouterAddRoutee{PID = routee4});
             Context.Send(router, new Message("message1"));
 
@@ -74,7 +74,7 @@ namespace Proto.Router.Tests
         public async void ConsistentHashGroupRouter_RouteesCanBeAdded()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
-            var routee4 = Actor.Spawn(MyActorProps);
+            var routee4 = Context.Spawn(MyActorProps);
             Context.Send(router, new RouterAddRoutee { PID = routee4 });
 
             var routees = await Context.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
@@ -98,7 +98,7 @@ namespace Proto.Router.Tests
         public async void ConsistentHashGroupRouter_AddedRouteesReceiveMessages()
         {
             var (router, _, _, _) = CreateRouterWith3Routees();
-            var routee4 = Actor.Spawn(MyActorProps);
+            var routee4 = Context.Spawn(MyActorProps);
             Context.Send(router, new RouterAddRoutee { PID = routee4 });
             Context.Send(router, new Message("message4"));
             Assert.Equal(1, await Context.RequestAsync<int>(routee4, "received?", _timeout));
@@ -135,13 +135,13 @@ namespace Proto.Router.Tests
         private (PID router, PID routee1, PID routee2, PID routee3) CreateRouterWith3Routees()
         {
             // assign unique names for when tests run in parallel
-            var routee1 = Actor.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee1");
-            var routee2 = Actor.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee2");
-            var routee3 = Actor.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee3");
+            var routee1 = Context.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee1");
+            var routee2 = Context.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee2");
+            var routee3 = Context.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee3");
 
             var props = Router.NewConsistentHashGroup(SuperIntelligentDeterministicHash.Hash, 1, routee1, routee2, routee3)
                 .WithMailbox(() => new TestMailbox());
-            var router = Actor.Spawn(props);
+            var router = Context.Spawn(props);
             return (router, routee1, routee2, routee3);
         }
         

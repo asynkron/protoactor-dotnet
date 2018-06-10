@@ -14,7 +14,7 @@ class Program
     {
         var context = new RootContext();
         var props = Actor.FromProducer(() => new HelloActor());
-        var pid = Actor.Spawn(props);
+        var pid = context.Spawn(props);
         context.Send(pid, new Hello("ProtoActor"));
         Console.ReadLine();
     }
