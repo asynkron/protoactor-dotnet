@@ -6,16 +6,16 @@ namespace Proto.Cluster
     {
         private int _val;
 
-        private IMemberStrategy _m;
+        private readonly IMemberStrategy _memberStrategy;
 
-        public RoundRobin(IMemberStrategy m)
+        public RoundRobin(IMemberStrategy memberStrategy)
         {
-            this._m = m;
+            _memberStrategy = memberStrategy;
         }
 
         public string GetNode()
         {
-            var members = _m.GetAllMembers();
+            var members = _memberStrategy.GetAllMembers();
             var l = members.Count;
             if (l == 0) return "";
             if (l == 1) return members[0].Address;

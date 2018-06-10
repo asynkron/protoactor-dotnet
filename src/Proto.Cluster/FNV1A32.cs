@@ -2,16 +2,7 @@ namespace System.Security.Cryptography
 {
     public abstract class FNV1A32 : HashAlgorithm
     {
-        protected FNV1A32() { }
-
-#if NETSTANDARD2_0 || NET452
-        public new static FNV1A32 Create()
-#else
-        public static FNV1A32 Create()
-#endif
-        {
-            return new Implementation();
-        }
+        public new static FNV1A32 Create() => new Implementation();
 
         private sealed class Implementation : FNV1A32
         {
@@ -23,15 +14,13 @@ namespace System.Security.Cryptography
 
             public Implementation()
             {
-                this.Initialize();
-#if NETSTANDARD2_0 || NET452
-                this.HashSizeValue = 32;
-#endif
+                Initialize();
+                HashSizeValue = 32;
             }
 
             public override void Initialize()
             {
-                this._hash = FnvOffsetBasis;
+                _hash = FnvOffsetBasis;
             }
 
             protected override void HashCore(byte[] array, int ibStart, int cbSize)
@@ -45,16 +34,13 @@ namespace System.Security.Cryptography
                 {
                     unchecked
                     {
-                        this._hash ^= array[i];
-                        this._hash *= FnvPrime;
+                        _hash ^= array[i];
+                        _hash *= FnvPrime;
                     }
                 }
             }
 
-            protected override byte[] HashFinal()
-            {
-                return BitConverter.GetBytes(this._hash);
-            }
+            protected override byte[] HashFinal() => BitConverter.GetBytes(_hash);
         }
     }
 }

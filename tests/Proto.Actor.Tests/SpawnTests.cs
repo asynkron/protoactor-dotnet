@@ -6,7 +6,6 @@
 
 using System;
 using Xunit;
-using Xunit.Sdk;
 using static Proto.TestFixtures.Receivers;
 
 namespace Proto.Tests

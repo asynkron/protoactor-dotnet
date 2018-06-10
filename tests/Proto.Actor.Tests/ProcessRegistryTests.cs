@@ -27,7 +27,7 @@ namespace Proto.Tests
             var reg = new ProcessRegistry();
             reg.TryAdd(id, p);
 
-            var (pid, ok) = reg.TryAdd(id, p);
+            var (_, ok) = reg.TryAdd(id, p);
 
             Assert.False(ok);
         }
@@ -39,7 +39,7 @@ namespace Proto.Tests
             var p = new TestProcess();
             var reg = new ProcessRegistry();
             reg.TryAdd(id, p);
-            var (pid, ok) = reg.TryAdd(id, p);
+            var (pid, _) = reg.TryAdd(id, p);
 
             var p2 = reg.Get(pid);
 
@@ -52,7 +52,7 @@ namespace Proto.Tests
             var id = Guid.NewGuid().ToString();
             var p = new TestProcess();
             var reg = new ProcessRegistry();
-            var (pid, ok) = reg.TryAdd(id, p);
+            var (pid, _) = reg.TryAdd(id, p);
             reg.Remove(pid);
 
             var p2 = reg.Get(pid);

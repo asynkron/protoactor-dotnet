@@ -16,7 +16,7 @@ namespace Proto.Persistence
         private readonly Action<Snapshot> _applySnapshot;
         private readonly Func<object> _getState;
         private readonly ISnapshotStrategy _snapshotStrategy;
-        private bool UsingSnapshotting => _applySnapshot != null;
+        private bool UsingSnapshotting => _applySnapshot != null; //TODO: why not used?
         private bool UsingEventSourcing => _applyEvent != null;
         private readonly IEventStore _eventStore;
         private readonly ISnapshotStore _snapshotStore;

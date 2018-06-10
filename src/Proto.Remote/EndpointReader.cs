@@ -82,7 +82,7 @@ namespace Proto.Remote
 
         public void Suspend(bool suspended)
         {
-            this._suspended = suspended;
+            _suspended = suspended;
         }
     }
 }

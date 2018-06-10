@@ -67,7 +67,7 @@ namespace Proto.Cluster
         private class SpawningProcess : TaskCompletionSource<ActorPidResponse>
         {
             public string SpawningAddress { get; }
-            public SpawningProcess(string address) => this.SpawningAddress = address;
+            public SpawningProcess(string address) => SpawningAddress = address;
         }
 
         private readonly string _kind;
@@ -172,7 +172,7 @@ namespace Proto.Cluster
             }
 
             //Process Spawning Process
-            foreach (var (actorId, sp) in _spawningProcs)
+            foreach (var (_, sp) in _spawningProcs)
             {
                 if (sp.SpawningAddress == msg.Address)
                 {
@@ -195,7 +195,7 @@ namespace Proto.Cluster
             }
 
             //Process Spawning Process
-            foreach (var (actorId, sp) in _spawningProcs)
+            foreach (var (_, sp) in _spawningProcs)
             {
                 if (sp.SpawningAddress == msg.Address)
                 {
@@ -333,7 +333,7 @@ namespace Proto.Cluster
             ActorPidResponse pidResp;
             try
             {
-                pidResp = await Remote.Remote.SpawnNamedAsync(activator, req.Name, req.Kind, Cluster.cfg.TimeoutTimespan);
+                pidResp = await Remote.Remote.SpawnNamedAsync(activator, req.Name, req.Kind, Cluster.Config.TimeoutTimespan);
             }
             catch (TimeoutException)
             {

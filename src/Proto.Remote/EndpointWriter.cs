@@ -6,11 +6,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
-using Google.Protobuf.Collections;
 using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote

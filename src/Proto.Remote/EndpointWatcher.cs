@@ -147,11 +147,6 @@ namespace Proto.Remote
                     //pass 
                     break;
                 }
-                default:
-                {
-                    //TODO: log error
-                    break;
-                }
             }
             return Actor.Done;
         }

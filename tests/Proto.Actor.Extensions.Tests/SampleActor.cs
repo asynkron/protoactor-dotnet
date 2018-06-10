@@ -3,7 +3,7 @@ namespace Proto.ActorExtensions.Tests
 {
     public class SampleActor : IActor
     {
-        public static bool Created = false;
+        public static bool Created;
 
         public SampleActor()
         {
