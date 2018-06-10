@@ -28,20 +28,20 @@ namespace Proto.Remote
     {
         private class ConnectionRegistry : ConcurrentDictionary<string, Lazy<Endpoint>> { }
 
-        private static readonly ILogger _logger = Log.CreateLogger("EndpointManager");
+        private static readonly ILogger Logger = Log.CreateLogger("EndpointManager");
 
-        private static readonly ConnectionRegistry _connections = new ConnectionRegistry();
+        private static readonly ConnectionRegistry Connections = new ConnectionRegistry();
         private static PID _endpointSupervisor;
         private static Subscription<object> _endpointTermEvnSub;
         private static Subscription<object> _endpointConnEvnSub;
 
         public static void Start()
         {
-            _logger.LogDebug("Started EndpointManager");
+            Logger.LogDebug("Started EndpointManager");
 
             var props = Actor.FromProducer(() => new EndpointSupervisor())
                              .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
-                             .WithDispatcher(Proto.Mailbox.Dispatchers.SynchronousDispatcher);
+                             .WithDispatcher(Mailbox.Dispatchers.SynchronousDispatcher);
             _endpointSupervisor = Actor.SpawnNamed(props, "EndpointSupervisor");
             _endpointTermEvnSub = EventStream.Instance.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated);
             _endpointConnEvnSub = EventStream.Instance.Subscribe<EndpointConnectedEvent>(OnEndpointConnected);
@@ -52,54 +52,54 @@ namespace Proto.Remote
             EventStream.Instance.Unsubscribe(_endpointTermEvnSub.Id);
             EventStream.Instance.Unsubscribe(_endpointConnEvnSub.Id);
 
-            _connections.Clear();
+            Connections.Clear();
             _endpointSupervisor.Stop();
-            _logger.LogDebug("Stopped EndpointManager");
+            Logger.LogDebug("Stopped EndpointManager");
         }
 
         private static void OnEndpointTerminated(EndpointTerminatedEvent msg)
         {
-            if (_connections.TryRemove(msg.Address, out var v))
+            if (Connections.TryRemove(msg.Address, out var v))
             {
                 var endpoint = v.Value;
-                endpoint.Watcher.Send(msg);
-                endpoint.Writer.Send(msg);
+                RootContext.Empty.Send(endpoint.Watcher,msg);
+                RootContext.Empty.Send(endpoint.Writer,msg);
             }
         }
 
         private static void OnEndpointConnected(EndpointConnectedEvent msg)
         {
             var endpoint = EnsureConnected(msg.Address);
-            endpoint.Watcher.Send(msg);
+            RootContext.Empty.Send(endpoint.Watcher,msg);
         }
 
         public static void RemoteTerminate(RemoteTerminate msg)
         {
             var endpoint = EnsureConnected(msg.Watchee.Address);
-            endpoint.Watcher.Send(msg);
+            RootContext.Empty.Send(endpoint.Watcher,msg);
         }
 
         public static void RemoteWatch(RemoteWatch msg)
         {
             var endpoint = EnsureConnected(msg.Watchee.Address);
-            endpoint.Watcher.Send(msg);
+            RootContext.Empty.Send(endpoint.Watcher,msg);
         }
 
         public static void RemoteUnwatch(RemoteUnwatch msg)
         {
             var endpoint = EnsureConnected(msg.Watchee.Address);
-            endpoint.Watcher.Send(msg);
+            RootContext.Empty.Send(endpoint.Watcher,msg);
         }
 
         public static void RemoteDeliver(RemoteDeliver msg)
         {
             var endpoint = EnsureConnected(msg.Target.Address);
-            endpoint.Writer.Send(msg);
+            RootContext.Empty.Send(endpoint.Writer, msg);
         }
 
         private static Endpoint EnsureConnected(string address)
         {
-            var conn = _connections.GetOrAdd(address, v =>
+            var conn = Connections.GetOrAdd(address, v =>
                 new Lazy<Endpoint>(() =>
                     RootContext.Empty.RequestAsync<Endpoint>(_endpointSupervisor, v).Result)
             );

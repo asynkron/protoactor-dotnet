@@ -48,6 +48,8 @@ namespace Proto.Router.Routers
                 var key = hashable.HashBy();
                 var node = _hashRing.GetNode(key);
                 var routee = _routeeMap[node];
+                
+                //by design, just forward message
                 RootContext.Empty.Send(routee, message);
             }
             else

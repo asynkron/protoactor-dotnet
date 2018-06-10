@@ -10,20 +10,22 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto
-{   
+{
     public class RootContext : ISenderContext
     {
-        public static readonly RootContext Empty = new RootContext(MessageHeader.Empty);
+        public static readonly RootContext Empty = new RootContext();
         private readonly Sender _senderMiddleware;
 
         public RootContext()
         {
+            _senderMiddleware = null;
             Headers = MessageHeader.Empty;
         }
+
         public RootContext(MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
         {
             _senderMiddleware = middleware.Reverse()
-                    .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner));
+                .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner));
             Headers = messageHeader;
         }
 
@@ -55,14 +57,14 @@ namespace Proto
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => RequestAsync(target, message, new FutureProcess<T>(cancellationToken));
 
-        public Task<T>    RequestAsync<T>(PID target, object message)
+        public Task<T> RequestAsync<T>(PID target, object message)
             => RequestAsync(target, message, new FutureProcess<T>());
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
         {
             var messageEnvelope = new MessageEnvelope(message, future.Pid, null);
             SendUserMessage(target, messageEnvelope);
-            
+
             return future.Task;
         }
 
@@ -80,12 +82,10 @@ namespace Proto
                     //tell based middleware
                     _senderMiddleware(this, target, new MessageEnvelope(message, null, null));
                 }
+                return;
             }
-            else
-            {
-                //Default path
-                target.SendUserMessage(message);
-            }
+            //Default path
+            target.SendUserMessage(message);
         }
     }
 }
