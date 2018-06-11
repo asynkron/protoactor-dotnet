@@ -21,40 +21,44 @@ namespace Proto.OpenTracing
         internal static Props WithOpenTracingSender(this Props props, SpanSetup sendSpanSetup, ITracer tracer)
             => props.WithSenderMiddleware(OpenTracingSenderMiddleware(sendSpanSetup, tracer));
 
-        public static Func<Sender, Sender> OpenTracingSenderMiddleware(SpanSetup sendSpanSetup, ITracer tracer) => next => async (context, target, envelope) =>
-        {
-            tracer = tracer ?? GlobalTracer.Instance;
-
-            var message = envelope.Message;
-
-            using (IScope scope = tracer
-                .BuildSpan("Send " + (message?.GetType().Name ?? "Unknown"))
-                .AsChildOf(tracer.ActiveSpan)
-                .StartActive(finishSpanOnDispose: true)
-                )
+        public static Func<Sender, Sender> OpenTracingSenderMiddleware(SpanSetup sendSpanSetup, ITracer tracer = null)
+            => next => async (context, target, envelope) =>
             {
-                var span = scope.Span;
+                tracer = tracer ?? GlobalTracer.Instance;
 
-                try
+                var message = envelope.Message;
+
+                using (IScope scope = tracer
+                    .BuildSpan("Send " + (message?.GetType().Name ?? "Unknown"))
+                    .AsChildOf(tracer.ActiveSpan)
+                    .StartActive(finishSpanOnDispose: true)
+                    )
                 {
-                    sendSpanSetup?.Invoke(span, message);
+                    var span = scope.Span;
 
-                    envelope = envelope.WithSpanContextHeader(span.Context);
+                    try
+                    {
+                        sendSpanSetup?.Invoke(span, message);
 
-                    await next(context, target, envelope).ConfigureAwait(false);
+                        envelope = envelope.WithSpanContextHeader(span.Context);
+
+                        await next(context, target, envelope).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Tags.Error.Set(scope.Span, true);
+                        span.Log(ex.Message);
+                        span.Log(ex.StackTrace);
+                        throw;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Tags.Error.Set(scope.Span, true);
-                    span.Log(ex.Message);
-                    span.Log(ex.StackTrace);
-                    throw;
-                }
-            }
-        };
+            };
 
-        internal static Props WithOpenTracingReceiver(this Props props, SpanSetup receiveSpanSetup, ITracer tracer) =>
-            props.WithReceiveMiddleware(next => async (context, envelope) =>
+        internal static Props WithOpenTracingReceiver(this Props props, SpanSetup receiveSpanSetup, ITracer tracer)
+            => props.WithReceiveMiddleware(OpenTracingReceiverMiddleware(receiveSpanSetup, tracer));
+
+        public static Func<Receiver, Receiver> OpenTracingReceiverMiddleware(SpanSetup receiveSpanSetup, ITracer tracer = null)
+            => next => async (context, envelope) =>
             {
                 tracer = tracer ?? GlobalTracer.Instance;
 
@@ -70,11 +74,11 @@ namespace Proto.OpenTracing
                 {
                     var span = scope.Span;
 
-                    receiveSpanSetup?.Invoke(span, message);
-
                     try
                     {
-                        await context.Receive(envelope).ConfigureAwait(false);
+                        receiveSpanSetup?.Invoke(span, message);
+
+                        await next(context, envelope).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -86,6 +90,6 @@ namespace Proto.OpenTracing
 
                     // No need to call scope.Span.Finish() as we've set finishSpanOnDispose:true in StartActive.
                 }
-            });
+            };
     }
 }

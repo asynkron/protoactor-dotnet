@@ -14,7 +14,7 @@ namespace Proto.OpenTracing.Tests
         [InlineData(null, null, false)]
         [InlineData("traceid", null, false)]
         [InlineData(null, "spanId", false)]
-        public async Task WithOpenTracingSenderTest(string traceId, string spanId, bool spanCtxExpected)
+        public async Task OpenTracingSenderMiddlewareTest(string traceId, string spanId, bool spanCtxExpected)
         {
             // GIVEN
             var spanContext = Substitute.For<ISpanContext>();
@@ -53,7 +53,7 @@ namespace Proto.OpenTracing.Tests
                     Assert.Equal(senderPid, envelope.Sender);
 
                     var hasSpanCtx = envelope.Header.TryGetSpanContext(out var spContext);
-                    Assert.Equal(hasSpanCtx, spanCtxExpected);
+                    Assert.Equal(spanCtxExpected, hasSpanCtx);
 
                     if (spanCtxExpected)
                     {
@@ -68,6 +68,66 @@ namespace Proto.OpenTracing.Tests
                     span.Received(1).Log("test");
                 })
             (null, targetPid, new MessageEnvelope("test", senderPid, new MessageHeader()));
+        }
+
+
+        [Theory]
+        [InlineData(true, "traceid", "spanId")]
+        [InlineData(false, "", null)]
+        public async Task OpenTracingReceiverMiddlewareTests(bool hasContext, string traceId, string spanId)
+        {
+            // GIVEN
+            var spanContext = Substitute.For<ISpanContext>();
+            spanContext.TraceId.Returns(traceId);
+            spanContext.SpanId.Returns(spanId);
+
+            var span = Substitute.For<ISpan>();
+            span.Context.Returns(spanContext);
+
+            var scope = Substitute.For<IScope>();
+            scope.Span.Returns(span);
+
+            var spanBuilder = Substitute.For<ISpanBuilder>();
+            spanBuilder.AsChildOf(Arg.Any<ISpan>()).Returns(spanBuilder);
+            spanBuilder.StartActive().Returns(scope);
+            spanBuilder.StartActive(Arg.Any<bool>()).ReturnsForAnyArgs(scope);
+
+            var tracer = Substitute.For<ITracer>();
+            tracer.BuildSpan("").ReturnsForAnyArgs(spanBuilder);
+
+            var receiveMiddleware = OpenTracingExtensions.OpenTracingReceiverMiddleware(
+                (sp, message) => span.Log(message.ToString()),
+                tracer
+                );
+
+            var senderPid = new PID("here", "sender");
+
+            var env = new MessageEnvelope("test", senderPid, new MessageHeader());
+            if (hasContext) env = env.WithSpanContextHeader(new SpanContext(traceId, spanId));
+
+            // WHEN
+            var receive = receiveMiddleware(async (context, envelope) =>
+                {
+                    // THEN
+                    Assert.Null(context);
+                    Assert.Equal(senderPid, envelope.Sender);
+
+                    var hasSpanCtx = envelope.Header.TryGetSpanContext(out var spContext);
+                    Assert.Equal(hasContext, hasSpanCtx);
+
+                    if (hasContext)
+                    {
+                        spanBuilder.Received(1).AsChildOf(Arg.Is<ISpanContext>(sp => sp.TraceId == traceId && sp.SpanId == spanId));
+                    }
+                    else
+                    {
+                        spanBuilder.Received(1).AsChildOf(Arg.Is<ISpanContext>(sp => sp == null));
+                    }
+
+                    span.Received(1).Log("test");
+                });
+
+            await receive(null, env);
         }
     }
 }
