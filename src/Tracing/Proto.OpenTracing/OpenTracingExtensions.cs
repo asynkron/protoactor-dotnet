@@ -43,6 +43,9 @@ namespace Proto.OpenTracing
 
                     try
                     {
+                        ProtoTags.TargetPID.Set(span, target.ToShortString());
+                        if (envelope.Sender != null) ProtoTags.SenderPID.Set(span, envelope.Sender.ToShortString());
+
                         sendSpanSetup?.Invoke(span, message);
 
                         var dictionary = new Dictionary<string, string>();
@@ -74,7 +77,7 @@ namespace Proto.OpenTracing
                 var parentSpanCtx = envelope.Header != null
                     ? tracer.Extract(BuiltinFormats.TextMap, new TextMapExtractAdapter(envelope.Header.ToDictionary()))
                     : null;
-                
+
                 using (IScope scope = tracer
                     .BuildSpan("Receive " + (message?.GetType().Name ?? "Unknown"))
                     .AsChildOf(parentSpanCtx)
@@ -85,6 +88,8 @@ namespace Proto.OpenTracing
 
                     try
                     {
+                        if (envelope.Sender != null) ProtoTags.SenderPID.Set(span, envelope.Sender.ToShortString());
+
                         receiveSpanSetup?.Invoke(span, message);
 
                         await next(context, envelope).ConfigureAwait(false);
@@ -96,9 +101,6 @@ namespace Proto.OpenTracing
                         span.Log(ex.StackTrace);
                         throw;
                     }
-
-
-                    // No need to call scope.Span.Finish() as we've set finishSpanOnDispose:true in StartActive.
                 }
             };
     }
