@@ -62,8 +62,10 @@ namespace Proto.OpenTracing.Tests
                     }
                     else
                     {
-                        Assert.Null(spanContext);
+                        Assert.Null(spContext);
                     }
+
+                    span.Received(1).Log("test");
                 })
             (null, targetPid, new MessageEnvelope("test", senderPid, new MessageHeader()));
         }
