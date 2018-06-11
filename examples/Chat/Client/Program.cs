@@ -1,16 +1,25 @@
 ﻿using System;
 using chat.messages;
+using Jaeger;
+using Jaeger.Samplers;
+using OpenTracing.Util;
 using Proto;
+using Proto.OpenTracing;
 using Proto.Remote;
 
 class Program
 {
     static void Main(string[] args)
     {
+        var tracer = new Tracer.Builder("Proto.Chat.Client")
+            .WithSampler(new ConstSampler(true))
+            .Build();
+        GlobalTracer.Register(tracer);
+
         Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
         Remote.Start("127.0.0.1", 0);
         var server = new PID("127.0.0.1:8000", "chatserver");
-        var context = new RootContext();
+        var context = new RootContext(default, OpenTracingExtensions.OpenTracingSenderMiddleware());
 
         var props = Props.FromFunc(ctx =>
         {
@@ -27,7 +36,8 @@ class Program
                     break;
             }
             return Actor.Done;
-        });
+        })
+        .WithOpenTracing();
 
         var client = context.Spawn(props);
         context.Send(server, new Connect

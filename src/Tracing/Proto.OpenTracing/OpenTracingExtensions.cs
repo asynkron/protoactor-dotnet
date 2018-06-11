@@ -1,15 +1,20 @@
 ﻿using OpenTracing;
+using OpenTracing.Propagation;
 using OpenTracing.Tag;
 using OpenTracing.Util;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Proto.OpenTracing
 {
     public delegate void SpanSetup(ISpan span, object message);
 
+    /// <summary>
+    /// Good documentation/tutorials here : https://github.com/yurishkuro/opentracing-tutorial/tree/master/csharp
+    /// </summary>
     public static class OpenTracingExtensions
     {
         public static Props WithOpenTracing(this Props props, SpanSetup sendSpanSetup = null, SpanSetup receiveSpanSetup = null, ITracer tracer = null)
@@ -21,7 +26,7 @@ namespace Proto.OpenTracing
         internal static Props WithOpenTracingSender(this Props props, SpanSetup sendSpanSetup, ITracer tracer)
             => props.WithSenderMiddleware(OpenTracingSenderMiddleware(sendSpanSetup, tracer));
 
-        public static Func<Sender, Sender> OpenTracingSenderMiddleware(SpanSetup sendSpanSetup, ITracer tracer = null)
+        public static Func<Sender, Sender> OpenTracingSenderMiddleware(SpanSetup sendSpanSetup = null, ITracer tracer = null)
             => next => async (context, target, envelope) =>
             {
                 tracer = tracer ?? GlobalTracer.Instance;
@@ -40,13 +45,15 @@ namespace Proto.OpenTracing
                     {
                         sendSpanSetup?.Invoke(span, message);
 
-                        envelope = envelope.WithSpanContextHeader(span.Context);
+                        var dictionary = new Dictionary<string, string>();
+                        tracer.Inject(span.Context, BuiltinFormats.TextMap, new TextMapInjectAdapter(dictionary));
+                        envelope = envelope.WithHeaders(dictionary);
 
                         await next(context, target, envelope).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
-                        Tags.Error.Set(scope.Span, true);
+                        Tags.Error.Set(span, true);
                         span.Log(ex.Message);
                         span.Log(ex.StackTrace);
                         throw;
@@ -57,18 +64,20 @@ namespace Proto.OpenTracing
         internal static Props WithOpenTracingReceiver(this Props props, SpanSetup receiveSpanSetup, ITracer tracer)
             => props.WithReceiveMiddleware(OpenTracingReceiverMiddleware(receiveSpanSetup, tracer));
 
-        public static Func<Receiver, Receiver> OpenTracingReceiverMiddleware(SpanSetup receiveSpanSetup, ITracer tracer = null)
+        public static Func<Receiver, Receiver> OpenTracingReceiverMiddleware(SpanSetup receiveSpanSetup = null, ITracer tracer = null)
             => next => async (context, envelope) =>
             {
                 tracer = tracer ?? GlobalTracer.Instance;
 
                 var message = envelope.Message;
 
-                envelope.Header.TryGetSpanContext(out var parentSpanContext);
-
+                var parentSpanCtx = envelope.Header != null
+                    ? tracer.Extract(BuiltinFormats.TextMap, new TextMapExtractAdapter(envelope.Header.ToDictionary()))
+                    : null;
+                
                 using (IScope scope = tracer
                     .BuildSpan("Receive " + (message?.GetType().Name ?? "Unknown"))
-                    .AsChildOf(parentSpanContext)
+                    .AsChildOf(parentSpanCtx)
                     .StartActive(finishSpanOnDispose: true)
                     )
                 {
@@ -82,11 +91,12 @@ namespace Proto.OpenTracing
                     }
                     catch (Exception ex)
                     {
-                        Tags.Error.Set(scope.Span, true);
-                        scope.Span.Log(ex.Message);
-                        scope.Span.Log(ex.StackTrace);
+                        Tags.Error.Set(span, true);
+                        span.Log(ex.Message);
+                        span.Log(ex.StackTrace);
                         throw;
                     }
+
 
                     // No need to call scope.Span.Finish() as we've set finishSpanOnDispose:true in StartActive.
                 }

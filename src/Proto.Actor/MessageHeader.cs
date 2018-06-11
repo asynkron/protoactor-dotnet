@@ -30,6 +30,12 @@ namespace Proto
             return new MessageHeader(copy);
         }
 
+        public MessageHeader With(IEnumerable<KeyValuePair<string, string>> items)
+        {
+            var copy = _inner.SetItems(items);
+            return new MessageHeader(copy);
+        }
+
         public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => _inner.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => _inner.GetEnumerator();
         public int Count => _inner.Count;
