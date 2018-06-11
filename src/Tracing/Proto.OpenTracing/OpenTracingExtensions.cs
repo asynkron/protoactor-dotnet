@@ -12,17 +12,14 @@ namespace Proto.OpenTracing
 
     public static class OpenTracingExtensions
     {
-        public const string OpenTracingHeaderKey = "OpenTracingContext";
-
-
-
-        public static Props WithOpenTracing(this Props props, SpanSetup sendSpanSetup, SpanSetup receiveSpanSetup, ITracer tracer = null)
+        public static Props WithOpenTracing(this Props props, SpanSetup sendSpanSetup = null, SpanSetup receiveSpanSetup = null, ITracer tracer = null)
             => props
                 .WithOpenTracingSender(sendSpanSetup, tracer)
                 .WithOpenTracingReceiver(receiveSpanSetup, tracer)
             ;
 
-        private static Props WithOpenTracingSender(this Props props, SpanSetup sendSpanSetup, ITracer tracer) => props.WithSenderMiddleware(OpenTracingSenderMiddleware(sendSpanSetup, tracer));
+        internal static Props WithOpenTracingSender(this Props props, SpanSetup sendSpanSetup, ITracer tracer)
+            => props.WithSenderMiddleware(OpenTracingSenderMiddleware(sendSpanSetup, tracer));
 
         public static Func<Sender, Sender> OpenTracingSenderMiddleware(SpanSetup sendSpanSetup, ITracer tracer) => next => async (context, target, envelope) =>
         {
@@ -42,9 +39,7 @@ namespace Proto.OpenTracing
                 {
                     sendSpanSetup?.Invoke(span, message);
 
-                    envelope = envelope
-                        .WithHeader(OpenTracingHeaderKey, SpanContext.ToHeader(span.Context)
-                        );
+                    envelope = envelope.WithSpanContextHeader(span.Context);
 
                     await next(context, target, envelope).ConfigureAwait(false);
                 }
@@ -58,7 +53,7 @@ namespace Proto.OpenTracing
             }
         };
 
-        private static Props WithOpenTracingReceiver(this Props props, SpanSetup receiveSpanSetup, ITracer tracer) =>
+        internal static Props WithOpenTracingReceiver(this Props props, SpanSetup receiveSpanSetup, ITracer tracer) =>
             props.WithReceiveMiddleware(next => async (context, envelope) =>
             {
                 tracer = tracer ?? GlobalTracer.Instance;
@@ -92,50 +87,5 @@ namespace Proto.OpenTracing
                     // No need to call scope.Span.Finish() as we've set finishSpanOnDispose:true in StartActive.
                 }
             });
-
-
-        private class SpanContext : ISpanContext
-        {
-            public static string ToHeader(ISpanContext context)
-            {
-                var sb = new StringBuilder()
-                    .Append(context.TraceId).Append("|").Append(context.SpanId);
-
-                // TODO : GRPC serialisation ?
-                //foreach (var (key, value) in context.GetBaggageItems())
-                //{
-                //    sc.BaggageItems[key] = value;
-                //}
-
-                return sb.ToString();
-            }
-
-            public static SpanContext FromHeader(string headerValue)
-            {
-                var ids = headerValue.Split('|');
-                return new SpanContext { TraceId = ids[0], SpanId = ids[1] };
-            }
-
-            public string TraceId { get; private set; }
-
-            public string SpanId { get; private set; }
-
-            // TODO
-            //public Dictionary<string, string> BaggageItems { get; } = new Dictionary<string, string>();
-
-            public IEnumerable<KeyValuePair<string, string>> GetBaggageItems() { yield break; }
-        }
-
-        private static bool TryGetSpanContext(this MessageHeader header, out SpanContext spanContext)
-        {
-            spanContext = default;
-            if (header == null) return false;
-
-            var contextValues = header.GetOrDefault(OpenTracingHeaderKey);
-            if (contextValues == null) return false;
-
-            spanContext = SpanContext.FromHeader(contextValues);
-            return true;
-        }
     }
 }
