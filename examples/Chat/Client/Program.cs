@@ -14,12 +14,14 @@ class Program
         var tracer = new Tracer.Builder("Proto.Chat.Client")
             .WithSampler(new ConstSampler(true))
             .Build();
-        GlobalTracer.Register(tracer);
+
+        SpanSetup spanSetup = (span, message) => span.Log(message?.ToString());
+        var openTracingMiddleware = OpenTracingExtensions.OpenTracingSenderMiddleware(spanSetup, tracer);
 
         Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
         Remote.Start("127.0.0.1", 0);
         var server = new PID("127.0.0.1:8000", "chatserver");
-        var context = new RootContext(default, OpenTracingExtensions.OpenTracingSenderMiddleware());
+        var context = new RootContext(default, openTracingMiddleware);
 
         var props = Props.FromFunc(ctx =>
         {
@@ -37,7 +39,7 @@ class Program
             }
             return Actor.Done;
         })
-        .WithOpenTracing();
+        .WithOpenTracing(spanSetup, spanSetup, tracer);
 
         var client = context.Spawn(props);
         context.Send(server, new Connect

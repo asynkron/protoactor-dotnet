@@ -17,6 +17,8 @@ class Program
             .Build();
         GlobalTracer.Register(tracer);
 
+        SpanSetup spanSetup = (span, message) => span.Log(message?.ToString());
+
         var context = new RootContext();
         Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
         Remote.Start("127.0.0.1", 8000);
@@ -54,7 +56,7 @@ class Program
             }
             return Actor.Done;
         })
-        .WithOpenTracing();
+        .WithOpenTracing(spanSetup, spanSetup);
 
         context.SpawnNamed(props, "chatserver");
         Console.ReadLine();
