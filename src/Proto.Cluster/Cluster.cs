@@ -28,12 +28,12 @@ namespace Proto.Cluster
         
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Logger.LogInformation("Starting Proto.Actor cluster");
-            var (h, p) = ParseAddress(ProcessRegistry.Instance.Address);
+            var (host, port) = ParseAddress(ProcessRegistry.Instance.Address);
             var kinds = Remote.Remote.GetKnownKinds();
             Partition.Setup(kinds);
             PidCache.Setup();
             MemberList.Setup();
-            Config.ClusterProvider.RegisterMemberAsync(Config.Name, h, p, kinds, config.InitialMemberStatusValue, config.MemberStatusValueSerializer).Wait();
+            Config.ClusterProvider.RegisterMemberAsync(Config.Name, host, port, kinds, config.InitialMemberStatusValue, config.MemberStatusValueSerializer).Wait();
             Config.ClusterProvider.MonitorMemberStatusChanges();
 
             Logger.LogInformation("Started Cluster");
