@@ -8,7 +8,6 @@ namespace Proto.Cluster.SingleRemoteInstance
 {
     public class SingleRemoteInstanceProvider : IClusterProvider
     {
-        const string MAGIC_WORD = "kinds please";
         const string KINDS_RESPONDER = "remote_kinds_responder";
         readonly TimeSpan _timeout = TimeSpan.FromSeconds(10);
 
@@ -30,12 +29,13 @@ namespace Proto.Cluster.SingleRemoteInstance
 
             var props = Props.FromFunc(ctx =>
             {
-                if ((ctx.Message as string) == MAGIC_WORD && ctx.Sender != null)
-                    ctx.Respond(_kinds);
+                if ((ctx.Message is GetKinds) && ctx.Sender != null)
+                    ctx.Respond(new GetKindsResponse { Kinds = { _kinds } });
 
                 return Actor.Done;
             });
 
+            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             //RootContext.Empty.SpawnNamed(props, KINDS_RESPONDER);
 
             Remote.Remote.RegisterKnownKind(KINDS_RESPONDER, props);
@@ -89,8 +89,8 @@ namespace Proto.Cluster.SingleRemoteInstance
                 {
                     try
                     {
-                        var kinds = RootContext.Empty.RequestAsync<string[]>(responder.Pid, MAGIC_WORD, _timeout).Result;
-                        status = new MemberStatus(_serverAddress, _serverHost, _serverPort, kinds, true, _okStatus);
+                        var response = RootContext.Empty.RequestAsync<GetKindsResponse>(responder.Pid, new GetKinds(), _timeout).Result;
+                        status = new MemberStatus(_serverAddress, _serverHost, _serverPort, response.Kinds, true, _okStatus);
                     }
                     catch (Exception ex) when (ex is TimeoutException || ex.InnerException is TimeoutException)
                     {
