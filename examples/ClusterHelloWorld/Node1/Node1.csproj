@@ -8,6 +8,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\ClusterProviders\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
+    <ProjectReference Include="..\..\..\src\ClusterProviders\Proto.Cluster.SingleRemoteInstance\Proto.Cluster.SingleRemoteInstance.csproj" />
     <ProjectReference Include="..\..\..\src\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
     <ProjectReference Include="..\..\..\src\Proto.Mailbox\Proto.Mailbox.csproj" />

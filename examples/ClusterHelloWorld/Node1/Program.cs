@@ -11,6 +11,7 @@ using Messages;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
+using Proto.Cluster.SingleRemoteInstance;
 using Proto.Remote;
 using Process = System.Diagnostics.Process;
 using ProtosReflection = Messages.ProtosReflection;
@@ -22,11 +23,17 @@ class Program
         var context = new RootContext();
         Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
         var parsedArgs = parseArgs(args);
-        if(parsedArgs.StartConsul)
-        {
-            StartConsulDevMode();
-        }
-        Cluster.Start("MyCluster", parsedArgs.ServerName, 12001, new ConsulProvider(new ConsulProviderOptions(), c => c.Address = new Uri("http://" + parsedArgs.ConsulUrl + ":8500/")));
+        // SINGLE REMOTE INSTANCE
+        Cluster.Start("MyCluster", parsedArgs.ServerName, 12002, new SingleRemoteInstanceProvider("127.0.0.1", 12000));
+
+        // CONSUL 
+        //if(parsedArgs.StartConsul)
+        //{
+        //    StartConsulDevMode();
+        //}
+        //Cluster.Start("MyCluster", parsedArgs.ServerName, 12001, new ConsulProvider(new ConsulProviderOptions(), c => c.Address = new Uri("http://" + parsedArgs.ConsulUrl + ":8500/")));
+
+
         var (pid, sc) = Cluster.GetAsync("TheName", "HelloKind").Result;
         while (sc != ResponseStatusCode.OK)
             (pid, sc) = Cluster.GetAsync("TheName", "HelloKind").Result;
@@ -52,7 +59,7 @@ class Program
 
     private static Node1Config parseArgs(string[] args)
     {
-        if(args.Length > 0) 
+        if (args.Length > 0)
         {
             return new Node1Config(args[0], args[1], bool.Parse(args[2]));
         }
@@ -64,7 +71,7 @@ class Program
         public string ServerName { get; }
         public string ConsulUrl { get; }
         public bool StartConsul { get; }
-        public Node1Config(string serverName, string consulUrl, bool startConsul) 
+        public Node1Config(string serverName, string consulUrl, bool startConsul)
         {
             ServerName = serverName;
             ConsulUrl = consulUrl;
