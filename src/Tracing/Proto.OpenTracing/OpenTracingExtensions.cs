@@ -21,6 +21,7 @@ namespace Proto.OpenTracing
             => props
                 .WithOpenTracingSender(sendSpanSetup, tracer)
                 .WithOpenTracingReceiver(receiveSpanSetup, tracer)
+                .WithContextDecorator(ctx => ctx.DecorateOpenTracing(sendSpanSetup, tracer))
             ;
 
         internal static Props WithOpenTracingSender(this Props props, SpanSetup sendSpanSetup, ITracer tracer)
@@ -30,7 +31,7 @@ namespace Proto.OpenTracing
             => next => async (context, target, envelope) =>
             {
                 tracer = tracer ?? GlobalTracer.Instance;
-                
+
                 var message = envelope.Message;
 
                 var verb = envelope.Sender == null ? "Send" : "Request";
@@ -73,7 +74,7 @@ namespace Proto.OpenTracing
             => next => async (context, envelope) =>
             {
                 tracer = tracer ?? GlobalTracer.Instance;
-                
+
                 var message = envelope.Message;
 
                 var parentSpanCtx = envelope.Header != null
@@ -105,5 +106,16 @@ namespace Proto.OpenTracing
                     }
                 }
             };
+
+        public static IContext DecorateOpenTracing(this IContext context, SpanSetup sendSpanSetup = null, ITracer tracer = null)
+        {
+            tracer = tracer ?? GlobalTracer.Instance;
+            return OpenTracingDecorator<IContext>.Create(context, sendSpanSetup, tracer);
+        }
+        public static ISenderContext DecorateOpenTracing(this ISenderContext context, SpanSetup sendSpanSetup = null, ITracer tracer = null)
+        {
+            tracer = tracer ?? GlobalTracer.Instance;
+            return OpenTracingDecorator<ISenderContext>.Create(context, sendSpanSetup, tracer);
+        }
     }
 }

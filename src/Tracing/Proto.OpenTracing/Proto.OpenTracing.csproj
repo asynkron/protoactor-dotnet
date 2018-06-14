@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
+        <TargetFrameworks>netstandard2.0</TargetFrameworks>
         <Version>0.1.6-dev</Version>
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
@@ -23,5 +23,10 @@
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\Proto.Actor\Proto.Actor.csproj" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+      <PackageReference Include="System.Reflection.DispatchProxy">
+        <Version>4.5.0</Version>
+      </PackageReference>
     </ItemGroup>
 </Project>

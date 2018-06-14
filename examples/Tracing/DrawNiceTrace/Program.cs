@@ -20,8 +20,8 @@ namespace DrawNiceTrace
                .Build();
             GlobalTracer.Register(tracer);
 
-            var root = new RootContext(new MessageHeader(), OpenTracingExtensions.OpenTracingSenderMiddleware());
-
+            var rootContext = new RootContext(new MessageHeader(), OpenTracingExtensions.OpenTracingSenderMiddleware());
+            //var root = rootContext.DecorateOpenTracing();
 
             var bankProps = Props.FromFunc(async ctx =>
             {
@@ -31,8 +31,8 @@ namespace DrawNiceTrace
                         ctx.Respond(new ProcessPaymentResponse { Ok = true });
                         break;
                 }
-            });
-            var bank = root.Spawn(bankProps);
+            }).WithOpenTracing();
+            var bank = rootContext.Spawn(bankProps);
 
 
             var restaurantProps = Props.FromFunc(async ctx =>
@@ -48,7 +48,7 @@ namespace DrawNiceTrace
                         break;
                 }
             }).WithOpenTracing();
-            var restaurant = root.Spawn(restaurantProps);
+            var restaurant = rootContext.Spawn(restaurantProps);
 
 
             var cartProps = Props.FromProducer(() => new CartActor(bank)).WithOpenTracing();
@@ -72,7 +72,6 @@ namespace DrawNiceTrace
                             var cartActorName = getActorName(addItem.CartNumber);
                             cartPID = ctx.Children.First(p => p.Id.EndsWith(cartActorName));
                         }
-
                         ctx.Forward(cartPID);
                         break;
 
@@ -87,11 +86,9 @@ namespace DrawNiceTrace
                         if (resp.Ok) // it will always, we have super rich customers
                             ctx.Send(restaurant, new TriggerFood { Customer = sendPaymentDetails.Customer, OrderNumber = sendPaymentDetails.OrderNumber });
                         break;
-
                 }
             }).WithOpenTracing();
-            var dinner = root.Spawn(dinnerProps);
-
+            var dinner = rootContext.Spawn(dinnerProps);
 
 
             var customerProps = Props.FromFunc(async ctx =>
@@ -122,7 +119,7 @@ namespace DrawNiceTrace
             .WithOpenTracing()
             .WithGuardianSupervisorStrategy(new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 0, null));
 
-            root.Spawn(customerProps);
+            rootContext.Spawn(customerProps);
 
             await Task.Delay(TimeSpan.FromSeconds(10));
             Console.WriteLine("Done! Go to jaeger : http://localhost:16686/search?service=" + serviceName);
