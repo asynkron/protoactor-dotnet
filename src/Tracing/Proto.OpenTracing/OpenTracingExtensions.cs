@@ -19,49 +19,46 @@ namespace Proto.OpenTracing
     {
         public static Props WithOpenTracing(this Props props, SpanSetup sendSpanSetup = null, SpanSetup receiveSpanSetup = null, ITracer tracer = null)
             => props
-                .WithOpenTracingSender(sendSpanSetup, tracer)
+                .WithContextDecorator(ctx => ctx.WithOpenTracing(sendSpanSetup, tracer))
+                .WithOpenTracingSender(tracer)
                 .WithOpenTracingReceiver(receiveSpanSetup, tracer)
-                .WithContextDecorator(ctx => ctx.DecorateOpenTracing(sendSpanSetup, tracer))
             ;
 
-        internal static Props WithOpenTracingSender(this Props props, SpanSetup sendSpanSetup, ITracer tracer)
-            => props.WithSenderMiddleware(OpenTracingSenderMiddleware(sendSpanSetup, tracer));
+        internal static Props WithOpenTracingSender(this Props props, ITracer tracer)
+            => props.WithSenderMiddleware(OpenTracingSenderMiddleware(tracer));
 
-        public static Func<Sender, Sender> OpenTracingSenderMiddleware(SpanSetup sendSpanSetup = null, ITracer tracer = null)
+        public static Func<Sender, Sender> OpenTracingSenderMiddleware(ITracer tracer = null)
             => next => async (context, target, envelope) =>
             {
                 tracer = tracer ?? GlobalTracer.Instance;
 
-                var message = envelope.Message;
+                var span = tracer.ActiveSpan;
+                Task simpleNext() => next(context, target, envelope);
 
-                var verb = envelope.Sender == null ? "Send" : "Request";
-
-                using (IScope scope = tracer
-                    .BuildSpan($"{verb} {message?.GetType().Name ?? "Unknown"}")
-                    .AsChildOf(tracer.ActiveSpan)
-                    .StartActive(finishSpanOnDispose: true)
-                    )
+                if (span == null)
+                    await simpleNext().ConfigureAwait(false);
+                else
                 {
-                    var span = scope.Span;
-
                     try
                     {
                         ProtoTags.TargetPID.Set(span, target.ToShortString());
                         if (envelope.Sender != null) ProtoTags.SenderPID.Set(span, envelope.Sender.ToShortString());
 
-                        sendSpanSetup?.Invoke(span, message);
-
                         var dictionary = new Dictionary<string, string>();
                         tracer.Inject(span.Context, BuiltinFormats.TextMap, new TextMapInjectAdapter(dictionary));
                         envelope = envelope.WithHeaders(dictionary);
 
-                        await next(context, target, envelope).ConfigureAwait(false);
+                        await simpleNext().ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
                         Tags.Error.Set(span, true);
-                        span.Log(ex.Message);
-                        span.Log(ex.StackTrace);
+                        var baseEx = ex.GetBaseException();
+                        span.Log(new Dictionary<string, object> {
+                            { "exception", baseEx.GetType().Name },
+                            { "message", baseEx.Message },
+                            { "stackTrace", ex.StackTrace },
+                        });
                         throw;
                     }
                 }
@@ -81,11 +78,7 @@ namespace Proto.OpenTracing
                     ? tracer.Extract(BuiltinFormats.TextMap, new TextMapExtractAdapter(envelope.Header.ToDictionary()))
                     : null;
 
-                using (IScope scope = tracer
-                    .BuildSpan("Receive " + (message?.GetType().Name ?? "Unknown"))
-                    .AsChildOf(parentSpanCtx)
-                    .StartActive(finishSpanOnDispose: true)
-                    )
+                using (var scope = tracer.BuildStartedScope(parentSpanCtx, "Receive", message, receiveSpanSetup))
                 {
                     var span = scope.Span;
 
@@ -107,15 +100,16 @@ namespace Proto.OpenTracing
                 }
             };
 
-        public static IContext DecorateOpenTracing(this IContext context, SpanSetup sendSpanSetup = null, ITracer tracer = null)
+        static IContext WithOpenTracing(this IContext context, SpanSetup sendSpanSetup = null, ITracer tracer = null)
         {
             tracer = tracer ?? GlobalTracer.Instance;
-            return OpenTracingDecorator<IContext>.Create(context, sendSpanSetup, tracer);
+            return new OpenTracingActorContextDecorator(context, sendSpanSetup, tracer);
         }
-        public static ISenderContext DecorateOpenTracing(this ISenderContext context, SpanSetup sendSpanSetup = null, ITracer tracer = null)
+
+        public static IRootContext WithOpenTracing(this IRootContext context, SpanSetup sendSpanSetup = null, ITracer tracer = null)
         {
             tracer = tracer ?? GlobalTracer.Instance;
-            return OpenTracingDecorator<ISenderContext>.Create(context, sendSpanSetup, tracer);
+            return new OpenTracingRootContextDecorator(context, sendSpanSetup, tracer);
         }
     }
 }

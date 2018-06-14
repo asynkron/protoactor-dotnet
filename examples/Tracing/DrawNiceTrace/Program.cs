@@ -20,8 +20,8 @@ namespace DrawNiceTrace
                .Build();
             GlobalTracer.Register(tracer);
 
-            var rootContext = new RootContext(new MessageHeader(), OpenTracingExtensions.OpenTracingSenderMiddleware());
-            //var root = rootContext.DecorateOpenTracing();
+            var rootContext = new RootContext(new MessageHeader(), OpenTracingExtensions.OpenTracingSenderMiddleware())
+                .WithOpenTracing();
 
             var bankProps = Props.FromFunc(async ctx =>
             {
