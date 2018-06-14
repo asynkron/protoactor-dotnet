@@ -19,7 +19,6 @@ namespace Proto
 {
     internal enum ContextState : byte
     {
-        None,
         Alive,
         Restarting,
         Stopping,
@@ -29,7 +28,6 @@ namespace Proto
     //Angels cry over this code, but it serves a purpose, lazily init of less frequently used features
     public class ActorContextExtras
     {
-
         public ImmutableHashSet<PID> Children { get; private set; } = ActorContext.EmptyChildren;
         public Timer ReceiveTimeoutTimer { get; private set; }
         public RestartStatistics RestartStatistics { get; } = new RestartStatistics(0, null);
@@ -167,8 +165,6 @@ namespace Proto
 
             ReceiveTimeout = TimeSpan.Zero;
         }
-
-        public Task ReceiveAsync(object message) => ProcessMessageAsync(message);
 
         public void Send(PID target, object message) => SendUserMessage(target, message);
 

@@ -11,7 +11,11 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public class RootContext : ISenderContext
+    public interface IRootContext : ISpawnContext, ISenderContext
+    {
+    }
+    
+    public class RootContext : IRootContext
     {
         public static readonly RootContext Empty = new RootContext();
         private readonly Sender _senderMiddleware;
