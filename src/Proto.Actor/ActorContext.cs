@@ -33,6 +33,12 @@ namespace Proto
         public RestartStatistics RestartStatistics { get; } = new RestartStatistics(0, null);
         public Stack<object> Stash { get; } = new Stack<object>();
         public ImmutableHashSet<PID> Watchers { get; private set; } = ImmutableHashSet<PID>.Empty;
+        public IContext Context { get; }
+
+        public ActorContextExtras(IContext context)
+        {
+            Context = context;
+        }
 
         public void InitReceiveTimeoutTimer(Timer timer)
         {
@@ -70,7 +76,16 @@ namespace Proto
         private ContextState _state;
 
 
-        private ActorContextExtras EnsureExtras() => _extras ?? (_extras = new ActorContextExtras());
+        private ActorContextExtras EnsureExtras()
+        {
+            if (_extras == null)
+            {
+                var context = _props?.ContextDecorator(this) ?? this;
+                _extras = new ActorContextExtras(context);
+            }
+            
+            return _extras ;
+        }
 
         public ActorContext(Props props, PID parent)
         {
@@ -335,6 +350,14 @@ namespace Proto
                 Self.Stop();
                 return Done;
             }
+
+
+            //are we using decorators, if so, ensure it has been created
+            if (_props.ContextDecorator != null)
+            {
+                return Actor.ReceiveAsync(EnsureExtras().Context);
+            }
+            
             return Actor.ReceiveAsync(this);
         }
 
@@ -343,7 +366,7 @@ namespace Proto
             //slow path, there is middleware, message must be wrapped in an envelop
             if (_props.ReceiveMiddlewareChain != null)
             {
-                return _props.ReceiveMiddlewareChain(this, MessageEnvelope.Wrap(msg));
+                return _props.ReceiveMiddlewareChain(EnsureExtras().Context, MessageEnvelope.Wrap(msg));
             }
             //fast path, 0 alloc invocation of actor receive
             _messageOrEnvelope = msg;
@@ -362,7 +385,7 @@ namespace Proto
             if (_props.SenderMiddlewareChain != null)
             {
                 //slow path
-                _props.SenderMiddlewareChain(this, target, MessageEnvelope.Wrap(message));
+                _props.SenderMiddlewareChain(EnsureExtras().Context, target, MessageEnvelope.Wrap(message));
             }
             else
             {
