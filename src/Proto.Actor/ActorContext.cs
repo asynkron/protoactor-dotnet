@@ -28,11 +28,11 @@ namespace Proto
     //Angels cry over this code, but it serves a purpose, lazily init of less frequently used features
     public class ActorContextExtras
     {
-        public ImmutableHashSet<PID> Children { get; private set; } = ActorContext.EmptyChildren;
+        public ImmutableHashSet<PID> Children { get; private set; } = ImmutableHashSet<PID>.Empty;
         public Timer ReceiveTimeoutTimer { get; private set; }
         public RestartStatistics RestartStatistics { get; } = new RestartStatistics(0, null);
         public Stack<object> Stash { get; } = new Stack<object>();
-        public FastSet<PID> Watchers { get; } = new FastSet<PID>();
+        public ImmutableHashSet<PID> Watchers { get; private set; } = ImmutableHashSet<PID>.Empty;
 
         public void InitReceiveTimeoutTimer(Timer timer)
         {
@@ -48,6 +48,16 @@ namespace Proto
         public void AddChild(PID pid) => Children = Children.Add(pid);
 
         public void RemoveChild(PID msgWho) => Children = Children.Remove(msgWho);
+
+        public void Watch(PID watcher)
+        {
+            Watchers = Watchers.Add(watcher);
+        }
+
+        public void Unwatch(PID watcher)
+        {
+            Watchers = Watchers.Remove(watcher);
+        }
     }
 
     public class ActorContext : IMessageInvoker, IContext, ISupervisor
@@ -88,10 +98,7 @@ namespace Proto
         public MessageHeader Headers => MessageEnvelope.UnwrapHeader(_messageOrEnvelope);
 
         public TimeSpan ReceiveTimeout { get; private set; }
-        IReadOnlyCollection<PID> IContext.Children
-        {
-            get { return Children; }
-        }
+        IReadOnlyCollection<PID> IContext.Children => Children;
 
         public void Stash() => EnsureExtras().Stash.Push(Message);
 
@@ -378,7 +385,7 @@ namespace Proto
             await StopAllChildren();
         }
 
-        private void HandleUnwatch(Unwatch uw) => _extras?.Watchers?.Remove(uw.Watcher);
+        private void HandleUnwatch(Unwatch uw) => _extras?.Unwatch(uw.Watcher);
 
         private void HandleWatch(Watch w)
         {
@@ -388,9 +395,7 @@ namespace Proto
             }
             else
             {
-                EnsureExtras()
-                    .Watchers
-                    .Add(w.Watcher);
+                EnsureExtras().Watch(w.Watcher);
             }
         }
 
@@ -472,7 +477,7 @@ namespace Proto
             DisposeActorIfDisposable();
 
             //Notify watchers
-            _extras?.Watchers?.SendSystemNessage(Terminated.From(Self));
+            _extras?.Watchers.SendSystemNessage(Terminated.From(Self));
 
             //Notify parent
             Parent?.SendSystemMessage(Terminated.From(Self));
