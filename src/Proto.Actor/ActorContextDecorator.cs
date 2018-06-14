@@ -5,11 +5,11 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public abstract class ActorContextProxy : IContext
+    public abstract class ActorContextDecorator : IContext
     {
         private readonly IContext _context;
 
-        protected ActorContextProxy(IContext context)
+        protected ActorContextDecorator(IContext context)
         {
             _context = context;
         }

@@ -1,9 +1,25 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Proto;
 
 namespace ContextDecorators
 {
-    public class LoggingDecorator : ActorContextProxy
+    public class LoggingRootDecorator : RootContextDecorator
+    {
+        public LoggingRootDecorator(IRootContext context) : base(context)
+        {
+        }
+
+        public override async Task<T> RequestAsync<T>(PID target, object message)
+        {
+            Console.WriteLine("Enter RequestAsync");
+            var res = await base.RequestAsync<T>(target, message);
+            Console.WriteLine("Exit RequestAsync");
+            return res;
+        }
+    }
+    
+    public class LoggingDecorator : ActorContextDecorator
     {
         public LoggingDecorator(IContext context) : base(context)
         {
@@ -21,7 +37,7 @@ namespace ContextDecorators
     {
         static void Main(string[] args)
         {
-            var context = new RootContext();
+            var context = new LoggingRootDecorator(new RootContext());
             var props = Props.FromFunc(ctx =>
             {
                 if (ctx.Message is string str)
