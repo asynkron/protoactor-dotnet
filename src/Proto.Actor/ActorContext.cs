@@ -19,7 +19,6 @@ namespace Proto
 {
     internal enum ContextState : byte
     {
-        None,
         Alive,
         Restarting,
         Stopping,
@@ -29,12 +28,17 @@ namespace Proto
     //Angels cry over this code, but it serves a purpose, lazily init of less frequently used features
     public class ActorContextExtras
     {
-
-        public ImmutableHashSet<PID> Children { get; private set; } = ActorContext.EmptyChildren;
+        public ImmutableHashSet<PID> Children { get; private set; } = ImmutableHashSet<PID>.Empty;
         public Timer ReceiveTimeoutTimer { get; private set; }
         public RestartStatistics RestartStatistics { get; } = new RestartStatistics(0, null);
         public Stack<object> Stash { get; } = new Stack<object>();
-        public FastSet<PID> Watchers { get; } = new FastSet<PID>();
+        public ImmutableHashSet<PID> Watchers { get; private set; } = ImmutableHashSet<PID>.Empty;
+        public IContext Context { get; }
+
+        public ActorContextExtras(IContext context)
+        {
+            Context = context;
+        }
 
         public void InitReceiveTimeoutTimer(Timer timer)
         {
@@ -50,6 +54,16 @@ namespace Proto
         public void AddChild(PID pid) => Children = Children.Add(pid);
 
         public void RemoveChild(PID msgWho) => Children = Children.Remove(msgWho);
+
+        public void Watch(PID watcher)
+        {
+            Watchers = Watchers.Add(watcher);
+        }
+
+        public void Unwatch(PID watcher)
+        {
+            Watchers = Watchers.Remove(watcher);
+        }
     }
 
     public class ActorContext : IMessageInvoker, IContext, ISupervisor
@@ -62,7 +76,16 @@ namespace Proto
         private ContextState _state;
 
 
-        private ActorContextExtras EnsureExtras() => _extras ?? (_extras = new ActorContextExtras());
+        private ActorContextExtras EnsureExtras()
+        {
+            if (_extras == null)
+            {
+                var context = _props?.ContextDecorator(this) ?? this;
+                _extras = new ActorContextExtras(context);
+            }
+            
+            return _extras ;
+        }
 
         public ActorContext(Props props, PID parent)
         {
@@ -90,10 +113,7 @@ namespace Proto
         public MessageHeader Headers => MessageEnvelope.UnwrapHeader(_messageOrEnvelope);
 
         public TimeSpan ReceiveTimeout { get; private set; }
-        IReadOnlyCollection<PID> IContext.Children
-        {
-            get { return Children; }
-        }
+        IReadOnlyCollection<PID> IContext.Children => Children;
 
         public void Stash() => EnsureExtras().Stash.Push(Message);
 
@@ -167,8 +187,6 @@ namespace Proto
 
             ReceiveTimeout = TimeSpan.Zero;
         }
-
-        public Task ReceiveAsync(object message) => ProcessMessageAsync(message);
 
         public void Send(PID target, object message) => SendUserMessage(target, message);
 
@@ -332,6 +350,14 @@ namespace Proto
                 Self.Stop();
                 return Done;
             }
+
+
+            //are we using decorators, if so, ensure it has been created
+            if (_props.ContextDecorator != null)
+            {
+                return Actor.ReceiveAsync(EnsureExtras().Context);
+            }
+            
             return Actor.ReceiveAsync(this);
         }
 
@@ -340,7 +366,7 @@ namespace Proto
             //slow path, there is middleware, message must be wrapped in an envelop
             if (_props.ReceiveMiddlewareChain != null)
             {
-                return _props.ReceiveMiddlewareChain(this, MessageEnvelope.Wrap(msg));
+                return _props.ReceiveMiddlewareChain(EnsureExtras().Context, MessageEnvelope.Wrap(msg));
             }
             //fast path, 0 alloc invocation of actor receive
             _messageOrEnvelope = msg;
@@ -359,7 +385,7 @@ namespace Proto
             if (_props.SenderMiddlewareChain != null)
             {
                 //slow path
-                _props.SenderMiddlewareChain(this, target, MessageEnvelope.Wrap(message));
+                _props.SenderMiddlewareChain(EnsureExtras().Context, target, MessageEnvelope.Wrap(message));
             }
             else
             {
@@ -382,7 +408,7 @@ namespace Proto
             await StopAllChildren();
         }
 
-        private void HandleUnwatch(Unwatch uw) => _extras?.Watchers?.Remove(uw.Watcher);
+        private void HandleUnwatch(Unwatch uw) => _extras?.Unwatch(uw.Watcher);
 
         private void HandleWatch(Watch w)
         {
@@ -392,9 +418,7 @@ namespace Proto
             }
             else
             {
-                EnsureExtras()
-                    .Watchers
-                    .Add(w.Watcher);
+                EnsureExtras().Watch(w.Watcher);
             }
         }
 
@@ -476,7 +500,7 @@ namespace Proto
             DisposeActorIfDisposable();
 
             //Notify watchers
-            _extras?.Watchers?.SendSystemNessage(Terminated.From(Self));
+            _extras?.Watchers.SendSystemNessage(Terminated.From(Self));
 
             //Notify parent
             Parent?.SendSystemMessage(Terminated.From(Self));

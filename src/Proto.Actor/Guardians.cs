@@ -6,14 +6,15 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Collections.Immutable;
+using Proto.Mailbox;
 
 namespace Proto
 {
     internal static class Guardians
     {
-        private static readonly ConcurrentDictionary<ISupervisorStrategy, GuardianProcess> GuardianStrategies = new ConcurrentDictionary<ISupervisorStrategy, GuardianProcess>();
+        private static readonly ConcurrentDictionary<ISupervisorStrategy, GuardianProcess> GuardianStrategies =
+            new ConcurrentDictionary<ISupervisorStrategy, GuardianProcess>();
 
         internal static PID GetGuardianPID(ISupervisorStrategy strategy)
         {
@@ -26,10 +27,6 @@ namespace Proto
 
     internal class GuardianProcess : Process, ISupervisor
     {
-        public PID Pid { get; }
-
-        public IImmutableSet<PID> Children => throw new MemberAccessException("Guardian does not hold its children PIDs.");
-
         private readonly ISupervisorStrategy _supervisorStrategy;
 
         internal GuardianProcess(ISupervisorStrategy strategy)
@@ -42,8 +39,26 @@ namespace Proto
             {
                 throw new ProcessNameExistException(name, pid);
             }
+
             Pid = pid;
         }
+
+        public PID Pid { get; }
+
+        public IImmutableSet<PID> Children =>
+            throw new MemberAccessException("Guardian does not hold its children PIDs.");
+
+        public void EscalateFailure(Exception reason, PID who)
+        {
+            throw new InvalidOperationException("Guardian cannot escalate failure.");
+        }
+
+        public void RestartChildren(Exception reason, params PID[] pids) =>
+            pids?.SendSystemNessage(new Restart(reason));
+
+        public void StopChildren(params PID[] pids) => pids?.Stop();
+
+        public void ResumeChildren(params PID[] pids) => pids?.SendSystemNessage(ResumeMailbox.Instance);
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
@@ -57,16 +72,5 @@ namespace Proto
                 _supervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
             }
         }
-
-        public void EscalateFailure(Exception reason, PID who)
-        {
-            throw new InvalidOperationException("Guardian cannot escalate failure.");
-        }
-
-        public void RestartChildren(Exception reason, params PID[] pids) => pids?.SendSystemNessage(new Restart(reason));
-
-        public void StopChildren(params PID[] pids) => pids?.Stop();
-
-        public void ResumeChildren(params PID[] pids) => pids?.SendSystemNessage(Mailbox.ResumeMailbox.Instance);
     }
 }

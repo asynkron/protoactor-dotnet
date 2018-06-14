@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public interface IContext : ISenderContext, IReceiverContext
+    public interface IContext : ISenderContext, IReceiverContext, ISpawnContext
     {
         /// <summary>
         ///     Gets the PID for the parent of the current actor.
@@ -97,8 +97,6 @@ namespace Proto
         void SetReceiveTimeout(TimeSpan duration);
 
         void CancelReceiveTimeout();
-
-        Task ReceiveAsync(object message);
    
         void Forward(PID target);
 
@@ -117,5 +115,7 @@ namespace Proto
         /// <param name="target">the Task to await</param>
         /// <param name="action">the continuation to call once the task is completed</param>
         void ReenterAfter(Task target, Action action);
+        
+
     }
 }
