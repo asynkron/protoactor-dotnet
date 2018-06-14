@@ -8,14 +8,27 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Jaeger;
+using Jaeger.Samplers;
+using OpenTracing.Util;
 using Proto;
+using Proto.OpenTracing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        var context = new RootContext();
-        var props = Props.FromProducer(() => new ChildActor());
+        var tracer = new Tracer.Builder("Proto.Example.LifecycleEvents")
+            .WithSampler(new ConstSampler(true))
+            .Build();
+        GlobalTracer.Register(tracer);
+
+        var context = new RootContext(new MessageHeader(), OpenTracingExtensions.OpenTracingSenderMiddleware());
+
+        var props = Props
+            .FromProducer(() => new ChildActor())
+            .WithOpenTracing();
+
         var actor = context.Spawn(props);
         context.Send(actor, new Hello
         {
@@ -30,7 +43,7 @@ class Program
         actor.Stop();
 
         Console.ReadLine();
-    }    
+    }
 
     internal class ChildActor : IActor
     {

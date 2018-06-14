@@ -30,11 +30,13 @@ namespace Proto.OpenTracing
             => next => async (context, target, envelope) =>
             {
                 tracer = tracer ?? GlobalTracer.Instance;
-
+                
                 var message = envelope.Message;
 
+                var verb = envelope.Sender == null ? "Send" : "Request";
+
                 using (IScope scope = tracer
-                    .BuildSpan("Send " + (message?.GetType().Name ?? "Unknown"))
+                    .BuildSpan($"{verb} {message?.GetType().Name ?? "Unknown"}")
                     .AsChildOf(tracer.ActiveSpan)
                     .StartActive(finishSpanOnDispose: true)
                     )
@@ -71,7 +73,7 @@ namespace Proto.OpenTracing
             => next => async (context, envelope) =>
             {
                 tracer = tracer ?? GlobalTracer.Instance;
-
+                
                 var message = envelope.Message;
 
                 var parentSpanCtx = envelope.Header != null
