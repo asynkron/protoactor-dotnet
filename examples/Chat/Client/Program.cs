@@ -2,7 +2,7 @@
 using chat.messages;
 using Jaeger;
 using Jaeger.Samplers;
-using OpenTracing.Util;
+using OpenTracing;
 using Proto;
 using Proto.OpenTracing;
 using Proto.Remote;
@@ -15,8 +15,8 @@ class Program
             .WithSampler(new ConstSampler(true))
             .Build();
 
-        SpanSetup spanSetup = (span, message) => span.Log(message?.ToString());
-        var openTracingMiddleware = OpenTracingExtensions.OpenTracingSenderMiddleware(spanSetup, tracer);
+        void SpanSetup(ISpan span, object message) => span.Log(message?.ToString());
+        var openTracingMiddleware = OpenTracingExtensions.OpenTracingSenderMiddleware(tracer);
 
         Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
         Remote.Start("127.0.0.1", 0);
@@ -39,7 +39,7 @@ class Program
             }
             return Actor.Done;
         })
-        .WithOpenTracing(spanSetup, spanSetup, tracer);
+        .WithOpenTracing(SpanSetup, SpanSetup, tracer);
 
         var client = context.Spawn(props);
         context.Send(server, new Connect
