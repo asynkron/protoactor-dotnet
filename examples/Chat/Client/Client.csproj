@@ -2,14 +2,17 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
+      <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.5.1" />
+    <PackageReference Include="Jaeger" Version="0.1.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\..\..\src\Proto.Mailbox\Proto.Mailbox.csproj" />
     <ProjectReference Include="..\..\..\src\Proto.Remote\Proto.Remote.csproj" />
+    <ProjectReference Include="..\..\..\src\Tracing\Proto.OpenTracing\Proto.OpenTracing.csproj" />
     <ProjectReference Include="..\Messages\Chat.Messages.csproj" />
   </ItemGroup>
 </Project>

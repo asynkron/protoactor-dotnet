@@ -1,0 +1,62 @@
+﻿syntax = "proto3";
+package drawnicetrace;
+option csharp_namespace = "DrawNiceTrace";
+
+message AddItem {
+    int64 CartNumber = 1;
+    string ProductName = 2;
+}
+
+message AssignCartNumber{
+    int64 CartNumber = 1;
+}
+
+message CartNumberResponse{
+    int64 CartNumber = 1;
+}
+
+message OrderCart {
+    int64 CartNumber = 1;
+}
+
+message Order{
+    int64 OrderNumber = 1;
+    repeated string ProductNames = 2;
+}
+
+message ConfirmOrder {
+    int64 CartNumber = 1;
+    Order Order = 2;
+}
+
+message ConfirmOrderResponse{
+    int64 OrderNumber = 1;
+}
+
+message AskPaymentDetails{
+    int64 OrderNumber = 1;
+}
+
+message SendPaymentDetails{
+    int64 OrderNumber = 1;
+}
+
+message ProcessPayment{
+    int64 OrderNumber = 1;
+}
+
+message ProcessPaymentResponse{
+    bool Ok = 1;
+}
+
+message ConfirmPayment{
+    bool Ok = 1;
+} 
+
+message TriggerFood{
+    int64 OrderNumber = 1;
+}
+
+message DeliverFood{
+    
+}

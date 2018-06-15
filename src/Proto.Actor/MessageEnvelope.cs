@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Proto
@@ -47,6 +48,12 @@ namespace Proto
             return new MessageEnvelope(Message, Sender, header);
         }
         
+        public MessageEnvelope WithHeaders(IEnumerable<KeyValuePair<string, string>> items)
+        {
+            var header = (Header ?? new MessageHeader()).With(items);
+            return new MessageEnvelope(Message, Sender, header);
+
+        }
 
         public static (object message, PID sender, MessageHeader headers) Unwrap(object message)
         {
