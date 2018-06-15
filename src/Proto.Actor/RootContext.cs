@@ -18,7 +18,9 @@ namespace Proto
     public class RootContext : IRootContext
     {
         public static readonly RootContext Empty = new RootContext();
-        private readonly Sender _senderMiddleware;
+        private Sender SenderMiddleware { get; set; }
+        public MessageHeader Headers { get; private set; }
+
 
         public PID Spawn(Props props)
         {
@@ -40,20 +42,38 @@ namespace Proto
 
         public RootContext()
         {
-            _senderMiddleware = null;
+            SenderMiddleware = null;
             Headers = MessageHeader.Empty;
         }
 
         public RootContext(MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
         {
-            _senderMiddleware = middleware.Reverse()
+            SenderMiddleware = middleware.Reverse()
                 .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner));
             Headers = messageHeader;
         }
 
+        public RootContext WithHeaders(MessageHeader headers) => Copy(c => c.Headers = headers);
+        public RootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware) => Copy(c =>
+        {
+            SenderMiddleware = middleware.Reverse()
+                .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner));
+        });
+
+
+        private RootContext Copy(Action<RootContext> mutator)
+        {
+            var copy = new RootContext
+            {
+                SenderMiddleware = SenderMiddleware,
+                Headers = Headers
+            };
+            mutator(copy);
+            return copy;
+        }
+
         public object Message => null;
 
-        public MessageHeader Headers { get; }
 
         private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
         {
@@ -92,17 +112,17 @@ namespace Proto
 
         private void SendUserMessage(PID target, object message)
         {
-            if (_senderMiddleware != null)
+            if (SenderMiddleware != null)
             {
                 if (message is MessageEnvelope messageEnvelope)
                 {
                     //Request based middleware
-                    _senderMiddleware(this, target, messageEnvelope);
+                    SenderMiddleware(this, target, messageEnvelope);
                 }
                 else
                 {
                     //tell based middleware
-                    _senderMiddleware(this, target, new MessageEnvelope(message, null, null));
+                    SenderMiddleware(this, target, new MessageEnvelope(message, null, null));
                 }
                 return;
             }
