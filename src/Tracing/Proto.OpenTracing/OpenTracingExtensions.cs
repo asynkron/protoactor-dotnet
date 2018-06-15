@@ -96,8 +96,7 @@ namespace Proto.OpenTracing
                 }
             };
 
-
-        static IContext WithOpenTracing(this IContext context, SpanSetup sendSpanSetup = null/*, SpanSetup receiveSpanSetup = null*/, ITracer tracer = null)
+        internal static IContext WithOpenTracing(this IContext context, SpanSetup sendSpanSetup = null/*, SpanSetup receiveSpanSetup = null*/, ITracer tracer = null)
         {
             sendSpanSetup = sendSpanSetup ?? OpenTracingHelpers.DefaultSetupSpan;
             //receiveSpanSetup = receiveSpanSetup ?? OpenTracingHelpers.DefaultSetupSpan;

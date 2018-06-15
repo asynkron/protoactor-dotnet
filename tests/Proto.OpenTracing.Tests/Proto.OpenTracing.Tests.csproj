@@ -15,6 +15,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Tracing\Proto.OpenTracing\Proto.OpenTracing.csproj" />
+        <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
     </ItemGroup>
 
 </Project>
