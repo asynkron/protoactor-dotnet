@@ -36,13 +36,14 @@ namespace Proto.OpenTracing
                 Task simpleNext() => next(context, target, envelope);
 
                 if (span == null)
+                {
                     await simpleNext().ConfigureAwait(false);
+                }
                 else
                 {
                     try
                     {
                         ProtoTags.TargetPID.Set(span, target.ToShortString());
-                        if (envelope.Sender != null) ProtoTags.SenderPID.Set(span, envelope.Sender.ToShortString());
 
                         var dictionary = new Dictionary<string, string>();
                         tracer.Inject(span.Context, BuiltinFormats.TextMap, new TextMapInjectAdapter(dictionary));
@@ -71,6 +72,7 @@ namespace Proto.OpenTracing
             => next => async (context, envelope) =>
             {
                 tracer = tracer ?? GlobalTracer.Instance;
+                receiveSpanSetup = receiveSpanSetup ?? OpenTracingHelpers.DefaultSetupSpan;
 
                 var message = envelope.Message;
 
@@ -103,12 +105,16 @@ namespace Proto.OpenTracing
         static IContext WithOpenTracing(this IContext context, SpanSetup sendSpanSetup = null, ITracer tracer = null)
         {
             tracer = tracer ?? GlobalTracer.Instance;
+            sendSpanSetup = sendSpanSetup ?? OpenTracingHelpers.DefaultSetupSpan;
+
             return new OpenTracingActorContextDecorator(context, sendSpanSetup, tracer);
         }
 
         public static IRootContext WithOpenTracing(this IRootContext context, SpanSetup sendSpanSetup = null, ITracer tracer = null)
         {
             tracer = tracer ?? GlobalTracer.Instance;
+            sendSpanSetup = sendSpanSetup ?? OpenTracingHelpers.DefaultSetupSpan;
+
             return new OpenTracingRootContextDecorator(context, sendSpanSetup, tracer);
         }
     }

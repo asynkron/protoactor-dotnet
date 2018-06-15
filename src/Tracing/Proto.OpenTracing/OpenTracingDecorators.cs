@@ -17,7 +17,12 @@ namespace Proto.OpenTracing
 
         public OpenTracingRootContextDecorator(IRootContext context, SpanSetup sendSpanSetup, ITracer tracer) : base(context)
         {
-            _sendSpanSetup = sendSpanSetup;
+            _sendSpanSetup = (span, message) =>
+            {
+                ProtoTags.ActorType.Set(span, "<None>");
+                sendSpanSetup(span, message);
+            };
+
             _tracer = tracer;
         }
 
@@ -44,7 +49,13 @@ namespace Proto.OpenTracing
 
         public OpenTracingActorContextDecorator(IContext context, SpanSetup sendSpanSetup, ITracer tracer) : base(context)
         {
-            _sendSpanSetup = sendSpanSetup;
+            _sendSpanSetup = (span, message) =>
+            {
+                ProtoTags.ActorType.Set(span, context.Actor.GetType().Name);
+                ProtoTags.SenderPID.Set(span, context.Self.ToShortString());
+                sendSpanSetup(span, message);
+            };
+
             _tracer = tracer;
         }
 

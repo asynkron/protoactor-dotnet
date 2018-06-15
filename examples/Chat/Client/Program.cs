@@ -16,7 +16,7 @@ class Program
             .Build();
 
         SpanSetup spanSetup = (span, message) => span.Log(message?.ToString());
-        var openTracingMiddleware = OpenTracingExtensions.OpenTracingSenderMiddleware(spanSetup, tracer);
+        var openTracingMiddleware = OpenTracingExtensions.OpenTracingSenderMiddleware(tracer);
 
         Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
         Remote.Start("127.0.0.1", 0);
