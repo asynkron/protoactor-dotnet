@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenTracing;
+using OpenTracing.Propagation;
 using OpenTracing.Tag;
 
 namespace Proto.OpenTracing
@@ -27,27 +28,28 @@ namespace Proto.OpenTracing
         }
 
         public override void Send(PID target, object message)
-            => OpenTracingMethodsDecorators.Send(message, _sendSpanSetup, _tracer, () => base.Send(target, message));
+            => OpenTracingMethodsDecorators.Send(target, message, _sendSpanSetup, _tracer, () => base.Send(target, message));
 
         public override void Request(PID target, object message)
-            => OpenTracingMethodsDecorators.Request(message, _sendSpanSetup, _tracer, () => base.Request(target, message));
+            => OpenTracingMethodsDecorators.Request(target, message, _sendSpanSetup, _tracer, () => base.Request(target, message));
 
         public override Task<T> RequestAsync<T>(PID target, object message)
-            => OpenTracingMethodsDecorators.RequestAsync(message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message));
+            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message));
 
         public override Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => OpenTracingMethodsDecorators.RequestAsync(message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message, timeout));
+            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message, timeout));
 
         public override Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => OpenTracingMethodsDecorators.RequestAsync(message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message, cancellationToken));
+            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message, cancellationToken));
     }
 
     internal class OpenTracingActorContextDecorator : ActorContextDecorator
     {
         private readonly SpanSetup _sendSpanSetup;
+        private readonly SpanSetup _receiveSpanSetup;
         private readonly ITracer _tracer;
 
-        public OpenTracingActorContextDecorator(IContext context, SpanSetup sendSpanSetup, ITracer tracer) : base(context)
+        public OpenTracingActorContextDecorator(IMessageInvokerContext context, SpanSetup sendSpanSetup, SpanSetup receiveSpanSetup, ITracer tracer) : base(context)
         {
             _sendSpanSetup = (span, message) =>
             {
@@ -55,35 +57,45 @@ namespace Proto.OpenTracing
                 ProtoTags.SenderPID.Set(span, context.Self.ToShortString());
                 sendSpanSetup(span, message);
             };
+            _receiveSpanSetup = (span, message) =>
+            {
+                ProtoTags.ActorType.Set(span, context.Actor.GetType().Name);
+                ProtoTags.TargetPID.Set(span, context.Self.ToShortString());
+                receiveSpanSetup(span, message);
+            };
 
             _tracer = tracer;
         }
 
         public override void Send(PID target, object message)
-            => OpenTracingMethodsDecorators.Send(message, _sendSpanSetup, _tracer, () => base.Send(target, message));
+            => OpenTracingMethodsDecorators.Send(target, message, _sendSpanSetup, _tracer, () => base.Send(target, message));
 
         public override void Request(PID target, object message)
-            => OpenTracingMethodsDecorators.Request(message, _sendSpanSetup, _tracer, () => base.Request(target, message));
+            => OpenTracingMethodsDecorators.Request(target, message, _sendSpanSetup, _tracer, () => base.Request(target, message));
 
         public override Task<T> RequestAsync<T>(PID target, object message)
-            => OpenTracingMethodsDecorators.RequestAsync(message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message));
+            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message));
 
         public override Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => OpenTracingMethodsDecorators.RequestAsync(message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message, timeout));
+            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message, timeout));
 
         public override Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => OpenTracingMethodsDecorators.RequestAsync(message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message, cancellationToken));
+            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message, cancellationToken));
+
+        public override Task Receive(MessageEnvelope envelope)
+            => OpenTracingMethodsDecorators.Receive(envelope, _receiveSpanSetup, _tracer, () => base.Receive(envelope));
     }
 
     static class OpenTracingMethodsDecorators
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Send(object message, SpanSetup sendSpanSetup, ITracer tracer, Action send)
+        public static void Send(PID target, object message, SpanSetup sendSpanSetup, ITracer tracer, Action send)
         {
             using (var scope = tracer.BuildStartedScope(tracer.ActiveSpan?.Context, nameof(Send), message, sendSpanSetup))
             {
                 try
                 {
+                    ProtoTags.TargetPID.Set(scope.Span, target.ToShortString());
                     send();
                 }
                 catch (Exception ex)
@@ -95,12 +107,13 @@ namespace Proto.OpenTracing
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Request(object message, SpanSetup sendSpanSetup, ITracer tracer, Action request)
+        internal static void Request(PID target, object message, SpanSetup sendSpanSetup, ITracer tracer, Action request)
         {
             using (var scope = tracer.BuildStartedScope(tracer.ActiveSpan?.Context, nameof(Request), message, sendSpanSetup))
             {
                 try
                 {
+                    ProtoTags.TargetPID.Set(scope.Span, target.ToShortString());
                     request();
                 }
                 catch (Exception ex)
@@ -112,13 +125,43 @@ namespace Proto.OpenTracing
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static async Task<T> RequestAsync<T>(object message, SpanSetup sendSpanSetup, ITracer tracer, Func<Task<T>> requestAsync)
+        internal static async Task<T> RequestAsync<T>(PID target, object message, SpanSetup sendSpanSetup, ITracer tracer, Func<Task<T>> requestAsync)
         {
             using (var scope = tracer.BuildStartedScope(tracer.ActiveSpan?.Context, nameof(Request), message, sendSpanSetup))
             {
                 try
                 {
+                    ProtoTags.TargetPID.Set(scope.Span, target.ToShortString());
                     return await requestAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    ex.SetupSpan(scope.Span);
+                    throw;
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static async Task Receive(MessageEnvelope envelope, SpanSetup receiveSpanSetup, ITracer tracer, Func<Task> receive)
+        {
+            var message = envelope.Message;
+
+            var parentSpanCtx = envelope.Header != null
+              ? tracer.Extract(BuiltinFormats.TextMap, new TextMapExtractAdapter(envelope.Header.ToDictionary()))
+              : null;
+
+            using (var scope = tracer.BuildStartedScope(parentSpanCtx, nameof(Receive), message, receiveSpanSetup))
+            {
+                try
+                {
+                    var span = scope.Span;
+
+                    if (envelope.Sender != null) ProtoTags.SenderPID.Set(span, envelope.Sender.ToShortString());
+
+                    receiveSpanSetup?.Invoke(span, message);
+
+                    await receive().ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

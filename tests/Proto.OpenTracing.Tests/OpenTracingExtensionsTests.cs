@@ -7,72 +7,55 @@ namespace Proto.OpenTracing.Tests
 {
     public class OpenTracingExtensionsTests
     {
+        private readonly ISpanContext _spanContext;
+        private readonly ISpan _span;
+        private readonly IScope _scope;
+        private readonly ISpanBuilder _spanBuilder;
+        private readonly ITracer _tracer;
+
+        public OpenTracingExtensionsTests()
+        {
+            _spanContext = Substitute.For<ISpanContext>();
+
+            _span = Substitute.For<ISpan>();
+            _span.Context.Returns(_spanContext);
+
+            _scope = Substitute.For<IScope>();
+            _scope.Span.Returns(_span);
+
+            _spanBuilder = Substitute.For<ISpanBuilder>();
+            _spanBuilder.AsChildOf(Arg.Any<ISpan>()).Returns(_spanBuilder);
+            _spanBuilder.StartActive().Returns(_scope);
+            _spanBuilder.StartActive(Arg.Any<bool>()).ReturnsForAnyArgs(_scope);
+
+            _tracer = Substitute.For<ITracer>();
+            _tracer.BuildSpan("").ReturnsForAnyArgs(_spanBuilder);
+        }
+
         [Fact]
         public async Task OpenTracingReceiverMiddlewareTests()
         {
-            // GIVEN
-            var spanContext = Substitute.For<ISpanContext>();
+            var actorProps = Props
+                .FromFunc(ctx => Actor.Done)
+                .WithOpenTracing(tracer: _tracer);
 
-            var span = Substitute.For<ISpan>();
-            span.Context.Returns(spanContext);
+            var actor = RootContext.Empty.SpawnNamed(actorProps, "hello");
 
-            var scope = Substitute.For<IScope>();
-            scope.Span.Returns(span);
+            RootContext.Empty.Send(actor, "test_message");
 
-            var spanBuilder = Substitute.For<ISpanBuilder>();
-            spanBuilder.AsChildOf(Arg.Any<ISpan>()).Returns(spanBuilder);
-            spanBuilder.StartActive().Returns(scope);
-            spanBuilder.StartActive(Arg.Any<bool>()).ReturnsForAnyArgs(scope);
 
-            var tracer = Substitute.For<ITracer>();
-            tracer.BuildSpan("").ReturnsForAnyArgs(spanBuilder);
+            //Assert.Null(context);
+            //Assert.Equal(senderPid, envelope.Sender);
 
-            var receiveMiddleware = OpenTracingExtensions.OpenTracingReceiverMiddleware(
-                (sp, message) => span.Log(message.ToString()),
-                tracer
-            );
+            _span.Received(1).SetTag(ProtoTags.ActorType.Key, "<None>");
 
-            var senderPid = new PID("here", "sender");
-
-            var env = new MessageEnvelope("test", senderPid, new MessageHeader());
-
-            // WHEN
-            var receive = receiveMiddleware((context, envelope) =>
-            {
-                // THEN
-                Assert.Null(context);
-                Assert.Equal(senderPid, envelope.Sender);
-
-                span.Received(1).Log("test");
-                return Actor.Done;
-            });
-
-            await receive(null, env);
         }
 
         [Fact]
         public async Task OpenTracingSenderMiddlewareTest()
         {
             // GIVEN
-            var spanContext = Substitute.For<ISpanContext>();
-
-            var span = Substitute.For<ISpan>();
-            span.Context.Returns(spanContext);
-
-            var scope = Substitute.For<IScope>();
-            scope.Span.Returns(span);
-
-            var spanBuilder = Substitute.For<ISpanBuilder>();
-            spanBuilder.AsChildOf(Arg.Any<ISpan>()).Returns(spanBuilder);
-            spanBuilder.StartActive().Returns(scope);
-            spanBuilder.StartActive(Arg.Any<bool>()).ReturnsForAnyArgs(scope);
-
-            var tracer = Substitute.For<ITracer>();
-            tracer.BuildSpan("").ReturnsForAnyArgs(spanBuilder);
-
-            var sendMiddleware = OpenTracingExtensions.OpenTracingSenderMiddleware(
-                tracer
-            );
+            var sendMiddleware = OpenTracingExtensions.OpenTracingSenderMiddleware(_tracer);
 
             var senderPid = new PID("here", "sender");
             var targetPid = new PID("here", "target");
@@ -86,7 +69,7 @@ namespace Proto.OpenTracing.Tests
                     Assert.Equal(targetPid, target);
                     Assert.Equal(senderPid, envelope.Sender);
 
-                    span.Received(1).Log("test");
+                    _span.Received(1).Log("test");
                     return Actor.Done;
                 })
                 (null, targetPid, new MessageEnvelope("test", senderPid, new MessageHeader()));
