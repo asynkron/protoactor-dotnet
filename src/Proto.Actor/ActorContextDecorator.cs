@@ -34,6 +34,7 @@ namespace Proto
 
         public virtual MessageHeader Headers => _context.Headers;
         public virtual object Message => _context.Message;
+        
         public virtual Task Receive(MessageEnvelope envelope) => _context.Receive(envelope);
 
         public virtual PID Parent => _context.Parent;

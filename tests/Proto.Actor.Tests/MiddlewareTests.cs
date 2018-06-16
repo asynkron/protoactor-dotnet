@@ -4,15 +4,83 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Proto.TestFixtures;
 using Xunit;
 
 namespace Proto.Tests
 {
+    class TestContextDecorator : ActorContextDecorator
+    {
+        private readonly List<string> _logs;
+
+        public override Task Receive(MessageEnvelope envelope)
+        {
+            //only inspect "middleware" message
+            if (envelope.Message is string str && str == "middleware")
+            {
+                _logs.Add("decorator");
+                return base.Receive(envelope.WithMessage("decorator"));
+            }
+
+            return base.Receive(envelope);
+        }
+
+        public TestContextDecorator(IContext context, List<string> logs) : base(context)
+        {
+            _logs = logs;
+        }
+    }
     public class MiddlewareTests
     {
         private static readonly RootContext Context = new RootContext();
+        
+        [Fact]
+        public void Given_ReceiveMiddleware_and_ContextDecorator_Should_Call_Middleware_and_Decorator_Before_Actor_Receive()
+        {
+            var logs = new List<string>();
+            var testMailbox = new TestMailbox();
+            var props = Props.FromFunc(c =>
+                {
+                    switch (c.Message)
+                    {
+                        //only inspect "decorator" message
+                        case string str when str == "decorator":
+                            logs.Add("actor");
+                            return Actor.Done;
+                        default:
+                            return Actor.Done;
+                    }
+                })
+                .WithReceiveMiddleware(
+                    next => async (c, env) =>
+                    {
+                        //only inspect "start" message
+                        if (env.Message is string str && str == "start")
+                        {
+                            logs.Add("middleware");
+                            await next(c, env.WithMessage("middleware"));
+                            return;
+                        }
+
+                        await next(c, env);
+                    })
+                .WithMailbox(() => testMailbox)
+                .WithContextDecorator(c => new TestContextDecorator(c,logs));
+            var pid = Context.Spawn(props);
+
+            Context.Send(pid,"start");
+
+            Console.WriteLine(string.Join(", ",logs));
+            
+            Assert.Equal(3, logs.Count);
+            Assert.Equal("middleware", logs[0]);
+            Assert.Equal("decorator", logs[1]);
+            Assert.Equal("actor", logs[2]);
+        }
+        
         [Fact]
         public void Given_ReceiveMiddleware_Should_Call_Middleware_In_Order_Then_Actor_Receive()
         {

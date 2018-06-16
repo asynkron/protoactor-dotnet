@@ -336,7 +336,7 @@ namespace Proto
 
         public void EscalateFailure(Exception reason, object message) => EscalateFailure(reason, Self);
 
-        Task IReceiverContext.Receive(MessageEnvelope envelope)
+        public Task Receive(MessageEnvelope envelope)
         {
             _messageOrEnvelope = envelope;
             return DefaultReceive();
