@@ -17,6 +17,14 @@ namespace Proto.OpenTracing
     /// </summary>
     public static class OpenTracingExtensions
     {
+        /// <summary>
+        /// Setup open tracing send middleware & decorator.
+        /// </summary>
+        /// <param name="props">props.</param>
+        /// <param name="sendSpanSetup">provide a way inject send span constumisation according to the message.</param>
+        /// <param name="receiveSpanSetup">provide a way inject receive span constumisation according to the message.</param>
+        /// <param name="tracer">OpenTracing, if nul : GlobalTracer.Instance will be used.</param>
+        /// <returns>props</returns>
         public static Props WithOpenTracing(this Props props, SpanSetup sendSpanSetup = null, SpanSetup receiveSpanSetup = null, ITracer tracer = null)
             => props
                 .WithContextDecorator(ctx => ctx.WithOpenTracing(sendSpanSetup, tracer))
@@ -27,63 +35,53 @@ namespace Proto.OpenTracing
         internal static Props WithOpenTracingSender(this Props props, ITracer tracer)
             => props.WithSenderMiddleware(OpenTracingSenderMiddleware(tracer));
 
+        /// <summary>
+        /// Only responsible to tweak the envelop in order to send SpanContext informations.
+        /// </summary>
         public static Func<Sender, Sender> OpenTracingSenderMiddleware(ITracer tracer = null)
             => next => async (context, target, envelope) =>
             {
                 tracer = tracer ?? GlobalTracer.Instance;
 
                 var span = tracer.ActiveSpan;
-                Task simpleNext() => next(context, target, envelope);
+
+                Task simpleNext() => next(context, target, envelope); // to forget nothing
 
                 if (span == null)
+                {
                     await simpleNext().ConfigureAwait(false);
+                }
                 else
                 {
-                    try
-                    {
-                        ProtoTags.TargetPID.Set(span, target.ToShortString());
-                        if (envelope.Sender != null) ProtoTags.SenderPID.Set(span, envelope.Sender.ToShortString());
+                    var dictionary = new Dictionary<string, string>();
+                    tracer.Inject(span.Context, BuiltinFormats.TextMap, new TextMapInjectAdapter(dictionary));
+                    envelope = envelope.WithHeaders(dictionary);
 
-                        var dictionary = new Dictionary<string, string>();
-                        tracer.Inject(span.Context, BuiltinFormats.TextMap, new TextMapInjectAdapter(dictionary));
-                        envelope = envelope.WithHeaders(dictionary);
-
-                        await simpleNext().ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        Tags.Error.Set(span, true);
-                        var baseEx = ex.GetBaseException();
-                        span.Log(new Dictionary<string, object> {
-                            { "exception", baseEx.GetType().Name },
-                            { "message", baseEx.Message },
-                            { "stackTrace", ex.StackTrace },
-                        });
-                        throw;
-                    }
+                    await simpleNext().ConfigureAwait(false);
                 }
             };
 
         internal static Props WithOpenTracingReceiver(this Props props, SpanSetup receiveSpanSetup, ITracer tracer)
-            => props.WithReceiveMiddleware(OpenTracingReceiverMiddleware(receiveSpanSetup, tracer));
+           => props.WithReceiveMiddleware(OpenTracingReceiverMiddleware(receiveSpanSetup, tracer));
 
         public static Func<Receiver, Receiver> OpenTracingReceiverMiddleware(SpanSetup receiveSpanSetup = null, ITracer tracer = null)
             => next => async (context, envelope) =>
             {
+                receiveSpanSetup = receiveSpanSetup ?? OpenTracingHelpers.DefaultSetupSpan;
                 tracer = tracer ?? GlobalTracer.Instance;
 
                 var message = envelope.Message;
 
                 var parentSpanCtx = envelope.Header != null
-                    ? tracer.Extract(BuiltinFormats.TextMap, new TextMapExtractAdapter(envelope.Header.ToDictionary()))
-                    : null;
+                  ? tracer.Extract(BuiltinFormats.TextMap, new TextMapExtractAdapter(envelope.Header.ToDictionary()))
+                  : null;
 
-                using (var scope = tracer.BuildStartedScope(parentSpanCtx, "Receive", message, receiveSpanSetup))
+                using (var scope = tracer.BuildStartedScope(parentSpanCtx, nameof(Receive), message, receiveSpanSetup))
                 {
-                    var span = scope.Span;
-
                     try
                     {
+                        var span = scope.Span;
+
                         if (envelope.Sender != null) ProtoTags.SenderPID.Set(span, envelope.Sender.ToShortString());
 
                         receiveSpanSetup?.Invoke(span, message);
@@ -92,23 +90,34 @@ namespace Proto.OpenTracing
                     }
                     catch (Exception ex)
                     {
-                        Tags.Error.Set(span, true);
-                        span.Log(ex.Message);
-                        span.Log(ex.StackTrace);
+                        ex.SetupSpan(scope.Span);
                         throw;
                     }
                 }
             };
 
-        static IContext WithOpenTracing(this IContext context, SpanSetup sendSpanSetup = null, ITracer tracer = null)
+        internal static IContext WithOpenTracing(this IContext context, SpanSetup sendSpanSetup = null/*, SpanSetup receiveSpanSetup = null*/, ITracer tracer = null)
         {
+            sendSpanSetup = sendSpanSetup ?? OpenTracingHelpers.DefaultSetupSpan;
+            //receiveSpanSetup = receiveSpanSetup ?? OpenTracingHelpers.DefaultSetupSpan;
             tracer = tracer ?? GlobalTracer.Instance;
-            return new OpenTracingActorContextDecorator(context, sendSpanSetup, tracer);
+
+            return new OpenTracingActorContextDecorator(context, sendSpanSetup /*, receiveSpanSetup*/, tracer);
         }
 
+        /// <summary>
+        /// Setup open tracing send decorator around RootContext.
+        /// DO NOT FORGET to create the RootContext passing OpenTracingExtensions.OpenTracingSenderMiddleware to the constructor.
+        /// </summary>
+        /// <param name="props">props.</param>
+        /// <param name="sendSpanSetup">provide a way inject send span constumisation according to the message.</param>
+        /// <param name="tracer">OpenTracing, if nul : GlobalTracer.Instance will be used.</param>
+        /// <returns>IRootContext</returns>
         public static IRootContext WithOpenTracing(this IRootContext context, SpanSetup sendSpanSetup = null, ITracer tracer = null)
         {
+            sendSpanSetup = sendSpanSetup ?? OpenTracingHelpers.DefaultSetupSpan;
             tracer = tracer ?? GlobalTracer.Instance;
+
             return new OpenTracingRootContextDecorator(context, sendSpanSetup, tracer);
         }
     }

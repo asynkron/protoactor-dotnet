@@ -117,7 +117,7 @@ namespace DrawNiceTrace
                 }
             })
             .WithOpenTracing()
-            .WithGuardianSupervisorStrategy(new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 0, null));
+            .WithGuardianSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Stop, 0, null));
 
             rootContext.Spawn(customerProps);
 
