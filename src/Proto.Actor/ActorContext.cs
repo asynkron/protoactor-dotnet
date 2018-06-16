@@ -368,6 +368,10 @@ namespace Proto
             {
                 return _props.ReceiveMiddlewareChain(EnsureExtras().Context, MessageEnvelope.Wrap(msg));
             }
+            if (_props.ContextDecorator != null)
+            {
+                return EnsureExtras().Context.Receive(MessageEnvelope.Wrap(msg));
+            }
             //fast path, 0 alloc invocation of actor receive
             _messageOrEnvelope = msg;
             return DefaultReceive();

@@ -36,7 +36,37 @@ namespace Proto.Tests
     public class MiddlewareTests
     {
         private static readonly RootContext Context = new RootContext();
-        
+
+
+        [Fact]
+        public void Given_ContextDecorator_Should_Call_Decorator_Before_Actor_Receive()
+        {
+            var logs = new List<string>();
+            var testMailbox = new TestMailbox();
+            var props = Props.FromFunc(c =>
+                {
+                    switch (c.Message)
+                    {
+                        //only inspect "decorator" message
+                        case string str when str == "decorator":
+                            logs.Add("actor");
+                            return Actor.Done;
+                        default:
+                            return Actor.Done;
+                    }
+                })
+                .WithMailbox(() => testMailbox)
+                .WithContextDecorator(c => new TestContextDecorator(c, logs));
+            var pid = Context.Spawn(props);
+
+            Context.Send(pid, "middleware");
+
+            Assert.Equal(2, logs.Count);
+            Assert.Equal("decorator", logs[0]);
+            Assert.Equal("actor", logs[1]);
+        }
+
+
         [Fact]
         public void Given_ReceiveMiddleware_and_ContextDecorator_Should_Call_Middleware_and_Decorator_Before_Actor_Receive()
         {
