@@ -80,7 +80,7 @@ namespace Proto
         {
             if (_extras == null)
             {
-                var context = _props?.ContextDecorator(this) ?? this;
+                var context = _props?.ContextDecoratorChain(this) ?? this;
                 _extras = new ActorContextExtras(context);
             }
             
@@ -353,7 +353,7 @@ namespace Proto
 
 
             //are we using decorators, if so, ensure it has been created
-            if (_props.ContextDecorator != null)
+            if (_props.ContextDecoratorChain != null)
             {
                 return Actor.ReceiveAsync(EnsureExtras().Context);
             }
@@ -368,7 +368,7 @@ namespace Proto
             {
                 return _props.ReceiveMiddlewareChain(EnsureExtras().Context, MessageEnvelope.Wrap(msg));
             }
-            if (_props.ContextDecorator != null)
+            if (_props.ContextDecoratorChain != null)
             {
                 return EnsureExtras().Context.Receive(MessageEnvelope.Wrap(msg));
             }

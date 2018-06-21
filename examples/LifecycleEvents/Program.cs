@@ -23,6 +23,12 @@ class Program
             .Build();
         GlobalTracer.Register(tracer);
 
+        EventStream.Instance.Subscribe<DeadLetterEvent>(
+            dl =>
+            {
+                Console.WriteLine($"DeadLetter from {dl.Sender} to {dl.Pid} : {dl.Message?.GetType().Name} = '{dl.Message?.ToString()}'");
+            });
+
         var context = new RootContext(new MessageHeader(), OpenTracingExtensions.OpenTracingSenderMiddleware());
 
         var props = Props
@@ -40,7 +46,7 @@ class Program
         //thus, it will be handled _before_ any user message
         //we only do this to show the correct order of events in the console
         Thread.Sleep(TimeSpan.FromSeconds(1));
-        actor.Stop();
+        actor.StopAsync().Wait();
 
         Console.ReadLine();
     }
