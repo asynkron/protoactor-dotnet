@@ -21,16 +21,19 @@ namespace ContextDecorators
     
     public class LoggingDecorator : ActorContextDecorator
     {
-        public LoggingDecorator(IContext context) : base(context)
+        private readonly string _loggerName;
+
+        public LoggingDecorator(IContext context, string loggerName) : base(context)
         {
+            _loggerName = loggerName;
         }
 
         //we are just logging this single method
         public override void Respond(object message)
         {
-            Console.WriteLine("Enter Respond");
+            Console.WriteLine($"{_loggerName} : Enter Respond");
             base.Respond(message);
-            Console.WriteLine("Exit Respond");
+            Console.WriteLine($"{_loggerName} : Exit Respond");
         }
     }
     class Program
@@ -39,15 +42,19 @@ namespace ContextDecorators
         {
             var context = new LoggingRootDecorator(new RootContext());
             var props = Props.FromFunc(ctx =>
-            {
-                if (ctx.Message is string str)
                 {
-                    Console.WriteLine("Inside Actor: " + str);
-                    ctx.Respond("Yo!");
-                }
+                    if (ctx.Message is string str)
+                    {
+                        Console.WriteLine("Inside Actor: " + str);
+                        ctx.Respond("Yo!");
+                    }
 
-                return Actor.Done;
-            }).WithContextDecorator(c => new LoggingDecorator(c));
+                    return Actor.Done;
+                })
+                .WithContextDecorator(c => new LoggingDecorator(c, "logger1"))
+                .WithContextDecorator(c => new LoggingDecorator(c, "logger2"))
+                ;
+
             var pid = context.Spawn(props);
             var res = context.RequestAsync<string>(pid, "Hello").Result;
             Console.WriteLine("Got result " + res);

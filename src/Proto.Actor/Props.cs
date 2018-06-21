@@ -37,7 +37,8 @@ namespace Proto
         public IList<Func<Sender, Sender>> SenderMiddleware { get; private set; } = new List<Func<Sender, Sender>>();
         public Receiver ReceiveMiddlewareChain { get; private set; }
         public Sender SenderMiddlewareChain { get; private set; }
-        public Func<IContext, IContext> ContextDecorator { get; private set; } = DefaultContextDecorator;
+        public IList<Func<IContext, IContext>> ContextDecorator { get; private set; } = new List<Func<IContext, IContext>>();
+        public Func<IContext, IContext> ContextDecoratorChain { get; private set; } = DefaultContextDecorator;
 
         public Spawner Spawner
         {
@@ -49,7 +50,7 @@ namespace Proto
 
         private static IMailbox ProduceDefaultMailbox() => UnboundedMailbox.Create();
 
-        private static PID DefaultSpawner (string name,Props props,PID parent)
+        private static PID DefaultSpawner(string name, Props props, PID parent)
         {
             var ctx = new ActorContext(props, parent);
             var mailbox = props.MailboxProducer();
@@ -74,9 +75,13 @@ namespace Proto
 
         public Props WithMailbox(Func<IMailbox> mailboxProducer) => Copy(props => props.MailboxProducer = mailboxProducer);
 
-        public Props WithContextDecorator(Func<IContext, IContext> contextDecorator) =>
-            Copy(props => props.ContextDecorator = contextDecorator);
-        
+        public Props WithContextDecorator(params Func<IContext, IContext>[] contextDecorator) => Copy(props =>
+        {
+            props.ContextDecorator = ContextDecorator.Concat(contextDecorator).ToList();
+            props.ContextDecoratorChain = props.ContextDecorator.Reverse()
+                                               .Aggregate((Func<IContext, IContext>)DefaultContextDecorator, (inner, outer) => ctx => outer(inner(ctx)));
+        });
+
         public Props WithGuardianSupervisorStrategy(ISupervisorStrategy guardianStrategy) => Copy(props => props.GuardianStrategy = guardianStrategy);
 
         public Props WithChildSupervisorStrategy(ISupervisorStrategy supervisorStrategy) => Copy(props => props.SupervisorStrategy = supervisorStrategy);
@@ -85,14 +90,14 @@ namespace Proto
         {
             props.ReceiveMiddleware = ReceiveMiddleware.Concat(middleware).ToList();
             props.ReceiveMiddlewareChain = props.ReceiveMiddleware.Reverse()
-                                                .Aggregate((Receiver) Middleware.Receive, (inner, outer) => outer(inner));
+                                                .Aggregate((Receiver)Middleware.Receive, (inner, outer) => outer(inner));
         });
 
         public Props WithSenderMiddleware(params Func<Sender, Sender>[] middleware) => Copy(props =>
         {
             props.SenderMiddleware = SenderMiddleware.Concat(middleware).ToList();
             props.SenderMiddlewareChain = props.SenderMiddleware.Reverse()
-                                               .Aggregate((Sender) Middleware.Sender, (inner, outer) => outer(inner));
+                                               .Aggregate((Sender)Middleware.Sender, (inner, outer) => outer(inner));
         });
 
         public Props WithSpawner(Spawner spawner) => Copy(props => props.Spawner = spawner);
@@ -110,7 +115,8 @@ namespace Proto
                 SenderMiddlewareChain = SenderMiddlewareChain,
                 Spawner = Spawner,
                 SupervisorStrategy = SupervisorStrategy,
-                ContextDecorator =  ContextDecorator,
+                ContextDecorator = ContextDecorator,
+                ContextDecoratorChain = ContextDecoratorChain,
             };
             mutator(props);
             return props;

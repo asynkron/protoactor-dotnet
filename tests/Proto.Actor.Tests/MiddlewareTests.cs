@@ -16,10 +16,15 @@ namespace Proto.Tests
     {
         private readonly List<string> _logs;
 
+        public TestContextDecorator(IContext context, List<string> logs) : base(context)
+        {
+            _logs = logs;
+        }
+
         public override Task Receive(MessageEnvelope envelope)
         {
             //only inspect "middleware" message
-            if (envelope.Message is string str && str == "middleware")
+            if (envelope.Message is string str && (str == "middleware" || str == "decorator"))
             {
                 _logs.Add("decorator");
                 return base.Receive(envelope.WithMessage("decorator"));
@@ -27,12 +32,8 @@ namespace Proto.Tests
 
             return base.Receive(envelope);
         }
-
-        public TestContextDecorator(IContext context, List<string> logs) : base(context)
-        {
-            _logs = logs;
-        }
     }
+
     public class MiddlewareTests
     {
         private static readonly RootContext Context = new RootContext();
@@ -42,6 +43,9 @@ namespace Proto.Tests
         public void Given_ContextDecorator_Should_Call_Decorator_Before_Actor_Receive()
         {
             var logs = new List<string>();
+            var logs2 = new List<string>();
+            var logs3 = new List<string>();
+
             var testMailbox = new TestMailbox();
             var props = Props.FromFunc(c =>
                 {
@@ -56,7 +60,8 @@ namespace Proto.Tests
                     }
                 })
                 .WithMailbox(() => testMailbox)
-                .WithContextDecorator(c => new TestContextDecorator(c, logs));
+                .WithContextDecorator(c => new TestContextDecorator(c, logs), c => new TestContextDecorator(c, logs2))
+                .WithContextDecorator(c => new TestContextDecorator(c, logs3));
             var pid = Context.Spawn(props);
 
             Context.Send(pid, "middleware");
@@ -64,6 +69,12 @@ namespace Proto.Tests
             Assert.Equal(2, logs.Count);
             Assert.Equal("decorator", logs[0]);
             Assert.Equal("actor", logs[1]);
+
+            foreach (var log in new[] { logs2, logs3 })
+            {
+                Assert.Single(log);
+                Assert.Equal("decorator", log[0]);
+            }
         }
 
 
@@ -98,19 +109,19 @@ namespace Proto.Tests
                         await next(c, env);
                     })
                 .WithMailbox(() => testMailbox)
-                .WithContextDecorator(c => new TestContextDecorator(c,logs));
+                .WithContextDecorator(c => new TestContextDecorator(c, logs));
             var pid = Context.Spawn(props);
 
-            Context.Send(pid,"start");
+            Context.Send(pid, "start");
 
-            Console.WriteLine(string.Join(", ",logs));
-            
+            Console.WriteLine(string.Join(", ", logs));
+
             Assert.Equal(3, logs.Count);
             Assert.Equal("middleware", logs[0]);
             Assert.Equal("decorator", logs[1]);
             Assert.Equal("actor", logs[2]);
         }
-        
+
         [Fact]
         public void Given_ReceiveMiddleware_Should_Call_Middleware_In_Order_Then_Actor_Receive()
         {
@@ -123,7 +134,7 @@ namespace Proto.Tests
                     return Actor.Done;
                 })
                 .WithReceiveMiddleware(
-                    next => async (c,env) =>
+                    next => async (c, env) =>
                     {
                         if (env.Message is string)
                             logs.Add("middleware 1");
@@ -138,7 +149,7 @@ namespace Proto.Tests
                 .WithMailbox(() => testMailbox);
             var pid = Context.Spawn(props);
 
-            Context.Send(pid,"");
+            Context.Send(pid, "");
 
             Assert.Equal(3, logs.Count);
             Assert.Equal("middleware 1", logs[0]);
