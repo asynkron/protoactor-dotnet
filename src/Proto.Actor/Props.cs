@@ -115,6 +115,7 @@ namespace Proto
                 SenderMiddlewareChain = SenderMiddlewareChain,
                 Spawner = Spawner,
                 SupervisorStrategy = SupervisorStrategy,
+                GuardianStrategy = GuardianStrategy,
                 ContextDecorator = ContextDecorator,
                 ContextDecoratorChain = ContextDecoratorChain,
             };
