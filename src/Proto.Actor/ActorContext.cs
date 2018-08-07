@@ -236,6 +236,8 @@ namespace Proto
             target.ContinueWith(t => { Self.SendSystemMessage(cont); });
         }
 
+        public void EscalateFailure(Exception reason, object message) => EscalateFailure(reason, Self);
+
         public void EscalateFailure(Exception reason, PID who)
         {
             var failure = new Failure(who, reason, EnsureExtras().RestartStatistics);
@@ -332,8 +334,6 @@ namespace Proto
             }
             return res;
         }
-
-        public void EscalateFailure(Exception reason, object message) => EscalateFailure(reason, Self);
 
         public Task Receive(MessageEnvelope envelope)
         {
