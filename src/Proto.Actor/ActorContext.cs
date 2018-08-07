@@ -236,10 +236,11 @@ namespace Proto
             target.ContinueWith(t => { Self.SendSystemMessage(cont); });
         }
 
+        public void EscalateFailure(Exception reason, object message) => EscalateFailure(reason, Self);
 
         public void EscalateFailure(Exception reason, PID who)
         {
-            var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics);
+            var failure = new Failure(who, reason, EnsureExtras().RestartStatistics);
             Self.SendSystemMessage(SuspendMailbox.Instance);
             if (Parent == null)
             {
@@ -333,8 +334,6 @@ namespace Proto
             }
             return res;
         }
-
-        public void EscalateFailure(Exception reason, object message) => EscalateFailure(reason, Self);
 
         public Task Receive(MessageEnvelope envelope)
         {
