@@ -76,7 +76,6 @@ namespace Proto
         private object _messageOrEnvelope;
         private ContextState _state;
 
-
         private ActorContextExtras EnsureExtras()
         {
             if (_extras == null)
@@ -102,6 +101,7 @@ namespace Proto
         private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
 
         public IImmutableSet<PID> Children => _extras?.Children ?? EmptyChildren;
+        IReadOnlyCollection<PID> IContext.Children => Children;
 
         public IActor Actor { get; private set; }
         public PID Parent { get; }
@@ -114,7 +114,6 @@ namespace Proto
         public MessageHeader Headers => MessageEnvelope.UnwrapHeader(_messageOrEnvelope);
 
         public TimeSpan ReceiveTimeout { get; private set; }
-        IReadOnlyCollection<PID> IContext.Children => Children;
 
         public void Stash() => EnsureExtras().Stash.Push(Message);
 
