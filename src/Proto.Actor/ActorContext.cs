@@ -361,9 +361,9 @@ namespace Proto
         private Task ProcessMessageAsync(object msg)
         {
             //slow path, there is middleware, message must be wrapped in an envelop
-            if (_props.ReceiveMiddlewareChain != null)
+            if (_props.ReceiverMiddlewareChain != null)
             {
-                return _props.ReceiveMiddlewareChain(EnsureExtras().Context, MessageEnvelope.Wrap(msg));
+                return _props.ReceiverMiddlewareChain(EnsureExtras().Context, MessageEnvelope.Wrap(msg));
             }
             if (_props.ContextDecoratorChain != null)
             {

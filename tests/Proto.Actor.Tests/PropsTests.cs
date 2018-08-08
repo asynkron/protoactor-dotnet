@@ -20,8 +20,8 @@ namespace Proto.Tests
 
             Assert.NotEqual(props.Dispatcher, props2.Dispatcher);
             Assert.Equal(props.MailboxProducer, props2.MailboxProducer);
-            Assert.Equal(props.ReceiveMiddleware, props2.ReceiveMiddleware);
-            Assert.Equal(props.ReceiveMiddlewareChain, props2.ReceiveMiddlewareChain);
+            Assert.Equal(props.ReceiverMiddleware, props2.ReceiverMiddleware);
+            Assert.Equal(props.ReceiverMiddlewareChain, props2.ReceiverMiddlewareChain);
             Assert.Equal(props.Producer, props2.Producer);
             Assert.Equal(props.Spawner, props2.Spawner);
             Assert.Equal(props.SupervisorStrategy, props2.SupervisorStrategy);
@@ -40,8 +40,8 @@ namespace Proto.Tests
 
             Assert.Equal(props.Dispatcher, props2.Dispatcher);
             Assert.NotEqual(props.MailboxProducer, props2.MailboxProducer);
-            Assert.Equal(props.ReceiveMiddleware, props2.ReceiveMiddleware);
-            Assert.Equal(props.ReceiveMiddlewareChain, props2.ReceiveMiddlewareChain);
+            Assert.Equal(props.ReceiverMiddleware, props2.ReceiverMiddleware);
+            Assert.Equal(props.ReceiverMiddlewareChain, props2.ReceiverMiddlewareChain);
             Assert.Equal(props.Producer, props2.Producer);
             Assert.Equal(props.Spawner, props2.Spawner);
             Assert.Equal(props.SupervisorStrategy, props2.SupervisorStrategy);
@@ -55,17 +55,17 @@ namespace Proto.Tests
             Func<Receiver, Receiver> middleware3 = r => r;
 
             var props = new Props();
-            var props2 = props.WithReceiveMiddleware(middleware, middleware2);
-            var props3 = props2.WithReceiveMiddleware(middleware3);
+            var props2 = props.WithReceiverMiddleware(middleware, middleware2);
+            var props3 = props2.WithReceiverMiddleware(middleware3);
 
             Assert.NotEqual(props, props2);
-            Assert.Equal(props.ReceiveMiddleware.Count + 2, props2.ReceiveMiddleware.Count);
-            Assert.Equal(props.ReceiveMiddleware.Count + 3, props3.ReceiveMiddleware.Count);
+            Assert.Equal(props.ReceiverMiddleware.Count + 2, props2.ReceiverMiddleware.Count);
+            Assert.Equal(props.ReceiverMiddleware.Count + 3, props3.ReceiverMiddleware.Count);
 
             Assert.Equal(props.Dispatcher, props2.Dispatcher);
             Assert.Equal(props.MailboxProducer, props2.MailboxProducer);
-            Assert.NotEqual(props.ReceiveMiddleware, props2.ReceiveMiddleware);
-            Assert.NotEqual(props.ReceiveMiddlewareChain, props2.ReceiveMiddlewareChain);
+            Assert.NotEqual(props.ReceiverMiddleware, props2.ReceiverMiddleware);
+            Assert.NotEqual(props.ReceiverMiddlewareChain, props2.ReceiverMiddlewareChain);
             Assert.Equal(props.Producer, props2.Producer);
             Assert.Equal(props.Spawner, props2.Spawner);
             Assert.Equal(props.SupervisorStrategy, props2.SupervisorStrategy);
@@ -84,8 +84,8 @@ namespace Proto.Tests
 
             Assert.Equal(props.Dispatcher, props2.Dispatcher);
             Assert.Equal(props.MailboxProducer, props2.MailboxProducer);
-            Assert.Equal(props.ReceiveMiddleware, props2.ReceiveMiddleware);
-            Assert.Equal(props.ReceiveMiddlewareChain, props2.ReceiveMiddlewareChain);
+            Assert.Equal(props.ReceiverMiddleware, props2.ReceiverMiddleware);
+            Assert.Equal(props.ReceiverMiddlewareChain, props2.ReceiverMiddlewareChain);
             Assert.NotEqual(props.Producer, props2.Producer);
             Assert.Equal(props.Spawner, props2.Spawner);
             Assert.Equal(props.SupervisorStrategy, props2.SupervisorStrategy);
@@ -104,8 +104,8 @@ namespace Proto.Tests
 
             Assert.Equal(props.Dispatcher, props2.Dispatcher);
             Assert.Equal(props.MailboxProducer, props2.MailboxProducer);
-            Assert.Equal(props.ReceiveMiddleware, props2.ReceiveMiddleware);
-            Assert.Equal(props.ReceiveMiddlewareChain, props2.ReceiveMiddlewareChain);
+            Assert.Equal(props.ReceiverMiddleware, props2.ReceiverMiddleware);
+            Assert.Equal(props.ReceiverMiddlewareChain, props2.ReceiverMiddlewareChain);
             Assert.Equal(props.Producer, props2.Producer);
             Assert.NotEqual(props.Spawner, props2.Spawner);
             Assert.Equal(props.SupervisorStrategy, props2.SupervisorStrategy);
@@ -124,8 +124,8 @@ namespace Proto.Tests
 
             Assert.Equal(props.Dispatcher, props2.Dispatcher);
             Assert.Equal(props.MailboxProducer, props2.MailboxProducer);
-            Assert.Equal(props.ReceiveMiddleware, props2.ReceiveMiddleware);
-            Assert.Equal(props.ReceiveMiddlewareChain, props2.ReceiveMiddlewareChain);
+            Assert.Equal(props.ReceiverMiddleware, props2.ReceiverMiddleware);
+            Assert.Equal(props.ReceiverMiddlewareChain, props2.ReceiverMiddlewareChain);
             Assert.Equal(props.Producer, props2.Producer);
             Assert.Equal(props.Spawner, props2.Spawner);
             Assert.NotEqual(props.SupervisorStrategy, props2.SupervisorStrategy);
