@@ -236,10 +236,9 @@ namespace Proto
             target.ContinueWith(t => { Self.SendSystemMessage(cont); });
         }
 
-
-        public void EscalateFailure(Exception reason, PID who)
+        public void EscalateFailure(Exception reason, object message)
         {
-            var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics);
+            var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
             Self.SendSystemMessage(SuspendMailbox.Instance);
             if (Parent == null)
             {
@@ -333,8 +332,6 @@ namespace Proto
             }
             return res;
         }
-
-        public void EscalateFailure(Exception reason, object message) => EscalateFailure(reason, Self);
 
         public Task Receive(MessageEnvelope envelope)
         {
@@ -431,10 +428,10 @@ namespace Proto
             switch (Actor)
             {
                 case ISupervisorStrategy supervisor:
-                    supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
+                    supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason, msg.Message);
                     break;
                 default:
-                    _props.SupervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
+                    _props.SupervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason, msg.Message);
                     break;
             }
         }
@@ -451,7 +448,7 @@ namespace Proto
 
         private void HandleRootFailure(Failure failure)
         {
-            Supervision.DefaultStrategy.HandleFailure(this, failure.Who, failure.RestartStatistics, failure.Reason);
+            Supervision.DefaultStrategy.HandleFailure(this, failure.Who, failure.RestartStatistics, failure.Reason, failure.Message);
         }
 
         //Initiate stopping, not final

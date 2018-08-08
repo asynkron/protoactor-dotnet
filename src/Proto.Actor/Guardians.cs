@@ -48,7 +48,7 @@ namespace Proto
         public IImmutableSet<PID> Children =>
             throw new MemberAccessException("Guardian does not hold its children PIDs.");
 
-        public void EscalateFailure(Exception reason, PID who)
+        public void EscalateFailure(Exception reason, object message)
         {
             throw new InvalidOperationException("Guardian cannot escalate failure.");
         }
@@ -69,7 +69,7 @@ namespace Proto
         {
             if (message is Failure msg)
             {
-                _supervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
+                _supervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason, msg.Message);
             }
         }
     }
