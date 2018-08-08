@@ -40,10 +40,11 @@ namespace Proto
             Context = context;
         }
 
-        public void InitReceiveTimeoutTimer(Timer timer)
-        {
-            ReceiveTimeoutTimer = timer;
-        }
+        public void InitReceiveTimeoutTimer(Timer timer) => ReceiveTimeoutTimer = timer;
+
+        public void ResetReceiveTimeoutTimer(TimeSpan timeout) => ReceiveTimeoutTimer?.Change(timeout, timeout);
+
+        public void StopReceiveTimeoutTimer() => ReceiveTimeoutTimer?.Change(-1, -1);
 
         public void KillreceiveTimeoutTimer()
         {
@@ -161,10 +162,10 @@ namespace Proto
                 return;
             }
 
-            StopReceiveTimeout();
             ReceiveTimeout = duration;
 
             EnsureExtras();
+            _extras.StopReceiveTimeoutTimer();
             if (_extras.ReceiveTimeoutTimer == null)
             {
                 _extras.InitReceiveTimeoutTimer(new Timer(ReceiveTimeoutCallback, null, ReceiveTimeout,
@@ -172,7 +173,7 @@ namespace Proto
             }
             else
             {
-                ResetReceiveTimeout();
+                _extras.ResetReceiveTimeoutTimer(ReceiveTimeout);
             }
         }
 
@@ -182,7 +183,7 @@ namespace Proto
             {
                 return;
             }
-            StopReceiveTimeout();
+            _extras.StopReceiveTimeoutTimer();
             _extras.KillreceiveTimeoutTimer();
 
             ReceiveTimeout = TimeSpan.Zero;
@@ -314,7 +315,7 @@ namespace Proto
                 influenceTimeout = !notInfluenceTimeout;
                 if (influenceTimeout)
                 {
-                    StopReceiveTimeout();
+                    _extras.StopReceiveTimeoutTimer();
                 }
             }
 
@@ -325,10 +326,10 @@ namespace Proto
                 //special handle non completed tasks that need to reset ReceiveTimout
                 if (!res.IsCompleted)
                 {
-                    return res.ContinueWith(_ => ResetReceiveTimeout());
+                    return res.ContinueWith(_ => _extras.ResetReceiveTimeoutTimer(ReceiveTimeout));
                 }
 
-                ResetReceiveTimeout();
+                _extras.ResetReceiveTimeoutTimer(ReceiveTimeout);
             }
             return res;
         }
@@ -533,10 +534,6 @@ namespace Proto
                 disposableActor.Dispose();
             }
         }
-
-        private void ResetReceiveTimeout() => _extras?.ReceiveTimeoutTimer?.Change(ReceiveTimeout, ReceiveTimeout);
-
-        private void StopReceiveTimeout() => _extras?.ReceiveTimeoutTimer?.Change(-1, -1);
 
         private void ReceiveTimeoutCallback(object state)
         {
