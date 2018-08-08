@@ -482,6 +482,8 @@ namespace Proto
                 return Done;
             }
 
+            CancelReceiveTimeout();
+
             switch (_state)
             {
                 case ContextState.Restarting:
