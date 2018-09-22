@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Program.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -27,7 +27,7 @@ namespace Node2
                     context.Respond(new Start());
                     return Actor.Done;
                 case Ping _:
-                    _sender.Tell(new Pong());
+                    context.Send(_sender, new Pong());
                     return Actor.Done;
                 default:
                     return Actor.Done;
@@ -39,9 +39,10 @@ namespace Node2
     {
         static void Main(string[] args)
         {
+            var context = new RootContext();
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Remote.Start("127.0.0.1", 12000);
-            Actor.SpawnNamed(Actor.FromProducer(() => new EchoActor()), "remote");
+            context.SpawnNamed(Props.FromProducer(() => new EchoActor()), "remote");
             Console.ReadLine();
         }
     }

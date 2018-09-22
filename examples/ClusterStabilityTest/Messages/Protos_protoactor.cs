@@ -16,7 +16,7 @@ namespace Messages
         public static void HelloGrainFactory(Func<IHelloGrain> factory) 
         {
             _HelloGrainFactory = factory;
-            Remote.RegisterKnownKind("HelloGrain", Actor.FromProducer(() => new HelloGrainActor()));
+            Remote.RegisterKnownKind("HelloGrain", Props.FromProducer(() => new HelloGrainActor()));
         } 
 
         public static HelloGrainClient HelloGrain(string id) => new HelloGrainClient(id);
@@ -59,7 +59,7 @@ namespace Messages
                 }
 
                 //request the RPC method to be invoked
-                var res = await pid.RequestAsync<object>(gr, ct);
+                var res = await RootContext.Empty.RequestAsync<object>(pid, gr, ct);
 
                 //did we get a response?
                 if (res is GrainResponse grainResponse)
@@ -81,7 +81,7 @@ namespace Messages
                 {
                     return await Inner();
                 }
-                catch(Exception x)
+                catch(Exception)
                 {
                     if (options.RetryAction != null)
                     {

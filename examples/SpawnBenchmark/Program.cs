@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Program.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -12,6 +12,7 @@ using Proto;
 
 namespace SpawnBenchmark
 {
+    
     internal class Request
     {
         public long Div;
@@ -22,7 +23,7 @@ namespace SpawnBenchmark
     internal class MyActor : IActor
     {
         private static MyActor ProduceActor() => new MyActor();
-        public static Props Props = Actor.FromProducer(ProduceActor);
+        public static Props Props = Props.FromProducer(ProduceActor);
         private long _replies;
         private PID _replyTo;
         private long _sum;
@@ -43,13 +44,13 @@ namespace SpawnBenchmark
                 _replyTo = context.Sender;
                 for (var i = 0; i < r.Div; i++)
                 {
-                    var child = Actor.Spawn(Props);
-                    child.Request(new Request
+                    var child = RootContext.Empty.Spawn(Props);
+                    context.Request(child, new Request
                     {
                         Num = r.Num + i * (r.Size / r.Div),
                         Size = r.Size / r.Div,
                         Div = r.Div
-                    }, context.Self);
+                    });
                 }
 
                 return Actor.Done;
@@ -60,7 +61,7 @@ namespace SpawnBenchmark
                 _replies--;
                 if (_replies == 0)
                 {
-                    _replyTo.Tell(_sum);
+                    context.Send(_replyTo, _sum);
                 }
                 return Actor.Done;
             }
@@ -72,20 +73,26 @@ namespace SpawnBenchmark
     {
         private static void Main()
         {
-            Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
-
-            var pid = Actor.Spawn(MyActor.Props);
-            var sw = Stopwatch.StartNew();
-            var t = pid.RequestAsync<long>(new Request
+            var context = new RootContext();
+            while (true)
             {
-                Num = 0,
-                Size = 1000000,
-                Div = 10
-            });
-            t.ConfigureAwait(false);
-            var res = t.Result;
-            Console.WriteLine(sw.Elapsed);
-            Console.WriteLine(res);
+                Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
+
+                var pid = context.Spawn(MyActor.Props);
+                var sw = Stopwatch.StartNew();
+                var t = context.RequestAsync<long>(pid, new Request
+                {
+                    Num = 0,
+                    Size = 1000000,
+                    Div = 10
+                });
+                t.ConfigureAwait(false);
+                var res = t.Result;
+                Console.WriteLine(sw.Elapsed);
+                Console.WriteLine(res);
+                pid.StopAsync().Wait();
+                Task.Delay(500).Wait();
+            }
             //   Console.ReadLine();
         }
     }

@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Program.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -12,8 +12,9 @@ class Program
 {
     static void Main(string[] args)
     {
+        var rootContext = new RootContext();
         var c = 0;
-        var props = Actor.FromFunc(context =>
+        var props = Props.FromFunc(context =>
         {
             switch (context.Message)
             {
@@ -34,10 +35,10 @@ class Program
             }
             return Actor.Done;
         });
-        var pid = Actor.Spawn(props);
+        var pid = rootContext.Spawn(props);
         for (var i = 0; i < 6; i++)
         {
-            pid.Tell("hello");
+            rootContext.Send(pid, "hello");
             Thread.Sleep(500);
         }
 
@@ -46,14 +47,14 @@ class Program
 
         for (var i = 0; i < 6; i++)
         {
-            pid.Tell(new NoInfluence());
+            rootContext.Send(pid, new NoInfluence());
             Thread.Sleep(500);
         }
 
         Console.WriteLine("Hit [return] to send a message to cancel the timeout");
         Console.ReadLine();
 
-        pid.Tell("cancel");
+        rootContext.Send(pid, "cancel");
 
         Console.WriteLine("Hit [return] to finish");
         Console.ReadLine();

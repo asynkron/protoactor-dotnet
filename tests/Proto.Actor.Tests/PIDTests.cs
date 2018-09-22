@@ -8,10 +8,11 @@ namespace Proto.Tests
 {
     public class PIDTests
     {
+        private static readonly RootContext Context = new RootContext();
         [Fact]
         public void Given_ActorNotDead_Ref_ShouldReturnIt()
         {
-            var pid = Actor.Spawn(Actor.FromFunc(EmptyReceive));
+            var pid = Context.Spawn(Props.FromFunc(EmptyReceive));
 
             var p = pid.Ref;
 
@@ -19,10 +20,10 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void Given_ActorDied_Ref_ShouldNotReturnIt()
+        public async void Given_ActorDied_Ref_ShouldNotReturnIt()
         {
-            var pid = Actor.Spawn(Actor.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
-            pid.Stop();
+            var pid = Context.Spawn(Props.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
+            await pid.StopAsync();
 
             var p = pid.Ref;
 
@@ -34,7 +35,7 @@ namespace Proto.Tests
         {
             var id = Guid.NewGuid().ToString();
             var p = new TestProcess();
-            var (pid, ok) = ProcessRegistry.Instance.TryAdd(id, p);
+            var (pid, _) = ProcessRegistry.Instance.TryAdd(id, p);
 
             var p2 = pid.Ref;
 

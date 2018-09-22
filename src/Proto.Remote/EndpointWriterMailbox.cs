@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="EndpointWriterMailbox.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -61,7 +61,7 @@ namespace Proto.Remote
             object m = null;
             try
             {
-                var t = _dispatcher.Throughput;
+                var _ = _dispatcher.Throughput; //not used for batch mailbox
                 var batch = new List<RemoteDeliver>(_batchSize);
                 var sys = _systemMessages.Pop();
                 if (sys != null)

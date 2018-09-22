@@ -10,9 +10,10 @@ namespace SimpleSchedulerDemo
     {
         static void Main(string[] args)
         {
-            var props = Actor.FromProducer(() => new ScheduleActor());
+            var context = new RootContext();
+            var props = Props.FromProducer(() => new ScheduleActor());
 
-            var pid = Actor.Spawn(props);
+            var pid = context.Spawn(props);
 
             Console.ReadLine();
         }
@@ -42,11 +43,11 @@ namespace SimpleSchedulerDemo
 
     public class ScheduleActor : IActor
     {
-        private ISimpleScheduler scheduler = new SimpleScheduler();
+        private readonly ISimpleScheduler _scheduler = new SimpleScheduler();
 
-        private CancellationTokenSource timer;
+        private CancellationTokenSource _timer;
 
-        private int counter = 0;
+        private int _counter;
 
         public Task ReceiveAsync(IContext context)
         {
@@ -54,9 +55,9 @@ namespace SimpleSchedulerDemo
             {
                 case Started _:
 
-                    var pid = context.Spawn(Actor.FromProducer(() => new ScheduleGreetActor()));
+                    var pid = context.Spawn(Props.FromProducer(() => new ScheduleGreetActor()));
                     
-                    scheduler
+                    _scheduler
                         .ScheduleTellOnce(TimeSpan.FromMilliseconds(100), context.Self, new SimpleMessage("test 1"))
                         .ScheduleTellOnce(TimeSpan.FromMilliseconds(200), context.Self, new SimpleMessage("test 2"))
                         .ScheduleTellOnce(TimeSpan.FromMilliseconds(300), context.Self, new SimpleMessage("test 3"))
@@ -67,32 +68,32 @@ namespace SimpleSchedulerDemo
 
                     break;
 
-                case Hello hl:
+                case Hello _:
 
                     Console.WriteLine($"Hello Once, let's give you a hickup every 0.5 second starting in 3 seconds!");
 
-                    scheduler.ScheduleTellRepeatedly(TimeSpan.FromSeconds(3), TimeSpan.FromMilliseconds(500), context.Self, new HickUp(), out timer);
+                    _scheduler.ScheduleTellRepeatedly(TimeSpan.FromSeconds(3), TimeSpan.FromMilliseconds(500), context.Self, new HickUp(), out _timer);
 
                     break;
 
-                case HickUp hu:
+                case HickUp _:
 
-                    counter++;
+                    _counter++;
 
-                    Console.WriteLine($"Hello!");
+                    Console.WriteLine("Hello!");
 
-                    if (counter == 5)
+                    if (_counter == 5)
                     {
-                        timer.Cancel();
+                        _timer.Cancel();
 
-                        context.Self.Tell(new AbortHickUp());
+                        context.Send(context.Self, new AbortHickUp());
                     }
 
                     break;
 
-                case AbortHickUp ahu:
+                case AbortHickUp _:
 
-                    Console.WriteLine($"Aborted hickup after {counter} times");
+                    Console.WriteLine($"Aborted hickup after {_counter} times");
 
                     Console.WriteLine("All this was scheduled calls, have fun!");
 
@@ -125,7 +126,7 @@ namespace SimpleSchedulerDemo
 
                     Console.WriteLine($"Hi {msg.Who}!");
 
-                    context.Sender.Tell(new Greet("Roger"));
+                    context.Respond(new Greet("Roger"));
 
                     break;
             }

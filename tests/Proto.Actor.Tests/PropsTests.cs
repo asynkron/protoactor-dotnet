@@ -1,7 +1,5 @@
 ﻿using Proto.Mailbox;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Proto.TestFixtures;
 using Xunit;
 
@@ -52,9 +50,9 @@ namespace Proto.Tests
         [Fact]
         public void Given_Props_When_WithMiddleware_Then_mutate_Middleware()
         {
-            Func<Receive, Receive> middleware = r => r;
-            Func<Receive, Receive> middleware2 = r => r;
-            Func<Receive, Receive> middleware3 = r => r;
+            Func<Receiver, Receiver> middleware = r => r;
+            Func<Receiver, Receiver> middleware2 = r => r;
+            Func<Receiver, Receiver> middleware3 = r => r;
 
             var props = new Props();
             var props2 = props.WithReceiveMiddleware(middleware, middleware2);

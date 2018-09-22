@@ -1,10 +1,9 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="EndpointReader.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -70,14 +69,10 @@ namespace Proto.Remote
                         Proto.MessageHeader header = null;
                         if (envelope.MessageHeader != null)
                         {
-                            header = new Proto.MessageHeader();
-                            foreach(var (k, v) in envelope.MessageHeader.HeaderData)
-                            {
-                                header.Add(k, v);
-                            }
+                            header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
                         }
                         var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
-                        target.Tell(localEnvelope);
+                        RootContext.Empty.Send(target, localEnvelope);
                     }
                 }
 
@@ -87,7 +82,7 @@ namespace Proto.Remote
 
         public void Suspend(bool suspended)
         {
-            this._suspended = suspended;
+            _suspended = suspended;
         }
     }
 }

@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 //   <copyright file="ConsistentHashRouterState.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -48,7 +48,9 @@ namespace Proto.Router.Routers
                 var key = hashable.HashBy();
                 var node = _hashRing.GetNode(key);
                 var routee = _routeeMap[node];
-                routee.Tell(message);
+                
+                //by design, just forward message
+                RootContext.Empty.Send(routee, message);
             }
             else
             {

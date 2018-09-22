@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Program.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -11,7 +11,8 @@ class Program
 {
     static void Main(string[] args)
     {
-        var props = Actor.FromFunc(ctx =>
+        var context = new RootContext();
+        var props = Props.FromFunc(ctx =>
         {
             if (ctx.Message is string)
             {
@@ -19,9 +20,9 @@ class Program
             }
             return Actor.Done;
         });
-        var pid = Actor.Spawn(props);
+        var pid = context.Spawn(props);
 
-        var reply = pid.RequestAsync<object>("hello").Result;
+        var reply = context.RequestAsync<object>(pid ,"hello").Result;
         Console.WriteLine(reply);
         Console.ReadLine();
     }

@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 //   <copyright file="RouterProcess.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -10,7 +10,7 @@ using Proto.Mailbox;
 
 namespace Proto.Router
 {
-    public class RouterProcess : LocalProcess
+    public class RouterProcess : ActorProcess
     {
         private readonly RouterState _state;
 

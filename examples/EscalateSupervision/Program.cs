@@ -7,8 +7,7 @@ namespace EscalateSupervision
     {
         static void Main(string[] args)
         {
-
-            var childProps = Actor.FromFunc(context =>
+            var childProps = Props.FromFunc(context =>
             {
                 Console.WriteLine($"{context.Self.Id}: MSG: {context.Message.GetType()}");
                 switch (context.Message)
@@ -19,7 +18,7 @@ namespace EscalateSupervision
                 return Actor.Done;
             });
 
-            var rootProps = Actor.FromFunc(context =>
+            var rootProps = Props.FromFunc(context =>
             {
                 Console.WriteLine($"{context.Self.Id}: MSG: {context.Message.GetType()}");
                 switch (context.Message)
@@ -35,7 +34,8 @@ namespace EscalateSupervision
             })
             .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 0, null));
 
-            Actor.SpawnNamed(rootProps, "root");
+            var rootContext = new RootContext();
+            rootContext.SpawnNamed(rootProps, "root");
 
             Console.ReadLine();
         }

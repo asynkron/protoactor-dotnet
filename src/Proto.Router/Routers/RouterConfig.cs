@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 //   <copyright file="IRouterConfig.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -19,9 +19,9 @@ namespace Proto.Router.Routers
             {
                 var routerState = CreateRouterState();
                 var wg = new AutoResetEvent(false);
+                var p = props.WithProducer(() => new RouterActor(this, routerState, wg));
    
-
-                var ctx = new LocalContext(()=> new RouterActor(this,routerState,wg), props.SupervisorStrategy, props.ReceiveMiddlewareChain, props.SenderMiddlewareChain, parent);
+                var ctx = new ActorContext(p, parent);
                 var mailbox = props.MailboxProducer();
                 var dispatcher = props.Dispatcher;
                 var process = new RouterProcess(routerState, mailbox);

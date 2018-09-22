@@ -8,13 +8,14 @@ namespace Proto.Tests
 {
     public class ReceiveTimeoutTests
     {
+        private static readonly RootContext Context = new RootContext();
         [Fact]
         public async Task receive_timeout_received_within_expected_time()
         {
             var timeoutReceived = false;
             var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Actor.FromFunc((context) =>
+            var props = Props.FromFunc((context) =>
             {
                 switch (context.Message)
                 {
@@ -28,7 +29,7 @@ namespace Proto.Tests
                 }
                 return Actor.Done;
             });
-            Actor.Spawn(props);
+            Context.Spawn(props);
 
             await GetSafeAwaitableTask(receiveTimeoutWaiter);
             Assert.True(timeoutReceived);
@@ -40,7 +41,7 @@ namespace Proto.Tests
             var timeoutReceived = false;
             var actorStartedWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Actor.FromFunc((context) =>
+            var props = Props.FromFunc((context) =>
             {
                 switch (context.Message)
                 {
@@ -54,7 +55,7 @@ namespace Proto.Tests
                 }
                 return Actor.Done;
             });
-            Actor.Spawn(props);
+            Context.Spawn(props);
 
             await GetSafeAwaitableTask(actorStartedWaiter);
             Assert.False(timeoutReceived);
@@ -67,7 +68,7 @@ namespace Proto.Tests
             var endingTimeout = TimeSpan.MaxValue;
             var autoExpiringWaiter = GetExpiringTaskCompletionSource(1500);
 
-            var props = Actor.FromFunc((context) =>
+            var props = Props.FromFunc((context) =>
             {
                 switch (context.Message)
                 {
@@ -83,7 +84,7 @@ namespace Proto.Tests
                 }
                 return Actor.Done;
             });
-            Actor.Spawn(props);
+            Context.Spawn(props);
 
             // this task should auto cancel
             await GetSafeAwaitableTask(autoExpiringWaiter);
@@ -99,7 +100,7 @@ namespace Proto.Tests
             var timeoutReceived = false;
             var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Actor.FromFunc((context) =>
+            var props = Props.FromFunc((context) =>
             {
                 switch (context.Message)
                 {
@@ -115,7 +116,7 @@ namespace Proto.Tests
                 }
                 return Actor.Done;
             });
-            Actor.Spawn(props);
+            Context.Spawn(props);
 
             await GetSafeAwaitableTask(receiveTimeoutWaiter);
             Assert.True(timeoutReceived);

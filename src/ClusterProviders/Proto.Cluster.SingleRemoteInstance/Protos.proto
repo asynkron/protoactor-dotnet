@@ -1,0 +1,8 @@
+﻿syntax = "proto3";
+package singleremoteinstance;
+option csharp_namespace = "Proto.Cluster.SingleRemoteInstance";
+
+message GetKinds {}
+message GetKindsResponse {
+    repeated string Kinds=1;
+}

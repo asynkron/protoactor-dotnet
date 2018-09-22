@@ -18,6 +18,7 @@ class Program
 {
     static void Main(string[] args)
     {
+        var context = new RootContext();
         Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
         const int messageCount = 1000000;
         const int batchSize = 100;
@@ -33,7 +34,7 @@ class Program
             var echos = new PID[clientCount];
             var completions = new TaskCompletionSource<bool>[clientCount];
 
-            var echoProps = FromProducer(() => new EchoActor())
+            var echoProps = Props.FromProducer(() => new EchoActor())
                 .WithDispatcher(d)
                 .WithMailbox(() => BoundedMailbox.Create(2048));
 
@@ -41,12 +42,12 @@ class Program
             {
                 var tsc = new TaskCompletionSource<bool>();
                 completions[i] = tsc;
-                var clientProps = FromProducer(() => new PingActor(tsc, messageCount, batchSize))
+                var clientProps = Props.FromProducer(() => new PingActor(tsc, messageCount, batchSize))
                     .WithDispatcher(d)
                     .WithMailbox(() => BoundedMailbox.Create(2048));
 
-                clients[i] = Spawn(clientProps);
-                echos[i] = Spawn(echoProps);
+                clients[i] = context.Spawn(clientProps);
+                echos[i] = context.Spawn(echoProps);
             }
             var tasks = completions.Select(tsc => tsc.Task).ToArray();
             var sw = Stopwatch.StartNew();
@@ -55,7 +56,7 @@ class Program
                 var client = clients[i];
                 var echo = echos[i];
 
-                client.Tell(new Start(echo));
+                context.Send(client, new Start(echo));
             }
             Task.WaitAll(tasks);
 
@@ -97,7 +98,7 @@ class Program
             switch (context.Message)
             {
                 case Msg msg:
-                    msg.Sender.Tell(msg);
+                    context.Send(msg.Sender, msg);
                     break;
             }
             return Done;
@@ -154,7 +155,7 @@ class Program
             
             for (var i = 0; i < _batchSize; i++)
             {
-                sender.Tell(m);
+                context.Send(sender, m);
             }
 
             _messageCount -= _batchSize;

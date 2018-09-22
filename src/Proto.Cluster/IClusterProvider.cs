@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="IClusterProvider.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -10,7 +10,7 @@ namespace Proto.Cluster
 {
     public interface IClusterProvider
     {
-        Task RegisterMemberAsync(string clusterName, string h, int p, string[] kinds, IMemberStatusValue statusValue, IMemberStatusValueSerializer serializer);
+        Task RegisterMemberAsync(string clusterName, string host, int port, string[] kinds, IMemberStatusValue statusValue, IMemberStatusValueSerializer serializer);
         void MonitorMemberStatusChanges();
         Task UpdateMemberStatusValueAsync(IMemberStatusValue statusValue);
         Task DeregisterMemberAsync();

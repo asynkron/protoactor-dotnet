@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 //   <copyright file="RandomRouterState.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -36,7 +36,7 @@ namespace Proto.Router.Routers
         {
             var i = _random.Next(_values.Length);
             var pid = _values[i];
-            pid.Tell(message);
+            RootContext.Empty.Send(pid, message);
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Program.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -15,18 +15,20 @@ class Program
 {
     static void Main(string[] args)
     {
-        Proto.Log.SetLoggerFactory(new LoggerFactory()
-            .AddConsole(minLevel: LogLevel.Debug));
+        var context = new RootContext();
+        Log.SetLoggerFactory(new LoggerFactory()
+            .AddConsole(LogLevel.Debug));
 
-        var props = Actor.FromProducer(() => new ParentActor()).WithChildSupervisorStrategy(new OneForOneStrategy(Decider.Decide, 1, null));
+        var props = Props.FromProducer(() => new ParentActor()).WithChildSupervisorStrategy(new OneForOneStrategy(Decider.Decide, 1, null));
 
-        var actor = Actor.Spawn(props);
-        actor.Tell(new Hello
+        var actor = context.Spawn(props);
+        
+        context.Send(actor,new Hello
         {
             Who = "Alex"
         });
-        actor.Tell(new Recoverable());
-        actor.Tell(new Fatal());
+        context.Send(actor,new Recoverable());
+        context.Send(actor,new Fatal());
         //why wait?
         //Stop is a system message and is not processed through the user message mailbox
         //thus, it will be handled _before_ any user message
@@ -42,9 +44,9 @@ class Program
         {
             switch (reason)
             {
-                case RecoverableException r:
+                case RecoverableException _:
                     return SupervisorDirective.Restart;
-                case FatalException r:
+                case FatalException _:
                     return SupervisorDirective.Stop;
                 default:
                     return SupervisorDirective.Escalate;
@@ -60,7 +62,7 @@ class Program
             PID child;
             if (context.Children == null || context.Children.Count == 0)
             {
-                var props = Actor.FromProducer(() => new ChildActor());
+                var props = Props.FromProducer(() => new ChildActor());
                 child = context.Spawn(props);
             }
             else
@@ -70,14 +72,10 @@ class Program
 
             switch (context.Message)
             {
-                case Hello r:
-                    child.Tell(context.Message);
-                    break;
-                case Recoverable r:
-                    child.Tell(context.Message);
-                    break;
-                case Fatal r:
-                    child.Tell(context.Message);
+                case Hello _:
+                case Recoverable _:
+                case Fatal _:
+                    context.Forward(child);
                     break;
                 case Terminated r:
                     Console.WriteLine("Watched actor was Terminated, {0}", r.Who);
@@ -94,27 +92,25 @@ class Program
 
         public Task ReceiveAsync(IContext context)
         {
-            var msg = context.Message;
-
             switch (context.Message)
             {
                 case Hello r:
                     logger.LogDebug($"Hello {r.Who}");
                     break;
-                case Recoverable r:
+                case Recoverable _:
                     throw new RecoverableException();
-                case Fatal r:
+                case Fatal _:
                     throw new FatalException();
-                case Started r:
+                case Started _:
                     logger.LogDebug("Started, initialize actor here");
                     break;
-                case Stopping r:
+                case Stopping _:
                     logger.LogDebug("Stopping, actor is about shut down");
                     break;
-                case Stopped r:
+                case Stopped _:
                     logger.LogDebug("Stopped, actor and it's children are stopped");
                     break;
-                case Restarting r:
+                case Restarting _:
                     logger.LogDebug("Restarting, actor is about restart");
                     break;
             }

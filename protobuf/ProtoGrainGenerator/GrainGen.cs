@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="GrainGen.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -33,7 +33,7 @@ namespace GrainGenerator
                 Messages = file
                     .MessageTypes
                     .ToArray()
-                    .Select(mt => new ProtoMessage {Name = mt.Name})
+                    .Select(mt => new ProtoMessage { Name = mt.Name })
                     .ToArray(),
                 Services = file
                     .Services
@@ -41,7 +41,7 @@ namespace GrainGenerator
                     .Select(s => new ProtoService
                     {
                         Name = s.Name,
-                        Methods = s.Methods.ToArray().Select((m,i) => new ProtoMethod
+                        Methods = s.Methods.ToArray().Select((m, i) => new ProtoMethod
                         {
                             Index = i,
                             Name = m.Name,
@@ -60,7 +60,7 @@ namespace GrainGenerator
         private string RemovePackageName(string type)
         {
             var parts = type.Split('.');
-            return parts[2];
+            return parts.Last();
         }
 
         protected override void WriteField(GeneratorContext ctx, FieldDescriptorProto obj, ref object state, OneOfStub[] oneOfs)

@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="Partition.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -17,7 +17,7 @@ namespace Proto.Cluster
     {
         public static Dictionary<string, PID> KindMap = new Dictionary<string, PID>();
 
-        private static Subscription<object> memberStatusSub;
+        private static Subscription<object> _memberStatusSub;
 
         public static void Setup(string[] kinds)
         {
@@ -27,13 +27,13 @@ namespace Proto.Cluster
                 KindMap[kind] = pid;
             }
 
-            memberStatusSub = EventStream.Instance.Subscribe<MemberStatusEvent>(msg =>
+            _memberStatusSub = EventStream.Instance.Subscribe<MemberStatusEvent>(msg =>
             {
                 foreach (var kind in msg.Kinds)
                 {
                     if (KindMap.TryGetValue(kind, out var kindPid))
                     {
-                        kindPid.Tell(msg);
+                        RootContext.Empty.Send(kindPid, msg);
                     }
                 }
             });
@@ -41,8 +41,8 @@ namespace Proto.Cluster
 
         public static PID SpawnPartitionActor(string kind)
         {
-            var props = Actor.FromProducer(() => new PartitionActor(kind)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-            var pid = Actor.SpawnNamed(props, "partition-" + kind);
+            var props = Props.FromProducer(() => new PartitionActor(kind)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+            var pid = RootContext.Empty.SpawnNamed(props, "partition-" + kind);
             return pid;
         }
 
@@ -53,7 +53,7 @@ namespace Proto.Cluster
                 kind.Stop();
             }
             KindMap.Clear();
-            EventStream.Instance.Unsubscribe(memberStatusSub.Id);
+            EventStream.Instance.Unsubscribe(_memberStatusSub.Id);
         }
 
         public static PID PartitionForKind(string address, string kind)
@@ -67,7 +67,7 @@ namespace Proto.Cluster
         private class SpawningProcess : TaskCompletionSource<ActorPidResponse>
         {
             public string SpawningAddress { get; }
-            public SpawningProcess(string address) => this.SpawningAddress = address;
+            public SpawningProcess(string address) => SpawningAddress = address;
         }
 
         private readonly string _kind;
@@ -130,7 +130,8 @@ namespace Proto.Cluster
             {
                 //if not, forward to the correct owner
                 var owner = Partition.PartitionForKind(address, _kind);
-                owner.Tell(msg);
+                
+                context.Send(owner, msg);
             }
             else
             {
@@ -171,7 +172,7 @@ namespace Proto.Cluster
             }
 
             //Process Spawning Process
-            foreach (var (actorId, sp) in _spawningProcs)
+            foreach (var (_, sp) in _spawningProcs)
             {
                 if (sp.SpawningAddress == msg.Address)
                 {
@@ -194,7 +195,7 @@ namespace Proto.Cluster
             }
 
             //Process Spawning Process
-            foreach (var (actorId, sp) in _spawningProcs)
+            foreach (var (_, sp) in _spawningProcs)
             {
                 if (sp.SpawningAddress == msg.Address)
                 {
@@ -234,7 +235,7 @@ namespace Proto.Cluster
         {
             var pid = _partition[actorId];
             var owner = Partition.PartitionForKind(address, _kind);
-            owner.Tell(new TakeOwnership
+            context.Send(owner, new TakeOwnership
                        {
                            Name = actorId,
                            Pid = pid
@@ -332,7 +333,7 @@ namespace Proto.Cluster
             ActorPidResponse pidResp;
             try
             {
-                pidResp = await Remote.Remote.SpawnNamedAsync(activator, req.Name, req.Kind, Cluster.cfg.TimeoutTimespan);
+                pidResp = await Remote.Remote.SpawnNamedAsync(activator, req.Name, req.Kind, Cluster.Config.TimeoutTimespan);
             }
             catch (TimeoutException)
             {

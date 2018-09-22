@@ -53,7 +53,7 @@ namespace Proto.Tests
         [Fact]
         public void EventStream_CanSubscribeToSpecificEventTypes_Async()
         {
-            var received = "";
+            string received;
             var eventStream = new EventStream();
             eventStream.Subscribe<string>(theString =>
             {

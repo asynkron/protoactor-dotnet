@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto.TestFixtures;
@@ -10,11 +8,13 @@ namespace Proto.Tests
 {
     public class WatchTests
     {
+        private static readonly RootContext Context = new RootContext();
+        
         [Fact]
         public async Task MultipleStopsTriggerSingleTerminated()
         {
             int counter = 0;
-            var childProps = Actor.FromFunc(context =>
+            var childProps = Props.FromFunc(context =>
             {
                 switch (context.Message)
                 {
@@ -26,14 +26,14 @@ namespace Proto.Tests
                 return Actor.Done;
             });
 
-            Actor.Spawn(Actor.FromFunc(context =>
+            Context.Spawn(Props.FromFunc(context =>
             {
                 switch (context.Message)
                 {
                     case Started _:
                         context.Spawn(childProps);
                         break;
-                    case Terminated t:
+                    case Terminated _:
                         Interlocked.Increment(ref counter);
                         break;
                 }
@@ -47,13 +47,13 @@ namespace Proto.Tests
         [Fact]
         public async void CanWatchLocalActors()
         {
-            var watchee = Actor.Spawn(Actor.FromProducer(() => new DoNothingActor())
+            var watchee = Context.Spawn(Props.FromProducer(() => new DoNothingActor())
                                            .WithMailbox(() => new TestMailbox()));
-            var watcher = Actor.Spawn(Actor.FromProducer(() => new LocalActor(watchee))
+            var watcher = Context.Spawn(Props.FromProducer(() => new LocalActor(watchee))
                                            .WithMailbox(() => new TestMailbox()));
 
-            watchee.Stop();
-            var terminatedMessageReceived = await watcher.RequestAsync<bool>("?", TimeSpan.FromSeconds(5));
+            await watchee.StopAsync();
+            var terminatedMessageReceived = await Context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
             Assert.True(terminatedMessageReceived);
         }
 
@@ -75,9 +75,9 @@ namespace Proto.Tests
                         context.Watch(_watchee);
                         break;
                     case string msg when msg == "?":
-                        context.Sender.Tell(_terminateReceived);
+                        context.Respond(_terminateReceived);
                         break;
-                    case Terminated msg:
+                    case Terminated _:
                         _terminateReceived = true;
                         break;
                 }

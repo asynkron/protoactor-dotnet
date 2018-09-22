@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="EndpointWatcher.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -13,9 +13,9 @@ namespace Proto.Remote
     public class EndpointWatcher : IActor
     {
         private readonly Behavior _behavior;
-        private readonly Dictionary<string, FastSet<PID>> _watched = new Dictionary<string, FastSet<PID>>();
         private readonly ILogger _logger = Log.CreateLogger<EndpointWatcher>();
-        private string _address; //for logging
+        private readonly Dictionary<string, HashSet<PID>> _watched = new Dictionary<string, HashSet<PID>>();
+        private readonly string _address; //for logging
 
         public EndpointWatcher(string address)
         {
@@ -23,10 +23,7 @@ namespace Proto.Remote
             _behavior = new Behavior(ConnectedAsync);
         }
 
-        public Task ReceiveAsync(IContext context)
-        {
-            return _behavior.ReceiveAsync(context);
-        }
+        public Task ReceiveAsync(IContext context) => _behavior.ReceiveAsync(context);
 
         public Task ConnectedAsync(IContext context)
         {
@@ -79,6 +76,7 @@ namespace Proto.Remote
 
                     _watched.Clear();
                     _behavior.Become(TerminatedAsync);
+                    context.Self.Stop();
                     break;
                 }
                 case RemoteUnwatch msg:
@@ -93,7 +91,7 @@ namespace Proto.Remote
                     }
 
                     var w = new Unwatch(msg.Watcher);
-                    Remote.SendMessage(msg.Watchee, w,-1);
+                    Remote.SendMessage(msg.Watchee, w, -1);
                     break;
                 }
                 case RemoteWatch msg:
@@ -104,7 +102,7 @@ namespace Proto.Remote
                     }
                     else
                     {
-                        _watched[msg.Watcher.Id] = new FastSet<PID>{msg.Watchee}; 
+                        _watched[msg.Watcher.Id] = new HashSet<PID> {msg.Watchee};
                     }
 
                     var w = new Watch(msg.Watcher);
@@ -117,6 +115,7 @@ namespace Proto.Remote
                     break;
                 }
             }
+
             return Actor.Done;
         }
 
@@ -146,12 +145,8 @@ namespace Proto.Remote
                     //pass 
                     break;
                 }
-                default:
-                {
-                    //TODO: log error
-                    break;
-                }
             }
+
             return Actor.Done;
         }
     }

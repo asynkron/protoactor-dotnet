@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="Futures.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -15,11 +15,20 @@ namespace Proto
         private readonly CancellationTokenSource _cts;
         private readonly TaskCompletionSource<T> _tcs;
 
-        internal FutureProcess(TimeSpan timeout) : this(new CancellationTokenSource(timeout)) { }
-        internal FutureProcess(CancellationToken cancellationToken) : this(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) { }
-        internal FutureProcess() : this(null) { }
+        internal FutureProcess(TimeSpan timeout) : this(new CancellationTokenSource(timeout))
+        {
+        }
 
-        FutureProcess(CancellationTokenSource cts)
+        internal FutureProcess(CancellationToken cancellationToken) : this(
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+        {
+        }
+
+        internal FutureProcess() : this(null)
+        {
+        }
+
+        private FutureProcess(CancellationTokenSource cts)
         {
             _tcs = new TaskCompletionSource<T>();
             _cts = cts;
@@ -30,18 +39,23 @@ namespace Proto
             {
                 throw new ProcessNameExistException(name, pid);
             }
+
             Pid = pid;
 
             if (cts != null)
             {
+                //TODO: I don't think this is correct, there is probably a more kosher way to do this
                 System.Threading.Tasks.Task.Delay(-1, cts.Token)
                     .ContinueWith(t =>
                     {
-                        if (!_tcs.Task.IsCompleted)
+                        if (_tcs.Task.IsCompleted)
                         {
-                            _tcs.TrySetException(new TimeoutException("Request didn't receive any Response within the expected time."));
-                            Stop(pid);
+                            return;
                         }
+
+                        _tcs.TrySetException(
+                            new TimeoutException("Request didn't receive any Response within the expected time."));
+                        Stop(pid);
                     });
             }
 
@@ -53,22 +67,25 @@ namespace Proto
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
-            var env = MessageEnvelope.Unwrap(message);
-            
-            if (env.message is T || message == null)
+            var msg = MessageEnvelope.UnwrapMessage(message);
+
+            if (msg is T || msg == null)
             {
                 if (_cts != null && _cts.IsCancellationRequested)
                 {
-                    Stop(pid);
+                    Stop(Pid);
                     return;
                 }
 
-                _tcs.TrySetResult((T)env.message);
-                Stop(pid);
-            }            
+                _tcs.TrySetResult((T) msg);
+                Stop(Pid);
+            }
             else
             {
-                throw new InvalidOperationException($"Unexpected message.  Was type {env.message.GetType()} but expected {typeof(T)}");
+                Stop(Pid);
+                _tcs.SetException(
+                    new InvalidOperationException(
+                        $"Unexpected message. Was type {msg.GetType()} but expected {typeof(T)}"));
             }
         }
 
@@ -78,7 +95,15 @@ namespace Proto
             {
                 ProcessRegistry.Instance.Remove(Pid);
                 _cts?.Dispose();
+                return;
             }
+
+            if (_cts == null || !_cts.IsCancellationRequested)
+            {
+                _tcs.TrySetResult(default(T));
+            }
+
+            Stop(pid);
         }
     }
 }

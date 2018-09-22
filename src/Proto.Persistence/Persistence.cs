@@ -16,7 +16,7 @@ namespace Proto.Persistence
         private readonly Action<Snapshot> _applySnapshot;
         private readonly Func<object> _getState;
         private readonly ISnapshotStrategy _snapshotStrategy;
-        private bool UsingSnapshotting => _applySnapshot != null;
+        private bool UsingSnapshotting => _applySnapshot != null; //TODO: why not used?
         private bool UsingEventSourcing => _applyEvent != null;
         private readonly IEventStore _eventStore;
         private readonly ISnapshotStore _snapshotStore;
@@ -132,8 +132,6 @@ namespace Proto.Persistence
                 var persistedSnapshot = new PersistedSnapshot(_getState(), persistedEvent.Index);
 
                 await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, persistedSnapshot.State);
-
-                _applySnapshot(persistedSnapshot);
             }
         }
 
@@ -142,8 +140,6 @@ namespace Proto.Persistence
             var persistedSnapshot = new PersistedSnapshot(snapshot, Index);
 
             await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, snapshot);
-
-            _applySnapshot(persistedSnapshot);
         }
 
         public async Task DeleteSnapshotsAsync(long inclusiveToIndex)

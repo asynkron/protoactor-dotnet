@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="Cluster.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -16,25 +16,25 @@ namespace Proto.Cluster
     {
         private static readonly ILogger Logger = Log.CreateLogger(typeof(Cluster).FullName);
 
-        internal static ClusterConfig cfg;
+        internal static ClusterConfig Config;
 
         public static void Start(string clusterName, string address, int port, IClusterProvider cp) => StartWithConfig(new ClusterConfig(clusterName, address, port, cp));
 
         public static void StartWithConfig(ClusterConfig config)
         {
-            cfg = config;
+            Config = config;
 
-            Remote.Remote.Start(cfg.Address, cfg.Port, cfg.RemoteConfig);
+            Remote.Remote.Start(Config.Address, Config.Port, Config.RemoteConfig);
         
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             Logger.LogInformation("Starting Proto.Actor cluster");
-            var (h, p) = ParseAddress(ProcessRegistry.Instance.Address);
+            var (host, port) = ParseAddress(ProcessRegistry.Instance.Address);
             var kinds = Remote.Remote.GetKnownKinds();
             Partition.Setup(kinds);
             PidCache.Setup();
             MemberList.Setup();
-            cfg.ClusterProvider.RegisterMemberAsync(cfg.Name, h, p, kinds, config.InitialMemberStatusValue, config.MemberStatusValueSerializer).Wait();
-            cfg.ClusterProvider.MonitorMemberStatusChanges();
+            Config.ClusterProvider.RegisterMemberAsync(Config.Name, host, port, kinds, config.InitialMemberStatusValue, config.MemberStatusValueSerializer).Wait();
+            Config.ClusterProvider.MonitorMemberStatusChanges();
 
             Logger.LogInformation("Started Cluster");
         }
@@ -43,7 +43,7 @@ namespace Proto.Cluster
         {
             if (gracefull)
             {
-                cfg.ClusterProvider.Shutdown();
+                Config.ClusterProvider.Shutdown();
                 //This is to wait ownership transfering complete.
                 Task.Delay(2000).Wait();
                 MemberList.Stop();
@@ -90,9 +90,9 @@ namespace Proto.Cluster
 
             try
             {
-                var resp = ct == null || ct == CancellationToken.None
-                           ? await remotePid.RequestAsync<ActorPidResponse>(req, cfg.TimeoutTimespan)
-                           : await remotePid.RequestAsync<ActorPidResponse>(req, ct);
+                var resp = ct == CancellationToken.None
+                           ? await RootContext.Empty.RequestAsync<ActorPidResponse>(remotePid, req, Config.TimeoutTimespan)
+                           : await RootContext.Empty.RequestAsync<ActorPidResponse>(remotePid, req, ct);
                 var status = (ResponseStatusCode) resp.StatusCode;
                 switch (status)
                 {

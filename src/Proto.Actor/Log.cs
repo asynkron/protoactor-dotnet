@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 //   <copyright file="Log.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -10,21 +10,15 @@ namespace Proto
 {
     public static class Log
     {
-        private static ILoggerFactory loggerFactory = new NullLoggerFactory();
+        private static ILoggerFactory _loggerFactory = new NullLoggerFactory();
 
         public static void SetLoggerFactory(ILoggerFactory loggerFactory)
         {
-            Log.loggerFactory = loggerFactory;
+            _loggerFactory = loggerFactory;
         }
 
-        public static ILogger CreateLogger(string categoryName)
-        {
-            return loggerFactory.CreateLogger(categoryName);
-        }
+        public static ILogger CreateLogger(string categoryName) => _loggerFactory.CreateLogger(categoryName);
 
-        public static ILogger CreateLogger<T>()
-        {
-            return loggerFactory.CreateLogger<T>();
-        }
+        public static ILogger CreateLogger<T>() => _loggerFactory.CreateLogger<T>();
     }
 }

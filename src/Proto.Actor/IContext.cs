@@ -1,17 +1,16 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="IContext.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto
 {
-    public interface IContext : ISenderContext
+    public interface IContext : ISenderContext, IReceiverContext, ISpawnContext
     {
         /// <summary>
         ///     Gets the PID for the parent of the current actor.
@@ -55,29 +54,6 @@ namespace Proto
         void Stash();
 
         /// <summary>
-        ///     Spawns a new child actor based on props and named with a unique ID.
-        /// </summary>
-        /// <param name="props">The Props used to spawn the actor</param>
-        /// <returns>The PID of the child actor</returns>
-        PID Spawn(Props props);
-
-        /// <summary>
-        ///     Spawns a new child actor based on props and named using a prefix followed by a unique ID.
-        /// </summary>
-        /// <param name="props">The Props used to spawn the actor</param>
-        /// <param name="prefix">The prefix for the actor name</param>
-        /// <returns>The PID of the child actor</returns>
-        PID SpawnPrefix(Props props, string prefix);
-
-        /// <summary>
-        ///     Spawns a new child actor based on props and named using the specified name.
-        /// </summary>
-        /// <param name="props">The Props used to spawn the actor</param>
-        /// <param name="name">The actor name</param>
-        /// <returns>The PID of the child actor</returns>
-        PID SpawnNamed(Props props, string name);
-
-        /// <summary>
         ///     Registers the actor as a watcher for the specified PID.
         /// </summary>
         /// <param name="pid">The PID to watch</param>
@@ -98,13 +74,8 @@ namespace Proto
         void SetReceiveTimeout(TimeSpan duration);
 
         void CancelReceiveTimeout();
-
-        Task ReceiveAsync(object message);
-        void Tell(PID target, object message);
-        void Request(PID target, object message);
-        Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout);
-        Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken);
-        Task<T> RequestAsync<T>(PID target, object message);
+   
+        void Forward(PID target);
 
         /// <summary>
         ///     Awaits the given target task and once completed, the given action is then completed within the actors concurrency constraint.
@@ -121,7 +92,5 @@ namespace Proto
         /// <param name="target">the Task to await</param>
         /// <param name="action">the continuation to call once the task is completed</param>
         void ReenterAfter(Task target, Action action);
-
-
     }
 }

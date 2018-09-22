@@ -6,13 +6,25 @@ namespace Proto.Schedulers.SimpleScheduler
 {
     public class SimpleScheduler : ISimpleScheduler
     {
+        private readonly ISenderContext _context;
+
+        public SimpleScheduler()
+        {
+            _context = RootContext.Empty;
+        }
+
+        public SimpleScheduler(ISenderContext context)
+        {
+            _context = context;
+        }
+        
         public ISimpleScheduler ScheduleTellOnce(TimeSpan delay, PID target, object message)
         {
             Task.Run(async () =>
             {
                 await Task.Delay(delay);
 
-                target.Tell(message);
+                _context.Send(target, message);
             });
 
             return this;
@@ -20,11 +32,11 @@ namespace Proto.Schedulers.SimpleScheduler
 
         public ISimpleScheduler ScheduleTellRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message, out CancellationTokenSource cancellationTokenSource)
         {
-            CancellationTokenSource cts = new CancellationTokenSource();
+            var cts = new CancellationTokenSource();
 
-            var task = Task.Run(async () =>
+            var _ = Task.Run(async () =>
             {
-                await Task.Delay(delay);
+                await Task.Delay(delay, cts.Token);
 
                 async void Trigger()
                 {
@@ -33,9 +45,9 @@ namespace Proto.Schedulers.SimpleScheduler
                         if (cts.IsCancellationRequested)
                             return;
 
-                        target.Tell(message);
-
-                        await Task.Delay(interval);
+                        _context.Send(target, message);
+                        
+                        await Task.Delay(interval, cts.Token);
                     }
                 }
 
@@ -54,7 +66,8 @@ namespace Proto.Schedulers.SimpleScheduler
             {
                 await Task.Delay(delay);
 
-                target.Request(message, sender);
+                //TODO: allow custom sender
+                _context.Request(target, message);
             });
 
             return this;
@@ -64,23 +77,25 @@ namespace Proto.Schedulers.SimpleScheduler
         {
             CancellationTokenSource cts = new CancellationTokenSource();
 
-            var task = Task.Run(async () =>
+            var _ = Task.Run(async () =>
             {
-                await Task.Delay(delay);
+                await Task.Delay(delay, cts.Token);
 
-                async void Trigger(object _message)
+                async void Trigger()
                 {
-                    if (cts.IsCancellationRequested)
-                        return;
+                    while (true)
+                    {
+                        if (cts.IsCancellationRequested)
+                            return;
 
-                    target.Request(message, sender);
+                        //TODO: allow using sender
+                        _context.Request(target,message);                       
 
-                    await Task.Delay(interval);
-
-                    Trigger(_message);
+                        await Task.Delay(interval, cts.Token);
+                    }
                 }
 
-                Trigger(message);
+                Trigger();
 
             }, cts.Token);
 

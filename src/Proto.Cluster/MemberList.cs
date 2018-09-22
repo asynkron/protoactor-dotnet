@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="MemberList.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -14,11 +14,11 @@ namespace Proto.Cluster
 {
     public static class MemberList
     {
-        private static readonly ILogger _logger = Log.CreateLogger("MemberList");
+        private static readonly ILogger Logger = Log.CreateLogger("MemberList");
 
-        private static readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
-        private static readonly Dictionary<string, MemberStatus> _members = new Dictionary<string, MemberStatus>();
-        private static readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind = new Dictionary<string, IMemberStrategy>();
+        private static readonly ReaderWriterLockSlim RwLock = new ReaderWriterLockSlim();
+        private static readonly Dictionary<string, MemberStatus> Members = new Dictionary<string, MemberStatus>();
+        private static readonly Dictionary<string, IMemberStrategy> MemberStrategyByKind = new Dictionary<string, IMemberStrategy>();
 
         private static Subscription<object> _clusterTopologyEvnSub;
 
@@ -34,71 +34,71 @@ namespace Proto.Cluster
 
         internal static string[] GetMembers(string kind)
         {
-            bool locked = _rwLock.TryEnterReadLock(1000);
+            bool locked = RwLock.TryEnterReadLock(1000);
             while (!locked)
             {
-                _logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
-                locked = _rwLock.TryEnterReadLock(1000);
+                Logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
+                locked = RwLock.TryEnterReadLock(1000);
             }
 
             try
             {
-                return _memberStrategyByKind.TryGetValue(kind, out var memberStrategy)
+                return MemberStrategyByKind.TryGetValue(kind, out var memberStrategy)
                            ? memberStrategy.GetAllMembers().FindAll(m => m.Alive).Select(m => m.Address).ToArray() : new string[0];
             }
             finally
             {
-                _rwLock.ExitReadLock();
+                RwLock.ExitReadLock();
             }
         }
 
         internal static string GetPartition(string name, string kind)
         {
-            bool locked = _rwLock.TryEnterReadLock(1000);
+            bool locked = RwLock.TryEnterReadLock(1000);
             while (!locked)
             {
-                _logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
-                locked = _rwLock.TryEnterReadLock(1000);
+                Logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
+                locked = RwLock.TryEnterReadLock(1000);
             }
 
             try
             {
-                return _memberStrategyByKind.TryGetValue(kind, out var memberStrategy)
+                return MemberStrategyByKind.TryGetValue(kind, out var memberStrategy)
                            ? memberStrategy.GetPartition(name) : "";
             }
             finally
             {
-                _rwLock.ExitReadLock();
+                RwLock.ExitReadLock();
             }
         }
 
         internal static string GetActivator(string kind)
         {
-            bool locked = _rwLock.TryEnterReadLock(1000);
+            bool locked = RwLock.TryEnterReadLock(1000);
             while (!locked)
             {
-                _logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
-                locked = _rwLock.TryEnterReadLock(1000);
+                Logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
+                locked = RwLock.TryEnterReadLock(1000);
             }
 
             try
             {
-                return _memberStrategyByKind.TryGetValue(kind, out var memberStrategy)
+                return MemberStrategyByKind.TryGetValue(kind, out var memberStrategy)
                            ? memberStrategy.GetActivator() : "";
             }
             finally
             {
-                _rwLock.ExitReadLock();
+                RwLock.ExitReadLock();
             }
         }
 
         internal static void UpdateClusterTopology(ClusterTopologyEvent msg)
         {
-            bool locked = _rwLock.TryEnterWriteLock(1000);
+            bool locked = RwLock.TryEnterWriteLock(1000);
             while (!locked)
             {
-                _logger.LogDebug("MemberList did not acquire writer lock within 1 seconds, retry");
-                locked = _rwLock.TryEnterWriteLock(1000);
+                Logger.LogDebug("MemberList did not acquire writer lock within 1 seconds, retry");
+                locked = RwLock.TryEnterWriteLock(1000);
             }
 
             try
@@ -112,7 +112,7 @@ namespace Proto.Cluster
 
                 //remove old ones whose address not exist in new address sets
                 //_members.ToList() duplicates _members, allow _members to be modified in Notify
-                foreach (var (address, old) in _members.ToList())
+                foreach (var (address, old) in Members.ToList())
                 {
                     if (!newMembersAddress.Contains(address))
                     {
@@ -123,14 +123,14 @@ namespace Proto.Cluster
                 //find all the entries that exist in the new set
                 foreach (var @new in msg.Statuses)
                 {
-                    _members.TryGetValue(@new.Address, out var old);
-                    _members[@new.Address] = @new;
+                    Members.TryGetValue(@new.Address, out var old);
+                    Members[@new.Address] = @new;
                     UpdateAndNotify(@new, old);
                 }
             }
             finally
             {
-                _rwLock.ExitWriteLock();
+                RwLock.ExitWriteLock();
             }
         }
 
@@ -146,18 +146,18 @@ namespace Proto.Cluster
                 //update MemberStrategy
                 foreach (var k in old.Kinds)
                 {
-                    if (_memberStrategyByKind.TryGetValue(k, out var ms))
+                    if (MemberStrategyByKind.TryGetValue(k, out var ms))
                     {
                         ms.RemoveMember(old);
                         if (ms.GetAllMembers().Count == 0)
-                            _memberStrategyByKind.Remove(k);
+                            MemberStrategyByKind.Remove(k);
                     }
                 }
 
                 //notify left
                 var left = new MemberLeftEvent(old.Host, old.Port, old.Kinds);
                 Actor.EventStream.Publish(left);
-                _members.Remove(old.Address);
+                Members.Remove(old.Address);
                 var endpointTerminated = new EndpointTerminatedEvent
                 {
                     Address = old.Address
@@ -171,9 +171,9 @@ namespace Proto.Cluster
                 //update MemberStrategy
                 foreach (var k in @new.Kinds)
                 {
-                    if (!_memberStrategyByKind.ContainsKey(k))
-                        _memberStrategyByKind[k] = Cluster.cfg.MemberStrategyBuilder(k);
-                    _memberStrategyByKind[k].AddMember(@new);
+                    if (!MemberStrategyByKind.ContainsKey(k))
+                        MemberStrategyByKind[k] = Cluster.Config.MemberStrategyBuilder(k);
+                    MemberStrategyByKind[k].AddMember(@new);
                 }
 
                 //notify joined
@@ -187,7 +187,7 @@ namespace Proto.Cluster
             {
                 foreach (var k in @new.Kinds)
                 {
-                    if (_memberStrategyByKind.TryGetValue(k, out var ms))
+                    if (MemberStrategyByKind.TryGetValue(k, out var ms))
                     {
                         ms.UpdateMember(@new);
                     }
@@ -199,7 +199,6 @@ namespace Proto.Cluster
             {
                 var rejoined = new MemberRejoinedEvent(@new.Host, @new.Port, @new.Kinds);
                 Actor.EventStream.Publish(rejoined);
-                return;
             }
         }
     }

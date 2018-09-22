@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="EndpointWriter.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
-using Google.Protobuf.Collections;
 using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
@@ -49,6 +48,9 @@ namespace Proto.Remote
                 case Restarting _:
                     await RestartingAsync();
                     break;
+                case EndpointTerminatedEvent _:
+                    context.Self.Stop();
+                    break;
                 case IEnumerable<RemoteDeliver> m:
                     var envelopes = new List<MessageEnvelope>();
                     var typeNames = new Dictionary<string,int>();
@@ -77,7 +79,7 @@ namespace Proto.Remote
                         if (rd.Header != null && rd.Header.Count > 0)
                         {
                             header = new MessageHeader();
-                            header.HeaderData.Add(rd.Header);
+                            header.HeaderData.Add(rd.Header.ToDictionary());
                         }
 
                         var bytes = Serialization.Serialize(rd.Message, serializerId);

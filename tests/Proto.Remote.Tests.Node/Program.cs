@@ -9,6 +9,7 @@ namespace Proto.Remote.Tests.Node
     {
         static void Main(string[] args)
         {
+            var context = new RootContext();
             var app = new CommandLineApplication();
             var hostOption = app.Option("-h|--host", "host", CommandOptionType.SingleValue);
             var portArgument = app.Option("-p|--port", "port", CommandOptionType.SingleValue);
@@ -25,9 +26,9 @@ namespace Proto.Remote.Tests.Node
 
                 Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
                 Remote.Start(host, port);
-                var props = Actor.FromProducer(() => new EchoActor(host, port));
+                var props = Props.FromProducer(() => new EchoActor(host, port));
                 Remote.RegisterKnownKind("EchoActor", props);
-                Actor.SpawnNamed(props, "EchoActorInstance");
+                context.SpawnNamed(props, "EchoActorInstance");
                 Console.ReadLine();
                 return 0;
             });
@@ -52,7 +53,7 @@ namespace Proto.Remote.Tests.Node
             switch (context.Message)
             {
                 case Ping ping:
-                    context.Sender.Tell(new Pong{Message= $"{_host}:{_port} {ping.Message}"});
+                    context.Respond(new Pong{Message= $"{_host}:{_port} {ping.Message}"});
                     return Actor.Done;
                 default:
                     return Actor.Done;

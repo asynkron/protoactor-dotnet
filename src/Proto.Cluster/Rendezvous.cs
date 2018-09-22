@@ -17,7 +17,7 @@ namespace Proto.Cluster
 
         public Rendezvous(IMemberStrategy m)
         {
-            this._m = m;
+            _m = m;
             UpdateRdv();
         }
 
@@ -35,7 +35,7 @@ namespace Proto.Cluster
 
             uint maxScore = 0;
             MemberStatus maxNode = null;
-            uint score = 0;
+            uint score;
 
             for(int i = 0; i < members.Count; i++)
             {
@@ -57,7 +57,7 @@ namespace Proto.Cluster
 
         public void UpdateRdv()
         {
-            this._memberHashes = this._m.GetAllMembers().Select(mb => Encoding.UTF8.GetBytes(mb.Address)).ToArray();
+            _memberHashes = _m.GetAllMembers().Select(mb => Encoding.UTF8.GetBytes(mb.Address)).ToArray();
         }
 
         private static uint RdvHash(byte[] node, byte[] key)

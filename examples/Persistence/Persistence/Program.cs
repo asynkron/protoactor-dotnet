@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Program.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2017 Asynkron HB All rights reserved
+//      Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -20,11 +20,12 @@ class Program
 {
     static void Main(string[] args)
     {
+        var context = new RootContext();
         var provider = new SqliteProvider(new SqliteConnectionStringBuilder { DataSource = "states.db" });
 
-        var props = Actor.FromProducer(() => new MyPersistenceActor(provider));
+        var props = Props.FromProducer(() => new MyPersistenceActor(provider));
 
-        var pid = Actor.Spawn(props);
+        var pid = context.Spawn(props);
 
         Console.ReadLine();
     }
@@ -81,9 +82,6 @@ class Program
                         Console.WriteLine("MyPersistenceActor - RecoverSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}", _persistence.Index, ss.Name);
                     }
                     break;
-                case PersistedSnapshot msg:
-                    Console.WriteLine("MyPersistenceActor - PersistedSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}", msg.Index, msg.State);
-                    break;
             }
         }
 
@@ -103,7 +101,7 @@ class Program
                     
                     await _persistence.RecoverStateAsync();
                     
-                    context.Self.Tell(new StartLoopActor());
+                    context.Send(context.Self, new StartLoopActor());
 
                     break;
 
@@ -129,7 +127,7 @@ class Program
 
             Console.WriteLine("MyPersistenceActor - StartLoopActor");
 
-            var props = Actor.FromProducer(() => new LoopActor());
+            var props = Props.FromProducer(() => new LoopActor());
 
             _loopActor = context.Spawn(props);
             
@@ -158,18 +156,18 @@ class Program
 
                     Console.WriteLine("LoopActor - Started");
 
-                    context.Self.Tell(new LoopParentMessage());
+                    context.Send(context.Self, new LoopParentMessage());
 
                     break;
-                case LoopParentMessage msg:
+                case LoopParentMessage _:
 
                     Task.Run(async () => {
                         
-                        context.Parent.Tell(new RenameCommand { Name = GeneratePronounceableName(5) });
+                        context.Send(context.Parent, new RenameCommand { Name = GeneratePronounceableName(5) });
 
                         await Task.Delay(TimeSpan.FromMilliseconds(500));
 
-                        context.Self.Tell(new LoopParentMessage());
+                        context.Send(context.Self ,new LoopParentMessage());
                     });
 
                     break;

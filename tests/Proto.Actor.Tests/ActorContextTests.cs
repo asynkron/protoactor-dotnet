@@ -8,17 +8,19 @@ namespace Proto.Tests
 {
     public class LocalContextTests
     {
-        public static PID SpawnActorFromFunc(Receive receive) => Actor.Spawn(Actor.FromFunc(receive));
+        private static readonly RootContext Context = new RootContext();
+        public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
 
         [Fact]
         public void Given_Context_ctor_should_set_some_fields()
         {
-            var producer = (Func<IActor>)(() => null);
-            var supervisorStrategyMock = new DoNothingSupervisorStrategy();
-            var middleware = new Receive(ctx => Actor.Done);
             var parent = new PID("test", "test");
-
-            var context = new LocalContext(producer, supervisorStrategyMock, middleware, null, parent);
+            var props = new Props()
+                .WithProducer(() => null)
+                .WithChildSupervisorStrategy(new DoNothingSupervisorStrategy())
+                .WithReceiveMiddleware(next => (ctx,env) => Actor.Done);
+            
+            var context = new ActorContext(props, parent);
 
             Assert.Equal(parent, context.Parent);
 
@@ -27,7 +29,7 @@ namespace Proto.Tests
             Assert.Null(context.Self);
             Assert.Null(context.Actor);
             Assert.NotNull(context.Children);
-            Assert.Same(context.Children, LocalContext.EmptyChildren);
+            Assert.NotNull(context.Children);
 
             Assert.Equal(TimeSpan.Zero, context.ReceiveTimeout);
         }
@@ -60,8 +62,8 @@ namespace Proto.Tests
                 return Actor.Done;
             });
 
-            var task1 = pid.RequestAsync<object>("hello1");
-            var task2 = pid.RequestAsync<object>("hello2");
+            var task1 = Context.RequestAsync<object>(pid, "hello1");
+            var task2 = Context.RequestAsync<object>(pid, "hello2");
             await Task.Yield();
             var reply1 = await task1;
             var reply2 = await task2;
