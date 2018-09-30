@@ -1,10 +1,20 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Proto.Tests
 {
     public class FutureTests
     {
+        private readonly ITestOutputHelper output;
+
+        public FutureTests(ITestOutputHelper output)
+        {
+            this.output = output;
+        }
+        
         private static readonly RootContext Context = new RootContext();
         
         [Fact]
@@ -65,6 +75,32 @@ namespace Proto.Tests
             var reply = Context.RequestAsync<object>(pid, "hello", TimeSpan.FromSeconds(1)).Result;
 
             Assert.Null(reply);
+        }
+        
+        [Fact]
+        public void TestInATask() // This one will break
+        {
+            Task.Run(async () =>
+            {
+                var pid = Context.Spawn(Props.FromFunc(ctx =>
+                {
+                    if (ctx.Message is string msg)
+                    {
+                        output.WriteLine("Got Message " + msg);
+                        ctx.Respond(null);
+                        output.WriteLine("Sent Response to " + msg);
+                    }
+                    return Actor.Done;
+                }));
+
+                output.WriteLine("Starting");
+                var reply1 = await Context.RequestAsync<object>(pid, "hello1", TimeSpan.FromSeconds(2));
+                Assert.Null(reply1);
+                output.WriteLine("got response 1");
+                var reply2 = Context.RequestAsync<object>(pid, "hello2", TimeSpan.FromSeconds(2)).Result;
+                Assert.Null(reply2);
+                output.WriteLine("got response 2");
+            }).Wait();
         }
     }
 }
