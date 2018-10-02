@@ -61,22 +61,21 @@ namespace Proto
                         
                         Stop(pid);
                     });
-                Task = _tcs.Task.ContinueWith(x =>
-                {
-                    if (x.IsFaulted)
-                    {
-                        throw new TimeoutException("Request didn't receive any Response within the expected time.");
-                    }
-     
-                    return x.Result;
-                });
+                Task = WrapTask(_tcs.Task);
             }
             else
             {
-                Task = _tcs.Task.ContinueWith(x => x.Result);
+                Task = WrapTask(_tcs.Task);
             }
             
             
+        }
+
+        private static async Task<T> WrapTask(Task<T> task)
+        {
+            await System.Threading.Tasks.Task.Yield();
+            var res = await task;
+            return res;
         }
 
         public PID Pid { get; }
@@ -93,7 +92,7 @@ namespace Proto
                 }
                 else
                 {
-                    _tcs.SetException(
+                    _tcs.TrySetException(
                         new InvalidOperationException(
                             $"Unexpected message. Was type {msg.GetType()} but expected {typeof(T)}"));
                 }
