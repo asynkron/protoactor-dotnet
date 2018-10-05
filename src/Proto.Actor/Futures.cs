@@ -77,7 +77,7 @@ namespace Proto
                     return;
                 }
 
-                _tcs.TrySetResult((T) msg);
+                System.Threading.Tasks.Task.Run(() => _tcs.TrySetResult((T)msg));
                 Stop(Pid);
             }
             else
