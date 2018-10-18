@@ -19,10 +19,10 @@ namespace Saga
         private bool _stopping;
         private bool _processCompleted;
 
-        private Props TryCredit(PID targetActor, decimal amount) => Actor
+        private Props TryCredit(PID targetActor, decimal amount) => Props
             .FromProducer(() => new AccountProxy(targetActor, sender => new Credit(amount, sender)));
         
-        private Props TryDebit(PID targetActor, decimal amount) => Actor
+        private Props TryDebit(PID targetActor, decimal amount) => Props
             .FromProducer(() => new AccountProxy(targetActor, sender => new Debit(amount, sender)));
 
         public TransferProcess(PID from, PID to, decimal amount, IProvider provider, string persistenceId, Random random, double availability)
@@ -146,16 +146,16 @@ namespace Saga
             switch (context.Message)
             {
                 case Started _:
-                    // if we are in this state when started then we need to recreate the TryCredit actor
+                    // if we are in this state when started then we need to recreate the TryCredit actorew
                     context.SpawnNamed(TryCredit(_to, +_amount), "CreditAttempt");
                     break;
                 case OK msg:
-                    decimal fromBalance = await _from.RequestAsync<decimal>(new GetBalance(), TimeSpan.FromMilliseconds(2000));
-                    decimal toBalance = await _to.RequestAsync<decimal>(new GetBalance(), TimeSpan.FromMilliseconds(2000));
+                    decimal fromBalance = await  context.RequestAsync<decimal>(_from, new GetBalance(), TimeSpan.FromMilliseconds(2000));
+                    decimal toBalance = await context.RequestAsync<decimal>(_to, new GetBalance(), TimeSpan.FromMilliseconds(2000));
         
                     await _persistence.PersistEventAsync(new AccountCredited());
                     await _persistence.PersistEventAsync(new TransferCompleted(_from, fromBalance, _to, toBalance));
-                    context.Parent.Tell(new SuccessResult(context.Self));
+                    context.Send(context.Parent, new SuccessResult(context.Self));
                     StopAll(context);
                     break;
                 case Refused msg:

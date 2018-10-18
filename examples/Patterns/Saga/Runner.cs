@@ -34,8 +34,10 @@ namespace Saga
 
         private PID CreateAccount(string name, Random random)
         {
-            var accountProps = Actor.FromProducer(() => new Account(name, _uptime, _refusalProbability, _busyProbability, random));
-            return Actor.SpawnNamed(accountProps, name);
+            var accountProps = Props.FromProducer(() => new Account(name, _uptime, _refusalProbability, _busyProbability, random));
+            //TODO: I've never used ProtoActor before, so don't know is this is an appropropriate fix to access a global static Context
+            // perhaps should be injected somehow during proto construction?
+            return Program.Context.SpawnNamed(accountProps, name);
         }
 
         public Task ReceiveAsync(IContext context)
@@ -68,7 +70,7 @@ namespace Saga
                         var fromAccount = CreateAccount($"FromAccount{j}", random);
                         var toAccount = CreateAccount($"ToAccount{j}", random);
 
-                        var transferProps = Actor.FromProducer(() => new TransferProcess(fromAccount, toAccount, 10,
+                        var transferProps = Props.FromProducer(() => new TransferProcess(fromAccount, toAccount, 10,
                                 _inMemoryProvider, $"Transfer Process {j}", random, _uptime))
                             .WithChildSupervisorStrategy(
                                 new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, _retryAttempts,
