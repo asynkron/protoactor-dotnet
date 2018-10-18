@@ -146,7 +146,7 @@ namespace Saga
             switch (context.Message)
             {
                 case Started _:
-                    // if we are in this state when started then we need to recreate the TryCredit actorew
+                    // if we are in this state when started then we need to recreate the TryCredit actor
                     context.SpawnNamed(TryCredit(_to, +_amount), "CreditAttempt");
                     break;
                 case OK msg:
