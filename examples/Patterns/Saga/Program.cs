@@ -22,7 +22,6 @@ namespace Saga
             var retryAttempts = 0;
             var refusalProbability = 0.01;
             var busyProbability = 0.01;
-            var provider = new InMemoryProvider();
 
             var props = Props.FromProducer(() => new Runner(numberOfTransfers, uptime, refusalProbability, busyProbability, retryAttempts, false))
                 .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, retryAttempts, null));
