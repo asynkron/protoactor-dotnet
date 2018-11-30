@@ -23,7 +23,7 @@ namespace Proto
     public interface ISupervisor
     {
         IImmutableSet<PID> Children { get; }
-        void EscalateFailure(Exception reason, PID who);
+        void EscalateFailure(Exception reason, object message);
         void RestartChildren(Exception reason, params PID[] pids);
         void StopChildren(params PID[] pids);
         void ResumeChildren(params PID[] pids);
@@ -38,7 +38,7 @@ namespace Proto
 
     public interface ISupervisorStrategy
     {
-        void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause);
+        void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause, object message);
     }
 
     public delegate SupervisorDirective Decider(PID pid, Exception reason);
@@ -63,7 +63,7 @@ namespace Proto
             _withinTimeSpan = withinTimeSpan;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason, object message)
         {
             var directive = _decider(child, reason);
             switch (directive)
@@ -89,7 +89,7 @@ namespace Proto
                     supervisor.StopChildren(supervisor.Children.ToArray());
                     break;
                 case SupervisorDirective.Escalate:
-                    supervisor.EscalateFailure(reason, child);
+                    supervisor.EscalateFailure(reason, message);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -128,7 +128,7 @@ namespace Proto
             _withinTimeSpan = withinTimeSpan;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason, object message)
         {
             var directive = _decider(child, reason);
             switch (directive)
@@ -153,7 +153,7 @@ namespace Proto
                     supervisor.StopChildren(child);
                     break;
                 case SupervisorDirective.Escalate:
-                    supervisor.EscalateFailure(reason, child);
+                    supervisor.EscalateFailure(reason, message);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -190,7 +190,7 @@ namespace Proto
             _initialBackoff = initialBackoff;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason, object message)
         {
             if (rs.NumberOfFailures(_backoffWindow) == 0)
             {
@@ -221,7 +221,7 @@ namespace Proto
 
     public class AlwaysRestartStrategy : ISupervisorStrategy
     {
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason, object message)
         {
             //always restart
             supervisor.RestartChildren(reason, child);

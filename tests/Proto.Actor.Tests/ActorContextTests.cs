@@ -18,7 +18,7 @@ namespace Proto.Tests
             var props = new Props()
                 .WithProducer(() => null)
                 .WithChildSupervisorStrategy(new DoNothingSupervisorStrategy())
-                .WithReceiveMiddleware(next => (ctx,env) => Actor.Done);
+                .WithReceiverMiddleware(next => (ctx,env) => Actor.Done);
             
             var context = new ActorContext(props, parent);
 
