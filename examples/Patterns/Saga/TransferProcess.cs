@@ -11,6 +11,7 @@ namespace Saga
         private readonly PID _from;
         private readonly PID _to;
         private readonly decimal _amount;
+        private readonly string _persistenceId;
         private readonly Random _random;
         private readonly double _availability;
         private readonly Persistence _persistence;
@@ -30,6 +31,7 @@ namespace Saga
             _from = from;
             _to = to;
             _amount = amount;
+            _persistenceId = persistenceId;
             _random = random;
             _availability = availability;
             _persistence = Persistence.WithEventSourcing(provider, persistenceId, ApplyEvent);
@@ -37,6 +39,7 @@ namespace Saga
 
         private void ApplyEvent(Event @event)
         {
+            Console.WriteLine($"Applying event: {@event.Data.ToString()}");
             switch (@event.Data)
             {
                 case TransferStarted msg:
@@ -64,7 +67,9 @@ namespace Saga
 
         public async Task ReceiveAsync(IContext context)
         {
-            switch (context.Message)
+            var message = context.Message;
+            Console.WriteLine($"[{_persistenceId}] Recieiving :{message.ToString()}");
+            switch (message)
             {
                 case Started msg:
                     // default to Starting behavior
