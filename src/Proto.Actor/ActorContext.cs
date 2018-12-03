@@ -40,10 +40,11 @@ namespace Proto
             Context = context;
         }
 
-        public void InitReceiveTimeoutTimer(Timer timer)
-        {
-            ReceiveTimeoutTimer = timer;
-        }
+        public void InitReceiveTimeoutTimer(Timer timer) => ReceiveTimeoutTimer = timer;
+
+        public void ResetReceiveTimeoutTimer(TimeSpan timeout) => ReceiveTimeoutTimer?.Change(timeout, timeout);
+
+        public void StopReceiveTimeoutTimer() => ReceiveTimeoutTimer?.Change(-1, -1);
 
         public void KillreceiveTimeoutTimer()
         {
@@ -75,7 +76,6 @@ namespace Proto
         private object _messageOrEnvelope;
         private ContextState _state;
 
-
         private ActorContextExtras EnsureExtras()
         {
             if (_extras == null)
@@ -101,6 +101,7 @@ namespace Proto
         private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
 
         public IImmutableSet<PID> Children => _extras?.Children ?? EmptyChildren;
+        IReadOnlyCollection<PID> IContext.Children => Children;
 
         public IActor Actor { get; private set; }
         public PID Parent { get; }
@@ -113,7 +114,6 @@ namespace Proto
         public MessageHeader Headers => MessageEnvelope.UnwrapHeader(_messageOrEnvelope);
 
         public TimeSpan ReceiveTimeout { get; private set; }
-        IReadOnlyCollection<PID> IContext.Children => Children;
 
         public void Stash() => EnsureExtras().Stash.Push(Message);
 
@@ -161,10 +161,10 @@ namespace Proto
                 return;
             }
 
-            StopReceiveTimeout();
             ReceiveTimeout = duration;
 
             EnsureExtras();
+            _extras.StopReceiveTimeoutTimer();
             if (_extras.ReceiveTimeoutTimer == null)
             {
                 _extras.InitReceiveTimeoutTimer(new Timer(ReceiveTimeoutCallback, null, ReceiveTimeout,
@@ -172,7 +172,7 @@ namespace Proto
             }
             else
             {
-                ResetReceiveTimeout();
+                _extras.ResetReceiveTimeoutTimer(ReceiveTimeout);
             }
         }
 
@@ -182,7 +182,7 @@ namespace Proto
             {
                 return;
             }
-            StopReceiveTimeout();
+            _extras.StopReceiveTimeoutTimer();
             _extras.KillreceiveTimeoutTimer();
 
             ReceiveTimeout = TimeSpan.Zero;
@@ -236,10 +236,9 @@ namespace Proto
             target.ContinueWith(t => { Self.SendSystemMessage(cont); });
         }
 
-
-        public void EscalateFailure(Exception reason, PID who)
+        public void EscalateFailure(Exception reason, object message)
         {
-            var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics);
+            var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
             Self.SendSystemMessage(SuspendMailbox.Instance);
             if (Parent == null)
             {
@@ -315,7 +314,7 @@ namespace Proto
                 influenceTimeout = !notInfluenceTimeout;
                 if (influenceTimeout)
                 {
-                    StopReceiveTimeout();
+                    _extras.StopReceiveTimeoutTimer();
                 }
             }
 
@@ -326,15 +325,13 @@ namespace Proto
                 //special handle non completed tasks that need to reset ReceiveTimout
                 if (!res.IsCompleted)
                 {
-                    return res.ContinueWith(_ => ResetReceiveTimeout());
+                    return res.ContinueWith(_ => _extras.ResetReceiveTimeoutTimer(ReceiveTimeout));
                 }
 
-                ResetReceiveTimeout();
+                _extras.ResetReceiveTimeoutTimer(ReceiveTimeout);
             }
             return res;
         }
-
-        public void EscalateFailure(Exception reason, object message) => EscalateFailure(reason, Self);
 
         public Task Receive(MessageEnvelope envelope)
         {
@@ -364,9 +361,9 @@ namespace Proto
         private Task ProcessMessageAsync(object msg)
         {
             //slow path, there is middleware, message must be wrapped in an envelop
-            if (_props.ReceiveMiddlewareChain != null)
+            if (_props.ReceiverMiddlewareChain != null)
             {
-                return _props.ReceiveMiddlewareChain(EnsureExtras().Context, MessageEnvelope.Wrap(msg));
+                return _props.ReceiverMiddlewareChain(EnsureExtras().Context, MessageEnvelope.Wrap(msg));
             }
             if (_props.ContextDecoratorChain != null)
             {
@@ -431,10 +428,10 @@ namespace Proto
             switch (Actor)
             {
                 case ISupervisorStrategy supervisor:
-                    supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
+                    supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason, msg.Message);
                     break;
                 default:
-                    _props.SupervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
+                    _props.SupervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason, msg.Message);
                     break;
             }
         }
@@ -451,7 +448,7 @@ namespace Proto
 
         private void HandleRootFailure(Failure failure)
         {
-            Supervision.DefaultStrategy.HandleFailure(this, failure.Who, failure.RestartStatistics, failure.Reason);
+            Supervision.DefaultStrategy.HandleFailure(this, failure.Who, failure.RestartStatistics, failure.Reason, failure.Message);
         }
 
         //Initiate stopping, not final
@@ -483,6 +480,8 @@ namespace Proto
             {
                 return Done;
             }
+
+            CancelReceiveTimeout();
 
             switch (_state)
             {
@@ -536,10 +535,6 @@ namespace Proto
                 disposableActor.Dispose();
             }
         }
-
-        private void ResetReceiveTimeout() => _extras?.ReceiveTimeoutTimer?.Change(ReceiveTimeout, ReceiveTimeout);
-
-        private void StopReceiveTimeout() => _extras?.ReceiveTimeoutTimer?.Change(-1, -1);
 
         private void ReceiveTimeoutCallback(object state)
         {
