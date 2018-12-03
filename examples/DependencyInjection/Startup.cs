@@ -15,7 +15,7 @@ namespace DependencyInjection
             services.AddProtoActor(props =>
             {
                 //attached console tracing
-                props.RegisterProps<DIActor>(p => p.WithReceiveMiddleware(next => async (c,env) =>
+                props.RegisterProps<DIActor>(p => p.WithReceiverMiddleware(next => async (c,env) =>
                 {
                     Console.WriteLine($"enter {env.Message.GetType().FullName}");
                     await next(c, env);

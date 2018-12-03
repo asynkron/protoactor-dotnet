@@ -33,9 +33,9 @@ namespace Proto
         public ISupervisorStrategy GuardianStrategy { get; private set; }
         public ISupervisorStrategy SupervisorStrategy { get; private set; } = Supervision.DefaultStrategy;
         public IDispatcher Dispatcher { get; private set; } = Dispatchers.DefaultDispatcher;
-        public IList<Func<Receiver, Receiver>> ReceiveMiddleware { get; private set; } = new List<Func<Receiver, Receiver>>();
+        public IList<Func<Receiver, Receiver>> ReceiverMiddleware { get; private set; } = new List<Func<Receiver, Receiver>>();
         public IList<Func<Sender, Sender>> SenderMiddleware { get; private set; } = new List<Func<Sender, Sender>>();
-        public Receiver ReceiveMiddlewareChain { get; private set; }
+        public Receiver ReceiverMiddlewareChain { get; private set; }
         public Sender SenderMiddlewareChain { get; private set; }
         public IList<Func<IContext, IContext>> ContextDecorator { get; private set; } = new List<Func<IContext, IContext>>();
         public Func<IContext, IContext> ContextDecoratorChain { get; private set; } = DefaultContextDecorator;
@@ -86,10 +86,10 @@ namespace Proto
 
         public Props WithChildSupervisorStrategy(ISupervisorStrategy supervisorStrategy) => Copy(props => props.SupervisorStrategy = supervisorStrategy);
 
-        public Props WithReceiveMiddleware(params Func<Receiver, Receiver>[] middleware) => Copy(props =>
+        public Props WithReceiverMiddleware(params Func<Receiver, Receiver>[] middleware) => Copy(props =>
         {
-            props.ReceiveMiddleware = ReceiveMiddleware.Concat(middleware).ToList();
-            props.ReceiveMiddlewareChain = props.ReceiveMiddleware.Reverse()
+            props.ReceiverMiddleware = ReceiverMiddleware.Concat(middleware).ToList();
+            props.ReceiverMiddlewareChain = props.ReceiverMiddleware.Reverse()
                                                 .Aggregate((Receiver)Middleware.Receive, (inner, outer) => outer(inner));
         });
 
@@ -109,8 +109,8 @@ namespace Proto
                 Dispatcher = Dispatcher,
                 MailboxProducer = MailboxProducer,
                 Producer = Producer,
-                ReceiveMiddleware = ReceiveMiddleware,
-                ReceiveMiddlewareChain = ReceiveMiddlewareChain,
+                ReceiverMiddleware = ReceiverMiddleware,
+                ReceiverMiddlewareChain = ReceiverMiddlewareChain,
                 SenderMiddleware = SenderMiddleware,
                 SenderMiddlewareChain = SenderMiddlewareChain,
                 Spawner = Spawner,

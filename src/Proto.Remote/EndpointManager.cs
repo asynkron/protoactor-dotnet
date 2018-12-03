@@ -119,7 +119,7 @@ namespace Proto.Remote
             return Actor.Done;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause)
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause, object message)
         {
             supervisor.RestartChildren(cause, child);
         }

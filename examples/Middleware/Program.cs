@@ -59,7 +59,7 @@ class Program
 
                     return Actor.Done;
                 })
-            .WithReceiveMiddleware(next => async (context, envelope) =>
+            .WithReceiverMiddleware(next => async (context, envelope) =>
             {
                 if (envelope.Message is string)
                 {

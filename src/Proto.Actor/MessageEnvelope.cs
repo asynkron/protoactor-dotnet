@@ -66,14 +66,7 @@ namespace Proto
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static MessageHeader UnwrapHeader(object message)
-        {
-            if (message is MessageEnvelope messageEnvelope && messageEnvelope.Header != null)
-            {
-                return messageEnvelope.Header;
-            }
-            return MessageHeader.Empty;
-        }
+        public static MessageHeader UnwrapHeader(object message) => (message as MessageEnvelope)?.Header;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static object UnwrapMessage(object message) => message is MessageEnvelope r ? r.Message : message;
