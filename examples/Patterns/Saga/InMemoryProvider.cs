@@ -14,7 +14,7 @@ namespace Saga
 
         public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(((object)default(Snapshot), 0L));
         }
 
         public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
@@ -44,7 +44,7 @@ namespace Saga
 
         public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(0);
         }
 
         public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
@@ -63,12 +63,12 @@ namespace Saga
 
         public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(0L);
         }
 
         Task<long> IEventStore.PersistEventAsync(string actorName, long index, object @event)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(0L);
         }
     }
 }
