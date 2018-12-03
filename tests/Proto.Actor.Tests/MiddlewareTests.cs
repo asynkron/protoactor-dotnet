@@ -79,7 +79,7 @@ namespace Proto.Tests
 
 
         [Fact]
-        public void Given_ReceiveMiddleware_and_ContextDecorator_Should_Call_Middleware_and_Decorator_Before_Actor_Receive()
+        public void Given_ReceiverMiddleware_and_ContextDecorator_Should_Call_Middleware_and_Decorator_Before_Actor_Receive()
         {
             var logs = new List<string>();
             var testMailbox = new TestMailbox();
@@ -95,7 +95,7 @@ namespace Proto.Tests
                             return Actor.Done;
                     }
                 })
-                .WithReceiveMiddleware(
+                .WithReceiverMiddleware(
                     next => async (c, env) =>
                     {
                         //only inspect "start" message
@@ -123,7 +123,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void Given_ReceiveMiddleware_Should_Call_Middleware_In_Order_Then_Actor_Receive()
+        public void Given_ReceiverMiddleware_Should_Call_Middleware_In_Order_Then_Actor_Receive()
         {
             var logs = new List<string>();
             var testMailbox = new TestMailbox();
@@ -133,7 +133,7 @@ namespace Proto.Tests
                         logs.Add("actor");
                     return Actor.Done;
                 })
-                .WithReceiveMiddleware(
+                .WithReceiverMiddleware(
                     next => async (c, env) =>
                     {
                         if (env.Message is string)

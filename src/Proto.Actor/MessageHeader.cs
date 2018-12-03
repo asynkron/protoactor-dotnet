@@ -12,9 +12,8 @@ namespace Proto
 {
     public class MessageHeader : IReadOnlyDictionary<string, string>
     {
-        
         private readonly ImmutableDictionary<string, string> _inner;
-        public static MessageHeader Empty => new MessageHeader();
+        public readonly static MessageHeader Empty = new MessageHeader();
 
         public IDictionary<string, string> ToDictionary() => _inner;
 

@@ -31,6 +31,7 @@ namespace Proto
         private FutureProcess(CancellationTokenSource cts)
         {
             _tcs = new TaskCompletionSource<T>();
+
             _cts = cts;
 
             var name = ProcessRegistry.Instance.NextId();
@@ -41,6 +42,8 @@ namespace Proto
             }
 
             Pid = pid;
+
+
 
             if (cts != null)
             {
@@ -55,11 +58,24 @@ namespace Proto
 
                         _tcs.TrySetException(
                             new TimeoutException("Request didn't receive any Response within the expected time."));
+                        
                         Stop(pid);
                     });
+                Task = WrapTask(_tcs.Task);
             }
+            else
+            {
+                Task = WrapTask(_tcs.Task);
+            }
+            
+            
+        }
 
-            Task = _tcs.Task;
+        private static async Task<T> WrapTask(Task<T> task)
+        {
+            await System.Threading.Tasks.Task.Yield();
+            var res = await task;
+            return res;
         }
 
         public PID Pid { get; }
@@ -68,24 +84,22 @@ namespace Proto
         protected internal override void SendUserMessage(PID pid, object message)
         {
             var msg = MessageEnvelope.UnwrapMessage(message);
-
-            if (msg is T || msg == null)
+            try
             {
-                if (_cts != null && _cts.IsCancellationRequested)
+                if (msg is T || msg == null)
                 {
-                    Stop(Pid);
-                    return;
+                    _tcs.TrySetResult((T) msg);
                 }
-
-                _tcs.TrySetResult((T) msg);
-                Stop(Pid);
+                else
+                {
+                    _tcs.TrySetException(
+                        new InvalidOperationException(
+                            $"Unexpected message. Was type {msg.GetType()} but expected {typeof(T)}"));
+                }
             }
-            else
+            finally
             {
                 Stop(Pid);
-                _tcs.SetException(
-                    new InvalidOperationException(
-                        $"Unexpected message. Was type {msg.GetType()} but expected {typeof(T)}"));
             }
         }
 
