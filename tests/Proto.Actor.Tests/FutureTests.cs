@@ -77,7 +77,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void TestInATask() // This one will break
+        public void TestInATask()
         {
             Task.Run(async () =>
             {
@@ -103,7 +103,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void TestInATaskIndirect() // This one will break
+        public void TestInATaskIndirect()
         {
             Task.Run(async () =>
             {
