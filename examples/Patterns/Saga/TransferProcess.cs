@@ -11,6 +11,7 @@ namespace Saga
         private readonly PID _from;
         private readonly PID _to;
         private readonly decimal _amount;
+        private readonly string _persistenceId;
         private readonly Random _random;
         private readonly double _availability;
         private readonly Persistence _persistence;
@@ -19,10 +20,10 @@ namespace Saga
         private bool _stopping;
         private bool _processCompleted;
 
-        private Props TryCredit(PID targetActor, decimal amount) => Actor
+        private Props TryCredit(PID targetActor, decimal amount) => Props
             .FromProducer(() => new AccountProxy(targetActor, sender => new Credit(amount, sender)));
         
-        private Props TryDebit(PID targetActor, decimal amount) => Actor
+        private Props TryDebit(PID targetActor, decimal amount) => Props
             .FromProducer(() => new AccountProxy(targetActor, sender => new Debit(amount, sender)));
 
         public TransferProcess(PID from, PID to, decimal amount, IProvider provider, string persistenceId, Random random, double availability)
@@ -30,6 +31,7 @@ namespace Saga
             _from = from;
             _to = to;
             _amount = amount;
+            _persistenceId = persistenceId;
             _random = random;
             _availability = availability;
             _persistence = Persistence.WithEventSourcing(provider, persistenceId, ApplyEvent);
@@ -37,6 +39,7 @@ namespace Saga
 
         private void ApplyEvent(Event @event)
         {
+            Console.WriteLine($"Applying event: {@event.Data.ToString()}");
             switch (@event.Data)
             {
                 case TransferStarted msg:
@@ -64,7 +67,9 @@ namespace Saga
 
         public async Task ReceiveAsync(IContext context)
         {
-            switch (context.Message)
+            var message = context.Message;
+            Console.WriteLine($"[{_persistenceId}] Recieiving :{message.ToString()}");
+            switch (message)
             {
                 case Started msg:
                     // default to Starting behavior
@@ -150,12 +155,12 @@ namespace Saga
                     context.SpawnNamed(TryCredit(_to, +_amount), "CreditAttempt");
                     break;
                 case OK msg:
-                    decimal fromBalance = await _from.RequestAsync<decimal>(new GetBalance(), TimeSpan.FromMilliseconds(2000));
-                    decimal toBalance = await _to.RequestAsync<decimal>(new GetBalance(), TimeSpan.FromMilliseconds(2000));
+                    decimal fromBalance = await  context.RequestAsync<decimal>(_from, new GetBalance(), TimeSpan.FromMilliseconds(2000));
+                    decimal toBalance = await context.RequestAsync<decimal>(_to, new GetBalance(), TimeSpan.FromMilliseconds(2000));
         
                     await _persistence.PersistEventAsync(new AccountCredited());
                     await _persistence.PersistEventAsync(new TransferCompleted(_from, fromBalance, _to, toBalance));
-                    context.Parent.Tell(new SuccessResult(context.Self));
+                    context.Send(context.Parent, new SuccessResult(context.Self));
                     StopAll(context);
                     break;
                 case Refused msg:

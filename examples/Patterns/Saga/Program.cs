@@ -11,22 +11,25 @@ namespace Saga
 {
     internal class Program
     {
+        private static RootContext Context = RootContext.Empty;
+
         public static void Main(string[] args)
         {
             Console.WriteLine("Starting");
             var random = new Random();
-            var numberOfTransfers = 1000;
+            var numberOfTransfers = 5;
+            var intervalBetweenConsoleUpdates = 1;
             var uptime = 99.99;
             var retryAttempts = 0;
             var refusalProbability = 0.01;
             var busyProbability = 0.01;
-            var provider = new InMemoryProvider();
+            bool verbose = false;
 
-            var props = Actor.FromProducer(() => new Runner(numberOfTransfers, uptime, refusalProbability, busyProbability, retryAttempts, false))
+            var props = Props.FromProducer(() => new Runner(numberOfTransfers, intervalBetweenConsoleUpdates, uptime, refusalProbability, busyProbability, retryAttempts, verbose))
                 .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, retryAttempts, null));
             
             Console.WriteLine("Spawning runner");
-            var runner = Actor.SpawnNamed(props, "runner");
+            var runner = Context.SpawnNamed(props, "runner");
            
             Console.ReadLine();
         }
