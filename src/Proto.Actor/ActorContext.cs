@@ -302,8 +302,8 @@ namespace Proto
         {
             if (_state == ContextState.Stopped)
             {
-                //already stopped
-                Logger.LogError("Actor already stopped, ignore user message {0}", msg);
+                //already stopped, send message to deadletter process
+                DeadLetterProcess.Instance.SendUserMessage(this.Self, msg);
                 return Done;
             }
 
