@@ -20,7 +20,11 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="build.bat" />
-    <None Include="Protos.proto" />
+    <Content Include="Protos.proto">
+      <Pack>true</Pack>
+      <PackagePath>./protos/Proto.Actor</PackagePath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.5.1" />
