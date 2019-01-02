@@ -62,7 +62,7 @@ namespace Proto.Router
                 var sender = context.Sender;
                 foreach (var routee in _routerState.GetRoutees())
                 {
-                    context.RequestWithCustomSender(routee, broadcastMessage.Message, sender);
+                    context.Request(routee, broadcastMessage.Message, sender);
                 }
                 return Actor.Done;
             }

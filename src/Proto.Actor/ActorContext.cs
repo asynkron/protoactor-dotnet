@@ -207,7 +207,7 @@ namespace Proto
             SendUserMessage(target, messageEnvelope);
         }
 
-        public void RequestWithCustomSender(PID target, object message, PID sender)
+        public void Request(PID target, object message, PID sender)
         {
             var messageEnvelope = new MessageEnvelope(message, sender, null);
             SendUserMessage(target, messageEnvelope);

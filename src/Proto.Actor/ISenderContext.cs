@@ -30,7 +30,7 @@ namespace Proto
         /// </summary>
         /// <param name="target">The target PID</param>
         /// <param name="message">The message to send</param>
-        void RequestWithCustomSender(PID target, object message, PID sender);
+        void Request(PID target, object message, PID sender);
 
         /// <summary>
         /// Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
