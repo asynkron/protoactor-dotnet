@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public interface IRootContext : ISpawnContext, ISenderContext
+    public interface IRootContext : ISpawnerContext, ISenderContext
     {
     }
     
@@ -87,7 +87,7 @@ namespace Proto
         public void Request(PID target, object message)
             => SendUserMessage(target, message);
 
-        public void Request(PID target, object message, PID sender)
+        public void RequestWithCustomSender(PID target, object message, PID sender)
         {
             var envelope = new MessageEnvelope(message, sender, null);
             Send(target, envelope);
