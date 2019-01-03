@@ -24,9 +24,9 @@ namespace Proto
             _context.Request(target, message);
         }
 
-        public virtual void RequestWithCustomSender(PID target, object message, PID sender)
+        public virtual void Request(PID target, object message, PID sender)
         {
-            _context.RequestWithCustomSender(target, message, sender);
+            _context.Request(target, message, sender);
         }
 
         public virtual Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout) =>
