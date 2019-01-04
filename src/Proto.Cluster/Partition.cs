@@ -50,7 +50,7 @@ namespace Proto.Cluster
         {
             foreach (var kind in KindMap.Values)
             {
-                kind.Stop();
+                RootContext.Empty.Stop(kind);
             }
             KindMap.Clear();
             EventStream.Instance.Unsubscribe(_memberStatusSub.Id);

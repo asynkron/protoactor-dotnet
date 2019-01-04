@@ -182,7 +182,7 @@ namespace Proto.Persistence.Tests
             Context.Send(pid, new Multiply { Amount = 2 });
             Context.Send(pid, new Multiply { Amount = 4 });
 
-            await pid.StopAsync();
+            await Context.StopAsync(pid);
             pid = Context.Spawn(props);
             var state = await Context.RequestAsync<int>(pid, new GetState(), TimeSpan.FromSeconds(1));
             var index = await Context.RequestAsync<long>(pid, new GetIndex(), TimeSpan.FromSeconds(1));
@@ -237,7 +237,7 @@ namespace Proto.Persistence.Tests
 
         private async Task<int> RestartActorAndGetState(PID pid, Props props)
         {
-            await pid.StopAsync();
+            await Context.StopAsync(pid);
             pid = Context.Spawn(props);
             return await Context.RequestAsync<int>(pid, new GetState(), TimeSpan.FromMilliseconds(500));
         }

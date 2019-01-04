@@ -49,15 +49,15 @@ namespace Proto.Remote
                     await RestartingAsync();
                     break;
                 case EndpointTerminatedEvent _:
-                    context.Self.Stop();
+                    context.Stop(context.Self);
                     break;
                 case IEnumerable<RemoteDeliver> m:
                     var envelopes = new List<MessageEnvelope>();
-                    var typeNames = new Dictionary<string,int>();
-                    var targetNames = new Dictionary<string,int>();
+                    var typeNames = new Dictionary<string, int>();
+                    var targetNames = new Dictionary<string, int>();
                     var typeNameList = new List<string>();
                     var targetNameList = new List<string>();
-                    foreach(var rd in m)
+                    foreach (var rd in m)
                     {
                         var targetName = rd.Target.Id;
                         var serializerId = rd.SerializerId == -1 ? _serializerId : rd.SerializerId;
@@ -139,7 +139,7 @@ namespace Proto.Remote
                 _stream = _client.Receive(_callOptions);
                 _streamWriter = _stream.RequestStream;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError($"GRPC Failed to connect to address {_address}\n{ex}");
                 //Wait for 2 seconds to restart and retry

@@ -37,7 +37,7 @@ namespace SpawnBenchmark
                 if (r.Size == 1)
                 {
                     context.Respond(r.Num);
-                    context.Self.Stop();
+                    context.Stop(context.Self);
                     return Actor.Done;
                 }
                 _replies = r.Div;
@@ -90,7 +90,7 @@ namespace SpawnBenchmark
                 var res = t.Result;
                 Console.WriteLine(sw.Elapsed);
                 Console.WriteLine(res);
-                pid.StopAsync().Wait();
+                context.StopAsync(pid).Wait();
                 Task.Delay(500).Wait();
             }
             //   Console.ReadLine();

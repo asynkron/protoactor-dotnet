@@ -52,7 +52,7 @@ namespace Proto.Remote
             EventStream.Instance.Unsubscribe(_endpointConnEvnSub.Id);
 
             Connections.Clear();
-            _endpointSupervisor.Stop();
+            RootContext.Empty.Stop(_endpointSupervisor);
             Logger.LogDebug("Stopped EndpointManager");
         }
 

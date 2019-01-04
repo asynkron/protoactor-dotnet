@@ -109,7 +109,7 @@ namespace Messages
                 }
                 case ReceiveTimeout _:
                 {
-                    context.Self.Stop();
+                    context.Stop(context.Self);
                     break;
                 }
                 case GrainRequest request:

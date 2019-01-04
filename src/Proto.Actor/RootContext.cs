@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public interface IRootContext : ISpawnerContext, ISenderContext
+    public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext
     {
     }
     
@@ -114,20 +114,42 @@ namespace Proto
         {
             if (SenderMiddleware != null)
             {
-                if (message is MessageEnvelope messageEnvelope)
-                {
-                    //Request based middleware
-                    SenderMiddleware(this, target, messageEnvelope);
-                }
-                else
-                {
-                    //tell based middleware
-                    SenderMiddleware(this, target, new MessageEnvelope(message, null, null));
-                }
-                return;
+                //slow path
+                SenderMiddleware(this, target, MessageEnvelope.Wrap(message));
             }
-            //Default path
-            target.SendUserMessage(message);
+            else
+            {
+                //fast path, 0 alloc
+                target.SendUserMessage(message);
+            }
+        }
+
+        public void Stop(PID pid)
+        {
+            var reff = ProcessRegistry.Instance.Get(pid);
+            reff.Stop(pid);
+        }
+
+        public Task StopAsync(PID pid)
+        {
+            var future = new FutureProcess<object>();
+
+            pid.SendSystemMessage(new Watch(future.Pid));
+            Stop(pid);
+
+            return future.Task;
+        }
+
+        public void Poison(PID pid) => pid.SendUserMessage(new PoisonPill());
+
+        public Task PoisonAsync(PID pid)
+        {
+            var future = new FutureProcess<object>();
+
+            pid.SendSystemMessage(new Watch(future.Pid));
+            Poison(pid);            
+
+            return future.Task;
         }
     }
 }

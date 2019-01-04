@@ -16,7 +16,7 @@ namespace Proto
         {   
             foreach (var pid in self)
             {
-                pid.Stop();
+                RootContext.Empty.Stop(pid);
             }
         }
         
