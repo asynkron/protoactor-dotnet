@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public interface IRootContext : ISpawnContext, ISenderContext
+    public interface IRootContext : ISpawnerContext, ISenderContext
     {
     }
     

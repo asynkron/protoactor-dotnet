@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public interface IContext : ISenderContext, IReceiverContext, ISpawnContext
+    public interface IContext : ISenderContext, IReceiverContext, ISpawnerContext
     {
         /// <summary>
         ///     Gets the PID for the parent of the current actor.

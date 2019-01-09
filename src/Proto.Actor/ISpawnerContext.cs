@@ -1,6 +1,6 @@
 ﻿namespace Proto
 {
-    public interface ISpawnContext
+    public interface ISpawnerContext
     {
         /// <summary>
         ///     Spawns a new child actor based on props and named with a unique ID.
