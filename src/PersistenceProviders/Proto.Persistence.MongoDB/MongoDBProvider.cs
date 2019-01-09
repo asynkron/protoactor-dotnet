@@ -33,7 +33,7 @@ namespace Proto.Persistence.MongoDB
         
         public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
-            var sort = Builders<Event>.Sort.Ascending("eventIndex");
+            var sort = Builders<Event>.Sort.Ascending("EventIndex");
             var events = await EventCollection
                 .Find(e => e.ActorName == actorName && e.EventIndex >= indexStart && e.EventIndex <= indexEnd)
                 .Sort(sort)
@@ -49,7 +49,7 @@ namespace Proto.Persistence.MongoDB
 
         public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
-            var sort = Builders<Snapshot>.Sort.Descending("snapshotIndex");
+            var sort = Builders<Snapshot>.Sort.Descending("SnapshotIndex");
             var snapshot = await SnapshotCollection
                                 .Find(s => s.ActorName == actorName)
                                 .Sort(sort)
