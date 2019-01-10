@@ -38,7 +38,7 @@ namespace Proto.Schedulers.SimpleScheduler
             {
                 await Task.Delay(delay, cts.Token);
 
-                async void Trigger()
+                async Task Trigger()
                 {
                     while (true)
                     {
@@ -51,7 +51,7 @@ namespace Proto.Schedulers.SimpleScheduler
                     }
                 }
 
-                Trigger();
+                await Trigger();
 
             }, cts.Token);
 
@@ -81,7 +81,7 @@ namespace Proto.Schedulers.SimpleScheduler
             {
                 await Task.Delay(delay, cts.Token);
 
-                async void Trigger()
+                async Task Trigger()
                 {
                     while (true)
                     {
@@ -95,7 +95,7 @@ namespace Proto.Schedulers.SimpleScheduler
                     }
                 }
 
-                Trigger();
+                await Trigger();
 
             }, cts.Token);
 
