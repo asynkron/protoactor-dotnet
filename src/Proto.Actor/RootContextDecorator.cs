@@ -35,5 +35,10 @@ namespace Proto
 
         public virtual MessageHeader Headers => _context.Headers;
         public virtual object Message => _context.Message;
+
+        public virtual PID Parent { get => null; }
+        public virtual PID Self { get => null; }
+        public virtual PID Sender { get => null; }
+        public virtual IActor Actor { get => null; }
     }
 }

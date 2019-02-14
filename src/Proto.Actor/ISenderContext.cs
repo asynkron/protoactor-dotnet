@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public interface ISenderContext
+    public interface ISenderContext: IInfoContext
     {
         /// <summary>
         /// Send a message to a given PID target
