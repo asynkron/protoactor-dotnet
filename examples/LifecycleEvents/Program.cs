@@ -46,7 +46,7 @@ class Program
         //thus, it will be handled _before_ any user message
         //we only do this to show the correct order of events in the console
         Thread.Sleep(TimeSpan.FromSeconds(1));
-        actor.StopAsync().Wait();
+        RootContext.Empty.StopAsync(actor).Wait();
 
         Console.ReadLine();
     }

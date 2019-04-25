@@ -76,7 +76,7 @@ namespace Proto.Remote
 
                     _watched.Clear();
                     _behavior.Become(TerminatedAsync);
-                    context.Self.Stop();
+                    context.Stop(context.Self);
                     break;
                 }
                 case RemoteUnwatch msg:

@@ -35,5 +35,13 @@ namespace Proto
 
         public virtual MessageHeader Headers => _context.Headers;
         public virtual object Message => _context.Message;
+
+        public void Stop(PID pid) => _context.Stop(pid);
+
+        public Task StopAsync(PID pid) => _context.StopAsync(pid);
+
+        public void Poison(PID pid) => _context.Poison(pid);
+
+        public Task PoisonAsync(PID pid) => _context.PoisonAsync(pid);
     }
 }

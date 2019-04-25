@@ -62,14 +62,14 @@ namespace Proto
             reff.SendSystemMessage(this, sys);
         }
 
-        /// <summary> Stop will tell actor to stop immediately, regardless of existing user messages in mailbox. </summary>
+        [Obsolete("Replaced with Context.Stop(pid)", false)]
         public void Stop()
         {
             var reff = ProcessRegistry.Instance.Get(this);
             reff.Stop(this);
         }
 
-        /// <summary> StopAsync will tell and wait actor to stop immediately, regardless of existing user messages in mailbox. </summary>
+        [Obsolete("Replaced with Context.StopAsync(pid)", false)]
         public Task StopAsync()
         {
             var future = new FutureProcess<object>();
@@ -80,10 +80,10 @@ namespace Proto
             return future.Task;
         }
 
-        /// <summary> Poison will tell actor to stop after processing current user messages in mailbox. </summary>
+        [Obsolete("Replaced with Context.Poison(pid)", false)]
         public void Poison() => SendUserMessage(new PoisonPill());
 
-        /// <summary> PoisonAsync will tell and wait actor to stop after processing current user messages in mailbox. </summary>
+        [Obsolete("Replaced with Context.PoisonAsync(pid)", false)]
         public Task PoisonAsync()
         {
             var future = new FutureProcess<object>();
