@@ -14,13 +14,17 @@ namespace Proto
     public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext
     {
     }
-    
+
     public class RootContext : IRootContext
     {
         public static readonly RootContext Empty = new RootContext();
         private Sender SenderMiddleware { get; set; }
         public MessageHeader Headers { get; private set; }
 
+        public PID Parent { get => null; }
+        public PID Self { get => null; }
+        public PID Sender { get => null; }
+        public IActor Actor { get => null; }
 
         public PID Spawn(Props props)
         {
@@ -49,7 +53,7 @@ namespace Proto
         public RootContext(MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
         {
             SenderMiddleware = middleware.Reverse()
-                .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner));
+                .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner));
             Headers = messageHeader;
         }
 
@@ -57,7 +61,7 @@ namespace Proto
         public RootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware) => Copy(c =>
         {
             SenderMiddleware = middleware.Reverse()
-                .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner));
+                .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner));
         });
 
 
@@ -78,7 +82,7 @@ namespace Proto
         private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
         {
             target.SendUserMessage(message);
-            return Actor.Done;
+            return Proto.Actor.Done;
         }
 
         public void Send(PID target, object message)
