@@ -258,7 +258,7 @@ namespace Proto
 
         public void RestartChildren(Exception reason, params PID[] pids) => pids.SendSystemNessage(new Restart(reason));
 
-        public void StopChildren(params PID[] pids) => pids.SendSystemNessage(Stop.Instance);
+        public void StopChildren(params PID[] pids) => pids.SendSystemNessage(Proto.Stop.Instance);
 
         public void ResumeChildren(params PID[] pids) => pids.SendSystemNessage(ResumeMailbox.Instance);
 
@@ -350,7 +350,7 @@ namespace Proto
         {
             if (Message is PoisonPill)
             {
-                Self.Stop();
+                Stop(Self);
                 return Done;
             }
 
@@ -550,6 +550,34 @@ namespace Proto
             }
             CancelReceiveTimeout();
             Send(Self, Proto.ReceiveTimeout.Instance);
+        }
+
+        public void Stop(PID pid)
+        {
+            var reff = ProcessRegistry.Instance.Get(pid);
+            reff.Stop(pid);
+        }
+
+        public Task StopAsync(PID pid)
+        {
+            var future = new FutureProcess<object>();
+
+            pid.SendSystemMessage(new Watch(future.Pid));
+            Stop(pid);
+
+            return future.Task;
+        }
+
+        public void Poison(PID pid) => pid.SendUserMessage(new PoisonPill());
+
+        public Task PoisonAsync(PID pid)
+        {
+            var future = new FutureProcess<object>();
+
+            pid.SendSystemMessage(new Watch(future.Pid));
+            Poison(pid);            
+
+            return future.Task;
         }
     }
 }

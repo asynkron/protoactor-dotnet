@@ -27,7 +27,7 @@ namespace Proto.Cluster
 
         internal static void Stop()
         {
-            _watcher.Stop();
+            RootContext.Empty.Stop(_watcher);
             Actor.EventStream.Unsubscribe(_clusterTopologyEvnSub.Id);
         }
 

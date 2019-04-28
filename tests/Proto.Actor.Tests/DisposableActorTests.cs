@@ -129,7 +129,7 @@ namespace Proto.Tests
             var props = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => new TestMailbox());
             var pid = Context.Spawn(props);
-            await pid.StopAsync();
+            await Context.StopAsync(pid);
             Assert.True(disposeCalled);
         }
 

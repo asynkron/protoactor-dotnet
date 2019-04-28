@@ -20,7 +20,7 @@ namespace Proto.ActorExtensions.Tests
 
             context.Send(pid, "hello");
 
-            await pid.StopAsync();
+            await RootContext.Empty.StopAsync(pid);
 
             Assert.True(SampleActor.Created);
         }
@@ -44,7 +44,7 @@ namespace Proto.ActorExtensions.Tests
 
             var pid = factory.GetActor<SampleActor>();
 
-            await pid.StopAsync();
+            await RootContext.Empty.StopAsync(pid);
 
             Assert.True(created);
         }

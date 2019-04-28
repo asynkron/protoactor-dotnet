@@ -72,5 +72,13 @@ namespace Proto
             _context.ReenterAfter(target, action);
 
         public virtual void ReenterAfter(Task target, Action action) => _context.ReenterAfter(target, action);
+
+        public void Stop(PID pid) => _context.Stop(pid);
+
+        public Task StopAsync(PID pid) => _context.StopAsync(pid);
+
+        public void Poison(PID pid) => _context.Poison(pid);
+
+        public Task PoisonAsync(PID pid) => _context.PoisonAsync(pid);
     }
 }
