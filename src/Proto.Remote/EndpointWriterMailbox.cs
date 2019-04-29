@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
@@ -21,7 +20,6 @@ namespace Proto.Remote
 
     public class EndpointWriterMailbox : IMailbox
     {
-        private static readonly ILogger Logger = Log.CreateLogger<EndpointWriterMailbox>();
         private readonly int _batchSize;
         private readonly IMailboxQueue _systemMessages = new UnboundedMailboxQueue();
         private readonly IMailboxQueue _userMessages = new UnboundedMailboxQueue();
@@ -85,12 +83,6 @@ namespace Proto.Remote
                     object msg;
                     while ((msg = _userMessages.Pop()) != null)
                     {
-                        if (msg is EndpointTerminatedEvent) //The mailbox was crashing when it received this particular message 
-                        {
-                            await _invoker.InvokeUserMessageAsync(msg);
-                            continue;
-                        }
-
                         batch.Add((RemoteDeliver) msg);
                         if (batch.Count >= _batchSize)
                         {
@@ -108,15 +100,13 @@ namespace Proto.Remote
             }
             catch (Exception x)
             {
-                Logger.LogWarning("Exception in RunAsync", x);
                 _invoker.EscalateFailure(x,m);
-                return; //Without this, messages are delivered while failure is being escalated
             }
 
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
-            if (_userMessages.HasMessages || _systemMessages.HasMessages &! _suspended )
+            if (_userMessages.HasMessages || _systemMessages.HasMessages)
             {
                 Schedule();
             }
@@ -124,8 +114,7 @@ namespace Proto.Remote
 
         protected void Schedule()
         {
-           
-            if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
+            if (Interlocked.Exchange(ref _status, MailboxStatus.Busy) == MailboxStatus.Idle)
             {
                 _dispatcher.Schedule(RunAsync);
             }
