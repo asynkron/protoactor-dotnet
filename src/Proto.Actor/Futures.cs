@@ -30,8 +30,11 @@ namespace Proto
 
         private FutureProcess(CancellationTokenSource cts)
         {
+#if NET452
             _tcs = new TaskCompletionSource<T>();
-
+#else
+            _tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+#endif
             _cts = cts;
 
             var name = ProcessRegistry.Instance.NextId();
@@ -45,30 +48,34 @@ namespace Proto
 
 
 
-            if (cts != null)
+            if (_cts != null)
             {
-                //TODO: I don't think this is correct, there is probably a more kosher way to do this
-                System.Threading.Tasks.Task.Delay(-1, cts.Token)
-                    .ContinueWith(t =>
+                _cts.Token.Register(() =>
+                {
+                    if (_tcs.Task.IsCompleted)
                     {
-                        if (_tcs.Task.IsCompleted)
-                        {
-                            return;
-                        }
+                        return;
+                    }
 
-                        _tcs.TrySetException(
-                            new TimeoutException("Request didn't receive any Response within the expected time."));
-                        
-                        Stop(pid);
-                    });
+                    _tcs.TrySetException(
+                        new TimeoutException("Request didn't receive any Response within the expected time."));
+
+                    Stop(pid);
+                });
+#if NET452
                 Task = WrapTask(_tcs.Task);
+#else
+                Task = _tcs.Task;
+#endif
             }
             else
             {
+#if NET452
                 Task = WrapTask(_tcs.Task);
+#else
+                Task = _tcs.Task;
+#endif
             }
-            
-            
         }
 
         private static async Task<T> WrapTask(Task<T> task)

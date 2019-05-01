@@ -14,7 +14,7 @@ using Proto;
 using Proto.Mailbox;
 using static Proto.Actor;
 
-class Program
+public class Program
 {
     static void Main(string[] args)
     {
@@ -70,97 +70,97 @@ class Program
 
         Console.ReadLine();
     }
+}
 
-    public class Msg
+public class Msg
+{
+    public Msg(PID sender)
     {
-        public Msg(PID sender)
-        {
-            Sender = sender;
-        }
-
-        public PID Sender { get; }
+        Sender = sender;
     }
 
-    public class Start
-    {
-        public Start(PID sender)
-        {
-            Sender = sender;
-        }
+    public PID Sender { get; }
+}
 
-        public PID Sender { get; }
+public class Start
+{
+    public Start(PID sender)
+    {
+        Sender = sender;
     }
 
-    public class EchoActor : IActor
+    public PID Sender { get; }
+}
+
+public class EchoActor : IActor
+{
+    public Task ReceiveAsync(IContext context)
     {
-        public Task ReceiveAsync(IContext context)
+        switch (context.Message)
         {
-            switch (context.Message)
-            {
-                case Msg msg:
-                    context.Send(msg.Sender, msg);
-                    break;
-            }
-            return Done;
+            case Msg msg:
+                context.Send(msg.Sender, msg);
+                break;
         }
+        return Done;
+    }
+}
+
+
+public class PingActor : IActor
+{
+    private readonly int _batchSize;
+    private readonly TaskCompletionSource<bool> _wgStop;
+    private int _batch;
+    private int _messageCount;
+
+    public PingActor(TaskCompletionSource<bool> wgStop, int messageCount, int batchSize)
+    {
+        _wgStop = wgStop;
+        _messageCount = messageCount;
+        _batchSize = batchSize;
     }
 
-
-    public class PingActor : IActor
+    public Task ReceiveAsync(IContext context)
     {
-        private readonly int _batchSize;
-        private readonly TaskCompletionSource<bool> _wgStop;
-        private int _batch;
-        private int _messageCount;
-
-        public PingActor(TaskCompletionSource<bool> wgStop, int messageCount, int batchSize)
+        switch (context.Message)
         {
-            _wgStop = wgStop;
-            _messageCount = messageCount;
-            _batchSize = batchSize;
-        }
+            case Start s:
+                SendBatch(context, s.Sender);
+                break;
+            case Msg m:
+                _batch--;
 
-        public Task ReceiveAsync(IContext context)
-        {
-            switch (context.Message)
-            {
-                case Start s:
-                    SendBatch(context, s.Sender);
+                if (_batch > 0)
+                {
                     break;
-                case Msg m:
-                    _batch--;
+                }
 
-                    if (_batch > 0)
-                    {
-                        break;
-                    }
-
-                    if (!SendBatch(context, m.Sender))
-                    {
-                        _wgStop.SetResult(true);
-                    }
-                    break;
-            }
-            return Done;
+                if (!SendBatch(context, m.Sender))
+                {
+                    _wgStop.SetResult(true);
+                }
+                break;
         }
+        return Done;
+    }
 
-        private bool SendBatch(IContext context, PID sender)
+    private bool SendBatch(IContext context, PID sender)
+    {
+        if (_messageCount == 0)
         {
-            if (_messageCount == 0)
-            {
-                return false;
-            }
-
-            var m = new Msg(context.Self);
-            
-            for (var i = 0; i < _batchSize; i++)
-            {
-                context.Send(sender, m);
-            }
-
-            _messageCount -= _batchSize;
-            _batch = _batchSize;
-            return true;
+            return false;
         }
+
+        var m = new Msg(context.Self);
+
+        for (var i = 0; i < _batchSize; i++)
+        {
+            context.Send(sender, m);
+        }
+
+        _messageCount -= _batchSize;
+        _batch = _batchSize;
+        return true;
     }
 }
