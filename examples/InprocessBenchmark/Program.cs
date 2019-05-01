@@ -21,11 +21,11 @@ public class Program
     {
         var context = new RootContext();
         Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
-        const int messageCount = 1000000;
+        const int messageCount = 1_000_000;
         const int batchSize = 100;
 
         Console.WriteLine("Dispatcher\t\tElapsed\t\tMsg/sec");
-        var tps = new[] {300, 400, 500, 600, 700, 800, 900};
+        var tps = new[] {300, 400, 500, 600, 700, 800, 900, 1000, 1500, 3000};
         foreach (var t in tps)
         {
             var d = new ThreadPoolDispatcher {Throughput = t};

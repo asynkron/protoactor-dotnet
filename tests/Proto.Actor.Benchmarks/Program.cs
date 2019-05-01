@@ -27,6 +27,7 @@ namespace Proto.Actor.Benchmarks
         private RootContext _context;
         private Props _echoProps;
         private PID _echoActor;
+        private TimeSpan _timeout;
 
         [GlobalSetup]
         public void Setup()
@@ -36,14 +37,13 @@ namespace Proto.Actor.Benchmarks
             _echoProps = Props.FromProducer(() => new EchoActor2())
                 .WithMailbox(() => BoundedMailbox.Create(2048));
             _echoActor = _context.Spawn(_echoProps);
+            _timeout = TimeSpan.FromSeconds(5);
         }
 
         [Benchmark]
-        public async Task InProcessPingPong()
+        public Task InProcessPingPong()
         {
-            var pong = await _context.RequestAsync<string>(_echoActor, "ping", TimeSpan.FromSeconds(5));
-            if (pong != "pong")
-                throw new Exception("Wrong!");
+            return _context.RequestAsync<string>(_echoActor, "ping", _timeout);
         }
     }
 
