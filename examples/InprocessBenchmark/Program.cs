@@ -6,6 +6,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Runtime;
 using System.Threading;
@@ -63,8 +64,8 @@ public class Program
             sw.Stop();
             var totalMessages = messageCount * 2 * clientCount;
 
-            var x = (int) (totalMessages / (double) sw.ElapsedMilliseconds * 1000.0d);
-            Console.WriteLine($"{t}\t\t\t{sw.ElapsedMilliseconds}\t\t{x}");
+            var x = ((int) (totalMessages / (double) sw.ElapsedMilliseconds * 1000.0d)).ToString("#,##0,,M", CultureInfo.InvariantCulture);
+            Console.WriteLine($"{t}\t\t\t{sw.ElapsedMilliseconds} ms\t\t{x}");
             Thread.Sleep(2000);
         }
 
