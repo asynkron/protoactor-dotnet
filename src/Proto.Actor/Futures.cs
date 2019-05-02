@@ -30,11 +30,8 @@ namespace Proto
 
         private FutureProcess(CancellationTokenSource cts)
         {
-#if NET452
-            _tcs = new TaskCompletionSource<T>();
-#else
+
             _tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
-#endif
             _cts = cts;
 
             var name = ProcessRegistry.Instance.NextId();
@@ -62,19 +59,11 @@ namespace Proto
 
                     Stop(pid);
                 });
-#if NET452
-                Task = WrapTask(_tcs.Task);
-#else
                 Task = _tcs.Task;
-#endif
             }
             else
             {
-#if NET452
-                Task = WrapTask(_tcs.Task);
-#else
                 Task = _tcs.Task;
-#endif
             }
         }
 

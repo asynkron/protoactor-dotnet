@@ -37,7 +37,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Router", "src\Proto.R
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Router", "examples\Router\Router.csproj", "{571A1CB9-2819-4FCD-A721-DB9AD63CC444}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence", "src\Proto.Persistence\Proto.Persistence.csproj", "{30AAE00A-7FB9-43AC-8304-B824C0F097F2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Persistence", "src\Proto.Persistence\Proto.Persistence.csproj", "{30AAE00A-7FB9-43AC-8304-B824C0F097F2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence", "Persistence", "{8622758C-75DB-4067-AB13-7D9531A16E9E}"
 EndProject

@@ -1,20 +1,11 @@
-﻿#if NET452
-using Raven.Abstractions.Data;
-using Raven.Abstractions.Extensions;
-using Raven.Client;
-using Raven.Client.Connection;
-using Raven.Client.Indexes;
-#endif
-using System;
+﻿using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-#if !NET452
 using Raven.Client.Documents;
 using Raven.Client.Documents.Indexes;
 using Raven.Client.Documents.Operations;
 using Raven.Client.Documents.Queries;
-#endif
 
 namespace Proto.Persistence.RavenDB
 {
@@ -31,18 +22,8 @@ namespace Proto.Persistence.RavenDB
 
         private async void SetupIndexes()
         {
-#if NET452
-            await IndexCreation.CreateIndexesAsync(typeof(DeleteEventIndex).Assembly(), _store);
-            await IndexCreation.CreateIndexesAsync(typeof(DeleteSnapshotIndex).Assembly(), _store);
-#else
-#if NETSTANDARD1_5
-            await IndexCreation.CreateIndexesAsync(typeof(DeleteEventIndex).GetTypeInfo().Assembly, _store);
-            await IndexCreation.CreateIndexesAsync(typeof(DeleteSnapshotIndex).GetTypeInfo().Assembly, _store);
-#else
             await IndexCreation.CreateIndexesAsync(typeof(DeleteEventIndex).Assembly, _store);
             await IndexCreation.CreateIndexesAsync(typeof(DeleteSnapshotIndex).Assembly, _store);
-#endif
-#endif
         }
 
         public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
@@ -104,9 +85,6 @@ namespace Proto.Persistence.RavenDB
             var indexName = "DeleteEventIndex";
 
             var indexQuery = new IndexQuery { Query = $"ActorName:{actorName} AND Index_Range:[Lx0 TO Lx{inclusiveToIndex}]" };
-#if NET452
-            Operation operation = await _store.AsyncDatabaseCommands.DeleteByIndexAsync(indexName, indexQuery);
-#endif
         }
 
         public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
@@ -114,9 +92,6 @@ namespace Proto.Persistence.RavenDB
             var indexName = "DeleteSnapshotIndex";
 
             var indexQuery = new IndexQuery { Query = $"ActorName:{actorName} AND Index_Range:[Lx0 TO Lx{inclusiveToIndex}]" };
-#if NET452
-            Operation operation = await _store.AsyncDatabaseCommands.DeleteByIndexAsync(indexName, indexQuery);
-#endif
         }
     }
 }
