@@ -12,7 +12,7 @@ namespace Proto.TestKit.Tests
             var a = CreateTestProbe();
             var b = CreateTestProbe();
 
-            a.Context.AtLeastOnceDelivery(b, "hi", TimeSpan.FromMilliseconds(100));
+            a.Context.AtLeastOnceDelivery(b, "hi");
             b.GetNextMessage<string>(x => x.Equals("hi"));
             b.Respond(new Confirmation());
 
