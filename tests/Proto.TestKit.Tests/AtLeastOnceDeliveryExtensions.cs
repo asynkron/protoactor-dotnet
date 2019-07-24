@@ -40,7 +40,7 @@ namespace Proto.TestKit.Tests
                 {
                     try
                     {
-                        context.RequestAsync<Confirmation>(target, message, timeout ?? TimeSpan.FromSeconds(1)).Wait();
+                        context.RequestAsync<Confirmation>(target, message, timeout ?? TimeSpan.FromSeconds(2)).Wait();
                         return;
                     }
                     catch

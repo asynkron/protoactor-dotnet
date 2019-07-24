@@ -56,8 +56,8 @@ namespace Proto.TestKit
         /// <inheritdoc />
         public void ExpectNoMessage(TimeSpan? timeAllowed = null)
         {
-            if (_messageQueue.TryTake(out _, timeAllowed ?? TimeSpan.FromSeconds(1)))
-                throw new Exception($"Waited {timeAllowed} and received a message.");
+            if (_messageQueue.TryTake(out var o, timeAllowed ?? TimeSpan.FromSeconds(1)))
+                throw new Exception($"Waited {timeAllowed} and received a message of type {o.GetType()}.");
         }
 
         /// <inheritdoc />
