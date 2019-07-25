@@ -104,7 +104,7 @@ namespace Proto.Tests
             });
 
 
-            var ctxSender = await Context.RequestAsync<PID>(receiver, "firstmessage");
+            var ctxSender = await Context.RequestAsync<PID>(receiver, "firstmessage", TimeSpan.FromSeconds(10));
 
             Assert.NotNull(ctxSender);
         }

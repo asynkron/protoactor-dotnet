@@ -115,7 +115,7 @@ namespace Proto
 
         public TimeSpan ReceiveTimeout { get; private set; }
 
-        public void Stash() => EnsureExtras().Stash.Push(Message);
+        public void Stash() => EnsureExtras().Stash.Push(_messageOrEnvelope);
 
         public void Respond(object message) => Send(Sender, message);
 
