@@ -30,6 +30,7 @@ namespace Proto.Tests
             Assert.Null(context.Actor);
             Assert.NotNull(context.Children);
             Assert.NotNull(context.Children);
+            
 
             Assert.Equal(TimeSpan.Zero, context.ReceiveTimeout);
         }
@@ -83,5 +84,31 @@ namespace Proto.Tests
             Assert.Equal("bar", two);
             Assert.Equal("baz", three);
         }
+        [Fact]
+        public async Task Stash_Should_Replay_Context()
+        {
+            var receiverFirstMessage = true;
+
+        
+            var receiver = SpawnActorFromFunc(ctx => {
+                
+                if(ctx.Message is string strMsg){
+                    if(receiverFirstMessage){
+                        ctx.Stash();
+                        receiverFirstMessage = false;
+                        throw new ApplicationException("First run error");
+                    }
+                    ctx.Respond(ctx.Sender);
+                }
+                return Actor.Done;
+            });
+
+
+            var ctxSender = await Context.RequestAsync<PID>(receiver, "firstmessage");
+
+            Assert.NotNull(ctxSender);
+        }
     }
+
+    
 }
