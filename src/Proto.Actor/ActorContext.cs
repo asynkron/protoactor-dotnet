@@ -526,9 +526,12 @@ namespace Proto
             await InvokeUserMessageAsync(Started.Instance);
             if (_extras?.Stash != null)
             {
-                while (_extras.Stash.Any())
+                
+                var currentStash = new Stack<Object>(_extras.Stash);
+                _extras.Stash.Clear();
+                while (currentStash.Any())
                 {
-                    var msg = _extras.Stash.Pop();
+                    var msg = currentStash.Pop();
                     await InvokeUserMessageAsync(msg);
                 }
             }

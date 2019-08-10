@@ -108,6 +108,38 @@ namespace Proto.Tests
 
             Assert.NotNull(ctxSender);
         }
+
+         [Fact]
+        public async Task Stash_Should_Reset_OnRestart()
+        {
+            var receiverFirstMessage = true;
+
+            PID requestor = null;
+            var receiver = SpawnActorFromFunc(ctx => {
+                
+                switch(ctx.Message){
+                    case string strMsg when strMsg == "firstmessage":
+                        ctx.Stash();
+                        requestor = ctx.Sender;
+                        if(receiverFirstMessage){
+                            receiverFirstMessage = false;
+                            throw new ApplicationException("First run error");
+                        }
+                        ctx.Send(ctx.Self, "respond");
+                        break;
+                    case string strMsg when strMsg == "respond":
+                        ctx.Send(requestor, requestor);
+                        break;
+                }
+           
+                return Actor.Done;
+            });
+
+
+            var ctxSender = await Context.RequestAsync<PID>(receiver, "firstmessage", TimeSpan.FromSeconds(10));
+
+            Assert.NotNull(ctxSender);
+        }
     }
 
     
