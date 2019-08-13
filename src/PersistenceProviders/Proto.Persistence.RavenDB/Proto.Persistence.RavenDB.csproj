@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <Import Project="../../../netfx.props" />
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     <Version>0.1.6</Version>
     <Authors>Proto.Actor Team</Authors>
