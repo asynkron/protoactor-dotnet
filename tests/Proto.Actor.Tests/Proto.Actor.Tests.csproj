@@ -1,4 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+  <Import Project="../../netfx.props" />
   <PropertyGroup Label="Configuration">
     <RootNamespace>Proto.Tests</RootNamespace>
   </PropertyGroup>
