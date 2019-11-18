@@ -3,6 +3,7 @@
 //       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
+// Modified file in context of repo fork : https://github.com/Optis-World/protoactor-dotnet
 
 using System;
 using System.Collections.Generic;
@@ -34,6 +35,12 @@ namespace Proto.Remote
             Kinds.Add(kind, props);
         }
 
+        // Modified class in context of repo fork : https://github.com/Optis-World/protoactor-dotnet
+        public static void UnregisterKnownKind(string kind)
+        {
+            Kinds.Remove(kind);
+        }
+        
         public static Props GetKnownKind(string kind)
         {
             if (Kinds.TryGetValue(kind, out var props)){
