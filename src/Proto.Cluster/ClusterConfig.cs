@@ -31,7 +31,7 @@ namespace Proto.Cluster
             
             RemoteConfig = new RemoteConfig();
             TimeoutTimespan = TimeSpan.FromSeconds(5);
-            MemberStatusValueSerializer = new EmptyMemberStatusValueSerializer();
+            MemberStatusValueSerializer = new NullMemberStatusValueSerializer();
             MemberStrategyBuilder = kind => new SimpleMemberStrategy();
         }
 

@@ -41,7 +41,7 @@ namespace Proto.Cluster
         IMemberStatusValue Deserialize(string val);
     }
 
-    internal class EmptyMemberStatusValueSerializer : IMemberStatusValueSerializer
+    internal class NullMemberStatusValueSerializer : IMemberStatusValueSerializer
     {
         public string Serialize(IMemberStatusValue val)
         {
