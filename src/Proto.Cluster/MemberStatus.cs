@@ -41,11 +41,11 @@ namespace Proto.Cluster
         IMemberStatusValue Deserialize(string val);
     }
 
-    internal class NullMemberStatusValueSerializer : IMemberStatusValueSerializer
+    internal class EmptyMemberStatusValueSerializer : IMemberStatusValueSerializer
     {
         public string Serialize(IMemberStatusValue val)
         {
-            return null;
+            return "";
         }
 
         public IMemberStatusValue Deserialize(string val)
