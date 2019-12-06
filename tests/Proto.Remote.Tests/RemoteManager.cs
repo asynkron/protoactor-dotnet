@@ -13,11 +13,18 @@ namespace Proto.Remote.Tests
 
         public (string Address, System.Diagnostics.Process Process) DefaultNode => (DefaultNodeAddress, Nodes[DefaultNodeAddress]);
 
-        public RemoteManager()
+        public RemoteManager() : this(true) {
+
+        }
+        
+        public RemoteManager(bool startLocalRemote = false)
         {
             Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
             ProvisionNode("127.0.0.1", 12000);
-            Remote.Start("127.0.0.1", 12001);
+            if(startLocalRemote){
+                 Remote.Start("127.0.0.1", 12001);
+            }
+           
             
             Thread.Sleep(3000);
         }

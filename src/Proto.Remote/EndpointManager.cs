@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -16,7 +17,7 @@ namespace Proto.Remote
         public Endpoint(PID writer, PID watcher)
         {
             Writer = writer;
-            Watcher = watcher;
+            Watcher = watcher; 
         }
 
         public PID Writer { get; }
@@ -27,12 +28,13 @@ namespace Proto.Remote
     {
         private class ConnectionRegistry : ConcurrentDictionary<string, Lazy<Endpoint>> { }
 
-        private static readonly ILogger Logger = Log.CreateLogger("EndpointManager");
+        private static readonly ILogger Logger = Log.CreateLogger(typeof(EndpointManager).FullName);
 
         private static readonly ConnectionRegistry Connections = new ConnectionRegistry();
         private static PID _endpointSupervisor;
         private static Subscription<object> _endpointTermEvnSub;
         private static Subscription<object> _endpointConnEvnSub;
+        
 
         public static void Start()
         {
@@ -58,6 +60,7 @@ namespace Proto.Remote
 
         private static void OnEndpointTerminated(EndpointTerminatedEvent msg)
         {
+            Logger.LogDebug($"Endpoint {msg.Address} terminated removing from connections");
             if (Connections.TryRemove(msg.Address, out var v))
             {
                 var endpoint = v.Value;
@@ -70,6 +73,7 @@ namespace Proto.Remote
         {
             var endpoint = EnsureConnected(msg.Address);
             RootContext.Empty.Send(endpoint.Watcher,msg);
+            endpoint.Writer.SendSystemMessage(msg);
         }
 
         public static void RemoteTerminate(RemoteTerminate msg)
@@ -92,36 +96,113 @@ namespace Proto.Remote
 
         public static void RemoteDeliver(RemoteDeliver msg)
         {
+            
             var endpoint = EnsureConnected(msg.Target.Address);
+            Logger.LogDebug($"Forwarding message for {msg.Target.Address} through EndpontWriter {endpoint.Writer}");
             RootContext.Empty.Send(endpoint.Writer, msg);
+           
         }
 
         private static Endpoint EnsureConnected(string address)
         {
             var conn = Connections.GetOrAdd(address, v =>
                 new Lazy<Endpoint>(() =>
-                    RootContext.Empty.RequestAsync<Endpoint>(_endpointSupervisor, v).Result)
-            );
+                {
+                    Logger.LogDebug($"Requesting new endpoint for {v}");
+                    var endpoint = RootContext.Empty.RequestAsync<Endpoint>(_endpointSupervisor, v).Result;
+                    Logger.LogDebug($"Created new endpoint for {v}");
+                    return endpoint;
+                }));
             return conn.Value;
         }
     }
 
     public class EndpointSupervisor : IActor, ISupervisorStrategy
     {
+        private static readonly ILogger Logger = Log.CreateLogger("EndpointSupervisor");
+        private readonly int _maxNrOfRetries;
+        private readonly Random _random = new Random();
+        private readonly TimeSpan? _withinTimeSpan;
+        private CancellationTokenSource _cancelFutureRetries;
+
+        private int _backoff;
+        private string _address;
+
+        public EndpointSupervisor(){
+            _maxNrOfRetries = Remote.RemoteConfig.EndpointWriterOptions.MaxRetries;
+            _withinTimeSpan = Remote.RemoteConfig.EndpointWriterOptions.RetryTimeSpan;
+            _backoff = Remote.RemoteConfig.EndpointWriterOptions.RetryBackOffms;
+        }
+
         public Task ReceiveAsync(IContext context)
         {
             if (context.Message is string address)
             {
+                _address = address;
                 var watcher = SpawnWatcher(address, context);
                 var writer = SpawnWriter(address, context);
+                _cancelFutureRetries = new CancellationTokenSource();
                 context.Respond(new Endpoint(writer, watcher));
             }
             return Actor.Done;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause, object message)
+        
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
+            object message)
         {
-            supervisor.RestartChildren(cause, child);
+            if (ShouldStop(rs))
+            {
+                Logger.LogWarning($"Stopping connection to address {_address} after retries expired Reason { reason}");
+                _cancelFutureRetries.Cancel();
+                supervisor.StopChildren(child);
+                ProcessRegistry.Instance.Remove(child); //TODO: work out why this hangs around in the process registry
+                
+                var terminated = new EndpointTerminatedEvent
+                {
+                    Address = _address
+                };
+                Actor.EventStream.Publish(terminated);
+                
+            }
+            else
+            {
+                _backoff = _backoff * 2;
+                var noise = _random.Next(_backoff);
+                var duration = TimeSpan.FromMilliseconds(_backoff + noise);
+                Task.Delay(duration).ContinueWith(t =>
+                {
+                    Logger.LogWarning($"Restarting {child.ToShortString()} after {duration} Reason {reason}");
+                    supervisor.RestartChildren(reason, child);
+                }, _cancelFutureRetries.Token);
+            }
+        }
+        
+        private bool ShouldStop(RestartStatistics rs)
+        {
+            if (_maxNrOfRetries == 0)
+            {
+                return true;
+            }
+            rs.Fail();
+            
+            if (rs.NumberOfFailures(_withinTimeSpan) > _maxNrOfRetries)
+            {
+                rs.Reset();
+                return true;
+            }
+            
+            return false;
+        }
+        
+        private long ToNanoseconds(TimeSpan timeSpan)
+        {
+            return Convert.ToInt64(timeSpan.TotalMilliseconds * 1000000);
+        }
+
+        private long ToMilliseconds(long nanoseconds)
+        {
+            return nanoseconds / 1000000;
         }
 
         private static PID SpawnWatcher(string address, IContext context)
@@ -135,7 +216,7 @@ namespace Proto.Remote
         {
             var writerProps =
                 Props.FromProducer(() => new EndpointWriter(address, Remote.RemoteConfig.ChannelOptions, Remote.RemoteConfig.CallOptions, Remote.RemoteConfig.ChannelCredentials))
-                     .WithMailbox(() => new EndpointWriterMailbox(Remote.RemoteConfig.EndpointWriterBatchSize));
+                     .WithMailbox(() => new EndpointWriterMailbox(Remote.RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize));
             var writer = context.Spawn(writerProps);
             return writer;
         }
