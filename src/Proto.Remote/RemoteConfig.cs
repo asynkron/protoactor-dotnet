@@ -73,6 +73,6 @@ namespace Proto.Remote
         /// <summary>
         /// each retry backs off by an exponential ratio of this amount
         /// </summary>
-        public int RetryBackOffms { get; set; } = 10;
+        public int RetryBackOffms { get; set; } = 100;
     }
 }
