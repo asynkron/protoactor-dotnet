@@ -67,12 +67,12 @@ namespace Proto.Remote
         /// <summary>
         /// the number of times to retry the connection within the RetryTimeSpan
         /// </summary>
-        public int MaxRetries {get; set; } = 10;
-        public TimeSpan RetryTimeSpan { get; set; } = TimeSpan.FromMinutes(10);
+        public int MaxRetries {get; set; } = 8;
+        public TimeSpan RetryTimeSpan { get; set; } = TimeSpan.FromMinutes(3);
 
         /// <summary>
         /// each retry backs off by an exponential ratio of this amount
         /// </summary>
-        public int RetryBackOffms { get; set; } = 250;
+        public int RetryBackOffms { get; set; } = 10;
     }
 }
