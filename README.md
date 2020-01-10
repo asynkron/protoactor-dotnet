@@ -69,9 +69,11 @@ internal class HelloActor : IActor
 Spawn it and send a message to it:
 
 ```csharp
-var props = Actor.FromProducer(() => new HelloActor());
-var pid = Actor.Spawn(props);
-pid.Tell(new Hello
+var context = new RootContext();
+var props = Props.FromProducer(() => new HelloActor());
+var pid = context.Spawn(props);
+
+context.Send(pid, new Hello
 {
     Who = "Alex"
 });

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27004.2009
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28803.202
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{771514F1-12AE-4A26-89CB-2646D3EF7034}"
 EndProject
@@ -37,7 +37,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Router", "src\Proto.R
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Router", "examples\Router\Router.csproj", "{571A1CB9-2819-4FCD-A721-DB9AD63CC444}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence", "src\Proto.Persistence\Proto.Persistence.csproj", "{30AAE00A-7FB9-43AC-8304-B824C0F097F2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Persistence", "src\Proto.Persistence\Proto.Persistence.csproj", "{30AAE00A-7FB9-43AC-8304-B824C0F097F2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence", "Persistence", "{8622758C-75DB-4067-AB13-7D9531A16E9E}"
 EndProject
@@ -202,6 +202,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Patterns", "Patterns", "{3025D606-F487-4A06-A2A3-91AA7503B606}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Saga", "examples\Patterns\Saga\Saga.csproj", "{F6E76800-BF17-4D9B-9AD1-2BD2A3138807}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Actor.Benchmarks", "tests\Proto.Actor.Benchmarks\Proto.Actor.Benchmarks.csproj", "{690E360D-BC49-42E8-B914-41B022C7093A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1016,6 +1018,18 @@ Global
 		{F6E76800-BF17-4D9B-9AD1-2BD2A3138807}.Release|x64.Build.0 = Release|Any CPU
 		{F6E76800-BF17-4D9B-9AD1-2BD2A3138807}.Release|x86.ActiveCfg = Release|Any CPU
 		{F6E76800-BF17-4D9B-9AD1-2BD2A3138807}.Release|x86.Build.0 = Release|Any CPU
+		{690E360D-BC49-42E8-B914-41B022C7093A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{690E360D-BC49-42E8-B914-41B022C7093A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{690E360D-BC49-42E8-B914-41B022C7093A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{690E360D-BC49-42E8-B914-41B022C7093A}.Debug|x64.Build.0 = Debug|Any CPU
+		{690E360D-BC49-42E8-B914-41B022C7093A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{690E360D-BC49-42E8-B914-41B022C7093A}.Debug|x86.Build.0 = Debug|Any CPU
+		{690E360D-BC49-42E8-B914-41B022C7093A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{690E360D-BC49-42E8-B914-41B022C7093A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{690E360D-BC49-42E8-B914-41B022C7093A}.Release|x64.ActiveCfg = Release|Any CPU
+		{690E360D-BC49-42E8-B914-41B022C7093A}.Release|x64.Build.0 = Release|Any CPU
+		{690E360D-BC49-42E8-B914-41B022C7093A}.Release|x86.ActiveCfg = Release|Any CPU
+		{690E360D-BC49-42E8-B914-41B022C7093A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1116,6 +1130,7 @@ Global
 		{25973551-0EE2-428A-842C-00D5EB8FBF94} = {1F19AC4F-31B5-40DA-B599-3F8F69731339}
 		{3025D606-F487-4A06-A2A3-91AA7503B606} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
 		{F6E76800-BF17-4D9B-9AD1-2BD2A3138807} = {3025D606-F487-4A06-A2A3-91AA7503B606}
+		{690E360D-BC49-42E8-B914-41B022C7093A} = {9AA2BCF0-19AB-4DD9-8D91-7D188E463806}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD0D1E44-8118-4682-8793-6B20ABFA824C}

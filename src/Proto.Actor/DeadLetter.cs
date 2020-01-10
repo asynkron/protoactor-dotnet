@@ -7,7 +7,7 @@ namespace Proto
 {
     public class DeadLetterEvent
     {
-        internal DeadLetterEvent(PID pid, object message, PID sender)
+        public DeadLetterEvent(PID pid, object message, PID sender)
         {
             Pid = pid;
             Message = message;

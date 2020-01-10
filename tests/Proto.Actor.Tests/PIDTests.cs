@@ -23,7 +23,7 @@ namespace Proto.Tests
         public async void Given_ActorDied_Ref_ShouldNotReturnIt()
         {
             var pid = Context.Spawn(Props.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
-            await pid.StopAsync();
+            await Context.StopAsync(pid);
 
             var p = pid.Ref;
 

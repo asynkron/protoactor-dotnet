@@ -258,3 +258,9 @@ tools/
 Cake/
 Addins/
 examples/Persistence/Persistence/states.db
+
+# MacOS file
+.DS_Store
+
+# Benchmark artifacts
+BenchmarkDotNet.Artifacts/

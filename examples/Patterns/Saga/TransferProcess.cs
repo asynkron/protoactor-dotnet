@@ -210,9 +210,9 @@ namespace Saga
         
         private void StopAll(IContext context)
         {
-            _from.Stop();
-            _to.Stop();
-            context.Self.Stop();
+            RootContext.Empty.Stop(_from);
+            RootContext.Empty.Stop(_to);
+            RootContext.Empty.Stop(context.Self);
         }
     }
 }

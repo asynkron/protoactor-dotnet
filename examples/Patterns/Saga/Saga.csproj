@@ -5,16 +5,10 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Proto.Actor\Proto.Actor.csproj">
-      <Project>{7d13ccdd-6b93-45b8-ba88-761744601726}</Project>
-      <Name>Proto.Actor</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\src\Proto.Mailbox\Proto.Mailbox.csproj">
-      <Project>{7b1e82f7-270f-40f0-af76-3fa54ef79124}</Project>
-      <Name>Proto.Mailbox</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\src\Proto.Persistence\Proto.Persistence.csproj">
-      <Project>{30aae00a-7fb9-43ac-8304-b824c0f097f2}</Project>
-      <Name>Proto.Persistence</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

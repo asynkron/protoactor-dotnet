@@ -34,6 +34,20 @@ namespace Proto
         public virtual Task<T> RequestAsync<T>(PID target, object message) => _context.RequestAsync<T>(target, message);
 
         public virtual MessageHeader Headers => _context.Headers;
+
         public virtual object Message => _context.Message;
+
+        public void Stop(PID pid) => _context.Stop(pid);
+
+        public Task StopAsync(PID pid) => _context.StopAsync(pid);
+
+        public void Poison(PID pid) => _context.Poison(pid);
+
+        public Task PoisonAsync(PID pid) => _context.PoisonAsync(pid);
+
+        public virtual PID Parent { get => null; }
+        public virtual PID Self { get => null; }
+        public virtual PID Sender { get => null; }
+        public virtual IActor Actor { get => null; }
     }
 }

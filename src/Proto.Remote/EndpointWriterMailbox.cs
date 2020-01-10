@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
@@ -20,6 +21,7 @@ namespace Proto.Remote
 
     public class EndpointWriterMailbox : IMailbox
     {
+        private static readonly ILogger Logger = Log.CreateLogger<EndpointWriterMailbox>();
         private readonly int _batchSize;
         private readonly IMailboxQueue _systemMessages = new UnboundedMailboxQueue();
         private readonly IMailboxQueue _userMessages = new UnboundedMailboxQueue();
@@ -37,6 +39,8 @@ namespace Proto.Remote
         public void PostUserMessage(object msg)
         {
             _userMessages.Push(msg);
+             
+            Logger.LogDebug($"EndpointWriterMailbox received User Message added to queue");
             Schedule();
         }
 
@@ -61,21 +65,39 @@ namespace Proto.Remote
             object m = null;
             try
             {
+                Logger.LogDebug($"Running Mailbox Loop HasSystemMessages: {_systemMessages.HasMessages} HasUserMessages: {_userMessages.HasMessages} suspended: {_suspended}");
                 var _ = _dispatcher.Throughput; //not used for batch mailbox
                 var batch = new List<RemoteDeliver>(_batchSize);
                 var sys = _systemMessages.Pop();
                 if (sys != null)
                 {
+                    Logger.LogDebug($"Processing System Message");
                     if (sys is SuspendMailbox)
                     {
                         _suspended = true;
                     }
                     if (sys is ResumeMailbox)
                     {
+                        //Wait till endpoint is connected before allowing messages to flow
+                        //_suspended = false;
+                    }
+                    if (sys is EndpointConnectedEvent){
                         _suspended = false;
                     }
                     m = sys;
                     await _invoker.InvokeSystemMessageAsync(sys);
+                    if (sys is Stop)
+                    {
+                        //Dump messages from user messages queue to deadletter 
+                        object usrMsg;
+                        while ((usrMsg = _userMessages.Pop()) != null)
+                        {
+                            if(usrMsg is RemoteDeliver rd){
+                                EventStream.Instance.Publish(new DeadLetterEvent(rd.Target, rd.Message, rd.Sender));
+                            }
+                            
+                        }
+                    }
                 }
                 if (!_suspended)
                 {
@@ -83,6 +105,14 @@ namespace Proto.Remote
                     object msg;
                     while ((msg = _userMessages.Pop()) != null)
                     {
+                        Logger.LogDebug($"Processing User Message");
+                        
+                        if (msg is EndpointTerminatedEvent) //The mailbox was crashing when it received this particular message 
+                        {
+                            await _invoker.InvokeUserMessageAsync(msg);
+                            continue;
+                        }
+
                         batch.Add((RemoteDeliver) msg);
                         if (batch.Count >= _batchSize)
                         {
@@ -93,6 +123,7 @@ namespace Proto.Remote
                     if (batch.Count > 0)
                     {
                         m = batch;
+                        Logger.LogDebug($"Calling message invoker");
                         await _invoker.InvokeUserMessageAsync(batch);
                     }
                 }
@@ -100,13 +131,16 @@ namespace Proto.Remote
             }
             catch (Exception x)
             {
+                Logger.LogWarning("Exception in RunAsync", x);
+                _suspended = true;
                 _invoker.EscalateFailure(x,m);
+                
             }
 
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
-            if (_userMessages.HasMessages || _systemMessages.HasMessages)
+            if (_systemMessages.HasMessages || ( _userMessages.HasMessages &! _suspended )  )
             {
                 Schedule();
             }
@@ -114,7 +148,8 @@ namespace Proto.Remote
 
         protected void Schedule()
         {
-            if (Interlocked.Exchange(ref _status, MailboxStatus.Busy) == MailboxStatus.Idle)
+           
+            if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
             {
                 _dispatcher.Schedule(RunAsync);
             }

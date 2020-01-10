@@ -93,10 +93,10 @@ namespace Proto.Tests
                 }));
 
                 output.WriteLine("Starting");
-                var reply1 = await Context.RequestAsync<object>(pid, "hello1", TimeSpan.FromSeconds(2));
+                var reply1 = await Context.RequestAsync<object>(pid, "hello1", TimeSpan.FromSeconds(10));
                 Assert.Null(reply1);
                 output.WriteLine("got response 1");
-                var reply2 = Context.RequestAsync<object>(pid, "hello2", TimeSpan.FromSeconds(2)).Result;
+                var reply2 = Context.RequestAsync<object>(pid, "hello2", TimeSpan.FromSeconds(10)).Result;
                 Assert.Null(reply2);
                 output.WriteLine("got response 2");
             }).Wait();

@@ -46,8 +46,8 @@ namespace Proto.Cluster.SingleRemoteInstance
         public Task RegisterMemberAsync(string clusterName, string host, int port, string[] kinds, IMemberStatusValue statusValue, IMemberStatusValueSerializer serializer)
         {
             _kinds = kinds;
-            _okStatus = serializer.FromValueBytes(Encoding.UTF8.GetBytes("Ok!"));
-            _koStatus = serializer.FromValueBytes(Encoding.UTF8.GetBytes("Ko!"));
+            _okStatus = serializer.Deserialize("Ok!");
+            _koStatus = serializer.Deserialize("Ko!");
 
             _isServer = host == _serverHost && port == _serverPort;
 

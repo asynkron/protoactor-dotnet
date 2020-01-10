@@ -10,28 +10,8 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public interface IContext : ISenderContext, IReceiverContext, ISpawnerContext
+    public interface IContext : ISenderContext, IReceiverContext, ISpawnerContext, IStopperContext
     {
-        /// <summary>
-        ///     Gets the PID for the parent of the current actor.
-        /// </summary>
-        PID Parent { get; }
-
-        /// <summary>
-        ///     Gets the PID for the current actor.
-        /// </summary>
-        PID Self { get; }
-
-        /// <summary>
-        ///     Gets the PID of the actor that sent the currently processed message.
-        /// </summary>
-        PID Sender { get; }
-
-        /// <summary>
-        ///     Gets the actor associated with this context.
-        /// </summary>
-        IActor Actor { get; }
-
         /// <summary>
         ///     Gets the receive timeout.
         /// </summary>
