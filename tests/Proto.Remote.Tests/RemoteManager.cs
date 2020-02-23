@@ -13,19 +13,11 @@ namespace Proto.Remote.Tests
 
         public (string Address, System.Diagnostics.Process Process) DefaultNode => (DefaultNodeAddress, Nodes[DefaultNodeAddress]);
 
-        public RemoteManager() : this(true) {
-
-        }
-        
-        public RemoteManager(bool startLocalRemote = false)
+        public RemoteManager()
         {
             Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
-            ProvisionNode("127.0.0.1", 12000);
-            if(startLocalRemote){
-                 Remote.Start("127.0.0.1", 12001);
-            }
-           
-            
+            ProvisionNode();
+            Remote.Start("127.0.0.1", 12001);
             Thread.Sleep(3000);
         }
 
@@ -48,7 +40,7 @@ namespace Proto.Remote.Tests
             var nodeAppPath = $@"Proto.Remote.Tests.Node/bin/{buildConfig}/netcoreapp2.0/Proto.Remote.Tests.Node.dll";
             var testsDirectory = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent;
             var nodeDllPath = $@"{testsDirectory.FullName}/{nodeAppPath}";
-            
+
             if (!File.Exists(nodeDllPath))
             {
                 throw new FileNotFoundException(nodeDllPath);
@@ -64,10 +56,10 @@ namespace Proto.Remote.Tests
                     FileName = "dotnet"
                 }
             };
-            
+
             process.Start();
             Nodes.Add(address, process);
-            
+
             Console.WriteLine($"Waiting for remote node {address} to initialise...");
             Thread.Sleep(TimeSpan.FromSeconds(3));
 
@@ -76,7 +68,5 @@ namespace Proto.Remote.Tests
     }
 
     [CollectionDefinition("RemoteTests")]
-    public class RemoteCollection : ICollectionFixture<RemoteManager>
-    {
-    }
+    public class RemoteCollection : ICollectionFixture<RemoteManager> { }
 }
