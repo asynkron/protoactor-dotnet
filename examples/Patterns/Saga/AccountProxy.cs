@@ -22,16 +22,16 @@ namespace Saga
             {
                 case Started _:
                     // imagine this is some sort of remote call rather than a local actor call
-                    _target.Tell(_createMessage(context.Self));
+                    context.Send(_target, _createMessage(context.Self));
                     context.SetReceiveTimeout(TimeSpan.FromMilliseconds(100));
                     break;
                 case OK msg:
                     context.CancelReceiveTimeout();
-                    context.Parent.Tell(msg);
+                    context.Send(context.Parent, msg);
                     break;
                 case Refused msg:
                     context.CancelReceiveTimeout();
-                    context.Parent.Tell(msg);
+                    context.Send(context.Parent, msg);
                     break;
                 // This emulates a failed remote call
                 case InsufficientFunds _:

@@ -24,21 +24,21 @@ namespace Proto.Remote
             }
 
             return Task.FromResult(
-                new ConnectResponse()
+                new ConnectResponse
                 {
                     DefaultSerializerId = Serialization.DefaultSerializerId
                 }
             );
         }
 
-        public override async Task Receive(
+        public override Task Receive(
             IAsyncStreamReader<MessageBatch> requestStream,
             IServerStreamWriter<Unit> responseStream, ServerCallContext context
         )
         {
             var targets = new PID[100];
 
-            await requestStream.ForEachAsync(
+            return requestStream.ForEachAsync(
                 batch =>
                 {
                     if (_suspended)
@@ -50,7 +50,7 @@ namespace Proto.Remote
                         targets = new PID[batch.TargetNames.Count];
                     }
 
-                    for (int i = 0; i < batch.TargetNames.Count; i++)
+                    for (var i = 0; i < batch.TargetNames.Count; i++)
                     {
                         targets[i] = new PID(ProcessRegistry.Instance.Address, batch.TargetNames[i]);
                     }
@@ -63,34 +63,32 @@ namespace Proto.Remote
                         var typeName = typeNames[envelope.TypeId];
                         var message = Serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
 
-                    if (message is Terminated msg)
-                    {
-                        var rt = new RemoteTerminate(target, msg.Who);
-                        EndpointManager.RemoteTerminate(rt);
-                    }
-                    else if (message is SystemMessage sys)
-                    {
-                        target.SendSystemMessage(sys);
-                    }
-                    else
-                    {
-                        Proto.MessageHeader header = null;
-                        if (envelope.MessageHeader != null)
-                        {
-                            header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
+                        switch (message) {
+                            case Terminated msg: {
+                                var rt = new RemoteTerminate(target, msg.Who);
+                                EndpointManager.RemoteTerminate(rt);
+                                break;
+                            }
+                            case SystemMessage sys: target.SendSystemMessage(sys);
+                                break;
+                            default: {
+                                Proto.MessageHeader header = null;
+
+                                if (envelope.MessageHeader != null)
+                                {
+                                    header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
+                                }
+
+                                var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
+                                RootContext.Empty.Send(target, localEnvelope);
+                                break;
+                            }
                         }
-                        var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
-                        RootContext.Empty.Send(target, localEnvelope);
                     }
+
+                    return Actor.Done;
                 }
-
-                return Actor.Done;
-            });
-        }
-
-        public void Suspend(bool suspended)
-        {
-            _suspended = suspended;
+            );
         }
 
         public void Suspend(bool suspended) => _suspended = suspended;

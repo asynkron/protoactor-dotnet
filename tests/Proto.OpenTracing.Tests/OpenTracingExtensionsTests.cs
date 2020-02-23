@@ -60,7 +60,7 @@ namespace Proto.OpenTracing.Tests
         }
 
         [Fact]
-        public async Task RootContextOpenTracingSenderTest()
+        public void RootContextOpenTracingSenderTest()
         {
             var root = new RootContext(new MessageHeader(), OpenTracingExtensions.OpenTracingSenderMiddleware(_tracer))
                 .WithOpenTracing(tracer: _tracer);
@@ -86,7 +86,7 @@ namespace Proto.OpenTracing.Tests
         }
 
         [Fact]
-        public async Task ActorContextOpenTracingSenderTest()
+        public void ActorContextOpenTracingSenderTest()
         {
             var messages = new List<object>();
 

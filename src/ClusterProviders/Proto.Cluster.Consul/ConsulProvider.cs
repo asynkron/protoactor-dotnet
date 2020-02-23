@@ -143,7 +143,7 @@ namespace Proto.Cluster.Consul
         public Task UpdateMemberStatusValueAsync(IMemberStatusValue statusValue)
         {
             _statusValue = statusValue;
-            await this.RegisterServiceAsync();
+            return RegisterServiceAsync();
         }
 
         private void NotifyStatuses()
@@ -155,7 +155,8 @@ namespace Proto.Cluster.Consul
                         WaitTime = _blockingWaitTime
                     }
                 )
-                .Result;
+                .GetAwaiter().GetResult();
+            
             _index = statuses.LastIndex;
             var memberStatuses =
                 (from v in statuses.Response
