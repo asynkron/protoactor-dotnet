@@ -17,7 +17,7 @@ namespace Proto
         public PID RegisterActor<T>(T actor, string id = null, string address = null, IContext parent = null)
             where T : IActor
         {
-            id ??= typeof(T).FullName;
+            id = id ?? typeof(T).FullName;
             return GetActor(id, address, parent, () => CreateActor<T>(id, parent, () => new Props().WithProducer(() => actor)));
         }
 
@@ -35,7 +35,7 @@ namespace Proto
 
         public PID GetActor(string id, string address, IContext parent, Func<PID> create)
         {
-            address ??= "nonhost";
+            address = address ?? "nonhost";
 
             var pidId = id;
             if (parent != null)
@@ -61,7 +61,11 @@ namespace Proto
             }
 
             var props2 = props(producer());
-            return parent == null ? RootContext.Empty.SpawnNamed(props2, id) : parent.SpawnNamed(props2, id);
+            if (parent == null)
+            {
+                return RootContext.Empty.SpawnNamed(props2, id);
+            }
+            return parent.SpawnNamed(props2, id);
         }
     }
 }

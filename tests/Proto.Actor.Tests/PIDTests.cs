@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Proto.TestFixtures;
 using Xunit;
+
 using static Proto.TestFixtures.Receivers;
 
 namespace Proto.Tests
@@ -9,7 +9,6 @@ namespace Proto.Tests
     public class PIDTests
     {
         private static readonly RootContext Context = new RootContext();
-
         [Fact]
         public void Given_ActorNotDead_Ref_ShouldReturnIt()
         {
@@ -21,10 +20,10 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public async Task Given_ActorDied_Ref_ShouldNotReturnIt()
+        public async void Given_ActorDied_Ref_ShouldNotReturnIt()
         {
             var pid = Context.Spawn(Props.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
-            await pid.StopAsync();
+            await Context.StopAsync(pid);
 
             var p = pid.Ref;
 

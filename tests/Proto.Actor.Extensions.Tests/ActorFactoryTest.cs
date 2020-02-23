@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Proto.ActorExtensions.Tests
@@ -8,7 +7,7 @@ namespace Proto.ActorExtensions.Tests
     public class ActorFactoryTest
     {
         [Fact]
-        public async Task SpawnActor()
+        public async void SpawnActor()
         {
             var context = new RootContext();
             var services = new ServiceCollection();
@@ -21,13 +20,13 @@ namespace Proto.ActorExtensions.Tests
 
             context.Send(pid, "hello");
 
-            await pid.StopAsync();
+            await RootContext.Empty.StopAsync(pid);
 
             Assert.True(SampleActor.Created);
         }
 
         [Fact]
-        public async Task should_register_by_type()
+        public async void should_register_by_type()
         {
             var services = new ServiceCollection();
             var created = false;
@@ -45,7 +44,7 @@ namespace Proto.ActorExtensions.Tests
 
             var pid = factory.GetActor<SampleActor>();
 
-            await pid.StopAsync();
+            await RootContext.Empty.StopAsync(pid);
 
             Assert.True(created);
         }

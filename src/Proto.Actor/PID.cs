@@ -4,6 +4,8 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto
@@ -19,25 +21,29 @@ namespace Proto
             Id = id;
         }
 
-        internal PID(string address, string id, Process process) : this(address, id) => _process = process;
+        internal PID(string address, string id, Process process) : this(address, id)
+        {
+            _process = process;
+        }
 
         internal Process Ref
         {
             get
             {
-                if (_process != null)
+                var p = _process;
+                if (p != null)
                 {
-                    if (_process is ActorProcess actorProcess && actorProcess.IsDead)
+                    if (p is ActorProcess lp && lp.IsDead)
                     {
                         _process = null;
                     }
                     return _process;
                 }
 
-                var process = ProcessRegistry.Instance.Get(this);
-                if (!(process is DeadLetterProcess))
+                var reff = ProcessRegistry.Instance.Get(this);
+                if (!(reff is DeadLetterProcess))
                 {
-                    _process = process;
+                    _process = reff;
                 }
 
                 return _process;
@@ -46,20 +52,24 @@ namespace Proto
 
         internal void SendUserMessage(object message)
         {
-            var process = Ref ?? ProcessRegistry.Instance.Get(this);
-            process.SendUserMessage(this, message);
+            var reff = Ref ?? ProcessRegistry.Instance.Get(this);
+            reff.SendUserMessage(this, message);
         }
 
         public void SendSystemMessage(object sys)
         {
-            var process = Ref ?? ProcessRegistry.Instance.Get(this);
-            process.SendSystemMessage(this, sys);
+            var reff = Ref ?? ProcessRegistry.Instance.Get(this);
+            reff.SendSystemMessage(this, sys);
         }
 
-        /// <summary> Stop will tell actor to stop immediately, regardless of existing user messages in mailbox. </summary>
-        public void Stop() => ProcessRegistry.Instance.Get(this).Stop(this);
+        [Obsolete("Replaced with Context.Stop(pid)", false)]
+        public void Stop()
+        {
+            var reff = ProcessRegistry.Instance.Get(this);
+            reff.Stop(this);
+        }
 
-        /// <summary> StopAsync will tell and wait actor to stop immediately, regardless of existing user messages in mailbox. </summary>
+        [Obsolete("Replaced with Context.StopAsync(pid)", false)]
         public Task StopAsync()
         {
             var future = new FutureProcess<object>();
@@ -70,10 +80,10 @@ namespace Proto
             return future.Task;
         }
 
-        /// <summary> Poison will tell actor to stop after processing current user messages in mailbox. </summary>
+        [Obsolete("Replaced with Context.Poison(pid)", false)]
         public void Poison() => SendUserMessage(new PoisonPill());
 
-        /// <summary> PoisonAsync will tell and wait actor to stop after processing current user messages in mailbox. </summary>
+        [Obsolete("Replaced with Context.PoisonAsync(pid)", false)]
         public Task PoisonAsync()
         {
             var future = new FutureProcess<object>();
@@ -84,6 +94,9 @@ namespace Proto
             return future.Task;
         }
 
-        public string ToShortString() => Address + "/" + Id;
+        public string ToShortString()
+        {
+            return Address + "/" + Id;
+        }
     }
 }

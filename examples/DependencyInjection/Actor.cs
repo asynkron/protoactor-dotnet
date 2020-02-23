@@ -8,16 +8,19 @@ namespace DependencyInjection
     {
         public class Ping
         {
-            public Ping(string name) => Name = name;
+            public Ping(string name)
+            {
+                Name = name;
+            }
 
             public string Name { get; }
         }
 
-        private readonly ILogger _logger;
+        private readonly ILogger logger;
 
         public DIActor(ILogger<DIActor> logger)
         {
-            _logger = logger;
+            this.logger = logger;
 
             logger.LogWarning("Created DIActor");
         }
@@ -28,7 +31,7 @@ namespace DependencyInjection
             {
                 case Ping p:
                 {
-                    _logger.LogInformation($"Ping! {p.Name} replying on eventstream");
+                    logger.LogInformation($"Ping! {p.Name} replying on eventstream");
                     EventStream.Instance.Publish(p);
                     break;
                 }

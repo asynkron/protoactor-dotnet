@@ -123,13 +123,13 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public async Task WhenActorStopped_DisposeIsCalled()
+        public async void WhenActorStopped_DisposeIsCalled()
         {
             var disposeCalled = false;
             var props = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => new TestMailbox());
             var pid = Context.Spawn(props);
-            await pid.StopAsync();
+            await Context.StopAsync(pid);
             Assert.True(disposeCalled);
         }
 

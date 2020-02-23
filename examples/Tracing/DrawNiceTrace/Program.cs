@@ -12,7 +12,7 @@ namespace DrawNiceTrace
 {
     class Program
     {
-        static async Task Main()
+        static async Task Main(string[] args)
         {
             var serviceName = "DrawNiceTrace" + Guid.NewGuid();
             var tracer = new Tracer.Builder(serviceName)
@@ -23,7 +23,7 @@ namespace DrawNiceTrace
             var rootContext = new RootContext(new MessageHeader(), OpenTracingExtensions.OpenTracingSenderMiddleware())
                 .WithOpenTracing();
 
-            var bankProps = Props.FromFunc(ctx =>
+            var bankProps = Props.FromFunc(async ctx =>
             {
                 switch (ctx.Message)
                 {
@@ -31,9 +31,9 @@ namespace DrawNiceTrace
                         ctx.Respond(new ProcessPaymentResponse { Ok = true });
                         break;
                 }
-                return Task.CompletedTask;
             }).WithOpenTracing();
             var bank = rootContext.Spawn(bankProps);
+
 
             var restaurantProps = Props.FromFunc(async ctx =>
             {
@@ -49,6 +49,7 @@ namespace DrawNiceTrace
                 }
             }).WithOpenTracing();
             var restaurant = rootContext.Spawn(restaurantProps);
+
 
             var cartProps = Props.FromProducer(() => new CartActor(bank)).WithOpenTracing();
             long nextCartNumber = 1;
@@ -100,7 +101,6 @@ namespace DrawNiceTrace
 
                         await Task.Delay(100);
                         await ctx.RequestAsync<CartNumberResponse>(dinner, new AddItem { CartNumber = cartNumber, ProductName = "Pizza." });
-                        
                         await Task.Delay(100);
                         await ctx.RequestAsync<CartNumberResponse>(dinner, new AddItem { CartNumber = cartNumber, ProductName = "Ice cream." });
 
@@ -112,7 +112,7 @@ namespace DrawNiceTrace
 
                         break;
 
-                    case DeliverFood _:
+                    case DeliverFood deliver:
                         throw new Exception("Food Delivered !");
                 }
             })
@@ -127,15 +127,19 @@ namespace DrawNiceTrace
             Console.ReadLine();
         }
 
+
         class CartActor : IActor
         {
             private readonly PID _bank;
 
-            private readonly List<string> _products = new List<string>();
-            private long _cartNumber;
-            private bool _isConfirmed;
+            List<string> _products = new List<string>();
+            long _cartNumber;
+            bool _isConfirmed;
 
-            public CartActor(PID bank) => _bank = bank;
+            public CartActor(PID bank)
+            {
+                _bank = bank;
+            }
 
             public async Task ReceiveAsync(IContext ctx)
             {
@@ -155,17 +159,16 @@ namespace DrawNiceTrace
                         ctx.Respond(new ConfirmOrderResponse { OrderNumber = confirmOrder.CartNumber });
                         break;
 
-                    case SendPaymentDetails _:
+                    case SendPaymentDetails sendPaymentDetails:
                         if (!_isConfirmed) throw new InvalidOperationException("Haaaaaa!");
-                        
                         var response = await ctx.RequestAsync<ProcessPaymentResponse>(_bank, new ProcessPayment());
-                        
                         if (!response.Ok) throw new InvalidOperationException("Haaaaaaaa!");
-                        
                         ctx.Respond(response);
                         break;
                 }
             }
         }
+
+
     }
 }

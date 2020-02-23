@@ -8,7 +8,10 @@ namespace Proto
     {
         private readonly IRootContext _context;
 
-        protected RootContextDecorator(IRootContext context) => _context = context;
+        protected RootContextDecorator(IRootContext context)
+        {
+            _context = context;
+        }
 
         public virtual PID Spawn(Props props) => _context.Spawn(props);
 
@@ -20,6 +23,8 @@ namespace Proto
 
         public virtual void Request(PID target, object message) => _context.Request(target, message);
 
+        public virtual void Request(PID target, object message, PID sender) => _context.Request(target, message, sender);
+
         public virtual Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout) =>
             _context.RequestAsync<T>(target, message, timeout);
 
@@ -29,7 +34,20 @@ namespace Proto
         public virtual Task<T> RequestAsync<T>(PID target, object message) => _context.RequestAsync<T>(target, message);
 
         public virtual MessageHeader Headers => _context.Headers;
-        
+
         public virtual object Message => _context.Message;
+
+        public void Stop(PID pid) => _context.Stop(pid);
+
+        public Task StopAsync(PID pid) => _context.StopAsync(pid);
+
+        public void Poison(PID pid) => _context.Poison(pid);
+
+        public Task PoisonAsync(PID pid) => _context.PoisonAsync(pid);
+
+        public virtual PID Parent { get => null; }
+        public virtual PID Self { get => null; }
+        public virtual PID Sender { get => null; }
+        public virtual IActor Actor { get => null; }
     }
 }

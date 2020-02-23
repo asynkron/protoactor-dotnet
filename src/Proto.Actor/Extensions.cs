@@ -16,7 +16,7 @@ namespace Proto
         {   
             foreach (var pid in self)
             {
-                pid.Stop();
+                RootContext.Empty.Stop(pid);
             }
         }
         
@@ -30,8 +30,11 @@ namespace Proto
         
         
         [Obsolete("Replaced with Context.Send(msg)", false)]
-        public static void Tell(this PID self, object message) => self.SendUserMessage(message);
-
+        public static void Tell(this PID self, object message)
+        {
+            self.SendUserMessage(message);
+        }
+        
         public static void Deconstruct<TKey, TValue>(this KeyValuePair<TKey, TValue> self, out TKey key, out TValue value)
         {
             key = self.Key;

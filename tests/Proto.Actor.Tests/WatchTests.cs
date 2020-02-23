@@ -19,8 +19,8 @@ namespace Proto.Tests
                 switch (context.Message)
                 {
                     case Started _:
-                        context.Self.Stop();
-                        context.Self.Stop();
+                        context.Stop(context.Self);
+                        context.Stop(context.Self);
                         break;
                 }
                 return Actor.Done;
@@ -45,14 +45,14 @@ namespace Proto.Tests
 
         }
         [Fact]
-        public async Task CanWatchLocalActors()
+        public async void CanWatchLocalActors()
         {
             var watchee = Context.Spawn(Props.FromProducer(() => new DoNothingActor())
                                            .WithMailbox(() => new TestMailbox()));
             var watcher = Context.Spawn(Props.FromProducer(() => new LocalActor(watchee))
                                            .WithMailbox(() => new TestMailbox()));
 
-            await watchee.StopAsync();
+            await Context.StopAsync(watchee);
             var terminatedMessageReceived = await Context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
             Assert.True(terminatedMessageReceived);
         }

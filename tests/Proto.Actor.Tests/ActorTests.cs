@@ -74,8 +74,8 @@ namespace Proto.Tests
                 );
 
             Context.Send(pid, "hello");
-            
-            await pid.StopAsync();
+
+            await RootContext.Empty.StopAsync(pid);
 
             Assert.Equal(4, messages.Count);
             var msgs = messages.ToArray();

@@ -13,46 +13,53 @@ using Microsoft.Extensions.Logging;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         var context = new RootContext();
-        Log.SetLoggerFactory(LoggerFactory.Create(x => x.AddConsole().SetMinimumLevel(LogLevel.Debug)));
+        Log.SetLoggerFactory(new LoggerFactory()
+            .AddConsole(LogLevel.Debug));
 
-        var props = Props.FromProducer(() => new ParentActor()).WithChildSupervisorStrategy(new OneForOneStrategy(Decide, 1, null));
+        var props = Props.FromProducer(() => new ParentActor()).WithChildSupervisorStrategy(new OneForOneStrategy(Decider.Decide, 1, null));
 
         var actor = context.Spawn(props);
-
-        context.Send(
-            actor, new Hello
-            {
-                Who = "Alex"
-            }
-        );
-        context.Send(actor, new Recoverable());
-        context.Send(actor, new Fatal());
+        
+        context.Send(actor,new Hello
+        {
+            Who = "Alex"
+        });
+        context.Send(actor,new Recoverable());
+        context.Send(actor,new Fatal());
         //why wait?
         //Stop is a system message and is not processed through the user message mailbox
         //thus, it will be handled _before_ any user message
         //we only do this to show the correct order of events in the console
         Thread.Sleep(TimeSpan.FromSeconds(1));
-        actor.Stop();
+        context.Stop(actor);
         Console.ReadLine();
     }
 
-    public static SupervisorDirective Decide(PID pid, Exception reason)
-        => reason switch
+    internal class Decider
+    {
+        public static SupervisorDirective Decide(PID pid, Exception reason)
         {
-            RecoverableException _ => SupervisorDirective.Restart,
-            FatalException _       => SupervisorDirective.Stop,
-            _                      => SupervisorDirective.Escalate
-        };
+            switch (reason)
+            {
+                case RecoverableException _:
+                    return SupervisorDirective.Restart;
+                case FatalException _:
+                    return SupervisorDirective.Stop;
+                default:
+                    return SupervisorDirective.Escalate;
 
-    private class ParentActor : IActor
+            }
+        }
+    }
+
+    internal class ParentActor : IActor
     {
         public Task ReceiveAsync(IContext context)
         {
             PID child;
-
             if (context.Children == null || context.Children.Count == 0)
             {
                 var props = Props.FromProducer(() => new ChildActor());
@@ -79,49 +86,44 @@ class Program
         }
     }
 
-    private class ChildActor : IActor
+    internal class ChildActor : IActor
     {
-        private readonly ILogger _logger = Log.CreateLogger<ChildActor>();
+        private ILogger logger = Log.CreateLogger<ChildActor>();
 
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
                 case Hello r:
-                    _logger.LogDebug($"Hello {r.Who}");
+                    logger.LogDebug($"Hello {r.Who}");
                     break;
                 case Recoverable _:
                     throw new RecoverableException();
                 case Fatal _:
                     throw new FatalException();
                 case Started _:
-                    _logger.LogDebug("Started, initialize actor here");
+                    logger.LogDebug("Started, initialize actor here");
                     break;
                 case Stopping _:
-                    _logger.LogDebug("Stopping, actor is about shut down");
+                    logger.LogDebug("Stopping, actor is about shut down");
                     break;
                 case Stopped _:
-                    _logger.LogDebug("Stopped, actor and it's children are stopped");
+                    logger.LogDebug("Stopped, actor and it's children are stopped");
                     break;
                 case Restarting _:
-                    _logger.LogDebug("Restarting, actor is about restart");
+                    logger.LogDebug("Restarting, actor is about restart");
                     break;
             }
-
             return Actor.Done;
         }
     }
 
-    private class Hello
+    internal class Hello
     {
         public string Who;
     }
-
-    private class RecoverableException : Exception { }
-
-    private class FatalException : Exception { }
-
-    private class Fatal { }
-
-    private class Recoverable { }
+    internal class RecoverableException : Exception { }
+    internal class FatalException : Exception { }
+    internal class Fatal { }
+    internal class Recoverable { }
 }

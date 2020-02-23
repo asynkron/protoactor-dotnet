@@ -14,7 +14,7 @@ namespace Proto.Router.Tests
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
         [Fact]
-        public async Task RoundRobinGroupRouter_RouteesReceiveMessagesInRoundRobinStyle()
+        public async void RoundRobinGroupRouter_RouteesReceiveMessagesInRoundRobinStyle()
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees();
 
@@ -22,8 +22,8 @@ namespace Proto.Router.Tests
 
             // only routee1 has received the message
             Assert.Equal("1", await Context.RequestAsync<string>(routee1, "received?", _timeout));
-            Assert.Null(await Context.RequestAsync<string>(routee2, "received?", _timeout));
-            Assert.Null(await Context.RequestAsync<string>(routee3, "received?", _timeout));
+            Assert.Equal(null, await Context.RequestAsync<string>(routee2, "received?", _timeout));
+            Assert.Equal(null, await Context.RequestAsync<string>(routee3, "received?", _timeout));
 
             Context.Send(router, "2");
             Context.Send(router, "3");
@@ -42,7 +42,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async Task RoundRobinGroupRouter_RouteesCanBeRemoved()
+        public async void RoundRobinGroupRouter_RouteesCanBeRemoved()
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees();
 
@@ -55,7 +55,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async Task RoundRobinGroupRouter_RouteesCanBeAdded()
+        public async void RoundRobinGroupRouter_RouteesCanBeAdded()
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees();
             var routee4 = Context.Spawn(MyActorProps);
@@ -69,7 +69,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async Task RoundRobinGroupRouter_RemovedRouteesNoLongerReceiveMessages()
+        public async void RoundRobinGroupRouter_RemovedRouteesNoLongerReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees();
 
@@ -88,7 +88,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async Task RoundRobinGroupRouter_AddedRouteesReceiveMessages()
+        public async void RoundRobinGroupRouter_AddedRouteesReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees();
             var routee4 = Context.Spawn(MyActorProps);
@@ -106,7 +106,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async Task RoundRobinGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
+        public async void RoundRobinGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees();
             

@@ -1,13 +1,30 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+  <Import Project="../../netfx.props" />
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    <Version>0.1.6-dev</Version>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net461'">
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OutputType>library</OutputType>
+    <Authors>Proto.Actor Team</Authors>
+    <Description>Ultra-fast distributed actors for .NET.</Description>
+    <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
+    <PackageProjectUrl>http://proto.actor/</PackageProjectUrl>
+    <PackageIconUrl>http://proto.actor/images/logo.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/AsynkronIT/protoactor-dotnet</RepositoryUrl>
+    <PackageTags>actors actor model concurrency proto protoactor grpc</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <None Include="Protos.proto" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.11.3" />
-    <PackageReference Include="Grpc" Version="2.27.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.7.0" />
+    <PackageReference Include="Grpc" Version="1.20.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />

@@ -1,6 +1,27 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+  <Import Project="../../../netfx.props" />
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    <Version>0.1.2</Version>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net461'">
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OutputType>library</OutputType>
+    <Authors>Proto.Actor Team</Authors>
+    <Description>Ultra-fast distributed actors for .NET.</Description>
+    <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
+    <PackageProjectUrl>http://proto.actor/</PackageProjectUrl>
+    <PackageIconUrl>http://proto.actor/images/logo.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/AsynkronIT/protoactor-dotnet</RepositoryUrl>
+    <PackageTags>actors actor model concurrency proto protoactor schedule scheduler schedulers</PackageTags>
+    <PackageId>Proto.Schedulers.SimpleScheduler</PackageId>
+    <Product>Proto.Schedulers.SimpleScheduler</Product>
+    <AssemblyName>Proto.Schedulers.SimpleScheduler</AssemblyName>
+    <RootNamespace>Proto.Schedulers.SimpleScheduler</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Proto.Actor\Proto.Actor.csproj" />

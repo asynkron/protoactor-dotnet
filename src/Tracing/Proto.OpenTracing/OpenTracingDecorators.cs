@@ -43,7 +43,7 @@ namespace Proto.OpenTracing
             => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message, cancellationToken));
     }
 
-    class OpenTracingActorContextDecorator : ActorContextDecorator
+    internal class OpenTracingActorContextDecorator : ActorContextDecorator
     {
         private readonly SpanSetup _sendSpanSetup;
         private readonly SpanSetup _receiveSpanSetup;
@@ -94,68 +94,72 @@ namespace Proto.OpenTracing
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Send(PID target, object message, SpanSetup sendSpanSetup, ITracer tracer, Action send)
         {
-            using var scope = tracer.BuildStartedScope(tracer.ActiveSpan?.Context, nameof(Send), message, sendSpanSetup);
-
-            try
+            using (var scope = tracer.BuildStartedScope(tracer.ActiveSpan?.Context, nameof(Send), message, sendSpanSetup))
             {
-                ProtoTags.TargetPID.Set(scope.Span, target.ToShortString());
-                send();
-            }
-            catch (Exception ex)
-            {
-                ex.SetupSpan(scope.Span);
-                throw;
+                try
+                {
+                    ProtoTags.TargetPID.Set(scope.Span, target.ToShortString());
+                    send();
+                }
+                catch (Exception ex)
+                {
+                    ex.SetupSpan(scope.Span);
+                    throw;
+                }
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void Request(PID target, object message, SpanSetup sendSpanSetup, ITracer tracer, Action request)
         {
-            using var scope = tracer.BuildStartedScope(tracer.ActiveSpan?.Context, nameof(Request), message, sendSpanSetup);
-
-            try
+            using (var scope = tracer.BuildStartedScope(tracer.ActiveSpan?.Context, nameof(Request), message, sendSpanSetup))
             {
-                ProtoTags.TargetPID.Set(scope.Span, target.ToShortString());
-                request();
-            }
-            catch (Exception ex)
-            {
-                ex.SetupSpan(scope.Span);
-                throw;
+                try
+                {
+                    ProtoTags.TargetPID.Set(scope.Span, target.ToShortString());
+                    request();
+                }
+                catch (Exception ex)
+                {
+                    ex.SetupSpan(scope.Span);
+                    throw;
+                }
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static async Task<T> RequestAsync<T>(PID target, object message, SpanSetup sendSpanSetup, ITracer tracer, Func<Task<T>> requestAsync)
         {
-            using var scope = tracer.BuildStartedScope(tracer.ActiveSpan?.Context, nameof(Request), message, sendSpanSetup);
-
-            try
+            using (var scope = tracer.BuildStartedScope(tracer.ActiveSpan?.Context, nameof(Request), message, sendSpanSetup))
             {
-                ProtoTags.TargetPID.Set(scope.Span, target.ToShortString());
-                return await requestAsync().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                ex.SetupSpan(scope.Span);
-                throw;
+                try
+                {
+                    ProtoTags.TargetPID.Set(scope.Span, target.ToShortString());
+                    return await requestAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    ex.SetupSpan(scope.Span);
+                    throw;
+                }
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void Forward(PID target, object message, SpanSetup sendSpanSetup, ITracer tracer, Action forward)
         {
-            using var scope = tracer.BuildStartedScope(tracer.ActiveSpan?.Context, nameof(Forward), message, sendSpanSetup);
-
-            try
+            using (var scope = tracer.BuildStartedScope(tracer.ActiveSpan?.Context, nameof(Forward), message, sendSpanSetup))
             {
-                ProtoTags.TargetPID.Set(scope.Span, target.ToShortString());
-                forward();
-            }
-            catch (Exception ex)
-            {
-                ex.SetupSpan(scope.Span);
-                throw;
+                try
+                {
+                    ProtoTags.TargetPID.Set(scope.Span, target.ToShortString());
+                    forward();
+                }
+                catch (Exception ex)
+                {
+                    ex.SetupSpan(scope.Span);
+                    throw;
+                }
             }
         }
 
@@ -168,22 +172,23 @@ namespace Proto.OpenTracing
               ? tracer.Extract(BuiltinFormats.TextMap, new TextMapExtractAdapter(envelope.Header.ToDictionary()))
               : null;
 
-            using var scope = tracer.BuildStartedScope(parentSpanCtx, nameof(Receive), message, receiveSpanSetup);
-
-            try
+            using (var scope = tracer.BuildStartedScope(parentSpanCtx, nameof(Receive), message, receiveSpanSetup))
             {
-                var span = scope.Span;
+                try
+                {
+                    var span = scope.Span;
 
-                if (envelope.Sender != null) ProtoTags.SenderPID.Set(span, envelope.Sender.ToShortString());
+                    if (envelope.Sender != null) ProtoTags.SenderPID.Set(span, envelope.Sender.ToShortString());
 
-                receiveSpanSetup?.Invoke(span, message);
+                    receiveSpanSetup?.Invoke(span, message);
 
-                await receive().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                ex.SetupSpan(scope.Span);
-                throw;
+                    await receive().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    ex.SetupSpan(scope.Span);
+                    throw;
+                }
             }
         }
     }

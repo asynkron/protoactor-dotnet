@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Proto.Mailbox
 {
-    static class MailboxStatus
+    internal static class MailboxStatus
     {
         public const int Idle = 0;
         public const int Busy = 1;
@@ -26,17 +26,15 @@ namespace Proto.Mailbox
 
     public static class BoundedMailbox
     {
-        public static IMailbox Create(int size, params IMailboxStatistics[] stats)
-            => new DefaultMailbox(new UnboundedMailboxQueue(), new BoundedMailboxQueue(size), stats);
+        public static IMailbox Create(int size, params IMailboxStatistics[] stats) => new DefaultMailbox(new UnboundedMailboxQueue(), new BoundedMailboxQueue(size), stats);
     }
 
     public static class UnboundedMailbox
     {
-        public static IMailbox Create(params IMailboxStatistics[] stats)
-            => new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue(), stats);
+        public static IMailbox Create(params IMailboxStatistics[] stats) => new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue(), stats);
     }
 
-    class DefaultMailbox : IMailbox
+    internal class DefaultMailbox : IMailbox
     {
         private readonly IMailboxStatistics[] _stats;
         private readonly IMailboxQueue _systemMessages;
@@ -60,9 +58,10 @@ namespace Proto.Mailbox
         public void PostUserMessage(object msg)
         {
             _userMailbox.Push(msg);
-
-            _stats.MessagePosted(msg);
-
+            foreach (var t in _stats)
+            {
+                t.MessagePosted(msg);
+            }
             Schedule();
         }
 
@@ -70,9 +69,10 @@ namespace Proto.Mailbox
         {
             _systemMessages.Push(msg);
             Interlocked.Increment(ref _systemMessageCount);
-
-            _stats.MessagePosted(msg);
-
+            foreach (var t in _stats)
+            {
+                t.MessagePosted(msg);
+            }
             Schedule();
         }
 
@@ -82,7 +82,13 @@ namespace Proto.Mailbox
             _dispatcher = dispatcher;
         }
 
-        public void Start() => _stats.MailboxStarted();
+        public void Start()
+        {
+            foreach (var t in _stats)
+            {
+                t.MailboxStarted();
+            }
+        }
 
         private Task RunAsync()
         {
@@ -100,16 +106,17 @@ namespace Proto.Mailbox
             }
             else
             {
-                _stats.MailboxEmpty();
+                foreach (var t in _stats)
+                {
+                    t.MailboxEmpty();
+                }
             }
-
             return Task.FromResult(0);
         }
 
         private bool ProcessMessages()
         {
             object msg = null;
-
             try
             {
                 for (var i = 0; i < _dispatcher.Throughput; i++)
@@ -117,56 +124,54 @@ namespace Proto.Mailbox
                     if (Interlocked.Read(ref _systemMessageCount) > 0 && (msg = _systemMessages.Pop()) != null)
                     {
                         Interlocked.Decrement(ref _systemMessageCount);
-
-                        _suspended = msg switch
+                        if (msg is SuspendMailbox)
                         {
-                            SuspendMailbox _ => true,
-                            ResumeMailbox _  => false,
-                            _                => _suspended
-                        };
+                            _suspended = true;
+                        }
+                        else if (msg is ResumeMailbox)
+                        {
+                            _suspended = false;
+                        }
                         var t = _invoker.InvokeSystemMessageAsync(msg);
-
                         if (t.IsFaulted)
                         {
                             _invoker.EscalateFailure(t.Exception, msg);
                             continue;
                         }
-
                         if (!t.IsCompleted)
                         {
                             // if task didn't complete immediately, halt processing and reschedule a new run when task completes
                             t.ContinueWith(RescheduleOnTaskComplete, msg);
                             return false;
                         }
-
-                        _stats.MessageReceived(msg);
-
+                        foreach (var t1 in _stats)
+                        {
+                            t1.MessageReceived(msg);
+                        }
                         continue;
                     }
-
                     if (_suspended)
                     {
                         break;
                     }
-
                     if ((msg = _userMailbox.Pop()) != null)
                     {
                         var t = _invoker.InvokeUserMessageAsync(msg);
-
                         if (t.IsFaulted)
                         {
                             _invoker.EscalateFailure(t.Exception, msg);
                             continue;
                         }
-
                         if (!t.IsCompleted)
                         {
                             // if task didn't complete immediately, halt processing and reschedule a new run when task completes
                             t.ContinueWith(RescheduleOnTaskComplete, msg);
                             return false;
                         }
-
-                        _stats.MessageReceived(msg);
+                        foreach (var t1 in _stats)
+                        {
+                            t1.MessageReceived(msg);
+                        }
                     }
                     else
                     {
@@ -178,7 +183,6 @@ namespace Proto.Mailbox
             {
                 _invoker.EscalateFailure(e, msg);
             }
-
             return true;
         }
 
@@ -190,13 +194,16 @@ namespace Proto.Mailbox
             }
             else
             {
-                _stats.MessageReceived(message);
+                foreach (var t in _stats)
+                {
+                    t.MessageReceived(message);
+                }
             }
-
             _dispatcher.Schedule(RunAsync);
         }
 
-        private void Schedule()
+
+        protected void Schedule()
         {
             if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
             {
@@ -214,47 +221,17 @@ namespace Proto.Mailbox
         /// This method is invoked when the mailbox is started
         /// </summary>
         void MailboxStarted();
-
         /// <summary>
         /// This method is invoked when a message is posted to the mailbox.
         /// </summary>
         void MessagePosted(object message);
-
         /// <summary>
         /// This method is invoked when a message has been received by the invoker associated with the mailbox.
         /// </summary>
         void MessageReceived(object message);
-
         /// <summary>
         /// This method is invoked when all messages in the mailbox have been received.
         /// </summary>
         void MailboxEmpty();
-    }
-
-    static class StatsExtensions
-    {
-        public static void MailboxStarted(this IMailboxStatistics[] stats)
-        {
-            foreach (var stat in stats)
-                stat.MailboxStarted();
-        }
-
-        public static void MailboxEmpty(this IMailboxStatistics[] stats)
-        {
-            foreach (var stat in stats)
-                stat.MailboxEmpty();
-        }
-
-        public static void MessageReceived(this IMailboxStatistics[] stats, object message)
-        {
-            foreach (var stat in stats)
-                stat.MessageReceived(message);
-        }
-
-        public static void MessagePosted(this IMailboxStatistics[] stats, object message)
-        {
-            foreach (var stat in stats)
-                stat.MessagePosted(message);
-        }
     }
 }

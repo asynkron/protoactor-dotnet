@@ -72,7 +72,7 @@ namespace Proto.Tests
 
             Context.Send(parent, "hello");
 
-            child1MailboxStats.Reset.Wait(1000);
+            child1MailboxStats.Reset.Wait(5000);
             Assert.Contains(ResumeMailbox.Instance, child1MailboxStats.Posted);
             Assert.Contains(ResumeMailbox.Instance, child1MailboxStats.Received);
             Assert.DoesNotContain(ResumeMailbox.Instance, child2MailboxStats.Posted);

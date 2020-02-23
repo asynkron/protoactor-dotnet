@@ -60,7 +60,7 @@ namespace Proto.Remote.Tests
                 if (ctx.Message is Pong)
                 {
                     tcs.SetResult(true);
-                    ctx.Self.Stop();
+                    ctx.Stop(ctx.Self);
                 }
 
                 return Actor.Done;
@@ -106,7 +106,7 @@ namespace Proto.Remote.Tests
             var remoteActor = await SpawnRemoteActor(_remoteManager.DefaultNode.Address);
             var localActor = await SpawnLocalActorAndWatch(remoteActor);
             
-            remoteActor.Stop();
+            Context.Stop(remoteActor);
             Assert.True(await PollUntilTrue(() => 
                     Context.RequestAsync<bool>(localActor, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor.Id), TimeSpan.FromSeconds(5))), 
                 "Watching actor did not receive Termination message");
@@ -119,8 +119,8 @@ namespace Proto.Remote.Tests
             var remoteActor2 = await SpawnRemoteActor(_remoteManager.DefaultNode.Address);
             var localActor = await SpawnLocalActorAndWatch(remoteActor1, remoteActor2);
 
-            remoteActor1.Stop();
-            remoteActor2.Stop();
+            Context.Stop(remoteActor1);
+            Context.Stop(remoteActor2);
             Assert.True(await PollUntilTrue(() => 
                     Context.RequestAsync<bool>(localActor, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor1.Id), TimeSpan.FromSeconds(5))),
                 "Watching actor did not receive Termination message");
@@ -136,7 +136,7 @@ namespace Proto.Remote.Tests
 
             var localActor1 = await SpawnLocalActorAndWatch(remoteActor);
             var localActor2 = await SpawnLocalActorAndWatch(remoteActor);
-            remoteActor.Stop();
+            Context.Stop(remoteActor);
 
             Assert.True(await PollUntilTrue(() =>
                     Context.RequestAsync<bool>(localActor1, new TerminatedMessageReceived(_remoteManager.DefaultNode.Address, remoteActor.Id), TimeSpan.FromSeconds(5))),
@@ -154,7 +154,7 @@ namespace Proto.Remote.Tests
             var localActor2 = await SpawnLocalActorAndWatch(remoteActor);
             Context.Send(localActor2, new Unwatch(remoteActor));
             await Task.Delay(TimeSpan.FromSeconds(3)); // wait for unwatch to propagate...
-            remoteActor.Stop();
+            Context.Stop(remoteActor);
 
             // localActor1 is still watching so should get notified
             Assert.True(await PollUntilTrue(() => 

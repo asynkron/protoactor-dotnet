@@ -6,25 +6,30 @@
 
 using System;
 using System.Collections.Generic;
+using System.Security.Authentication.ExtendedProtection;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using Microsoft.Extensions.Logging;
+using Proto.Mailbox;
+
 
 namespace Proto.Remote
 {
     public class EndpointWriter : IActor
     {
+        private static readonly ILogger _logger = Log.CreateLogger<EndpointWriter>();
         private int _serializerId;
         private readonly string _address;
         private readonly CallOptions _callOptions;
         private readonly ChannelCredentials _channelCredentials;
         private readonly IEnumerable<ChannelOption> _channelOptions;
-        private readonly ILogger _logger = Log.CreateLogger<EndpointWriter>();
+        
         private Channel _channel;
         private Remoting.RemotingClient _client;
         private AsyncDuplexStreamingCall<MessageBatch, Unit> _stream;
         private IClientStreamWriter<MessageBatch> _streamWriter;
+        
 
         public EndpointWriter(string address, IEnumerable<ChannelOption> channelOptions, CallOptions callOptions, ChannelCredentials channelCredentials)
         {
@@ -32,14 +37,18 @@ namespace Proto.Remote
             _channelOptions = channelOptions;
             _callOptions = callOptions;
             _channelCredentials = channelCredentials;
+            
+           
         }
 
         public async Task ReceiveAsync(IContext context)
         {
+            
             switch (context.Message)
             {
                 case Started _:
-                    await StartedAsync();
+                    _logger.LogDebug("Starting Endpoint Writer");
+                    await StartedAsync(context);
                     break;
                 case Stopped _:
                     await StoppedAsync();
@@ -49,9 +58,13 @@ namespace Proto.Remote
                     await RestartingAsync();
                     break;
                 case EndpointTerminatedEvent _:
+                    context.Stop(context.Self);
+                    break;
+                case EndpointTerminatedEvent _:
                     context.Self.Stop();
                     break;
                 case IEnumerable<RemoteDeliver> m:
+                    
                     var envelopes = new List<MessageEnvelope>();
                     var typeNames = new Dictionary<string,int>();
                     var targetNames = new Dictionary<string,int>();
@@ -95,12 +108,12 @@ namespace Proto.Remote
 
                         envelopes.Add(envelope);
                     }
-
+                    
                     var batch = new MessageBatch();
                     batch.TargetNames.AddRange(targetNameList);
                     batch.TypeNames.AddRange(typeNameList);
                     batch.Envelopes.AddRange(envelopes);
-
+                    _logger.LogDebug($"EndpointWriter sending {envelopes.Count} Envelopes for {_address} while channel status is {_channel?.State}");        
                     await SendEnvelopesAsync(batch, context);
                     break;
             }
@@ -108,8 +121,15 @@ namespace Proto.Remote
 
         private async Task SendEnvelopesAsync(MessageBatch batch, IContext context)
         {
+            if (_streamWriter == null)
+            {
+                
+                _logger.LogError($"gRPC Failed to send to address {_address}, reason No Connection available");
+                return;
+            }
             try
             {
+                _logger.LogDebug($"Writing batch to {_address}");
                 await _streamWriter.WriteAsync(batch);
             }
             catch (Exception x)
@@ -121,34 +141,40 @@ namespace Proto.Remote
         }
 
         //shutdown channel before restarting
-        private Task RestartingAsync() => _channel.ShutdownAsync();
-
+        private Task RestartingAsync() => ShutDownChannel();
+       
         //shutdown channel before stopping
-        private Task StoppedAsync() => _channel.ShutdownAsync();
+        private Task StoppedAsync() => ShutDownChannel();
+        
+        private Task ShutDownChannel() 
+        {
+            if (_channel != null && _channel.State != ChannelState.Shutdown)
+            {
+                return _channel.ShutdownAsync();
+            }
 
-        private async Task StartedAsync()
+            return Actor.Done;
+        }
+
+        private async Task StartedAsync(IContext ctx)
         {
             _logger.LogDebug($"Connecting to address {_address}");
+            
+            
             _channel = new Channel(_address, _channelCredentials, _channelOptions);
             _client = new Remoting.RemotingClient(_channel);
+            
+            _logger.LogDebug($"created channel and client for address {_address}");
 
-            try
-            {
-                var res = await _client.ConnectAsync(new ConnectRequest());
-                _serializerId = res.DefaultSerializerId;
-                _stream = _client.Receive(_callOptions);
-                _streamWriter = _stream.RequestStream;
-            }
-            catch(Exception ex)
-            {
-                _logger.LogError($"GRPC Failed to connect to address {_address}\n{ex}");
-                //Wait for 2 seconds to restart and retry
-                //Replace with Exponential Backoff
-                await Task.Delay(2000);
-                throw;
-            }
-
-            var _ = Task.Factory.StartNew(async () =>
+            var res = await _client.ConnectAsync(new ConnectRequest());
+            _serializerId = res.DefaultSerializerId;
+            _stream = _client.Receive(_callOptions);
+            _streamWriter = _stream.RequestStream;
+            
+            _logger.LogDebug($"Connected client for address {_address}");
+           
+            
+            var _ = Task.Run(async () =>
             {
                 try
                 {
@@ -164,6 +190,8 @@ namespace Proto.Remote
                     Actor.EventStream.Publish(terminated);
                 }
             });
+            
+            _logger.LogDebug($"created reader for address {_address}");
 
             var connected = new EndpointConnectedEvent
             {

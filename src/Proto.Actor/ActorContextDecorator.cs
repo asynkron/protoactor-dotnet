@@ -24,6 +24,11 @@ namespace Proto
             _context.Request(target, message);
         }
 
+        public virtual void Request(PID target, object message, PID sender)
+        {
+            _context.Request(target, message, sender);
+        }
+
         public virtual Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout) =>
             _context.RequestAsync<T>(target, message, timeout);
 
@@ -34,7 +39,7 @@ namespace Proto
 
         public virtual MessageHeader Headers => _context.Headers;
         public virtual object Message => _context.Message;
-
+        
         public virtual Task Receive(MessageEnvelope envelope) => _context.Receive(envelope);
 
         public virtual PID Parent => _context.Parent;
@@ -43,7 +48,6 @@ namespace Proto
         public virtual IActor Actor => _context.Actor;
         public virtual TimeSpan ReceiveTimeout => _context.ReceiveTimeout;
         public virtual IReadOnlyCollection<PID> Children => _context.Children;
-        
         public virtual void Respond(object message) => _context.Respond(message);
 
         public virtual void Stash() => _context.Stash();
@@ -68,5 +72,13 @@ namespace Proto
             _context.ReenterAfter(target, action);
 
         public virtual void ReenterAfter(Task target, Action action) => _context.ReenterAfter(target, action);
+
+        public void Stop(PID pid) => _context.Stop(pid);
+
+        public Task StopAsync(PID pid) => _context.StopAsync(pid);
+
+        public void Poison(PID pid) => _context.Poison(pid);
+
+        public Task PoisonAsync(PID pid) => _context.PoisonAsync(pid);
     }
 }

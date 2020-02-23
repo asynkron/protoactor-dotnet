@@ -16,12 +16,10 @@ namespace Proto.OpenTracing
         /// Message destination
         /// </summary>
         public static readonly StringTag TargetPID = new StringTag("proto.targetpid");
-        
         /// <summary>
         /// Message origin
         /// </summary>
         public static readonly StringTag SenderPID = new StringTag("proto.senderpid");
-        
         /// <summary>
         /// Current actor PID, when applicable (equals TargetPID when this is a receive span, or SenderId when this is a sending span)
         /// </summary>
@@ -31,6 +29,8 @@ namespace Proto.OpenTracing
         /// Type of the current actor, when applicable
         /// </summary>
         public static readonly StringTag ActorType = new StringTag("proto.actortype");
+
+
 
         //public static readonly StringTag ActorKind = new StringTag("proto.actorkind"); // TODO ? How ? it's in the PID so ... it's ok
     }

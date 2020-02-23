@@ -3,10 +3,13 @@
     public partial class Terminated
     {
         public static Terminated From(PID who)
-            => new Terminated
+        {
+            return new Terminated()
             {
                 Who = who,
                 AddressTerminated = false,
             };
+        }
+        
     }
 }

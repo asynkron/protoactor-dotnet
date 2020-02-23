@@ -27,57 +27,50 @@ namespace Proto.Router
 
         public Task ReceiveAsync(IContext context)
         {
-            switch (context.Message)
+            if (context.Message is Started)
             {
-                case Started _:
-                    _config.OnStarted(context, _routerState);
-                    _wg.Set();
-                    break;
-                case RouterAddRoutee addRoutee:
-                {
-                    var r = _routerState.GetRoutees();
-
-                    if (r.Contains(addRoutee.PID))
-                    {
-                        return Actor.Done;
-                    }
-
-                    context.Watch(addRoutee.PID);
-                    r.Add(addRoutee.PID);
-                    _routerState.SetRoutees(r);
-                    break;
-                }
-                case RouterRemoveRoutee removeRoutee:
-                {
-                    var r = _routerState.GetRoutees();
-
-                    if (!r.Contains(removeRoutee.PID))
-                    {
-                        return Actor.Done;
-                    }
-
-                    context.Unwatch(removeRoutee.PID);
-                    r.Remove(removeRoutee.PID);
-                    _routerState.SetRoutees(r);
-                    break;
-                }
-                case RouterBroadcastMessage broadcastMessage:
-                {
-                    foreach (var routee in _routerState.GetRoutees())
-                    {
-                        context.Request(routee, broadcastMessage.Message);
-                    }
-
-                    break;
-                }
-                case RouterGetRoutees _:
-                {
-                    var r = _routerState.GetRoutees().ToList();
-                    context.Respond(new Routees(r));
-                    break;
-                }
+                _config.OnStarted(context, _routerState);
+                _wg.Set();
+                return Actor.Done;
             }
-
+            if (context.Message is RouterAddRoutee addRoutee)
+            {
+                var r = _routerState.GetRoutees();
+                if (r.Contains(addRoutee.PID))
+                {
+                    return Actor.Done;
+                }
+                context.Watch(addRoutee.PID);
+                r.Add(addRoutee.PID);
+                _routerState.SetRoutees(r);
+                return Actor.Done;
+            }
+            if (context.Message is RouterRemoveRoutee removeRoutee)
+            {
+                var r = _routerState.GetRoutees();
+                if (!r.Contains(removeRoutee.PID))
+                {
+                    return Actor.Done;
+                }
+                context.Unwatch(removeRoutee.PID);
+                r.Remove(removeRoutee.PID);
+                _routerState.SetRoutees(r);
+                return Actor.Done;
+            }
+            if (context.Message is RouterBroadcastMessage broadcastMessage)
+            {
+                var sender = context.Sender;
+                foreach (var routee in _routerState.GetRoutees())
+                {
+                    context.Request(routee, broadcastMessage.Message, sender);
+                }
+                return Actor.Done;
+            }
+            if (context.Message is RouterGetRoutees)
+            {
+                var r = _routerState.GetRoutees().ToList();
+                context.Respond(new Routees(r));
+            }
             return Actor.Done;
         }
     }

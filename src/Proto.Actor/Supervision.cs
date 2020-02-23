@@ -23,7 +23,7 @@ namespace Proto
     public interface ISupervisor
     {
         IImmutableSet<PID> Children { get; }
-        void EscalateFailure(Exception reason, PID who);
+        void EscalateFailure(Exception reason, object message);
         void RestartChildren(Exception reason, params PID[] pids);
         void StopChildren(params PID[] pids);
         void ResumeChildren(params PID[] pids);
@@ -38,7 +38,7 @@ namespace Proto
 
     public interface ISupervisorStrategy
     {
-        void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause);
+        void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause, object message);
     }
 
     public delegate SupervisorDirective Decider(PID pid, Exception reason);
@@ -50,8 +50,7 @@ namespace Proto
     /// This strategy is appropriate when the children have a strong dependency, such that and any single one failing would
     /// place them all into a potentially invalid state.
     /// </summary>
-    public class AllForOneStrategy : ISupervisorStrategy
-    {
+    public class AllForOneStrategy : ISupervisorStrategy {
         private static readonly ILogger Logger = Log.CreateLogger<AllForOneStrategy>();
         private readonly Decider _decider;
         private readonly int _maxNrOfRetries;
@@ -64,10 +63,9 @@ namespace Proto
             _withinTimeSpan = withinTimeSpan;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason, object message)
         {
             var directive = _decider(child, reason);
-
             switch (directive)
             {
                 case SupervisorDirective.Resume:
@@ -77,7 +75,7 @@ namespace Proto
                 case SupervisorDirective.Restart:
                     if (ShouldStop(rs))
                     {
-                        Logger.LogInformation($"Stopping {child.ToShortString()} Reason {reason}");
+                        Logger.LogInformation($"Stopping {child.ToShortString()} Reason { reason}");
                         supervisor.StopChildren(supervisor.Children.ToArray());
                     }
                     else
@@ -85,14 +83,13 @@ namespace Proto
                         Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
                         supervisor.RestartChildren(reason, supervisor.Children.ToArray());
                     }
-
                     break;
                 case SupervisorDirective.Stop:
                     Logger.LogInformation($"Stopping {child.ToShortString()} Reason {reason}");
                     supervisor.StopChildren(supervisor.Children.ToArray());
                     break;
                 case SupervisorDirective.Escalate:
-                    supervisor.EscalateFailure(reason, child);
+                    supervisor.EscalateFailure(reason, message);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -105,15 +102,14 @@ namespace Proto
             {
                 return true;
             }
-
             rs.Fail();
-
+            
             if (rs.NumberOfFailures(_withinTimeSpan) > _maxNrOfRetries)
             {
                 rs.Reset();
                 return true;
             }
-
+            
             return false;
         }
     }
@@ -132,10 +128,9 @@ namespace Proto
             _withinTimeSpan = withinTimeSpan;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason, object message)
         {
             var directive = _decider(child, reason);
-
             switch (directive)
             {
                 case SupervisorDirective.Resume:
@@ -144,7 +139,7 @@ namespace Proto
                 case SupervisorDirective.Restart:
                     if (ShouldStop(rs))
                     {
-                        Logger.LogInformation($"Stopping {child.ToShortString()} Reason {reason}");
+                        Logger.LogInformation($"Stopping {child.ToShortString()} Reason { reason}");
                         supervisor.StopChildren(child);
                     }
                     else
@@ -152,14 +147,13 @@ namespace Proto
                         Logger.LogInformation($"Restarting {child.ToShortString()} Reason {reason}");
                         supervisor.RestartChildren(reason, child);
                     }
-
                     break;
                 case SupervisorDirective.Stop:
                     Logger.LogInformation($"Stopping {child.ToShortString()} Reason {reason}");
                     supervisor.StopChildren(child);
                     break;
                 case SupervisorDirective.Escalate:
-                    supervisor.EscalateFailure(reason, child);
+                    supervisor.EscalateFailure(reason, message);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -172,15 +166,14 @@ namespace Proto
             {
                 return true;
             }
-
             rs.Fail();
-
+            
             if (rs.NumberOfFailures(_withinTimeSpan) > _maxNrOfRetries)
             {
                 rs.Reset();
                 return true;
             }
-
+            
             return false;
         }
     }
@@ -197,7 +190,7 @@ namespace Proto
             _initialBackoff = initialBackoff;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason, object message)
         {
             if (rs.NumberOfFailures(_backoffWindow) == 0)
             {
@@ -205,22 +198,33 @@ namespace Proto
             }
 
             rs.Fail();
-
+            
             var backoff = rs.FailureCount * ToNanoseconds(_initialBackoff);
             var noise = _random.Next(500);
             var duration = TimeSpan.FromMilliseconds(ToMilliseconds(backoff + noise));
-            Task.Delay(duration).ContinueWith(t => { supervisor.RestartChildren(reason, child); });
+            Task.Delay(duration).ContinueWith(t =>
+            {
+                supervisor.RestartChildren(reason, child);
+            });
         }
 
-        private static long ToNanoseconds(TimeSpan timeSpan) => Convert.ToInt64(timeSpan.TotalMilliseconds * 1000000);
+        private long ToNanoseconds(TimeSpan timeSpan)
+        {
+            return Convert.ToInt64(timeSpan.TotalMilliseconds * 1000000);
+        }
 
-        private static long ToMilliseconds(long nanoseconds) => nanoseconds / 1000000;
+        private long ToMilliseconds(long nanoseconds)
+        {
+            return nanoseconds / 1000000;
+        }
     }
 
     public class AlwaysRestartStrategy : ISupervisorStrategy
     {
-        //always restart
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason)
-            => supervisor.RestartChildren(reason, child);
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason, object message)
+        {
+            //always restart
+            supervisor.RestartChildren(reason, child);
+        }
     }
 }

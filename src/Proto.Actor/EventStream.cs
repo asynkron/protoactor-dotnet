@@ -76,13 +76,13 @@ namespace Proto
 
         public void Publish(T msg)
         {
-            foreach (var (_, subscription) in _subscriptions)
+            foreach (var sub in _subscriptions.Values)
             {
-                subscription.Dispatcher.Schedule(() =>
+                sub.Dispatcher.Schedule(() =>
                 {
                     try
                     {
-                        subscription.Action(msg);
+                        sub.Action(msg);
                     }
                     catch (Exception ex)
                     {

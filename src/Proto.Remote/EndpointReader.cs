@@ -63,32 +63,34 @@ namespace Proto.Remote
                         var typeName = typeNames[envelope.TypeId];
                         var message = Serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
 
-                        switch (message) {
-                            case Terminated msg: {
-                                var rt = new RemoteTerminate(target, msg.Who);
-                                EndpointManager.RemoteTerminate(rt);
-                                break;
-                            }
-                            case SystemMessage sys: target.SendSystemMessage(sys);
-                                break;
-                            default: {
-                                Proto.MessageHeader header = null;
-
-                                if (envelope.MessageHeader != null)
-                                {
-                                    header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
-                                }
-
-                                var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
-                                RootContext.Empty.Send(target, localEnvelope);
-                                break;
-                            }
-                        }
+                    if (message is Terminated msg)
+                    {
+                        var rt = new RemoteTerminate(target, msg.Who);
+                        EndpointManager.RemoteTerminate(rt);
                     }
-
-                    return Actor.Done;
+                    else if (message is SystemMessage sys)
+                    {
+                        target.SendSystemMessage(sys);
+                    }
+                    else
+                    {
+                        Proto.MessageHeader header = null;
+                        if (envelope.MessageHeader != null)
+                        {
+                            header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
+                        }
+                        var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
+                        RootContext.Empty.Send(target, localEnvelope);
+                    }
                 }
-            );
+
+                return Actor.Done;
+            });
+        }
+
+        public void Suspend(bool suspended)
+        {
+            _suspended = suspended;
         }
 
         public void Suspend(bool suspended) => _suspended = suspended;

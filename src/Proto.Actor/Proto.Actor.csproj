@@ -1,16 +1,39 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+  <Import Project="../../netfx.props" />
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    <Version>0.1.6-dev</Version>
     <RootNamespace>Proto</RootNamespace>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net461'">
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <DefineConstants>NET461</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OutputType>library</OutputType>
+    <Authors>Proto.Actor Team</Authors>
+    <Description>Ultra-fast distributed actors for .NET.</Description>
+    <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
+    <PackageProjectUrl>http://proto.actor/</PackageProjectUrl>
+    <PackageIconUrl>http://proto.actor/images/logo.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/AsynkronIT/protoactor-dotnet</RepositoryUrl>
+    <PackageTags>actors actor model concurrency proto protoactor</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <None Include="build.bat" />
-    <None Include="Protos.proto" />
+    <Content Include="Protos.proto">
+      <Pack>true</Pack>
+      <PackagePath>./protos/Proto.Actor</PackagePath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.11.3" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.1" />
-    <PackageReference Include="System.Collections.Immutable" Version="1.7.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.7.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Proto.Mailbox\Proto.Mailbox.csproj" />

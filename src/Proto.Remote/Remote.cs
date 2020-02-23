@@ -3,6 +3,17 @@
 //       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
+// Modified file in context of repo fork : https://github.com/Optis-World/protoactor-dotnet
+// Copyright 2019 ANSYS, Inc.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 using System;
 using System.Collections.Generic;
@@ -24,21 +35,34 @@ namespace Proto.Remote
 
         private static EndpointReader _endpointReader;
 
-        public static string[] GetKnownKinds() => Kinds.Keys.ToArray();
+        public static string[] GetKnownKinds()
+        {
+            return Kinds.Keys.ToArray();
+        }
 
-        public static void RegisterKnownKind(string kind, Props props) => Kinds.Add(kind, props);
+        public static void RegisterKnownKind(string kind, Props props)
+        {
+            Kinds.Add(kind, props);
+        }
 
+        // Modified class in context of repo fork : https://github.com/Optis-World/protoactor-dotnet
+        public static void UnregisterKnownKind(string kind)
+        {
+            Kinds.Remove(kind);
+        }
+        
         public static Props GetKnownKind(string kind)
         {
-            if (Kinds.TryGetValue(kind, out var props))
-            {
+            if (Kinds.TryGetValue(kind, out var props)){
                 return props;
             }
-
             throw new ArgumentException($"No Props found for kind '{kind}'");
         }
 
-        public static void Start(string hostname, int port) => Start(hostname, port, new RemoteConfig());
+        public static void Start(string hostname, int port)
+        {
+            Start(hostname, port, new RemoteConfig());
+        }
 
         public static void Start(string hostname, int port, RemoteConfig config)
         {
@@ -48,17 +72,16 @@ namespace Proto.Remote
 
             EndpointManager.Start();
             _endpointReader = new EndpointReader();
-
             _server = new Server
             {
-                Services = {Remoting.BindService(_endpointReader)},
-                Ports = {new ServerPort(hostname, port, config.ServerCredentials)}
+                Services = { Remoting.BindService(_endpointReader) },
+                Ports = { new ServerPort(hostname, port, config.ServerCredentials) }
             };
             _server.Start();
 
             var boundPort = _server.Ports.Single().BoundPort;
             var boundAddr = $"{hostname}:{boundPort}";
-            var addr = $"{config.AdvertisedHostname ?? hostname}:{config.AdvertisedPort ?? boundPort}";
+            var addr = $"{config.AdvertisedHostname??hostname}:{config.AdvertisedPort?? boundPort}";
             ProcessRegistry.Instance.Address = addr;
 
             SpawnActivator();
@@ -81,10 +104,10 @@ namespace Proto.Remote
                 {
                     _server.KillAsync().Wait(10000);
                 }
-
+                
                 Logger.LogDebug($"Proto.Actor server stopped on {ProcessRegistry.Instance.Address}. Graceful:{gracefull}");
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 _server.KillAsync().Wait(1000);
                 Logger.LogError($"Proto.Actor server stopped on {ProcessRegistry.Instance.Address} with error:\n{ex.Message}");
@@ -97,23 +120,30 @@ namespace Proto.Remote
             ActivatorPid = RootContext.Empty.SpawnNamed(props, "activator");
         }
 
-        private static void StopActivator() => ActivatorPid.Stop();
+        private static void StopActivator()
+        {
+            RootContext.Empty.Stop(ActivatorPid);
+        }
 
-        public static PID ActivatorForAddress(string address) => new PID(address, "activator");
+        public static PID ActivatorForAddress(string address)
+        {
+            return new PID(address, "activator");
+        }
 
-        public static Task<ActorPidResponse> SpawnAsync(string address, string kind, TimeSpan timeout) => SpawnNamedAsync(address, "", kind, timeout);
+        public static Task<ActorPidResponse> SpawnAsync(string address, string kind, TimeSpan timeout)
+        {
+            return SpawnNamedAsync(address, "", kind, timeout);
+        }
 
         public static async Task<ActorPidResponse> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
         {
             var activator = ActivatorForAddress(address);
 
-            var res = await RootContext.Empty.RequestAsync<ActorPidResponse>(
-                activator, new ActorPidRequest
-                {
-                    Kind = kind,
-                    Name = name
-                }, timeout
-            );
+            var res = await RootContext.Empty.RequestAsync<ActorPidResponse>(activator, new ActorPidRequest
+            {
+                Kind = kind,
+                Name = name
+            }, timeout);
 
             return res;
         }
