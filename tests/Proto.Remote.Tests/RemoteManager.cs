@@ -9,7 +9,7 @@ namespace Proto.Remote.Tests
     public class RemoteManager : IDisposable
     {
         private static string DefaultNodeAddress = "127.0.0.1:12000";
-        public Dictionary<string, System.Diagnostics.Process> Nodes = new Dictionary<string, System.Diagnostics.Process>();
+        private Dictionary<string, System.Diagnostics.Process> Nodes = new Dictionary<string, System.Diagnostics.Process>();
 
         public (string Address, System.Diagnostics.Process Process) DefaultNode => (DefaultNodeAddress, Nodes[DefaultNodeAddress]);
 
@@ -37,7 +37,7 @@ namespace Proto.Remote.Tests
 #if RELEASE
             buildConfig = "Release";
 #endif
-            var nodeAppPath = $@"Proto.Remote.Tests.Node/bin/{buildConfig}/netcoreapp2.0/Proto.Remote.Tests.Node.dll";
+            var nodeAppPath = $@"Proto.Remote.Tests.Node/bin/{buildConfig}/netcoreapp3.1/Proto.Remote.Tests.Node.dll";
             var testsDirectory = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent;
             var nodeDllPath = $@"{testsDirectory.FullName}/{nodeAppPath}";
 
