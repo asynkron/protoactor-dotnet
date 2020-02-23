@@ -66,14 +66,13 @@ namespace Proto.Remote
                 var sys = _systemMessages.Pop();
                 if (sys != null)
                 {
-                    if (sys is SuspendMailbox)
+                    _suspended = sys switch
                     {
-                        _suspended = true;
-                    }
-                    if (sys is ResumeMailbox)
-                    {
-                        _suspended = false;
-                    }
+                        SuspendMailbox _ => true,
+                        ResumeMailbox _  => false,
+                        _                => _suspended
+                    };
+
                     m = sys;
                     await _invoker.InvokeSystemMessageAsync(sys);
                 }
@@ -102,7 +101,6 @@ namespace Proto.Remote
             {
                 _invoker.EscalateFailure(x,m);
             }
-
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 

@@ -16,7 +16,7 @@ using static Proto.Actor;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         var context = new RootContext();
         Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
@@ -25,6 +25,7 @@ class Program
 
         Console.WriteLine("Dispatcher\t\tElapsed\t\tMsg/sec");
         var tps = new[] {300, 400, 500, 600, 700, 800, 900};
+
         foreach (var t in tps)
         {
             var d = new ThreadPoolDispatcher {Throughput = t};
@@ -42,6 +43,7 @@ class Program
             {
                 var tsc = new TaskCompletionSource<bool>();
                 completions[i] = tsc;
+
                 var clientProps = Props.FromProducer(() => new PingActor(tsc, messageCount, batchSize))
                     .WithDispatcher(d)
                     .WithMailbox(() => BoundedMailbox.Create(2048));
@@ -49,8 +51,10 @@ class Program
                 clients[i] = context.Spawn(clientProps);
                 echos[i] = context.Spawn(echoProps);
             }
+
             var tasks = completions.Select(tsc => tsc.Task).ToArray();
             var sw = Stopwatch.StartNew();
+
             for (var i = 0; i < clientCount; i++)
             {
                 var client = clients[i];
@@ -58,6 +62,7 @@ class Program
 
                 context.Send(client, new Start(echo));
             }
+
             Task.WaitAll(tasks);
 
             sw.Stop();
@@ -101,10 +106,10 @@ class Program
                     context.Send(msg.Sender, msg);
                     break;
             }
+
             return Done;
         }
     }
-
 
     public class PingActor : IActor
     {
@@ -139,8 +144,10 @@ class Program
                     {
                         _wgStop.SetResult(true);
                     }
+
                     break;
             }
+
             return Done;
         }
 
@@ -152,7 +159,7 @@ class Program
             }
 
             var m = new Msg(context.Self);
-            
+
             for (var i = 0; i < _batchSize; i++)
             {
                 context.Send(sender, m);

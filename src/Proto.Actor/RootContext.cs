@@ -54,6 +54,7 @@ namespace Proto
         }
 
         public RootContext WithHeaders(MessageHeader headers) => Copy(c => c.Headers = headers);
+        
         public RootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware) => Copy(c =>
         {
             SenderMiddleware = middleware.Reverse()
@@ -73,7 +74,6 @@ namespace Proto
         }
 
         public object Message => null;
-
 
         private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
         {

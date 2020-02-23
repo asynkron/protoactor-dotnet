@@ -39,8 +39,8 @@ namespace Proto.Remote
             Logger.LogDebug("Started EndpointManager");
 
             var props = Props.FromProducer(() => new EndpointSupervisor())
-                             .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
-                             .WithDispatcher(Mailbox.Dispatchers.SynchronousDispatcher);
+                .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
+                .WithDispatcher(Mailbox.Dispatchers.SynchronousDispatcher);
             _endpointSupervisor = RootContext.Empty.SpawnNamed(props, "EndpointSupervisor");
             _endpointTermEvnSub = EventStream.Instance.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated);
             _endpointConnEvnSub = EventStream.Instance.Subscribe<EndpointConnectedEvent>(OnEndpointConnected);
@@ -61,33 +61,33 @@ namespace Proto.Remote
             if (Connections.TryRemove(msg.Address, out var v))
             {
                 var endpoint = v.Value;
-                RootContext.Empty.Send(endpoint.Watcher,msg);
-                RootContext.Empty.Send(endpoint.Writer,msg);
+                RootContext.Empty.Send(endpoint.Watcher, msg);
+                RootContext.Empty.Send(endpoint.Writer, msg);
             }
         }
 
         private static void OnEndpointConnected(EndpointConnectedEvent msg)
         {
             var endpoint = EnsureConnected(msg.Address);
-            RootContext.Empty.Send(endpoint.Watcher,msg);
+            RootContext.Empty.Send(endpoint.Watcher, msg);
         }
 
         public static void RemoteTerminate(RemoteTerminate msg)
         {
             var endpoint = EnsureConnected(msg.Watchee.Address);
-            RootContext.Empty.Send(endpoint.Watcher,msg);
+            RootContext.Empty.Send(endpoint.Watcher, msg);
         }
 
         public static void RemoteWatch(RemoteWatch msg)
         {
             var endpoint = EnsureConnected(msg.Watchee.Address);
-            RootContext.Empty.Send(endpoint.Watcher,msg);
+            RootContext.Empty.Send(endpoint.Watcher, msg);
         }
 
         public static void RemoteUnwatch(RemoteUnwatch msg)
         {
             var endpoint = EnsureConnected(msg.Watchee.Address);
-            RootContext.Empty.Send(endpoint.Watcher,msg);
+            RootContext.Empty.Send(endpoint.Watcher, msg);
         }
 
         public static void RemoteDeliver(RemoteDeliver msg)
@@ -98,9 +98,12 @@ namespace Proto.Remote
 
         private static Endpoint EnsureConnected(string address)
         {
-            var conn = Connections.GetOrAdd(address, v =>
-                new Lazy<Endpoint>(() =>
-                    RootContext.Empty.RequestAsync<Endpoint>(_endpointSupervisor, v).Result)
+            var conn = Connections.GetOrAdd(
+                address, v =>
+                    new Lazy<Endpoint>(
+                        () =>
+                            RootContext.Empty.RequestAsync<Endpoint>(_endpointSupervisor, v).Result
+                    )
             );
             return conn.Value;
         }
@@ -116,13 +119,12 @@ namespace Proto.Remote
                 var writer = SpawnWriter(address, context);
                 context.Respond(new Endpoint(writer, watcher));
             }
+
             return Actor.Done;
         }
 
         public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause)
-        {
-            supervisor.RestartChildren(cause, child);
-        }
+            => supervisor.RestartChildren(cause, child);
 
         private static PID SpawnWatcher(string address, IContext context)
         {
@@ -131,11 +133,15 @@ namespace Proto.Remote
             return watcher;
         }
 
-        private PID SpawnWriter(string address, IContext context)
+        private static PID SpawnWriter(string address, IContext context)
         {
             var writerProps =
-                Props.FromProducer(() => new EndpointWriter(address, Remote.RemoteConfig.ChannelOptions, Remote.RemoteConfig.CallOptions, Remote.RemoteConfig.ChannelCredentials))
-                     .WithMailbox(() => new EndpointWriterMailbox(Remote.RemoteConfig.EndpointWriterBatchSize));
+                Props.FromProducer(
+                        () => new EndpointWriter(
+                            address, Remote.RemoteConfig.ChannelOptions, Remote.RemoteConfig.CallOptions, Remote.RemoteConfig.ChannelCredentials
+                        )
+                    )
+                    .WithMailbox(() => new EndpointWriterMailbox(Remote.RemoteConfig.EndpointWriterBatchSize));
             var writer = context.Spawn(writerProps);
             return writer;
         }

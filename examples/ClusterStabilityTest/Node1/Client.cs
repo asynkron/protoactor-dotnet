@@ -26,7 +26,7 @@ namespace TestApp
             {
                 var psi = new ProcessStartInfo("dotnet", "bin/" +
                                                          "release" +
-                                                         "/netcoreapp2.0/TestApp.dll " + clusterName);
+                                                         "/netcoreapp3.1/TestApp.dll " + clusterName);
                 Process.Start(psi);
             }
             EventStream.Instance.Subscribe<ClusterTopologyEvent>(e =>

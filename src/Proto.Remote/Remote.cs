@@ -24,28 +24,21 @@ namespace Proto.Remote
 
         private static EndpointReader _endpointReader;
 
-        public static string[] GetKnownKinds()
-        {
-            return Kinds.Keys.ToArray();
-        }
+        public static string[] GetKnownKinds() => Kinds.Keys.ToArray();
 
-        public static void RegisterKnownKind(string kind, Props props)
-        {
-            Kinds.Add(kind, props);
-        }
+        public static void RegisterKnownKind(string kind, Props props) => Kinds.Add(kind, props);
 
         public static Props GetKnownKind(string kind)
         {
-            if (Kinds.TryGetValue(kind, out var props)){
+            if (Kinds.TryGetValue(kind, out var props))
+            {
                 return props;
             }
+
             throw new ArgumentException($"No Props found for kind '{kind}'");
         }
 
-        public static void Start(string hostname, int port)
-        {
-            Start(hostname, port, new RemoteConfig());
-        }
+        public static void Start(string hostname, int port) => Start(hostname, port, new RemoteConfig());
 
         public static void Start(string hostname, int port, RemoteConfig config)
         {
@@ -55,16 +48,17 @@ namespace Proto.Remote
 
             EndpointManager.Start();
             _endpointReader = new EndpointReader();
+
             _server = new Server
             {
-                Services = { Remoting.BindService(_endpointReader) },
-                Ports = { new ServerPort(hostname, port, config.ServerCredentials) }
+                Services = {Remoting.BindService(_endpointReader)},
+                Ports = {new ServerPort(hostname, port, config.ServerCredentials)}
             };
             _server.Start();
 
             var boundPort = _server.Ports.Single().BoundPort;
             var boundAddr = $"{hostname}:{boundPort}";
-            var addr = $"{config.AdvertisedHostname??hostname}:{config.AdvertisedPort?? boundPort}";
+            var addr = $"{config.AdvertisedHostname ?? hostname}:{config.AdvertisedPort ?? boundPort}";
             ProcessRegistry.Instance.Address = addr;
 
             SpawnActivator();
@@ -87,10 +81,10 @@ namespace Proto.Remote
                 {
                     _server.KillAsync().Wait(10000);
                 }
-                
+
                 Logger.LogDebug($"Proto.Actor server stopped on {ProcessRegistry.Instance.Address}. Graceful:{gracefull}");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _server.KillAsync().Wait(1000);
                 Logger.LogError($"Proto.Actor server stopped on {ProcessRegistry.Instance.Address} with error:\n{ex.Message}");
@@ -103,30 +97,23 @@ namespace Proto.Remote
             ActivatorPid = RootContext.Empty.SpawnNamed(props, "activator");
         }
 
-        private static void StopActivator()
-        {
-            ActivatorPid.Stop();
-        }
+        private static void StopActivator() => ActivatorPid.Stop();
 
-        public static PID ActivatorForAddress(string address)
-        {
-            return new PID(address, "activator");
-        }
+        public static PID ActivatorForAddress(string address) => new PID(address, "activator");
 
-        public static Task<ActorPidResponse> SpawnAsync(string address, string kind, TimeSpan timeout)
-        {
-            return SpawnNamedAsync(address, "", kind, timeout);
-        }
+        public static Task<ActorPidResponse> SpawnAsync(string address, string kind, TimeSpan timeout) => SpawnNamedAsync(address, "", kind, timeout);
 
         public static async Task<ActorPidResponse> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
         {
             var activator = ActivatorForAddress(address);
 
-            var res = await RootContext.Empty.RequestAsync<ActorPidResponse>(activator, new ActorPidRequest
-            {
-                Kind = kind,
-                Name = name
-            }, timeout);
+            var res = await RootContext.Empty.RequestAsync<ActorPidResponse>(
+                activator, new ActorPidRequest
+                {
+                    Kind = kind,
+                    Name = name
+                }, timeout
+            );
 
             return res;
         }

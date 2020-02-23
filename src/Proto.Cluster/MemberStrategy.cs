@@ -20,9 +20,9 @@ namespace Proto.Cluster
 
     internal class SimpleMemberStrategy : IMemberStrategy
     {
-        private List<MemberStatus> _members;
-        private Rendezvous _rdv;
-        private RoundRobin _rr;
+        private readonly List<MemberStatus> _members;
+        private readonly Rendezvous _rdv;
+        private readonly RoundRobin _rr;
 
         public SimpleMemberStrategy()
         {

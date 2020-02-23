@@ -63,7 +63,7 @@ namespace Proto.Mailbox
             _dequeuePos = 0;
         }
 
-        public bool TryEnqueue(object item)
+        private bool TryEnqueue(object item)
         {
             do
             {
@@ -114,20 +114,10 @@ namespace Proto.Mailbox
 
                 if (cell.Sequence < pos + 1)
                 {
-                    result = default(object);
+                    result = default;
                     return false;
                 }
             } while (true);
-        }
-
-        public object Dequeue()
-        {
-            while (true)
-            {
-                object o;
-                if (TryDequeue(out o))
-                    return o;
-            }
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 16, CharSet = CharSet.Ansi)]

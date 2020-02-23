@@ -20,21 +20,21 @@ namespace Proto.Cluster
         private static readonly Dictionary<string, MemberStatus> Members = new Dictionary<string, MemberStatus>();
         private static readonly Dictionary<string, IMemberStrategy> MemberStrategyByKind = new Dictionary<string, IMemberStrategy>();
 
-        private static Subscription<object> _clusterTopologyEvnSub;
+        private static Subscription<object> clusterTopologyEvnSub;
 
         internal static void Setup()
         {
-            _clusterTopologyEvnSub = Actor.EventStream.Subscribe<ClusterTopologyEvent>(UpdateClusterTopology);
+            clusterTopologyEvnSub = Actor.EventStream.Subscribe<ClusterTopologyEvent>(UpdateClusterTopology);
         }
 
         internal static void Stop()
         {
-            Actor.EventStream.Unsubscribe(_clusterTopologyEvnSub.Id);
+            Actor.EventStream.Unsubscribe(clusterTopologyEvnSub.Id);
         }
 
         internal static string[] GetMembers(string kind)
         {
-            bool locked = RwLock.TryEnterReadLock(1000);
+            var locked = RwLock.TryEnterReadLock(1000);
             while (!locked)
             {
                 Logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
@@ -54,7 +54,7 @@ namespace Proto.Cluster
 
         internal static string GetPartition(string name, string kind)
         {
-            bool locked = RwLock.TryEnterReadLock(1000);
+            var locked = RwLock.TryEnterReadLock(1000);
             while (!locked)
             {
                 Logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
@@ -74,7 +74,7 @@ namespace Proto.Cluster
 
         internal static string GetActivator(string kind)
         {
-            bool locked = RwLock.TryEnterReadLock(1000);
+            var locked = RwLock.TryEnterReadLock(1000);
             while (!locked)
             {
                 Logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
@@ -92,9 +92,9 @@ namespace Proto.Cluster
             }
         }
 
-        internal static void UpdateClusterTopology(ClusterTopologyEvent msg)
+        private static void UpdateClusterTopology(ClusterTopologyEvent msg)
         {
-            bool locked = RwLock.TryEnterWriteLock(1000);
+            var locked = RwLock.TryEnterWriteLock(1000);
             while (!locked)
             {
                 Logger.LogDebug("MemberList did not acquire writer lock within 1 seconds, retry");

@@ -76,13 +76,13 @@ namespace Proto
 
         public void Publish(T msg)
         {
-            foreach (var sub in _subscriptions)
+            foreach (var (_, subscription) in _subscriptions)
             {
-                sub.Value.Dispatcher.Schedule(() =>
+                subscription.Dispatcher.Schedule(() =>
                 {
                     try
                     {
-                        sub.Value.Action(msg);
+                        subscription.Action(msg);
                     }
                     catch (Exception ex)
                     {
@@ -93,10 +93,7 @@ namespace Proto
             }
         }
 
-        public void Unsubscribe(Guid id)
-        {
-            _subscriptions.TryRemove(id, out var _);
-        }
+        public void Unsubscribe(Guid id) => _subscriptions.TryRemove(id, out _);
     }
 
     public class Subscription<T>
@@ -115,9 +112,6 @@ namespace Proto
         public IDispatcher Dispatcher { get; }
         public Func<T, Task> Action { get; }
 
-        public void Unsubscribe()
-        {
-            _eventStream.Unsubscribe(Id);
-        }
+        public void Unsubscribe() => _eventStream.Unsubscribe(Id);
     }
 }

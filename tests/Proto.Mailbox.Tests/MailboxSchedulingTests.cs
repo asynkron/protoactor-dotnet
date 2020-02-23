@@ -8,21 +8,29 @@ namespace Proto.Mailbox.Tests
 {
     public class MailboxSchedulingTests
     {
+        private readonly DefaultMailbox _mailbox;
+        private readonly UnboundedMailboxQueue _userMailbox;
+        private readonly TestMailboxHandler _mailboxHandler;
+        private readonly UnboundedMailboxQueue _systemMessages;
+
+        public MailboxSchedulingTests()
+        {
+            _mailboxHandler = new TestMailboxHandler();
+            _userMailbox = new UnboundedMailboxQueue();
+            _systemMessages = new UnboundedMailboxQueue();
+            _mailbox = new DefaultMailbox(_systemMessages, _userMailbox);
+            _mailbox.RegisterHandlers(_mailboxHandler, _mailboxHandler);
+        }
+
         [Fact]
         public async Task GivenNonCompletedUserMessage_ShouldHaltProcessingUntilCompletion()
         {
-            var mailboxHandler = new TestMailboxHandler();
-            var userMailbox = new UnboundedMailboxQueue();
-            var systemMessages = new UnboundedMailboxQueue();
-            var mailbox = new DefaultMailbox(systemMessages, userMailbox);
-            mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
-
             var msg1 = new TestMessage();
             var msg2 = new TestMessage();
 
-            mailbox.PostUserMessage(msg1);
-            mailbox.PostUserMessage(msg2);
-            Assert.True(userMailbox.HasMessages, "Mailbox should not have processed msg2 because processing of msg1 is not completed.");
+            _mailbox.PostUserMessage(msg1);
+            _mailbox.PostUserMessage(msg2);
+            Assert.True(_userMailbox.HasMessages, "Mailbox should not have processed msg2 because processing of msg1 is not completed.");
 
             Action resumeMailboxTrigger = () =>
             {
@@ -32,46 +40,34 @@ namespace Proto.Mailbox.Tests
                 msg1.TaskCompletionSource.SetResult(0);
             };
 
-            await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
+            await _mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
                 .ConfigureAwait(false);
 
-            Assert.False(userMailbox.HasMessages, "Mailbox should have processed msg2 because processing of msg1 is completed.");
+            Assert.False(_userMailbox.HasMessages, "Mailbox should have processed msg2 because processing of msg1 is completed.");
         }
 
         [Fact]
         public void GivenCompletedUserMessage_ShouldContinueProcessing()
         {
-            var mailboxHandler = new TestMailboxHandler();
-            var userMailbox = new UnboundedMailboxQueue();
-            var systemMessages = new UnboundedMailboxQueue();
-            var mailbox = new DefaultMailbox(systemMessages, userMailbox);
-            mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
-
             var msg1 = new TestMessage();
             var msg2 = new TestMessage();
             msg1.TaskCompletionSource.SetResult(0);
             msg2.TaskCompletionSource.SetResult(0);
 
-            mailbox.PostUserMessage(msg1);
-            mailbox.PostUserMessage(msg2);
-            Assert.False(userMailbox.HasMessages, "Mailbox should have processed both messages because they were already completed.");
+            _mailbox.PostUserMessage(msg1);
+            _mailbox.PostUserMessage(msg2);
+            Assert.False(_userMailbox.HasMessages, "Mailbox should have processed both messages because they were already completed.");
         }
 
         [Fact]
         public async Task GivenNonCompletedSystemMessage_ShouldHaltProcessingUntilCompletion()
         {
-            var mailboxHandler = new TestMailboxHandler();
-            var userMailbox = new UnboundedMailboxQueue();
-            var systemMessages = new UnboundedMailboxQueue();
-            var mailbox = new DefaultMailbox(systemMessages, userMailbox);
-            mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
-
             var msg1 = new TestMessage();
             var msg2 = new TestMessage();
 
-            mailbox.PostSystemMessage(msg1);
-            mailbox.PostSystemMessage(msg2);
-            Assert.True(systemMessages.HasMessages, "Mailbox should not have processed msg2 because processing of msg1 is not completed.");
+            _mailbox.PostSystemMessage(msg1);
+            _mailbox.PostSystemMessage(msg2);
+            Assert.True(_systemMessages.HasMessages, "Mailbox should not have processed msg2 because processing of msg1 is not completed.");
 
             Action resumeMailboxTrigger = () =>
             {
@@ -81,48 +77,37 @@ namespace Proto.Mailbox.Tests
                 msg1.TaskCompletionSource.SetResult(0);
             };
 
-            await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
+            await _mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
                 .ConfigureAwait(false);
 
-            Assert.False(systemMessages.HasMessages, "Mailbox should have processed msg2 because processing of msg1 is completed.");
+            Assert.False(_systemMessages.HasMessages, "Mailbox should have processed msg2 because processing of msg1 is completed.");
         }
 
         [Fact]
         public void GivenCompletedSystemMessage_ShouldContinueProcessing()
         {
-            var mailboxHandler = new TestMailboxHandler();
-            var userMailbox = new UnboundedMailboxQueue();
-            var systemMessages = new UnboundedMailboxQueue();
-            var mailbox = new DefaultMailbox(systemMessages, userMailbox);
-            mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
-
             var msg1 = new TestMessage();
             var msg2 = new TestMessage();
             msg1.TaskCompletionSource.SetResult(0);
             msg2.TaskCompletionSource.SetResult(0);
 
-            mailbox.PostSystemMessage(msg1);
-            mailbox.PostSystemMessage(msg2);
-            Assert.False(systemMessages.HasMessages, "Mailbox should have processed both messages because they were already completed.");
+            _mailbox.PostSystemMessage(msg1);
+            _mailbox.PostSystemMessage(msg2);
+            Assert.False(_systemMessages.HasMessages, "Mailbox should have processed both messages because they were already completed.");
         }
 
         [Fact]
         public async Task GivenNonCompletedUserMessage_ShouldSetMailboxToIdleAfterCompletion()
         {
-            var mailboxHandler = new TestMailboxHandler();
-            var userMailbox = new UnboundedMailboxQueue();
-            var systemMessages = new UnboundedMailboxQueue();
-            var mailbox = new DefaultMailbox(systemMessages, userMailbox);
-            mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
-
             var msg1 = new TestMessage();
-            mailbox.PostUserMessage(msg1);
+            _mailbox.PostUserMessage(msg1);
 
             Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetResult(0);
-            await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
+
+            await _mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
                 .ConfigureAwait(false);
 
-            Assert.True(mailbox.Status == MailboxStatus.Idle, "Mailbox should be set back to Idle after completion of message.");
+            Assert.True(_mailbox.Status == MailboxStatus.Idle, "Mailbox should be set back to Idle after completion of message.");
         }
     }
 }

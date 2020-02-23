@@ -75,6 +75,7 @@ namespace Proto
         private object _messageOrEnvelope;
         private ContextState _state;
 
+        IReadOnlyCollection<PID> IContext.Children => Children;
 
         private ActorContextExtras EnsureExtras()
         {
@@ -83,8 +84,8 @@ namespace Proto
                 var context = _props?.ContextDecoratorChain(this) ?? this;
                 _extras = new ActorContextExtras(context);
             }
-            
-            return _extras ;
+
+            return _extras;
         }
 
         public ActorContext(Props props, PID parent)
@@ -113,7 +114,6 @@ namespace Proto
         public MessageHeader Headers => MessageEnvelope.UnwrapHeader(_messageOrEnvelope);
 
         public TimeSpan ReceiveTimeout { get; private set; }
-        IReadOnlyCollection<PID> IContext.Children => Children;
 
         public void Stash() => EnsureExtras().Stash.Push(Message);
 
@@ -141,7 +141,6 @@ namespace Proto
             var pid = props.Spawn($"{Self.Id}/{name}", Self);
             EnsureExtras().AddChild(pid);
 
-
             return pid;
         }
 
@@ -168,7 +167,9 @@ namespace Proto
             if (_extras.ReceiveTimeoutTimer == null)
             {
                 _extras.InitReceiveTimeoutTimer(new Timer(ReceiveTimeoutCallback, null, ReceiveTimeout,
-                    ReceiveTimeout));
+                        ReceiveTimeout
+                    )
+                );
             }
             else
             {
@@ -182,6 +183,7 @@ namespace Proto
             {
                 return;
             }
+
             StopReceiveTimeout();
             _extras.KillreceiveTimeoutTimer();
 
@@ -198,6 +200,7 @@ namespace Proto
                 Logger.LogWarning("SystemMessage cannot be forwarded. {0}", _messageOrEnvelope);
                 return;
             }
+
             SendUserMessage(target, _messageOrEnvelope);
         }
 
@@ -228,14 +231,14 @@ namespace Proto
         {
             var msg = _messageOrEnvelope;
             var cont = new Continuation(() =>
-            {
-                action();
-                return Done;
-            }, msg);
+                {
+                    action();
+                    return Done;
+                }, msg
+            );
 
             target.ContinueWith(t => { Self.SendSystemMessage(cont); });
         }
-
 
         public void EscalateFailure(Exception reason, PID who)
         {
@@ -331,6 +334,7 @@ namespace Proto
 
                 ResetReceiveTimeout();
             }
+
             return res;
         }
 
@@ -351,14 +355,12 @@ namespace Proto
                 return Done;
             }
 
-
             //are we using decorators, if so, ensure it has been created
-            if (_props.ContextDecoratorChain != null)
-            {
-                return Actor.ReceiveAsync(EnsureExtras().Context);
-            }
-            
-            return Actor.ReceiveAsync(this);
+            return Actor.ReceiveAsync(
+                _props.ContextDecoratorChain != null
+                    ? EnsureExtras().Context
+                    : this
+            );
         }
 
         private Task ProcessMessageAsync(object msg)
@@ -368,10 +370,12 @@ namespace Proto
             {
                 return _props.ReceiveMiddlewareChain(EnsureExtras().Context, MessageEnvelope.Wrap(msg));
             }
+
             if (_props.ContextDecoratorChain != null)
             {
                 return EnsureExtras().Context.Receive(MessageEnvelope.Wrap(msg));
             }
+
             //fast path, 0 alloc invocation of actor receive
             _messageOrEnvelope = msg;
             return DefaultReceive();
@@ -428,21 +432,17 @@ namespace Proto
 
         private void HandleFailure(Failure msg)
         {
-            switch (Actor)
-            {
-                case ISupervisorStrategy supervisor:
-                    supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
-                    break;
-                default:
-                    _props.SupervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
-                    break;
-            }
+            if (Actor is ISupervisorStrategy supervisor)
+                supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
+            else
+                _props.SupervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason);
         }
 
         private async Task HandleTerminatedAsync(Terminated msg)
         {
             _extras?.RemoveChild(msg.Who);
             await InvokeUserMessageAsync(msg);
+
             if (_state == ContextState.Stopping || _state == ContextState.Restarting)
             {
                 await TryRestartOrStopAsync();
@@ -465,6 +465,7 @@ namespace Proto
 
             _state = ContextState.Stopping;
             CancelReceiveTimeout();
+
             //this is intentional
             await InvokeUserMessageAsync(Stopping.Instance);
             await StopAllChildren();
@@ -478,21 +479,14 @@ namespace Proto
 
         //intermediate stopping stage, waiting for children to stop
         private Task TryRestartOrStopAsync()
-        {
-            if (_extras?.Children?.Count > 0)
-            {
-                return Done;
-            }
-
-            switch (_state)
-            {
-                case ContextState.Restarting:
-                    return RestartAsync();
-                case ContextState.Stopping:
-                    return FinalizeStopAsync();
-                default: return Done;
-            }
-        }
+            => _extras?.Children?.Count > 0
+                ? Done
+                : _state switch
+                {
+                    ContextState.Restarting => RestartAsync(),
+                    ContextState.Stopping   => FinalizeStopAsync(),
+                    _                       => Done
+                };
 
         //Last and final termination step
         private async Task FinalizeStopAsync()
@@ -547,6 +541,7 @@ namespace Proto
             {
                 return;
             }
+
             CancelReceiveTimeout();
             Send(Self, Proto.ReceiveTimeout.Instance);
         }

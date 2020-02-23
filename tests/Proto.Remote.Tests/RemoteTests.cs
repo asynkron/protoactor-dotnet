@@ -45,7 +45,7 @@ namespace Proto.Remote.Tests
         }
 
         [Fact, DisplayTestMethodName]
-        public async void CanSendJsonAndReceiveToExistingRemote()
+        public async Task CanSendJsonAndReceiveToExistingRemote()
         {
             var remoteActor = new PID(_remoteManager.DefaultNode.Address, "EchoActorInstance");
             var ct = new CancellationTokenSource(3000);
@@ -73,7 +73,7 @@ namespace Proto.Remote.Tests
         }
 
         [Fact, DisplayTestMethodName]
-        public async void CanSendAndReceiveToExistingRemote()
+        public async Task CanSendAndReceiveToExistingRemote()
         {
             var remoteActor = new PID(_remoteManager.DefaultNode.Address, "EchoActorInstance");
             var pong = await Context.RequestAsync<Pong>(remoteActor, new Ping { Message = "Hello" }, TimeSpan.FromMilliseconds(5000));
@@ -81,7 +81,7 @@ namespace Proto.Remote.Tests
         }
 
         [Fact, DisplayTestMethodName]
-        public async void WhenRemoteActorNotFound_RequestAsyncTimesout()
+        public async Task WhenRemoteActorNotFound_RequestAsyncTimesout()
         {
             var unknownRemoteActor = new PID(_remoteManager.DefaultNode.Address, "doesn't exist");
             await Assert.ThrowsAsync<TimeoutException>(async () =>
@@ -91,7 +91,7 @@ namespace Proto.Remote.Tests
         }
 
         [Fact, DisplayTestMethodName]
-        public async void CanSpawnRemoteActor()
+        public async Task CanSpawnRemoteActor()
         {
             var remoteActorName = Guid.NewGuid().ToString();
             var remoteActorResp = await Remote.SpawnNamedAsync(_remoteManager.DefaultNode.Address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
@@ -101,7 +101,7 @@ namespace Proto.Remote.Tests
         }
 
         [Fact, DisplayTestMethodName]
-        public async void CanWatchRemoteActor()
+        public async Task CanWatchRemoteActor()
         {
             var remoteActor = await SpawnRemoteActor(_remoteManager.DefaultNode.Address);
             var localActor = await SpawnLocalActorAndWatch(remoteActor);
@@ -113,7 +113,7 @@ namespace Proto.Remote.Tests
         }
 
         [Fact, DisplayTestMethodName]
-        public async void CanWatchMultipleRemoteActors()
+        public async Task CanWatchMultipleRemoteActors()
         {
             var remoteActor1 = await SpawnRemoteActor(_remoteManager.DefaultNode.Address);
             var remoteActor2 = await SpawnRemoteActor(_remoteManager.DefaultNode.Address);
@@ -130,7 +130,7 @@ namespace Proto.Remote.Tests
         }
 
         [Fact, DisplayTestMethodName]
-        public async void MultipleLocalActorsCanWatchRemoteActor()
+        public async Task MultipleLocalActorsCanWatchRemoteActor()
         {
             var remoteActor = await SpawnRemoteActor(_remoteManager.DefaultNode.Address);
 
@@ -147,7 +147,7 @@ namespace Proto.Remote.Tests
         }
 
         [Fact, DisplayTestMethodName]
-        public async void CanUnwatchRemoteActor()
+        public async Task CanUnwatchRemoteActor()
         {
             var remoteActor = await SpawnRemoteActor(_remoteManager.DefaultNode.Address);
             var localActor1 = await SpawnLocalActorAndWatch(remoteActor);
@@ -166,7 +166,7 @@ namespace Proto.Remote.Tests
         }
 
         [Fact, DisplayTestMethodName]
-        public async void WhenRemoteTerminated_LocalWatcherReceivesNotification()
+        public async Task WhenRemoteTerminated_LocalWatcherReceivesNotification()
         {
             var (address, process) = _remoteManager.ProvisionNode("127.0.0.1", 12002);
             

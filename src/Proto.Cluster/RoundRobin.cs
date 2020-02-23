@@ -8,10 +8,7 @@ namespace Proto.Cluster
 
         private readonly IMemberStrategy _memberStrategy;
 
-        public RoundRobin(IMemberStrategy memberStrategy)
-        {
-            _memberStrategy = memberStrategy;
-        }
+        public RoundRobin(IMemberStrategy memberStrategy) => _memberStrategy = memberStrategy;
 
         public string GetNode()
         {

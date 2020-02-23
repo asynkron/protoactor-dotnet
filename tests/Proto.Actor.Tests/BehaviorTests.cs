@@ -8,7 +8,7 @@ namespace Proto.Tests
         private static readonly RootContext Context = new RootContext();
         
         [Fact]
-        public async void can_change_states()
+        public async Task can_change_states()
         {
             var testActorProps = Props.FromProducer(() => new LightBulb());
             var actor = Context.Spawn(testActorProps);
@@ -24,7 +24,7 @@ namespace Proto.Tests
         }
         
         [Fact]
-        public async void can_use_global_behaviour()
+        public async Task can_use_global_behaviour()
         {
             var testActorProps = Props.FromProducer(() => new LightBulb());
             var actor = Context.Spawn(testActorProps);

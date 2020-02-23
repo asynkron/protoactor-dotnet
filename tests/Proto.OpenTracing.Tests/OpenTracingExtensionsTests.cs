@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using NSubstitute;
 using OpenTracing;
 using Proto.TestFixtures;
@@ -12,29 +11,25 @@ namespace Proto.OpenTracing.Tests
     /// </summary>
     public class OpenTracingExtensionsTests
     {
-        private readonly ISpanContext _spanContext;
-        private readonly ISpan _span;
-        private readonly IScope _scope;
-        private readonly ISpanBuilder _spanBuilder;
         private readonly ITracer _tracer;
 
         public OpenTracingExtensionsTests()
         {
-            _spanContext = Substitute.For<ISpanContext>();
+            var spanContext = Substitute.For<ISpanContext>();
 
-            _span = Substitute.For<ISpan>();
-            _span.Context.Returns(_spanContext);
+            var span = Substitute.For<ISpan>();
+            span.Context.Returns(spanContext);
 
-            _scope = Substitute.For<IScope>();
-            _scope.Span.Returns(_span);
+            var scope = Substitute.For<IScope>();
+            scope.Span.Returns(span);
 
-            _spanBuilder = Substitute.For<ISpanBuilder>();
-            _spanBuilder.AsChildOf(Arg.Any<ISpan>()).Returns(_spanBuilder);
-            _spanBuilder.StartActive().Returns(_scope);
-            _spanBuilder.StartActive(Arg.Any<bool>()).ReturnsForAnyArgs(_scope);
+            var spanBuilder = Substitute.For<ISpanBuilder>();
+            spanBuilder.AsChildOf(Arg.Any<ISpan>()).Returns(spanBuilder);
+            spanBuilder.StartActive().Returns(scope);
+            spanBuilder.StartActive(Arg.Any<bool>()).ReturnsForAnyArgs(scope);
 
             _tracer = Substitute.For<ITracer>();
-            _tracer.BuildSpan("").ReturnsForAnyArgs(_spanBuilder);
+            _tracer.BuildSpan("").ReturnsForAnyArgs(spanBuilder);
         }
 
         [Fact]
@@ -43,10 +38,15 @@ namespace Proto.OpenTracing.Tests
             var messages = new List<object>();
 
             var actorProps = Props
-                .FromFunc(ctx => { messages.Add(ctx.Message); return Actor.Done; })
+                .FromFunc(
+                    ctx =>
+                    {
+                        messages.Add(ctx.Message);
+                        return Actor.Done;
+                    }
+                )
                 .WithMailbox(() => new TestMailbox())
-                .WithOpenTracing(tracer: _tracer)
-                ;
+                .WithOpenTracing(tracer: _tracer);
 
             var actor = RootContext.Empty.Spawn(actorProps);
 
@@ -60,7 +60,7 @@ namespace Proto.OpenTracing.Tests
         }
 
         [Fact]
-        public async Task RootContextOpenTracingSenderTest()
+        public void RootContextOpenTracingSenderTest()
         {
             var root = new RootContext(new MessageHeader(), OpenTracingExtensions.OpenTracingSenderMiddleware(_tracer))
                 .WithOpenTracing(tracer: _tracer);
@@ -68,9 +68,14 @@ namespace Proto.OpenTracing.Tests
             var messages = new List<object>();
 
             var actorProps = Props
-                .FromFunc(ctx => { messages.Add(ctx.Message); return Actor.Done; })
-                .WithMailbox(() => new TestMailbox())
-                ;
+                .FromFunc(
+                    ctx =>
+                    {
+                        messages.Add(ctx.Message);
+                        return Actor.Done;
+                    }
+                )
+                .WithMailbox(() => new TestMailbox());
             var actor = RootContext.Empty.Spawn(actorProps);
 
             root.Send(actor, "test_message");
@@ -86,32 +91,48 @@ namespace Proto.OpenTracing.Tests
         }
 
         [Fact]
-        public async Task ActorContextOpenTracingSenderTest()
+        public void ActorContextOpenTracingSenderTest()
         {
             var messages = new List<object>();
 
             var finalTargetProps = Props
-                .FromFunc(ctx => { messages.Add(ctx.Message); return Actor.Done; })
-                .WithMailbox(() => new TestMailbox())
+                    .FromFunc(
+                        ctx =>
+                        {
+                            messages.Add(ctx.Message);
+                            return Actor.Done;
+                        }
+                    )
+                    .WithMailbox(() => new TestMailbox())
                 ;
             var finalTarget = RootContext.Empty.Spawn(finalTargetProps);
 
             var actorProps = Props
-                .FromFunc(ctx =>
-                {
-                    if (ctx.Message is string msg)
-                        switch (msg)
+                    .FromFunc(
+                        ctx =>
                         {
-                            case "send": ctx.Send(finalTarget, msg); break;
-                            case "request": ctx.Request(finalTarget, msg); break;
-                            case "forward": ctx.Forward(finalTarget); break;
+                            if (!(ctx.Message is string msg)) return Actor.Done;
+
+                            switch (msg)
+                            {
+                                case "send":
+                                    ctx.Send(finalTarget, msg);
+                                    break;
+                                case "request":
+                                    ctx.Request(finalTarget, msg);
+                                    break;
+                                case "forward":
+                                    ctx.Forward(finalTarget);
+                                    break;
+                            }
+
+                            return Actor.Done;
                         }
-                    return Actor.Done;
-                })
-                .WithMailbox(() => new TestMailbox())
-                // This is OpenTracing stack without received
-                .WithContextDecorator(ctx => ctx.WithOpenTracing(null, tracer: _tracer))
-                .WithOpenTracingSender(_tracer)
+                    )
+                    .WithMailbox(() => new TestMailbox())
+                    // This is OpenTracing stack without received
+                    .WithContextDecorator(ctx => ctx.WithOpenTracing(null, tracer: _tracer))
+                    .WithOpenTracingSender(_tracer)
                 ;
             var actor = RootContext.Empty.Spawn(actorProps);
 

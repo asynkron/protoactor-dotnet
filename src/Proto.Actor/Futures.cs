@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    internal class FutureProcess<T> : Process
+    class FutureProcess<T> : Process
     {
         private readonly CancellationTokenSource _cts;
         private readonly TaskCompletionSource<T> _tcs;
@@ -100,7 +100,7 @@ namespace Proto
 
             if (_cts == null || !_cts.IsCancellationRequested)
             {
-                _tcs.TrySetResult(default(T));
+                _tcs.TrySetResult(default);
             }
 
             Stop(pid);

@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace Proto.Router.Routers
 {
-    internal class ConsistentHashGroupRouterConfig : GroupRouterConfig
+    class ConsistentHashGroupRouterConfig : GroupRouterConfig
     {
         private readonly Func<string, uint> _hash;
         private readonly int _replicaCount;

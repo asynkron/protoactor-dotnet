@@ -22,22 +22,10 @@ namespace Proto
             }
         }
 
-//        static ulong CalculateHash(string read)
-//        {
-//            var hashedValue = 3074457345618258791ul;
-//            for (var i = 0; i < read.Length; i++)
-//            {
-//                hashedValue += read[i];
-//                hashedValue *= 3074457345618258799ul;
-//            }
-//            return hashedValue;
-//        }
-
         private Partition GetPartition(string key)
         {
             var hash = Math.Abs(key.GetHashCode()) % HashSize;
-            var p = _partitions[hash];
-            return p;
+            return _partitions[hash];
         }
 
         public bool TryAdd(string key, Process reff)

@@ -4,12 +4,11 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace Proto.Persistence.MongoDB
 {
-    internal class Event
+    class Event
     {
         public Event(string actorName, long eventIndex, object data)
         {

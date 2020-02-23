@@ -16,11 +16,14 @@ namespace Proto.Cluster
         private static Subscription<object> _clusterTopologyEvnSub;
 
         private static readonly ConcurrentDictionary<string, PID> Cache = new ConcurrentDictionary<string, PID>();
-        private static readonly ConcurrentDictionary<string, string> ReverseCache = new ConcurrentDictionary<string, string>();
+
+        private static readonly ConcurrentDictionary<string, string> ReverseCache =
+            new ConcurrentDictionary<string, string>();
 
         internal static void Setup()
         {
-            var props = Props.FromProducer(() => new PidCacheWatcher()).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+            var props = Props.FromProducer(() => new PidCacheWatcher())
+                .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
             _watcher = RootContext.Empty.SpawnNamed(props, "PidCacheWatcher");
             _clusterTopologyEvnSub = Actor.EventStream.Subscribe<MemberStatusEvent>(OnMemberStatusEvent);
         }
@@ -46,14 +49,12 @@ namespace Proto.Cluster
 
         internal static bool TryAddCache(string name, PID pid)
         {
-            if (Cache.TryAdd(name, pid))
-            {
-                var key = pid.ToShortString();
-                ReverseCache.TryAdd(key, name);
-                RootContext.Empty.Send(_watcher, new WatchPidRequest(pid));
-                return true;
-            }
-            return false;
+            if (!Cache.TryAdd(name, pid)) return false;
+
+            var key = pid.ToShortString();
+            ReverseCache.TryAdd(key, name);
+            RootContext.Empty.Send(_watcher, new WatchPidRequest(pid));
+            return true;
         }
 
         internal static void RemoveCacheByPid(PID pid)
@@ -67,7 +68,7 @@ namespace Proto.Cluster
 
         internal static void RemoveCacheByName(string name)
         {
-            if(Cache.TryRemove(name, out var pid))
+            if (Cache.TryRemove(name, out var pid))
             {
                 ReverseCache.TryRemove(pid.ToShortString(), out _);
             }
@@ -91,7 +92,10 @@ namespace Proto.Cluster
     {
         internal PID Pid { get; }
 
-        public WatchPidRequest(PID pid) { Pid = pid; }
+        public WatchPidRequest(PID pid)
+        {
+            Pid = pid;
+        }
     }
 
     internal class PidCacheWatcher : IActor
@@ -112,6 +116,7 @@ namespace Proto.Cluster
                     PidCache.RemoveCacheByPid(msg.Who);
                     break;
             }
+
             return Actor.Done;
         }
     }

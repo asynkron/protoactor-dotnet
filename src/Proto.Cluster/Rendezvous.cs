@@ -12,18 +12,18 @@ namespace Proto.Cluster
     {
         private static readonly HashAlgorithm HashAlgorithm = FNV1A32.Create();
 
-        private IMemberStrategy _m;
+        private readonly IMemberStrategy _strategy;
         private byte[][] _memberHashes;
 
-        public Rendezvous(IMemberStrategy m)
+        public Rendezvous(IMemberStrategy strategy)
         {
-            _m = m;
+            _strategy = strategy;
             UpdateRdv();
         }
 
         public string GetNode(string key)
         {
-            var members = _m.GetAllMembers();
+            var members = _strategy.GetAllMembers();
 
             if (members == null || members.Count == 0)
                 return "";
@@ -35,7 +35,6 @@ namespace Proto.Cluster
 
             uint maxScore = 0;
             MemberStatus maxNode = null;
-            uint score;
 
             for(int i = 0; i < members.Count; i++)
             {
@@ -43,7 +42,7 @@ namespace Proto.Cluster
                 if (member.Alive)
                 {
                     var hashBytes = _memberHashes[i];
-                    score = RdvHash(hashBytes, keyBytes);
+                    var score = RdvHash(hashBytes, keyBytes);
                     if (score > maxScore)
                     {
                         maxScore = score;
@@ -57,7 +56,7 @@ namespace Proto.Cluster
 
         public void UpdateRdv()
         {
-            _memberHashes = _m.GetAllMembers().Select(mb => Encoding.UTF8.GetBytes(mb.Address)).ToArray();
+            _memberHashes = _strategy.GetAllMembers().Select(mb => Encoding.UTF8.GetBytes(mb.Address)).ToArray();
         }
 
         private static uint RdvHash(byte[] node, byte[] key)

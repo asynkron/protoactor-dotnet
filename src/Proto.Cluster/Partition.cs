@@ -15,9 +15,9 @@ namespace Proto.Cluster
 {
     internal static class Partition
     {
-        public static Dictionary<string, PID> KindMap = new Dictionary<string, PID>();
+        public static readonly Dictionary<string, PID> KindMap = new Dictionary<string, PID>();
 
-        private static Subscription<object> _memberStatusSub;
+        private static Subscription<object> memberStatusSub;
 
         public static void Setup(string[] kinds)
         {
@@ -27,7 +27,7 @@ namespace Proto.Cluster
                 KindMap[kind] = pid;
             }
 
-            _memberStatusSub = EventStream.Instance.Subscribe<MemberStatusEvent>(msg =>
+            memberStatusSub = EventStream.Instance.Subscribe<MemberStatusEvent>(msg =>
             {
                 foreach (var kind in msg.Kinds)
                 {
@@ -53,13 +53,10 @@ namespace Proto.Cluster
                 kind.Stop();
             }
             KindMap.Clear();
-            EventStream.Instance.Unsubscribe(_memberStatusSub.Id);
+            EventStream.Instance.Unsubscribe(memberStatusSub.Id);
         }
 
-        public static PID PartitionForKind(string address, string kind)
-        {
-            return new PID(address, "partition-" + kind);
-        }
+        public static PID PartitionForKind(string address, string kind) => new PID(address, "partition-" + kind);
     }
 
     internal class PartitionActor : IActor

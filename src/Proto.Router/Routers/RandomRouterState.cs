@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace Proto.Router.Routers
 {
-    internal class RandomRouterState : RouterState
+    class RandomRouterState : RouterState
     {
         private readonly Random _random;
         private HashSet<PID> _routees;
@@ -21,10 +21,7 @@ namespace Proto.Router.Routers
             _random = seed.HasValue ? new Random(seed.Value) : new Random();
         }
 
-        public override HashSet<PID> GetRoutees()
-        {
-            return _routees;
-        }
+        public override HashSet<PID> GetRoutees() => _routees;
 
         public override void SetRoutees(HashSet<PID> routees)
         {

@@ -10,16 +10,13 @@ using System.Threading;
 
 namespace Proto.Router.Routers
 {
-    internal class RoundRobinRouterState : RouterState
+    class RoundRobinRouterState : RouterState
     {
         private int _currentIndex;
         private HashSet<PID> _routees;
         private List<PID> _values;
 
-        public override HashSet<PID> GetRoutees()
-        {
-            return _routees;
-        }
+        public override HashSet<PID> GetRoutees() => _routees;
 
         public override void SetRoutees(HashSet<PID> routees)
         {

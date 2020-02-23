@@ -43,14 +43,8 @@ namespace Proto.Cluster
 
     internal class NullMemberStatusValueSerializer : IMemberStatusValueSerializer
     {
-        public byte[] ToValueBytes(IMemberStatusValue val)
-        {
-            return null;
-        }
+        public byte[] ToValueBytes(IMemberStatusValue val) => null;
 
-        public IMemberStatusValue FromValueBytes(byte[] val)
-        {
-            return null;
-        }
+        public IMemberStatusValue FromValueBytes(byte[] val) => null;
     }
 }

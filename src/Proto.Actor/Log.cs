@@ -12,10 +12,7 @@ namespace Proto
     {
         private static ILoggerFactory _loggerFactory = new NullLoggerFactory();
 
-        public static void SetLoggerFactory(ILoggerFactory loggerFactory)
-        {
-            _loggerFactory = loggerFactory;
-        }
+        public static void SetLoggerFactory(ILoggerFactory loggerFactory) => _loggerFactory = loggerFactory;
 
         public static ILogger CreateLogger(string categoryName) => _loggerFactory.CreateLogger(categoryName);
 

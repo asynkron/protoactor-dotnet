@@ -3,14 +3,13 @@
 //       Copyright (C) 2015-2018 Asynkron HB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Router.Routers
 {
-    internal class BroadcastPoolRouterConfig : PoolRouterConfig
+    class BroadcastPoolRouterConfig : PoolRouterConfig
     {
         public BroadcastPoolRouterConfig(int poolSize, Props routeeProps)
-            : base(poolSize, routeeProps)
-        {
-        }
+            : base(poolSize, routeeProps) { }
 
         public override RouterState CreateRouterState() => new BroadcastRouterState();
     }

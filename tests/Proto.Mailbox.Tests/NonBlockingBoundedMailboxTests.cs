@@ -12,7 +12,8 @@ namespace Proto.Mailbox.Tests
             var mailbox = new NonBlockingBoundedMailbox(1, (msg) => overflowMessage = msg, TimeSpan.FromSeconds(1));
             mailbox.Push("first message");
             Assert.Null(overflowMessage);
-            var secondMessage = "second message";
+            
+            const string secondMessage = "second message";
             mailbox.Push(secondMessage);
             Assert.Equal(overflowMessage, secondMessage);
         }
@@ -27,14 +28,13 @@ namespace Proto.Mailbox.Tests
                 mailbox.Push(i);
             }
             
-            Assert.Equal(overflowActionCallCount, 10);
+            Assert.Equal(10, overflowActionCallCount);
         }
 
         [Fact]
         public void WhenMailboxOverflows_CurrentMessagesRemainInMailbox()
         {
-            object overflowMessage = null;
-            var mailbox = new NonBlockingBoundedMailbox(1, (msg) => overflowMessage = msg, TimeSpan.FromSeconds(1));
+            var mailbox = new NonBlockingBoundedMailbox(1, msg => { }, TimeSpan.FromSeconds(1));
             mailbox.Push("first message");
             mailbox.Push("second message");
             Assert.Equal("first message", mailbox.Pop());

@@ -12,16 +12,9 @@ namespace Proto.Mailbox
     {
         private readonly ConcurrentQueue<object> _messages = new ConcurrentQueue<object>();
 
-        public void Push(object message)
-        {
-            _messages.Enqueue(message);
-        }
+        public void Push(object message) => _messages.Enqueue(message);
 
-        public object Pop()
-        {
-            object message;
-            return _messages.TryDequeue(out message) ? message : null;
-        }
+        public object Pop() => _messages.TryDequeue(out var message) ? message : null;
 
         public bool HasMessages => !_messages.IsEmpty;
     }

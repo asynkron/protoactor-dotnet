@@ -2,7 +2,7 @@
 
 namespace Proto.Persistence.Couchbase
 {
-    internal class Event
+    class Event
     {
         public Event(string actorName, long eventIndex, object data)
         {

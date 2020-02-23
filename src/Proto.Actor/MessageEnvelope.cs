@@ -12,25 +12,16 @@ namespace Proto
     //TODO: make immutable as the same envelope can be sent to multiple targets
     public class MessageEnvelope
     {
-        public MessageEnvelope()
-        {
-        }
+        public MessageEnvelope() { }
 
         public MessageEnvelope(object message, PID sender, MessageHeader header)
         {
-            Sender = sender; 
+            Sender = sender;
             Message = message;
             Header = header;
         }
 
-        public static MessageEnvelope Wrap(object message)
-        {
-            if (message is MessageEnvelope env)
-            {
-                return env;
-            }
-            return new MessageEnvelope(message, null, null);
-        }
+        public static MessageEnvelope Wrap(object message) => message is MessageEnvelope env ? env : new MessageEnvelope(message, null, null);
 
         public PID Sender { get; }
         public object Message { get; }
@@ -47,33 +38,19 @@ namespace Proto
             var header = (Header ?? new MessageHeader()).With(key, value);
             return new MessageEnvelope(Message, Sender, header);
         }
-        
+
         public MessageEnvelope WithHeaders(IEnumerable<KeyValuePair<string, string>> items)
         {
             var header = (Header ?? new MessageHeader()).With(items);
             return new MessageEnvelope(Message, Sender, header);
-
         }
 
         public static (object message, PID sender, MessageHeader headers) Unwrap(object message)
-        {
-            if (message is MessageEnvelope envelope)
-            {
-                return (envelope.Message, envelope.Sender, envelope.Header);
-            }
+            => message is MessageEnvelope envelope ? (envelope.Message, envelope.Sender, envelope.Header) : (message, null, null);
 
-            return (message, null, null);
-        }
-        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MessageHeader UnwrapHeader(object message)
-        {
-            if (message is MessageEnvelope messageEnvelope && messageEnvelope.Header != null)
-            {
-                return messageEnvelope.Header;
-            }
-            return MessageHeader.Empty;
-        }
+            => message is MessageEnvelope messageEnvelope && messageEnvelope.Header != null ? messageEnvelope.Header : MessageHeader.Empty;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static object UnwrapMessage(object message) => message is MessageEnvelope r ? r.Message : message;

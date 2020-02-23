@@ -27,7 +27,9 @@ namespace Proto.Cluster
             Remote.Remote.Start(Config.Address, Config.Port, Config.RemoteConfig);
         
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+            
             Logger.LogInformation("Starting Proto.Actor cluster");
+            
             var (host, port) = ParseAddress(ProcessRegistry.Instance.Address);
             var kinds = Remote.Remote.GetKnownKinds();
             Partition.Setup(kinds);

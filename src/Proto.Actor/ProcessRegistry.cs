@@ -16,13 +16,11 @@ namespace Proto
         private readonly IList<Func<PID, Process>> _hostResolvers = new List<Func<PID, Process>>();
         private readonly HashedConcurrentDictionary _localActorRefs = new HashedConcurrentDictionary();
         private int _sequenceId;
+
         public static ProcessRegistry Instance { get; } = new ProcessRegistry();
         public string Address { get; set; } = NoHost;
 
-        public void RegisterHostResolver(Func<PID, Process> resolver)
-        {
-            _hostResolvers.Add(resolver);
-        }
+        public void RegisterHostResolver(Func<PID, Process> resolver) => _hostResolvers.Add(resolver);
 
         public Process Get(PID pid)
         {
@@ -31,12 +29,15 @@ namespace Proto
                 foreach (var resolver in _hostResolvers)
                 {
                     var reff = resolver(pid);
+
                     if (reff == null)
                     {
                         continue;
                     }
+
                     return reff;
                 }
+
                 throw new NotSupportedException("Unknown host");
             }
 
@@ -44,28 +45,24 @@ namespace Proto
             {
                 return process;
             }
+
             return DeadLetterProcess.Instance;
         }
 
         public (PID pid, bool ok) TryGet(string id)
-        {
-            return _localActorRefs.TryGetValue(id, out var process)
-                       ? (new PID(Address, id, process), true)
-                       : (null, false);
-        }
-        
+            => _localActorRefs.TryGetValue(id, out var process)
+                ? (new PID(Address, id, process), true)
+                : (null, false);
+
         public (PID pid, bool ok) TryAdd(string id, Process process)
         {
             var pid = new PID(Address, id, process);
-            
+
             var ok = _localActorRefs.TryAdd(pid.Id, process);
             return ok ? (pid, true) : (new PID(Address, id), false);
         }
 
-        public void Remove(PID pid)
-        {
-            _localActorRefs.Remove(pid.Id);
-        }
+        public void Remove(PID pid) => _localActorRefs.Remove(pid.Id);
 
         public string NextId()
         {

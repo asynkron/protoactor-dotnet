@@ -8,10 +8,7 @@ namespace Proto
     {
         private readonly IRootContext _context;
 
-        protected RootContextDecorator(IRootContext context)
-        {
-            _context = context;
-        }
+        protected RootContextDecorator(IRootContext context) => _context = context;
 
         public virtual PID Spawn(Props props) => _context.Spawn(props);
 
@@ -32,6 +29,7 @@ namespace Proto
         public virtual Task<T> RequestAsync<T>(PID target, object message) => _context.RequestAsync<T>(target, message);
 
         public virtual MessageHeader Headers => _context.Headers;
+        
         public virtual object Message => _context.Message;
     }
 }

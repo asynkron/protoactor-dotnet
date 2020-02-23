@@ -15,7 +15,7 @@ namespace Proto.Router.Tests
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
         [Fact]
-        public async void ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee()
+        public async Task ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
@@ -29,7 +29,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_MessagesWithDifferentHashesGoToDifferentRoutees()
+        public async Task ConsistentHashGroupRouter_MessagesWithDifferentHashesGoToDifferentRoutees()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
@@ -43,7 +43,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee_EvenWhenNewRouteeAdded()
+        public async Task ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee_EvenWhenNewRouteeAdded()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
@@ -58,7 +58,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_RouteesCanBeRemoved()
+        public async Task ConsistentHashGroupRouter_RouteesCanBeRemoved()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
@@ -71,7 +71,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_RouteesCanBeAdded()
+        public async Task ConsistentHashGroupRouter_RouteesCanBeAdded()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
             var routee4 = Context.Spawn(MyActorProps);
@@ -85,7 +85,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_RemovedRouteesNoLongerReceiveMessages()
+        public async Task ConsistentHashGroupRouter_RemovedRouteesNoLongerReceiveMessages()
         {
             var (router, routee1, _, _) = CreateRouterWith3Routees();
             
@@ -95,7 +95,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_AddedRouteesReceiveMessages()
+        public async Task ConsistentHashGroupRouter_AddedRouteesReceiveMessages()
         {
             var (router, _, _, _) = CreateRouterWith3Routees();
             var routee4 = Context.Spawn(MyActorProps);
@@ -105,7 +105,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_MessageIsReassignedWhenRouteeRemoved()
+        public async Task ConsistentHashGroupRouter_MessageIsReassignedWhenRouteeRemoved()
         {
             var (router, routee1, routee2, _) = CreateRouterWith3Routees();
 
@@ -121,7 +121,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void ConsistentHashGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
+        public async Task ConsistentHashGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 

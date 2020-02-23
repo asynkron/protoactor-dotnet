@@ -34,6 +34,7 @@ namespace Proto.Remote
                     if (_watched.TryGetValue(msg.Watcher.Id, out var pidSet))
                     {
                         pidSet.Remove(msg.Watchee);
+
                         if (pidSet.Count == 0)
                         {
                             _watched.Remove(msg.Watcher.Id);
@@ -57,6 +58,7 @@ namespace Proto.Remote
                     {
                         var watcherPid = new PID(ProcessRegistry.Instance.Address, id);
                         var watcherRef = ProcessRegistry.Instance.Get(watcherPid);
+
                         if (watcherRef != DeadLetterProcess.Instance)
                         {
                             foreach (var pid in pidSet)
@@ -84,6 +86,7 @@ namespace Proto.Remote
                     if (_watched.TryGetValue(msg.Watcher.Id, out var pidSet))
                     {
                         pidSet.Remove(msg.Watchee);
+
                         if (pidSet.Count == 0)
                         {
                             _watched.Remove(msg.Watcher.Id);
@@ -125,11 +128,13 @@ namespace Proto.Remote
             {
                 case RemoteWatch msg:
                 {
-                    msg.Watcher.SendSystemMessage(new Terminated
-                    {
-                        AddressTerminated = true,
-                        Who = msg.Watchee
-                    });
+                    msg.Watcher.SendSystemMessage(
+                        new Terminated
+                        {
+                            AddressTerminated = true,
+                            Who = msg.Watchee
+                        }
+                    );
                     break;
                 }
                 case EndpointConnectedEvent _:

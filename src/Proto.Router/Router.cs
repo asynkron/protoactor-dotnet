@@ -15,7 +15,8 @@ namespace Proto.Router
 
         public static Props NewConsistentHashGroup(params PID[] routees) => new ConsistentHashGroupRouterConfig(MD5Hasher.Hash, 100, routees).Props();
 
-        public static Props NewConsistentHashGroup(Func<string, uint> hash, int replicaCount, params PID[] routees) => new ConsistentHashGroupRouterConfig(hash, replicaCount, routees).Props();
+        public static Props NewConsistentHashGroup(Func<string, uint> hash, int replicaCount, params PID[] routees)
+            => new ConsistentHashGroupRouterConfig(hash, replicaCount, routees).Props();
 
         public static Props NewRandomGroup(params PID[] routees) => new RandomGroupRouterConfig(routees).Props();
 
@@ -25,7 +26,8 @@ namespace Proto.Router
 
         public static Props NewBroadcastPool(Props props, int poolSize) => new BroadcastPoolRouterConfig(poolSize, props).Props();
 
-        public static Props NewConsistentHashPool(Props props, int poolSize, Func<string, uint> hash = null, int replicaCount = 100) => new ConsistentHashPoolRouterConfig(poolSize, props, hash ?? MD5Hasher.Hash, replicaCount).Props();
+        public static Props NewConsistentHashPool(Props props, int poolSize, Func<string, uint> hash = null, int replicaCount = 100)
+            => new ConsistentHashPoolRouterConfig(poolSize, props, hash ?? MD5Hasher.Hash, replicaCount).Props();
 
         public static Props NewRandomPool(Props props, int poolSize, int? seed = null) => new RandomPoolRouterConfig(poolSize, props, seed).Props();
 

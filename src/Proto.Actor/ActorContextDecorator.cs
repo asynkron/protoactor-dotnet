@@ -34,7 +34,7 @@ namespace Proto
 
         public virtual MessageHeader Headers => _context.Headers;
         public virtual object Message => _context.Message;
-        
+
         public virtual Task Receive(MessageEnvelope envelope) => _context.Receive(envelope);
 
         public virtual PID Parent => _context.Parent;
@@ -43,6 +43,7 @@ namespace Proto
         public virtual IActor Actor => _context.Actor;
         public virtual TimeSpan ReceiveTimeout => _context.ReceiveTimeout;
         public virtual IReadOnlyCollection<PID> Children => _context.Children;
+        
         public virtual void Respond(object message) => _context.Respond(message);
 
         public virtual void Stash() => _context.Stash();

@@ -13,12 +13,9 @@ namespace Proto
     {
         protected internal abstract void SendUserMessage(PID pid, object message);
 
-        public virtual void Stop(PID pid)
-        {
-            SendSystemMessage(pid, Proto.Stop.Instance);
-        }
-
         protected internal abstract void SendSystemMessage(PID pid, object message);
+        
+        public virtual void Stop(PID pid) => SendSystemMessage(pid, Proto.Stop.Instance);
     }
 
     public class ActorProcess : Process

@@ -4,12 +4,11 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace Proto.Persistence.MongoDB
 {
-    internal class Snapshot
+    class Snapshot
     {
         public Snapshot(string actorName, long snapshotIndex, object data)
         {
