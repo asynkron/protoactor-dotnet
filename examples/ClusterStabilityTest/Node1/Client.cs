@@ -1,85 +1,65 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Messages;
+using Microsoft.Extensions.Logging;
+using Polly;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Remote;
-using Process = System.Diagnostics.Process;
+using Log = Proto.Log;
 using ProtosReflection = Messages.ProtosReflection;
 
 namespace TestApp
 {
     public static class Client
     {
-        public static void Start()
+        public static async Task Start()
         {
-            var clusterName = "cluster" + DateTime.Now.Ticks;
-            StartConsulDevMode();
+            var log = LoggerFactory.Create(x => x.AddSeq().SetMinimumLevel(LogLevel.Debug));
+            Log.SetLoggerFactory(log);
+
+            var logger = log.CreateLogger("Client");
+
+            logger.LogInformation("Test");
+            const string clusterName = "test";
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-            Cluster.Start(clusterName, "127.0.0.1", 0, new ConsulProvider(new ConsulProviderOptions()));
 
-            for (int i = 0; i < 30; i++)
-            {
-                var psi = new ProcessStartInfo("dotnet", "bin/" +
-                                                         "release" +
-                                                         "/netcoreapp2.0/TestApp.dll " + clusterName);
-                Process.Start(psi);
-            }
-            EventStream.Instance.Subscribe<ClusterTopologyEvent>(e =>
-            {
-                Console.Write("T");
-            });
+            await Cluster.Start(
+                clusterName, "127.0.0.1", 0, new ConsulProvider(new ConsulProviderOptions {DeregisterCritical = TimeSpan.FromSeconds(2)})
+            );
 
-            var options = new GrainCallOptions()
+            EventStream.Instance.Subscribe<ClusterTopologyEvent>(e => logger.LogInformation("Topology changed {@Event}", e));
+            EventStream.Instance.Subscribe<MemberStatusEvent>(e => logger.LogInformation("Member status {@Event}", e));
+
+            var options = new GrainCallOptions
             {
                 RetryCount = 10,
-                RetryAction = async i =>
+                RetryAction = i =>
                 {
                     Console.Write("!");
-                    i++;
-                    await Task.Delay(i * i * 50);
-                },
+                    return Task.Delay(50);
+                }
             };
 
-            var tasks = new List<Task>();
-            for (int i = 0; i < 20000; i++)
+            Console.WriteLine("Ready to send messages, press Enter");
+            Console.ReadLine();
+
+            var policy = Policy.Handle<TaskCanceledException>().RetryForeverAsync();
+
+            for (var i = 0; i < 100000; i++)
             {
                 var client = Grains.HelloGrain("name" + i % 200);
-                var task = client.SayHello(new HelloRequest(),CancellationToken.None,options).ContinueWith(t =>
-                {
-                    if (t.Status == TaskStatus.RanToCompletion)
-                    {
-                        Console.Write(".");
-                    }
-                    else
-                    {
-                        Console.Write("#");
-                    }
-                });
-                tasks.Add(task);
+
+                await policy.ExecuteAsync(
+                    () => client.SayHello(new HelloRequest(), CancellationToken.None, options)
+                );
+                Console.Write(".");
             }
 
-
-            Task.WaitAll(tasks.ToArray());
             Console.WriteLine("Done!");
             Console.ReadLine();
-        }
-
-        private static void StartConsulDevMode()
-        {
-            Console.WriteLine("Consul - Starting");
-            ProcessStartInfo psi =
-                new ProcessStartInfo(@"..\..\..\dependencies\consul",
-                    "agent -server -bootstrap -data-dir /tmp/consul -bind=127.0.0.1 -ui")
-                {
-                    CreateNoWindow = true,
-                };
-            Process.Start(psi);
-            Console.WriteLine("Consul - Started");
         }
     }
 }

@@ -8,21 +8,28 @@ using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
+using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
 
 namespace Proto.Remote
 {
     public class EndpointReader : Remoting.RemotingBase
     {
+        private static readonly ILogger Logger = Log.CreateLogger<EndpointReader>();
+        
         private bool _suspended;
 
         public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
         {
             if (_suspended)
             {
+                Logger.LogWarning("Attempt to connect to the suspended reader has been rejected");
+                
                 throw new RpcException(Status.DefaultCancelled, "Suspended");
             }
 
+            Logger.LogDebug("Accepted connection request from {Remote} to {Local}", context.Peer, context.Host);
+            
             return Task.FromResult(
                 new ConnectResponse
                 {
@@ -37,10 +44,12 @@ namespace Proto.Remote
         )
         {
             var targets = new PID[100];
-
+            
             return requestStream.ForEachAsync(
                 batch =>
                 {
+                    Logger.LogDebug("Received a batch of {Count} messages from {Remote}", batch.TargetNames.Count, context.Peer);
+
                     if (_suspended)
                         return Actor.Done;
 
@@ -65,11 +74,17 @@ namespace Proto.Remote
 
                         switch (message) {
                             case Terminated msg: {
+                                Logger.LogDebug("Forwarding remote endpoint termination request for {Who}", msg.Who);
+                                
                                 var rt = new RemoteTerminate(target, msg.Who);
                                 EndpointManager.RemoteTerminate(rt);
+                                
                                 break;
                             }
-                            case SystemMessage sys: target.SendSystemMessage(sys);
+                            case SystemMessage sys:
+                                Logger.LogDebug("Forwarding remote system message {@Message}", sys);
+                                
+                                target.SendSystemMessage(sys);
                                 break;
                             default: {
                                 Proto.MessageHeader header = null;
@@ -79,6 +94,7 @@ namespace Proto.Remote
                                     header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
                                 }
 
+                                Logger.LogDebug("Forwarding remote user message {@Message}", message);
                                 var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
                                 RootContext.Empty.Send(target, localEnvelope);
                                 break;
@@ -91,6 +107,10 @@ namespace Proto.Remote
             );
         }
 
-        public void Suspend(bool suspended) => _suspended = suspended;
+        public void Suspend(bool suspended)
+        {
+            Logger.LogDebug("EndpointReader suspended");
+            _suspended = suspended;
+        }
     }
 }

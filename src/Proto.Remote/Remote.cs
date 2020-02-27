@@ -71,16 +71,14 @@ namespace Proto.Remote
             server.Start();
 
             var boundPort = server.Ports.Single().BoundPort;
-            var boundAddr = $"{hostname}:{boundPort}";
-            var addr = $"{config.AdvertisedHostname ?? hostname}:{config.AdvertisedPort ?? boundPort}";
-            ProcessRegistry.Instance.Address = addr;
+            ProcessRegistry.Instance.SetAddress(config.AdvertisedHostname ?? hostname, config.AdvertisedPort ?? boundPort);
 
             SpawnActivator();
 
-            Logger.LogDebug("Starting Proto.Actor server on {Bound} ({Address})", boundAddr, addr);
+            Logger.LogDebug("Starting Proto.Actor server on {Host}:{Port} ({Address})", hostname, boundPort, ProcessRegistry.Instance.Address);
         }
 
-        public static void Shutdown(bool graceful = true)
+        public static async Task Shutdown(bool graceful = true)
         {
             try
             {
@@ -89,11 +87,11 @@ namespace Proto.Remote
                     EndpointManager.Stop();
                     endpointReader.Suspend(true);
                     StopActivator();
-                    server.ShutdownAsync().Wait(10000);
+                    await server.ShutdownAsync();
                 }
                 else
                 {
-                    server.KillAsync().Wait(10000);
+                    await server.KillAsync();
                 }
 
                 Logger.LogDebug(
@@ -103,7 +101,7 @@ namespace Proto.Remote
             }
             catch (Exception ex)
             {
-                server.KillAsync().Wait(1000);
+                await server.KillAsync();
 
                 Logger.LogError(
                     ex, "Proto.Actor server stopped on {Address} with error: {Message}",

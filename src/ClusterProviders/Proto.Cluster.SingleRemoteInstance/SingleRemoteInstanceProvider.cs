@@ -8,8 +8,8 @@ namespace Proto.Cluster.SingleRemoteInstance
 {
     public class SingleRemoteInstanceProvider : IClusterProvider
     {
-        const string KINDS_RESPONDER = "remote_kinds_responder";
-        readonly TimeSpan _timeout = TimeSpan.FromSeconds(10);
+        private const string KindsResponder = "remote_kinds_responder";
+        private readonly TimeSpan _timeout = TimeSpan.FromSeconds(10);
 
         private readonly string _serverHost;
         private readonly int _serverPort;
@@ -29,16 +29,15 @@ namespace Proto.Cluster.SingleRemoteInstance
 
             var props = Props.FromFunc(ctx =>
             {
-                if ((ctx.Message is GetKinds) && ctx.Sender != null)
+                if (ctx.Message is GetKinds && ctx.Sender != null)
                     ctx.Respond(new GetKindsResponse { Kinds = { _kinds } });
 
                 return Actor.Done;
             });
 
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-            //RootContext.Empty.SpawnNamed(props, KINDS_RESPONDER);
 
-            Remote.Remote.RegisterKnownKind(KINDS_RESPONDER, props);
+            Remote.Remote.RegisterKnownKind(KindsResponder, props);
         }
 
         public Task DeregisterMemberAsync() => Actor.Done;
@@ -77,14 +76,14 @@ namespace Proto.Cluster.SingleRemoteInstance
 
         private void NotifyStatuses()
         {
-            MemberStatus status = null;
+            MemberStatus status;
             if (_isServer)
             {
                 status = new MemberStatus(_serverAddress, _serverHost, _serverPort, _kinds, true, _okStatus);
             }
             else
             {
-                var responder = Remote.Remote.SpawnNamedAsync(_serverAddress, KINDS_RESPONDER, KINDS_RESPONDER, _timeout).Result;
+                var responder = Remote.Remote.SpawnNamedAsync(_serverAddress, KindsResponder, KindsResponder, _timeout).Result;
                 if (responder.Pid != null)
                 {
                     try

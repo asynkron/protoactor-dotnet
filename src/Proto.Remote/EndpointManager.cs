@@ -100,8 +100,8 @@ namespace Proto.Remote
             var endpoint = EnsureConnected(msg.Target.Address);
 
             Logger.LogDebug(
-                "Forwarding message for {Address} through EndpontWriter {Writer}",
-                msg.Target.Address, endpoint.Writer
+                "Forwarding message {Message} from {From} for {Address} through EndpointWriter {Writer}",
+                msg.Message?.GetType(), msg.Sender?.Address, msg.Target?.Address, endpoint.Writer
             );
             RootContext.Empty.Send(endpoint.Writer, msg);
         }
@@ -217,14 +217,14 @@ namespace Proto.Remote
             return false;
         }
 
-        private static PID SpawnWatcher(string address, IContext context)
+        private static PID SpawnWatcher(string address, ISpawnerContext context)
         {
             var watcherProps = Props.FromProducer(() => new EndpointWatcher(address));
             var watcher = context.Spawn(watcherProps);
             return watcher;
         }
 
-        private static PID SpawnWriter(string address, IContext context)
+        private static PID SpawnWriter(string address, ISpawnerContext context)
         {
             var writerProps =
                 Props.FromProducer(

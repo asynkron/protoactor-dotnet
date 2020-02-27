@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
-    internal static class MailboxStatus
+    static class MailboxStatus
     {
         public const int Idle = 0;
         public const int Busy = 1;
@@ -38,13 +38,15 @@ namespace Proto.Remote
         {
             _userMessages.Push(msg);
 
-            Logger.LogDebug("EndpointWriterMailbox received User Message added to queue");
+            Logger.LogDebug("[EndpointWriterMailbox] received User Message {@Message}", msg);
             Schedule();
         }
 
         public void PostSystemMessage(object msg)
         {
             _systemMessages.Push(msg);
+
+            Logger.LogDebug("[EndpointWriterMailbox] received System Message {@Message}", msg);
             Schedule();
         }
 
@@ -63,7 +65,7 @@ namespace Proto.Remote
             try
             {
                 Logger.LogDebug(
-                    "Running Mailbox Loop HasSystemMessages: {HasSystemMessages} HasUserMessages: {HasUserMessages} suspended: {Suspended}",
+                    "[EndpointWriterMailbox] Running Mailbox Loop HasSystemMessages: {HasSystemMessages} HasUserMessages: {HasUserMessages} Suspended: {Suspended}",
                     _systemMessages.HasMessages, _userMessages.HasMessages, _suspended
                 );
                 var _ = _dispatcher.Throughput; //not used for batch mailbox
@@ -72,7 +74,7 @@ namespace Proto.Remote
 
                 if (sys != null)
                 {
-                    Logger.LogDebug("Processing System Message");
+                    Logger.LogDebug("[EndpointWriterMailbox] Processing System Message {@Message}", sys);
 
                     _suspended = sys switch
                     {
@@ -106,7 +108,7 @@ namespace Proto.Remote
 
                     while ((msg = _userMessages.Pop()) != null)
                     {
-                        Logger.LogDebug("Processing User Message");
+                        Logger.LogDebug("[EndpointWriterMailbox] Processing User Message {@Message}", msg);
 
                         if (msg is EndpointTerminatedEvent) //The mailbox was crashing when it received this particular message 
                         {
@@ -125,21 +127,21 @@ namespace Proto.Remote
                     if (batch.Count > 0)
                     {
                         m = batch;
-                        Logger.LogDebug("Calling message invoker");
+                        Logger.LogDebug("[EndpointWriterMailbox] Calling message invoker");
                         await _invoker.InvokeUserMessageAsync(batch);
                     }
                 }
             }
             catch (Exception x)
             {
-                Logger.LogWarning("Exception in RunAsync", x);
+                Logger.LogWarning(x, "[EndpointWriterMailbox] Exception in RunAsync");
                 _suspended = true;
                 _invoker.EscalateFailure(x, m);
             }
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
-            if (_systemMessages.HasMessages || (_userMessages.HasMessages & !_suspended))
+            if (_systemMessages.HasMessages || _userMessages.HasMessages & !_suspended)
             {
                 Schedule();
             }

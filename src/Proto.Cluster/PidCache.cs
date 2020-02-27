@@ -10,10 +10,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster
 {
-    internal static class PidCache
+    static class PidCache
     {
-        private static PID _watcher;
-        private static Subscription<object> _clusterTopologyEvnSub;
+        private static PID watcher;
+        private static Subscription<object> clusterTopologyEvnSub;
 
         private static readonly ConcurrentDictionary<string, PID> Cache = new ConcurrentDictionary<string, PID>();
         private static readonly ConcurrentDictionary<string, string> ReverseCache = new ConcurrentDictionary<string, string>();
@@ -21,17 +21,17 @@ namespace Proto.Cluster
         internal static void Setup()
         {
             var props = Props.FromProducer(() => new PidCacheWatcher()).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-            _watcher = RootContext.Empty.SpawnNamed(props, "PidCacheWatcher");
-            _clusterTopologyEvnSub = Actor.EventStream.Subscribe<MemberStatusEvent>(OnMemberStatusEvent);
+            watcher = RootContext.Empty.SpawnNamed(props, "PidCacheWatcher");
+            clusterTopologyEvnSub = Actor.EventStream.Subscribe<MemberStatusEvent>(OnMemberStatusEvent);
         }
 
         internal static void Stop()
         {
-            RootContext.Empty.Stop(_watcher);
-            Actor.EventStream.Unsubscribe(_clusterTopologyEvnSub.Id);
+            RootContext.Empty.Stop(watcher);
+            Actor.EventStream.Unsubscribe(clusterTopologyEvnSub.Id);
         }
 
-        internal static void OnMemberStatusEvent(MemberStatusEvent evn)
+        private static void OnMemberStatusEvent(MemberStatusEvent evn)
         {
             if (evn is MemberLeftEvent || evn is MemberRejoinedEvent)
             {
@@ -39,26 +39,22 @@ namespace Proto.Cluster
             }
         }
 
-        internal static bool TryGetCache(string name, out PID pid)
-        {
-            return Cache.TryGetValue(name, out pid);
-        }
+        internal static bool TryGetCache(string name, out PID pid) => Cache.TryGetValue(name, out pid);
 
         internal static bool TryAddCache(string name, PID pid)
         {
-            if (Cache.TryAdd(name, pid))
-            {
-                var key = pid.ToShortString();
-                ReverseCache.TryAdd(key, name);
-                RootContext.Empty.Send(_watcher, new WatchPidRequest(pid));
-                return true;
-            }
-            return false;
+            if (!Cache.TryAdd(name, pid)) return false;
+
+            var key = pid.ToShortString();
+            ReverseCache.TryAdd(key, name);
+            RootContext.Empty.Send(watcher, new WatchPidRequest(pid));
+            return true;
         }
 
         internal static void RemoveCacheByPid(PID pid)
         {
             var key = pid.ToShortString();
+
             if (ReverseCache.TryRemove(key, out var name))
             {
                 Cache.TryRemove(name, out _);
@@ -67,13 +63,13 @@ namespace Proto.Cluster
 
         internal static void RemoveCacheByName(string name)
         {
-            if(Cache.TryRemove(name, out var pid))
+            if (Cache.TryRemove(name, out var pid))
             {
                 ReverseCache.TryRemove(pid.ToShortString(), out _);
             }
         }
 
-        internal static void RemoveCacheByMemberAddress(string memberAddress)
+        private static void RemoveCacheByMemberAddress(string memberAddress)
         {
             foreach (var (name, pid) in Cache.ToArray())
             {
@@ -87,14 +83,14 @@ namespace Proto.Cluster
         }
     }
 
-    internal class WatchPidRequest
+    class WatchPidRequest
     {
         internal PID Pid { get; }
 
-        public WatchPidRequest(PID pid) { Pid = pid; }
+        public WatchPidRequest(PID pid) => Pid = pid;
     }
 
-    internal class PidCacheWatcher : IActor
+    class PidCacheWatcher : IActor
     {
         private readonly ILogger _logger = Log.CreateLogger<PidCacheWatcher>();
 
@@ -112,6 +108,7 @@ namespace Proto.Cluster
                     PidCache.RemoveCacheByPid(msg.Who);
                     break;
             }
+
             return Actor.Done;
         }
     }
