@@ -17,7 +17,6 @@ namespace Proto.Mailbox
         void EscalateFailure(Exception reason, object message);
     }
 
-
     public interface IDispatcher
     {
         int Throughput { get; }
@@ -34,18 +33,12 @@ namespace Proto.Mailbox
     {
         public int Throughput => 300;
 
-        public void Schedule(Func<Task> runner)
-        {
-            runner().Wait();
-        }
+        public void Schedule(Func<Task> runner) => runner().Wait();
     }
 
     public sealed class ThreadPoolDispatcher : IDispatcher
     {
-        public ThreadPoolDispatcher()
-        {
-            Throughput = 300;
-        }
+        public ThreadPoolDispatcher() => Throughput = 300;
 
         public void Schedule(Func<Task> runner) => Task.Factory.StartNew(runner, TaskCreationOptions.None);
 
@@ -53,7 +46,7 @@ namespace Proto.Mailbox
     }
 
     /// <summary>
-    /// This must be created on the UI thread after a SynhronizationContext has been created.  Otherwise, an error will occur.
+    /// This must be created on the UI thread after a SynchronizationContext has been created.  Otherwise, an error will occur.
     /// </summary>
     public sealed class CurrentSynchronizationContextDispatcher : IDispatcher
     {

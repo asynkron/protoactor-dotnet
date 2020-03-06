@@ -4,14 +4,9 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Diagnostics;
 using BenchmarkDotNet.Running;
-using Proto.Mailbox;
 
 class Program
 {
-    static void Main(string[] args)
-    {
-        var summary = BenchmarkRunner.Run<MailboxBenchmark>();
-    }
+    static void Main() => BenchmarkRunner.Run<MailboxBenchmark>();
 }

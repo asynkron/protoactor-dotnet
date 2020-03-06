@@ -33,25 +33,26 @@ namespace Saga
                 case Credit msg when AlreadyProcessed(msg.ReplyTo):
                     return Reply(msg.ReplyTo);
                 case Credit msg:
-                    return AdjustBalance(msg.ReplyTo, msg.Amount);
+                    return AdjustBalance(context, msg.ReplyTo, msg.Amount);
                 case Debit msg when AlreadyProcessed(msg.ReplyTo):
                     return Reply(msg.ReplyTo);
                 case Debit msg when msg.Amount + _balance >= 0:
-                    return AdjustBalance(msg.ReplyTo, msg.Amount);
+                    return AdjustBalance(context, msg.ReplyTo, msg.Amount);
                 case Debit msg:
-                    msg.ReplyTo.Tell(new InsufficientFunds());
+                    context.Send(msg.ReplyTo, new InsufficientFunds());
                     break;
                 case GetBalance _:
                     context.Respond(_balance);
                     break;
             }
+
             return Actor.Done;
-        }
-        
-        private Task Reply(PID replyTo)
-        {
-            replyTo.Tell(_processedMessages[replyTo]);
-            return Actor.Done;
+
+            Task Reply(PID replyTo)
+            {
+                context.Send(replyTo, _processedMessages[replyTo]);
+                return Actor.Done;
+            }
         }
 
         /// <summary>
@@ -63,71 +64,70 @@ namespace Saga
         ///  * slow processing
         ///  * successful processing
         /// </summary>
-        private Task AdjustBalance(PID replyTo, decimal amount)
+        private Task AdjustBalance(IContext context, PID replyTo, decimal amount)
         {
             if (RefusePermanently())
             {
                 _processedMessages.Add(replyTo, new Refused());
-                replyTo.Tell(new Refused());
+                context.Send(replyTo, new Refused());
             }
-                
+
             if (Busy())
-                replyTo.Tell(new ServiceUnavailable());
-            
+                context.Send(replyTo, new ServiceUnavailable());
+
             // generate the behavior to be used whilst processing this message
             var behaviour = DetermineProcessingBehavior();
+
             if (behaviour == Behavior.FailBeforeProcessing)
-                return Failure(replyTo);
-            
+                return Failure();
+
             // simulate potential long-running process
             Thread.Sleep(_random.Next(0, 150));
-            
+
             _balance += amount;
             _processedMessages.Add(replyTo, new OK());
-            
+
             // simulate chance of failure after applying the change. This will
             // force a retry of the operation which will test the operation
             // is idempotent
             if (behaviour == Behavior.FailAfterProcessing)
-                return Failure(replyTo);
-            
-            replyTo.Tell(new OK());
+                return Failure();
+
+            context.Send(replyTo, new OK());
             return Actor.Done;
+
+            Task Failure()
+            {
+                context.Send(replyTo, new InternalServerError());
+                return Actor.Done;
+            }
         }
 
         private bool Busy()
         {
-            var comparsion = _random.NextDouble() * 100;
-            return comparsion <= _busyProbability;
+            var comparison = _random.NextDouble() * 100;
+            return comparison <= _busyProbability;
         }
 
         private bool RefusePermanently()
         {
-            
-            var comparsion = _random.NextDouble() * 100;
-            return comparsion <= _refusalProbability;
-        }
-
-        private Task Failure(PID replyTo)
-        {
-            replyTo.Tell(new InternalServerError());
-            return Actor.Done;
+            var comparison = _random.NextDouble() * 100;
+            return comparison <= _refusalProbability;
         }
 
         private Behavior DetermineProcessingBehavior()
         {
             var comparision = _random.NextDouble() * 100;
+
             if (comparision > _serviceUptime)
             {
                 return _random.NextDouble() * 100 > 50 ? Behavior.FailBeforeProcessing : Behavior.FailAfterProcessing;
             }
+
             return Behavior.ProcessSuccessfully;
         }
 
-        private bool AlreadyProcessed(PID replyTo)
-        {
-            return _processedMessages.ContainsKey(replyTo);
-        }
+        private bool AlreadyProcessed(PID replyTo) => _processedMessages.ContainsKey(replyTo);
 
         private enum Behavior
         {
@@ -136,6 +136,4 @@ namespace Saga
             ProcessSuccessfully
         }
     }
-    
-    
 }

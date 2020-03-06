@@ -15,10 +15,7 @@ namespace Proto
 
         public Behavior() { }
 
-        public Behavior(Receive receive)
-        {
-            Become(receive);
-        }
+        public Behavior(Receive receive) => Become(receive);
 
         public void Become(Receive receive)
         {
@@ -26,15 +23,9 @@ namespace Proto
             _behaviors.Push(receive);
         }
 
-        public void BecomeStacked(Receive receive)
-        {
-            _behaviors.Push(receive);
-        }
+        public void BecomeStacked(Receive receive) => _behaviors.Push(receive);
 
-        public void UnbecomeStacked()
-        {
-            _behaviors.Pop();
-        }
+        public void UnbecomeStacked() => _behaviors.Pop();
 
         public Task ReceiveAsync(IContext context)
         {

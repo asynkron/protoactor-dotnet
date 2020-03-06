@@ -13,7 +13,7 @@ namespace Proto.Router.Tests
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
         [Fact]
-        public async void BroadcastGroupRouter_AllRouteesReceiveMessages()
+        public async Task BroadcastGroupRouter_AllRouteesReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
@@ -25,7 +25,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void BroadcastGroupRouter_WhenOneRouteeIsStopped_AllOtherRouteesReceiveMessages()
+        public async Task BroadcastGroupRouter_WhenOneRouteeIsStopped_AllOtherRouteesReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
@@ -37,7 +37,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void BroadcastGroupRouter_WhenOneRouteeIsSlow_AllOtherRouteesReceiveMessages()
+        public async Task BroadcastGroupRouter_WhenOneRouteeIsSlow_AllOtherRouteesReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
@@ -49,7 +49,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void BroadcastGroupRouter_RouteesCanBeRemoved()
+        public async Task BroadcastGroupRouter_RouteesCanBeRemoved()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
@@ -62,7 +62,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void BroadcastGroupRouter_RouteesCanBeAdded()
+        public async Task BroadcastGroupRouter_RouteesCanBeAdded()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
             var routee4 = Context.Spawn(MyActorProps);
@@ -76,7 +76,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void BroadcastGroupRouter_RemovedRouteesNoLongerReceiveMessages()
+        public async Task BroadcastGroupRouter_RemovedRouteesNoLongerReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 
@@ -90,7 +90,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void BroadcastGroupRouter_AddedRouteesReceiveMessages()
+        public async Task BroadcastGroupRouter_AddedRouteesReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
             var routee4 = Context.Spawn(MyActorProps);
@@ -104,7 +104,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void BroadcastGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
+        public async Task BroadcastGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees();
 

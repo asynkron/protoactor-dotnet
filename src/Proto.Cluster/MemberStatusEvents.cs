@@ -13,9 +13,7 @@ namespace Proto.Cluster
     public class ClusterTopologyEvent
     {
         public ClusterTopologyEvent(IEnumerable<MemberStatus> statuses)
-        {
-            Statuses = statuses?.ToArray() ?? throw new ArgumentNullException(nameof(statuses));
-        }
+            => Statuses = statuses?.ToArray() ?? throw new ArgumentNullException(nameof(statuses));
 
         public IReadOnlyCollection<MemberStatus> Statuses { get; }
     }
@@ -37,22 +35,16 @@ namespace Proto.Cluster
 
     public class MemberJoinedEvent : MemberStatusEvent
     {
-        public MemberJoinedEvent(string host, int port, IReadOnlyCollection<string> kinds) : base(host, port, kinds)
-        {
-        }
+        public MemberJoinedEvent(string host, int port, IReadOnlyCollection<string> kinds) : base(host, port, kinds) { }
     }
 
     public class MemberRejoinedEvent : MemberStatusEvent
     {
-        public MemberRejoinedEvent(string host, int port, IReadOnlyCollection<string> kinds) : base(host, port, kinds)
-        {
-        }
+        public MemberRejoinedEvent(string host, int port, IReadOnlyCollection<string> kinds) : base(host, port, kinds) { }
     }
 
     public class MemberLeftEvent : MemberStatusEvent
     {
-        public MemberLeftEvent(string host, int port, IReadOnlyCollection<string> kinds) : base(host, port, kinds)
-        {
-        }
+        public MemberLeftEvent(string host, int port, IReadOnlyCollection<string> kinds) : base(host, port, kinds) { }
     }
 }

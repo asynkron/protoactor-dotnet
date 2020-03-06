@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace Proto.Router.Routers
 {
-    internal class BroadcastGroupRouterConfig : GroupRouterConfig
+    class BroadcastGroupRouterConfig : GroupRouterConfig
     {
         public BroadcastGroupRouterConfig(params PID[] routees) => Routees = new HashSet<PID>(routees);
 

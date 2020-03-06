@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Proto;
@@ -25,12 +24,10 @@ namespace DependencyInjection
             services.AddTransient<IActorManager, ActorManager>();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory,
-            IApplicationLifetime appLifetime)
+        public void Configure(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
-            loggerFactory.AddConsole(LogLevel.Debug);
             //attach logger to proto logging just in case
-            Proto.Log.SetLoggerFactory(loggerFactory);
+            Log.SetLoggerFactory(loggerFactory);
 
             //This is only for demo purposes done in the service initialization
             var actorManager = app.ApplicationServices.GetRequiredService<IActorManager>();

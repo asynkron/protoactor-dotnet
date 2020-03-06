@@ -1,0 +1,30 @@
+version: "3.7"
+
+services:
+  consul:
+    image: bitnami/consul:latest
+    ports:
+      - '8300:8300'
+      - '8301:8301'
+      - '8301:8301/udp'
+      - '8500:8500'
+      - '8600:8600'
+      - '8600:8600/udp'  
+  seq1:
+    image: datalust/seq:latest
+    ports:
+      - "5341:80"
+    environment: 
+      - ACCEPT_EULA=Y
+  seq2:
+    image: datalust/seq:latest
+    ports:
+      - "5342:80"
+    environment: 
+      - ACCEPT_EULA=Y
+  seq3:
+    image: datalust/seq:latest
+    ports:
+      - "5343:80"
+    environment: 
+      - ACCEPT_EULA=Y

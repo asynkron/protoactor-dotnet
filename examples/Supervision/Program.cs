@@ -13,22 +13,23 @@ using Microsoft.Extensions.Logging;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         var context = new RootContext();
-        Log.SetLoggerFactory(new LoggerFactory()
-            .AddConsole(LogLevel.Debug));
+        Log.SetLoggerFactory(LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Debug)));
 
         var props = Props.FromProducer(() => new ParentActor()).WithChildSupervisorStrategy(new OneForOneStrategy(Decider.Decide, 1, null));
 
         var actor = context.Spawn(props);
-        
-        context.Send(actor,new Hello
-        {
-            Who = "Alex"
-        });
-        context.Send(actor,new Recoverable());
-        context.Send(actor,new Fatal());
+
+        context.Send(
+            actor, new Hello
+            {
+                Who = "Alex"
+            }
+        );
+        context.Send(actor, new Recoverable());
+        context.Send(actor, new Fatal());
         //why wait?
         //Stop is a system message and is not processed through the user message mailbox
         //thus, it will be handled _before_ any user message
@@ -38,28 +39,23 @@ class Program
         Console.ReadLine();
     }
 
-    internal class Decider
+    private class Decider
     {
         public static SupervisorDirective Decide(PID pid, Exception reason)
-        {
-            switch (reason)
+            => reason switch
             {
-                case RecoverableException _:
-                    return SupervisorDirective.Restart;
-                case FatalException _:
-                    return SupervisorDirective.Stop;
-                default:
-                    return SupervisorDirective.Escalate;
-
-            }
-        }
+                RecoverableException _ => SupervisorDirective.Restart,
+                FatalException _       => SupervisorDirective.Stop,
+                _                      => SupervisorDirective.Escalate
+            };
     }
 
-    internal class ParentActor : IActor
+    private class ParentActor : IActor
     {
         public Task ReceiveAsync(IContext context)
         {
             PID child;
+
             if (context.Children == null || context.Children.Count == 0)
             {
                 var props = Props.FromProducer(() => new ChildActor());
@@ -114,6 +110,7 @@ class Program
                     logger.LogDebug("Restarting, actor is about restart");
                     break;
             }
+
             return Actor.Done;
         }
     }
@@ -122,8 +119,12 @@ class Program
     {
         public string Who;
     }
+
     internal class RecoverableException : Exception { }
+
     internal class FatalException : Exception { }
+
     internal class Fatal { }
+
     internal class Recoverable { }
 }

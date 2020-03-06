@@ -2,7 +2,7 @@
 
 namespace Proto.Persistence.Couchbase
 {
-    internal class Snapshot
+    class Snapshot
     {
         public Snapshot(string actorName, long snapshotIndex, object data)
         {

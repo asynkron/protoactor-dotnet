@@ -4,21 +4,21 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System.Linq;
+using System.Threading.Tasks;
 
 namespace TestApp
 {
-    class Program
+    static class Program
     {
-        static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
             if (args == null || args.Length == 0)
             {
-                Client.Start();
+                await Client.Start();
             }
             else
             {
-                Worker.Start(args.First());
+                await Worker.Start(args[0], args[1]);
             }
         }
     }

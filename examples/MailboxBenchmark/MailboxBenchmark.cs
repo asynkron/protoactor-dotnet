@@ -9,20 +9,16 @@ using System.Threading.Tasks;
 using Proto;
 using Proto.Mailbox;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Running;
-using BenchmarkDotNet.Attributes.Jobs;
 
 [SimpleJob(launchCount: 1, warmupCount: 3, targetCount: 5, invocationCount: 100, id: "QuickJob")]
 [ShortRunJob]
 public class MailboxBenchmark
 {
-
     [Benchmark]
     public Task Unbounded() => RunTest(() => UnboundedMailbox.Create());
 
     [Benchmark]
     public Task Unbound() => RunTest(() => BoundedMailbox.Create(1024 * 1024));
-
 
     public static async Task RunTest(Func<IMailbox> mailbox)
     {

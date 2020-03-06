@@ -8,11 +8,12 @@ using System;
 
 namespace Proto.Persistence.DynamoDB
 {
-    public class DynamoDBProviderOptions {
+    public class DynamoDBProviderOptions
+    {
         public DynamoDBProviderOptions(string eventsTableName, string snapshotsTableName)
         {
-            if (String.IsNullOrEmpty(eventsTableName)) throw new ArgumentNullException("eventsTableName");
-            if (String.IsNullOrEmpty(snapshotsTableName)) throw new ArgumentNullException("snapshotsTableName");
+            if (string.IsNullOrEmpty(eventsTableName)) throw new ArgumentNullException(nameof(eventsTableName));
+            if (string.IsNullOrEmpty(snapshotsTableName)) throw new ArgumentNullException(nameof(snapshotsTableName));
 
             EventsTableName = eventsTableName;
             EventsTableHashKey = "ActorName";
@@ -26,17 +27,16 @@ namespace Proto.Persistence.DynamoDB
             SnapshotsTableDataKey = "Data";
             SnapshotsTableDataTypeKey = "DataType";
         }
-        
-        public string EventsTableName { get; private set; }
-        public string EventsTableHashKey { get; private set; }
-        public string EventsTableSortKey { get; private set; }
-        public string EventsTableDataKey { get; private set; }
-        public string EventsTableDataTypeKey { get; private set; }
 
-        public string SnapshotsTableName { get; private set; }
-        public string SnapshotsTableHashKey { get; private set; }
-        public string SnapshotsTableSortKey { get; private set; }
-        public string SnapshotsTableDataKey { get; private set; }
-        public string SnapshotsTableDataTypeKey { get; private set; }
+        public string EventsTableName { get; }
+        public string EventsTableHashKey { get; }
+        public string EventsTableSortKey { get; }
+        public string EventsTableDataKey { get; }
+        public string EventsTableDataTypeKey { get; }
+        public string SnapshotsTableName { get; }
+        public string SnapshotsTableHashKey { get; }
+        public string SnapshotsTableSortKey { get; }
+        public string SnapshotsTableDataKey { get; }
+        public string SnapshotsTableDataTypeKey { get; }
     }
 }

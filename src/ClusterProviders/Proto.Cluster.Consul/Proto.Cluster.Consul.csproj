@@ -29,5 +29,6 @@
     <ProjectReference Include="..\..\Proto.Cluster\Proto.Cluster.csproj" />
     <ProjectReference Include="..\..\Proto.Mailbox\Proto.Mailbox.csproj" />
     <ProjectReference Include="..\..\Proto.Persistence\Proto.Persistence.csproj" />
+    <ProjectReference Include="..\..\Schedulers\Proto.Scheduler.SimpleScheduler\Proto.Schedulers.SimpleScheduler.csproj" />
   </ItemGroup>
 </Project>

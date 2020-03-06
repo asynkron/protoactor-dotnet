@@ -8,19 +8,13 @@ using System.Collections.Generic;
 
 namespace Proto.Router.Routers
 {
-    internal class BroadcastRouterState : RouterState
+    class BroadcastRouterState : RouterState
     {
         private HashSet<PID> _routees;
 
-        public override HashSet<PID> GetRoutees()
-        {
-            return _routees;
-        }
+        public override HashSet<PID> GetRoutees() => _routees;
 
-        public override void SetRoutees(HashSet<PID> routees)
-        {
-            _routees = routees;
-        }
+        public override void SetRoutees(HashSet<PID> routees) => _routees = routees;
 
         public override void RouteMessage(object message)
         {

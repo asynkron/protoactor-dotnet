@@ -32,23 +32,25 @@ namespace Proto.Router
         public HashRing(IEnumerable<string> nodes, Func<string, uint> hash, int replicaCount)
         {
             _hash = hash;
+
             _ring = nodes
-                .SelectMany(n => Enumerable.Range(0, replicaCount).Select(i => new
-                {
-                    hashKey = i + n,
-                    node = n
-                }))
+                .SelectMany(
+                    n =>
+                        Enumerable
+                            .Range(0, replicaCount)
+                            .Select(
+                                i => new
+                                {
+                                    hashKey = i + n,
+                                    node = n
+                                }
+                            )
+                )
                 .Select(a => Tuple.Create(_hash(a.hashKey), a.node))
                 .OrderBy(t => t.Item1)
                 .ToList();
         }
 
-        public string GetNode(string key)
-        {
-            return (
-                _ring.FirstOrDefault(t => t.Item1 > _hash(key))
-                ?? _ring.First()
-            ).Item2;
-        }
+        public string GetNode(string key) => (_ring.FirstOrDefault(t => t.Item1 > _hash(key)) ?? _ring.First()).Item2;
     }
 }

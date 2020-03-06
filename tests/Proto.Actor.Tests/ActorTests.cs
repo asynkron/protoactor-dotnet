@@ -60,7 +60,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public async void ActorLifeCycle()
+        public async Task ActorLifeCycle()
         {
             var messages = new Queue<object>();
 

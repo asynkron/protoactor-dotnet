@@ -15,8 +15,8 @@ namespace Proto.Remote
        
         [Obsolete("Use EndpointWriterOptions.EndpointWriterBatchSize instead")]
         public int EndpointWriterBatchSize { 
-            get { return EndpointWriterOptions.EndpointWriterBatchSize; }
-            set { EndpointWriterOptions.EndpointWriterBatchSize = value; }
+            get => EndpointWriterOptions.EndpointWriterBatchSize;
+            set => EndpointWriterOptions.EndpointWriterBatchSize = value;
         }
 
         /// <summary>
@@ -68,6 +68,7 @@ namespace Proto.Remote
         /// the number of times to retry the connection within the RetryTimeSpan
         /// </summary>
         public int MaxRetries {get; set; } = 8;
+        
         public TimeSpan RetryTimeSpan { get; set; } = TimeSpan.FromMinutes(3);
 
         /// <summary>

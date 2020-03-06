@@ -18,11 +18,11 @@ namespace Proto.Cluster
         string GetActivator();
     }
 
-    internal class SimpleMemberStrategy : IMemberStrategy
+    class SimpleMemberStrategy : IMemberStrategy
     {
-        private List<MemberStatus> _members;
-        private Rendezvous _rdv;
-        private RoundRobin _rr;
+        private readonly List<MemberStatus> _members;
+        private readonly Rendezvous _rdv;
+        private readonly RoundRobin _rr;
 
         public SimpleMemberStrategy()
         {
@@ -43,11 +43,10 @@ namespace Proto.Cluster
         {
             for (int i = 0; i < _members.Count; i++)
             {
-                if (_members[i].Address == member.Address)
-                {
-                    _members[i] = member;
-                    return;
-                }
+                if (_members[i].Address != member.Address) continue;
+
+                _members[i] = member;
+                return;
             }
         }
 
@@ -55,12 +54,11 @@ namespace Proto.Cluster
         {
             for (int i = 0; i < _members.Count; i++)
             {
-                if (_members[i].Address == member.Address)
-                {
-                    _members.RemoveAt(i);
-                    _rdv.UpdateRdv();
-                    return;
-                }
+                if (_members[i].Address != member.Address) continue;
+
+                _members.RemoveAt(i);
+                _rdv.UpdateRdv();
+                return;
             }
         }
 

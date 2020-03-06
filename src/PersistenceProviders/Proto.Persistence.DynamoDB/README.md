@@ -4,6 +4,7 @@
 ```csharp
 // Initialize Amazon DynamoDBv2 Client.
 var client = new AmazonDynamoDBClient("", "", Amazon.RegionEndpoint.USWest1);
+
 // Set options - you can replace table names.
 var options = new DynamoDBProviderOptions("events", "snapshots");
 
@@ -16,7 +17,6 @@ await DynamoDBHelper.CheckCreateSnapshotsTable(client, options, 1, 1);
 
 // Initialize provider and use it for your persistent Actors.
 var provider = new DynamoDBProvider(_client, options);
-
 ```
 
 
@@ -33,5 +33,5 @@ Snapshots table must have:
 
 ## Serialization/Deserialization notes
 
-* DateTimeOffset not supported.
+* DateTimeOffset is not supported.
 * DateTime precision is down to milliseconds. Milliseconds fractions are lost.

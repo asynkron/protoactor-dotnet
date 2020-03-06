@@ -7,18 +7,15 @@ namespace Proto.Mailbox.Tests
 {
     public class MailboxQueuesTests
     {
-        public enum MailboxQueueKind { Bounded, Unbounded, }
+        public enum MailboxQueueKind { Bounded, Unbounded }
 
         private IMailboxQueue GetMailboxQueue(MailboxQueueKind kind)
-        {
-            switch (kind)
+            => kind switch
             {
-                case MailboxQueueKind.Bounded: return new BoundedMailboxQueue(4);
-                case MailboxQueueKind.Unbounded: return new UnboundedMailboxQueue();
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
-            }
-        }
+                MailboxQueueKind.Bounded   => (IMailboxQueue) new BoundedMailboxQueue(4),
+                MailboxQueueKind.Unbounded => new UnboundedMailboxQueue(),
+                _                          => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+            };
 
         [Theory]
         //[InlineData(MailboxQueueKind.Bounded)] -- temporarily disabled because the Bounded queue doesn't seem to work correctly
@@ -51,38 +48,50 @@ namespace Proto.Mailbox.Tests
 
             var sut = GetMailboxQueue(kind);
 
-            var producer = new Thread(_ =>
-            {
-                for (int i = 0; i < msgCount; i++)
+            var producer = new Thread(
+                _ =>
                 {
-                    if (cancelSource.IsCancellationRequested) return;
-                    sut.Push(i);
-                }
-            });
-
-            var consumerList = new List<int>();
-            var consumer = new Thread(l =>
-            {
-                var list = (List<int>)l;
-                for (var i = 0; i < msgCount; i++)
-                {
-                    var popped = sut.Pop();
-                    while (popped == null)
+                    for (int i = 0; i < msgCount; i++)
                     {
                         if (cancelSource.IsCancellationRequested) return;
 
-                        Thread.Sleep(1);
-                        popped = sut.Pop();
+                        sut.Push(i);
                     }
-                    list.Add((int)popped);
                 }
-            });
+            );
 
-            producer.Start(); consumer.Start(consumerList);
-            producer.Join(1000); consumer.Join(1000);
+            var consumerList = new List<int>();
+
+            var consumer = new Thread(
+                l =>
+                {
+                    var list = (List<int>) l;
+
+                    for (var i = 0; i < msgCount; i++)
+                    {
+                        var popped = sut.Pop();
+
+                        while (popped == null)
+                        {
+                            if (cancelSource.IsCancellationRequested) return;
+
+                            Thread.Sleep(1);
+                            popped = sut.Pop();
+                        }
+
+                        list.Add((int) popped);
+                    }
+                }
+            );
+
+            producer.Start();
+            consumer.Start(consumerList);
+            producer.Join(1000);
+            consumer.Join(1000);
             cancelSource.Cancel();
 
             Assert.Equal(msgCount, consumerList.Count);
+
             for (var i = 0; i < msgCount; i++)
             {
                 Assert.Equal(i, consumerList[i]);

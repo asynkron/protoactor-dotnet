@@ -2,7 +2,9 @@
 using System.Threading.Tasks;
 using System.Data.SqlClient;
 using System.Collections.Generic;
+using System.Data;
 using Newtonsoft.Json;
+using static System.Data.SqlDbType;
 
 namespace Proto.Persistence.SqlServer
 {
@@ -13,7 +15,19 @@ namespace Proto.Persistence.SqlServer
         private readonly string _tableEvents;
         private readonly string _tableSchema;
 
-        public SqlServerProvider(string connectionString, bool autoCreateTables = false, string useTablesWithPrefix = "", string useTablesWithSchema = "dbo")
+        private static readonly JsonSerializerSettings AutoTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Auto};
+        private static readonly JsonSerializerSettings AllTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};
+
+        private readonly string _sqlDeleteEvents;
+        private readonly string _sqlDeleteSnapshots;
+        private readonly string _sqlReadEvents;
+        private readonly string _sqlReadSnapshot;
+        private readonly string _sqlSaveEvents;
+        private readonly string _sqlSaveSnapshot;
+
+        public SqlServerProvider(
+            string connectionString, bool autoCreateTables = false, string useTablesWithPrefix = "", string useTablesWithSchema = "dbo"
+        )
         {
             _connectionString = connectionString;
             _tableSchema = useTablesWithSchema;
@@ -22,38 +36,130 @@ namespace Proto.Persistence.SqlServer
 
             if (autoCreateTables)
             {
-                AutoCreateSnapshotTableInDatabaseAsync().Wait();
-                AutoCreateEventTableInDatabaseAsync().Wait();
+                CreateSnapshotTable();
+                CreateEventTable();
             }
+
+            // execute string interpolation once
+            _sqlDeleteEvents = $@"DELETE FROM {_tableSchema}.{_tableEvents} WHERE ActorName = @ActorName AND EventIndex <= @EventIndex";
+            _sqlDeleteSnapshots = $@"DELETE FROM {_tableSchema}.{_tableSnapshots} WHERE ActorName = @ActorName AND SnapshotIndex <= @SnapshotIndex";
+
+            _sqlReadEvents =
+                $@"SELECT EventIndex, EventData FROM {_tableSchema}.{_tableEvents} WHERE ActorName = @ActorName AND EventIndex >= @IndexStart AND EventIndex <= @IndexEnd ORDER BY EventIndex ASC";
+
+            _sqlReadSnapshot =
+                $@"SELECT TOP 1 SnapshotIndex, SnapshotData FROM {_tableSchema}.{_tableSnapshots} WHERE ActorName = @ActorName ORDER BY SnapshotIndex DESC";
+
+            _sqlSaveEvents =
+                $@"INSERT INTO {_tableSchema}.{_tableEvents} (Id, ActorName, EventIndex, EventData) VALUES (@Id, @ActorName, @EventIndex, @EventData)";
+
+            _sqlSaveSnapshot =
+                $@"INSERT INTO {_tableSchema}.{_tableSnapshots} (Id, ActorName, SnapshotIndex, SnapshotData) VALUES (@Id, @ActorName, @SnapshotIndex, @SnapshotData)";
         }
 
-        private async Task ExecuteNonQueryAsync(string sql, List<SqlParameter> parameters = null)
+        public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
+            => ExecuteNonQueryAsync(
+                _sqlDeleteEvents,
+                CreateParameter("ActorName", NVarChar, actorName),
+                CreateParameter("EventIndex", BigInt, inclusiveToIndex)
+            );
+
+        public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
+            => ExecuteNonQueryAsync(
+                _sqlDeleteSnapshots,
+                CreateParameter("ActorName", NVarChar, actorName),
+                CreateParameter("SnapshotIndex", BigInt, inclusiveToIndex)
+            );
+
+        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
-            using (var connection = new SqlConnection(_connectionString))
-            using (var command = new SqlCommand(sql, connection))
-            {
-                await connection.OpenAsync();
+            using var connection = new SqlConnection(_connectionString);
 
-                using (var tx = connection.BeginTransaction())
+            using var command = new SqlCommand(_sqlReadEvents, connection);
+
+            await connection.OpenAsync();
+
+            command.Parameters.AddRange(
+                new[]
                 {
-                    command.Transaction = tx;
-
-                    if (parameters?.Count > 0)
-                    {
-                        foreach (var p in parameters)
-                        {
-                            command.Parameters.Add(p);
-                        }
-                    }
-
-                    await command.ExecuteNonQueryAsync();
-
-                    tx.Commit();
+                    CreateParameter("ActorName", NVarChar, actorName),
+                    CreateParameter("IndexStart", BigInt, indexStart),
+                    CreateParameter("IndexEnd", BigInt, indexEnd)
                 }
+            );
+
+            long lastIndex = -1;
+
+            var eventReader = await command.ExecuteReaderAsync();
+
+            while (await eventReader.ReadAsync())
+            {
+                lastIndex = (long) eventReader["EventIndex"];
+
+                callback(JsonConvert.DeserializeObject<object>(eventReader["EventData"].ToString(), AutoTypeSettings));
             }
+
+            return lastIndex;
         }
 
-        private async Task AutoCreateSnapshotTableInDatabaseAsync()
+        public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
+        {
+            long snapshotIndex = 0;
+            object snapshotData = null;
+
+            using var connection = new SqlConnection(_connectionString);
+
+            using var command = new SqlCommand(_sqlReadSnapshot, connection);
+
+            await connection.OpenAsync();
+
+            command.Parameters.Add(CreateParameter("ActorName", NVarChar, actorName));
+
+            var snapshotReader = await command.ExecuteReaderAsync();
+
+            while (await snapshotReader.ReadAsync())
+            {
+                snapshotIndex = Convert.ToInt64(snapshotReader["SnapshotIndex"]);
+
+                snapshotData = JsonConvert.DeserializeObject<object>(
+                    snapshotReader["SnapshotData"].ToString(), AutoTypeSettings
+                );
+            }
+
+            return (snapshotData, snapshotIndex);
+        }
+
+        public async Task<long> PersistEventAsync(string actorName, long index, object @event)
+        {
+            var item = new Event(actorName, index, @event);
+
+            await ExecuteNonQueryAsync(
+                _sqlSaveEvents,
+                CreateParameter("Id", NVarChar, item.Id),
+                CreateParameter("ActorName", NVarChar, item.ActorName),
+                CreateParameter("EventIndex", BigInt, item.EventIndex),
+                CreateParameter("EventData", NVarChar, JsonConvert.SerializeObject(item.EventData, AllTypeSettings))
+            );
+
+            return index++;
+        }
+
+        public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
+        {
+            var item = new Snapshot(actorName, index, snapshot);
+
+            return ExecuteNonQueryAsync(
+                _sqlSaveSnapshot,
+                CreateParameter("Id", NVarChar, item.Id),
+                CreateParameter("ActorName", NVarChar, item.ActorName),
+                CreateParameter("SnapshotIndex", BigInt, item.SnapshotIndex),
+                CreateParameter(
+                    "SnapshotData", NVarChar, JsonConvert.SerializeObject(item.SnapshotData, AllTypeSettings)
+                )
+            );
+        }
+
+        private void CreateSnapshotTable()
         {
             var sql = $@"
             IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '{_tableSchema}' AND TABLE_NAME = '{_tableSnapshots}')
@@ -71,10 +177,10 @@ namespace Proto.Persistence.SqlServer
             END
             ";
 
-            await ExecuteNonQueryAsync(sql);
+            ExecuteNonQuery(sql);
         }
 
-        private async Task AutoCreateEventTableInDatabaseAsync()
+        private void CreateEventTable()
         {
             var sql = $@"
             IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '{_tableSchema}' AND TABLE_NAME = '{_tableEvents}')
@@ -92,222 +198,44 @@ namespace Proto.Persistence.SqlServer
             END
             ";
 
-            await ExecuteNonQueryAsync(sql);
+            ExecuteNonQuery(sql);
         }
-        
-        public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
-        {
-            var sql = $@"DELETE FROM {_tableSchema}.{_tableEvents} WHERE ActorName = @ActorName AND EventIndex <= @EventIndex";
 
-            var parameters = new List<SqlParameter>
+        private static SqlParameter CreateParameter(string name, SqlDbType type, object value)
+            => new SqlParameter(name, type)
             {
-                new SqlParameter()
-                {
-                    ParameterName = "ActorName",
-                    SqlDbType = System.Data.SqlDbType.NVarChar,
-                    SqlValue = actorName
-                },
-                new SqlParameter()
-                {
-                    ParameterName = "EventIndex",
-                    SqlDbType = System.Data.SqlDbType.BigInt,
-                    SqlValue = inclusiveToIndex
-                }
+                SqlValue = value
             };
 
-            await ExecuteNonQueryAsync(sql, parameters);
-        }
-
-        public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
+        private async Task ExecuteNonQueryAsync(string sql, params SqlParameter[] parameters)
         {
-            var sql = $@"DELETE FROM {_tableSchema}.{_tableSnapshots} WHERE ActorName = @ActorName AND SnapshotIndex <= @SnapshotIndex";
+            using var connection = new SqlConnection(_connectionString);
 
-            var parameters = new List<SqlParameter>
+            using var command = new SqlCommand(sql, connection);
+
+            await connection.OpenAsync();
+
+            using var tx = connection.BeginTransaction();
+
+            command.Transaction = tx;
+
+            if (parameters.Length > 0)
             {
-                new SqlParameter()
-                {
-                    ParameterName = "ActorName",
-                    SqlDbType = System.Data.SqlDbType.NVarChar,
-                    SqlValue = actorName
-                },
-                new SqlParameter()
-                {
-                    ParameterName = "SnapshotIndex",
-                    SqlDbType = System.Data.SqlDbType.BigInt,
-                    SqlValue = inclusiveToIndex
-                }
-            };
-
-            await ExecuteNonQueryAsync(sql, parameters);
-        }
-
-        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
-        {
-            var sql = GenerateGetEventsSqlString();
-            var sqlParameters = GenerateGetEventsParameters(actorName, indexStart, indexEnd);
-
-            using (var connection = new SqlConnection(_connectionString))
-            using (var command = new SqlCommand(sql, connection))
-            {
-                await connection.OpenAsync();
-                foreach (var sqlParameter in sqlParameters)
-                {
-                    command.Parameters.Add(sqlParameter);
-                }
-
-                long lastIndex = -1;
-
-                var eventReader = await command.ExecuteReaderAsync();
-
-                while (await eventReader.ReadAsync())
-                {
-                    lastIndex = (long)eventReader["EventIndex"];
-                    callback(JsonConvert.DeserializeObject<object>(eventReader["EventData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
-                }
-
-                return lastIndex;
-            }
-        }
-
-        private string GenerateGetEventsSqlString()
-        {
-            return $@"SELECT EventIndex, EventData FROM {_tableSchema}.{_tableEvents} " +
-                      "WHERE ActorName = @ActorName " +
-                      "AND EventIndex >= @IndexStart " +
-                      "AND EventIndex <= @IndexEnd " +
-                      "ORDER BY EventIndex ASC";
-        }
-
-        private List<SqlParameter> GenerateGetEventsParameters(string actorName, long indexStart, long indexEnd)
-        {
-            return new List<SqlParameter>
-            {
-                new SqlParameter()
-                {
-                    ParameterName = "ActorName",
-                    SqlDbType = System.Data.SqlDbType.NVarChar,
-                    SqlValue = actorName
-                },
-                new SqlParameter()
-                {
-                    ParameterName = "IndexStart",
-                    SqlDbType = System.Data.SqlDbType.BigInt,
-                    SqlValue = indexStart
-                },
-                new SqlParameter()
-                {
-                    ParameterName = "IndexEnd",
-                    SqlDbType = System.Data.SqlDbType.BigInt,
-                    SqlValue = indexEnd
-                }
-            };
-        }
-
-        public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
-        {
-            long snapshotIndex = 0;
-            object snapshotData = null;
-
-            var sql = $@"SELECT TOP 1 SnapshotIndex, SnapshotData FROM {_tableSchema}.{_tableSnapshots} WHERE ActorName = @ActorName ORDER BY SnapshotIndex DESC";
-
-            using (var connection = new SqlConnection(_connectionString))
-            using (var command = new SqlCommand(sql, connection))
-            {
-                await connection.OpenAsync();
-
-                command.Parameters.Add(new SqlParameter()
-                {
-                    ParameterName = "ActorName",
-                    SqlDbType = System.Data.SqlDbType.NVarChar,
-                    SqlValue = actorName
-                });
-
-                var snapshotReader = await command.ExecuteReaderAsync();
-
-                while (await snapshotReader.ReadAsync())
-                {
-                    snapshotIndex = Convert.ToInt64(snapshotReader["SnapshotIndex"]);
-                    snapshotData = JsonConvert.DeserializeObject<object>(snapshotReader["SnapshotData"].ToString(), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-                }
+                command.Parameters.AddRange(parameters);
             }
 
-            return (snapshotData, snapshotIndex);
+            await command.ExecuteNonQueryAsync();
+
+            tx.Commit();
         }
 
-        public async Task<long> PersistEventAsync(string actorName, long index, object @event)
+        private void ExecuteNonQuery(string sql)
         {
-            var item = new Event(actorName, index, @event);
+            using var connection = new SqlConnection(_connectionString);
 
-            var sql = $@"INSERT INTO {_tableSchema}.{_tableEvents} (Id, ActorName, EventIndex, EventData) VALUES (@Id, @ActorName, @EventIndex, @EventData)";
+            using var command = new SqlCommand(sql, connection);
 
-            var parameters = new List<SqlParameter>
-            {
-                new SqlParameter()
-                {
-                    ParameterName = "Id",
-                    SqlDbType = System.Data.SqlDbType.NVarChar,
-                    SqlValue = item.Id
-                },
-                new SqlParameter()
-                {
-                    ParameterName = "ActorName",
-                    SqlDbType = System.Data.SqlDbType.NVarChar,
-                    SqlValue = item.ActorName
-                },
-                new SqlParameter()
-                {
-                    ParameterName = "EventIndex",
-                    SqlDbType = System.Data.SqlDbType.BigInt,
-                    SqlValue = item.EventIndex
-                },
-                new SqlParameter()
-                {
-                    ParameterName = "EventData",
-                    SqlDbType = System.Data.SqlDbType.NVarChar,
-                    SqlValue = JsonConvert.SerializeObject(item.EventData, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All })
-                }
-            };
-
-            await ExecuteNonQueryAsync(sql, parameters);
-
-            return index++;
-        }
-
-        public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)
-        {
-            var item = new Snapshot(actorName, index, snapshot);
-
-            var sql = $@"INSERT INTO {_tableSchema}.{_tableSnapshots} (Id, ActorName, SnapshotIndex, SnapshotData) VALUES (@Id, @ActorName, @SnapshotIndex, @SnapshotData)";
-
-            var parameters = new List<SqlParameter>
-            {
-                new SqlParameter()
-                {
-                    ParameterName = "Id",
-                    SqlDbType = System.Data.SqlDbType.NVarChar,
-                    SqlValue = item.Id
-                },
-                new SqlParameter()
-                {
-                    ParameterName = "ActorName",
-                    SqlDbType = System.Data.SqlDbType.NVarChar,
-                    SqlValue = item.ActorName
-                },
-                new SqlParameter()
-                {
-                    ParameterName = "SnapshotIndex",
-                    SqlDbType = System.Data.SqlDbType.BigInt,
-                    SqlValue = item.SnapshotIndex
-                },
-                new SqlParameter()
-                {
-                    ParameterName = "SnapshotData",
-                    SqlDbType = System.Data.SqlDbType.NVarChar,
-                    SqlValue = JsonConvert.SerializeObject(item.SnapshotData, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All })
-                }
-            };
-
-            await ExecuteNonQueryAsync(sql, parameters);
+            command.ExecuteNonQuery();
         }
     }
 }

@@ -6,113 +6,119 @@
 
 using System;
 using System.Collections.Generic;
-using System.Security.Authentication.ExtendedProtection;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using Microsoft.Extensions.Logging;
-using Proto.Mailbox;
-
 
 namespace Proto.Remote
 {
     public class EndpointWriter : IActor
     {
-        private static readonly ILogger _logger = Log.CreateLogger<EndpointWriter>();
+        private static readonly ILogger Logger = Log.CreateLogger<EndpointWriter>();
+
         private int _serializerId;
         private readonly string _address;
         private readonly CallOptions _callOptions;
         private readonly ChannelCredentials _channelCredentials;
         private readonly IEnumerable<ChannelOption> _channelOptions;
-        
+
         private Channel _channel;
         private Remoting.RemotingClient _client;
         private AsyncDuplexStreamingCall<MessageBatch, Unit> _stream;
         private IClientStreamWriter<MessageBatch> _streamWriter;
-        
 
-        public EndpointWriter(string address, IEnumerable<ChannelOption> channelOptions, CallOptions callOptions, ChannelCredentials channelCredentials)
+        public EndpointWriter(
+            string address, IEnumerable<ChannelOption> channelOptions, CallOptions callOptions, ChannelCredentials channelCredentials
+        )
         {
             _address = address;
             _channelOptions = channelOptions;
             _callOptions = callOptions;
             _channelCredentials = channelCredentials;
-            
-           
         }
 
-        public async Task ReceiveAsync(IContext context)
+        public Task ReceiveAsync(IContext context)
         {
-            
             switch (context.Message)
             {
                 case Started _:
-                    _logger.LogDebug("Starting Endpoint Writer");
-                    await StartedAsync(context);
-                    break;
+                    Logger.LogDebug("Starting Endpoint Writer");
+                    return StartedAsync();
                 case Stopped _:
-                    await StoppedAsync();
-                    _logger.LogDebug($"Stopped EndpointWriter at {_address}");
-                    break;
+                    return StoppedAsync().ContinueWith(_ => Logger.LogDebug("Stopped EndpointWriter at {Address}", _address));
                 case Restarting _:
-                    await RestartingAsync();
-                    break;
+                    return RestartingAsync();
                 case EndpointTerminatedEvent _:
                     context.Stop(context.Self);
-                    break;
+                    return Actor.Done;
                 case IEnumerable<RemoteDeliver> m:
-                    
-                    var envelopes = new List<MessageEnvelope>();
-                    var typeNames = new Dictionary<string,int>();
-                    var targetNames = new Dictionary<string,int>();
-                    var typeNameList = new List<string>();
-                    var targetNameList = new List<string>();
-                    foreach(var rd in m)
+                    return Deliver(m);
+                default:
+                    return Actor.Done;
+            }
+
+            Task Deliver(IEnumerable<RemoteDeliver> m)
+            {
+                var envelopes = new List<MessageEnvelope>();
+                var typeNames = new Dictionary<string, int>();
+                var targetNames = new Dictionary<string, int>();
+                var typeNameList = new List<string>();
+                var targetNameList = new List<string>();
+
+                foreach (var rd in m)
+                {
+                    var targetName = rd.Target.Id;
+                    var serializerId = rd.SerializerId == -1 ? _serializerId : rd.SerializerId;
+
+                    if (!targetNames.TryGetValue(targetName, out var targetId))
                     {
-                        var targetName = rd.Target.Id;
-                        var serializerId = rd.SerializerId == -1 ? _serializerId : rd.SerializerId;
-
-                        if (!targetNames.TryGetValue(targetName, out var targetId))
-                        {
-                            targetId = targetNames[targetName] = targetNames.Count;
-                            targetNameList.Add(targetName);
-                        }
-
-                        var typeName = Serialization.GetTypeName(rd.Message, serializerId);
-                        if (!typeNames.TryGetValue(typeName, out var typeId))
-                        {
-                            typeId = typeNames[typeName] = typeNames.Count;
-                            typeNameList.Add(typeName);
-                        }
-
-                        MessageHeader header = null;
-                        if (rd.Header != null && rd.Header.Count > 0)
-                        {
-                            header = new MessageHeader();
-                            header.HeaderData.Add(rd.Header.ToDictionary());
-                        }
-
-                        var bytes = Serialization.Serialize(rd.Message, serializerId);
-                        var envelope = new MessageEnvelope
-                        {
-                            MessageData = bytes,
-                            Sender = rd.Sender,
-                            Target = targetId,
-                            TypeId = typeId,
-                            SerializerId = serializerId,
-                            MessageHeader = header,
-                        };
-
-                        envelopes.Add(envelope);
+                        targetId = targetNames[targetName] = targetNames.Count;
+                        targetNameList.Add(targetName);
                     }
-                    
-                    var batch = new MessageBatch();
-                    batch.TargetNames.AddRange(targetNameList);
-                    batch.TypeNames.AddRange(typeNameList);
-                    batch.Envelopes.AddRange(envelopes);
-                    _logger.LogDebug($"EndpointWriter sending {envelopes.Count} Envelopes for {_address} while channel status is {_channel?.State}");        
-                    await SendEnvelopesAsync(batch, context);
-                    break;
+
+                    var typeName = Serialization.GetTypeName(rd.Message, serializerId);
+
+                    if (!typeNames.TryGetValue(typeName, out var typeId))
+                    {
+                        typeId = typeNames[typeName] = typeNames.Count;
+                        typeNameList.Add(typeName);
+                    }
+
+                    MessageHeader header = null;
+
+                    if (rd.Header != null && rd.Header.Count > 0)
+                    {
+                        header = new MessageHeader();
+                        header.HeaderData.Add(rd.Header.ToDictionary());
+                    }
+
+                    var bytes = Serialization.Serialize(rd.Message, serializerId);
+
+                    var envelope = new MessageEnvelope
+                    {
+                        MessageData = bytes,
+                        Sender = rd.Sender,
+                        Target = targetId,
+                        TypeId = typeId,
+                        SerializerId = serializerId,
+                        MessageHeader = header,
+                    };
+
+                    envelopes.Add(envelope);
+                }
+
+                var batch = new MessageBatch();
+                batch.TargetNames.AddRange(targetNameList);
+                batch.TypeNames.AddRange(typeNameList);
+                batch.Envelopes.AddRange(envelopes);
+
+                Logger.LogDebug(
+                    "EndpointWriter sending {Count} envelopes for {Address} while channel status is {State}",
+                    envelopes.Count, _address, _channel?.State
+                );
+
+                return SendEnvelopesAsync(batch, context);
             }
         }
 
@@ -120,30 +126,33 @@ namespace Proto.Remote
         {
             if (_streamWriter == null)
             {
-                
-                _logger.LogError($"gRPC Failed to send to address {_address}, reason No Connection available");
+                Logger.LogError("gRPC Failed to send to address {Address}, reason No Connection available", _address);
                 return;
+
+                // throw new EndpointWriterException("gRPC Failed to send, reason No Connection available");
             }
+            
             try
             {
-                _logger.LogDebug($"Writing batch to {_address}");
+                Logger.LogDebug("Writing batch to {Address}", _address);
+
                 await _streamWriter.WriteAsync(batch);
             }
             catch (Exception x)
             {
                 context.Stash();
-                _logger.LogError($"gRPC Failed to send to address {_address}, reason {x.Message}");
+                Logger.LogError("gRPC Failed to send to address {Address}, reason {Message}", _address, x.Message);
                 throw;
             }
         }
 
         //shutdown channel before restarting
         private Task RestartingAsync() => ShutDownChannel();
-       
+
         //shutdown channel before stopping
         private Task StoppedAsync() => ShutDownChannel();
-        
-        private Task ShutDownChannel() 
+
+        private Task ShutDownChannel()
         {
             if (_channel != null && _channel.State != ChannelState.Shutdown)
             {
@@ -153,42 +162,43 @@ namespace Proto.Remote
             return Actor.Done;
         }
 
-        private async Task StartedAsync(IContext ctx)
+        private async Task StartedAsync()
         {
-            _logger.LogDebug($"Connecting to address {_address}");
-            
-            
+            Logger.LogDebug("Connecting to address {Address}", _address);
+
             _channel = new Channel(_address, _channelCredentials, _channelOptions);
             _client = new Remoting.RemotingClient(_channel);
-            
-            _logger.LogDebug($"created channel and client for address {_address}");
+
+            Logger.LogDebug("Created channel and client for address {Address}", _address);
 
             var res = await _client.ConnectAsync(new ConnectRequest());
             _serializerId = res.DefaultSerializerId;
             _stream = _client.Receive(_callOptions);
             _streamWriter = _stream.RequestStream;
-            
-            _logger.LogDebug($"Connected client for address {_address}");
-           
-            
-            var _ = Task.Run(async () =>
-            {
-                try
+
+            Logger.LogDebug("Connected client for address {Address}", _address);
+
+            var _ = Task.Run(
+                async () =>
                 {
-                    await _stream.ResponseStream.ForEachAsync(i => Actor.Done);
-                }
-                catch (Exception x)
-                {
-                    _logger.LogError($"Lost connection to address {_address}, reason {x.Message}");
-                    var terminated = new EndpointTerminatedEvent
+                    try
                     {
-                        Address = _address
-                    };
-                    Actor.EventStream.Publish(terminated);
+                        await _stream.ResponseStream.ForEachAsync(i => Actor.Done);
+                    }
+                    catch (Exception x)
+                    {
+                        Logger.LogError("Lost connection to address {Address}, reason {Message}", _address, x.Message);
+
+                        var terminated = new EndpointTerminatedEvent
+                        {
+                            Address = _address
+                        };
+                        Actor.EventStream.Publish(terminated);
+                    }
                 }
-            });
-            
-            _logger.LogDebug($"created reader for address {_address}");
+            );
+
+            Logger.LogDebug("Created reader for address {Address}", _address);
 
             var connected = new EndpointConnectedEvent
             {
@@ -196,7 +206,12 @@ namespace Proto.Remote
             };
             Actor.EventStream.Publish(connected);
 
-            _logger.LogDebug($"Connected to address {_address}");
+            Logger.LogDebug("Connected to address {Address}", _address);
         }
+    }
+
+    class EndpointWriterException : Exception
+    {
+        public EndpointWriterException(string message) : base(message) { }
     }
 }

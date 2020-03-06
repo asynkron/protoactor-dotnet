@@ -5,7 +5,7 @@
 // -----------------------------------------------------------------------
 namespace Proto.Router.Routers
 {
-    internal class RandomPoolRouterConfig : PoolRouterConfig
+    class RandomPoolRouterConfig : PoolRouterConfig
     {
         private readonly int? _seed;
 

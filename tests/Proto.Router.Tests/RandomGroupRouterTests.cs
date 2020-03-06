@@ -15,7 +15,7 @@ namespace Proto.Router.Tests
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
         [Fact]
-        public async void RandomGroupRouter_RouteesReceiveMessagesInRandomOrder()
+        public async Task RandomGroupRouter_RouteesReceiveMessagesInRandomOrder()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
@@ -29,7 +29,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void RandomGroupRouter_NewlyAddedRouteesReceiveMessages()
+        public async Task RandomGroupRouter_NewlyAddedRouteesReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
             var routee4 = Context.Spawn(MyActorProps);
@@ -51,7 +51,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void RandomGroupRouter_RemovedRouteesDoNotReceiveMessages()
+        public async Task RandomGroupRouter_RemovedRouteesDoNotReceiveMessages()
         {
             var (router, routee1, _, _) = CreateRouterWith3Routees();
             Context.Send(router, new RouterRemoveRoutee
@@ -66,7 +66,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void RandomGroupRouter_RouteesCanBeRemoved()
+        public async Task RandomGroupRouter_RouteesCanBeRemoved()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 
@@ -79,7 +79,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void RandomGroupRouter_RouteesCanBeAdded()
+        public async Task RandomGroupRouter_RouteesCanBeAdded()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
             var routee4 = Context.Spawn(MyActorProps);
@@ -93,7 +93,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void RandomGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
+        public async Task RandomGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees();
 

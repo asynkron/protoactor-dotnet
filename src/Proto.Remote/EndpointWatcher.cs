@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -12,8 +13,9 @@ namespace Proto.Remote
 {
     public class EndpointWatcher : IActor
     {
+        private static readonly ILogger Logger = Log.CreateLogger<EndpointWatcher>();
+
         private readonly Behavior _behavior;
-        private readonly ILogger _logger = Log.CreateLogger<EndpointWatcher>();
         private readonly Dictionary<string, HashSet<PID>> _watched = new Dictionary<string, HashSet<PID>>();
         private readonly string _address; //for logging
 
@@ -25,7 +27,7 @@ namespace Proto.Remote
 
         public Task ReceiveAsync(IContext context) => _behavior.ReceiveAsync(context);
 
-        public Task ConnectedAsync(IContext context)
+        private Task ConnectedAsync(IContext context)
         {
             switch (context.Message)
             {
@@ -34,6 +36,7 @@ namespace Proto.Remote
                     if (_watched.TryGetValue(msg.Watcher.Id, out var pidSet))
                     {
                         pidSet.Remove(msg.Watchee);
+
                         if (pidSet.Count == 0)
                         {
                             _watched.Remove(msg.Watcher.Id);
@@ -41,36 +44,33 @@ namespace Proto.Remote
                     }
 
                     //create a terminated event for the Watched actor
-                    var t = new Terminated
-                    {
-                        Who = msg.Watchee
-                    };
+                    var t = new Terminated {Who = msg.Watchee};
+
                     //send the address Terminated event to the Watcher
                     msg.Watcher.SendSystemMessage(t);
                     break;
                 }
                 case EndpointTerminatedEvent _:
                 {
-                    _logger.LogDebug($"Handle terminated address {_address}");
+                    Logger.LogDebug("Handle terminated address {Address}", _address);
 
                     foreach (var (id, pidSet) in _watched)
                     {
                         var watcherPid = new PID(ProcessRegistry.Instance.Address, id);
                         var watcherRef = ProcessRegistry.Instance.Get(watcherPid);
-                        if (watcherRef != DeadLetterProcess.Instance)
-                        {
-                            foreach (var pid in pidSet)
-                            {
-                                //create a terminated event for the Watched actor
-                                var t = new Terminated
-                                {
-                                    Who = pid,
-                                    AddressTerminated = true
-                                };
 
-                                //send the address Terminated event to the Watcher
-                                watcherPid.SendSystemMessage(t);
+                        if (watcherRef == DeadLetterProcess.Instance) continue;
+
+                        foreach (var t in pidSet.Select(
+                            pid => new Terminated
+                            {
+                                Who = pid,
+                                AddressTerminated = true
                             }
+                        ))
+                        {
+                            //send the address Terminated event to the Watcher
+                            watcherPid.SendSystemMessage(t);
                         }
                     }
 
@@ -84,6 +84,7 @@ namespace Proto.Remote
                     if (_watched.TryGetValue(msg.Watcher.Id, out var pidSet))
                     {
                         pidSet.Remove(msg.Watchee);
+
                         if (pidSet.Count == 0)
                         {
                             _watched.Remove(msg.Watcher.Id);
@@ -111,7 +112,7 @@ namespace Proto.Remote
                 }
                 case Stopped _:
                 {
-                    _logger.LogDebug($"Stopped EndpointWatcher at {_address}");
+                    Logger.LogDebug("Stopped EndpointWatcher at {Address}", _address);
                     break;
                 }
             }
@@ -119,22 +120,24 @@ namespace Proto.Remote
             return Actor.Done;
         }
 
-        public Task TerminatedAsync(IContext context)
+        private Task TerminatedAsync(IContext context)
         {
             switch (context.Message)
             {
                 case RemoteWatch msg:
                 {
-                    msg.Watcher.SendSystemMessage(new Terminated
-                    {
-                        AddressTerminated = true,
-                        Who = msg.Watchee
-                    });
+                    msg.Watcher.SendSystemMessage(
+                        new Terminated
+                        {
+                            AddressTerminated = true,
+                            Who = msg.Watchee
+                        }
+                    );
                     break;
                 }
                 case EndpointConnectedEvent _:
                 {
-                    _logger.LogDebug($"Handle restart address {_address}");
+                    Logger.LogDebug("Handle restart address {Address}", _address);
                     _behavior.Become(ConnectedAsync);
                     break;
                 }

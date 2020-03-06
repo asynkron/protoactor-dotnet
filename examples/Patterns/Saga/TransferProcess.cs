@@ -88,7 +88,7 @@ namespace Saga
                 case Stopped _ when !_processCompleted:
                     await _persistence.PersistEventAsync(new TransferFailed($"Unknown. Transfer Process crashed"));
                     await _persistence.PersistEventAsync(new EscalateTransfer($"Unknown failure. Transfer Process crashed"));
-                    context.Parent.Tell(new UnknownResult(context.Self));
+                    context.Send(context.Parent, new UnknownResult(context.Self));
                     return;
                 case Terminated _ when _restarting || _stopping:
                     // if the TransferProcess itself is restarting or stopping due to failure, we will receive a
@@ -134,7 +134,7 @@ namespace Saga
                 case Refused _:
                     // the debit has been refused, and should not be retried 
                     await _persistence.PersistEventAsync(new TransferFailed($"Debit refused"));
-                    context.Parent.Tell(new FailedButConsistentResult(context.Self));
+                    context.Send(context.Parent, new FailedButConsistentResult(context.Self));
                     StopAll(context);
                     break;
                 case Terminated _:
@@ -195,14 +195,14 @@ namespace Saga
                 case OK _:
                     await _persistence.PersistEventAsync(new DebitRolledBack());
                     await _persistence.PersistEventAsync(new TransferFailed($"Unable to rollback debit to {_to.Id}"));
-                    context.Parent.Tell(new FailedButConsistentResult(context.Self));
+                    context.Send(context.Parent, new FailedAndInconsistent(context.Self));
                     StopAll(context);
                     break;
                 case Refused _: // in between making the credit and debit, the _from account has started refusing!! :O
                 case Terminated _:
                     await _persistence.PersistEventAsync(new TransferFailed($"Unable to rollback process. {_from.Id} is owed {_amount}"));
                     await _persistence.PersistEventAsync(new EscalateTransfer($"{_from.Id} is owed {_amount}"));
-                    context.Parent.Tell(new FailedAndInconsistent(context.Self));
+                    context.Send(context.Parent, new FailedAndInconsistent(context.Self));
                     StopAll(context);
                     break;
             }

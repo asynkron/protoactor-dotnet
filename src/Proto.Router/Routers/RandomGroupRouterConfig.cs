@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace Proto.Router.Routers
 {
-    internal class RandomGroupRouterConfig : GroupRouterConfig
+    class RandomGroupRouterConfig : GroupRouterConfig
     {
         private readonly int? _seed;
 
@@ -23,9 +23,6 @@ namespace Proto.Router.Routers
             Routees = new HashSet<PID>(routees);
         }
 
-        public override RouterState CreateRouterState()
-        {
-            return new RandomRouterState(_seed);
-        }
+        public override RouterState CreateRouterState() => new RandomRouterState(_seed);
     }
 }

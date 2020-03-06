@@ -10,10 +10,7 @@ namespace Proto.Remote
     {
         private readonly PID _pid;
 
-        public RemoteProcess(PID pid)
-        {
-            _pid = pid;
-        }
+        public RemoteProcess(PID pid) => _pid = pid;
 
         protected override void SendUserMessage(PID _, object message) => Send(message);
 
@@ -21,19 +18,20 @@ namespace Proto.Remote
 
         private void Send(object msg)
         {
-            if (msg is Watch w)
-            {
-                var rw = new RemoteWatch(w.Watcher, _pid);
-                EndpointManager.RemoteWatch(rw);
-            }
-            else if (msg is Unwatch uw)
-            {
-                var ruw = new RemoteUnwatch(uw.Watcher, _pid);
-                EndpointManager.RemoteUnwatch(ruw);
-            }
-            else
-            {
-                Remote.SendMessage(_pid, msg,-1);
+            switch (msg) {
+                case Watch w: {
+                    var rw = new RemoteWatch(w.Watcher, _pid);
+                    EndpointManager.RemoteWatch(rw);
+                    break;
+                }
+                case Unwatch uw: {
+                    var ruw = new RemoteUnwatch(uw.Watcher, _pid);
+                    EndpointManager.RemoteUnwatch(ruw);
+                    break;
+                }
+                default: 
+                    Remote.SendMessage(_pid, msg,-1);
+                    break;
             }
         }
     }

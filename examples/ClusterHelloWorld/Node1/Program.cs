@@ -5,77 +5,71 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Diagnostics;
-using System.Threading;
+using System.Threading.Tasks;
 using Messages;
+using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
-using Proto.Cluster.SingleRemoteInstance;
 using Proto.Remote;
-using Process = System.Diagnostics.Process;
 using ProtosReflection = Messages.ProtosReflection;
 
-class Program
+namespace Node1
 {
-    static void Main(string[] args)
+    static class Program
     {
-        var context = new RootContext();
-        Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-        var parsedArgs = parseArgs(args);
-        // SINGLE REMOTE INSTANCE
-        Cluster.Start("MyCluster", parsedArgs.ServerName, 12002, new SingleRemoteInstanceProvider("127.0.0.1", 12000));
+        static async Task Main(string[] args)
+        {
+            var log = LoggerFactory.Create(x => x.AddConsole().SetMinimumLevel(LogLevel.Debug));
+            Log.SetLoggerFactory(log);
 
-        // CONSUL 
-        //if(parsedArgs.StartConsul)
-        //{
-        //    StartConsulDevMode();
-        //}
-        //Cluster.Start("MyCluster", parsedArgs.ServerName, 12001, new ConsulProvider(new ConsulProviderOptions(), c => c.Address = new Uri("http://" + parsedArgs.ConsulUrl + ":8500/")));
+            Console.WriteLine("Starting Node1");
 
+            var context = new RootContext();
+            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+            var parsedArgs = ParseArgs(args);
+            // SINGLE REMOTE INSTANCE
+            // Cluster.Start("MyCluster", parsedArgs.ServerName, 12001, new SingleRemoteInstanceProvider("localhost", 12000));
 
-        var (pid, sc) = Cluster.GetAsync("TheName", "HelloKind").Result;
-        while (sc != ResponseStatusCode.OK)
-            (pid, sc) = Cluster.GetAsync("TheName", "HelloKind").Result;
-        var res = context.RequestAsync<HelloResponse>(pid, new HelloRequest()).Result;
-        Console.WriteLine(res.Message);
-        Thread.Sleep(Timeout.Infinite);
-        Console.WriteLine("Shutting Down...");
-        Cluster.Shutdown();
-    }
+            // CONSUL 
+            await Cluster.Start(
+                "MyCluster", "node1", 12001, new ConsulProvider(new ConsulProviderOptions(), c => c.Address = new Uri("http://consul:8500/"))
+            );
 
-    private static void StartConsulDevMode()
-    {
-        Console.WriteLine("Consul - Starting");
-        ProcessStartInfo psi =
-            new ProcessStartInfo(@"..\..\..\dependencies\consul",
-                "agent -server -bootstrap -data-dir /tmp/consul -bind=127.0.0.1 -ui")
+            var (pid, sc) = await Cluster.GetAsync("TheName", "HelloKind");
+
+            while (sc != ResponseStatusCode.OK)
+                (pid, sc) = await Cluster.GetAsync("TheName", "HelloKind");
+
+            var i = 10000;
+            while (i-- > 0)
             {
-                CreateNoWindow = true,
-            };
-        Process.Start(psi);
-        Console.WriteLine("Consul - Started");
-    }
+                var res = await context.RequestAsync<HelloResponse>(pid, new HelloRequest());
+                Console.WriteLine(res.Message);
+                await Task.Delay(500);
+            }
+            
+            await Task.Delay(-1);
+            Console.WriteLine("Shutting Down...");
 
-    private static Node1Config parseArgs(string[] args)
-    {
-        if (args.Length > 0)
-        {
-            return new Node1Config(args[0], args[1], bool.Parse(args[2]));
+            await Cluster.Shutdown();
         }
-        return new Node1Config("127.0.0.1", "127.0.0.1", true);
-    }
 
-    class Node1Config
-    {
-        public string ServerName { get; }
-        public string ConsulUrl { get; }
-        public bool StartConsul { get; }
-        public Node1Config(string serverName, string consulUrl, bool startConsul)
+        private static Node1Config ParseArgs(string[] args)
+            => args.Length > 0 ? new Node1Config(args[0], args[1], bool.Parse(args[2])) : new Node1Config("localhost", "localhost", true);
+
+        class Node1Config
         {
-            ServerName = serverName;
-            ConsulUrl = consulUrl;
-            StartConsul = startConsul;
+            public string ServerName { get; }
+            public string ConsulUrl { get; }
+            public bool StartConsul { get; }
+
+            public Node1Config(string serverName, string consulUrl, bool startConsul)
+            {
+                ServerName = serverName;
+                ConsulUrl = consulUrl;
+                StartConsul = startConsul;
+            }
         }
     }
 }

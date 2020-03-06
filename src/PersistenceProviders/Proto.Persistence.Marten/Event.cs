@@ -1,6 +1,6 @@
 ﻿namespace Proto.Persistence.Marten
 {
-    internal class Event
+    class Event
     {
         public Event(string actorName, long index, object data)
         {
