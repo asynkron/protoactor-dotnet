@@ -22,10 +22,7 @@ namespace Proto
     {
         private long _isDead;
 
-        public ActorProcess(IMailbox mailbox)
-        {
-            Mailbox = mailbox;
-        }
+        public ActorProcess(IMailbox mailbox) => Mailbox = mailbox;
 
         public IMailbox Mailbox { get; }
 
@@ -35,15 +32,9 @@ namespace Proto
             private set => Interlocked.Exchange(ref _isDead, value ? 1 : 0);
         }
 
-        protected internal override void SendUserMessage(PID pid, object message)
-        {
-            Mailbox.PostUserMessage(message);
-        }
+        protected internal override void SendUserMessage(PID pid, object message) => Mailbox.PostUserMessage(message);
 
-        protected internal override void SendSystemMessage(PID pid, object message)
-        {
-            Mailbox.PostSystemMessage(message);
-        }
+        protected internal override void SendSystemMessage(PID pid, object message) => Mailbox.PostSystemMessage(message);
 
         public override void Stop(PID pid)
         {

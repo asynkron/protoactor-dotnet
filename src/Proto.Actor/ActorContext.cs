@@ -309,7 +309,7 @@ namespace Proto
             if (_state == ContextState.Stopped)
             {
                 //already stopped, send message to deadletter process
-                DeadLetterProcess.Instance.SendUserMessage(this.Self, msg);
+                DeadLetterProcess.Instance.SendUserMessage(Self, msg);
                 return Done;
             }
 

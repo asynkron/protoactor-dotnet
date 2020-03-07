@@ -29,7 +29,8 @@ namespace Proto.Remote
                     EndpointManager.RemoteUnwatch(ruw);
                     break;
                 }
-                default: Remote.SendMessage(_pid, msg,-1);
+                default: 
+                    Remote.SendMessage(_pid, msg,-1);
                     break;
             }
         }

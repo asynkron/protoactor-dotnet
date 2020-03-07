@@ -5,8 +5,9 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Threading;
+using System.Threading.Tasks;
 using Messages;
+using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
@@ -18,51 +19,54 @@ namespace Node2
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
+            var log = LoggerFactory.Create(x => x.AddConsole().SetMinimumLevel(LogLevel.Debug));
+            Log.SetLoggerFactory(log);
+            Console.WriteLine("Starting Node2");
+
             Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-            var props = Props.FromFunc(ctx =>
-            {
-                switch (ctx.Message)
+
+            var props = Props.FromFunc(
+                ctx =>
                 {
-                    case HelloRequest _:
-                        ctx.Respond(new HelloResponse
-                        {
-                            Message = "Hello from node 2"
-                        });
-                        break;
+                    switch (ctx.Message)
+                    {
+                        case HelloRequest _:
+                            ctx.Respond(new HelloResponse {Message = "Hello from node 2"});
+                            break;
+                    }
+
+                    return Actor.Done;
                 }
-                return Actor.Done;
-            });
+            );
 
             var parsedArgs = ParseArgs(args);
             Remote.RegisterKnownKind("HelloKind", props);
 
             // SINGLE REMOTE INSTANCE
-            Cluster.Start("MyCluster", parsedArgs.ServerName, 12000, new SingleRemoteInstanceProvider(parsedArgs.ServerName, 12000));
+            // Cluster.Start("MyCluster", parsedArgs.ServerName, 12000, new SingleRemoteInstanceProvider(parsedArgs.ServerName, 12001));
 
             // CONSUL 
-            //Cluster.Start("MyCluster", parsedArgs.ServerName, 12000, new ConsulProvider(new ConsulProviderOptions(), c => c.Address = new Uri("http://" + parsedArgs.ConsulUrl + ":8500/")));
+            await Cluster.Start(
+                "MyCluster", "node2", 12000, new ConsulProvider(new ConsulProviderOptions(), c => c.Address = new Uri("http://consul:8500/"))
+            );
 
-            Thread.Sleep(Timeout.Infinite);
+            await Task.Delay(-1);
+
             Console.WriteLine("Shutting Down...");
-            Cluster.Shutdown();
+            await Cluster.Shutdown();
         }
 
         private static Node2Config ParseArgs(string[] args)
-        {
-            if(args.Length > 0) 
-            {
-                return new Node2Config(args[0], args[1]);
-            }
-            return new Node2Config("127.0.0.1", "127.0.0.1");
-        }
+            => args.Length > 0 ? new Node2Config(args[0], args[1]) : new Node2Config("localhost", "localhost");
 
         class Node2Config
         {
             public string ServerName { get; }
             public string ConsulUrl { get; }
-            public Node2Config(string serverName, string consulUrl) 
+
+            public Node2Config(string serverName, string consulUrl)
             {
                 ServerName = serverName;
                 ConsulUrl = consulUrl;

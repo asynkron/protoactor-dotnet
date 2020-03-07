@@ -15,27 +15,22 @@ namespace Proto
         private readonly CancellationTokenSource _cts;
         private readonly TaskCompletionSource<T> _tcs;
 
-        internal FutureProcess(TimeSpan timeout) : this(new CancellationTokenSource(timeout))
-        {
-        }
+        internal FutureProcess(TimeSpan timeout) : this(new CancellationTokenSource(timeout)) { }
 
         internal FutureProcess(CancellationToken cancellationToken) : this(
-            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
-        {
-        }
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)
+        ) { }
 
-        internal FutureProcess() : this(null)
-        {
-        }
+        internal FutureProcess() : this(null) { }
 
         private FutureProcess(CancellationTokenSource cts)
         {
-
             _tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
             _cts = cts;
 
             var name = ProcessRegistry.Instance.NextId();
             var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, this);
+
             if (!absent)
             {
                 throw new ProcessNameExistException(name, pid);
@@ -43,22 +38,23 @@ namespace Proto
 
             Pid = pid;
 
-
-
             if (_cts != null)
             {
-                _cts.Token.Register(() =>
-                {
-                    if (_tcs.Task.IsCompleted)
+                _cts.Token.Register(
+                    () =>
                     {
-                        return;
+                        if (_tcs.Task.IsCompleted)
+                        {
+                            return;
+                        }
+
+                        _tcs.TrySetException(
+                            new TimeoutException("Request didn't receive any Response within the expected time.")
+                        );
+
+                        Stop(pid);
                     }
-
-                    _tcs.TrySetException(
-                        new TimeoutException("Request didn't receive any Response within the expected time."));
-
-                    Stop(pid);
-                });
+                );
                 Task = _tcs.Task;
             }
             else
@@ -67,19 +63,13 @@ namespace Proto
             }
         }
 
-        private static async Task<T> WrapTask(Task<T> task)
-        {
-            await System.Threading.Tasks.Task.Yield();
-            var res = await task;
-            return res;
-        }
-
         public PID Pid { get; }
         public Task<T> Task { get; }
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
             var msg = MessageEnvelope.UnwrapMessage(message);
+
             try
             {
                 if (msg is T || msg == null)
@@ -90,7 +80,9 @@ namespace Proto
                 {
                     _tcs.TrySetException(
                         new InvalidOperationException(
-                            $"Unexpected message. Was type {msg.GetType()} but expected {typeof(T)}"));
+                            $"Unexpected message. Was type {msg.GetType()} but expected {typeof(T)}"
+                        )
+                    );
                 }
             }
             finally
@@ -110,7 +102,7 @@ namespace Proto
 
             if (_cts == null || !_cts.IsCancellationRequested)
             {
-                _tcs.TrySetResult(default(T));
+                _tcs.TrySetResult(default);
             }
 
             Stop(pid);

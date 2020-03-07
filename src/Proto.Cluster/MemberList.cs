@@ -15,46 +15,21 @@ namespace Proto.Cluster
     public static class MemberList
     {
         private static readonly ILogger Logger = Log.CreateLogger("MemberList");
-
+        
         private static readonly ReaderWriterLockSlim RwLock = new ReaderWriterLockSlim();
         private static readonly Dictionary<string, MemberStatus> Members = new Dictionary<string, MemberStatus>();
         private static readonly Dictionary<string, IMemberStrategy> MemberStrategyByKind = new Dictionary<string, IMemberStrategy>();
 
-        private static Subscription<object> _clusterTopologyEvnSub;
+        private static Subscription<object> clusterTopologyEvnSub;
 
-        internal static void Setup()
-        {
-            _clusterTopologyEvnSub = Actor.EventStream.Subscribe<ClusterTopologyEvent>(UpdateClusterTopology);
-        }
+        internal static void Setup() => clusterTopologyEvnSub = Actor.EventStream.Subscribe<ClusterTopologyEvent>(UpdateClusterTopology);
 
-        internal static void Stop()
-        {
-            Actor.EventStream.Unsubscribe(_clusterTopologyEvnSub.Id);
-        }
-
-        internal static string[] GetMembers(string kind)
-        {
-            bool locked = RwLock.TryEnterReadLock(1000);
-            while (!locked)
-            {
-                Logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
-                locked = RwLock.TryEnterReadLock(1000);
-            }
-
-            try
-            {
-                return MemberStrategyByKind.TryGetValue(kind, out var memberStrategy)
-                           ? memberStrategy.GetAllMembers().FindAll(m => m.Alive).Select(m => m.Address).ToArray() : new string[0];
-            }
-            finally
-            {
-                RwLock.ExitReadLock();
-            }
-        }
+        internal static void Stop() => Actor.EventStream.Unsubscribe(clusterTopologyEvnSub.Id);
 
         internal static string GetPartition(string name, string kind)
         {
-            bool locked = RwLock.TryEnterReadLock(1000);
+            var locked = RwLock.TryEnterReadLock(1000);
+
             while (!locked)
             {
                 Logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
@@ -64,7 +39,8 @@ namespace Proto.Cluster
             try
             {
                 return MemberStrategyByKind.TryGetValue(kind, out var memberStrategy)
-                           ? memberStrategy.GetPartition(name) : "";
+                    ? memberStrategy.GetPartition(name)
+                    : "";
             }
             finally
             {
@@ -74,7 +50,8 @@ namespace Proto.Cluster
 
         internal static string GetActivator(string kind)
         {
-            bool locked = RwLock.TryEnterReadLock(1000);
+            var locked = RwLock.TryEnterReadLock(1000);
+
             while (!locked)
             {
                 Logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
@@ -84,7 +61,8 @@ namespace Proto.Cluster
             try
             {
                 return MemberStrategyByKind.TryGetValue(kind, out var memberStrategy)
-                           ? memberStrategy.GetActivator() : "";
+                    ? memberStrategy.GetActivator()
+                    : "";
             }
             finally
             {
@@ -94,7 +72,8 @@ namespace Proto.Cluster
 
         internal static void UpdateClusterTopology(ClusterTopologyEvent msg)
         {
-            bool locked = RwLock.TryEnterWriteLock(1000);
+            var locked = RwLock.TryEnterWriteLock(1000);
+
             while (!locked)
             {
                 Logger.LogDebug("MemberList did not acquire writer lock within 1 seconds, retry");
@@ -105,6 +84,7 @@ namespace Proto.Cluster
             {
                 //get all new members address sets
                 var newMembersAddress = new HashSet<string>();
+
                 foreach (var status in msg.Statuses)
                 {
                     newMembersAddress.Add(status.Address);
@@ -149,6 +129,7 @@ namespace Proto.Cluster
                     if (MemberStrategyByKind.TryGetValue(k, out var ms))
                     {
                         ms.RemoveMember(old);
+
                         if (ms.GetAllMembers().Count == 0)
                             MemberStrategyByKind.Remove(k);
                     }
@@ -157,12 +138,12 @@ namespace Proto.Cluster
                 //notify left
                 var left = new MemberLeftEvent(old.Host, old.Port, old.Kinds);
                 Actor.EventStream.Publish(left);
+
                 Members.Remove(old.Address);
-                var endpointTerminated = new EndpointTerminatedEvent
-                {
-                    Address = old.Address
-                };
+
+                var endpointTerminated = new EndpointTerminatedEvent {Address = old.Address};
                 Actor.EventStream.Publish(endpointTerminated);
+
                 return;
             }
 
@@ -179,6 +160,7 @@ namespace Proto.Cluster
                 //notify joined
                 var joined = new MemberJoinedEvent(@new.Host, @new.Port, @new.Kinds);
                 Actor.EventStream.Publish(joined);
+                
                 return;
             }
 

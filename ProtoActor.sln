@@ -100,6 +100,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence.Marten", "src\PersistenceProviders\Proto.Persistence.Marten\Proto.Persistence.Marten.csproj", "{D68E7578-BCB0-49AE-B434-F080F6D334AB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ClusterHelloWorld", "ClusterHelloWorld", "{AC12A8DF-9992-4B42-B016-62573DB36421}"
+ProjectSection(SolutionItems) = preProject
+	examples\ClusterHelloWorld\docker-compose.yml = examples\ClusterHelloWorld\docker-compose.yml
+EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Messages", "examples\ClusterHelloWorld\Messages\Messages.csproj", "{B829E4C2-5D3E-4B31-87DD-3498EEEA78A8}"
 EndProject

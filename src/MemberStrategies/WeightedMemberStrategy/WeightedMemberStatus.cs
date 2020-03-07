@@ -4,8 +4,6 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System.Text;
-
 namespace Proto.Cluster.WeightedMemberStrategy
 {
     public class WeightedMemberStatusValue : IMemberStatusValue
@@ -14,10 +12,7 @@ namespace Proto.Cluster.WeightedMemberStrategy
 
         public int Weight { get; set; }
 
-        public bool IsSame(IMemberStatusValue val)
-        {
-            return Weight == (val as WeightedMemberStatusValue)?.Weight;
-        }
+        public bool IsSame(IMemberStatusValue val) => Weight == (val as WeightedMemberStatusValue)?.Weight;
     }
 
     public class WeightedMemberStatusValueSerializer : IMemberStatusValueSerializer
@@ -28,12 +23,7 @@ namespace Proto.Cluster.WeightedMemberStrategy
             return dVal.Weight.ToString();
         }
 
-        public IMemberStatusValue Deserialize(string val)
-        {
-            return new WeightedMemberStatusValue
-            {
-                Weight = int.Parse(val)
-            };
-        }
+        public IMemberStatusValue Deserialize(string val) 
+            => new WeightedMemberStatusValue { Weight = int.Parse(val) };
     }
 }
