@@ -14,7 +14,13 @@ jobs:
           
       - name: Run tests netcoreapp3.1
         run: |
+          echo "Building the solution..."
           dotnet build -c Release
+          echo "Starting containers..."
           docker-compose -f tests/docker-compose.yml up -d
+          echo "Running tests..."
           dotnet test -c Release
+          echo "Test run complete"
+          echo "Stopping containers"
           docker-compose -f tests/docker-compose.yml down
+          echo "Job completed"
