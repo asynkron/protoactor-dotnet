@@ -279,7 +279,6 @@ namespace Proto
                     case Started s:
                         return InvokeUserMessageAsync(s);
                     case Stop _:
-                        Logger.LogDebug("Stop initiated");
                         return InitiateStopAsync();
                     case Terminated t:
                         return HandleTerminatedAsync(t);
@@ -302,13 +301,13 @@ namespace Proto
                         _messageOrEnvelope = cont.Message;
                         return cont.Action();
                     default:
-                        Logger.LogWarning("Unknown system message {0}", msg);
+                        Logger.LogDebug("Unknown system message {Message}", msg);
                         return Done;
                 }
             }
             catch (Exception x)
             {
-                Logger.LogError("Error handling SystemMessage {0}", x);
+                Logger.LogError(x, "Error handling SystemMessage {Message}", msg);
                 throw;
             }
         }
@@ -367,12 +366,7 @@ namespace Proto
             }
 
             //are we using decorators, if so, ensure it has been created
-            if (_props.ContextDecoratorChain != null)
-            {
-                return Actor.ReceiveAsync(EnsureExtras().Context);
-            }
-
-            return Actor.ReceiveAsync(this);
+            return Actor.ReceiveAsync(_props.ContextDecoratorChain != null ? EnsureExtras().Context : this);
         }
 
         private Task ProcessMessageAsync(object msg)
@@ -501,7 +495,6 @@ namespace Proto
 
             CancelReceiveTimeout();
 
-            Logger.LogDebug("{State}", _state);
             switch (_state)
             {
                 case ContextState.Restarting:
