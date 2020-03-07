@@ -8,6 +8,7 @@ using Divergic.Logging.Xunit;
 using Microsoft.Extensions.Logging;
 using Proto.Remote.Tests.Messages;
 using Xunit.Abstractions;
+// ReSharper disable MethodHasAsyncOverload
 
 namespace Proto.Remote.Tests
 {
@@ -38,7 +39,7 @@ namespace Proto.Remote.Tests
         [Fact, DisplayTestMethodName]
         public void CanSerializeAndDeserializeJson()
         {
-            var typeName = "remote_test_messages.Ping";
+            const string typeName = "remote_test_messages.Ping";
             var json = new JsonMessage(typeName, "{ \"message\":\"Hello\"}");
             var bytes = Serialization.Serialize(json, 1);
             var deserialized = Serialization.Deserialize(typeName, bytes, 1) as Ping;
@@ -132,8 +133,8 @@ namespace Proto.Remote.Tests
             var remoteActor2 = await SpawnRemoteActor(RemoteManager.RemoteAddress);
             var localActor = await SpawnLocalActorAndWatch(remoteActor1, remoteActor2);
 
-            await Context.StopAsync(remoteActor1);
-            await Context.StopAsync(remoteActor2);
+            Context.Stop(remoteActor1);
+            Context.Stop(remoteActor2);
 
             Assert.True(
                 await PollUntilTrue(
@@ -163,7 +164,7 @@ namespace Proto.Remote.Tests
 
             var localActor1 = await SpawnLocalActorAndWatch(remoteActor);
             var localActor2 = await SpawnLocalActorAndWatch(remoteActor);
-            await Context.StopAsync(remoteActor);
+            Context.Stop(remoteActor);
 
             Assert.True(
                 await PollUntilTrue(
@@ -194,7 +195,7 @@ namespace Proto.Remote.Tests
             var localActor2 = await SpawnLocalActorAndWatch(remoteActor);
             Context.Send(localActor2, new Unwatch(remoteActor));
             await Task.Delay(TimeSpan.FromSeconds(3)); // wait for unwatch to propagate...
-            await Context.StopAsync(remoteActor);
+            Context.Stop(remoteActor);
 
             // localActor1 is still watching so should get notified
             Assert.True(
