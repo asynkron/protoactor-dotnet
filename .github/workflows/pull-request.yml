@@ -13,4 +13,6 @@ jobs:
           dotnet-version: '3.1.102'
           
       - name: Run tests netcoreapp3.1
-        run: dotnet test -c Release -f netcoreapp3.1
+        run: |
+          dotnet build -c Release
+          dotnet test --no-build
