@@ -113,17 +113,14 @@ namespace Proto.Remote.Tests
             Remote.SendMessage(remoteActor, envelope, 1);
 
             logger.LogDebug("waiting for connection to fail after retries and fire a terminated event");
-
             await receivedDeadLetterEventTcs.Task;
 
-            logger.LogDebug("Starting Remote service");
-
             //Should reconnect if we send a new message
-            // using var remoteService = new RemoteManager(false);
-
             await Task.Delay(2000, ct.Token);
+            
             logger.LogDebug("Sending new message now that remote is up");
             Remote.SendMessage(remoteActor, envelope, 1);
+            
             logger.LogDebug("Waiting for response to message");
             await receivedPong.Task;
         }
