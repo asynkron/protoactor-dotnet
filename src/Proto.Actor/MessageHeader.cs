@@ -21,7 +21,7 @@ namespace Proto
 
         public MessageHeader(IDictionary<string,string> headers) => _inner = headers.ToImmutableDictionary();
 
-        public string GetOrDefault(string key, string @default = null) => TryGetValue(key, out var value) ? value : @default;
+        public string GetOrDefault(string key, string? @default = null) => TryGetValue(key, out var value) ? value : @default;
 
         public MessageHeader With(string key, string value)
         {

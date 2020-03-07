@@ -27,7 +27,7 @@ namespace Proto
     }
     public sealed class Props
     {
-        private Spawner _spawner;
+        private Spawner? _spawner;
         public Func<IActor> Producer { get; private set; }
         public Func<IMailbox> MailboxProducer { get; private set; } = ProduceDefaultMailbox;
         public ISupervisorStrategy GuardianStrategy { get; private set; }

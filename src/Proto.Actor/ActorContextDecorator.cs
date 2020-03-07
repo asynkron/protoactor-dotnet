@@ -42,10 +42,10 @@ namespace Proto
         
         public virtual Task Receive(MessageEnvelope envelope) => _context.Receive(envelope);
 
-        public virtual PID Parent => _context.Parent;
-        public virtual PID Self => _context.Self;
-        public virtual PID Sender => _context.Sender;
-        public virtual IActor Actor => _context.Actor;
+        public virtual PID? Parent => _context.Parent;
+        public virtual PID? Self => _context.Self;
+        public virtual PID? Sender => _context.Sender;
+        public virtual IActor? Actor => _context.Actor;
         public virtual TimeSpan ReceiveTimeout => _context.ReceiveTimeout;
         public virtual IReadOnlyCollection<PID> Children => _context.Children;
         public virtual void Respond(object message) => _context.Respond(message);

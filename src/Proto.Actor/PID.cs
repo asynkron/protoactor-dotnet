@@ -13,7 +13,7 @@ namespace Proto
     // ReSharper disable once InconsistentNaming
     public partial class PID
     {
-        private Process _process;
+        private Process? _process;
 
         public PID(string address, string id)
         {
@@ -26,7 +26,7 @@ namespace Proto
             _process = process;
         }
 
-        internal Process Ref
+        internal Process? Ref
         {
             get
             {

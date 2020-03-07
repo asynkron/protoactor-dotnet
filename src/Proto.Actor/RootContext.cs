@@ -21,10 +21,10 @@ namespace Proto
         private Sender SenderMiddleware { get; set; }
         public MessageHeader Headers { get; private set; }
 
-        public PID Parent { get => null; }
-        public PID Self { get => null; }
-        public PID Sender { get => null; }
-        public IActor Actor { get => null; }
+        public PID? Parent => null;
+        public PID? Self => null;
+        PID? IInfoContext.Sender => null;
+        public IActor? Actor => null;
 
         public PID Spawn(Props props)
         {

@@ -2,6 +2,7 @@
   <PropertyGroup>
     <RootNamespace>Proto</RootNamespace>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <None Include="build.bat" />

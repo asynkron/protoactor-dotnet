@@ -29,7 +29,7 @@ namespace Proto
     public class ActorContextExtras
     {
         public ImmutableHashSet<PID> Children { get; private set; } = ImmutableHashSet<PID>.Empty;
-        public Timer ReceiveTimeoutTimer { get; private set; }
+        public Timer? ReceiveTimeoutTimer { get; private set; }
         public RestartStatistics RestartStatistics { get; } = new RestartStatistics(0, null);
         public Stack<object> Stash { get; } = new Stack<object>();
         public ImmutableHashSet<PID> Watchers { get; private set; } = ImmutableHashSet<PID>.Empty;
@@ -46,9 +46,9 @@ namespace Proto
 
         public void StopReceiveTimeoutTimer() => ReceiveTimeoutTimer?.Change(-1, -1);
 
-        public void KillreceiveTimeoutTimer()
+        public void KillReceiveTimeoutTimer()
         {
-            ReceiveTimeoutTimer.Dispose();
+            ReceiveTimeoutTimer?.Dispose();
             ReceiveTimeoutTimer = null;
         }
 
@@ -69,18 +69,18 @@ namespace Proto
 
     public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
-        public static readonly ImmutableHashSet<PID> EmptyChildren = ImmutableHashSet<PID>.Empty;
+        private static readonly ImmutableHashSet<PID> EmptyChildren = ImmutableHashSet<PID>.Empty;
         private readonly Props _props;
 
-        private ActorContextExtras _extras;
-        private object _messageOrEnvelope;
+        private ActorContextExtras? _extras;
+        private object? _messageOrEnvelope;
         private ContextState _state;
 
         private ActorContextExtras EnsureExtras()
         {
             if (_extras == null)
             {
-                var context = _props?.ContextDecoratorChain(this) ?? this;
+                var context = _props.ContextDecoratorChain(this) ?? this;
                 _extras = new ActorContextExtras(context);
             }
             
@@ -103,9 +103,9 @@ namespace Proto
         public IImmutableSet<PID> Children => _extras?.Children ?? EmptyChildren;
         IReadOnlyCollection<PID> IContext.Children => Children;
 
-        public IActor Actor { get; private set; }
-        public PID Parent { get; }
-        public PID Self { get; set; }
+        public IActor? Actor { get; private set; }
+        public PID? Parent { get; }
+        public PID? Self { get; set; }
 
         public object Message => MessageEnvelope.UnwrapMessage(_messageOrEnvelope);
 
@@ -183,7 +183,7 @@ namespace Proto
                 return;
             }
             _extras.StopReceiveTimeoutTimer();
-            _extras.KillreceiveTimeoutTimer();
+            _extras.KillReceiveTimeoutTimer();
 
             ReceiveTimeout = TimeSpan.Zero;
         }

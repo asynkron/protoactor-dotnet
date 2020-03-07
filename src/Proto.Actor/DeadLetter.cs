@@ -8,7 +8,7 @@ namespace Proto
 {
     public class DeadLetterEvent
     {
-        public DeadLetterEvent(PID pid, object message, PID sender)
+        public DeadLetterEvent(PID pid, object message, PID? sender)
         {
             Pid = pid;
             Message = message;
@@ -17,7 +17,7 @@ namespace Proto
 
         public PID Pid { get; }
         public object Message { get; }
-        public PID Sender { get; }
+        public PID? Sender { get; }
     }
 
     public class DeadLetterProcess : Process

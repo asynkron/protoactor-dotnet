@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    class FutureProcess<T> : Process
+    internal class FutureProcess<T> : Process
     {
         private readonly CancellationTokenSource _cts;
         private readonly TaskCompletionSource<T> _tcs;
@@ -23,7 +23,7 @@ namespace Proto
 
         internal FutureProcess() : this(null) { }
 
-        private FutureProcess(CancellationTokenSource cts)
+        private FutureProcess(CancellationTokenSource? cts)
         {
             _tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
             _cts = cts;
