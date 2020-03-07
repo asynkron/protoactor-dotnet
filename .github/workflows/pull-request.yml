@@ -15,4 +15,4 @@ jobs:
       - name: Run tests netcoreapp3.1
         run: |
           dotnet build -c Release
-          dotnet test --no-build
+          dotnet test -c Release
