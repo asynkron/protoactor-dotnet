@@ -16,4 +16,9 @@
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
         <DefineConstants>TRACE;DEBUG</DefineConstants>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations" Version="2019.1.3" PrivateAssets="All" />
+        <PackageReference Include="MinVer" Version="2.1.0" PrivateAssets="All" />
+    </ItemGroup>
 </Project>

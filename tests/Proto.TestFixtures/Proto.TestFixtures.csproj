@@ -1,7 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <IsTestProject>false</IsTestProject>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Remove="AutoFixture.Xunit2"/>
+    <PackageReference Remove="FluentAssertions" />
+    <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
+    <PackageReference Remove="xunit" />
+    <PackageReference Remove="xunit.runner.visualstudio" />
+  </ItemGroup>
+  
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\..\src\Proto.Mailbox\Proto.Mailbox.csproj" />

@@ -1,0 +1,15 @@
+version: '2'
+services:
+  node1:
+    build: 
+      context: ..
+      dockerfile: ./tests/Proto.Remote.Tests.Node/Dockerfile
+    container_name: "remote-test"
+    hostname: "proto-remote"
+    ports:
+    - 5000:5000
+    - 12000:12000
+    networks:
+      - proto-test
+networks:
+  proto-test:

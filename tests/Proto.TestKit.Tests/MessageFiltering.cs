@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Proto.TestKit.Tests
@@ -32,13 +33,9 @@ namespace Proto.TestKit.Tests
         [Fact]
         public void FishFailsWrongType()
         {
-            for (var i = 0; i < 100; i++)
-                Send(Probe, i);
-
+            HundredTimes(i => Send(Probe, i));
             Send(Probe, "hi");
-
-            for (var i = 0; i < 100; i++)
-                Send(Probe, i);
+            HundredTimes(i => Send(Probe, i));
 
             Assert.Throws<Exception>(() => FishForMessage<DateTime>());
         }
@@ -46,13 +43,9 @@ namespace Proto.TestKit.Tests
         [Fact]
         public void FishFailsMissing()
         {
-            for (var i = 0; i < 100; i++)
-                Send(Probe, i);
-
+            HundredTimes(i => Send(Probe, i));
             Send(Probe, "hi");
-
-            for (var i = 0; i < 100; i++)
-                Send(Probe, i);
+            HundredTimes(i => Send(Probe, i));
 
             Assert.Throws<Exception>(() => FishForMessage<string>(x => x.Equals("bye")));
         }
@@ -60,27 +53,19 @@ namespace Proto.TestKit.Tests
         [Fact]
         public void FishSucceedsType()
         {
-            for (var i = 0; i < 100; i++)
-                Send(Probe, i);
-
+            HundredTimes(i => Send(Probe, i));
             Send(Probe, "hi");
-
-            for (var i = 0; i < 100; i++)
-                Send(Probe, i);
-
+            HundredTimes(i => Send(Probe, i));
+            
             FishForMessage<string>();
         }
 
         [Fact]
         public void FishSucceedsCondition()
         {
-            for (var i = 0; i < 100; i++)
-                Send(Probe, i);
-
+            HundredTimes(i => Send(Probe, i));
             Send(Probe, "hi");
-
-            for (var i = 0; i < 100; i++)
-                Send(Probe, i);
+            HundredTimes(i => Send(Probe, i));
 
             FishForMessage<string>(x => x.Equals("hi"));
         }
@@ -88,11 +73,8 @@ namespace Proto.TestKit.Tests
         [Fact]
         public void GetMovesToNextMessage()
         {
-            for (var i = 0; i < 100; i++)
-                Send(Probe, i);
-
-            for (var i = 0; i < 100; i++)
-                GetNextMessage<int>(x => x == i);
+            HundredTimes(i => Send(Probe, i));
+            HundredTimes(i => GetNextMessage<int>(x => x == i));
         }
 
 
@@ -111,10 +93,7 @@ namespace Proto.TestKit.Tests
         }
 
         [Fact]
-        public void GetFailsNoMessage()
-        {
-            Assert.Throws<Exception>(() => GetNextMessage<DateTime>());
-        }
+        public void GetFailsNoMessage() => Assert.Throws<Exception>(() => GetNextMessage<DateTime>());
 
         [Fact]
         public void GetFailsCondition()
@@ -131,9 +110,14 @@ namespace Proto.TestKit.Tests
         }
 
         [Fact]
-        public void ExpectNoMessageSucceeds()
+        public void ExpectNoMessageSucceeds() => ExpectNoMessage();
+
+        private static void HundredTimes(Action<int> runMe)
         {
-            ExpectNoMessage();
+            for (var i = 0; i < 100; i++)
+            {
+                runMe(i);
+            }
         }
     }
 }

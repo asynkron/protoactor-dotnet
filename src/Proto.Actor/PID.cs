@@ -21,10 +21,7 @@ namespace Proto
             Id = id;
         }
 
-        internal PID(string address, string id, Process process) : this(address, id)
-        {
-            _process = process;
-        }
+        internal PID(string address, string id, Process process) : this(address, id) => _process = process;
 
         internal Process? Ref
         {
@@ -94,9 +91,6 @@ namespace Proto
             return future.Task;
         }
 
-        public string ToShortString()
-        {
-            return Address + "/" + Id;
-        }
+        public string ToShortString() => Address + "/" + Id;
     }
 }

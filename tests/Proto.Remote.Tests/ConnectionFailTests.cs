@@ -9,6 +9,7 @@ using Xunit.Abstractions;
 
 namespace Proto.Remote.Tests
 {
+    [Collection("RemoteTests"), Trait("Category", "Remote")]
     public class ConnectionFailTests
     {
         public ConnectionFailTests(ITestOutputHelper testOutputHelper)
@@ -17,7 +18,7 @@ namespace Proto.Remote.Tests
             Log.SetLoggerFactory(factory);
         }
 
-        //[Fact, DisplayTestMethodName]
+        [Fact, DisplayTestMethodName]
         public async Task CanRecoverFromConnectionFailureAsync()
         {
             var logger = Log.CreateLogger("ConnectionFail");
@@ -25,20 +26,17 @@ namespace Proto.Remote.Tests
             var remoteActor = new PID("127.0.0.1:12000", "EchoActorInstance");
             var ct = new CancellationTokenSource(30000);
             var tcs = new TaskCompletionSource<bool>();
-            var receivedTerminationTCS = new TaskCompletionSource<bool>();
+            var receivedTerminationTcs = new TaskCompletionSource<bool>();
 
             ct.Token.Register(
                 () =>
                 {
                     tcs.TrySetCanceled();
-                    receivedTerminationTCS.TrySetCanceled();
+                    receivedTerminationTcs.TrySetCanceled();
                 }
             );
 
-            var endpointTermEvnSub =
-                EventStream.Instance.Subscribe<EndpointTerminatedEvent>(termEvent => { receivedTerminationTCS.TrySetResult(true); });
-
-            Remote.Start("127.0.0.1", 12001);
+            EventStream.Instance.Subscribe<EndpointTerminatedEvent>(termEvent => receivedTerminationTcs.TrySetResult(true));
 
             var localActor = RootContext.Empty.Spawn(
                 Props.FromFunc(
@@ -58,21 +56,15 @@ namespace Proto.Remote.Tests
             var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
             var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
             Remote.SendMessage(remoteActor, envelope, 1);
+
             logger.LogDebug("sent message");
-            
-            // await Task.Delay(3000);
-            logger.LogDebug("starting remote manager");
-
-            // using var manager = new RemoteManager(false);
-
             logger.LogDebug("awaiting completion");
-            await tcs.Task;
 
-            Remote.Shutdown();
-            await receivedTerminationTCS.Task;
+            await tcs.Task;
+            await receivedTerminationTcs.Task;
         }
 
-        //[Fact, DisplayTestMethodName]
+        [Fact, DisplayTestMethodName]
         public async Task MessagesGoToDeadLetterAfterConnectionFail()
         {
             var logger = Log.CreateLogger("ConnectionFail");
@@ -80,13 +72,13 @@ namespace Proto.Remote.Tests
             var remoteActor = new PID("127.0.0.1:12000", "EchoActorInstance");
             var ct = new CancellationTokenSource(30000);
             var receivedPong = new TaskCompletionSource<bool>();
-            var receivedDeadLetterEventTCS = new TaskCompletionSource<bool>();
+            var receivedDeadLetterEventTcs = new TaskCompletionSource<bool>();
 
             ct.Token.Register(
                 () =>
                 {
                     receivedPong.TrySetCanceled();
-                    receivedDeadLetterEventTCS.TrySetCanceled();
+                    receivedDeadLetterEventTcs.TrySetCanceled();
                 }
             );
 
@@ -95,22 +87,10 @@ namespace Proto.Remote.Tests
                 {
                     if (deadLetterEvt.Message is JsonMessage)
                     {
-                        receivedDeadLetterEventTCS.TrySetResult(true);
+                        receivedDeadLetterEventTcs.TrySetResult(true);
                     }
                 }
             );
-
-            var config = new RemoteConfig
-            {
-                EndpointWriterOptions = new EndpointWriterOptions
-                {
-                    MaxRetries = 2,
-                    RetryBackOffms = 10,
-                    RetryTimeSpan = TimeSpan.FromSeconds(120)
-                }
-            };
-
-            Remote.Start("127.0.0.1", 12001, config);
 
             var localActor = RootContext.Empty.Spawn(
                 Props.FromFunc(
@@ -129,25 +109,20 @@ namespace Proto.Remote.Tests
 
             var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
             var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
-            logger.LogDebug("sending messge while offline");
+            logger.LogDebug("sending message while offline");
             Remote.SendMessage(remoteActor, envelope, 1);
 
             logger.LogDebug("waiting for connection to fail after retries and fire a terminated event");
-            
-            await receivedDeadLetterEventTCS.Task;
-
-            logger.LogDebug("Starting Remote service");
+            await receivedDeadLetterEventTcs.Task;
 
             //Should reconnect if we send a new message
-            // using var remoteService = new RemoteManager(false);
-
             await Task.Delay(2000, ct.Token);
+            
             logger.LogDebug("Sending new message now that remote is up");
             Remote.SendMessage(remoteActor, envelope, 1);
+            
             logger.LogDebug("Waiting for response to message");
             await receivedPong.Task;
-
-            Remote.Shutdown();
         }
     }
 }

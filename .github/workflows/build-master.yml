@@ -8,7 +8,7 @@ on:
       - '*'
 
 jobs:
-  test-linux:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,21 +17,15 @@ jobs:
         with:
           dotnet-version: '3.1.102'
 
-      - name: Run tests netcoreapp3.1
-        run: dotnet test -c Release -f netcoreapp3.1
+      - name: Build
+        run: dotnet build -c Release
 
-  test-win:
-    runs-on: windows-latest
-    
-    steps:
-     - uses: actions/checkout@v1
-     - uses: actions/setup-dotnet@v1
-       with:
-         dotnet-version: '3.1.102'
-
-     - name: Run tests netcoreapp3.1
-       run: dotnet test -c Release -f netcoreapp3.1
-      
+      - name: Run tests
+        run: |
+          docker-compose -f tests/docker-compose.yml up -d
+          dotnet test -c Release
+          docker-compose -f tests/docker-compose.yml down
+        
 #  nuget:
 #    runs-on: windows-latest
 #    needs: [test-win,test-linux]

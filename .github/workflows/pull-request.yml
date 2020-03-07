@@ -4,7 +4,7 @@ on: [pull_request]
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v1
@@ -13,4 +13,8 @@ jobs:
           dotnet-version: '3.1.102'
           
       - name: Run tests netcoreapp3.1
-        run: dotnet test -c Release -f netcoreapp3.1
+        run: |
+          dotnet build -c Release
+          docker-compose -f tests/docker-compose.yml up -d
+          dotnet test -c Release
+          docker-compose -f tests/docker-compose.yml down

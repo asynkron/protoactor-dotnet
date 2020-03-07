@@ -11,4 +11,7 @@
     <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
     <ProjectReference Include="..\Proto.Remote.Tests.Messages\Proto.Remote.Tests.Messages.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="ConnectionFailTests.cs" />
+  </ItemGroup>
 </Project>

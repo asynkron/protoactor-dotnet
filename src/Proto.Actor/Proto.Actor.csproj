@@ -4,20 +4,19 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
   <ItemGroup>
-    <None Include="build.bat" />
-    <Content Include="Protos.proto">
-      <Pack>true</Pack>
-      <PackagePath>./protos/Proto.Actor</PackagePath>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <PackageReference Include="Google.Protobuf" Version="3.11.4"/>
+    <PackageReference Include="Grpc.Tools" Version="2.23.0" PrivateAssets="All"/>
+    <PackageReference Include="System.Collections.Immutable" Version="1.7.0"/>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0"/>
   </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.11.4" />
-    <PackageReference Include="System.Collections.Immutable" Version="1.7.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
+    <ProjectReference Include="..\Proto.Mailbox\Proto.Mailbox.csproj"/>
   </ItemGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\Proto.Mailbox\Proto.Mailbox.csproj" />
+    <Protobuf Include="Protos.proto" GrpcServices="Server"/>
   </ItemGroup>
 </Project>

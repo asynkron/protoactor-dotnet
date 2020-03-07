@@ -1,72 +1,42 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using Xunit;
+using System.Net;
+using System.Net.Sockets;
 
 namespace Proto.Remote.Tests
 {
-    public class RemoteManager : IDisposable
+    public static class RemoteManager
     {
-        private static string DefaultNodeAddress = "127.0.0.1:12000";
-        private Dictionary<string, System.Diagnostics.Process> Nodes = new Dictionary<string, System.Diagnostics.Process>();
+        public const string RemoteAddress = "0.0.0.0:12000";
+        
+        static RemoteManager() => Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
 
-        public (string Address, System.Diagnostics.Process Process) DefaultNode => (DefaultNodeAddress, Nodes[DefaultNodeAddress]);
+        private static bool remoteStarted;
 
-        public RemoteManager()
+        public static void EnsureRemote()
         {
-            Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
-            ProvisionNode();
-            Remote.Start("127.0.0.1", 12001);
-            Thread.Sleep(3000);
-        }
-
-        public void Dispose()
-        {
-            foreach (var (_, process) in Nodes)
+            if (remoteStarted) return;
+            
+            var config = new RemoteConfig
             {
-                if (process != null && !process.HasExited)
-                    process.Kill();
-            }
-        }
-
-        public (string Address, System.Diagnostics.Process Process) ProvisionNode(string host = "127.0.0.1", int port = 12000)
-        {
-            var address = $"{host}:{port}";
-            var buildConfig = "Debug";
-#if RELEASE
-            buildConfig = "Release";
-#endif
-            var nodeAppPath = $@"Proto.Remote.Tests.Node/bin/{buildConfig}/netcoreapp3.1/Proto.Remote.Tests.Node.dll";
-            var testsDirectory = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent;
-            var nodeDllPath = $@"{testsDirectory.FullName}/{nodeAppPath}";
-
-            if (!File.Exists(nodeDllPath))
-            {
-                throw new FileNotFoundException(nodeDllPath);
-            }
-
-            var process = new System.Diagnostics.Process
-            {
-                StartInfo =
+                EndpointWriterOptions = new EndpointWriterOptions
                 {
-                    Arguments = $"{nodeDllPath} --host {host} --port {port}",
-                    CreateNoWindow = false,
-                    UseShellExecute = false,
-                    FileName = "dotnet"
+                    MaxRetries = 2,
+                    RetryBackOffms = 10,
+                    RetryTimeSpan = TimeSpan.FromSeconds(120)
                 }
             };
 
-            process.Start();
-            Nodes.Add(address, process);
+            Remote.Start(GetLocalIp(), 12001, config);
+            remoteStarted = true;
 
-            Console.WriteLine($"Waiting for remote node {address} to initialise...");
-            Thread.Sleep(TimeSpan.FromSeconds(3));
+            static string GetLocalIp()
+            {
+                using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0);
 
-            return (address, process);
+                socket.Connect("8.8.8.8", 65530);
+                var endPoint = socket.LocalEndPoint as IPEndPoint;
+                return endPoint?.Address.ToString();
+            }
         }
     }
-
-    [CollectionDefinition("RemoteTests")]
-    public class RemoteCollection : ICollectionFixture<RemoteManager> { }
 }
