@@ -37,7 +37,7 @@ namespace Proto.Remote.Tests
 #if RELEASE
             buildConfig = "Release";
 #endif
-            var nodeAppPath = $@"Proto.Remote.Tests.Node/bin/{buildConfig}/netcoreapp3.1/Proto.Remote.Tests.Node.dll";
+            var nodeAppPath = Path.Combine("Proto.Remote.Tests.Node", "bin", buildConfig, "netcoreapp3.1", "Proto.Remote.Tests.Node.dll");
             var testsDirectory = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent;
             var nodeDllPath = $@"{testsDirectory.FullName}/{nodeAppPath}";
 
