@@ -21,7 +21,6 @@ namespace Proto.Router.Routers
                 var wg = new AutoResetEvent(false);
                 var p = props.WithProducer(() => new RouterActor(this, routerState, wg));
    
-                var ctx = new ActorContext(p, parent);
                 var mailbox = props.MailboxProducer();
                 var dispatcher = props.Dispatcher;
                 var process = new RouterProcess(routerState, mailbox);
@@ -30,7 +29,7 @@ namespace Proto.Router.Routers
                 {
                     throw new ProcessNameExistException(name, self);
                 }
-                ctx.Self = self;
+                var ctx = new ActorContext(p, parent, self);
                 mailbox.RegisterHandlers(ctx, dispatcher);
                 mailbox.PostSystemMessage(Started.Instance);
                 mailbox.Start();

@@ -52,7 +52,6 @@ namespace Proto
 
         private static PID DefaultSpawner(string name, Props props, PID parent)
         {
-            var ctx = new ActorContext(props, parent);
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
             var process = new ActorProcess(mailbox);
@@ -61,7 +60,7 @@ namespace Proto
             {
                 throw new ProcessNameExistException(name, pid);
             }
-            ctx.Self = pid;
+            var ctx = new ActorContext(props, parent, pid);
             mailbox.RegisterHandlers(ctx, dispatcher);
             mailbox.PostSystemMessage(Started.Instance);
             mailbox.Start();

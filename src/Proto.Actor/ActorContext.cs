@@ -87,15 +87,15 @@ namespace Proto
             return _extras;
         }
 
-        public ActorContext(Props props, PID parent)
+        public ActorContext(Props props, PID parent, PID self)
         {
             _props = props;
 
             //Parents are implicitly watching the child
             //The parent is not part of the Watchers set
             Parent = parent;
-
-            IncarnateActor();
+            Self = self;
+            Actor = IncarnateActor();
         }
 
         private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
@@ -408,10 +408,10 @@ namespace Proto
             }
         }
 
-        private void IncarnateActor()
+        private IActor IncarnateActor()
         {
             _state = ContextState.Alive;
-            Actor = _props.Producer();
+            return _props.Producer();
         }
 
         private async Task HandleRestartAsync()
@@ -526,7 +526,7 @@ namespace Proto
         private async Task RestartAsync()
         {
             DisposeActorIfDisposable();
-            IncarnateActor();
+            Actor = IncarnateActor();
             Self.SendSystemMessage(ResumeMailbox.Instance);
 
             await InvokeUserMessageAsync(Started.Instance);
