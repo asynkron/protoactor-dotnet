@@ -81,6 +81,15 @@ context.Send(pid, new Hello
 
 You should see the output `Hello Alex`.
 
+
+## Contributors
+
+<a href="https://github.com/AsynkronIT/protoactor-dotnet/graphs/contributors">
+  <img src="https://contributors-img.firebaseapp.com/image?repo=AsynkronIT/protoactor-dotnet" />
+</a>
+
+Made with [contributors-img](https://contributors-img.firebaseapp.com).
+
 ### Support
 
 Many thanks to [JetBrains](https://www.jetbrains.com) for support!
