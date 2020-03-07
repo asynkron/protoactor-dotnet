@@ -160,7 +160,7 @@ namespace Proto.Remote.Tests
 
             var localActor1 = await SpawnLocalActorAndWatch(remoteActor);
             var localActor2 = await SpawnLocalActorAndWatch(remoteActor);
-            Context.Stop(remoteActor);
+            await Context.StopAsync(remoteActor);
 
             Assert.True(
                 await PollUntilTrue(
@@ -191,7 +191,7 @@ namespace Proto.Remote.Tests
             var localActor2 = await SpawnLocalActorAndWatch(remoteActor);
             Context.Send(localActor2, new Unwatch(remoteActor));
             await Task.Delay(TimeSpan.FromSeconds(3)); // wait for unwatch to propagate...
-            Context.Stop(remoteActor);
+            await Context.StopAsync(remoteActor);
 
             // localActor1 is still watching so should get notified
             Assert.True(
@@ -240,10 +240,11 @@ namespace Proto.Remote.Tests
             return remoteActorResp.Pid;
         }
 
-        private async Task<PID> SpawnLocalActorAndWatch(params PID[] remoteActors)
+        private static async Task<PID> SpawnLocalActorAndWatch(params PID[] remoteActors)
         {
             var props = Props.FromProducer(() => new LocalActor(remoteActors));
             var actor = Context.Spawn(props);
+            
             // The local actor watches the remote one - we wait here for the RemoteWatch 
             // message to propagate to the remote actor
             Console.WriteLine("Waiting for RemoteWatch to propagate...");

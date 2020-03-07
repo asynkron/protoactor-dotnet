@@ -4,10 +4,12 @@
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <IsTestProject>false</IsTestProject>
     </PropertyGroup>
+    
     <ItemGroup>
         <PackageReference Include="Google.Protobuf" Version="3.11.4" />
         <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
     </ItemGroup>
+    
     <ItemGroup>
         <PackageReference Remove="AutoFixture.Xunit2"/>
         <PackageReference Remove="FluentAssertions" />

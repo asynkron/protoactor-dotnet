@@ -15,9 +15,10 @@ namespace Proto.Remote.Tests
         {
             var factory = LogFactory.Create(testOutputHelper);
             Log.SetLoggerFactory(factory);
+            RemoteManager.EnsureRemote();
         }
 
-        //[Fact, DisplayTestMethodName]
+        [Fact, DisplayTestMethodName]
         public async Task CanRecoverFromConnectionFailureAsync()
         {
             var logger = Log.CreateLogger("ConnectionFail");
@@ -37,8 +38,6 @@ namespace Proto.Remote.Tests
 
             var endpointTermEvnSub =
                 EventStream.Instance.Subscribe<EndpointTerminatedEvent>(termEvent => { receivedTerminationTCS.TrySetResult(true); });
-
-            Remote.Start("127.0.0.1", 12001);
 
             var localActor = RootContext.Empty.Spawn(
                 Props.FromFunc(
@@ -68,11 +67,10 @@ namespace Proto.Remote.Tests
             logger.LogDebug("awaiting completion");
             await tcs.Task;
 
-            Remote.Shutdown();
             await receivedTerminationTCS.Task;
         }
 
-        //[Fact, DisplayTestMethodName]
+        [Fact, DisplayTestMethodName]
         public async Task MessagesGoToDeadLetterAfterConnectionFail()
         {
             var logger = Log.CreateLogger("ConnectionFail");
@@ -110,8 +108,6 @@ namespace Proto.Remote.Tests
                 }
             };
 
-            Remote.Start("127.0.0.1", 12001, config);
-
             var localActor = RootContext.Empty.Spawn(
                 Props.FromFunc(
                     ctx =>
@@ -129,7 +125,7 @@ namespace Proto.Remote.Tests
 
             var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
             var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
-            logger.LogDebug("sending messge while offline");
+            logger.LogDebug("sending message while offline");
             Remote.SendMessage(remoteActor, envelope, 1);
 
             logger.LogDebug("waiting for connection to fail after retries and fire a terminated event");
@@ -146,8 +142,6 @@ namespace Proto.Remote.Tests
             Remote.SendMessage(remoteActor, envelope, 1);
             logger.LogDebug("Waiting for response to message");
             await receivedPong.Task;
-
-            Remote.Shutdown();
         }
     }
 }

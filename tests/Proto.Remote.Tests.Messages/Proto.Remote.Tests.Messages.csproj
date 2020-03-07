@@ -3,9 +3,19 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsTestProject>false</IsTestProject>
   </PropertyGroup>
+  
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.11.4" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Remove="AutoFixture.Xunit2"/>
+    <PackageReference Remove="FluentAssertions" />
+    <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
+    <PackageReference Remove="xunit" />
+    <PackageReference Remove="xunit.runner.visualstudio" />
+  </ItemGroup>
+  
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\..\src\Proto.Mailbox\Proto.Mailbox.csproj" />

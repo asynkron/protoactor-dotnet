@@ -17,8 +17,17 @@ namespace Proto.Remote.Tests
         {
             Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
             ProvisionNode();
-            Remote.Start("127.0.0.1", 12001);
+            EnsureRemote();
             Thread.Sleep(3000);
+        }
+
+        private static bool _remoteStarted;
+        public static void EnsureRemote()
+        {
+            if (_remoteStarted) return;
+            
+            Remote.Start("127.0.0.1", 12001);
+            _remoteStarted = true;
         }
 
         public void Dispose()
@@ -39,7 +48,7 @@ namespace Proto.Remote.Tests
 #endif
             var nodeAppPath = Path.Combine("Proto.Remote.Tests.Node", "bin", buildConfig, "netcoreapp3.1", "Proto.Remote.Tests.Node.dll");
             var testsDirectory = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent;
-            var nodeDllPath = $@"{testsDirectory.FullName}/{nodeAppPath}";
+            var nodeDllPath = Path.Combine(testsDirectory.FullName, nodeAppPath);
 
             if (!File.Exists(nodeDllPath))
             {
