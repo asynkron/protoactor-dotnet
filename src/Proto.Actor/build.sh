@@ -1,1 +1,0 @@
-$HOME/.nuget/packages/grpc.tools/1.6.1/tools/macosx_x64/protoc Protos.proto -I. -I.. --csharp_out=.   --csharp_opt=file_extension=.g.cs --grpc_out . --plugin=protoc-gen-grpc=$HOME/.nuget/packages/grpc.tools/1.6.1/tools/macosx_x64/grpc_csharp_plugin
