@@ -1,0 +1,38 @@
+# Git
+**/.git
+**/.gitattributes
+**/.gitignore
+
+# GitLab
+**/.gitlab-ci.yml
+
+# JetBrains
+**/.idea/
+**/*DotSettings*
+
+# Visual Studio Code
+**/.vs
+**/.vscode
+**/*.code-workspace
+
+# .Net
+**/bin/
+**/obj/
+**/wwwroot/
+**/*.trx
+
+# Docker
+**/Dockerfile*
+**/docker-compose*
+
+# macOS
+**/*.DS_Store
+**/.AppleDouble
+**/.LSOverride
+**/._*
+
+# Others
+**/*.md
+**/tools/
+**/docs/
+**/artifacts/
