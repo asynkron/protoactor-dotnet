@@ -22,11 +22,22 @@ namespace Proto.Remote.Tests
         }
 
         private static bool remoteStarted;
-        public static void EnsureRemote()
+
+        private static void EnsureRemote()
         {
             if (remoteStarted) return;
             
-            Remote.Start("127.0.0.1", 12001);
+            var config = new RemoteConfig
+            {
+                EndpointWriterOptions = new EndpointWriterOptions
+                {
+                    MaxRetries = 2,
+                    RetryBackOffms = 10,
+                    RetryTimeSpan = TimeSpan.FromSeconds(120)
+                }
+            };
+            
+            Remote.Start("127.0.0.1", 12001, config);
             remoteStarted = true;
         }
 
@@ -37,6 +48,9 @@ namespace Proto.Remote.Tests
                 if (process != null && !process.HasExited)
                     process.Kill();
             }
+
+            if (remoteStarted)
+                Remote.Shutdown(false).GetAwaiter().GetResult();
         }
 
         public (string Address, System.Diagnostics.Process Process) ProvisionNode(string host = "127.0.0.1", int port = 12000)

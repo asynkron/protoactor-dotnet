@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading;
 using Xunit;
 using System.Threading.Tasks;
+using Divergic.Logging.Xunit;
+using Microsoft.Extensions.Logging;
 using Proto.Remote.Tests.Messages;
 using Xunit.Abstractions;
 
@@ -14,12 +16,12 @@ namespace Proto.Remote.Tests
     {
         private static readonly RootContext Context = new RootContext();
         private readonly RemoteManager _remoteManager;
-        private readonly ITestOutputHelper _testOutputHelper;
 
         public RemoteTests(RemoteManager remoteManager, ITestOutputHelper testOutputHelper)
         {
             _remoteManager = remoteManager;
-            _testOutputHelper = testOutputHelper;
+            var factory = LogFactory.Create(testOutputHelper);
+            Log.SetLoggerFactory(factory);
         }
 
         [Fact, DisplayTestMethodName]
@@ -29,6 +31,7 @@ namespace Proto.Remote.Tests
             var json = new JsonMessage(typeName, "{ \"Address\":\"123\", \"Id\":\"456\"}");
             var bytes = Serialization.Serialize(json, 1);
             var deserialized = Serialization.Deserialize(typeName, bytes, 1) as PID;
+            Assert.NotNull(deserialized);
             Assert.Equal("123", deserialized.Address);
             Assert.Equal("456", deserialized.Id);
         }
@@ -40,6 +43,7 @@ namespace Proto.Remote.Tests
             var json = new JsonMessage(typeName, "{ \"message\":\"Hello\"}");
             var bytes = Serialization.Serialize(json, 1);
             var deserialized = Serialization.Deserialize(typeName, bytes, 1) as Ping;
+            Assert.NotNull(deserialized);
             Assert.Equal("Hello", deserialized.Message);
         }
 
@@ -129,8 +133,8 @@ namespace Proto.Remote.Tests
             var remoteActor2 = await SpawnRemoteActor(_remoteManager.DefaultNode.Address);
             var localActor = await SpawnLocalActorAndWatch(remoteActor1, remoteActor2);
 
-            Context.Stop(remoteActor1);
-            Context.Stop(remoteActor2);
+            await Context.StopAsync(remoteActor1);
+            await Context.StopAsync(remoteActor2);
 
             Assert.True(
                 await PollUntilTrue(
@@ -216,11 +220,13 @@ namespace Proto.Remote.Tests
         [Fact, DisplayTestMethodName]
         public async Task WhenRemoteTerminated_LocalWatcherReceivesNotification()
         {
+            var logger = Log.CreateLogger(nameof(WhenRemoteTerminated_LocalWatcherReceivesNotification));
+            
             var (address, process) = _remoteManager.ProvisionNode("127.0.0.1", 12002);
 
             var remoteActor = await SpawnRemoteActor(address);
             var localActor = await SpawnLocalActorAndWatch(remoteActor);
-            _testOutputHelper.WriteLine($"Killing remote process {address}!");
+            logger.LogInformation($"Killing remote process {address}!");
             process.Kill();
 
             Assert.True(
@@ -256,15 +262,16 @@ namespace Proto.Remote.Tests
 
         private async Task<bool> PollUntilTrue(Func<Task<bool>> predicate, int attempts, TimeSpan interval)
         {
+            var logger = Log.CreateLogger(nameof(PollUntilTrue));
             var attempt = 1;
 
             while (attempt <= attempts)
             {
-                _testOutputHelper.WriteLine($"Attempting assertion (attempt {attempt} of {attempts})");
+                logger.LogInformation($"Attempting assertion (attempt {attempt} of {attempts})");
 
                 if (await predicate())
                 {
-                    _testOutputHelper.WriteLine("Passed!");
+                    logger.LogInformation("Passed!");
                     return true;
                 }
 
