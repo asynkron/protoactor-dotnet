@@ -21,13 +21,13 @@ namespace Proto.Remote.Tests
             Thread.Sleep(3000);
         }
 
-        private static bool _remoteStarted;
+        private static bool remoteStarted;
         public static void EnsureRemote()
         {
-            if (_remoteStarted) return;
+            if (remoteStarted) return;
             
             Remote.Start("127.0.0.1", 12001);
-            _remoteStarted = true;
+            remoteStarted = true;
         }
 
         public void Dispose()
@@ -47,8 +47,13 @@ namespace Proto.Remote.Tests
             buildConfig = "Release";
 #endif
             var nodeAppPath = Path.Combine("Proto.Remote.Tests.Node", "bin", buildConfig, "netcoreapp3.1", "Proto.Remote.Tests.Node.dll");
-            var testsDirectory = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent;
+            var currentDirectory = Directory.GetCurrentDirectory();
+            var testsDirectory = Directory.GetParent(currentDirectory).Parent.Parent.Parent;
             var nodeDllPath = Path.Combine(testsDirectory.FullName, nodeAppPath);
+            
+            Console.WriteLine(currentDirectory);
+            Console.WriteLine(testsDirectory);
+            Console.WriteLine(nodeDllPath);
 
             if (!File.Exists(nodeDllPath))
             {
