@@ -3,13 +3,7 @@ using System.Threading.Tasks;
 
 namespace Proto.TestKit.Tests
 {
-    public interface IConfirmable
-    {
-    }
-
-    public class Confirmation
-    {
-    }
+    public class Confirmation { }
 
     public class FailedDelivery
     {
@@ -18,7 +12,7 @@ namespace Proto.TestKit.Tests
         public TimeSpan? TimeOut { get; set; }
         public int MaxAttempts { get; set; }
 
-        public void Retry(IContext context) => context.AtLeastOnceDelivery(Target, Message, TimeOut, MaxAttempts);
+        public Task Retry(IContext context) => context.AtLeastOnceDelivery(Target, Message, TimeOut, MaxAttempts);
     }
 
     public static class AtLeastOnceDeliveryExtensions
@@ -31,35 +25,39 @@ namespace Proto.TestKit.Tests
             context.Respond(new Confirmation());
         }
 
-        public static void AtLeastOnceDelivery(this IContext context, PID target, object message, TimeSpan? timeout = null, int maxAttempts = 10)
-        {
-            Task.Run(() =>
-            {
-                var attempts = 1;
-                while (true)
+        public static Task AtLeastOnceDelivery(this IContext context, PID target, object message, TimeSpan? timeout = null, int maxAttempts = 10)
+            => Task.Run(
+                async () =>
                 {
-                    try
-                    {
-                        context.RequestAsync<Confirmation>(target, message, timeout ?? TimeSpan.FromSeconds(2)).Wait();
-                        return;
-                    }
-                    catch
-                    {
-                        attempts++;
-                        if (attempts <= maxAttempts)
-                            continue;
+                    var attempts = 1;
 
-                        context.Send(context.Self, new FailedDelivery
+                    while (true)
+                    {
+                        try
                         {
-                            Message = message,
-                            Target = target,
-                            TimeOut = timeout,
-                            MaxAttempts = maxAttempts
-                        });
-                        return;
+                            await context.RequestAsync<Confirmation>(target, message, timeout ?? TimeSpan.FromSeconds(2));
+                            return;
+                        }
+                        catch
+                        {
+                            attempts++;
+
+                            if (attempts <= maxAttempts)
+                                continue;
+
+                            context.Send(
+                                context.Self, new FailedDelivery
+                                {
+                                    Message = message,
+                                    Target = target,
+                                    TimeOut = timeout,
+                                    MaxAttempts = maxAttempts
+                                }
+                            );
+                            return;
+                        }
                     }
                 }
-            });
-        }
+            );
     }
 }
