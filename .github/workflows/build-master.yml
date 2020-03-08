@@ -26,17 +26,17 @@ jobs:
           dotnet test -c Release
           docker-compose -f tests/docker-compose.yml down
         
-#  nuget:
-#    runs-on: windows-latest
-#    needs: [test-win,test-linux]
-#
-#    steps:
-#    - uses: actions/checkout@v1
-#
-#    - name: Create NuGet package
-#      run: dotnet pack -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
-#
-#    - name: Push NuGet package
-#      run: dotnet nuget push **/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+  nuget:
+    runs-on: ubuntu-latest
+    needs: [test]
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Create NuGet package
+      run: dotnet pack -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
+
+    - name: Push NuGet package
+      run: dotnet nuget push **/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
       
   
