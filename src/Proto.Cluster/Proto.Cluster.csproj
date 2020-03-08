@@ -3,12 +3,15 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="Protos.proto"/>
+    <PackageReference Include="Grpc.Tools" Version="2.23.0" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj"/>
-    <ProjectReference Include="..\Proto.Remote\Proto.Remote.csproj"/>
-    <ProjectReference Include="..\Proto.Mailbox\Proto.Mailbox.csproj"/>
-    <ProjectReference Include="..\Proto.Router\Proto.Router.csproj"/>
+    <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
+    <ProjectReference Include="..\Proto.Remote\Proto.Remote.csproj" />
+    <ProjectReference Include="..\Proto.Mailbox\Proto.Mailbox.csproj" />
+    <ProjectReference Include="..\Proto.Router\Proto.Router.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="Protos.proto" GrpcServices="Server" ProtoRoot=".; ..\..\src"/>
   </ItemGroup>
 </Project>

@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//   <copyright file="WeightedMemberStatus.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
+//   </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Threading;
 
 namespace Proto.Cluster.WeightedMemberStrategy
@@ -30,6 +36,7 @@ namespace Proto.Cluster.WeightedMemberStrategy
                 while (true)
                 {
                     _currIndex = (_currIndex + 1) % l;
+
                     if (_currIndex == 0)
                     {
                         if (_currWeight > _gcd)
@@ -41,6 +48,7 @@ namespace Proto.Cluster.WeightedMemberStrategy
                             _currWeight = _maxWeight;
                         }
                     }
+
                     if (((WeightedMemberStatusValue) members[_currIndex].StatusValue).Weight >= _currWeight)
                     {
                         return members[_currIndex].Address;
@@ -58,12 +66,15 @@ namespace Proto.Cluster.WeightedMemberStrategy
         private int GetMaxWeight()
         {
             var max = 0;
+
             foreach (var m in _memberStrategy.GetAllMembers())
             {
                 var statusVal = (WeightedMemberStatusValue) m.StatusValue;
+
                 if (statusVal.Weight > max)
                     max = statusVal.Weight;
             }
+
             return max;
         }
 
@@ -73,10 +84,12 @@ namespace Proto.Cluster.WeightedMemberStrategy
             if (members.Count == 0) return 0;
 
             var ints = new int[members.Count];
+
             for (int i = 0; i < members.Count; i++)
             {
                 ints[i] = ((WeightedMemberStatusValue) members[i].StatusValue).Weight;
             }
+
             return NGCD(ints);
         }
 
@@ -92,6 +105,7 @@ namespace Proto.Cluster.WeightedMemberStrategy
                 }
 
                 if (b == 0) return a;
+
                 var a1 = a;
                 a = b;
                 b = a1 % b;

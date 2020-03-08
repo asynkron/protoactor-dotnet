@@ -138,6 +138,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Messages", "examples\ClusterGrainHelloWorld\Messages\Messages.csproj", "{793CC5BC-71B5-441C-A37B-2E7A893C34FF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "protobuf", "protobuf", "{6D996E5A-5A15-4A5D-97F6-C01F619E3177}"
+ProjectSection(SolutionItems) = preProject
+	protobuf\Directory.Build.props = protobuf\Directory.Build.props
+EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProtoGrainGenerator", "protobuf\ProtoGrainGenerator\ProtoGrainGenerator.csproj", "{E686C93C-5853-44CC-A331-958396DADF64}"
 EndProject
