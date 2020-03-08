@@ -20,7 +20,7 @@ namespace Proto
             }
         }
         
-        public static void SendSystemNessage(this IEnumerable<PID> self, SystemMessage message)
+        public static void SendSystemMessage(this IEnumerable<PID> self, SystemMessage message)
         {
             foreach (var pid in self)
             {

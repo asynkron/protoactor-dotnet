@@ -264,11 +264,11 @@ namespace Proto
             }
         }
 
-        public void RestartChildren(Exception reason, params PID[] pids) => pids.SendSystemNessage(new Restart(reason));
+        public void RestartChildren(Exception reason, params PID[] pids) => pids.SendSystemMessage(new Restart(reason));
 
-        public void StopChildren(params PID[] pids) => pids.SendSystemNessage(Proto.Stop.Instance);
+        public void StopChildren(params PID[] pids) => pids.SendSystemMessage(Proto.Stop.Instance);
 
-        public void ResumeChildren(params PID[] pids) => pids.SendSystemNessage(ResumeMailbox.Instance);
+        public void ResumeChildren(params PID[] pids) => pids.SendSystemMessage(ResumeMailbox.Instance);
 
         public Task InvokeSystemMessageAsync(object msg)
         {
@@ -515,7 +515,7 @@ namespace Proto
             DisposeActorIfDisposable();
 
             //Notify watchers
-            _extras?.Watchers.SendSystemNessage(Terminated.From(Self));
+            _extras?.Watchers.SendSystemMessage(Terminated.From(Self));
 
             //Notify parent
             Parent?.SendSystemMessage(Terminated.From(Self));

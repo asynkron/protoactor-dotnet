@@ -54,11 +54,11 @@ namespace Proto
         }
 
         public void RestartChildren(Exception reason, params PID[] pids) =>
-            pids?.SendSystemNessage(new Restart(reason));
+            pids?.SendSystemMessage(new Restart(reason));
 
         public void StopChildren(params PID[] pids) => pids?.Stop();
 
-        public void ResumeChildren(params PID[] pids) => pids?.SendSystemNessage(ResumeMailbox.Instance);
+        public void ResumeChildren(params PID[] pids) => pids?.SendSystemMessage(ResumeMailbox.Instance);
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
