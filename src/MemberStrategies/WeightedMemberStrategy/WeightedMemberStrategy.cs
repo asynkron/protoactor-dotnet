@@ -8,6 +8,7 @@ using System.Collections.Generic;
 
 namespace Proto.Cluster.WeightedMemberStrategy
 {
+    [JetBrains.Annotations.PublicAPI]
     public class WeightedMemberStrategy : IMemberStrategy
     {
         private readonly List<MemberStatus> _members;

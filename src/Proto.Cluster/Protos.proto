@@ -2,7 +2,7 @@
 package cluster;
 option csharp_namespace = "Proto.Cluster";
 
-import "Proto.Actor/protos.proto";
+import "Proto.Actor/Protos.proto";
 
 message TakeOwnership {
     actor.PID pid = 1;
