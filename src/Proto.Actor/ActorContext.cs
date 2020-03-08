@@ -80,7 +80,7 @@ namespace Proto
         {
             if (_extras == null)
             {
-                var context = _props.ContextDecoratorChain(this) ?? this;
+                var context = _props.ContextDecoratorChain?.Invoke(this) ?? this;
                 _extras = new ActorContextExtras(context);
             }
 
@@ -488,21 +488,19 @@ namespace Proto
         //intermediate stopping stage, waiting for children to stop
         private Task TryRestartOrStopAsync()
         {
-            if (_extras?.Children?.Count > 0)
+            if (_extras?.Children.Count > 0)
             {
                 return Done;
             }
 
             CancelReceiveTimeout();
 
-            switch (_state)
+            return _state switch
             {
-                case ContextState.Restarting:
-                    return RestartAsync();
-                case ContextState.Stopping:
-                    return FinalizeStopAsync();
-                default: return Done;
-            }
+                ContextState.Restarting => RestartAsync(),
+                ContextState.Stopping => FinalizeStopAsync(),
+                _ => Done
+            };
         }
 
         //Last and final termination step

@@ -38,7 +38,7 @@ namespace Proto
         public Receiver ReceiverMiddlewareChain { get; private set; }
         public Sender SenderMiddlewareChain { get; private set; }
         public IList<Func<IContext, IContext>> ContextDecorator { get; private set; } = new List<Func<IContext, IContext>>();
-        public Func<IContext, IContext> ContextDecoratorChain { get; private set; } = DefaultContextDecorator;
+        public Func<IContext, IContext>? ContextDecoratorChain { get; private set; }
 
         public Spawner Spawner
         {
