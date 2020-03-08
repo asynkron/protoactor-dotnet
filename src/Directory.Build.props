@@ -3,9 +3,9 @@
     <Authors>Proto.Actor Team</Authors>
     <Company>Proto.Actor Team</Company>
     <Description>Ultra-fast distributed actors for .NET.</Description>
-    <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>http://proto.actor/</PackageProjectUrl>
-    <PackageIconUrl>http://proto.actor/images/logo.png</PackageIconUrl>
+    <PackageIcon>logo.png</PackageIcon>
     <RepositoryUrl>https://github.com/AsynkronIT/protoactor-dotnet</RepositoryUrl>
     <PackageTags>actors actor model concurrency proto protoactor</PackageTags>
     <LangVersion>8</LangVersion>
@@ -17,5 +17,9 @@
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" Version="2019.1.3" PrivateAssets="All"/>
     <PackageReference Include="MinVer" Version="2.1.0" PrivateAssets="All"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildStartupDirectory)\logo.png" Pack="true" PackagePath="\"/>
   </ItemGroup>
 </Project>
