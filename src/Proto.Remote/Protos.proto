@@ -3,7 +3,7 @@ syntax = "proto3";
 package remote;
 option csharp_namespace = "Proto.Remote";
 
-import "Proto.Actor/protos.proto";
+import "Proto.Actor/Protos.proto";
 
 message MessageBatch {
   repeated string type_names = 1;
