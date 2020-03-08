@@ -21,15 +21,19 @@ namespace Proto
         internal EventStream()
         {
             Subscribe(msg =>
-            {
-                if (msg is DeadLetterEvent letter)
                 {
-                    _logger.LogInformation("[DeadLetter] '{0}' got '{1}:{2}' from '{3}'", letter.Pid.ToShortString(),
-                        letter.Message.GetType().Name, letter.Message, letter.Sender?.ToShortString());
+                    if (msg is DeadLetterEvent letter)
+                    {
+                        _logger.LogInformation("[DeadLetter] '{0}' got '{1}:{2}' from '{3}'",
+                            letter.Pid.ToShortString(),
+                            letter.Message.GetType().Name, letter.Message, letter.Sender?.ToShortString()
+                        );
+                    }
                 }
-            });
+            );
         }
     }
+
     public class EventStream<T>
     {
         private readonly ILogger _logger = Log.CreateLogger<EventStream<T>>();
@@ -44,10 +48,11 @@ namespace Proto
         public Subscription<T> Subscribe(Action<T> action, IDispatcher? dispatcher = null)
         {
             var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, x =>
-            {
-                action(x);
-                return Actor.Done;
-            });
+                {
+                    action(x);
+                    return Actor.Done;
+                }
+            );
             _subscriptions.TryAdd(sub.Id, sub);
             return sub;
         }
@@ -62,13 +67,15 @@ namespace Proto
         public Subscription<T> Subscribe<TMsg>(Action<TMsg> action, IDispatcher? dispatcher = null) where TMsg : T
         {
             var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, msg =>
-            {
-                if (msg is TMsg typed)
                 {
-                    action(typed);
+                    if (msg is TMsg typed)
+                    {
+                        action(typed);
+                    }
+
+                    return Actor.Done;
                 }
-                return Actor.Done;
-            });
+            );
 
             _subscriptions.TryAdd(sub.Id, sub);
             return sub;
@@ -79,17 +86,19 @@ namespace Proto
             foreach (var sub in _subscriptions.Values)
             {
                 sub.Dispatcher.Schedule(() =>
-                {
-                    try
                     {
-                        sub.Action(msg);
+                        try
+                        {
+                            sub.Action(msg);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(0, ex, "Exception has occurred when publishing a message.");
+                        }
+
+                        return Actor.Done;
                     }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(0, ex, "Exception has occurred when publishing a message.");
-                    }
-                    return Actor.Done;
-                });
+                );
             }
         }
 

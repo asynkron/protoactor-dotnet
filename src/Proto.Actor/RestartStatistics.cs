@@ -13,16 +13,16 @@ namespace Proto
     public class RestartStatistics
     {
         private readonly List<DateTime> _failureTimes = new List<DateTime>();
-        
-        public int FailureCount => _failureTimes.Count;
 
         public RestartStatistics(int failureCount, DateTime? lastFailuretime)
         {
-            for (int i = 0; i < failureCount; i++)
+            for (var i = 0; i < failureCount; i++)
             {
                 _failureTimes.Add(lastFailuretime ?? DateTime.Now);
             }
         }
+
+        public int FailureCount => _failureTimes.Count;
 
         public void Fail() => _failureTimes.Add(DateTime.Now);
 

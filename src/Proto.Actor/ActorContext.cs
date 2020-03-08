@@ -22,23 +22,23 @@ namespace Proto
         Alive,
         Restarting,
         Stopping,
-        Stopped,
+        Stopped
     }
 
     //Angels cry over this code, but it serves a purpose, lazily init of less frequently used features
     public class ActorContextExtras
     {
+        public ActorContextExtras(IContext context)
+        {
+            Context = context;
+        }
+
         public ImmutableHashSet<PID> Children { get; private set; } = ImmutableHashSet<PID>.Empty;
         public Timer? ReceiveTimeoutTimer { get; private set; }
         public RestartStatistics RestartStatistics { get; } = new RestartStatistics(0, null);
         public Stack<object> Stash { get; } = new Stack<object>();
         public ImmutableHashSet<PID> Watchers { get; private set; } = ImmutableHashSet<PID>.Empty;
         public IContext Context { get; }
-
-        public ActorContextExtras(IContext context)
-        {
-            Context = context;
-        }
 
         public void InitReceiveTimeoutTimer(Timer timer) => ReceiveTimeoutTimer = timer;
 
@@ -76,17 +76,6 @@ namespace Proto
         private object? _messageOrEnvelope;
         private ContextState _state;
 
-        private ActorContextExtras EnsureExtras()
-        {
-            if (_extras == null)
-            {
-                var context = _props.ContextDecoratorChain?.Invoke(this) ?? this;
-                _extras = new ActorContextExtras(context);
-            }
-
-            return _extras;
-        }
-
         public ActorContext(Props props, PID parent, PID self)
         {
             _props = props;
@@ -99,8 +88,6 @@ namespace Proto
         }
 
         private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
-
-        public IImmutableSet<PID> Children => _extras?.Children ?? EmptyChildren;
         IReadOnlyCollection<PID> IContext.Children => Children;
 
         public IActor? Actor { get; private set; }
@@ -219,12 +206,14 @@ namespace Proto
             SendUserMessage(target, messageEnvelope);
         }
 
-        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout) => RequestAsync(target, message, new FutureProcess<T>(timeout));
+        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout) =>
+            RequestAsync(target, message, new FutureProcess<T>(timeout));
 
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => RequestAsync(target, message, new FutureProcess<T>(cancellationToken));
 
-        public Task<T> RequestAsync<T>(PID target, object message) => RequestAsync(target, message, new FutureProcess<T>());
+        public Task<T> RequestAsync<T>(PID target, object message) =>
+            RequestAsync(target, message, new FutureProcess<T>());
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
@@ -249,6 +238,40 @@ namespace Proto
             target.ContinueWith(t => { Self.SendSystemMessage(cont); });
         }
 
+        public Task Receive(MessageEnvelope envelope)
+        {
+            _messageOrEnvelope = envelope;
+            return DefaultReceive();
+        }
+
+        public void Stop(PID pid)
+        {
+            var reff = ProcessRegistry.Instance.Get(pid);
+            reff.Stop(pid);
+        }
+
+        public Task StopAsync(PID pid)
+        {
+            var future = new FutureProcess<object>();
+
+            pid.SendSystemMessage(new Watch(future.Pid));
+            Stop(pid);
+
+            return future.Task;
+        }
+
+        public void Poison(PID pid) => pid.SendUserMessage(new PoisonPill());
+
+        public Task PoisonAsync(PID pid)
+        {
+            var future = new FutureProcess<object>();
+
+            pid.SendSystemMessage(new Watch(future.Pid));
+            Poison(pid);
+
+            return future.Task;
+        }
+
         public void EscalateFailure(Exception reason, object message)
         {
             var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
@@ -263,12 +286,6 @@ namespace Proto
                 Parent.SendSystemMessage(failure);
             }
         }
-
-        public void RestartChildren(Exception reason, params PID[] pids) => pids.SendSystemMessage(new Restart(reason));
-
-        public void StopChildren(params PID[] pids) => pids.SendSystemMessage(Proto.Stop.Instance);
-
-        public void ResumeChildren(params PID[] pids) => pids.SendSystemMessage(ResumeMailbox.Instance);
 
         public Task InvokeSystemMessageAsync(object msg)
         {
@@ -350,10 +367,23 @@ namespace Proto
             return res;
         }
 
-        public Task Receive(MessageEnvelope envelope)
+        public IImmutableSet<PID> Children => _extras?.Children ?? EmptyChildren;
+
+        public void RestartChildren(Exception reason, params PID[] pids) => pids.SendSystemMessage(new Restart(reason));
+
+        public void StopChildren(params PID[] pids) => pids.SendSystemMessage(Proto.Stop.Instance);
+
+        public void ResumeChildren(params PID[] pids) => pids.SendSystemMessage(ResumeMailbox.Instance);
+
+        private ActorContextExtras EnsureExtras()
         {
-            _messageOrEnvelope = envelope;
-            return DefaultReceive();
+            if (_extras == null)
+            {
+                var context = _props.ContextDecoratorChain?.Invoke(this) ?? this;
+                _extras = new ActorContextExtras(context);
+            }
+
+            return _extras;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -444,7 +474,9 @@ namespace Proto
                     supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason, msg.Message);
                     break;
                 default:
-                    _props.SupervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason, msg.Message);
+                    _props.SupervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason,
+                        msg.Message
+                    );
                     break;
             }
         }
@@ -461,7 +493,9 @@ namespace Proto
         }
 
         private void HandleRootFailure(Failure failure)
-            => Supervision.DefaultStrategy.HandleFailure(this, failure.Who, failure.RestartStatistics, failure.Reason, failure.Message);
+            => Supervision.DefaultStrategy.HandleFailure(this, failure.Who, failure.RestartStatistics, failure.Reason,
+                failure.Message
+            );
 
         //Initiate stopping, not final
         private async Task InitiateStopAsync()
@@ -559,34 +593,6 @@ namespace Proto
 
             CancelReceiveTimeout();
             Send(Self, Proto.ReceiveTimeout.Instance);
-        }
-
-        public void Stop(PID pid)
-        {
-            var reff = ProcessRegistry.Instance.Get(pid);
-            reff.Stop(pid);
-        }
-
-        public Task StopAsync(PID pid)
-        {
-            var future = new FutureProcess<object>();
-
-            pid.SendSystemMessage(new Watch(future.Pid));
-            Stop(pid);
-
-            return future.Task;
-        }
-
-        public void Poison(PID pid) => pid.SendUserMessage(new PoisonPill());
-
-        public Task PoisonAsync(PID pid)
-        {
-            var future = new FutureProcess<object>();
-
-            pid.SendSystemMessage(new Watch(future.Pid));
-            Poison(pid);
-
-            return future.Task;
         }
     }
 }

@@ -6,7 +6,7 @@
             => new Terminated
             {
                 Who = who,
-                AddressTerminated = false,
+                AddressTerminated = false
             };
     }
 }

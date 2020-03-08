@@ -62,7 +62,7 @@ namespace Proto
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
-            throw new InvalidOperationException($"Guardian actor cannot receive any user messages.");
+            throw new InvalidOperationException("Guardian actor cannot receive any user messages.");
         }
 
         protected internal override void SendSystemMessage(PID pid, object message)

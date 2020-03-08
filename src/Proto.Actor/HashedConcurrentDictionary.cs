@@ -49,6 +49,7 @@ namespace Proto
                 {
                     return false;
                 }
+
                 p.Add(key, reff);
                 return true;
             }
@@ -73,6 +74,7 @@ namespace Proto
         }
 
         public class Partition : Dictionary<string, Process>
-        {}
+        {
+        }
     }
 }

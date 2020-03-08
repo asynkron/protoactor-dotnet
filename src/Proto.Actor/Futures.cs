@@ -15,13 +15,19 @@ namespace Proto
         private readonly CancellationTokenSource _cts;
         private readonly TaskCompletionSource<T> _tcs;
 
-        internal FutureProcess(TimeSpan timeout) : this(new CancellationTokenSource(timeout)) { }
+        internal FutureProcess(TimeSpan timeout) : this(new CancellationTokenSource(timeout))
+        {
+        }
 
         internal FutureProcess(CancellationToken cancellationToken) : this(
             CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)
-        ) { }
+        )
+        {
+        }
 
-        internal FutureProcess() : this(null) { }
+        internal FutureProcess() : this(null)
+        {
+        }
 
         private FutureProcess(CancellationTokenSource? cts)
         {

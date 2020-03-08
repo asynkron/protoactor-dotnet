@@ -2,7 +2,7 @@
 
 namespace Proto
 {
-    public interface IReceiverContext: IInfoContext
+    public interface IReceiverContext : IInfoContext
     {
         Task Receive(MessageEnvelope envelope);
     }

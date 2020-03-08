@@ -16,15 +16,15 @@ namespace Proto
         private const string NoHost = "nonhost";
         private readonly IList<Func<PID, Process>> _hostResolvers = new List<Func<PID, Process>>();
         private readonly HashedConcurrentDictionary _localActorRefs = new HashedConcurrentDictionary();
-        
-        private int _sequenceId;
         private string _host;
         private int _port;
+
+        private int _sequenceId;
 
         public static ProcessRegistry Instance { get; } = new ProcessRegistry();
 
         public string Address { get; private set; } = NoHost;
-        
+
         public void RegisterHostResolver(Func<PID, Process> resolver) => _hostResolvers.Add(resolver);
 
         public Process Get(PID pid)
@@ -34,7 +34,9 @@ namespace Proto
                 var reff = _hostResolvers.Select(x => x(pid)).FirstOrDefault();
 
                 if (reff == null)
+                {
                     throw new NotSupportedException("Unknown host");
+                }
 
                 return reff;
             }

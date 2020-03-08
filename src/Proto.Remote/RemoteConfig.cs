@@ -13,11 +13,7 @@ namespace Proto.Remote
     public class RemoteConfig
     {
        
-        [Obsolete("Use EndpointWriterOptions.EndpointWriterBatchSize instead")]
-        public int EndpointWriterBatchSize { 
-            get => EndpointWriterOptions.EndpointWriterBatchSize;
-            set => EndpointWriterOptions.EndpointWriterBatchSize = value;
-        }
+        
 
         /// <summary>
         /// Gets or sets the ChannelOptions for the gRPC channel.

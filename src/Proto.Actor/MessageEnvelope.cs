@@ -14,10 +14,14 @@ namespace Proto
     {
         public MessageEnvelope(object message, PID? sender, MessageHeader? header)
         {
-            Sender = sender; 
+            Sender = sender;
             Message = message;
             Header = header;
         }
+
+        public PID? Sender { get; }
+        public object Message { get; }
+        public MessageHeader? Header { get; }
 
         public static MessageEnvelope Wrap(object message)
         {
@@ -25,12 +29,9 @@ namespace Proto
             {
                 return env;
             }
+
             return new MessageEnvelope(message, null, null);
         }
-
-        public PID? Sender { get; }
-        public object Message { get; }
-        public MessageHeader? Header { get; }
 
         public MessageEnvelope WithSender(PID sender) => new MessageEnvelope(Message, sender, Header);
 
@@ -43,12 +44,11 @@ namespace Proto
             var header = (Header ?? new MessageHeader()).With(key, value);
             return new MessageEnvelope(Message, Sender, header);
         }
-        
+
         public MessageEnvelope WithHeaders(IEnumerable<KeyValuePair<string, string>> items)
         {
             var header = (Header ?? new MessageHeader()).With(items);
             return new MessageEnvelope(Message, Sender, header);
-
         }
 
         public static (object message, PID? sender, MessageHeader? headers) Unwrap(object message)
@@ -60,7 +60,7 @@ namespace Proto
 
             return (message, null, null);
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MessageHeader UnwrapHeader(object message) => (message as MessageEnvelope)?.Header;
 

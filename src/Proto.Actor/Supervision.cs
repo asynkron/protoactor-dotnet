@@ -8,7 +8,6 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Xml.Schema;
 using Microsoft.Extensions.Logging;
 
 namespace Proto
@@ -34,6 +33,7 @@ namespace Proto
     {
         public static ISupervisorStrategy DefaultStrategy { get; } =
             new OneForOneStrategy((who, reason) => SupervisorDirective.Restart, 10, TimeSpan.FromSeconds(10));
+
         public static ISupervisorStrategy AlwaysRestartStrategy { get; } = new AlwaysRestartStrategy();
     }
 
@@ -45,11 +45,10 @@ namespace Proto
     public delegate SupervisorDirective Decider(PID pid, Exception reason);
 
     /// <summary>
-    /// AllForOneStrategy returns a new SupervisorStrategy which applies the given fault Directive from the decider to the
-    /// failing child and all its children.
-    ///
-    /// This strategy is appropriate when the children have a strong dependency, such that and any single one failing would
-    /// place them all into a potentially invalid state.
+    ///     AllForOneStrategy returns a new SupervisorStrategy which applies the given fault Directive from the decider to the
+    ///     failing child and all its children.
+    ///     This strategy is appropriate when the children have a strong dependency, such that and any single one failing would
+    ///     place them all into a potentially invalid state.
     /// </summary>
     public class AllForOneStrategy : ISupervisorStrategy
     {
@@ -65,7 +64,8 @@ namespace Proto
             _withinTimeSpan = withinTimeSpan;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason, object message)
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
+            object message)
         {
             var directive = _decider(child, reason);
 
@@ -86,6 +86,7 @@ namespace Proto
                         LogInfo("Restarting");
                         supervisor.RestartChildren(reason, supervisor.Children.ToArray());
                     }
+
                     break;
                 case SupervisorDirective.Stop:
                     LogInfo("Stopping");
@@ -98,7 +99,9 @@ namespace Proto
                     throw new ArgumentOutOfRangeException();
             }
 
-            void LogInfo(string action) => Logger.LogInformation("{Action} {Actor} because of {Reason}", action, child.ToShortString(), reason);
+            void LogInfo(string action) => Logger.LogInformation("{Action} {Actor} because of {Reason}", action,
+                child.ToShortString(), reason
+            );
         }
 
         private bool ShouldStop(RestartStatistics rs)
@@ -135,7 +138,8 @@ namespace Proto
             _withinTimeSpan = withinTimeSpan;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason, object message)
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
+            object message)
         {
             var directive = _decider(child, reason);
 
@@ -156,6 +160,7 @@ namespace Proto
                         LogInfo("Restarting");
                         supervisor.RestartChildren(reason, child);
                     }
+
                     break;
                 case SupervisorDirective.Stop:
                     LogInfo("Stopping");
@@ -168,7 +173,9 @@ namespace Proto
                     throw new ArgumentOutOfRangeException();
             }
 
-            void LogInfo(string action) => Logger.LogInformation("{Action} {Actor} because of {Reason}", action, child.ToShortString(), reason);
+            void LogInfo(string action) => Logger.LogInformation("{Action} {Actor} because of {Reason}", action,
+                child.ToShortString(), reason
+            );
         }
 
         private bool ShouldStop(RestartStatistics rs)
@@ -202,7 +209,8 @@ namespace Proto
             _initialBackoff = initialBackoff;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason, object message)
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
+            object message)
         {
             if (rs.NumberOfFailures(_backoffWindow) == 0)
             {
@@ -225,7 +233,8 @@ namespace Proto
     public class AlwaysRestartStrategy : ISupervisorStrategy
     {
         //always restart
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason, object message)
+        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
+            object message)
             => supervisor.RestartChildren(reason, child);
     }
 }

@@ -4,10 +4,6 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Proto
 {
     // ReSharper disable once InconsistentNaming
@@ -21,7 +17,10 @@ namespace Proto
             Id = id;
         }
 
-        internal PID(string address, string id, Process process) : this(address, id) => _process = process;
+        internal PID(string address, string id, Process process) : this(address, id)
+        {
+            _process = process;
+        }
 
         internal Process? Ref
         {
@@ -34,6 +33,7 @@ namespace Proto
                     {
                         _process = null;
                     }
+
                     return _process;
                 }
 
@@ -57,38 +57,6 @@ namespace Proto
         {
             var reff = Ref ?? ProcessRegistry.Instance.Get(this);
             reff.SendSystemMessage(this, sys);
-        }
-
-        [Obsolete("Replaced with Context.Stop(pid)", false)]
-        public void Stop()
-        {
-            var reff = ProcessRegistry.Instance.Get(this);
-            reff.Stop(this);
-        }
-
-        [Obsolete("Replaced with Context.StopAsync(pid)", false)]
-        public Task StopAsync()
-        {
-            var future = new FutureProcess<object>();
-
-            SendSystemMessage(new Watch(future.Pid));
-            Stop();
-
-            return future.Task;
-        }
-
-        [Obsolete("Replaced with Context.Poison(pid)", false)]
-        public void Poison() => SendUserMessage(new PoisonPill());
-
-        [Obsolete("Replaced with Context.PoisonAsync(pid)", false)]
-        public Task PoisonAsync()
-        {
-            var future = new FutureProcess<object>();
-
-            SendSystemMessage(new Watch(future.Pid));
-            Poison();            
-
-            return future.Task;
         }
 
         public string ToShortString() => Address + "/" + Id;
