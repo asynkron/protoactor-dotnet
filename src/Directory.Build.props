@@ -1,21 +1,21 @@
 <Project>
-    <PropertyGroup>
-        <Authors>Proto.Actor Team</Authors>
-        <Company>Proto.Actor Team</Company>
-        <Description>Ultra-fast distributed actors for .NET.</Description>
-        <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
-        <PackageProjectUrl>http://proto.actor/</PackageProjectUrl>
-        <PackageIconUrl>http://proto.actor/images/logo.png</PackageIconUrl>
-        <RepositoryUrl>https://github.com/AsynkronIT/protoactor-dotnet</RepositoryUrl>
-        <PackageTags>actors actor model concurrency proto protoactor</PackageTags>
-        <LangVersion>8</LangVersion>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-        <DefineConstants>TRACE;DEBUG</DefineConstants>
-    </PropertyGroup>
-    
-    <ItemGroup>
-        <PackageReference Include="JetBrains.Annotations" Version="2019.1.3" PrivateAssets="All" />
-        <PackageReference Include="MinVer" Version="2.1.0" PrivateAssets="All" />
-    </ItemGroup>
+  <PropertyGroup>
+    <Authors>Proto.Actor Team</Authors>
+    <Company>Proto.Actor Team</Company>
+    <Description>Ultra-fast distributed actors for .NET.</Description>
+    <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
+    <PackageProjectUrl>http://proto.actor/</PackageProjectUrl>
+    <PackageIconUrl>http://proto.actor/images/logo.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/AsynkronIT/protoactor-dotnet</RepositoryUrl>
+    <PackageTags>actors actor model concurrency proto protoactor</PackageTags>
+    <LangVersion>8</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2019.1.3" PrivateAssets="All"/>
+    <PackageReference Include="MinVer" Version="2.1.0" PrivateAssets="All"/>
+  </ItemGroup>
 </Project>
