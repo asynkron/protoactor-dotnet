@@ -517,10 +517,8 @@ namespace Proto
 
         private async Task StopAllChildren()
         {
-            foreach (var pid in _extras?.Children)
-            {
-                System.Root.Stop(pid);
-            }
+            _extras?.Children?.Stop(System);
+            
             await TryRestartOrStopAsync();
         }
 

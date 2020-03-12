@@ -63,10 +63,7 @@ namespace Proto
 
         public void StopChildren(params PID[] pids)
         {
-            foreach (var pid in pids)
-            {
-                System.Root.Stop(pid);
-            }
+            pids?.Stop(System);
         }
 
         public void ResumeChildren(params PID[] pids) => pids?.SendSystemMessage(ResumeMailbox.Instance, System);
