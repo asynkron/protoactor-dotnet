@@ -22,7 +22,7 @@ namespace Proto
 
     public class DeadLetterProcess : Process
     {
-        public static readonly DeadLetterProcess Instance = new DeadLetterProcess();
+        public DeadLetterProcess(ActorSystem system) : base(system) {}
 
         protected internal override void SendUserMessage(PID pid, object message)
         {

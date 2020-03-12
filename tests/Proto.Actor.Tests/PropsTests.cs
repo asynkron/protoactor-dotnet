@@ -7,12 +7,15 @@ namespace Proto.Tests
 {
     public class PropsTests
     {
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
+        
         [Fact]
         public void Given_Props_When_WithDispatcher_Then_mutate_Dispatcher()
         {
             var dispatcher = new TestDispatcher();
 
-            var props = new Props();
+            var props = new Props(System);
             var props2 = props.WithDispatcher(dispatcher);
 
             Assert.NotEqual(props, props2);
@@ -32,7 +35,7 @@ namespace Proto.Tests
         {
             Func<IMailbox> mailboxProducer = () => new TestMailbox();
 
-            var props = new Props();
+            var props = new Props(System);
             var props2 = props.WithMailbox(mailboxProducer);
 
             Assert.NotEqual(props, props2);
@@ -54,7 +57,7 @@ namespace Proto.Tests
             Func<Receiver, Receiver> middleware2 = r => r;
             Func<Receiver, Receiver> middleware3 = r => r;
 
-            var props = new Props();
+            var props = new Props(System);
             var props2 = props.WithReceiverMiddleware(middleware, middleware2);
             var props3 = props2.WithReceiverMiddleware(middleware3);
 
@@ -76,7 +79,7 @@ namespace Proto.Tests
         {
             Func<IActor> producer = () => (IActor)null;
 
-            var props = new Props();
+            var props = new Props(System);
             var props2 = props.WithProducer(producer);
 
             Assert.NotEqual(props, props2);
@@ -96,7 +99,7 @@ namespace Proto.Tests
         {
             Spawner spawner = (id, p, parent) => new PID();
 
-            var props = new Props();
+            var props = new Props(System);
             var props2 = props.WithSpawner(spawner);
 
             Assert.NotEqual(props, props2);
@@ -116,7 +119,7 @@ namespace Proto.Tests
         {
             var supervision = new DoNothingSupervisorStrategy();
 
-            var props = new Props();
+            var props = new Props(System);
             var props2 = props.WithChildSupervisorStrategy(supervision);
 
             Assert.NotEqual(props, props2);

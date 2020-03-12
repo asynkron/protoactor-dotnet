@@ -22,40 +22,39 @@ namespace Proto
             _process = process;
         }
 
-        internal Process? Ref
+        internal Process? Ref(ActorSystem system)
         {
-            get
+
+            var p = _process;
+            if (p != null)
             {
-                var p = _process;
-                if (p != null)
+                if (p is ActorProcess lp && lp.IsDead)
                 {
-                    if (p is ActorProcess lp && lp.IsDead)
-                    {
-                        _process = null;
-                    }
-
-                    return _process;
-                }
-
-                var reff = ProcessRegistry.Instance.Get(this);
-                if (!(reff is DeadLetterProcess))
-                {
-                    _process = reff;
+                    _process = null;
                 }
 
                 return _process;
             }
+
+            var reff = system.ProcessRegistry.Get(this);
+            if (!(reff is DeadLetterProcess))
+            {
+                _process = reff;
+            }
+
+            return _process;
+
         }
 
-        internal void SendUserMessage(object message)
+        internal void SendUserMessage(ActorSystem system, object message)
         {
-            var reff = Ref ?? ProcessRegistry.Instance.Get(this);
+            var reff = Ref(system) ?? system.ProcessRegistry.Get(this);
             reff.SendUserMessage(this, message);
         }
 
-        public void SendSystemMessage(object sys)
+        public void SendSystemMessage(ActorSystem system,object sys)
         {
-            var reff = Ref ?? ProcessRegistry.Instance.Get(this);
+            var reff = Ref(system) ?? system.ProcessRegistry.Get(this);
             reff.SendSystemMessage(this, sys);
         }
 

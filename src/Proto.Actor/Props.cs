@@ -7,24 +7,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Proto.Mailbox;
 
 namespace Proto
 {
-    internal static class Middleware
-    {
-        internal static Task Receive(IReceiverContext context, MessageEnvelope envelope) => context.Receive(envelope);
-
-        internal static Task Sender(ISenderContext context, PID target, MessageEnvelope envelope)
-        {
-            target.SendUserMessage(envelope);
-            return Actor.Done;
-        }
-    }
-
     public sealed class Props
     {
+
+        public Props(ActorSystem system)
+        {
+            System = system;
+        }
+        
+        public ActorSystem System { get; }
         private Spawner? _spawner;
         public Func<IActor> Producer { get; private set; }
         public Func<IMailbox> MailboxProducer { get; private set; } = ProduceDefaultMailbox;
@@ -46,33 +41,14 @@ namespace Proto
 
         public Spawner Spawner
         {
-            get => _spawner ?? DefaultSpawner;
+            get => _spawner ?? System.DefaultSpawner;
             private set => _spawner = value;
         }
 
         private static IContext DefaultContextDecorator(IContext context) => context;
 
         private static IMailbox ProduceDefaultMailbox() => UnboundedMailbox.Create();
-
-        private static PID DefaultSpawner(string name, Props props, PID parent)
-        {
-            var mailbox = props.MailboxProducer();
-            var dispatcher = props.Dispatcher;
-            var process = new ActorProcess(mailbox);
-            var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, process);
-            if (!absent)
-            {
-                throw new ProcessNameExistException(name, pid);
-            }
-
-            var ctx = new ActorContext(props, parent, pid);
-            mailbox.RegisterHandlers(ctx, dispatcher);
-            mailbox.PostSystemMessage(Started.Instance);
-            mailbox.Start();
-
-            return pid;
-        }
-
+        
         public Props WithProducer(Func<IActor> producer) => Copy(props => props.Producer = producer);
 
         public Props WithDispatcher(IDispatcher dispatcher) => Copy(props => props.Dispatcher = dispatcher);
@@ -100,7 +76,7 @@ namespace Proto
             {
                 props.ReceiverMiddleware = ReceiverMiddleware.Concat(middleware).ToList();
                 props.ReceiverMiddlewareChain = props.ReceiverMiddleware.Reverse()
-                    .Aggregate((Receiver) Middleware.Receive, (inner, outer) => outer(inner));
+                    .Aggregate((Receiver) System.Middleware.Receive, (inner, outer) => outer(inner));
             }
         );
 
@@ -108,7 +84,7 @@ namespace Proto
             {
                 props.SenderMiddleware = SenderMiddleware.Concat(middleware).ToList();
                 props.SenderMiddlewareChain = props.SenderMiddleware.Reverse()
-                    .Aggregate((Sender) Middleware.Sender, (inner, outer) => outer(inner));
+                    .Aggregate((Sender) System.Middleware.Sender, (inner, outer) => outer(inner));
             }
         );
 
@@ -116,7 +92,7 @@ namespace Proto
 
         private Props Copy(Action<Props> mutator)
         {
-            var props = new Props
+            var props = new Props(System)
             {
                 Dispatcher = Dispatcher,
                 MailboxProducer = MailboxProducer,
@@ -136,8 +112,8 @@ namespace Proto
         }
 
         internal PID Spawn(string name, PID parent) => Spawner(name, this, parent);
-        public static Props FromProducer(Func<IActor> producer) => new Props().WithProducer(producer);
-        public static Props FromFunc(Receive receive) => FromProducer(() => new EmptyActor(receive));
+        public static Props FromProducer(ActorSystem system, Func<IActor> producer) => new Props(system).WithProducer(producer);
+        public static Props FromFunc(ActorSystem system,Receive receive) => FromProducer(system,() => new EmptyActor(receive));
     }
 
     public delegate PID Spawner(string id, Props props, PID parent);

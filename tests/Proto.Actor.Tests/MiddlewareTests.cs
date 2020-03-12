@@ -36,7 +36,8 @@ namespace Proto.Tests
 
     public class MiddlewareTests
     {
-        private static readonly RootContext Context = new RootContext();
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
 
 
         [Fact]
@@ -47,7 +48,7 @@ namespace Proto.Tests
             var logs3 = new List<string>();
 
             var testMailbox = new TestMailbox();
-            var props = Props.FromFunc(c =>
+            var props = Props.FromFunc( System,c =>
                 {
                     switch (c.Message)
                     {
@@ -83,7 +84,7 @@ namespace Proto.Tests
         {
             var logs = new List<string>();
             var testMailbox = new TestMailbox();
-            var props = Props.FromFunc(c =>
+            var props = Props.FromFunc( System,c =>
                 {
                     switch (c.Message)
                     {
@@ -127,7 +128,7 @@ namespace Proto.Tests
         {
             var logs = new List<string>();
             var testMailbox = new TestMailbox();
-            var props = Props.FromFunc(c =>
+            var props = Props.FromFunc( System,c =>
                 {
                     if (c.Message is string)
                         logs.Add("actor");
@@ -161,8 +162,8 @@ namespace Proto.Tests
         public void Given_SenderMiddleware_Should_Call_Middleware_In_Order()
         {
             var logs = new List<string>();
-            var pid1 = Context.Spawn(Props.FromProducer(() => new DoNothingActor()));
-            var props = Props.FromFunc(c =>
+            var pid1 = Context.Spawn(Props.FromProducer( System,() => new DoNothingActor()));
+            var props = Props.FromFunc( System,c =>
                 {
                     if (c.Message is string)
                         c.Send(pid1, "hey");

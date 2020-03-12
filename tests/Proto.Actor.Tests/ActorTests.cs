@@ -9,8 +9,9 @@ namespace Proto.Tests
 {
     public class ActorTests
     {
-        private static readonly RootContext Context = new RootContext();
-        public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
+        public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(System,receive));
 
 
         [Fact]
@@ -45,7 +46,7 @@ namespace Proto.Tests
         [Fact]
         public async Task RequestActorAsync_should_not_raise_TimeoutException_when_result_is_first()
         {
-            PID pid = SpawnActorFromFunc(ctx =>
+            var pid = SpawnActorFromFunc(ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -65,7 +66,7 @@ namespace Proto.Tests
             var messages = new Queue<object>();
 
             var pid = Context.Spawn(
-                Props.FromFunc(ctx =>
+                Props.FromFunc(System, ctx =>
                     {
                         messages.Enqueue(ctx.Message);
                         return Actor.Done;
@@ -75,7 +76,7 @@ namespace Proto.Tests
 
             Context.Send(pid, "hello");
 
-            await RootContext.Empty.StopAsync(pid);
+            await Context.StopAsync(pid);
 
             Assert.Equal(4, messages.Count);
             var msgs = messages.ToArray();
@@ -85,7 +86,7 @@ namespace Proto.Tests
             Assert.IsType<Stopped>(msgs[3]);
         }
 
-        public static PID SpawnForwarderFromFunc(Receive forwarder) => Context.Spawn(Props.FromFunc(forwarder));
+        public static PID SpawnForwarderFromFunc(Receive forwarder) => Context.Spawn(Props.FromFunc(System,forwarder));
 
         [Fact]
         public async Task ForwardActorAsync()

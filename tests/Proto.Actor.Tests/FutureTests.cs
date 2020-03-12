@@ -7,6 +7,9 @@ namespace Proto.Tests
 {
     public class FutureTests
     {
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
+
         private readonly ITestOutputHelper output;
 
         public FutureTests(ITestOutputHelper output)
@@ -14,12 +17,12 @@ namespace Proto.Tests
             this.output = output;
         }
 
-        private static readonly RootContext Context = new RootContext();
+       
 
         [Fact]
         public void Given_Actor_When_AwaitRequestAsync_Should_ReturnReply()
         {
-            var pid = Context.Spawn(Props.FromFunc(ctx =>
+            var pid = Context.Spawn(Props.FromFunc(System ,ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -36,7 +39,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_Actor_When_AwaitContextRequestAsync_Should_GetReply()
         {
-            var pid1 = Context.Spawn(Props.FromFunc(ctx =>
+            var pid1 = Context.Spawn(Props.FromFunc( System, ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -44,7 +47,7 @@ namespace Proto.Tests
                 }
                 return Actor.Done;
             }));
-            var pid2 = Context.Spawn(Props.FromFunc(async ctx =>
+            var pid2 = Context.Spawn(Props.FromFunc( System,async ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -62,7 +65,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_Actor_When_ReplyIsNull_Should_Return()
         {
-            var pid = Context.Spawn(Props.FromFunc(ctx =>
+            var pid = Context.Spawn(Props.FromFunc( System,ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -81,7 +84,7 @@ namespace Proto.Tests
         {
             Task.Run(async () =>
             {
-                var pid = Context.Spawn(Props.FromFunc(ctx =>
+                var pid = Context.Spawn(Props.FromFunc( System ,ctx =>
                 {
                     if (ctx.Message is string msg)
                     {
@@ -107,22 +110,22 @@ namespace Proto.Tests
         {
             Task.Run(async () =>
             {
-                var replier = Context.Spawn(Props.FromFunc(ctx =>
+                var replier = Context.Spawn(Props.FromFunc( System ,ctx =>
                 {
                     if (ctx.Message is Tuple<PID, String> msg)
                     {
                         output.WriteLine("replier Got Message " + msg.Item2);
-                        msg.Item1.SendUserMessage(null);
+                        msg.Item1.SendUserMessage(System,null);
                         output.WriteLine("replier Sent Response to " + msg.Item2);
                     }
                     return Actor.Done;
                 }));
-                var pid = Context.Spawn(Props.FromFunc(ctx =>
+                var pid = Context.Spawn(Props.FromFunc( System ,ctx =>
                 {
                     if (ctx.Message is string msg)
                     {
                         output.WriteLine("pid Got Message " + msg);
-                        replier.SendUserMessage(Tuple.Create(ctx.Sender, msg));
+                        replier.SendUserMessage(System,Tuple.Create(ctx.Sender, msg));
                         output.WriteLine("pid Sent Response to " + msg);
                     }
                     return Actor.Done;

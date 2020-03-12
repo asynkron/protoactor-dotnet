@@ -8,7 +8,8 @@ namespace Proto.Tests
 {
     public class DisposableActorTests
     {
-        private static readonly RootContext Context = new RootContext();
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
         
         private class SupervisingActor : IActor
         {
@@ -92,10 +93,10 @@ namespace Proto.Tests
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
-            var childProps = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
+            var childProps = Props.FromProducer(System ,() => new DisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
                 .WithChildSupervisorStrategy(strategy);
-            var props = Props.FromProducer(() => new SupervisingActor(childProps))
+            var props = Props.FromProducer( System, () => new SupervisingActor(childProps))
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
             var parent = Context.Spawn(props);
@@ -110,10 +111,10 @@ namespace Proto.Tests
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
-            var childProps = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
+            var childProps = Props.FromProducer( System ,() => new DisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
                 .WithChildSupervisorStrategy(strategy);
-            var props = Props.FromProducer(() => new SupervisingActor(childProps))
+            var props = Props.FromProducer( System,() => new SupervisingActor(childProps))
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
             var parent = Context.Spawn(props);
@@ -126,7 +127,7 @@ namespace Proto.Tests
         public async void WhenActorStopped_DisposeIsCalled()
         {
             var disposeCalled = false;
-            var props = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
+            var props = Props.FromProducer( System ,() => new DisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => new TestMailbox());
             var pid = Context.Spawn(props);
             await Context.StopAsync(pid);
@@ -141,11 +142,11 @@ namespace Proto.Tests
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
-            var child1Props = Props.FromProducer(() => new DisposableActor(() => child1Disposed = true))
+            var child1Props = Props.FromProducer( System ,() => new DisposableActor(() => child1Disposed = true))
                 .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
-            var child2Props = Props.FromProducer(() => new DisposableActor(() => child2Disposed = true))
+            var child2Props = Props.FromProducer( System ,() => new DisposableActor(() => child2Disposed = true))
                 .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
-            var parentProps = Props.FromProducer(() => new ParentWithMultipleChildrenActor(child1Props, child2Props))
+            var parentProps = Props.FromProducer( System ,() => new ParentWithMultipleChildrenActor(child1Props, child2Props))
                 .WithChildSupervisorStrategy(strategy);
             var parent = Context.Spawn(parentProps);
 

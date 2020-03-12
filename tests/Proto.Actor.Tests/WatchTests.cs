@@ -8,13 +8,14 @@ namespace Proto.Tests
 {
     public class WatchTests
     {
-        private static readonly RootContext Context = new RootContext();
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
         
         [Fact]
         public async Task MultipleStopsTriggerSingleTerminated()
         {
             int counter = 0;
-            var childProps = Props.FromFunc(context =>
+            var childProps = Props.FromFunc(System,context =>
             {
                 switch (context.Message)
                 {
@@ -26,7 +27,7 @@ namespace Proto.Tests
                 return Actor.Done;
             });
 
-            Context.Spawn(Props.FromFunc(context =>
+            Context.Spawn(Props.FromFunc(System,context =>
             {
                 switch (context.Message)
                 {
@@ -47,9 +48,9 @@ namespace Proto.Tests
         [Fact]
         public async void CanWatchLocalActors()
         {
-            var watchee = Context.Spawn(Props.FromProducer(() => new DoNothingActor())
+            var watchee = Context.Spawn(Props.FromProducer(System,() => new DoNothingActor())
                                            .WithMailbox(() => new TestMailbox()));
-            var watcher = Context.Spawn(Props.FromProducer(() => new LocalActor(watchee))
+            var watcher = Context.Spawn(Props.FromProducer(System,() => new LocalActor(watchee))
                                            .WithMailbox(() => new TestMailbox()));
 
             await Context.StopAsync(watchee);

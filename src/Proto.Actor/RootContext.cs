@@ -17,10 +17,11 @@ namespace Proto
 
     public class RootContext : IRootContext
     {
-        public static readonly RootContext Empty = new RootContext();
+        private readonly ActorSystem _system;
 
-        public RootContext()
+        public RootContext(ActorSystem system)
         {
+            _system = system;
             SenderMiddleware = null;
             Headers = MessageHeader.Empty;
         }
@@ -42,19 +43,19 @@ namespace Proto
 
         public PID Spawn(Props props)
         {
-            var name = ProcessRegistry.Instance.NextId();
+            var name = _system.ProcessRegistry.NextId();
             return SpawnNamed(props, name);
         }
 
         public PID SpawnNamed(Props props, string name)
         {
-            var parent = props.GuardianStrategy != null ? Guardians.GetGuardianPID(props.GuardianStrategy) : null;
+            var parent = props.GuardianStrategy != null ? _system.Guardians.GetGuardianPID(props.GuardianStrategy) : null;
             return props.Spawn(name, parent);
         }
 
         public PID SpawnPrefix(Props props, string prefix)
         {
-            var name = prefix + ProcessRegistry.Instance.NextId();
+            var name = prefix + _system.ProcessRegistry.NextId();
             return SpawnNamed(props, name);
         }
 
@@ -73,37 +74,37 @@ namespace Proto
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => RequestAsync(target, message, new FutureProcess<T>(timeout));
+            => RequestAsync(target, message, new FutureProcess<T>(_system,timeout));
 
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => RequestAsync(target, message, new FutureProcess<T>(cancellationToken));
+            => RequestAsync(target, message, new FutureProcess<T>(_system,cancellationToken));
 
         public Task<T> RequestAsync<T>(PID target, object message)
-            => RequestAsync(target, message, new FutureProcess<T>());
+            => RequestAsync(target, message, new FutureProcess<T>(_system));
 
         public void Stop(PID pid)
         {
-            var reff = ProcessRegistry.Instance.Get(pid);
+            var reff = _system.ProcessRegistry.Get(pid);
             reff.Stop(pid);
         }
 
         public Task StopAsync(PID pid)
         {
-            var future = new FutureProcess<object>();
+            var future = new FutureProcess<object>(_system);
 
-            pid.SendSystemMessage(new Watch(future.Pid));
+            pid.SendSystemMessage(_system, new Watch(future.Pid));
             Stop(pid);
 
             return future.Task;
         }
 
-        public void Poison(PID pid) => pid.SendUserMessage(new PoisonPill());
+        public void Poison(PID pid) => pid.SendUserMessage(_system,new PoisonPill());
 
         public Task PoisonAsync(PID pid)
         {
-            var future = new FutureProcess<object>();
+            var future = new FutureProcess<object>(_system);
 
-            pid.SendSystemMessage(new Watch(future.Pid));
+            pid.SendSystemMessage(_system,new Watch(future.Pid));
             Poison(pid);
 
             return future.Task;
@@ -121,7 +122,7 @@ namespace Proto
 
         private RootContext Copy(Action<RootContext> mutator)
         {
-            var copy = new RootContext
+            var copy = new RootContext(_system)
             {
                 SenderMiddleware = SenderMiddleware,
                 Headers = Headers
@@ -133,7 +134,7 @@ namespace Proto
 
         private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
         {
-            target.SendUserMessage(message);
+            target.SendUserMessage(_system,message);
             return Proto.Actor.Done;
         }
 
@@ -155,7 +156,7 @@ namespace Proto
             else
             {
                 //fast path, 0 alloc
-                target.SendUserMessage(message);
+                target.SendUserMessage(_system,message);
             }
         }
     }

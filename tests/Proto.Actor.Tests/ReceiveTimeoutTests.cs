@@ -8,14 +8,15 @@ namespace Proto.Tests
 {
     public class ReceiveTimeoutTests
     {
-        private static readonly RootContext Context = new RootContext();
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
         [Fact]
         public async Task receive_timeout_received_within_expected_time()
         {
             var timeoutReceived = false;
             var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Props.FromFunc((context) =>
+            var props = Props.FromFunc(System,(context) =>
             {
                 switch (context.Message)
                 {
@@ -41,7 +42,7 @@ namespace Proto.Tests
             var timeoutReceived = false;
             var actorStartedWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Props.FromFunc((context) =>
+            var props = Props.FromFunc(System ,(context) =>
             {
                 switch (context.Message)
                 {
@@ -68,7 +69,7 @@ namespace Proto.Tests
             var endingTimeout = TimeSpan.MaxValue;
             var autoExpiringWaiter = GetExpiringTaskCompletionSource(1500);
 
-            var props = Props.FromFunc((context) =>
+            var props = Props.FromFunc( System ,(context) =>
             {
                 switch (context.Message)
                 {
@@ -100,7 +101,7 @@ namespace Proto.Tests
             var timeoutReceived = false;
             var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Props.FromFunc((context) =>
+            var props = Props.FromFunc( System ,(context) =>
             {
                 switch (context.Message)
                 {

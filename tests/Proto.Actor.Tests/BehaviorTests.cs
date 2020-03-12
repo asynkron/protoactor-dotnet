@@ -5,12 +5,13 @@ namespace Proto.Tests
 {
     public class BehaviorTests
     {
-        private static readonly RootContext Context = new RootContext();
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
         
         [Fact]
         public async Task can_change_states()
         {
-            var testActorProps = Props.FromProducer(() => new LightBulb());
+            var testActorProps = Props.FromProducer(System,() => new LightBulb());
             var actor = Context.Spawn(testActorProps);
             
             var response = await Context.RequestAsync<string>(actor, new PressSwitch());
@@ -26,7 +27,7 @@ namespace Proto.Tests
         [Fact]
         public async Task can_use_global_behaviour()
         {
-            var testActorProps = Props.FromProducer(() => new LightBulb());
+            var testActorProps = Props.FromProducer(System,() => new LightBulb());
             var actor = Context.Spawn(testActorProps);
             var _ = await Context.RequestAsync<string>(actor, new PressSwitch());
             var response = await Context.RequestAsync<string>(actor, new HitWithHammer());
@@ -37,7 +38,7 @@ namespace Proto.Tests
             Assert.Equal("OW!", response);
         }
         
-        public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
+        public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(System,receive));
 
         [Fact]
         public async Task pop_behavior_should_restore_pushed_behavior()
