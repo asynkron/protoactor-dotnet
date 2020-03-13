@@ -19,7 +19,7 @@ class Program
         Console.ReadLine();
     }
 
-    //Messages should be immutable to prvent race conditions between multiple actors
+    //Messages should be immutable to prevent race conditions between multiple actors
     private class Hello
     {
         public string Who { get; }

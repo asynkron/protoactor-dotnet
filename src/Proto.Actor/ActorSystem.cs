@@ -1,3 +1,5 @@
+using System.Security.Authentication.ExtendedProtection;
+
 namespace Proto
 {
     public class ActorSystem
@@ -11,6 +13,8 @@ namespace Proto
         
         public DeadLetterProcess DeadLetter { get; }
 
+        public EventStream EventStream { get; }
+
         public ActorSystem()
         {
             ProcessRegistry = new ProcessRegistry(this);
@@ -18,6 +22,7 @@ namespace Proto
             DeadLetter = new DeadLetterProcess(this);
             Guardians = new Guardians(this);
             Middleware = new Middleware(this);
+            EventStream = new EventStream();
         }
         
         public PID DefaultSpawner(string name, Props props, PID parent)
