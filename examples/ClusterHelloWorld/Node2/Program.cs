@@ -25,7 +25,11 @@ namespace Node2
             Log.SetLoggerFactory(log);
             Console.WriteLine("Starting Node2");
 
-            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+            var system = new ActorSystem();
+            var serialization = new Serialization();
+            var context = new RootContext(system);
+            serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+            var Cluster = new Cluster(system, serialization);
 
             var props = Props.FromFunc(
                 ctx =>
@@ -33,7 +37,7 @@ namespace Node2
                     switch (ctx.Message)
                     {
                         case HelloRequest _:
-                            ctx.Respond(new HelloResponse {Message = "Hello from node 2"});
+                            ctx.Respond(new HelloResponse { Message = "Hello from node 2" });
                             break;
                     }
 
@@ -42,7 +46,7 @@ namespace Node2
             );
 
             var parsedArgs = ParseArgs(args);
-            Remote.RegisterKnownKind("HelloKind", props);
+            Cluster.Remote.RegisterKnownKind("HelloKind", props);
 
             // SINGLE REMOTE INSTANCE
             // Cluster.Start("MyCluster", parsedArgs.ServerName, 12000, new SingleRemoteInstanceProvider(parsedArgs.ServerName, 12001));

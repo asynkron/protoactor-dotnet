@@ -9,18 +9,18 @@ namespace Proto.ActorExtensions.Tests
         [Fact]
         public async void SpawnActor()
         {
-            var context = new RootContext();
             var services = new ServiceCollection();
             services.AddProtoActor();
 
             var provider = services.BuildServiceProvider();
             var factory = provider.GetRequiredService<IActorFactory>();
+            var system = provider.GetRequiredService<ActorSystem>();
 
             var pid = factory.GetActor<SampleActor>();
 
-            context.Send(pid, "hello");
+            system.Root.Send(pid, "hello");
 
-            await RootContext.Empty.StopAsync(pid);
+            await system.Root.StopAsync(pid);
 
             Assert.True(SampleActor.Created);
         }
@@ -41,10 +41,11 @@ namespace Proto.ActorExtensions.Tests
 
             var provider = services.BuildServiceProvider();
             var factory = provider.GetRequiredService<IActorFactory>();
+            var system = provider.GetRequiredService<ActorSystem>();
 
             var pid = factory.GetActor<SampleActor>();
 
-            await RootContext.Empty.StopAsync(pid);
+            await system.Root.StopAsync(pid);
 
             Assert.True(created);
         }

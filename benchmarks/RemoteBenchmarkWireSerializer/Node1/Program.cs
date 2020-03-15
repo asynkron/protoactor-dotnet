@@ -16,12 +16,14 @@ class Program
 {
     static void Main(string[] args)
     {
-        var context = new RootContext();
+        var system = new ActorSystem();
+        var context = new RootContext(system);
+        var serialization = new Serialization();
         //Registering "knownTypes" is not required, but improves performance as those messages
         //do not need to pass any typename manifest
-        var wire = new WireSerializer(new []{typeof(Ping), typeof(Pong), typeof(StartRemote),typeof(Start)});
-        Serialization.RegisterSerializer(wire,true);
-
+        var wire = new WireSerializer(new[] { typeof(Ping), typeof(Pong), typeof(StartRemote), typeof(Start) });
+        serialization.RegisterSerializer(wire, true);
+        var Remote = new Remote(system, serialization);
         Remote.Start("127.0.0.1", 12001);
 
         var messageCount = 1000000;
@@ -30,7 +32,7 @@ class Program
 
         var pid = context.Spawn(props);
         var remote = new PID("127.0.0.1:12000", "remote");
-        context.RequestAsync<Start>(remote, new StartRemote {Sender = pid}).Wait();
+        context.RequestAsync<Start>(remote, new StartRemote { Sender = pid }).Wait();
 
         var start = DateTime.Now;
         Console.WriteLine("Starting to send");

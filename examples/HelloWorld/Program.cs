@@ -13,7 +13,7 @@ class Program
     static void Main(string[] args)
     {
         var system = new ActorSystem();
-        var props = Props.FromProducer(system,() => new HelloActor());
+        var props = Props.FromProducer(() => new HelloActor());
         var pid = system.Root.Spawn(props);
         system.Root.Send(pid, new Hello("ProtoActor"));
         Console.ReadLine();

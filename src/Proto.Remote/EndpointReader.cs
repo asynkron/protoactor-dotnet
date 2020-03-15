@@ -16,20 +16,30 @@ namespace Proto.Remote
     public class EndpointReader : Remoting.RemotingBase
     {
         private static readonly ILogger Logger = Log.CreateLogger<EndpointReader>();
-        
+
         private bool _suspended;
+        private readonly ActorSystem _system;
+        private readonly EndpointManager _endpointManager;
+        private readonly Serialization _serialization;
+
+        public EndpointReader(ActorSystem system, EndpointManager endpointManager, Serialization serialization)
+        {
+            _system = system;
+            _endpointManager = endpointManager;
+            _serialization = serialization;
+        }
 
         public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
         {
             if (_suspended)
             {
                 Logger.LogWarning("Attempt to connect to the suspended reader has been rejected");
-                
+
                 throw new RpcException(Status.DefaultCancelled, "Suspended");
             }
 
             Logger.LogDebug("Accepted connection request from {Remote} to {Local}", context.Peer, context.Host);
-            
+
             return Task.FromResult(
                 new ConnectResponse
                 {
@@ -44,7 +54,7 @@ namespace Proto.Remote
         )
         {
             var targets = new PID[100];
-            
+
             return requestStream.ForEachAsync(
                 batch =>
                 {
@@ -61,7 +71,7 @@ namespace Proto.Remote
 
                     for (var i = 0; i < batch.TargetNames.Count; i++)
                     {
-                        targets[i] = new PID(ProcessRegistry.Instance.Address, batch.TargetNames[i]);
+                        targets[i] = new PID(_system.ProcessRegistry.Address, batch.TargetNames[i]);
                     }
 
                     var typeNames = batch.TypeNames.ToArray();
@@ -70,35 +80,38 @@ namespace Proto.Remote
                     {
                         var target = targets[envelope.Target];
                         var typeName = typeNames[envelope.TypeId];
-                        var message = Serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
+                        var message = _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
 
-                        switch (message) {
-                            case Terminated msg: {
-                                Logger.LogDebug("Forwarding remote endpoint termination request for {Who}", msg.Who);
-                                
-                                var rt = new RemoteTerminate(target, msg.Who);
-                                EndpointManager.RemoteTerminate(rt);
-                                
-                                break;
-                            }
+                        switch (message)
+                        {
+                            case Terminated msg:
+                                {
+                                    Logger.LogDebug("Forwarding remote endpoint termination request for {Who}", msg.Who);
+
+                                    var rt = new RemoteTerminate(target, msg.Who);
+                                    _endpointManager.RemoteTerminate(rt);
+
+                                    break;
+                                }
                             case SystemMessage sys:
                                 Logger.LogDebug("Forwarding remote system message {@Message}", sys);
-                                
-                                target.SendSystemMessage(sys);
-                                break;
-                            default: {
-                                Proto.MessageHeader header = null;
 
-                                if (envelope.MessageHeader != null)
+                                target.SendSystemMessage(_system, sys);
+                                break;
+                            default:
                                 {
-                                    header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
-                                }
+                                    Proto.MessageHeader header = null;
 
-                                Logger.LogDebug("Forwarding remote user message {@Message}", message);
-                                var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
-                                RootContext.Empty.Send(target, localEnvelope);
-                                break;
-                            }
+                                    if (envelope.MessageHeader != null)
+                                    {
+                                        header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
+                                    }
+
+                                    Logger.LogDebug("Forwarding remote user message {@Message}", message);
+                                    var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
+                                    _system.Root.Send(target, localEnvelope);
+                                    break;
+                                }
                         }
                     }
 

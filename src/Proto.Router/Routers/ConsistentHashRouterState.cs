@@ -15,9 +15,11 @@ namespace Proto.Router.Routers
         private readonly int _replicaCount;
         private HashRing _hashRing;
         private Dictionary<string, PID> _routeeMap;
+        private readonly ActorSystem _system;
 
-        public ConsistentHashRouterState(Func<string, uint> hash, int replicaCount)
+        public ConsistentHashRouterState(ActorSystem system, Func<string, uint> hash, int replicaCount)
         {
+            _system = system;
             _hash = hash;
             _replicaCount = replicaCount;
         }
@@ -50,7 +52,7 @@ namespace Proto.Router.Routers
                 var routee = _routeeMap[node];
 
                 //by design, just forward message
-                RootContext.Empty.Send(routee, message);
+                _system.Root.Send(routee, message);
             }
             else
             {

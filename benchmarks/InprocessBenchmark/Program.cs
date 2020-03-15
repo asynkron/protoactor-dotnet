@@ -19,16 +19,16 @@ public class Program
 {
     static void Main(string[] args)
     {
-        var context = new RootContext();
+        var context = new RootContext(new ActorSystem());
         Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
         const int messageCount = 1_000_000;
         const int batchSize = 100;
 
         Console.WriteLine("Dispatcher\t\tElapsed\t\tMsg/sec");
-        var tps = new[] {300, 400, 500, 600, 700, 800, 900, 1000, 1500, 3000};
+        var tps = new[] { 300, 400, 500, 600, 700, 800, 900, 1000, 1500, 3000 };
         foreach (var t in tps)
         {
-            var d = new ThreadPoolDispatcher {Throughput = t};
+            var d = new ThreadPoolDispatcher { Throughput = t };
 
             var clientCount = Environment.ProcessorCount * 1;
             var clients = new PID[clientCount];
@@ -64,7 +64,7 @@ public class Program
             sw.Stop();
             var totalMessages = messageCount * 2 * clientCount;
 
-            var x = ((int) (totalMessages / (double) sw.ElapsedMilliseconds * 1000.0d)).ToString("#,##0,,M", CultureInfo.InvariantCulture);
+            var x = ((int)(totalMessages / (double)sw.ElapsedMilliseconds * 1000.0d)).ToString("#,##0,,M", CultureInfo.InvariantCulture);
             Console.WriteLine($"{t}\t\t\t{sw.ElapsedMilliseconds} ms\t\t{x}");
             Thread.Sleep(2000);
         }

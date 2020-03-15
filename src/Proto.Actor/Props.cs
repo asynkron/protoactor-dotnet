@@ -13,13 +13,6 @@ namespace Proto
 {
     public sealed class Props
     {
-
-        public Props(ActorSystem system)
-        {
-            System = system;
-        }
-        
-        public ActorSystem System { get; }
         private Spawner? _spawner;
         public Func<IActor> Producer { get; private set; }
         public Func<IMailbox> MailboxProducer { get; private set; } = ProduceDefaultMailbox;
@@ -41,14 +34,33 @@ namespace Proto
 
         public Spawner Spawner
         {
-            get => _spawner ?? System.DefaultSpawner;
+            get => _spawner ?? DefaultSpawner;
             private set => _spawner = value;
         }
 
         private static IContext DefaultContextDecorator(IContext context) => context;
 
         private static IMailbox ProduceDefaultMailbox() => UnboundedMailbox.Create();
-        
+
+        public PID DefaultSpawner(ActorSystem system, string name, Props props, PID parent)
+        {
+            var mailbox = props.MailboxProducer();
+            var dispatcher = props.Dispatcher;
+            var process = new ActorProcess(system, mailbox);
+            var (pid, absent) = system.ProcessRegistry.TryAdd(name, process);
+            if (!absent)
+            {
+                throw new ProcessNameExistException(name, pid);
+            }
+
+            var ctx = new ActorContext(system, props, parent, pid);
+            mailbox.RegisterHandlers(ctx, dispatcher);
+            mailbox.PostSystemMessage(Started.Instance);
+            mailbox.Start();
+
+            return pid;
+        }
+
         public Props WithProducer(Func<IActor> producer) => Copy(props => props.Producer = producer);
 
         public Props WithDispatcher(IDispatcher dispatcher) => Copy(props => props.Dispatcher = dispatcher);
@@ -60,7 +72,7 @@ namespace Proto
             {
                 props.ContextDecorator = ContextDecorator.Concat(contextDecorator).ToList();
                 props.ContextDecoratorChain = props.ContextDecorator.Reverse()
-                    .Aggregate((Func<IContext, IContext>) DefaultContextDecorator,
+                    .Aggregate((Func<IContext, IContext>)DefaultContextDecorator,
                         (inner, outer) => ctx => outer(inner(ctx))
                     );
             }
@@ -76,7 +88,7 @@ namespace Proto
             {
                 props.ReceiverMiddleware = ReceiverMiddleware.Concat(middleware).ToList();
                 props.ReceiverMiddlewareChain = props.ReceiverMiddleware.Reverse()
-                    .Aggregate((Receiver) System.Middleware.Receive, (inner, outer) => outer(inner));
+                    .Aggregate((Receiver)Middleware.Receive, (inner, outer) => outer(inner));
             }
         );
 
@@ -84,7 +96,7 @@ namespace Proto
             {
                 props.SenderMiddleware = SenderMiddleware.Concat(middleware).ToList();
                 props.SenderMiddlewareChain = props.SenderMiddleware.Reverse()
-                    .Aggregate((Sender) System.Middleware.Sender, (inner, outer) => outer(inner));
+                    .Aggregate((Sender)Middleware.Sender, (inner, outer) => outer(inner));
             }
         );
 
@@ -92,7 +104,7 @@ namespace Proto
 
         private Props Copy(Action<Props> mutator)
         {
-            var props = new Props(System)
+            var props = new Props()
             {
                 Dispatcher = Dispatcher,
                 MailboxProducer = MailboxProducer,
@@ -111,10 +123,10 @@ namespace Proto
             return props;
         }
 
-        internal PID Spawn(string name, PID parent) => Spawner(name, this, parent);
-        public static Props FromProducer(ActorSystem system, Func<IActor> producer) => new Props(system).WithProducer(producer);
-        public static Props FromFunc(ActorSystem system,Receive receive) => FromProducer(system,() => new EmptyActor(receive));
+        internal PID Spawn(ActorSystem system, string name, PID parent) => Spawner(system, name, this, parent);
+        public static Props FromProducer(Func<IActor> producer) => new Props().WithProducer(producer);
+        public static Props FromFunc(Receive receive) => FromProducer(() => new EmptyActor(receive));
     }
 
-    public delegate PID Spawner(string id, Props props, PID parent);
+    public delegate PID Spawner(ActorSystem system, string id, Props props, PID parent);
 }

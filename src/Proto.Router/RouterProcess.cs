@@ -14,18 +14,18 @@ namespace Proto.Router
     {
         private readonly RouterState _state;
 
-        public RouterProcess(RouterState state, IMailbox mailbox) : base(mailbox)
+        public RouterProcess(ActorSystem system, RouterState state, IMailbox mailbox) : base(system, mailbox)
         {
             _state = state;
         }
 
         protected override void SendUserMessage(PID pid, object message)
         {
-            var (msg,_,_) = MessageEnvelope.Unwrap(message);
+            var (msg, _, _) = MessageEnvelope.Unwrap(message);
             switch (msg)
             {
                 case RouterManagementMessage _:
-                    base.SendUserMessage(pid,message);
+                    base.SendUserMessage(pid, message);
                     break;
                 default:
                     _state.RouteMessage(message);

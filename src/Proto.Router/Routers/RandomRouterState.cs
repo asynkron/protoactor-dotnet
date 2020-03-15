@@ -13,12 +13,14 @@ namespace Proto.Router.Routers
     class RandomRouterState : RouterState
     {
         private readonly Random _random;
+        private readonly ActorSystem _system;
         private HashSet<PID> _routees;
         private PID[] _values;
 
-        public RandomRouterState(int? seed)
+        public RandomRouterState(ActorSystem system, int? seed)
         {
             _random = seed.HasValue ? new Random(seed.Value) : new Random();
+            _system = system;
         }
 
         public override HashSet<PID> GetRoutees() => _routees;
@@ -33,7 +35,7 @@ namespace Proto.Router.Routers
         {
             var i = _random.Next(_values.Length);
             var pid = _values[i];
-            RootContext.Empty.Send(pid, message);
+            _system.Root.Send(pid, message);
         }
     }
 }

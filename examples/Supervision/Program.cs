@@ -15,7 +15,7 @@ class Program
 {
     static void Main()
     {
-        var context = new RootContext();
+        var context = new RootContext(new ActorSystem());
         Log.SetLoggerFactory(LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Debug)));
 
         var props = Props.FromProducer(() => new ParentActor()).WithChildSupervisorStrategy(new OneForOneStrategy(Decider.Decide, 1, null));
@@ -45,8 +45,8 @@ class Program
             => reason switch
             {
                 RecoverableException _ => SupervisorDirective.Restart,
-                FatalException _       => SupervisorDirective.Stop,
-                _                      => SupervisorDirective.Escalate
+                FatalException _ => SupervisorDirective.Stop,
+                _ => SupervisorDirective.Escalate
             };
     }
 

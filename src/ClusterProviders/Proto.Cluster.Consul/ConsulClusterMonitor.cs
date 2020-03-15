@@ -23,9 +23,11 @@ namespace Proto.Cluster.Consul
         private readonly ConsulClient _client;
 
         private IMemberStatusValueSerializer _statusValueSerializer;
+        private ActorSystem _system;
 
-        public ConsulClusterMonitor(ConsulProviderOptions options, Action<ConsulClientConfiguration> consulConfig)
+        public ConsulClusterMonitor(ActorSystem system, ConsulProviderOptions options, Action<ConsulClientConfiguration> consulConfig)
         {
+            _system = system;
             _options = options;
             _client = new ConsulClient(consulConfig);
         }
@@ -34,13 +36,13 @@ namespace Proto.Cluster.Consul
         {
             var task = context.Message switch
             {
-                RegisterMember cmd    => Register(cmd, context),
-                CheckStatus cmd       => NotifyStatuses(cmd.Index, context.Self),
-                DeregisterMember _    => UnregisterService(context),
+                RegisterMember cmd => Register(cmd, context),
+                CheckStatus cmd => NotifyStatuses(cmd.Index, context.Self),
+                DeregisterMember _ => UnregisterService(context),
                 UpdateStatusValue cmd => RegisterService(cmd.StatusValue, context),
-                ReregisterMember _    => RegisterService(_statusValue, context),
-                Stopping _            => Stop(),
-                _                     => Task.CompletedTask
+                ReregisterMember _ => RegisterService(_statusValue, context),
+                Stopping _ => Stop(),
+                _ => Task.CompletedTask
             };
             await task.ConfigureAwait(false);
 
@@ -115,7 +117,7 @@ namespace Proto.Cluster.Consul
                 }
             );
 
-            Logger.LogDebug("Consul response: {@Response}", (object) statuses.Response);
+            Logger.LogDebug("Consul response: {@Response}", (object)statuses.Response);
 
             var reportedServices =
                 statuses.Response
@@ -142,9 +144,9 @@ namespace Proto.Cluster.Consul
             OverrideConsulDeregisterInterval();
 
             var res = new ClusterTopologyEvent(memberStatuses);
-            Actor.EventStream.Publish(res);
+            _system.EventStream.Publish(res);
 
-            RootContext.Empty.Send(self, new CheckStatus {Index = statuses.LastIndex});
+            _system.Root.Send(self, new CheckStatus { Index = statuses.LastIndex });
 
             void OverrideConsulDeregisterInterval()
             {
@@ -209,7 +211,7 @@ namespace Proto.Cluster.Consul
             public bool Equals(DeadMember other) => !ReferenceEquals(null, other) && (ReferenceEquals(this, other) || MemberId == other.MemberId);
 
             public override bool Equals(object obj)
-                => !ReferenceEquals(null, obj) && (ReferenceEquals(this, obj) || obj.GetType() == GetType() && Equals((DeadMember) obj));
+                => !ReferenceEquals(null, obj) && (ReferenceEquals(this, obj) || obj.GetType() == GetType() && Equals((DeadMember)obj));
 
             public override int GetHashCode() => MemberId != null ? MemberId.GetHashCode() : 0;
         }

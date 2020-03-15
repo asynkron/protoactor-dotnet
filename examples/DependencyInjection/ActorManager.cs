@@ -5,19 +5,20 @@ namespace DependencyInjection
 {
     public class ActorManager : IActorManager
     {
-        private readonly RootContext _context = new RootContext();
+        private readonly ActorSystem _system;
         private readonly IActorFactory _actorFactory;
 
-        public ActorManager(IActorFactory actorFactory, ILogger<ActorManager> logger)
+        public ActorManager(IActorFactory actorFactory, ILogger<ActorManager> logger, ActorSystem system)
         {
             _actorFactory = actorFactory;
-            EventStream.Instance.Subscribe<DIActor.Ping>(x => logger.LogInformation($"EventStream reply: {x.Name}"));
+            _system = system;
+            _system.EventStream.Subscribe<DIActor.Ping>(x => logger.LogInformation($"EventStream reply: {x.Name}"));
         }
 
         public void Activate()
         {
-            _context.Send( _actorFactory.GetActor<DIActor>(), new DIActor.Ping("no-name"));
-            _context.Send(_actorFactory.GetActor<DIActor>("named"), new DIActor.Ping("named"));
+            _system.Root.Send(_actorFactory.GetActor<DIActor>(), new DIActor.Ping("no-name"));
+            _system.Root.Send(_actorFactory.GetActor<DIActor>("named"), new DIActor.Ping("named"));
         }
     }
 }

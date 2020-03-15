@@ -10,12 +10,12 @@ namespace Proto.Tests
     {
         private static readonly ActorSystem System = new ActorSystem();
         private static readonly RootContext Context = System.Root;
-        
+
         [Fact]
         public async Task MultipleStopsTriggerSingleTerminated()
         {
             int counter = 0;
-            var childProps = Props.FromFunc(System,context =>
+            var childProps = Props.FromFunc(context =>
             {
                 switch (context.Message)
                 {
@@ -27,7 +27,7 @@ namespace Proto.Tests
                 return Actor.Done;
             });
 
-            Context.Spawn(Props.FromFunc(System,context =>
+            Context.Spawn(Props.FromFunc(context =>
             {
                 switch (context.Message)
                 {
@@ -42,15 +42,15 @@ namespace Proto.Tests
             }));
 
             await Task.Delay(1000);
-            Assert.Equal(1,counter);
+            Assert.Equal(1, counter);
 
         }
         [Fact]
         public async void CanWatchLocalActors()
         {
-            var watchee = Context.Spawn(Props.FromProducer(System,() => new DoNothingActor())
+            var watchee = Context.Spawn(Props.FromProducer(() => new DoNothingActor())
                                            .WithMailbox(() => new TestMailbox()));
-            var watcher = Context.Spawn(Props.FromProducer(System,() => new LocalActor(watchee))
+            var watcher = Context.Spawn(Props.FromProducer(() => new LocalActor(watchee))
                                            .WithMailbox(() => new TestMailbox()));
 
             await Context.StopAsync(watchee);

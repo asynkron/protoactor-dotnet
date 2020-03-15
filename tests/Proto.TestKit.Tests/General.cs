@@ -5,6 +5,7 @@ namespace Proto.TestKit.Tests
     [Collection("TestKitTests"), Trait("Category", "TestKit")]
     public class General : TestKit
     {
+
         [Fact]
         public void SenderIsSet()
         {

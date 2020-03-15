@@ -11,7 +11,6 @@ namespace Saga
 {
     public class Runner : IActor
     {
-        private RootContext Context = RootContext.Empty;
         private int _intervalBetweenConsoleUpdates;
         private readonly int _numberOfIterations;
         private readonly double _uptime;
@@ -37,10 +36,10 @@ namespace Saga
             _verbose = verbose;
         }
 
-        private PID CreateAccount(string name, Random random)
+        private PID CreateAccount(IContext context, string name, Random random)
         {
             var accountProps = Props.FromProducer(() => new Account(name, _uptime, _refusalProbability, _busyProbability, random));
-            return Context.SpawnNamed(accountProps, name);
+            return context.SpawnNamed(accountProps, name);
         }
 
         public Task ReceiveAsync(IContext context)
@@ -66,28 +65,29 @@ namespace Saga
                 case Started _:
                     var random = new Random();
                     _inMemoryProvider = new InMemoryProvider();
-                    new ForWithProgress(_numberOfIterations, _intervalBetweenConsoleUpdates, true, false).EveryNth( 
-                        i =>    Console.WriteLine($"Started {i}/{_numberOfIterations} processes"), 
-                        (i, nth) => {
+                    new ForWithProgress(_numberOfIterations, _intervalBetweenConsoleUpdates, true, false).EveryNth(
+                        i => Console.WriteLine($"Started {i}/{_numberOfIterations} processes"),
+                        (i, nth) =>
+                        {
                             int j = i;
-                            var fromAccount = CreateAccount($"FromAccount{j}", random);
-                            var toAccount = CreateAccount($"ToAccount{j}", random);
+                            var fromAccount = CreateAccount(context, $"FromAccount{j}", random);
+                            var toAccount = CreateAccount(context, $"ToAccount{j}", random);
                             var actorName = $"Transfer Process {j}";
                             var persistanceID = $"Transfer Process {j}";
                             var factory = new TransferFactory(context, _inMemoryProvider, random, _uptime, _retryAttempts);
                             var transfer = factory.CreateTransfer(actorName, fromAccount, toAccount, 10, persistanceID);
                             _transfers.Add(transfer);
-                            if(i== _numberOfIterations && !nth) Console.WriteLine($"Started {j}/{_numberOfIterations} proesses");
+                            if (i == _numberOfIterations && !nth) Console.WriteLine($"Started {j}/{_numberOfIterations} proesses");
                         });
                     break;
             }
             return Actor.Done;
         }
-    
+
         private void CheckForCompletion(PID pid)
         {
             _transfers.Remove(pid);
-            
+
             var remaining = _transfers.Count;
             if (_numberOfIterations >= _intervalBetweenConsoleUpdates)
             {
@@ -102,7 +102,7 @@ namespace Saga
             {
                 Console.WriteLine($"{remaining} processes remaining");
             }
-            
+
             if (remaining == 0)
             {
                 Thread.Sleep(250);
@@ -117,7 +117,7 @@ namespace Saga
                     $"{AsPercentage(_numberOfIterations, _failedAndInconsistentResults)}% ({_failedAndInconsistentResults}/{_numberOfIterations}) failures leaving an inconsistent system");
                 Console.WriteLine(
                     $"{AsPercentage(_numberOfIterations, _unknownResults)}% ({_unknownResults}/{_numberOfIterations}) unknown results");
-                
+
                 if (_verbose)
                 {
                     foreach (var stream in _inMemoryProvider.Events)

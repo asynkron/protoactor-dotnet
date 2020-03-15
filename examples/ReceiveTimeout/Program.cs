@@ -12,7 +12,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        var rootContext = new RootContext();
+        var rootContext = new RootContext(new ActorSystem());
         var c = 0;
         var props = Props.FromFunc(context =>
         {

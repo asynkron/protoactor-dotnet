@@ -7,9 +7,11 @@ namespace Proto
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ActorPropsRegistry _actorPropsRegistry;
+        private readonly ActorSystem _actorSystem;
 
-        public ActorFactory(IServiceProvider serviceProvider, ActorPropsRegistry actorPropsRegistry)
+        public ActorFactory(ActorSystem actorSystem, IServiceProvider serviceProvider, ActorPropsRegistry actorPropsRegistry)
         {
+            _actorSystem = actorSystem;
             _serviceProvider = serviceProvider;
             _actorPropsRegistry = actorPropsRegistry;
         }
@@ -44,7 +46,7 @@ namespace Proto
             }
 
             var pid = new PID(address, pidId);
-            var reff = ProcessRegistry.Instance.Get(pid);
+            var reff = _actorSystem.ProcessRegistry.Get(pid);
             if (reff is DeadLetterProcess)
             {
                 pid = create();
@@ -63,7 +65,7 @@ namespace Proto
             var props2 = props(producer());
             if (parent == null)
             {
-                return RootContext.Empty.SpawnNamed(props2, id);
+                return _actorSystem.Root.SpawnNamed(props2, id);
             }
             return parent.SpawnNamed(props2, id);
         }

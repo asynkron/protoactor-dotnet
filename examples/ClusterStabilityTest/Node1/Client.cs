@@ -24,14 +24,20 @@ namespace TestApp
 
             logger.LogInformation("Test");
             const string clusterName = "test";
-            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
 
-            await Cluster.Start(
-                clusterName, "127.0.0.1", 0, new ConsulProvider(new ConsulProviderOptions {DeregisterCritical = TimeSpan.FromSeconds(2)})
+            var system = new ActorSystem();
+            var serialization = new Serialization();
+            var cluster = new Cluster(system, serialization);
+            var grains = new Grains(cluster);
+
+            serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+
+            await cluster.Start(
+                clusterName, "127.0.0.1", 0, new ConsulProvider(new ConsulProviderOptions { DeregisterCritical = TimeSpan.FromSeconds(2) })
             );
 
-            EventStream.Instance.Subscribe<ClusterTopologyEvent>(e => logger.LogInformation("Topology changed {@Event}", e));
-            EventStream.Instance.Subscribe<MemberStatusEvent>(e => logger.LogInformation("Member status {@Event}", e));
+            system.EventStream.Subscribe<ClusterTopologyEvent>(e => logger.LogInformation("Topology changed {@Event}", e));
+            system.EventStream.Subscribe<MemberStatusEvent>(e => logger.LogInformation("Member status {@Event}", e));
 
             var options = new GrainCallOptions
             {
@@ -50,7 +56,7 @@ namespace TestApp
 
             for (var i = 0; i < 100000; i++)
             {
-                var client = Grains.HelloGrain("name" + i % 200);
+                var client = grains.HelloGrain("name" + i % 200);
 
                 await policy.ExecuteAsync(
                     () => client.SayHello(new HelloRequest(), CancellationToken.None, options)
@@ -60,6 +66,7 @@ namespace TestApp
 
             Console.WriteLine("Done!");
             Console.ReadLine();
+            await cluster.Shutdown();
         }
     }
 }

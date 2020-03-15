@@ -39,11 +39,14 @@ namespace Node2
     {
         static void Main(string[] args)
         {
-            var context = new RootContext();
+            var system = new ActorSystem();
+            var context = new RootContext(system);
+            var serialization = new Serialization();
             //Registering "knownTypes" is not required, but improves performance as those messages
             //do not need to pass any typename manifest
             var wire = new WireSerializer(new[] { typeof(Ping), typeof(Pong), typeof(StartRemote), typeof(Start) });
-            Serialization.RegisterSerializer(wire, true);
+            serialization.RegisterSerializer(wire, true);
+            var Remote = new Remote(system, serialization);
             Remote.Start("127.0.0.1", 12000);
             context.SpawnNamed(Props.FromProducer(() => new EchoActor()), "remote");
             Console.ReadLine();

@@ -26,13 +26,18 @@ namespace Proto.Remote
         private readonly int _batchSize;
         private readonly IMailboxQueue _systemMessages = new UnboundedMailboxQueue();
         private readonly IMailboxQueue _userMessages = new UnboundedMailboxQueue();
+        private readonly ActorSystem _system;
         private IDispatcher _dispatcher;
         private IMessageInvoker _invoker;
 
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
 
-        public EndpointWriterMailbox(int batchSize) => _batchSize = batchSize;
+        public EndpointWriterMailbox(ActorSystem system, int batchSize)
+        {
+            _system = system;
+            _batchSize = batchSize;
+        }
 
         public void PostUserMessage(object msg)
         {
@@ -78,9 +83,9 @@ namespace Proto.Remote
 
                     _suspended = sys switch
                     {
-                        SuspendMailbox _         => true,
+                        SuspendMailbox _ => true,
                         EndpointConnectedEvent _ => false,
-                        _                        => _suspended
+                        _ => _suspended
                     };
 
                     m = sys;
@@ -95,7 +100,7 @@ namespace Proto.Remote
                         {
                             if (usrMsg is RemoteDeliver rd)
                             {
-                                EventStream.Instance.Publish(new DeadLetterEvent(rd.Target, rd.Message, rd.Sender));
+                                _system.EventStream.Publish(new DeadLetterEvent(rd.Target, rd.Message, rd.Sender));
                             }
                         }
                     }
@@ -116,7 +121,7 @@ namespace Proto.Remote
                             continue;
                         }
 
-                        batch.Add((RemoteDeliver) msg);
+                        batch.Add((RemoteDeliver)msg);
 
                         if (batch.Count >= _batchSize)
                         {

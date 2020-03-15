@@ -11,7 +11,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        var context = new RootContext();
+        var context = new RootContext(new ActorSystem());
         var props = Props.FromFunc(ctx =>
         {
             if (ctx.Message is string)
@@ -22,7 +22,7 @@ class Program
         });
         var pid = context.Spawn(props);
 
-        var reply = context.RequestAsync<object>(pid ,"hello").Result;
+        var reply = context.RequestAsync<object>(pid, "hello").Result;
         Console.WriteLine(reply);
         Console.ReadLine();
     }

@@ -8,7 +8,7 @@ namespace Proto.Persistence.Tests
 {
     public class ExamplePersistentActorTests
     {
-        private static readonly RootContext Context = new RootContext();
+        private static readonly RootContext Context = new RootContext(new ActorSystem());
         private const int InitialState = 1;
 
         [Fact]
@@ -20,7 +20,7 @@ namespace Proto.Persistence.Tests
                 .GetEventsAsync(actorId, 0, long.MaxValue, o =>
                 {
                     Assert.IsType<Multiplied>(o);
-                    Assert.Equal(2, ((Multiplied) o).Amount);
+                    Assert.Equal(2, ((Multiplied)o).Amount);
                 });
         }
 
@@ -144,7 +144,7 @@ namespace Proto.Persistence.Tests
             Context.Send(pid, new Multiply { Amount = 4 });
             Context.Send(pid, new Multiply { Amount = 8 });
             await providerState.DeleteSnapshotsAsync(actorId, 3);
-            
+
             var state = await RestartActorAndGetState(pid, props);
             Assert.Equal(InitialState * 2 * 2 * 4 * 8, state);
         }
@@ -202,8 +202,8 @@ namespace Proto.Persistence.Tests
             var messages = new List<object>();
             await providerState.GetEventsAsync(actorId, 1, 2, msg => messages.Add(msg));
             Assert.Equal(2, messages.Count);
-            Assert.Equal(2, ((Multiplied) messages[0]).Amount);
-            Assert.Equal(4, ((Multiplied) messages[1]).Amount);
+            Assert.Equal(2, ((Multiplied)messages[0]).Amount);
+            Assert.Equal(4, ((Multiplied)messages[1]).Amount);
         }
 
         [Fact]
@@ -215,8 +215,8 @@ namespace Proto.Persistence.Tests
             var props = Props.FromProducer(() => new ExamplePersistentActor(eventStore, snapshotStore, actorId))
                 .WithMailbox(() => new TestMailbox());
             var pid = Context.Spawn(props);
-            
-            Context.Send(pid, new Multiply{ Amount = 2 });
+
+            Context.Send(pid, new Multiply { Amount = 2 });
             var eventStoreMessages = new List<object>();
             var snapshotStoreMessages = new List<object>();
             await eventStore.GetEventsAsync(actorId, 0, 1, msg => eventStoreMessages.Add(msg));
@@ -224,7 +224,7 @@ namespace Proto.Persistence.Tests
             await snapshotStore.GetEventsAsync(actorId, 0, 1, msg => snapshotStoreMessages.Add(msg));
             Assert.Empty(snapshotStoreMessages);
         }
-        
+
         private (PID pid, Props props, string actorId, IProvider provider) CreateTestActor()
         {
             var actorId = Guid.NewGuid().ToString();

@@ -9,17 +9,24 @@ using Proto.Remote;
 
 namespace Messages
 {
-    public static class Grains
+    public class Grains
     {
-        internal static Func<IHelloGrain> _HelloGrainFactory;
+        public Cluster Cluster { get; }
 
-        public static void HelloGrainFactory(Func<IHelloGrain> factory) 
+        public Grains(Cluster cluster)
+        {
+            Cluster = cluster;
+        }
+
+        internal Func<IHelloGrain> _HelloGrainFactory;
+
+        public void HelloGrainFactory(Func<IHelloGrain> factory) 
         {
             _HelloGrainFactory = factory;
-            Remote.RegisterKnownKind("HelloGrain", Props.FromProducer(() => new HelloGrainActor()));
+            Cluster.Remote.RegisterKnownKind("HelloGrain", Props.FromProducer(() => new HelloGrainActor(this)));
         } 
 
-        public static HelloGrainClient HelloGrain(string id) => new HelloGrainClient(id);
+        public HelloGrainClient HelloGrain(string id) => new HelloGrainClient(Cluster, id);
     }
 
     public interface IHelloGrain
@@ -30,10 +37,12 @@ namespace Messages
     public class HelloGrainClient
     {
         private readonly string _id;
+        private readonly Cluster _cluster;
 
-        public HelloGrainClient(string id)
+        public HelloGrainClient(Cluster cluster, string id)
         {
             _id = id;
+            _cluster = cluster;
         }
 
         public Task<HelloResponse> SayHello(HelloRequest request) => SayHello(request, CancellationToken.None);
@@ -51,7 +60,7 @@ namespace Messages
             async Task<HelloResponse> Inner() 
             {
                 //resolve the grain
-                var (pid, statusCode) = await Cluster.GetAsync(_id, "HelloGrain", ct);
+                var (pid, statusCode) = await _cluster.GetAsync(_id, "HelloGrain", ct);
 
                 if (statusCode != ResponseStatusCode.OK)
                 {
@@ -59,7 +68,7 @@ namespace Messages
                 }
 
                 //request the RPC method to be invoked
-                var res = await RootContext.Empty.RequestAsync<object>(pid, gr, ct);
+                var res = await _cluster.System.Root.RequestAsync<object>(pid, gr, ct);
 
                 //did we get a response?
                 if (res is GrainResponse grainResponse)
@@ -75,13 +84,13 @@ namespace Messages
                 throw new NotSupportedException();
             }
 
-            for(int i= 0;i < options.RetryCount; i++)
+            for (int i = 0; i < options.RetryCount; i++)
             {
                 try
                 {
                     return await Inner();
                 }
-                catch(Exception)
+                catch (Exception)
                 {
                     if (options.RetryAction != null)
                     {
@@ -96,6 +105,12 @@ namespace Messages
     public class HelloGrainActor : IActor
     {
         private IHelloGrain _inner;
+        private readonly Grains _grains;
+
+        public HelloGrainActor(Grains grains)
+        {
+            _grains = grains;
+        }
 
         public async Task ReceiveAsync(IContext context)
         {
@@ -103,7 +118,7 @@ namespace Messages
             {
                 case Started _:
                 {
-                    _inner = Grains._HelloGrainFactory();
+                    _inner = _grains._HelloGrainFactory();
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
                     break;
                 }

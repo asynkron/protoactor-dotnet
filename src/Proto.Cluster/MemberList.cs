@@ -12,21 +12,26 @@ using Proto.Remote;
 
 namespace Proto.Cluster
 {
-    public static class MemberList
+    public class MemberList
     {
         private static readonly ILogger Logger = Log.CreateLogger("MemberList");
-        
-        private static readonly ReaderWriterLockSlim RwLock = new ReaderWriterLockSlim();
-        private static readonly Dictionary<string, MemberStatus> Members = new Dictionary<string, MemberStatus>();
-        private static readonly Dictionary<string, IMemberStrategy> MemberStrategyByKind = new Dictionary<string, IMemberStrategy>();
 
-        private static Subscription<object> clusterTopologyEvnSub;
+        private readonly ReaderWriterLockSlim RwLock = new ReaderWriterLockSlim();
+        private readonly Dictionary<string, MemberStatus> Members = new Dictionary<string, MemberStatus>();
+        private readonly Dictionary<string, IMemberStrategy> MemberStrategyByKind = new Dictionary<string, IMemberStrategy>();
+        private readonly Cluster Cluster;
+        private Subscription<object> clusterTopologyEvnSub;
 
-        internal static void Setup() => clusterTopologyEvnSub = Actor.EventStream.Subscribe<ClusterTopologyEvent>(UpdateClusterTopology);
+        public MemberList(Cluster cluster)
+        {
+            Cluster = cluster;
+        }
 
-        internal static void Stop() => Actor.EventStream.Unsubscribe(clusterTopologyEvnSub.Id);
+        internal void Setup() => clusterTopologyEvnSub = Cluster.System.EventStream.Subscribe<ClusterTopologyEvent>(UpdateClusterTopology);
 
-        internal static string GetPartition(string name, string kind)
+        internal void Stop() => Cluster.System.EventStream.Unsubscribe(clusterTopologyEvnSub.Id);
+
+        internal string GetPartition(string name, string kind)
         {
             var locked = RwLock.TryEnterReadLock(1000);
 
@@ -48,7 +53,7 @@ namespace Proto.Cluster
             }
         }
 
-        internal static string GetActivator(string kind)
+        internal string GetActivator(string kind)
         {
             var locked = RwLock.TryEnterReadLock(1000);
 
@@ -70,7 +75,7 @@ namespace Proto.Cluster
             }
         }
 
-        internal static void UpdateClusterTopology(ClusterTopologyEvent msg)
+        internal void UpdateClusterTopology(ClusterTopologyEvent msg)
         {
             var locked = RwLock.TryEnterWriteLock(1000);
 
@@ -114,7 +119,7 @@ namespace Proto.Cluster
             }
         }
 
-        private static void UpdateAndNotify(MemberStatus @new, MemberStatus old)
+        private void UpdateAndNotify(MemberStatus @new, MemberStatus old)
         {
             if (@new == null && old == null)
             {
@@ -137,12 +142,12 @@ namespace Proto.Cluster
 
                 //notify left
                 var left = new MemberLeftEvent(old.Host, old.Port, old.Kinds);
-                Actor.EventStream.Publish(left);
+                Cluster.System.EventStream.Publish(left);
 
                 Members.Remove(old.Address);
 
-                var endpointTerminated = new EndpointTerminatedEvent {Address = old.Address};
-                Actor.EventStream.Publish(endpointTerminated);
+                var endpointTerminated = new EndpointTerminatedEvent { Address = old.Address };
+                Cluster.System.EventStream.Publish(endpointTerminated);
 
                 return;
             }
@@ -159,8 +164,8 @@ namespace Proto.Cluster
 
                 //notify joined
                 var joined = new MemberJoinedEvent(@new.Host, @new.Port, @new.Kinds);
-                Actor.EventStream.Publish(joined);
-                
+                Cluster.System.EventStream.Publish(joined);
+
                 return;
             }
 
@@ -180,7 +185,7 @@ namespace Proto.Cluster
             if (@new.MemberId != old.MemberId)
             {
                 var rejoined = new MemberRejoinedEvent(@new.Host, @new.Port, @new.Kinds);
-                Actor.EventStream.Publish(rejoined);
+                Cluster.System.EventStream.Publish(rejoined);
             }
         }
     }

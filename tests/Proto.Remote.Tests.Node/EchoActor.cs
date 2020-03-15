@@ -22,9 +22,12 @@ namespace Proto.Remote.Tests.Node
         {
             switch (context.Message)
             {
+                case Started _:
+                    Logger.LogDebug($"{context.Self}");
+                    break;
                 case Ping ping:
                     Logger.LogDebug("Received Ping, replying Pong");
-                    context.Respond(new Pong {Message = $"{_host}:{_port} {ping.Message}"});
+                    context.Respond(new Pong { Message = $"{_host}:{_port} {ping.Message}" });
                     break;
                 case Die _:
                     Logger.LogDebug("Received termination request, stopping");

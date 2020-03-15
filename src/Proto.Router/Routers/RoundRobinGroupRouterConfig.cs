@@ -10,11 +10,14 @@ namespace Proto.Router.Routers
 {
     class RoundRobinGroupRouterConfig : GroupRouterConfig
     {
-        public RoundRobinGroupRouterConfig(params PID[] routees)
+        private readonly ActorSystem _system;
+
+        public RoundRobinGroupRouterConfig(ActorSystem system, params PID[] routees)
         {
+            _system = system;
             Routees = new HashSet<PID>(routees);
         }
 
-        public override RouterState CreateRouterState() => new RoundRobinRouterState();
+        public override RouterState CreateRouterState() => new RoundRobinRouterState(_system);
     }
 }

@@ -12,45 +12,66 @@ using Proto.Remote;
 
 namespace Proto.Cluster
 {
-    public static class Cluster
+    public class Cluster
     {
         private static readonly ILogger Logger = Log.CreateLogger(typeof(Cluster).FullName);
 
-        internal static ClusterConfig Config;
+        internal ClusterConfig Config;
+        public ActorSystem System
+        {
+            get;
+        }
 
-        public static Task Start(string clusterName, string address, int port, IClusterProvider cp)
+        public Remote.Remote Remote
+        {
+            get;
+        }
+
+        public Cluster(ActorSystem system, Serialization serialization)
+        {
+            System = system;
+            Remote = new Remote.Remote(system, serialization);
+            Partition = new Partition(this);
+            MemberList = new MemberList(this);
+            PidCache = new PidCache(this);
+        }
+        internal Partition Partition { get; }
+        internal MemberList MemberList { get; }
+        internal PidCache PidCache { get; }
+
+        public Task Start(string clusterName, string address, int port, IClusterProvider cp)
             => Start(new ClusterConfig(clusterName, address, port, cp));
 
-        public static async Task Start(ClusterConfig config)
+        public async Task Start(ClusterConfig config)
         {
             Config = config;
 
-            Remote.Remote.Start(Config.Address, Config.Port, Config.RemoteConfig);
+            this.Remote.Start(Config.Address, Config.Port, Config.RemoteConfig);
 
-            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+            this.Remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
 
             Logger.LogInformation("Starting Proto.Actor cluster");
 
-            var kinds = Remote.Remote.GetKnownKinds();
+            var kinds = this.Remote.GetKnownKinds();
+
             Partition.Setup(kinds);
             PidCache.Setup();
             MemberList.Setup();
 
-            var (host, port) = ProcessRegistry.Instance.GetAddress();
+            var (host, port) = System.ProcessRegistry.GetAddress();
 
-            await Config.ClusterProvider.RegisterMemberAsync(
-                Config.Name, host, port, kinds, Config.InitialMemberStatusValue, Config.MemberStatusValueSerializer
+            await Config.ClusterProvider.RegisterMemberAsync(this, Config.Name, host, port, kinds, Config.InitialMemberStatusValue, Config.MemberStatusValueSerializer
             );
-            Config.ClusterProvider.MonitorMemberStatusChanges();
+            Config.ClusterProvider.MonitorMemberStatusChanges(this);
 
             Logger.LogInformation("Started cluster");
         }
 
-        public static async Task Shutdown(bool graceful = true)
+        public async Task Shutdown(bool graceful = true)
         {
             if (graceful)
             {
-                await Config.ClusterProvider.Shutdown();
+                await Config.ClusterProvider.Shutdown(this);
 
                 //This is to wait ownership transferring complete.
                 await Task.Delay(2000);
@@ -60,14 +81,14 @@ namespace Proto.Cluster
                 Partition.Stop();
             }
 
-            await Remote.Remote.Shutdown(graceful);
+            await Remote.Shutdown(graceful);
 
             Logger.LogInformation("Stopped Cluster");
         }
 
-        public static Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind) => GetAsync(name, kind, CancellationToken.None);
+        public Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind) => GetAsync(name, kind, CancellationToken.None);
 
-        public static async Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind, CancellationToken ct)
+        public async Task<(PID, ResponseStatusCode)> GetAsync(string name, string kind, CancellationToken ct)
         {
             //Check Cache
             if (PidCache.TryGetCache(name, out var pid))
@@ -93,9 +114,9 @@ namespace Proto.Cluster
             try
             {
                 var resp = ct == CancellationToken.None
-                    ? await RootContext.Empty.RequestAsync<ActorPidResponse>(remotePid, req, Config.TimeoutTimespan)
-                    : await RootContext.Empty.RequestAsync<ActorPidResponse>(remotePid, req, ct);
-                var status = (ResponseStatusCode) resp.StatusCode;
+                    ? await System.Root.RequestAsync<ActorPidResponse>(remotePid, req, Config.TimeoutTimespan)
+                    : await System.Root.RequestAsync<ActorPidResponse>(remotePid, req, ct);
+                var status = (ResponseStatusCode)resp.StatusCode;
 
                 switch (status)
                 {
