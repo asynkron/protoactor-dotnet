@@ -7,22 +7,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Proto.Mailbox;
 
 namespace Proto
 {
-    internal static class Middleware
-    {
-        internal static Task Receive(IReceiverContext context, MessageEnvelope envelope) => context.Receive(envelope);
-
-        internal static Task Sender(ISenderContext context, PID target, MessageEnvelope envelope)
-        {
-            target.SendUserMessage(envelope);
-            return Actor.Done;
-        }
-    }
-
     public sealed class Props
     {
         private Spawner? _spawner;
@@ -54,18 +42,18 @@ namespace Proto
 
         private static IMailbox ProduceDefaultMailbox() => UnboundedMailbox.Create();
 
-        private static PID DefaultSpawner(string name, Props props, PID parent)
+        public PID DefaultSpawner(ActorSystem system, string name, Props props, PID parent)
         {
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
-            var process = new ActorProcess(mailbox);
-            var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, process);
+            var process = new ActorProcess(system, mailbox);
+            var (pid, absent) = system.ProcessRegistry.TryAdd(name, process);
             if (!absent)
             {
                 throw new ProcessNameExistException(name, pid);
             }
 
-            var ctx = new ActorContext(props, parent, pid);
+            var ctx = new ActorContext(system, props, parent, pid);
             mailbox.RegisterHandlers(ctx, dispatcher);
             mailbox.PostSystemMessage(Started.Instance);
             mailbox.Start();
@@ -84,7 +72,7 @@ namespace Proto
             {
                 props.ContextDecorator = ContextDecorator.Concat(contextDecorator).ToList();
                 props.ContextDecoratorChain = props.ContextDecorator.Reverse()
-                    .Aggregate((Func<IContext, IContext>) DefaultContextDecorator,
+                    .Aggregate((Func<IContext, IContext>)DefaultContextDecorator,
                         (inner, outer) => ctx => outer(inner(ctx))
                     );
             }
@@ -100,7 +88,7 @@ namespace Proto
             {
                 props.ReceiverMiddleware = ReceiverMiddleware.Concat(middleware).ToList();
                 props.ReceiverMiddlewareChain = props.ReceiverMiddleware.Reverse()
-                    .Aggregate((Receiver) Middleware.Receive, (inner, outer) => outer(inner));
+                    .Aggregate((Receiver)Middleware.Receive, (inner, outer) => outer(inner));
             }
         );
 
@@ -108,7 +96,7 @@ namespace Proto
             {
                 props.SenderMiddleware = SenderMiddleware.Concat(middleware).ToList();
                 props.SenderMiddlewareChain = props.SenderMiddleware.Reverse()
-                    .Aggregate((Sender) Middleware.Sender, (inner, outer) => outer(inner));
+                    .Aggregate((Sender)Middleware.Sender, (inner, outer) => outer(inner));
             }
         );
 
@@ -116,7 +104,7 @@ namespace Proto
 
         private Props Copy(Action<Props> mutator)
         {
-            var props = new Props
+            var props = new Props()
             {
                 Dispatcher = Dispatcher,
                 MailboxProducer = MailboxProducer,
@@ -135,10 +123,10 @@ namespace Proto
             return props;
         }
 
-        internal PID Spawn(string name, PID parent) => Spawner(name, this, parent);
+        internal PID Spawn(ActorSystem system, string name, PID parent) => Spawner(system, name, this, parent);
         public static Props FromProducer(Func<IActor> producer) => new Props().WithProducer(producer);
         public static Props FromFunc(Receive receive) => FromProducer(() => new EmptyActor(receive));
     }
 
-    public delegate PID Spawner(string id, Props props, PID parent);
+    public delegate PID Spawner(ActorSystem system, string id, Props props, PID parent);
 }

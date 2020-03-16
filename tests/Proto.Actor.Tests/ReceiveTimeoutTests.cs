@@ -8,7 +8,8 @@ namespace Proto.Tests
 {
     public class ReceiveTimeoutTests
     {
-        private static readonly RootContext Context = new RootContext();
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
         [Fact]
         public async Task receive_timeout_received_within_expected_time()
         {
@@ -19,13 +20,13 @@ namespace Proto.Tests
             {
                 switch (context.Message)
                 {
-                        case Started _:
-                            context.SetReceiveTimeout(TimeSpan.FromMilliseconds(150));
-                            break;
-                        case ReceiveTimeout _:
-                            timeoutReceived = true;
-                            receiveTimeoutWaiter.SetResult(0);
-                            break;
+                    case Started _:
+                        context.SetReceiveTimeout(TimeSpan.FromMilliseconds(150));
+                        break;
+                    case ReceiveTimeout _:
+                        timeoutReceived = true;
+                        receiveTimeoutWaiter.SetResult(0);
+                        break;
                 }
                 return Actor.Done;
             });
@@ -34,7 +35,7 @@ namespace Proto.Tests
             await GetSafeAwaitableTask(receiveTimeoutWaiter);
             Assert.True(timeoutReceived);
         }
-        
+
         [Fact]
         public async Task receive_timeout_not_received_within_expected_time()
         {
@@ -60,7 +61,7 @@ namespace Proto.Tests
             await GetSafeAwaitableTask(actorStartedWaiter);
             Assert.False(timeoutReceived);
         }
-        
+
         [Fact]
         public async Task can_cancel_receive_timeout()
         {
@@ -93,7 +94,7 @@ namespace Proto.Tests
             Assert.Equal(TimeSpan.Zero, endingTimeout);
             Assert.False(timeoutReceived);
         }
-        
+
         [Fact]
         public async Task can_still_set_receive_timeout_after_cancelling()
         {

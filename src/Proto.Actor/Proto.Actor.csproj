@@ -6,17 +6,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.11.4"/>
-    <PackageReference Include="Grpc.Tools" Version="2.23.0" PrivateAssets="All"/>
-    <PackageReference Include="System.Collections.Immutable" Version="1.7.0"/>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0"/>
+    <PackageReference Include="Google.Protobuf" Version="3.11.4" />
+    <PackageReference Include="Grpc.Tools" Version="2.23.0" PrivateAssets="All" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.7.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Proto.Mailbox\Proto.Mailbox.csproj"/>
+    <ProjectReference Include="..\Proto.Mailbox\Proto.Mailbox.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="Protos.proto" GrpcServices="Server"/>
+    <Protobuf Include="Protos.proto" GrpcServices="Server" />
   </ItemGroup>
 </Project>

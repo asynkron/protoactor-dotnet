@@ -11,14 +11,19 @@ using Proto.Mailbox;
 
 namespace Proto
 {
-    internal static class Guardians
+    public class Guardians
     {
-        private static readonly ConcurrentDictionary<ISupervisorStrategy, GuardianProcess> GuardianStrategies =
+        public ActorSystem System { get; }
+        public Guardians(ActorSystem system)
+        {
+            System = system;
+        }
+        private readonly ConcurrentDictionary<ISupervisorStrategy, GuardianProcess> GuardianStrategies =
             new ConcurrentDictionary<ISupervisorStrategy, GuardianProcess>();
 
-        internal static PID GetGuardianPID(ISupervisorStrategy strategy)
+        internal PID GetGuardianPID(ISupervisorStrategy strategy)
         {
-            GuardianProcess ValueFactory(ISupervisorStrategy s) => new GuardianProcess(s);
+            GuardianProcess ValueFactory(ISupervisorStrategy s) => new GuardianProcess(System,s);
 
             var guardian = GuardianStrategies.GetOrAdd(strategy, ValueFactory);
             return guardian.Pid;
@@ -29,12 +34,12 @@ namespace Proto
     {
         private readonly ISupervisorStrategy _supervisorStrategy;
 
-        internal GuardianProcess(ISupervisorStrategy strategy)
+        internal GuardianProcess(ActorSystem system, ISupervisorStrategy strategy) : base(system)
         {
             _supervisorStrategy = strategy;
 
-            var name = $"Guardian{ProcessRegistry.Instance.NextId()}";
-            var (pid, ok) = ProcessRegistry.Instance.TryAdd(name, this);
+            var name = $"Guardian{System.ProcessRegistry.NextId()}";
+            var (pid, ok) = System.ProcessRegistry.TryAdd(name, this);
             if (!ok)
             {
                 throw new ProcessNameExistException(name, pid);
@@ -54,11 +59,14 @@ namespace Proto
         }
 
         public void RestartChildren(Exception reason, params PID[] pids) =>
-            pids?.SendSystemMessage(new Restart(reason));
+            pids?.SendSystemMessage(new Restart(reason), System);
 
-        public void StopChildren(params PID[] pids) => pids?.Stop();
+        public void StopChildren(params PID[] pids)
+        {
+            pids?.Stop(System);
+        }
 
-        public void ResumeChildren(params PID[] pids) => pids?.SendSystemMessage(ResumeMailbox.Instance);
+        public void ResumeChildren(params PID[] pids) => pids?.SendSystemMessage(ResumeMailbox.Instance, System);
 
         protected internal override void SendUserMessage(PID pid, object message)
         {

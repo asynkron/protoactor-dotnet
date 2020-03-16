@@ -27,11 +27,20 @@ namespace Proto.Remote
         private Remoting.RemotingClient _client;
         private AsyncDuplexStreamingCall<MessageBatch, Unit> _stream;
         private IClientStreamWriter<MessageBatch> _streamWriter;
+        private readonly ActorSystem _system;
+        private readonly Serialization _serialization;
 
         public EndpointWriter(
-            string address, IEnumerable<ChannelOption> channelOptions, CallOptions callOptions, ChannelCredentials channelCredentials
+            ActorSystem system,
+            Serialization serialization,
+            string address,
+            IEnumerable<ChannelOption> channelOptions,
+            CallOptions callOptions,
+            ChannelCredentials channelCredentials
         )
         {
+            _system = system;
+            _serialization = serialization;
             _address = address;
             _channelOptions = channelOptions;
             _callOptions = callOptions;
@@ -77,7 +86,7 @@ namespace Proto.Remote
                         targetNameList.Add(targetName);
                     }
 
-                    var typeName = Serialization.GetTypeName(rd.Message, serializerId);
+                    var typeName = _serialization.GetTypeName(rd.Message, serializerId);
 
                     if (!typeNames.TryGetValue(typeName, out var typeId))
                     {
@@ -93,7 +102,7 @@ namespace Proto.Remote
                         header.HeaderData.Add(rd.Header.ToDictionary());
                     }
 
-                    var bytes = Serialization.Serialize(rd.Message, serializerId);
+                    var bytes = _serialization.Serialize(rd.Message, serializerId);
 
                     var envelope = new MessageEnvelope
                     {
@@ -131,7 +140,7 @@ namespace Proto.Remote
 
                 // throw new EndpointWriterException("gRPC Failed to send, reason No Connection available");
             }
-            
+
             try
             {
                 Logger.LogDebug("Writing batch to {Address}", _address);
@@ -193,7 +202,7 @@ namespace Proto.Remote
                         {
                             Address = _address
                         };
-                        Actor.EventStream.Publish(terminated);
+                        _system.EventStream.Publish(terminated);
                     }
                 }
             );
@@ -204,7 +213,7 @@ namespace Proto.Remote
             {
                 Address = _address
             };
-            Actor.EventStream.Publish(connected);
+            _system.EventStream.Publish(connected);
 
             Logger.LogDebug("Connected to address {Address}", _address);
         }

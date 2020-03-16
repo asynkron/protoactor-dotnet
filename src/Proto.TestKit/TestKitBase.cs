@@ -25,7 +25,7 @@ namespace Proto.TestKit
         /// <summary>
         /// sets up the test environment
         /// </summary>
-        public virtual void SetUp() => Probe = RootContext.Empty.Spawn(Props.FromProducer(() => new TestProbe()));
+        public virtual void SetUp() => Probe = TestKit.System.Root.Spawn(Props.FromProducer(() => new TestProbe()));
 
         /// <summary>
         /// tears down the test environment

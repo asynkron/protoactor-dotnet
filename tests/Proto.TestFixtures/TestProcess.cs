@@ -2,7 +2,9 @@
 {
     public class TestProcess : Process
     {
-        protected override void SendUserMessage(PID pid, object message)
+        public TestProcess(ActorSystem system) : base(system) {}
+
+            protected override void SendUserMessage(PID pid, object message)
         {
         }
 

@@ -12,10 +12,12 @@ namespace Proto.Router.Routers
     {
         private readonly Func<string, uint> _hash;
         private readonly int _replicaCount;
+        private readonly ActorSystem _system;
 
-        public ConsistentHashPoolRouterConfig(int poolSize, Props routeeProps, Func<string, uint> hash, int replicaCount)
-            : base(poolSize,routeeProps)
+        public ConsistentHashPoolRouterConfig(ActorSystem system, int poolSize, Props routeeProps, Func<string, uint> hash, int replicaCount)
+            : base(poolSize, routeeProps)
         {
+            _system = system;
             if (replicaCount <= 0)
             {
                 throw new ArgumentException("ReplicaCount must be greater than 0");
@@ -24,6 +26,6 @@ namespace Proto.Router.Routers
             _replicaCount = replicaCount;
         }
 
-        public override RouterState CreateRouterState() => new ConsistentHashRouterState(_hash, _replicaCount);
+        public override RouterState CreateRouterState() => new ConsistentHashRouterState(_system, _hash, _replicaCount);
     }
 }

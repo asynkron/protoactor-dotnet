@@ -8,8 +8,9 @@ namespace Proto.Tests
 {
     public class DisposableActorTests
     {
-        private static readonly RootContext Context = new RootContext();
-        
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
+
         private class SupervisingActor : IActor
         {
             private readonly Props _childProps;

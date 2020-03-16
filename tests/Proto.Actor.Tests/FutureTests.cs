@@ -7,6 +7,9 @@ namespace Proto.Tests
 {
     public class FutureTests
     {
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
+
         private readonly ITestOutputHelper output;
 
         public FutureTests(ITestOutputHelper output)
@@ -14,7 +17,7 @@ namespace Proto.Tests
             this.output = output;
         }
 
-        private static readonly RootContext Context = new RootContext();
+
 
         [Fact]
         public void Given_Actor_When_AwaitRequestAsync_Should_ReturnReply()
@@ -45,13 +48,13 @@ namespace Proto.Tests
                 return Actor.Done;
             }));
             var pid2 = Context.Spawn(Props.FromFunc(async ctx =>
-            {
-                if (ctx.Message is string)
-                {
-                    var reply1 = await ctx.RequestAsync<string>(pid1, "");
-                    ctx.Respond(ctx.Message + reply1);
-                }
-            }));
+             {
+                 if (ctx.Message is string)
+                 {
+                     var reply1 = await ctx.RequestAsync<string>(pid1, "");
+                     ctx.Respond(ctx.Message + reply1);
+                 }
+             }));
 
 
             var reply2 = Context.RequestAsync<string>(pid2, "hello").Result;
@@ -63,13 +66,13 @@ namespace Proto.Tests
         public void Given_Actor_When_ReplyIsNull_Should_Return()
         {
             var pid = Context.Spawn(Props.FromFunc(ctx =>
-            {
-                if (ctx.Message is string)
-                {
-                    ctx.Respond(null);
-                }
-                return Actor.Done;
-            }));
+             {
+                 if (ctx.Message is string)
+                 {
+                     ctx.Respond(null);
+                 }
+                 return Actor.Done;
+             }));
 
             var reply = Context.RequestAsync<object>(pid, "hello", TimeSpan.FromSeconds(1)).Result;
 
@@ -82,15 +85,15 @@ namespace Proto.Tests
             Task.Run(async () =>
             {
                 var pid = Context.Spawn(Props.FromFunc(ctx =>
-                {
-                    if (ctx.Message is string msg)
-                    {
-                        output.WriteLine("Got Message " + msg);
-                        ctx.Respond(null);
-                        output.WriteLine("Sent Response to " + msg);
-                    }
-                    return Actor.Done;
-                }));
+               {
+                   if (ctx.Message is string msg)
+                   {
+                       output.WriteLine("Got Message " + msg);
+                       ctx.Respond(null);
+                       output.WriteLine("Sent Response to " + msg);
+                   }
+                   return Actor.Done;
+               }));
 
                 output.WriteLine("Starting");
                 var reply1 = await Context.RequestAsync<object>(pid, "hello1", TimeSpan.FromSeconds(10));
@@ -108,25 +111,25 @@ namespace Proto.Tests
             Task.Run(async () =>
             {
                 var replier = Context.Spawn(Props.FromFunc(ctx =>
-                {
-                    if (ctx.Message is Tuple<PID, String> msg)
-                    {
-                        output.WriteLine("replier Got Message " + msg.Item2);
-                        msg.Item1.SendUserMessage(null);
-                        output.WriteLine("replier Sent Response to " + msg.Item2);
-                    }
-                    return Actor.Done;
-                }));
+               {
+                   if (ctx.Message is Tuple<PID, String> msg)
+                   {
+                       output.WriteLine("replier Got Message " + msg.Item2);
+                       msg.Item1.SendUserMessage(System, null);
+                       output.WriteLine("replier Sent Response to " + msg.Item2);
+                   }
+                   return Actor.Done;
+               }));
                 var pid = Context.Spawn(Props.FromFunc(ctx =>
-                {
-                    if (ctx.Message is string msg)
-                    {
-                        output.WriteLine("pid Got Message " + msg);
-                        replier.SendUserMessage(Tuple.Create(ctx.Sender, msg));
-                        output.WriteLine("pid Sent Response to " + msg);
-                    }
-                    return Actor.Done;
-                }));
+               {
+                   if (ctx.Message is string msg)
+                   {
+                       output.WriteLine("pid Got Message " + msg);
+                       replier.SendUserMessage(System, Tuple.Create(ctx.Sender, msg));
+                       output.WriteLine("pid Sent Response to " + msg);
+                   }
+                   return Actor.Done;
+               }));
 
                 output.WriteLine("Starting");
                 var reply1 = await Context.RequestAsync<object>(pid, "hello1", TimeSpan.FromSeconds(2));

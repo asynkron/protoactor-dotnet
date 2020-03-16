@@ -18,7 +18,7 @@ namespace ContextDecorators
             return res;
         }
     }
-    
+
     public class LoggingDecorator : ActorContextDecorator
     {
         private readonly string _loggerName;
@@ -40,7 +40,7 @@ namespace ContextDecorators
     {
         static void Main(string[] args)
         {
-            var context = new LoggingRootDecorator(new RootContext());
+            var context = new LoggingRootDecorator(new RootContext(new ActorSystem()));
             var props = Props.FromFunc(ctx =>
                 {
                     if (ctx.Message is string str)

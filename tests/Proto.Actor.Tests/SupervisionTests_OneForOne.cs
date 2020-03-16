@@ -10,7 +10,8 @@ namespace Proto.Tests
 {
     public class SupervisionTests_OneForOne
     {
-        private static readonly RootContext Context = new RootContext();
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
         private static readonly Exception Exception = new Exception("boo hoo");
         class ParentActor : IActor
         {
@@ -101,7 +102,7 @@ namespace Proto.Tests
             Assert.Contains(Stop.Instance, childMailboxStats.Posted);
             Assert.Contains(Stop.Instance, childMailboxStats.Received);
         }
-        
+
         [Fact]
         public void OneForOneStrategy_Should_RestartChildOnFailure()
         {
@@ -119,7 +120,7 @@ namespace Proto.Tests
             Assert.Contains(childMailboxStats.Posted, msg => msg is Restart);
             Assert.Contains(childMailboxStats.Received, msg => msg is Restart);
         }
-        
+
         [Fact]
         public void OneForOneStrategy_WhenRestartedLessThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldNotStopChild()
         {
@@ -134,19 +135,19 @@ namespace Proto.Tests
             Context.Send(parent, "1st restart");
             Context.Send(parent, "2nd restart");
             Context.Send(parent, "3rd restart");
-            
+
             // wait more than the time period 
             Thread.Sleep(500);
             Assert.DoesNotContain(Stop.Instance, childMailboxStats.Posted);
             Assert.DoesNotContain(Stop.Instance, childMailboxStats.Received);
-            
+
             Context.Send(parent, "4th restart");
-            
-            childMailboxStats.Reset.Wait(500); 
+
+            childMailboxStats.Reset.Wait(500);
             Assert.DoesNotContain(Stop.Instance, childMailboxStats.Posted);
             Assert.DoesNotContain(Stop.Instance, childMailboxStats.Received);
         }
-        
+
         [Fact]
         public void OneForOneStrategy_WhenRestartedMoreThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldStopChild()
         {
@@ -162,13 +163,13 @@ namespace Proto.Tests
             Context.Send(parent, "2nd restart");
             Context.Send(parent, "3rd restart");
             Context.Send(parent, "4th restart");
-            
-            
-            childMailboxStats.Reset.Wait(1000); 
+
+
+            childMailboxStats.Reset.Wait(1000);
             Assert.Contains(Stop.Instance, childMailboxStats.Posted);
             Assert.Contains(Stop.Instance, childMailboxStats.Received);
         }
-        
+
         [Fact]
         public void OneForOneStrategy_Should_PassExceptionOnRestart()
         {
@@ -181,7 +182,7 @@ namespace Proto.Tests
             var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
-            
+
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(childMailboxStats.Posted, msg => (msg is Restart r) && r.Reason == Exception);
             Assert.Contains(childMailboxStats.Received, msg => (msg is Restart r) && r.Reason == Exception);
@@ -200,7 +201,7 @@ namespace Proto.Tests
 
             Context.Send(parent, "hello");
             Context.Send(parent, "hello");
-            
+
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(Stop.Instance, childMailboxStats.Posted);
             Assert.Contains(Stop.Instance, childMailboxStats.Received);
@@ -218,7 +219,7 @@ namespace Proto.Tests
             var parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
-            
+
             parentMailboxStats.Reset.Wait(1000);
             // Default directive allows 10 restarts so we expect 11 Failure messages before the child is stopped
             Assert.Equal(11, parentMailboxStats.Received.OfType<Failure>().Count());
@@ -270,7 +271,7 @@ namespace Proto.Tests
             Assert.Contains(Stop.Instance, childMailboxStats.Posted);
             Assert.Contains(Stop.Instance, childMailboxStats.Received);
         }
-        
+
         [Fact]
         public void OneForOneStrategy_Should_RestartParentOnEscalateFailure()
         {
@@ -283,7 +284,7 @@ namespace Proto.Tests
             var grandParentProps = Props.FromProducer(() => new ParentActor(parentProps))
                 .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, TimeSpan.FromSeconds(1)));
             var grandParent = Context.Spawn(grandParentProps);
-            
+
             parentMailboxStats.Reset.Wait(1000);
             Thread.Sleep(1000); //parentMailboxStats.Received could still be modified without a wait here
             Assert.Contains(parentMailboxStats.Received, msg => msg is Restart);

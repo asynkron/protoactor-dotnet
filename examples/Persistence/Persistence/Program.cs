@@ -20,7 +20,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        var context = new RootContext();
+        var context = new RootContext(new ActorSystem());
         var provider = new SqliteProvider(new SqliteConnectionStringBuilder { DataSource = "states.db" });
 
         var props = Props.FromProducer(() => new MyPersistenceActor(provider));
@@ -39,10 +39,10 @@ class Program
         public MyPersistenceActor(IProvider provider)
         {
             _persistence = Persistence.WithEventSourcingAndSnapshotting(
-                provider, 
-                provider, 
+                provider,
+                provider,
                 "demo-app-id",
-                ApplyEvent, 
+                ApplyEvent,
                 ApplySnapshot,
                 new IntervalStrategy(20), () => _state);
         }
@@ -52,7 +52,7 @@ class Program
             switch (@event)
             {
                 case RecoverEvent msg:
-                    if(msg.Data is RenameEvent re)
+                    if (msg.Data is RenameEvent re)
                     {
                         _state.Name = re.Name;
                         Console.WriteLine("MyPersistenceActor - RecoverEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
@@ -94,13 +94,13 @@ class Program
             switch (context.Message)
             {
                 case Started msg:
-                    
+
                     Console.WriteLine("MyPersistenceActor - Started");
 
                     Console.WriteLine("MyPersistenceActor - Current State: {0}", _state);
-                    
+
                     await _persistence.RecoverStateAsync();
-                    
+
                     context.Send(context.Self, new StartLoopActor());
 
                     break;
@@ -130,7 +130,7 @@ class Program
             var props = Props.FromProducer(() => new LoopActor());
 
             _loopActor = context.Spawn(props);
-            
+
             return Actor.Done;
         }
 
@@ -150,7 +150,7 @@ class Program
 
         public Task ReceiveAsync(IContext context)
         {
-            switch(context.Message)
+            switch (context.Message)
             {
                 case Started _:
 
@@ -161,13 +161,14 @@ class Program
                     break;
                 case LoopParentMessage _:
 
-                    Task.Run(async () => {
-                        
+                    Task.Run(async () =>
+                    {
+
                         context.Send(context.Parent, new RenameCommand { Name = GeneratePronounceableName(5) });
 
                         await Task.Delay(TimeSpan.FromMilliseconds(500));
 
-                        context.Send(context.Self ,new LoopParentMessage());
+                        context.Send(context.Self, new LoopParentMessage());
                     });
 
                     break;

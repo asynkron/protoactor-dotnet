@@ -14,7 +14,7 @@ namespace Proto
 {
     public class EventStream : EventStream<object>
     {
-        public static readonly EventStream Instance = new EventStream();
+
 
         private readonly ILogger _logger = Log.CreateLogger<EventStream>();
 

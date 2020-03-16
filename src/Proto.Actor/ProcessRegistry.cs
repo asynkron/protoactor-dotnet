@@ -21,7 +21,12 @@ namespace Proto
 
         private int _sequenceId;
 
-        public static ProcessRegistry Instance { get; } = new ProcessRegistry();
+        public ProcessRegistry(ActorSystem system)
+        {
+            System = system;
+        }
+
+        public ActorSystem System { get; }
 
         public string Address { get; private set; } = NoHost;
 
@@ -46,13 +51,13 @@ namespace Proto
                 return process;
             }
 
-            return DeadLetterProcess.Instance;
+            return System.DeadLetter;
         }
 
         public Process GetLocal(string id)
             => _localActorRefs.TryGetValue(id, out var process)
                 ? process
-                : DeadLetterProcess.Instance;
+                : System.DeadLetter;
 
         public (PID pid, bool ok) TryAdd(string id, Process process)
         {

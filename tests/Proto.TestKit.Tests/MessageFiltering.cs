@@ -7,6 +7,7 @@ namespace Proto.TestKit.Tests
     [Collection("FactKitFacts"), Trait("Category", "FactKit")]
     public class MessageFiltering : TestKit
     {
+
         [Fact]
         public void CanRespondToAsyncRequest()
         {
@@ -56,7 +57,7 @@ namespace Proto.TestKit.Tests
             HundredTimes(i => Send(Probe, i));
             Send(Probe, "hi");
             HundredTimes(i => Send(Probe, i));
-            
+
             FishForMessage<string>();
         }
 

@@ -20,6 +20,12 @@ namespace Proto.Remote
 
     public class JsonSerializer : ISerializer
     {
+        private readonly Serialization _serialization;
+
+        public JsonSerializer(Serialization serialization)
+        {
+            _serialization = serialization;
+        }
         public ByteString Serialize(object obj)
         {
             if (obj is JsonMessage jsonMessage)
@@ -35,7 +41,7 @@ namespace Proto.Remote
         public object Deserialize(ByteString bytes, string typeName)
         {
             var json = bytes.ToStringUtf8();
-            var parser = Serialization.TypeLookup[typeName];
+            var parser = _serialization.TypeLookup[typeName];
 
             var o = parser.ParseJson(json);
             return o;
@@ -59,6 +65,12 @@ namespace Proto.Remote
 
     public class ProtobufSerializer : ISerializer
     {
+        private readonly Serialization _serialization;
+
+        public ProtobufSerializer(Serialization serialization)
+        {
+            _serialization = serialization;
+        }
         public ByteString Serialize(object obj)
         {
             var message = obj as IMessage;
@@ -67,7 +79,7 @@ namespace Proto.Remote
 
         public object Deserialize(ByteString bytes, string typeName)
         {
-            var parser = Serialization.TypeLookup[typeName];
+            var parser = _serialization.TypeLookup[typeName];
             var o = parser.ParseFrom(bytes);
             return o;
         }
@@ -83,24 +95,22 @@ namespace Proto.Remote
         }
     }
 
-    public static class Serialization
+    public class Serialization
     {
-        internal static readonly Dictionary<string, MessageParser> TypeLookup = new Dictionary<string, MessageParser>();
-        private static readonly List<ISerializer> Serializers = new List<ISerializer>();
-        private static readonly ProtobufSerializer ProtobufSerializer = new ProtobufSerializer();
-        private static readonly JsonSerializer JsonSerializer = new JsonSerializer();
+        internal readonly Dictionary<string, MessageParser> TypeLookup = new Dictionary<string, MessageParser>();
+        private readonly List<ISerializer> Serializers = new List<ISerializer>();
 
-        static Serialization()
+        public Serialization()
         {
             RegisterFileDescriptor(Proto.ProtosReflection.Descriptor);
             RegisterFileDescriptor(ProtosReflection.Descriptor);
-            RegisterSerializer(ProtobufSerializer,true);
-            RegisterSerializer(JsonSerializer);
+            RegisterSerializer(new ProtobufSerializer(this), true);
+            RegisterSerializer(new JsonSerializer(this));
         }
 
         public static int DefaultSerializerId { get; set; }
 
-        public static void RegisterSerializer(ISerializer serializer, bool makeDefault = false)
+        public void RegisterSerializer(ISerializer serializer, bool makeDefault = false)
         {
             Serializers.Add(serializer);
             if (makeDefault)
@@ -109,7 +119,7 @@ namespace Proto.Remote
             }
         }
 
-        public static void RegisterFileDescriptor(FileDescriptor fd)
+        public void RegisterFileDescriptor(FileDescriptor fd)
         {
             foreach (var msg in fd.MessageTypes)
             {
@@ -118,10 +128,10 @@ namespace Proto.Remote
             }
         }
 
-        public static ByteString Serialize(object message,int serializerId) => Serializers[serializerId].Serialize(message);
+        public ByteString Serialize(object message, int serializerId) => Serializers[serializerId].Serialize(message);
 
-        public static string GetTypeName(object message, int serializerId) => Serializers[serializerId].GetTypeName(message);
+        public string GetTypeName(object message, int serializerId) => Serializers[serializerId].GetTypeName(message);
 
-        public static object Deserialize(string typeName, ByteString bytes, int serializerId) => Serializers[serializerId].Deserialize(bytes, typeName);
+        public object Deserialize(string typeName, ByteString bytes, int serializerId) => Serializers[serializerId].Deserialize(bytes, typeName);
     }
 }

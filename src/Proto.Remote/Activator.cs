@@ -11,22 +11,29 @@ namespace Proto.Remote
 {
     public class Activator : IActor
     {
+        private readonly ActorSystem _system;
+        private readonly Remote _remote;
+        public Activator(Remote remote, ActorSystem system)
+        {
+            _remote = remote;
+            _system = system;
+        }
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
                 case ActorPidRequest msg:
-                    var props = Remote.GetKnownKind(msg.Kind);
+                    var props = _remote.GetKnownKind(msg.Kind);
                     var name = msg.Name;
                     if (string.IsNullOrEmpty(name))
                     {
-                        name = ProcessRegistry.Instance.NextId();
+                        name = _system.ProcessRegistry.NextId();
                     }
 
                     try
                     {
-                        var pid = RootContext.Empty.SpawnNamed(props, name);
-                        var response = new ActorPidResponse{ Pid = pid };
+                        var pid = _system.Root.SpawnNamed(props, name);
+                        var response = new ActorPidResponse { Pid = pid };
                         context.Respond(response);
                     }
                     catch (ProcessNameExistException ex)
@@ -34,7 +41,7 @@ namespace Proto.Remote
                         var response = new ActorPidResponse
                         {
                             Pid = ex.Pid,
-                            StatusCode = (int) ResponseStatusCode.ProcessNameAlreadyExist
+                            StatusCode = (int)ResponseStatusCode.ProcessNameAlreadyExist
                         };
                         context.Respond(response);
                     }
@@ -53,7 +60,7 @@ namespace Proto.Remote
                     {
                         var response = new ActorPidResponse
                         {
-                            StatusCode = (int) ResponseStatusCode.Error
+                            StatusCode = (int)ResponseStatusCode.Error
                         };
                         context.Respond(response);
 
@@ -67,7 +74,7 @@ namespace Proto.Remote
 
     public class ActivatorUnavailableException : ActivatorException
     {
-        public ActivatorUnavailableException() : base((int) ResponseStatusCode.Unavailable, true) { }
+        public ActivatorUnavailableException() : base((int)ResponseStatusCode.Unavailable, true) { }
     }
 
     public class ActivatorException : Exception

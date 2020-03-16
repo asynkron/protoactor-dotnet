@@ -12,39 +12,41 @@ namespace Proto.Tests
 {
     public class SpawnTests
     {
-        private static readonly RootContext Context = new RootContext();
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
+
         [Fact]
         public void Given_PropsWithSpawner_SpawnShouldReturnPidCreatedBySpawner()
         {
             var spawnedPid = new PID("test", "test");
             var props = Props.FromFunc(EmptyReceive)
-                .WithSpawner((id, p, parent) => spawnedPid);
+                .WithSpawner((s, id, p, parent) => spawnedPid);
 
             var pid = Context.Spawn(props);
 
             Assert.Same(spawnedPid, pid);
         }
-        
+
         [Fact]
         public void Given_Existing_Name_SpawnNamedShouldThrow()
         {
             var props = Props.FromFunc(EmptyReceive);
 
             var uniqueName = Guid.NewGuid().ToString();
-            Context.SpawnNamed(props,uniqueName);
+            Context.SpawnNamed(props, uniqueName);
             var x = Assert.Throws<ProcessNameExistException>(() =>
             {
                 Context.SpawnNamed(props, uniqueName);
             });
-            Assert.Equal(uniqueName,x.Name);
+            Assert.Equal(uniqueName, x.Name);
         }
-        
+
         [Fact]
         public void Given_Existing_Name_SpawnPrefixShouldReturnPID()
         {
             var props = Props.FromFunc(EmptyReceive);
 
-            Context.SpawnNamed(props,"existing");
+            Context.SpawnNamed(props, "existing");
             var pid = Context.SpawnPrefix(props, "existing");
             Assert.NotNull(pid);
         }

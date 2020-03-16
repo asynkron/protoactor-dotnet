@@ -15,6 +15,9 @@ namespace Proto.Router.Routers
         private int _currentIndex;
         private HashSet<PID> _routees;
         private List<PID> _values;
+        private readonly ActorSystem _system;
+
+        internal RoundRobinRouterState(ActorSystem system) => _system = system;
 
         public override HashSet<PID> GetRoutees() => _routees;
 
@@ -29,7 +32,7 @@ namespace Proto.Router.Routers
             var i = _currentIndex % _values.Count;
             var pid = _values[i];
             Interlocked.Add(ref _currentIndex, 1);
-            RootContext.Empty.Send(pid, message);
+            _system.Root.Send(pid, message);
         }
     }
 }

@@ -19,9 +19,12 @@ class Program
 
         SpanSetup spanSetup = (span, message) => span.Log(message?.ToString());
 
-        var context = new RootContext();
-        Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
-        Remote.Start("127.0.0.1", 8000);
+        var system = new ActorSystem();
+        var serialization = new Serialization();
+        var context = new RootContext(system);
+        serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
+        var remote = new Remote(system, serialization);
+        remote.Start("127.0.0.1", 8000);
 
         var clients = new HashSet<PID>();
         var props = Props.FromFunc(ctx =>

@@ -22,15 +22,15 @@ namespace Proto
 
     public class DeadLetterProcess : Process
     {
-        public static readonly DeadLetterProcess Instance = new DeadLetterProcess();
+        public DeadLetterProcess(ActorSystem system) : base(system) {}
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
             var (msg, sender, _) = MessageEnvelope.Unwrap(message);
-            EventStream.Instance.Publish(new DeadLetterEvent(pid, msg, sender));
+            System.EventStream.Publish(new DeadLetterEvent(pid, msg, sender));
         }
 
         protected internal override void SendSystemMessage(PID pid, object message)
-            => EventStream.Instance.Publish(new DeadLetterEvent(pid, message, null));
+            => System.EventStream.Publish(new DeadLetterEvent(pid, message, null));
     }
 }

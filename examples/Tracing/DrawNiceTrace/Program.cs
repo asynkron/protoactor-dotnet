@@ -20,14 +20,14 @@ namespace DrawNiceTrace
                 .WithSampler(new ConstSampler(true))
                 .Build();
             GlobalTracer.Register(tracer);
-
-            var rootContext = new RootContext(new MessageHeader(), OpenTracingExtensions.OpenTracingSenderMiddleware())
+            var system = new ActorSystem();
+            var rootContext = new RootContext(system, new MessageHeader(), OpenTracingExtensions.OpenTracingSenderMiddleware())
                 .WithOpenTracing();
 
             var bankProps = Props.FromFunc(
                     ctx =>
                     {
-                        if (ctx.Message is ProcessPayment _) ctx.Respond(new ProcessPaymentResponse {Ok = true});
+                        if (ctx.Message is ProcessPayment _) ctx.Respond(new ProcessPaymentResponse { Ok = true });
                         return Actor.Done;
                     }
                 )
@@ -68,7 +68,7 @@ namespace DrawNiceTrace
                                 {
                                     var cartNumber = nextCartNumber++;
                                     cartPID = ctx.SpawnNamed(cartProps, getActorName(cartNumber));
-                                    ctx.Send(cartPID, new AssignCartNumber {CartNumber = cartNumber});
+                                    ctx.Send(cartPID, new AssignCartNumber { CartNumber = cartNumber });
                                 }
                                 else
                                 {
@@ -91,7 +91,7 @@ namespace DrawNiceTrace
                                 if (resp.Ok) // it will always, we have super rich customers
                                     ctx.Send(
                                         restaurant,
-                                        new TriggerFood {Customer = sendPaymentDetails.Customer, OrderNumber = sendPaymentDetails.OrderNumber}
+                                        new TriggerFood { Customer = sendPaymentDetails.Customer, OrderNumber = sendPaymentDetails.OrderNumber }
                                     );
                                 break;
                         }
@@ -106,19 +106,19 @@ namespace DrawNiceTrace
                         switch (ctx.Message)
                         {
                             case Started _:
-                                var cartNumberResponse = await ctx.RequestAsync<CartNumberResponse>(dinner, new AddItem {ProductName = "Beer!"});
+                                var cartNumberResponse = await ctx.RequestAsync<CartNumberResponse>(dinner, new AddItem { ProductName = "Beer!" });
                                 var cartNumber = cartNumberResponse.CartNumber;
 
                                 await Task.Delay(100);
-                                await ctx.RequestAsync<CartNumberResponse>(dinner, new AddItem {CartNumber = cartNumber, ProductName = "Pizza."});
+                                await ctx.RequestAsync<CartNumberResponse>(dinner, new AddItem { CartNumber = cartNumber, ProductName = "Pizza." });
                                 await Task.Delay(100);
-                                await ctx.RequestAsync<CartNumberResponse>(dinner, new AddItem {CartNumber = cartNumber, ProductName = "Ice cream."});
+                                await ctx.RequestAsync<CartNumberResponse>(dinner, new AddItem { CartNumber = cartNumber, ProductName = "Ice cream." });
 
                                 await Task.Delay(200);
-                                var confirmed = await ctx.RequestAsync<ConfirmOrderResponse>(dinner, new ConfirmOrder {CartNumber = cartNumber});
+                                var confirmed = await ctx.RequestAsync<ConfirmOrderResponse>(dinner, new ConfirmOrder { CartNumber = cartNumber });
 
                                 await Task.Delay(300);
-                                ctx.Send(dinner, new SendPaymentDetails {Customer = ctx.Self, OrderNumber = confirmed.OrderNumber});
+                                ctx.Send(dinner, new SendPaymentDetails { Customer = ctx.Self, OrderNumber = confirmed.OrderNumber });
 
                                 break;
 
@@ -158,12 +158,12 @@ namespace DrawNiceTrace
 
                     case AddItem orderItem:
                         _products.Add(orderItem.ProductName);
-                        ctx.Respond(new CartNumberResponse {CartNumber = _cartNumber});
+                        ctx.Respond(new CartNumberResponse { CartNumber = _cartNumber });
                         break;
 
                     case ConfirmOrder confirmOrder:
                         _isConfirmed = true;
-                        ctx.Respond(new ConfirmOrderResponse {OrderNumber = confirmOrder.CartNumber});
+                        ctx.Respond(new ConfirmOrderResponse { OrderNumber = confirmOrder.CartNumber });
                         break;
 
                     case SendPaymentDetails sendPaymentDetails:

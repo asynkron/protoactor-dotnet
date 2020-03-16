@@ -18,10 +18,13 @@ class Program
         SpanSetup spanSetup = (span, message) => span.Log(message?.ToString());
         var openTracingMiddleware = OpenTracingExtensions.OpenTracingSenderMiddleware(tracer);
 
-        Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
-        Remote.Start("127.0.0.1", 0);
+        var system = new ActorSystem();
+        var serialization = new Serialization();
+        serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
+        var remote = new Remote(system, serialization);
+        remote.Start("127.0.0.1", 0);
         var server = new PID("127.0.0.1:8000", "chatserver");
-        var context = new RootContext(default, openTracingMiddleware);
+        var context = new RootContext(system, default, openTracingMiddleware);
 
         var props = Props.FromFunc(ctx =>
         {

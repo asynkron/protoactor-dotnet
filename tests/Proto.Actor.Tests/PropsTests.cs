@@ -7,6 +7,7 @@ namespace Proto.Tests
 {
     public class PropsTests
     {
+
         [Fact]
         public void Given_Props_When_WithDispatcher_Then_mutate_Dispatcher()
         {
@@ -94,7 +95,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_Props_When_WithSpawner_Then_mutate_Spawner()
         {
-            Spawner spawner = (id, p, parent) => new PID();
+            Spawner spawner = (s, id, p, parent) => new PID();
 
             var props = new Props();
             var props2 = props.WithSpawner(spawner);

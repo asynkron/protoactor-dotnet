@@ -7,5 +7,5 @@ namespace Proto
     //TODO: IReceiveContext ?
     public delegate Task Receiver(IReceiverContext context, MessageEnvelope envelope);
 
-    public delegate Task Sender(ISenderContext context, PID target, MessageEnvelope envelope);
+    public delegate Task Sender(ActorSystem system, ISenderContext context, PID target, MessageEnvelope envelope);
 }

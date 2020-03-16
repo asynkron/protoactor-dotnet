@@ -11,7 +11,7 @@ namespace Saga
 {
     internal class Program
     {
-        private static RootContext Context = RootContext.Empty;
+        private static RootContext Context = new ActorSystem().Root;
 
         public static void Main(string[] args)
         {
@@ -27,10 +27,10 @@ namespace Saga
 
             var props = Props.FromProducer(() => new Runner(numberOfTransfers, intervalBetweenConsoleUpdates, uptime, refusalProbability, busyProbability, retryAttempts, verbose))
                 .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, retryAttempts, null));
-            
+
             Console.WriteLine("Spawning runner");
             var runner = Context.SpawnNamed(props, "runner");
-           
+
             Console.ReadLine();
         }
     }

@@ -12,14 +12,14 @@ class Program
 {
     static void Main(string[] args)
     {
-        var context = new RootContext();
+        var system = new ActorSystem();
         var props = Props.FromProducer(() => new HelloActor());
-        var pid = context.Spawn(props);
-        context.Send(pid, new Hello("ProtoActor"));
+        var pid = system.Root.Spawn(props);
+        system.Root.Send(pid, new Hello("ProtoActor"));
         Console.ReadLine();
     }
 
-    //Messages should be immutable to prvent race conditions between multiple actors
+    //Messages should be immutable to prevent race conditions between multiple actors
     private class Hello
     {
         public string Who { get; }

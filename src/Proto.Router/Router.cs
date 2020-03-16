@@ -9,28 +9,31 @@ using Proto.Router.Routers;
 
 namespace Proto.Router
 {
-    public static class Router
+    public class Router
     {
-        public static Props NewBroadcastGroup(params PID[] routees) => new BroadcastGroupRouterConfig(routees).Props();
+        private readonly ActorSystem _system;
+        public Router(ActorSystem system) => _system = system;
 
-        public static Props NewConsistentHashGroup(params PID[] routees) => new ConsistentHashGroupRouterConfig(MD5Hasher.Hash, 100, routees).Props();
+        public Props NewBroadcastGroup(params PID[] routees) => new BroadcastGroupRouterConfig(_system, routees).Props();
 
-        public static Props NewConsistentHashGroup(Func<string, uint> hash, int replicaCount, params PID[] routees)
-            => new ConsistentHashGroupRouterConfig(hash, replicaCount, routees).Props();
+        public Props NewConsistentHashGroup(params PID[] routees) => new ConsistentHashGroupRouterConfig(_system, MD5Hasher.Hash, 100, routees).Props();
 
-        public static Props NewRandomGroup(params PID[] routees) => new RandomGroupRouterConfig(routees).Props();
+        public Props NewConsistentHashGroup(Func<string, uint> hash, int replicaCount, params PID[] routees)
+            => new ConsistentHashGroupRouterConfig(_system, hash, replicaCount, routees).Props();
 
-        public static Props NewRandomGroup(int seed, params PID[] routees) => new RandomGroupRouterConfig(seed, routees).Props();
+        public Props NewRandomGroup(params PID[] routees) => new RandomGroupRouterConfig(_system, routees).Props();
 
-        public static Props NewRoundRobinGroup(params PID[] routees) => new RoundRobinGroupRouterConfig(routees).Props();
+        public Props NewRandomGroup(int seed, params PID[] routees) => new RandomGroupRouterConfig(_system, seed, routees).Props();
 
-        public static Props NewBroadcastPool(Props props, int poolSize) => new BroadcastPoolRouterConfig(poolSize, props).Props();
+        public Props NewRoundRobinGroup(params PID[] routees) => new RoundRobinGroupRouterConfig(_system, routees).Props();
 
-        public static Props NewConsistentHashPool(Props props, int poolSize, Func<string, uint> hash = null, int replicaCount = 100)
-            => new ConsistentHashPoolRouterConfig(poolSize, props, hash ?? MD5Hasher.Hash, replicaCount).Props();
+        public Props NewBroadcastPool(Props props, int poolSize) => new BroadcastPoolRouterConfig(_system, poolSize, props).Props();
 
-        public static Props NewRandomPool(Props props, int poolSize, int? seed = null) => new RandomPoolRouterConfig(poolSize, props, seed).Props();
+        public Props NewConsistentHashPool(Props props, int poolSize, Func<string, uint> hash = null, int replicaCount = 100)
+            => new ConsistentHashPoolRouterConfig(_system, poolSize, props, hash ?? MD5Hasher.Hash, replicaCount).Props();
 
-        public static Props NewRoundRobinPool(Props props, int poolSize) => new RoundRobinPoolRouterConfig(poolSize, props).Props();
+        public Props NewRandomPool(Props props, int poolSize, int? seed = null) => new RandomPoolRouterConfig(_system, poolSize, props, seed).Props();
+
+        public Props NewRoundRobinPool(Props props, int poolSize) => new RoundRobinPoolRouterConfig(_system, poolSize, props).Props();
     }
 }

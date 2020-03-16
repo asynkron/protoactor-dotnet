@@ -11,19 +11,24 @@ namespace Proto
 {
     public static class Extensions
     {
-        public static void Stop(this IEnumerable<PID> self)
+        public static void Stop(this IEnumerable<PID> self, ActorSystem system)
         {
+            if (self == null)
+            {
+                return;
+            }
+            
             foreach (var pid in self)
             {
-                RootContext.Empty.Stop(pid);
+                system.Root.Stop(pid);
             }
         }
-
-        public static void SendSystemMessage(this IEnumerable<PID> self, SystemMessage message)
+        
+        public static void SendSystemMessage( this IEnumerable<PID> self, SystemMessage message, ActorSystem system)
         {
             foreach (var pid in self)
             {
-                pid.SendSystemMessage(message);
+                pid.SendSystemMessage(system, message);
             }
         }
 

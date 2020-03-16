@@ -17,9 +17,11 @@ namespace Proto.OpenTracing.Tests
         private readonly IScope _scope;
         private readonly ISpanBuilder _spanBuilder;
         private readonly ITracer _tracer;
+        private ActorSystem System;
 
         public OpenTracingExtensionsTests()
         {
+            System = new ActorSystem();
             _spanContext = Substitute.For<ISpanContext>();
 
             _span = Substitute.For<ISpan>();
@@ -48,9 +50,9 @@ namespace Proto.OpenTracing.Tests
                 .WithOpenTracing(tracer: _tracer)
                 ;
 
-            var actor = RootContext.Empty.Spawn(actorProps);
+            var actor = System.Root.Spawn(actorProps);
 
-            RootContext.Empty.Send(actor, "test_message");
+            System.Root.Send(actor, "test_message");
 
             Assert.Equal(2, messages.Count); // Started & "test_message"
 
@@ -62,7 +64,7 @@ namespace Proto.OpenTracing.Tests
         [Fact]
         public void RootContextOpenTracingSenderTest()
         {
-            var root = new RootContext(new MessageHeader(), OpenTracingExtensions.OpenTracingSenderMiddleware(_tracer))
+            var root = new RootContext(System, new MessageHeader(), OpenTracingExtensions.OpenTracingSenderMiddleware(_tracer))
                 .WithOpenTracing(tracer: _tracer);
 
             var messages = new List<object>();
@@ -71,7 +73,7 @@ namespace Proto.OpenTracing.Tests
                 .FromFunc(ctx => { messages.Add(ctx.Message); return Actor.Done; })
                 .WithMailbox(() => new TestMailbox())
                 ;
-            var actor = RootContext.Empty.Spawn(actorProps);
+            var actor = System.Root.Spawn(actorProps);
 
             root.Send(actor, "test_message");
 
@@ -94,7 +96,7 @@ namespace Proto.OpenTracing.Tests
                 .FromFunc(ctx => { messages.Add(ctx.Message); return Actor.Done; })
                 .WithMailbox(() => new TestMailbox())
                 ;
-            var finalTarget = RootContext.Empty.Spawn(finalTargetProps);
+            var finalTarget = System.Root.Spawn(finalTargetProps);
 
             var actorProps = Props
                 .FromFunc(ctx =>
@@ -113,11 +115,11 @@ namespace Proto.OpenTracing.Tests
                 .WithContextDecorator(ctx => ctx.WithOpenTracing(null, tracer: _tracer))
                 .WithOpenTracingSender(_tracer)
                 ;
-            var actor = RootContext.Empty.Spawn(actorProps);
+            var actor = System.Root.Spawn(actorProps);
 
-            RootContext.Empty.Send(actor, "send");
-            RootContext.Empty.Send(actor, "request");
-            RootContext.Empty.Send(actor, "forward");
+            System.Root.Send(actor, "send");
+            System.Root.Send(actor, "request");
+            System.Root.Send(actor, "forward");
 
             Assert.Equal(4, messages.Count); // Started & "send" & "request" & "forward"
             Assert.Equal("send", messages[1]);

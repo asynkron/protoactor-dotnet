@@ -9,7 +9,8 @@ namespace Proto.Tests
 {
     public class ActorTests
     {
-        private static readonly RootContext Context = new RootContext();
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
         public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
 
 
@@ -45,7 +46,7 @@ namespace Proto.Tests
         [Fact]
         public async Task RequestActorAsync_should_not_raise_TimeoutException_when_result_is_first()
         {
-            PID pid = SpawnActorFromFunc(ctx =>
+            var pid = SpawnActorFromFunc(ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -75,7 +76,7 @@ namespace Proto.Tests
 
             Context.Send(pid, "hello");
 
-            await RootContext.Empty.StopAsync(pid);
+            await Context.StopAsync(pid);
 
             Assert.Equal(4, messages.Count);
             var msgs = messages.ToArray();

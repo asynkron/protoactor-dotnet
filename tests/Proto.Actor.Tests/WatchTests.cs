@@ -8,8 +8,9 @@ namespace Proto.Tests
 {
     public class WatchTests
     {
-        private static readonly RootContext Context = new RootContext();
-        
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
+
         [Fact]
         public async Task MultipleStopsTriggerSingleTerminated()
         {
@@ -41,7 +42,7 @@ namespace Proto.Tests
             }));
 
             await Task.Delay(1000);
-            Assert.Equal(1,counter);
+            Assert.Equal(1, counter);
 
         }
         [Fact]

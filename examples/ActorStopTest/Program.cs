@@ -12,13 +12,14 @@ public class Program
 {
     static void Main(string[] args)
     {
-        var props = Actor.FromProducer(() => new ProcessActor());
-        var pid = Actor.Spawn(props);
-        pid.Tell(new Process());
+        var system = new ActorSystem();
+        var props = Props.FromProducer(() => new ProcessActor());
+        var pid = system.Root.Spawn(props);
+        system.Root.Send(pid, new Process());
         Task.Run(async () =>
         {
             await Task.Delay(50);
-            pid.Stop();
+            system.Root.Stop(pid);
         });
         Console.ReadLine();
     }
@@ -37,7 +38,7 @@ public class Program
 
                 case Process _:
                     Console.WriteLine("Process");
-                    context.Self.Tell(new Process());
+                    context.Send(context.Self, new Process());
                     break;
 
                 case Stopping _:

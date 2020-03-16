@@ -9,7 +9,8 @@ namespace Proto.Tests
 {
     public class SupervisionTests_AllForOne
     {
-        private static readonly RootContext Context = new RootContext();
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
         private static readonly Exception Exception = new Exception("boo hoo");
         class ParentActor : IActor
         {
@@ -38,7 +39,7 @@ namespace Proto.Tests
                     // only tell one child
                     context.Forward(Child1);
                 }
-                    
+
                 return Actor.Done;
             }
         }
@@ -126,7 +127,7 @@ namespace Proto.Tests
             Assert.Contains(child2MailboxStats.Posted, msg => msg is Restart);
             Assert.Contains(child2MailboxStats.Received, msg => msg is Restart);
         }
-        
+
         [Fact]
         public void AllForOneStrategy_Should_PassExceptionOnRestart()
         {

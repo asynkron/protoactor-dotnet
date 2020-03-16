@@ -15,10 +15,6 @@ namespace Proto.TestKit
         {
         }
 
-        internal TestProbe()
-        {
-        }
-
         /// <inheritdoc />
         public PID Sender { get; private set; }
 
@@ -206,7 +202,7 @@ namespace Proto.TestKit
         {
             try
             {
-                return RootContext.Empty.RequestAsync<TestProbe>(tpPid, new RequestReference()).Result;
+                return TestKit.System.Root.RequestAsync<TestProbe>(tpPid, new RequestReference()).Result;
             }
             catch
             {

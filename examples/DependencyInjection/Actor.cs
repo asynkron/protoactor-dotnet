@@ -4,7 +4,11 @@ using Proto;
 
 namespace DependencyInjection
 {
-    public class DIActor : IActor
+    public interface IDIActor : IActor
+    {
+    }
+
+    public class DIActor : IDIActor
     {
         public class Ping
         {
@@ -17,11 +21,12 @@ namespace DependencyInjection
         }
 
         private readonly ILogger logger;
+        private readonly ActorSystem system;
 
-        public DIActor(ILogger<DIActor> logger)
+        public DIActor(ILogger<DIActor> logger, ActorSystem system)
         {
             this.logger = logger;
-
+            this.system = system;
             logger.LogWarning("Created DIActor");
         }
 
@@ -30,11 +35,11 @@ namespace DependencyInjection
             switch (context.Message)
             {
                 case Ping p:
-                {
-                    logger.LogInformation($"Ping! {p.Name} replying on eventstream");
-                    EventStream.Instance.Publish(p);
-                    break;
-                }
+                    {
+                        logger.LogInformation($"Ping! {p.Name} replying on eventstream");
+                        system.EventStream.Publish(p);
+                        break;
+                    }
             }
             return Task.CompletedTask;
         }

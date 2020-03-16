@@ -36,7 +36,8 @@ namespace Proto.Tests
 
     public class MiddlewareTests
     {
-        private static readonly RootContext Context = new RootContext();
+        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly RootContext Context = System.Root;
 
 
         [Fact]
@@ -169,17 +170,17 @@ namespace Proto.Tests
                     return Actor.Done;
                 })
                 .WithSenderMiddleware(
-                    next => (c, t, e) =>
+                    next => (s, c, t, e) =>
                     {
                         if (c.Message is string)
                             logs.Add("middleware 1");
-                        return next(c, t, e);
+                        return next(s, c, t, e);
                     },
-                    next => (c, t, e) =>
+                    next => (s, c, t, e) =>
                     {
                         if (c.Message is string)
                             logs.Add("middleware 2");
-                        return next(c, t, e);
+                        return next(s, c, t, e);
                     })
                 .WithMailbox(() => new TestMailbox());
             var pid2 = Context.Spawn(props);

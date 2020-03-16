@@ -15,27 +15,28 @@ namespace Proto
         private readonly CancellationTokenSource _cts;
         private readonly TaskCompletionSource<T> _tcs;
 
-        internal FutureProcess(TimeSpan timeout) : this(new CancellationTokenSource(timeout))
+        internal FutureProcess(ActorSystem system, TimeSpan timeout) : this(system,new CancellationTokenSource(timeout))
         {
+      
         }
 
-        internal FutureProcess(CancellationToken cancellationToken) : this(
+        internal FutureProcess(ActorSystem system, CancellationToken cancellationToken) : this(system,
             CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)
         )
         {
         }
 
-        internal FutureProcess() : this(null)
+        internal FutureProcess(ActorSystem system) : this(system, null)
         {
         }
 
-        private FutureProcess(CancellationTokenSource? cts)
+        private FutureProcess(ActorSystem system, CancellationTokenSource? cts) : base(system)
         {
             _tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
             _cts = cts;
 
-            var name = ProcessRegistry.Instance.NextId();
-            var (pid, absent) = ProcessRegistry.Instance.TryAdd(name, this);
+            var name = System.ProcessRegistry.NextId();
+            var (pid, absent) = System.ProcessRegistry.TryAdd(name, this);
 
             if (!absent)
             {
@@ -101,7 +102,7 @@ namespace Proto
         {
             if (message is Stop)
             {
-                ProcessRegistry.Instance.Remove(Pid);
+                System.ProcessRegistry.Remove(Pid);
                 _cts?.Dispose();
                 return;
             }
