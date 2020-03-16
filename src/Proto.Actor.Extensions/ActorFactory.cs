@@ -32,7 +32,7 @@ namespace Proto
             where T : IActor
         {
             id = id ?? typeof(T).FullName;
-            return GetActor(id, address, parent, () => CreateActor<T>(id, parent, () => new Props().WithProducer(() => ActivatorUtilities.CreateInstance<T>(_serviceProvider))));
+            return GetActor(id, address, parent, () => CreateActor<T>(id, parent, () => new Props().WithProducer(() => ActivatorUtilities.GetServiceOrCreateInstance<T>(_serviceProvider))));
         }
 
         public PID GetActor(string id, string address, IContext parent, Func<PID> create)

@@ -26,6 +26,26 @@ namespace Proto.ActorExtensions.Tests
         }
 
         [Fact]
+        public async void SpawnActorFromInterface()
+        {
+            var services = new ServiceCollection();
+            services.AddProtoActor();
+            services.AddTransient<ISampleActor, SampleActor>();
+
+            var provider = services.BuildServiceProvider();
+            var factory = provider.GetRequiredService<IActorFactory>();
+            var system = provider.GetRequiredService<ActorSystem>();
+
+            var pid = factory.GetActor<ISampleActor>();
+
+            system.Root.Send(pid, "hello");
+
+            await system.Root.StopAsync(pid);
+
+            Assert.True(SampleActor.Created);
+        }
+
+        [Fact]
         public async void should_register_by_type()
         {
             var services = new ServiceCollection();
@@ -36,7 +56,6 @@ namespace Proto.ActorExtensions.Tests
                 created = true;
                 return new SampleActor();
             };
-
             services.AddProtoActor(register => register.RegisterProps(typeof(SampleActor), p => p.WithProducer(producer)));
 
             var provider = services.BuildServiceProvider();

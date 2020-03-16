@@ -4,7 +4,11 @@ using Proto;
 
 namespace DependencyInjection
 {
-    public class DIActor : IActor
+    public interface IDIActor : IActor
+    {
+    }
+
+    public class DIActor : IDIActor
     {
         public class Ping
         {

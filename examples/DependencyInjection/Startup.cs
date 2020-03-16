@@ -14,7 +14,7 @@ namespace DependencyInjection
             services.AddProtoActor(props =>
             {
                 //attached console tracing
-                props.RegisterProps<DIActor>(p => p.WithReceiverMiddleware(next => async (c,env) =>
+                props.RegisterProps<DIActor>(p => p.WithReceiverMiddleware(next => async (c, env) =>
                 {
                     Console.WriteLine($"enter {env.Message.GetType().FullName}");
                     await next(c, env);
@@ -22,6 +22,7 @@ namespace DependencyInjection
                 }));
             });
             services.AddTransient<IActorManager, ActorManager>();
+            services.AddTransient<IDIActor, DIActor>();
         }
 
         public void Configure(IApplicationBuilder app, ILoggerFactory loggerFactory)
@@ -36,6 +37,7 @@ namespace DependencyInjection
             Thread.Sleep(TimeSpan.FromSeconds(2));
             //notice, there is no second creation!
             actorManager.Activate();
+            Thread.Sleep(TimeSpan.FromSeconds(2));
         }
     }
 }
