@@ -11,6 +11,7 @@ namespace Proto.Remote.Tests.Node
         private readonly ILogger<ProtoService> _logger;
         private readonly int _port;
         private readonly string _host;
+        private Remote _remote;
 
         public ProtoService(IConfiguration configuration, ILogger<ProtoService> logger, ILoggerFactory loggerFactory)
         {
@@ -23,24 +24,26 @@ namespace Proto.Remote.Tests.Node
         public Task StartAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("ProtoService starting on {Host}:{Port}...", _host, _port);
-            
-            var context = new RootContext();
-            Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
-            Remote.Start(_host, _port);
+
+            var actorSystem = new ActorSystem();
+            var serialization = new Serialization();
+            serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
+            _remote = new Remote(actorSystem, serialization);
+            _remote.Start(_host, _port);
 
             var props = Props.FromProducer(() => new EchoActor(_host, _port));
-            Remote.RegisterKnownKind("EchoActor", props);
-            context.SpawnNamed(props, "EchoActorInstance");
-            
+            _remote.RegisterKnownKind("EchoActor", props);
+            actorSystem.Root.SpawnNamed(props, "EchoActorInstance");
+
             _logger.LogInformation("ProtoService started");
-            
+
             return Task.CompletedTask;
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("ProtoService stopping...");
-            return Remote.Shutdown();
+            return _remote.Shutdown();
         }
     }
 }

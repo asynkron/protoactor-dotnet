@@ -8,9 +8,14 @@ namespace Proto.Router.Routers
 {
     class RoundRobinPoolRouterConfig : PoolRouterConfig
     {
-        public RoundRobinPoolRouterConfig(int poolSize, Props routeeProps)
-            : base(poolSize, routeeProps) { }
+        private readonly ActorSystem _system;
 
-        public override RouterState CreateRouterState() => new RoundRobinRouterState();
+        public RoundRobinPoolRouterConfig(ActorSystem system, int poolSize, Props routeeProps)
+            : base(poolSize, routeeProps)
+        {
+            _system = system;
+        }
+
+        public override RouterState CreateRouterState() => new RoundRobinRouterState(_system);
     }
 }

@@ -9,18 +9,38 @@ namespace Proto.ActorExtensions.Tests
         [Fact]
         public async void SpawnActor()
         {
-            var context = new RootContext();
             var services = new ServiceCollection();
             services.AddProtoActor();
 
             var provider = services.BuildServiceProvider();
             var factory = provider.GetRequiredService<IActorFactory>();
+            var system = provider.GetRequiredService<ActorSystem>();
 
             var pid = factory.GetActor<SampleActor>();
 
-            context.Send(pid, "hello");
+            system.Root.Send(pid, "hello");
 
-            await RootContext.Empty.StopAsync(pid);
+            await system.Root.StopAsync(pid);
+
+            Assert.True(SampleActor.Created);
+        }
+
+        [Fact]
+        public async void SpawnActorFromInterface()
+        {
+            var services = new ServiceCollection();
+            services.AddProtoActor();
+            services.AddTransient<ISampleActor, SampleActor>();
+
+            var provider = services.BuildServiceProvider();
+            var factory = provider.GetRequiredService<IActorFactory>();
+            var system = provider.GetRequiredService<ActorSystem>();
+
+            var pid = factory.GetActor<ISampleActor>();
+
+            system.Root.Send(pid, "hello");
+
+            await system.Root.StopAsync(pid);
 
             Assert.True(SampleActor.Created);
         }
@@ -36,15 +56,15 @@ namespace Proto.ActorExtensions.Tests
                 created = true;
                 return new SampleActor();
             };
-
             services.AddProtoActor(register => register.RegisterProps(typeof(SampleActor), p => p.WithProducer(producer)));
 
             var provider = services.BuildServiceProvider();
             var factory = provider.GetRequiredService<IActorFactory>();
+            var system = provider.GetRequiredService<ActorSystem>();
 
             var pid = factory.GetActor<SampleActor>();
 
-            await RootContext.Empty.StopAsync(pid);
+            await system.Root.StopAsync(pid);
 
             Assert.True(created);
         }

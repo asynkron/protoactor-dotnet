@@ -6,7 +6,9 @@
 
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Messages;
+using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Remote;
@@ -14,35 +16,30 @@ using ProtosReflection = Messages.ProtosReflection;
 
 class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
-        StartConsulDevMode();
-        Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+        var system = new ActorSystem();
+        var serialization = new Serialization();
+        var cluster = new Cluster(system, serialization);
+        var grains = new Grains(cluster);
+        serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
 
-        Cluster.Start("MyCluster", "127.0.0.1", 12001, new ConsulProvider(new ConsulProviderOptions()));
+        await cluster.Start("MyCluster", "node1", 12001, new ConsulProvider(new ConsulProviderOptions(), c => c.Address = new Uri("http://consul:8500/")));
+        await Task.Delay(2000);
 
-        var client = Grains.HelloGrain("Roger");
+        var client = grains.HelloGrain("Roger");
 
         var res = client.SayHello(new HelloRequest()).Result;
         Console.WriteLine(res.Message);
-        Console.ReadLine();
+
+
         res = client.SayHello(new HelloRequest()).Result;
         Console.WriteLine(res.Message);
-        Console.ReadLine();
-        Console.WriteLine("Shutting Down...");
-        Cluster.Shutdown();
-    }
-
-    private static void StartConsulDevMode()
-    {
-        Console.WriteLine("Consul - Starting");
-        ProcessStartInfo psi =
-            new ProcessStartInfo(@"..\..\..\dependencies\consul",
-                "agent -server -bootstrap -data-dir /tmp/consul -bind=127.0.0.1 -ui")
-            {
-                CreateNoWindow = true,
-            };
-        Process.Start(psi);
-        Console.WriteLine("Consul - Started");
+        Console.CancelKeyPress += async (e, y) =>
+        {
+            Console.WriteLine("Shutting Down...");
+            await cluster.Shutdown();
+        };
+        await Task.Delay(-1);
     }
 }

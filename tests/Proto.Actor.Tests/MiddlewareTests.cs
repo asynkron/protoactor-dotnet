@@ -48,7 +48,7 @@ namespace Proto.Tests
             var logs3 = new List<string>();
 
             var testMailbox = new TestMailbox();
-            var props = Props.FromFunc( System,c =>
+            var props = Props.FromFunc(c =>
                 {
                     switch (c.Message)
                     {
@@ -84,7 +84,7 @@ namespace Proto.Tests
         {
             var logs = new List<string>();
             var testMailbox = new TestMailbox();
-            var props = Props.FromFunc( System,c =>
+            var props = Props.FromFunc(c =>
                 {
                     switch (c.Message)
                     {
@@ -128,7 +128,7 @@ namespace Proto.Tests
         {
             var logs = new List<string>();
             var testMailbox = new TestMailbox();
-            var props = Props.FromFunc( System,c =>
+            var props = Props.FromFunc(c =>
                 {
                     if (c.Message is string)
                         logs.Add("actor");
@@ -162,25 +162,25 @@ namespace Proto.Tests
         public void Given_SenderMiddleware_Should_Call_Middleware_In_Order()
         {
             var logs = new List<string>();
-            var pid1 = Context.Spawn(Props.FromProducer( System,() => new DoNothingActor()));
-            var props = Props.FromFunc( System,c =>
+            var pid1 = Context.Spawn(Props.FromProducer(() => new DoNothingActor()));
+            var props = Props.FromFunc(c =>
                 {
                     if (c.Message is string)
                         c.Send(pid1, "hey");
                     return Actor.Done;
                 })
                 .WithSenderMiddleware(
-                    next => (c, t, e) =>
+                    next => (s, c, t, e) =>
                     {
                         if (c.Message is string)
                             logs.Add("middleware 1");
-                        return next(c, t, e);
+                        return next(s, c, t, e);
                     },
-                    next => (c, t, e) =>
+                    next => (s, c, t, e) =>
                     {
                         if (c.Message is string)
                             logs.Add("middleware 2");
-                        return next(c, t, e);
+                        return next(s, c, t, e);
                     })
                 .WithMailbox(() => new TestMailbox());
             var pid2 = Context.Spawn(props);

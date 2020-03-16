@@ -16,7 +16,7 @@ namespace Proto.Actor.Benchmarks
         [GlobalSetup]
         public void Setup()
         {
-            _context = new RootContext();
+            _context = new RootContext(new ActorSystem());
 
             _echoProps = Props.FromProducer(() => new EchoActor2())
                 .WithMailbox(() => BoundedMailbox.Create(2048));

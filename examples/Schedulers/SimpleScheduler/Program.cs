@@ -10,7 +10,7 @@ namespace SimpleSchedulerDemo
     {
         static void Main(string[] args)
         {
-            var context = new RootContext();
+            var context = new RootContext(new ActorSystem());
             var props = Props.FromProducer(() => new ScheduleActor());
 
             var pid = context.Spawn(props);
@@ -43,7 +43,7 @@ namespace SimpleSchedulerDemo
 
     public class ScheduleActor : IActor
     {
-        private readonly ISimpleScheduler _scheduler = new SimpleScheduler();
+        private ISimpleScheduler _scheduler;
 
         private CancellationTokenSource _timer;
 
@@ -54,9 +54,9 @@ namespace SimpleSchedulerDemo
             switch (context.Message)
             {
                 case Started _:
-
+                    _scheduler = new SimpleScheduler(context);
                     var pid = context.Spawn(Props.FromProducer(() => new ScheduleGreetActor()));
-                    
+
                     _scheduler
                         .ScheduleTellOnce(TimeSpan.FromMilliseconds(100), context.Self, new SimpleMessage("test 1"))
                         .ScheduleTellOnce(TimeSpan.FromMilliseconds(200), context.Self, new SimpleMessage("test 2"))
@@ -120,7 +120,7 @@ namespace SimpleSchedulerDemo
     {
         public Task ReceiveAsync(IContext context)
         {
-            switch(context.Message)
+            switch (context.Message)
             {
                 case Greet msg:
 

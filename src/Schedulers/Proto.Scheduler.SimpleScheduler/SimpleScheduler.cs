@@ -8,7 +8,7 @@ namespace Proto.Schedulers.SimpleScheduler
     {
         private readonly ISenderContext _context;
 
-        public SimpleScheduler() => _context = RootContext.Empty;
+        public SimpleScheduler(ActorSystem actorSystem) => _context = actorSystem.Root;
 
         public SimpleScheduler(ISenderContext context) => _context = context;
 
@@ -40,7 +40,7 @@ namespace Proto.Schedulers.SimpleScheduler
                             return;
 
                         _context.Send(target, message);
-                        
+
                         await Task.Delay(interval, cts.Token);
                     }
                 }
@@ -83,7 +83,7 @@ namespace Proto.Schedulers.SimpleScheduler
                             return;
 
                         //TODO: allow using sender
-                        _context.Request(target,message);                       
+                        _context.Request(target, message);
 
                         await Task.Delay(interval, cts.Token);
                     }

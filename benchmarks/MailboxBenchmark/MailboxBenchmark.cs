@@ -22,7 +22,7 @@ public class MailboxBenchmark
 
     public static async Task RunTest(Func<IMailbox> mailbox)
     {
-        var context = new RootContext();
+        var context = new RootContext(new ActorSystem());
         const int n = 10 * 1000;
         var props = Props.FromFunc(c =>
             {

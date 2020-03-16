@@ -26,10 +26,11 @@ namespace Proto
             Headers = MessageHeader.Empty;
         }
 
-        public RootContext(MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
+        public RootContext(ActorSystem system, MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
         {
+            _system = system;
             SenderMiddleware = middleware.Reverse()
-                .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner));
+                .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner));
             Headers = messageHeader;
         }
 
@@ -50,7 +51,7 @@ namespace Proto
         public PID SpawnNamed(Props props, string name)
         {
             var parent = props.GuardianStrategy != null ? _system.Guardians.GetGuardianPID(props.GuardianStrategy) : null;
-            return props.Spawn(name, parent);
+            return props.Spawn(_system, name, parent);
         }
 
         public PID SpawnPrefix(Props props, string prefix)
@@ -74,10 +75,10 @@ namespace Proto
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => RequestAsync(target, message, new FutureProcess<T>(_system,timeout));
+            => RequestAsync(target, message, new FutureProcess<T>(_system, timeout));
 
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => RequestAsync(target, message, new FutureProcess<T>(_system,cancellationToken));
+            => RequestAsync(target, message, new FutureProcess<T>(_system, cancellationToken));
 
         public Task<T> RequestAsync<T>(PID target, object message)
             => RequestAsync(target, message, new FutureProcess<T>(_system));
@@ -98,13 +99,13 @@ namespace Proto
             return future.Task;
         }
 
-        public void Poison(PID pid) => pid.SendUserMessage(_system,new PoisonPill());
+        public void Poison(PID pid) => pid.SendUserMessage(_system, new PoisonPill());
 
         public Task PoisonAsync(PID pid)
         {
             var future = new FutureProcess<object>(_system);
 
-            pid.SendSystemMessage(_system,new Watch(future.Pid));
+            pid.SendSystemMessage(_system, new Watch(future.Pid));
             Poison(pid);
 
             return future.Task;
@@ -115,7 +116,7 @@ namespace Proto
         public RootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware) => Copy(c =>
             {
                 SenderMiddleware = middleware.Reverse()
-                    .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner));
+                    .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner));
             }
         );
 
@@ -132,9 +133,9 @@ namespace Proto
         }
 
 
-        private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
+        private Task DefaultSender(ActorSystem system, ISenderContext context, PID target, MessageEnvelope message)
         {
-            target.SendUserMessage(_system,message);
+            target.SendUserMessage(system, message);
             return Proto.Actor.Done;
         }
 
@@ -151,12 +152,12 @@ namespace Proto
             if (SenderMiddleware != null)
             {
                 //slow path
-                SenderMiddleware(this, target, MessageEnvelope.Wrap(message));
+                SenderMiddleware(_system, this, target, MessageEnvelope.Wrap(message));
             }
             else
             {
                 //fast path, 0 alloc
-                target.SendUserMessage(_system,message);
+                target.SendUserMessage(_system, message);
             }
         }
     }

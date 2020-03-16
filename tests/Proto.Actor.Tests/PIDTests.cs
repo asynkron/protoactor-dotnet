@@ -13,7 +13,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_ActorNotDead_Ref_ShouldReturnIt()
         {
-            var pid = Context.Spawn(Props.FromFunc(System, EmptyReceive));
+            var pid = Context.Spawn(Props.FromFunc(EmptyReceive));
 
             var p = pid.Ref(System);
 
@@ -23,7 +23,7 @@ namespace Proto.Tests
         [Fact]
         public async void Given_ActorDied_Ref_ShouldNotReturnIt()
         {
-            var pid = Context.Spawn(Props.FromFunc(System, EmptyReceive).WithMailbox(() => new TestMailbox()));
+            var pid = Context.Spawn(Props.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
             await Context.StopAsync(pid);
 
             var p = pid.Ref(System);

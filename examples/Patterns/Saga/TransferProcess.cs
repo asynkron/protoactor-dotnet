@@ -22,7 +22,7 @@ namespace Saga
 
         private Props TryCredit(PID targetActor, decimal amount) => Props
             .FromProducer(() => new AccountProxy(targetActor, sender => new Credit(amount, sender)));
-        
+
         private Props TryDebit(PID targetActor, decimal amount) => Props
             .FromProducer(() => new AccountProxy(targetActor, sender => new Debit(amount, sender)));
 
@@ -58,7 +58,7 @@ namespace Saga
                     break;
             }
         }
-        
+
         private bool Fail()
         {
             var comparison = _random.NextDouble() * 100;
@@ -74,7 +74,7 @@ namespace Saga
                 case Started msg:
                     // default to Starting behavior
                     _behavior.Become(Starting);
-                    
+
                     // recover state from persistence - if there are any events, the current behavior 
                     // should change
                     await _persistence.RecoverStateAsync();
@@ -103,7 +103,7 @@ namespace Saga
                     }
                     break;
             }
-            
+
             // pass through all messages to the current behavior. Note this includes the Started message we
             // may have just handled as what we should do when started depends on the current behavior
             await _behavior.ReceiveAsync(context);
@@ -117,7 +117,7 @@ namespace Saga
                 await _persistence.PersistEventAsync(new TransferStarted());
             }
         }
-        
+
         private async Task AwaitingDebitConfirmation(IContext context)
         {
             switch (context.Message)
@@ -155,24 +155,24 @@ namespace Saga
                     context.SpawnNamed(TryCredit(_to, +_amount), "CreditAttempt");
                     break;
                 case OK msg:
-                    decimal fromBalance = await  context.RequestAsync<decimal>(_from, new GetBalance(), TimeSpan.FromMilliseconds(2000));
+                    decimal fromBalance = await context.RequestAsync<decimal>(_from, new GetBalance(), TimeSpan.FromMilliseconds(2000));
                     decimal toBalance = await context.RequestAsync<decimal>(_to, new GetBalance(), TimeSpan.FromMilliseconds(2000));
-        
+
                     await _persistence.PersistEventAsync(new AccountCredited());
                     await _persistence.PersistEventAsync(new TransferCompleted(_from, fromBalance, _to, toBalance));
                     context.Send(context.Parent, new SuccessResult(context.Self));
                     StopAll(context);
                     break;
                 case Refused msg:
-                    
+
                     // sometimes a remote service might say it refuses to perform some operation. 
                     // This is different from a failure
                     await _persistence.PersistEventAsync(new CreditRefused());
-                    
+
                     // we have definately debited the _from account as it was confirmed, and we 
                     // haven't creidted to _to account, so try and rollback
                     context.SpawnNamed(TryCredit(_from, +_amount), "RollbackDebit");
-                    
+
                     break;
                 case Terminated msg:
                     // at this point, we do not know if the credit succeeded. The remote account has not 
@@ -183,7 +183,7 @@ namespace Saga
                     break;
             }
         }
-        
+
         private async Task RollingBackDebit(IContext context)
         {
             switch (context.Message)
@@ -207,12 +207,12 @@ namespace Saga
                     break;
             }
         }
-        
+
         private void StopAll(IContext context)
         {
-            RootContext.Empty.Stop(_from);
-            RootContext.Empty.Stop(_to);
-            RootContext.Empty.Stop(context.Self);
+            context.Stop(_from);
+            context.Stop(_to);
+            context.Stop(context.Self);
         }
     }
 }

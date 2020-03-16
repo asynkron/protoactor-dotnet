@@ -10,8 +10,14 @@ namespace Proto.Router.Routers
 {
     class BroadcastGroupRouterConfig : GroupRouterConfig
     {
-        public BroadcastGroupRouterConfig(params PID[] routees) => Routees = new HashSet<PID>(routees);
+        private readonly ActorSystem _system;
 
-        public override RouterState CreateRouterState() => new BroadcastRouterState();
+        public BroadcastGroupRouterConfig(ActorSystem system, params PID[] routees)
+        {
+            Routees = new HashSet<PID>(routees);
+            _system = system;
+        }
+
+        public override RouterState CreateRouterState() => new BroadcastRouterState(_system);
     }
 }

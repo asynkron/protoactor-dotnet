@@ -16,7 +16,7 @@ namespace TestApp
 {
     public class HelloGrain : IHelloGrain
     {
-        public Task<HelloResponse> SayHello(HelloRequest request) => Task.FromResult(new HelloResponse {Message = ""});
+        public Task<HelloResponse> SayHello(HelloRequest request) => Task.FromResult(new HelloResponse { Message = "" });
     }
 
     public static class Worker
@@ -30,19 +30,24 @@ namespace TestApp
 
             Console.WriteLine("Starting worker");
 
-            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-            Grains.HelloGrainFactory(() => new HelloGrain());
+            var system = new ActorSystem();
+            var serialization = new Serialization();
+            var cluster = new Cluster(system, serialization);
+            var grains = new Grains(cluster);
 
-            await Cluster.Start(
+            serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+            grains.HelloGrainFactory(() => new HelloGrain());
+
+            await cluster.Start(
                 clusterName, "127.0.0.1", int.Parse(port),
-                new ConsulProvider(new ConsulProviderOptions {DeregisterCritical = TimeSpan.FromSeconds(2)})
+                new ConsulProvider(new ConsulProviderOptions { DeregisterCritical = TimeSpan.FromSeconds(2) })
             );
 
-            Console.WriteLine("Started worked on " + ProcessRegistry.Instance.Address);
+            Console.WriteLine("Started worked on " + system.ProcessRegistry.Address);
 
             Console.ReadLine();
 
-            await Cluster.Shutdown();
+            await cluster.Shutdown();
         }
     }
 }

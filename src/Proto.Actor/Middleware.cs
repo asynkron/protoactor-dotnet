@@ -2,18 +2,13 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public class Middleware
+    public static class Middleware
     {
-        public ActorSystem System { get;  }
-        public Middleware(ActorSystem system)
-        {
-            System = system;
-        }
-        internal Task Receive(IReceiverContext context, MessageEnvelope envelope) => context.Receive(envelope);
+        internal static Task Receive(IReceiverContext context, MessageEnvelope envelope) => context.Receive(envelope);
 
-        internal Task Sender(ISenderContext context, PID target, MessageEnvelope envelope)
+        internal static Task Sender(ActorSystem system, ISenderContext context, PID target, MessageEnvelope envelope)
         {
-            target.SendUserMessage(System, envelope);
+            target.SendUserMessage(system, envelope);
             return Actor.Done;
         }
     }

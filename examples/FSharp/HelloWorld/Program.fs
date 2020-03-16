@@ -13,7 +13,8 @@ type HelloActor() =
 
 [<EntryPoint>]
 let main argv =
-    let ctx = RootContext()
+    let system = ActorSystem()
+    let ctx = RootContext(system)
     let props = Props.FromProducer(fun () -> HelloActor() :> IActor)
     let pid = ctx.Spawn props
     ctx.Send(pid, {| Who = "ProtoActor" |})

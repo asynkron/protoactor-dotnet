@@ -21,12 +21,12 @@ namespace Proto.Actor.Benchmarks
         public int BatchSize { get; set; }
 
         [GlobalSetup]
-        public void Setup() => _context = new RootContext();
+        public void Setup() => _context = new RootContext(new ActorSystem());
 
         [Benchmark]
         public Task InProcessPingPong()
         {
-            var d = new ThreadPoolDispatcher {Throughput = Tps};
+            var d = new ThreadPoolDispatcher { Throughput = Tps };
 
             var clientCount = Environment.ProcessorCount * 1;
             var clients = new PID[clientCount];

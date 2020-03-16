@@ -26,24 +26,23 @@ namespace Proto.Cluster.SingleRemoteInstance
             _serverHost = serverHost;
             _serverPort = serverPort;
             _serverAddress = $"{serverHost}:{serverPort}";
-
-            var props = Props.FromFunc(ctx =>
-            {
-                if (ctx.Message is GetKinds && ctx.Sender != null)
-                    ctx.Respond(new GetKindsResponse { Kinds = { _kinds } });
-
-                return Actor.Done;
-            });
-
-            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-
-            Remote.Remote.RegisterKnownKind(KindsResponder, props);
         }
 
-        public Task DeregisterMemberAsync() => Actor.Done;
+        public Task DeregisterMemberAsync(Cluster cluster) => Actor.Done;
 
-        public Task RegisterMemberAsync(string clusterName, string host, int port, string[] kinds, IMemberStatusValue statusValue, IMemberStatusValueSerializer serializer)
+        public Task RegisterMemberAsync(Cluster cluster, string clusterName, string host, int port, string[] kinds, IMemberStatusValue statusValue, IMemberStatusValueSerializer serializer)
         {
+            var props = Props.FromFunc(ctx =>
+                        {
+                            if (ctx.Message is GetKinds && ctx.Sender != null)
+                                ctx.Respond(new GetKindsResponse { Kinds = { _kinds } });
+
+                            return Actor.Done;
+                        });
+            cluster.Remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+
+            cluster.Remote.RegisterKnownKind(KindsResponder, props);
+
             _kinds = kinds;
             _okStatus = serializer.Deserialize("Ok!");
             _koStatus = serializer.Deserialize("Ko!");
@@ -53,28 +52,28 @@ namespace Proto.Cluster.SingleRemoteInstance
             return Actor.Done;
         }
 
-        public void MonitorMemberStatusChanges()
+        public void MonitorMemberStatusChanges(Cluster cluster)
         {
             var t = new Thread(_ =>
             {
                 while (!_shutdown)
                 {
-                    NotifyStatuses();
+                    NotifyStatuses(cluster);
                 }
             })
             { IsBackground = true };
             t.Start();
         }
 
-        public Task Shutdown()
+        public Task Shutdown(Cluster cluster)
         {
             _shutdown = true;
             return Actor.Done;
         }
 
-        public Task UpdateMemberStatusValueAsync(IMemberStatusValue statusValue) => Actor.Done;
+        public Task UpdateMemberStatusValueAsync(Cluster cluster, IMemberStatusValue statusValue) => Actor.Done;
 
-        private void NotifyStatuses()
+        private void NotifyStatuses(Cluster cluster)
         {
             MemberStatus status;
             if (_isServer)
@@ -83,12 +82,12 @@ namespace Proto.Cluster.SingleRemoteInstance
             }
             else
             {
-                var responder = Remote.Remote.SpawnNamedAsync(_serverAddress, KindsResponder, KindsResponder, _timeout).Result;
+                var responder = cluster.Remote.SpawnNamedAsync(_serverAddress, KindsResponder, KindsResponder, _timeout).Result;
                 if (responder.Pid != null)
                 {
                     try
                     {
-                        var response = RootContext.Empty.RequestAsync<GetKindsResponse>(responder.Pid, new GetKinds(), _timeout).Result;
+                        var response = cluster.System.Root.RequestAsync<GetKindsResponse>(responder.Pid, new GetKinds(), _timeout).Result;
                         status = new MemberStatus(_serverAddress, _serverHost, _serverPort, response.Kinds, true, _okStatus);
                     }
                     catch (Exception ex) when (ex is TimeoutException || ex.InnerException is TimeoutException)
@@ -103,7 +102,7 @@ namespace Proto.Cluster.SingleRemoteInstance
             }
 
             var @event = new ClusterTopologyEvent(new[] { status });
-            Actor.EventStream.Publish(@event);
+            cluster.System.EventStream.Publish(@event);
 
             Thread.Sleep(TimeSpan.FromMinutes(1));
         }

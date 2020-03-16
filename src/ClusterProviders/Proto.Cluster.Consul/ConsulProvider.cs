@@ -30,18 +30,18 @@ namespace Proto.Cluster.Consul
         public ConsulProvider(IOptions<ConsulProviderOptions> options, Action<ConsulClientConfiguration> consulConfig)
             : this(options.Value, consulConfig) { }
 
-        public Task RegisterMemberAsync(
+        public Task RegisterMemberAsync(Cluster cluster,
             string clusterName, string address, int port, string[] kinds, IMemberStatusValue statusValue,
             IMemberStatusValueSerializer statusValueSerializer
         )
         {
             var props = Props
-                .FromProducer(() => new ConsulClusterMonitor(_options, _consulConfig))
+                .FromProducer(() => new ConsulClusterMonitor(cluster.System, _options, _consulConfig))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
                 .WithDispatcher(Mailbox.Dispatchers.SynchronousDispatcher);
-            _clusterMonitor = RootContext.Empty.SpawnNamed(props, "ClusterMonitor");
+            _clusterMonitor = cluster.System.Root.SpawnNamed(props, "ClusterMonitor");
 
-            RootContext.Empty.Send(
+            cluster.System.Root.Send(
                 _clusterMonitor, new Messages.RegisterMember
                 {
                     ClusterName = clusterName,
@@ -56,23 +56,23 @@ namespace Proto.Cluster.Consul
             return Actor.Done;
         }
 
-        public Task DeregisterMemberAsync()
+        public Task DeregisterMemberAsync(Cluster cluster)
         {
-            RootContext.Empty.Send(_clusterMonitor, new Messages.DeregisterMember());
+            cluster.System.Root.Send(_clusterMonitor, new Messages.DeregisterMember());
             return Actor.Done;
         }
 
-        public Task Shutdown()
+        public Task Shutdown(Cluster cluster)
         {
-            RootContext.Empty.Stop(_clusterMonitor);
+            cluster.System.Root.Stop(_clusterMonitor);
             return Task.CompletedTask;
         }
 
-        public void MonitorMemberStatusChanges() => RootContext.Empty.Send(_clusterMonitor, new Messages.CheckStatus {Index = 0});
+        public void MonitorMemberStatusChanges(Cluster cluster) => cluster.System.Root.Send(_clusterMonitor, new Messages.CheckStatus { Index = 0 });
 
-        public Task UpdateMemberStatusValueAsync(IMemberStatusValue statusValue)
+        public Task UpdateMemberStatusValueAsync(Cluster cluster, IMemberStatusValue statusValue)
         {
-            RootContext.Empty.Send(_clusterMonitor, new Messages.UpdateStatusValue{StatusValue = statusValue});
+            cluster.System.Root.Send(_clusterMonitor, new Messages.UpdateStatusValue { StatusValue = statusValue });
             return Actor.Done;
         }
     }

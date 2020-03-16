@@ -1,7 +1,11 @@
 using System.Threading.Tasks;
 namespace Proto.ActorExtensions.Tests
 {
-    public class SampleActor : IActor
+    public interface ISampleActor : IActor
+    {
+
+    }
+    public class SampleActor : ISampleActor
     {
         public static bool Created;
 

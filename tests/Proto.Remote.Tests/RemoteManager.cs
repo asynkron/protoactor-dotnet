@@ -4,18 +4,26 @@ using System.Net.Sockets;
 
 namespace Proto.Remote.Tests
 {
-    public static class RemoteManager
+    public class RemoteManager
     {
         public const string RemoteAddress = "0.0.0.0:12000";
-        
-        static RemoteManager() => Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
+        static RemoteManager()
+        {
+            system = new ActorSystem();
+            var serialization = new Serialization();
+            serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
+            remote = new Remote(system, serialization);
+        }
+
+        private static Remote remote;
+        private static ActorSystem system;
 
         private static bool remoteStarted;
 
-        public static void EnsureRemote()
+        public static (Remote, ActorSystem) EnsureRemote()
         {
-            if (remoteStarted) return;
-            
+            if (remoteStarted) return (remote, system);
+
             var config = new RemoteConfig
             {
                 EndpointWriterOptions = new EndpointWriterOptions
@@ -25,9 +33,10 @@ namespace Proto.Remote.Tests
                     RetryTimeSpan = TimeSpan.FromSeconds(120)
                 }
             };
-
-            Remote.Start(GetLocalIp(), 12001, config);
+            remote.Start(GetLocalIp(), 12001, config);
             remoteStarted = true;
+
+            return (remote, system);
 
             static string GetLocalIp()
             {

@@ -24,14 +24,17 @@ namespace Node1
             Log.SetLoggerFactory(log);
 
             Console.WriteLine("Starting Node1");
-
-            var context = new RootContext();
-            Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+            var system = new ActorSystem();
+            var serialization = new Serialization();
+            var context = new RootContext(system);
+            serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+            var Cluster = new Cluster(system, serialization);
             var parsedArgs = ParseArgs(args);
             // SINGLE REMOTE INSTANCE
             // Cluster.Start("MyCluster", parsedArgs.ServerName, 12001, new SingleRemoteInstanceProvider("localhost", 12000));
 
             // CONSUL 
+
             await Cluster.Start(
                 "MyCluster", "node1", 12001, new ConsulProvider(new ConsulProviderOptions(), c => c.Address = new Uri("http://consul:8500/"))
             );
@@ -48,7 +51,7 @@ namespace Node1
                 Console.WriteLine(res.Message);
                 await Task.Delay(500);
             }
-            
+
             await Task.Delay(-1);
             Console.WriteLine("Shutting Down...");
 

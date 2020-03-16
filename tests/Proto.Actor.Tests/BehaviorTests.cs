@@ -7,13 +7,13 @@ namespace Proto.Tests
     {
         private static readonly ActorSystem System = new ActorSystem();
         private static readonly RootContext Context = System.Root;
-        
+
         [Fact]
         public async Task can_change_states()
         {
-            var testActorProps = Props.FromProducer(System,() => new LightBulb());
+            var testActorProps = Props.FromProducer(() => new LightBulb());
             var actor = Context.Spawn(testActorProps);
-            
+
             var response = await Context.RequestAsync<string>(actor, new PressSwitch());
             Assert.Equal("Turning on", response);
             response = await Context.RequestAsync<string>(actor, new Touch());
@@ -23,11 +23,11 @@ namespace Proto.Tests
             response = await Context.RequestAsync<string>(actor, new Touch());
             Assert.Equal("Cold", response);
         }
-        
+
         [Fact]
         public async Task can_use_global_behaviour()
         {
-            var testActorProps = Props.FromProducer(System,() => new LightBulb());
+            var testActorProps = Props.FromProducer(() => new LightBulb());
             var actor = Context.Spawn(testActorProps);
             var _ = await Context.RequestAsync<string>(actor, new PressSwitch());
             var response = await Context.RequestAsync<string>(actor, new HitWithHammer());
@@ -37,8 +37,8 @@ namespace Proto.Tests
             response = await Context.RequestAsync<string>(actor, new Touch());
             Assert.Equal("OW!", response);
         }
-        
-        public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(System,receive));
+
+        public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
 
         [Fact]
         public async Task pop_behavior_should_restore_pushed_behavior()
@@ -67,8 +67,9 @@ namespace Proto.Tests
             Assert.Equal("number42answertolifetheuniverseandeverything", $"{reply}{replyAfterPush}{replyAfterPop}");
         }
     }
-    
-    public class LightBulb : IActor{
+
+    public class LightBulb : IActor
+    {
         private readonly Behavior _behavior;
         private bool _smashed;
 
@@ -90,10 +91,10 @@ namespace Proto.Tests
                     context.Respond("Cold");
                     break;
             }
-            
+
             return Actor.Done;
         }
-        
+
         private Task On(IContext context)
         {
             switch (context.Message)
@@ -106,7 +107,7 @@ namespace Proto.Tests
                     context.Respond("Hot!");
                     break;
             }
-            
+
             return Actor.Done;
         }
 
@@ -131,7 +132,7 @@ namespace Proto.Tests
         }
     }
 
-    public class PressSwitch {}
-    public class Touch {}
-    public class HitWithHammer {}
+    public class PressSwitch { }
+    public class Touch { }
+    public class HitWithHammer { }
 }

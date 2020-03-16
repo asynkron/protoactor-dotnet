@@ -11,7 +11,7 @@ namespace Proto.Tests
     {
         private static readonly ActorSystem System = new ActorSystem();
         private static readonly RootContext Context = System.Root;
-        public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(System,receive));
+        public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
 
 
         [Fact]
@@ -66,7 +66,7 @@ namespace Proto.Tests
             var messages = new Queue<object>();
 
             var pid = Context.Spawn(
-                Props.FromFunc(System, ctx =>
+                Props.FromFunc(ctx =>
                     {
                         messages.Enqueue(ctx.Message);
                         return Actor.Done;
@@ -86,7 +86,7 @@ namespace Proto.Tests
             Assert.IsType<Stopped>(msgs[3]);
         }
 
-        public static PID SpawnForwarderFromFunc(Receive forwarder) => Context.Spawn(Props.FromFunc(System,forwarder));
+        public static PID SpawnForwarderFromFunc(Receive forwarder) => Context.Spawn(Props.FromFunc(forwarder));
 
         [Fact]
         public async Task ForwardActorAsync()

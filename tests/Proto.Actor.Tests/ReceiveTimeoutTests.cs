@@ -16,17 +16,17 @@ namespace Proto.Tests
             var timeoutReceived = false;
             var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Props.FromFunc(System,(context) =>
+            var props = Props.FromFunc((context) =>
             {
                 switch (context.Message)
                 {
-                        case Started _:
-                            context.SetReceiveTimeout(TimeSpan.FromMilliseconds(150));
-                            break;
-                        case ReceiveTimeout _:
-                            timeoutReceived = true;
-                            receiveTimeoutWaiter.SetResult(0);
-                            break;
+                    case Started _:
+                        context.SetReceiveTimeout(TimeSpan.FromMilliseconds(150));
+                        break;
+                    case ReceiveTimeout _:
+                        timeoutReceived = true;
+                        receiveTimeoutWaiter.SetResult(0);
+                        break;
                 }
                 return Actor.Done;
             });
@@ -35,14 +35,14 @@ namespace Proto.Tests
             await GetSafeAwaitableTask(receiveTimeoutWaiter);
             Assert.True(timeoutReceived);
         }
-        
+
         [Fact]
         public async Task receive_timeout_not_received_within_expected_time()
         {
             var timeoutReceived = false;
             var actorStartedWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Props.FromFunc(System ,(context) =>
+            var props = Props.FromFunc((context) =>
             {
                 switch (context.Message)
                 {
@@ -61,7 +61,7 @@ namespace Proto.Tests
             await GetSafeAwaitableTask(actorStartedWaiter);
             Assert.False(timeoutReceived);
         }
-        
+
         [Fact]
         public async Task can_cancel_receive_timeout()
         {
@@ -69,7 +69,7 @@ namespace Proto.Tests
             var endingTimeout = TimeSpan.MaxValue;
             var autoExpiringWaiter = GetExpiringTaskCompletionSource(1500);
 
-            var props = Props.FromFunc( System ,(context) =>
+            var props = Props.FromFunc((context) =>
             {
                 switch (context.Message)
                 {
@@ -94,14 +94,14 @@ namespace Proto.Tests
             Assert.Equal(TimeSpan.Zero, endingTimeout);
             Assert.False(timeoutReceived);
         }
-        
+
         [Fact]
         public async Task can_still_set_receive_timeout_after_cancelling()
         {
             var timeoutReceived = false;
             var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Props.FromFunc( System ,(context) =>
+            var props = Props.FromFunc((context) =>
             {
                 switch (context.Message)
                 {
