@@ -50,5 +50,6 @@ namespace Proto
         public virtual PID? Self => null;
         public virtual PID? Sender => null;
         public virtual IActor? Actor => null;
+        public virtual ActorSystem System => null;
     }
 }

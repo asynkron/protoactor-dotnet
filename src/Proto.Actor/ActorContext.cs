@@ -76,11 +76,11 @@ namespace Proto
         private object? _messageOrEnvelope;
         private ContextState _state;
 
-        protected readonly ActorSystem System;
+        public ActorSystem System { get; }
 
-        public ActorContext(ActorSystem actorSystem, Props props, PID parent, PID self)
+        public ActorContext(ActorSystem system, Props props, PID parent, PID self)
         {
-            System = actorSystem;
+            System = system;
             _props = props;
 
             //Parents are implicitly watching the child
