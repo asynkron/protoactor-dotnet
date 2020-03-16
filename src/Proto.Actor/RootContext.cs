@@ -133,9 +133,9 @@ namespace Proto
         }
 
 
-        private Task DefaultSender(ActorSystem system, ISenderContext context, PID target, MessageEnvelope message)
+        private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
         {
-            target.SendUserMessage(system, message);
+            target.SendUserMessage(context.System, message);
             return Proto.Actor.Done;
         }
 
@@ -152,7 +152,7 @@ namespace Proto
             if (SenderMiddleware != null)
             {
                 //slow path
-                SenderMiddleware(System, this, target, MessageEnvelope.Wrap(message));
+                SenderMiddleware(this, target, MessageEnvelope.Wrap(message));
             }
             else
             {

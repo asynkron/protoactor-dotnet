@@ -432,7 +432,7 @@ namespace Proto
             if (_props.SenderMiddlewareChain != null)
             {
                 //slow path
-                _props.SenderMiddlewareChain(System, EnsureExtras().Context, target, MessageEnvelope.Wrap(message));
+                _props.SenderMiddlewareChain(EnsureExtras().Context, target, MessageEnvelope.Wrap(message));
             }
             else
             {

@@ -25,7 +25,7 @@ class Program
         var root = new RootContext(
             system,
             headers,
-            next => async (s, c, target, envelope) =>
+            next => async (c, target, envelope) =>
             {
                 var newEnvelope = envelope
                     .WithHeader("TraceID", c.Headers.GetOrDefault("TraceID"))
@@ -36,7 +36,7 @@ class Program
                 Console.WriteLine(" 1 TraceID: " + newEnvelope.Header.GetOrDefault("TraceID"));
                 Console.WriteLine(" 1 SpanID: " + newEnvelope.Header.GetOrDefault("SpanID"));
                 Console.WriteLine(" 1 ParentSpanID: " + newEnvelope.Header.GetOrDefault("ParentSpanID"));
-                await next(s, c, target, newEnvelope);
+                await next(c, target, newEnvelope);
                 //this line might look confusing at first when reading the console output
                 //it looks like this finishes before the actor receive middleware kicks in
                 //which is exactly what it does, due to the actor mailbox.
@@ -80,7 +80,7 @@ class Program
                 {
                     await next(context, envelope);
                 }
-            }).WithSenderMiddleware(next => async (system, context, target, envelope) =>
+            }).WithSenderMiddleware(next => async (context, target, envelope) =>
             {
                 var newEnvelope = envelope
                     .WithHeader("TraceID", context.Headers.GetOrDefault("TraceID"))
@@ -91,7 +91,7 @@ class Program
                 Console.WriteLine("    4 TraceID: " + newEnvelope.Header.GetOrDefault("TraceID"));
                 Console.WriteLine("    4 SpanID: " + newEnvelope.Header.GetOrDefault("SpanID"));
                 Console.WriteLine("    4 ParentSpanID: " + newEnvelope.Header.GetOrDefault("ParentSpanID"));
-                await next(system, context, target, envelope);
+                await next(context, target, envelope);
                 Console.WriteLine("    4 Exit Actor SenderMiddleware");
             });
         var pid = root.Spawn(actor);
