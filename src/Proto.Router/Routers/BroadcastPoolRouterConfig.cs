@@ -8,14 +8,14 @@ namespace Proto.Router.Routers
 {
     class BroadcastPoolRouterConfig : PoolRouterConfig
     {
-        private readonly ActorSystem _system;
+        private readonly ISenderContext _senderContext;
 
-        public BroadcastPoolRouterConfig(ActorSystem system, int poolSize, Props routeeProps)
+        public BroadcastPoolRouterConfig(ISenderContext senderContext, int poolSize, Props routeeProps)
             : base(poolSize, routeeProps)
         {
-            _system = system;
+            _senderContext = senderContext;
         }
 
-        public override RouterState CreateRouterState() => new BroadcastRouterState(_system);
+        public override RouterState CreateRouterState() => new BroadcastRouterState(_senderContext);
     }
 }
