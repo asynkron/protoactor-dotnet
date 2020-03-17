@@ -170,17 +170,17 @@ namespace Proto.Tests
                     return Actor.Done;
                 })
                 .WithSenderMiddleware(
-                    next => (s, c, t, e) =>
+                    next => (c, t, e) =>
                     {
                         if (c.Message is string)
                             logs.Add("middleware 1");
-                        return next(s, c, t, e);
+                        return next(c, t, e);
                     },
-                    next => (s, c, t, e) =>
+                    next => (c, t, e) =>
                     {
                         if (c.Message is string)
                             logs.Add("middleware 2");
-                        return next(s, c, t, e);
+                        return next(c, t, e);
                     })
                 .WithMailbox(() => new TestMailbox());
             var pid2 = Context.Spawn(props);

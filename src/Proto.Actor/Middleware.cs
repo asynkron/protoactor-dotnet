@@ -6,9 +6,9 @@ namespace Proto
     {
         internal static Task Receive(IReceiverContext context, MessageEnvelope envelope) => context.Receive(envelope);
 
-        internal static Task Sender(ActorSystem system, ISenderContext context, PID target, MessageEnvelope envelope)
+        internal static Task Sender(ISenderContext context, PID target, MessageEnvelope envelope)
         {
-            target.SendUserMessage(system, envelope);
+            target.SendUserMessage(context.System, envelope);
             return Actor.Done;
         }
     }

@@ -17,18 +17,18 @@ namespace Proto
 
     public class RootContext : IRootContext
     {
-        private readonly ActorSystem _system;
+        public ActorSystem System { get; }
 
         public RootContext(ActorSystem system)
         {
-            _system = system;
+            System = system;
             SenderMiddleware = null;
             Headers = MessageHeader.Empty;
         }
 
         public RootContext(ActorSystem system, MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
         {
-            _system = system;
+            System = system;
             SenderMiddleware = middleware.Reverse()
                 .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner));
             Headers = messageHeader;
@@ -44,19 +44,19 @@ namespace Proto
 
         public PID Spawn(Props props)
         {
-            var name = _system.ProcessRegistry.NextId();
+            var name = System.ProcessRegistry.NextId();
             return SpawnNamed(props, name);
         }
 
         public PID SpawnNamed(Props props, string name)
         {
-            var parent = props.GuardianStrategy != null ? _system.Guardians.GetGuardianPID(props.GuardianStrategy) : null;
-            return props.Spawn(_system, name, parent);
+            var parent = props.GuardianStrategy != null ? System.Guardians.GetGuardianPID(props.GuardianStrategy) : null;
+            return props.Spawn(System, name, parent);
         }
 
         public PID SpawnPrefix(Props props, string prefix)
         {
-            var name = prefix + _system.ProcessRegistry.NextId();
+            var name = prefix + System.ProcessRegistry.NextId();
             return SpawnNamed(props, name);
         }
 
@@ -75,37 +75,37 @@ namespace Proto
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => RequestAsync(target, message, new FutureProcess<T>(_system, timeout));
+            => RequestAsync(target, message, new FutureProcess<T>(System, timeout));
 
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => RequestAsync(target, message, new FutureProcess<T>(_system, cancellationToken));
+            => RequestAsync(target, message, new FutureProcess<T>(System, cancellationToken));
 
         public Task<T> RequestAsync<T>(PID target, object message)
-            => RequestAsync(target, message, new FutureProcess<T>(_system));
+            => RequestAsync(target, message, new FutureProcess<T>(System));
 
         public void Stop(PID pid)
         {
-            var reff = _system.ProcessRegistry.Get(pid);
+            var reff = System.ProcessRegistry.Get(pid);
             reff.Stop(pid);
         }
 
         public Task StopAsync(PID pid)
         {
-            var future = new FutureProcess<object>(_system);
+            var future = new FutureProcess<object>(System);
 
-            pid.SendSystemMessage(_system, new Watch(future.Pid));
+            pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
 
             return future.Task;
         }
 
-        public void Poison(PID pid) => pid.SendUserMessage(_system, new PoisonPill());
+        public void Poison(PID pid) => pid.SendUserMessage(System, new PoisonPill());
 
         public Task PoisonAsync(PID pid)
         {
-            var future = new FutureProcess<object>(_system);
+            var future = new FutureProcess<object>(System);
 
-            pid.SendSystemMessage(_system, new Watch(future.Pid));
+            pid.SendSystemMessage(System, new Watch(future.Pid));
             Poison(pid);
 
             return future.Task;
@@ -123,7 +123,7 @@ namespace Proto
 
         private RootContext Copy(Action<RootContext> mutator)
         {
-            var copy = new RootContext(_system)
+            var copy = new RootContext(System)
             {
                 SenderMiddleware = SenderMiddleware,
                 Headers = Headers
@@ -133,9 +133,9 @@ namespace Proto
         }
 
 
-        private Task DefaultSender(ActorSystem system, ISenderContext context, PID target, MessageEnvelope message)
+        private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
         {
-            target.SendUserMessage(system, message);
+            target.SendUserMessage(context.System, message);
             return Proto.Actor.Done;
         }
 
@@ -152,12 +152,12 @@ namespace Proto
             if (SenderMiddleware != null)
             {
                 //slow path
-                SenderMiddleware(_system, this, target, MessageEnvelope.Wrap(message));
+                SenderMiddleware(this, target, MessageEnvelope.Wrap(message));
             }
             else
             {
                 //fast path, 0 alloc
-                target.SendUserMessage(_system, message);
+                target.SendUserMessage(System, message);
             }
         }
     }

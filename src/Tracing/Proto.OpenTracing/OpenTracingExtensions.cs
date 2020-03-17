@@ -39,13 +39,13 @@ namespace Proto.OpenTracing
         /// Only responsible to tweak the envelop in order to send SpanContext informations.
         /// </summary>
         public static Func<Sender, Sender> OpenTracingSenderMiddleware(ITracer tracer = null)
-            => next => async (system, context, target, envelope) =>
+            => next => async (context, target, envelope) =>
             {
                 tracer ??= GlobalTracer.Instance;
 
                 var span = tracer.ActiveSpan;
 
-                Task SimpleNext() => next(system, context, target, envelope); // to forget nothing
+                Task SimpleNext() => next(context, target, envelope); // to forget nothing
 
                 if (span == null)
                 {

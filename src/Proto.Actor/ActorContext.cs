@@ -76,11 +76,11 @@ namespace Proto
         private object? _messageOrEnvelope;
         private ContextState _state;
 
-        protected readonly ActorSystem System;
+        public ActorSystem System { get; }
 
-        public ActorContext(ActorSystem actorSystem, Props props, PID parent, PID self)
+        public ActorContext(ActorSystem system, Props props, PID parent, PID self)
         {
-            System = actorSystem;
+            System = system;
             _props = props;
 
             //Parents are implicitly watching the child
@@ -432,7 +432,7 @@ namespace Proto
             if (_props.SenderMiddlewareChain != null)
             {
                 //slow path
-                _props.SenderMiddlewareChain(System, EnsureExtras().Context, target, MessageEnvelope.Wrap(message));
+                _props.SenderMiddlewareChain(EnsureExtras().Context, target, MessageEnvelope.Wrap(message));
             }
             else
             {

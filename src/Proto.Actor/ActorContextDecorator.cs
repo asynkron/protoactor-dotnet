@@ -46,6 +46,7 @@ namespace Proto
         public virtual PID? Self => _context.Self;
         public virtual PID? Sender => _context.Sender;
         public virtual IActor? Actor => _context.Actor;
+        public virtual ActorSystem System => _context.System;
         public virtual TimeSpan ReceiveTimeout => _context.ReceiveTimeout;
         public virtual IReadOnlyCollection<PID> Children => _context.Children;
         public virtual void Respond(object message) => _context.Respond(message);

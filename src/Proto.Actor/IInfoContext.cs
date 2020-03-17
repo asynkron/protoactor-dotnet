@@ -27,5 +27,10 @@ namespace Proto
         ///     Gets the actor associated with this context.
         /// </summary>
         IActor? Actor { get; }
+
+        /// <summary>
+        ///     Gets the actor system this actor was spawned in.
+        /// </summary>
+        ActorSystem System { get; }
     }
 }
