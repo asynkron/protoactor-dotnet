@@ -14,7 +14,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async void BroadcastGroupPool_CreatesRoutees()
         {
-            var props = new Router(ActorSystem).NewBroadcastPool(MyActorProps, 3)
+            var props = new ActorSystem().Root.GetRouters().NewBroadcastPool(MyActorProps, 3)
                 .WithMailbox(() => new TestMailbox());
             var router = ActorSystem.Root.Spawn(props);
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
@@ -24,7 +24,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async void RoundRobinPool_CreatesRoutees()
         {
-            var props = new Router(ActorSystem).NewRoundRobinPool(MyActorProps, 3)
+            var props = new ActorSystem().Root.GetRouters().NewRoundRobinPool(MyActorProps, 3)
                 .WithMailbox(() => new TestMailbox());
             var router = ActorSystem.Root.Spawn(props);
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
@@ -34,7 +34,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async void ConsistentHashPool_CreatesRoutees()
         {
-            var props = new Router(ActorSystem).NewConsistentHashPool(MyActorProps, 3)
+            var props = new ActorSystem().Root.GetRouters().NewConsistentHashPool(MyActorProps, 3)
                 .WithMailbox(() => new TestMailbox());
             var router = ActorSystem.Root.Spawn(props);
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
@@ -44,7 +44,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async void RandomPool_CreatesRoutees()
         {
-            var props = new Router(ActorSystem).NewRandomPool(MyActorProps, 3)
+            var props = new ActorSystem().Root.GetRouters().NewRandomPool(MyActorProps, 3)
                 .WithMailbox(() => new TestMailbox());
             var router = ActorSystem.Root.Spawn(props);
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);

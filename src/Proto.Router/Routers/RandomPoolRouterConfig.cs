@@ -7,16 +7,16 @@ namespace Proto.Router.Routers
 {
     class RandomPoolRouterConfig : PoolRouterConfig
     {
-        private readonly ActorSystem _system;
+        private readonly ISenderContext _senderContext;
         private readonly int? _seed;
 
-        public RandomPoolRouterConfig(ActorSystem system, int poolSize, Props routeeProps, int? seed)
+        public RandomPoolRouterConfig(ISenderContext senderContext, int poolSize, Props routeeProps, int? seed)
             : base(poolSize, routeeProps)
         {
-            _system = system;
+            _senderContext = senderContext;
             _seed = seed;
         }
 
-        public override RouterState CreateRouterState() => new RandomRouterState(_system, _seed);
+        public override RouterState CreateRouterState() => new RandomRouterState(_senderContext, _seed);
     }
 }

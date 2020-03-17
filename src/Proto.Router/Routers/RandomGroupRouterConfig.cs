@@ -10,22 +10,22 @@ namespace Proto.Router.Routers
 {
     class RandomGroupRouterConfig : GroupRouterConfig
     {
-        private readonly ActorSystem _system;
+        private readonly ISenderContext _senderContext;
         private readonly int? _seed;
 
-        public RandomGroupRouterConfig(ActorSystem system, int seed, params PID[] routees)
+        public RandomGroupRouterConfig(ISenderContext senderContext, int seed, params PID[] routees)
         {
-            _system = system;
+            _senderContext = senderContext;
             _seed = seed;
             Routees = new HashSet<PID>(routees);
         }
 
-        public RandomGroupRouterConfig(ActorSystem system, params PID[] routees)
+        public RandomGroupRouterConfig(ISenderContext senderContext, params PID[] routees)
         {
-            _system = system;
+            _senderContext = senderContext;
             Routees = new HashSet<PID>(routees);
         }
 
-        public override RouterState CreateRouterState() => new RandomRouterState(_system, _seed);
+        public override RouterState CreateRouterState() => new RandomRouterState(_senderContext, _seed);
     }
 }

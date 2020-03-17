@@ -11,11 +11,11 @@ namespace Proto.Router.Routers
     class BroadcastRouterState : RouterState
     {
         private HashSet<PID> _routees;
-        private readonly ActorSystem _system;
+        private readonly ISenderContext _senderContext;
 
-        internal BroadcastRouterState(ActorSystem system)
+        internal BroadcastRouterState(ISenderContext senderContext)
         {
-            _system = system;
+            _senderContext = senderContext;
         }
 
         public override HashSet<PID> GetRoutees() => _routees;
@@ -26,7 +26,7 @@ namespace Proto.Router.Routers
         {
             foreach (var pid in _routees)
             {
-                _system.Root.Send(pid, message);
+                _senderContext.Send(pid, message);
             }
         }
     }
