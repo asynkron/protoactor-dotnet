@@ -8,8 +8,6 @@ namespace Proto.Schedulers.SimpleScheduler
     {
         private readonly ISenderContext _context;
 
-        public SimpleScheduler(ActorSystem actorSystem) => _context = actorSystem.Root;
-
         public SimpleScheduler(ISenderContext context) => _context = context;
 
         public ISimpleScheduler ScheduleTellOnce(TimeSpan delay, PID target, object message)
