@@ -9,7 +9,7 @@ using Proto.Router.Routers;
 
 namespace Proto.Router
 {
-    public static class Router
+    public static class RouterExtensions
     {
         public static Props NewBroadcastGroup(this ISenderContext senderContext, params PID[] routees)
             => new BroadcastGroupRouterConfig(senderContext, routees).Props();
