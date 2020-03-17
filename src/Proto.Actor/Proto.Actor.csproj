@@ -3,6 +3,7 @@
     <RootNamespace>Proto</RootNamespace>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
