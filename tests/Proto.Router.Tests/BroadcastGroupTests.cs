@@ -121,7 +121,7 @@ namespace Proto.Router.Tests
             var routee2 = system.Root.Spawn(MyActorProps);
             var routee3 = system.Root.Spawn(MyActorProps);
 
-            var props = new Router(system.Root).NewBroadcastGroup(routee1, routee2, routee3)
+            var props = system.Root.NewBroadcastGroup(routee1, routee2, routee3)
                 .WithMailbox(() => new TestMailbox());
             var router = system.Root.Spawn(props);
             return (router, routee1, routee2, routee3);

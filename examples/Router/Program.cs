@@ -63,7 +63,7 @@ namespace RouterExample
         {
             var system = new ActorSystem();
             var context = new RootContext(system);
-            var props = system.GetRouters().NewBroadcastGroup(
+            var props = context.NewBroadcastGroup(
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
@@ -80,7 +80,7 @@ namespace RouterExample
         {
             var system = new ActorSystem();
             var context = new RootContext(system);
-            var props = system.GetRouters().NewBroadcastPool(MyActorProps, 5);
+            var props = context.NewBroadcastPool(MyActorProps, 5);
             var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
@@ -92,7 +92,7 @@ namespace RouterExample
         {
             var system = new ActorSystem();
             var context = new RootContext(system);
-            var props = system.GetRouters().NewConsistentHashGroup(
+            var props = context.NewConsistentHashGroup(
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
@@ -109,7 +109,7 @@ namespace RouterExample
         {
             var system = new ActorSystem();
             var context = new RootContext(system);
-            var props = system.GetRouters().NewConsistentHashPool(MyActorProps, 5);
+            var props = context.NewConsistentHashPool(MyActorProps, 5);
             var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
@@ -121,7 +121,7 @@ namespace RouterExample
         {
             var system = new ActorSystem();
             var context = new RootContext(system);
-            var props = system.GetRouters().NewRoundRobinGroup(
+            var props = context.NewRoundRobinGroup(
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
@@ -138,7 +138,7 @@ namespace RouterExample
         {
             var system = new ActorSystem();
             var context = new RootContext(system);
-            var props = context.GetRouters().NewRoundRobinPool(MyActorProps, 5);
+            var props = context.NewRoundRobinPool(MyActorProps, 5);
             var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
@@ -150,7 +150,7 @@ namespace RouterExample
         {
             var system = new ActorSystem();
             var context = new RootContext(system);
-            var props = context.GetRouters().NewRandomGroup(
+            var props = context.NewRandomGroup(
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
@@ -167,7 +167,7 @@ namespace RouterExample
         {
             var system = new ActorSystem();
             var context = new RootContext(system);
-            var props = context.GetRouters().NewRandomPool(MyActorProps, 5);
+            var props = context.NewRandomPool(MyActorProps, 5);
             var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
