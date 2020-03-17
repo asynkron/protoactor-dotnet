@@ -10,10 +10,18 @@ namespace SimpleSchedulerDemo
     {
         static void Main(string[] args)
         {
-            var context = new RootContext(new ActorSystem());
+            var system = new ActorSystem();
+            var context = new RootContext(system);
             var props = Props.FromProducer(() => new ScheduleActor());
 
             var pid = context.Spawn(props);
+
+            context
+                .ScheduleTellOnce(TimeSpan.FromMilliseconds(100), pid, new SimpleMessage("test 1 from root context"))
+                .ScheduleTellOnce(TimeSpan.FromMilliseconds(200), pid, new SimpleMessage("test 2 from root context"))
+                .ScheduleTellOnce(TimeSpan.FromMilliseconds(300), pid, new SimpleMessage("test 3 from root context"))
+                .ScheduleTellOnce(TimeSpan.FromMilliseconds(400), pid, new SimpleMessage("test 4 from root context"))
+                .ScheduleTellOnce(TimeSpan.FromMilliseconds(500), pid, new SimpleMessage("test 5 from root context"));
 
             Console.ReadLine();
         }
@@ -43,8 +51,6 @@ namespace SimpleSchedulerDemo
 
     public class ScheduleActor : IActor
     {
-        private ISimpleScheduler _scheduler;
-
         private CancellationTokenSource _timer;
 
         private int _counter;
@@ -54,10 +60,9 @@ namespace SimpleSchedulerDemo
             switch (context.Message)
             {
                 case Started _:
-                    _scheduler = new SimpleScheduler(context);
                     var pid = context.Spawn(Props.FromProducer(() => new ScheduleGreetActor()));
 
-                    _scheduler
+                    context
                         .ScheduleTellOnce(TimeSpan.FromMilliseconds(100), context.Self, new SimpleMessage("test 1"))
                         .ScheduleTellOnce(TimeSpan.FromMilliseconds(200), context.Self, new SimpleMessage("test 2"))
                         .ScheduleTellOnce(TimeSpan.FromMilliseconds(300), context.Self, new SimpleMessage("test 3"))
@@ -72,7 +77,7 @@ namespace SimpleSchedulerDemo
 
                     Console.WriteLine($"Hello Once, let's give you a hickup every 0.5 second starting in 3 seconds!");
 
-                    _scheduler.ScheduleTellRepeatedly(TimeSpan.FromSeconds(3), TimeSpan.FromMilliseconds(500), context.Self, new HickUp(), out _timer);
+                    context.ScheduleTellRepeatedly(TimeSpan.FromSeconds(3), TimeSpan.FromMilliseconds(500), context.Self, new HickUp(), out _timer);
 
                     break;
 
