@@ -14,7 +14,8 @@ namespace Proto.Router
         public static Props NewBroadcastGroup(this ISenderContext senderContext, params PID[] routees)
             => new BroadcastGroupRouterConfig(senderContext, routees).Props();
 
-        public static Props NewConsistentHashGroup(this ISenderContext senderContext, params PID[] routees) => new ConsistentHashGroupRouterConfig(senderContext, MD5Hasher.Hash, 100, routees).Props();
+        public static Props NewConsistentHashGroup(this ISenderContext senderContext, params PID[] routees)
+            => new ConsistentHashGroupRouterConfig(senderContext, MD5Hasher.Hash, 100, routees).Props();
 
         public static Props NewConsistentHashGroup(this ISenderContext senderContext, Func<string, uint> hash, int replicaCount, params PID[] routees)
             => new ConsistentHashGroupRouterConfig(senderContext, hash, replicaCount, routees).Props();
