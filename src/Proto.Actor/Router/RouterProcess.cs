@@ -19,7 +19,7 @@ namespace Proto.Router
             _state = state;
         }
 
-        protected override void SendUserMessage(PID pid, object message)
+        protected internal override void SendUserMessage(PID pid, object message)
         {
             var (msg, _, _) = MessageEnvelope.Unwrap(message);
             switch (msg)

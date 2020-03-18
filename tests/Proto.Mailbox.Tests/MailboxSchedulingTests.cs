@@ -118,8 +118,8 @@ namespace Proto.Mailbox.Tests
             var msg1 = new TestMessage();
             mailbox.PostUserMessage(msg1);
 
-            Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetResult(0);
-            await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
+            void ResumeMailboxTrigger() => msg1.TaskCompletionSource.SetResult(0);
+            await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(ResumeMailboxTrigger)
                 .ConfigureAwait(false);
 
             Assert.True(mailbox.Status == MailboxStatus.Idle, "Mailbox should be set back to Idle after completion of message.");
