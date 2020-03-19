@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Proto.Mailbox
 {
-    public static class MailboxStatus
+    internal static class MailboxStatus
     {
         public const int Idle = 0;
         public const int Busy = 1;
