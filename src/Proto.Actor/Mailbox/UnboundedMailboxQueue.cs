@@ -14,7 +14,7 @@ namespace Proto.Mailbox
 
         public void Push(object message) => _messages.Enqueue(message);
 
-        public object Pop() => _messages.TryDequeue(out var message) ? message : null;
+        public object? Pop() => _messages.TryDequeue(out var message) ? message : null;
 
         public bool HasMessages => !_messages.IsEmpty;
     }

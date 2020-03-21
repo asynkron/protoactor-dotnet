@@ -39,7 +39,7 @@ namespace Proto
 
         public IDictionary<string, string> ToDictionary() => _inner;
 
-        public string GetOrDefault(string key, string? @default = null) =>
+        public string? GetOrDefault(string key, string? @default = null) =>
             TryGetValue(key, out var value) ? value : @default;
 
         public MessageHeader With(string key, string value)

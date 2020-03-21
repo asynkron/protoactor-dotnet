@@ -6,7 +6,6 @@
     <ProjectReference Include="..\..\src\ClusterProviders\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
     <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
-    <ProjectReference Include="..\..\src\Proto.Mailbox\Proto.Mailbox.csproj" />
     <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
   </ItemGroup>
 </Project>

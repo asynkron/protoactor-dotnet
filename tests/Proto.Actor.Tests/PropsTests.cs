@@ -31,13 +31,13 @@ namespace Proto.Tests
         [Fact]
         public void Given_Props_When_WithMailbox_Then_mutate_MailboxProducer()
         {
-            Func<IMailbox> mailboxProducer = () => new TestMailbox();
+            IMailbox MailboxProducer() => new TestMailbox();
 
             var props = new Props();
-            var props2 = props.WithMailbox(mailboxProducer);
+            var props2 = props.WithMailbox(MailboxProducer);
 
             Assert.NotEqual(props, props2);
-            Assert.Equal(mailboxProducer, props2.MailboxProducer);
+            Assert.Equal(MailboxProducer, props2.MailboxProducer);
 
             Assert.Equal(props.Dispatcher, props2.Dispatcher);
             Assert.NotEqual(props.MailboxProducer, props2.MailboxProducer);
@@ -75,13 +75,13 @@ namespace Proto.Tests
         [Fact]
         public void Given_Props_When_WithProducer_Then_mutate_Producer()
         {
-            Func<IActor> producer = () => (IActor)null;
+            static IActor Producer() => null;
 
             var props = new Props();
-            var props2 = props.WithProducer(producer);
+            var props2 = props.WithProducer(Producer);
 
             Assert.NotEqual(props, props2);
-            Assert.Equal(producer, props2.Producer);
+            Assert.Equal(Producer, props2.Producer);
 
             Assert.Equal(props.Dispatcher, props2.Dispatcher);
             Assert.Equal(props.MailboxProducer, props2.MailboxProducer);

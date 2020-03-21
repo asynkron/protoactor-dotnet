@@ -5,7 +5,5 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
-    <ProjectReference Include="..\..\src\Proto.Mailbox\Proto.Mailbox.csproj" />
-    <ProjectReference Include="..\..\src\Proto.Router\Proto.Router.csproj" />
   </ItemGroup>
 </Project>

@@ -53,7 +53,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
 
-            ActorSystem.Root.Send(router, new RouterRemoveRoutee { PID = routee1 });
+            ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
 
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.PIDs);
@@ -66,7 +66,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
             var routee4 = ActorSystem.Root.Spawn(MyActorProps);
-            ActorSystem.Root.Send(router, new RouterAddRoutee { PID = routee4 });
+            ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
 
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.PIDs);
@@ -81,7 +81,7 @@ namespace Proto.Router.Tests
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
 
             ActorSystem.Root.Send(router, "first message");
-            ActorSystem.Root.Send(router, new RouterRemoveRoutee { PID = routee1 });
+            ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
             ActorSystem.Root.Send(router, "second message");
 
             Assert.Equal("first message", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
@@ -94,7 +94,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
             var routee4 = ActorSystem.Root.Spawn(MyActorProps);
-            ActorSystem.Root.Send(router, new RouterAddRoutee { PID = routee4 });
+            ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
             ActorSystem.Root.Send(router, "a message");
 
             Assert.Equal("a message", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
@@ -108,7 +108,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
 
-            ActorSystem.Root.Send(router, new RouterBroadcastMessage { Message = "hello" });
+            ActorSystem.Root.Send(router, new RouterBroadcastMessage("hello"));
 
             Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
             Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee2, "received?", _timeout));

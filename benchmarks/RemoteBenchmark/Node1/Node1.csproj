@@ -8,7 +8,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Proto.Actor\Proto.Actor.csproj" />
-    <ProjectReference Include="..\..\..\src\Proto.Mailbox\Proto.Mailbox.csproj" />
     <ProjectReference Include="..\..\..\src\Proto.Remote\Proto.Remote.csproj" />
     <ProjectReference Include="..\Messages\Messages.csproj" />
   </ItemGroup>

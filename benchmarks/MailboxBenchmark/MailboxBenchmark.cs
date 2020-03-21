@@ -20,7 +20,7 @@ public class MailboxBenchmark
     [Benchmark]
     public Task Unbound() => RunTest(() => BoundedMailbox.Create(1024 * 1024));
 
-    public static async Task RunTest(Func<IMailbox> mailbox)
+    private static async Task RunTest(MailboxProducer mailbox)
     {
         var context = new RootContext(new ActorSystem());
         const int n = 10 * 1000;

@@ -10,15 +10,22 @@ namespace Proto.Router.Routers
 {
     public abstract class GroupRouterConfig : RouterConfig
     {
-        protected HashSet<PID> Routees;
+        private readonly HashSet<PID> _routees;
+        protected readonly ISenderContext SenderContext;
+
+        protected GroupRouterConfig(ISenderContext senderContext, PID[] routees)
+        {
+            SenderContext = senderContext;
+            _routees = new HashSet<PID>(routees);
+        }
 
         public override void OnStarted(IContext context, RouterState router)
         {
-            foreach (var pid in Routees)
+            foreach (var pid in _routees)
             {
                 context.Watch(pid);
             }
-            router.SetRoutees(Routees);
+            router.SetRoutees(_routees);
         }
     }
 }

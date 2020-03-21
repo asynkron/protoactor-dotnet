@@ -32,7 +32,7 @@ namespace Proto.Router
         public static Props NewBroadcastPool(this ISenderContext senderContext, Props props, int poolSize)
             => new BroadcastPoolRouterConfig(senderContext, poolSize, props).Props();
 
-        public static Props NewConsistentHashPool(this ISenderContext senderContext, Props props, int poolSize, Func<string, uint> hash = null, int replicaCount = 100)
+        public static Props NewConsistentHashPool(this ISenderContext senderContext, Props props, int poolSize, Func<string, uint>? hash = null, int replicaCount = 100)
             => new ConsistentHashPoolRouterConfig(senderContext, poolSize, props, hash ?? MD5Hasher.Hash, replicaCount).Props();
 
         public static Props NewRandomPool(this ISenderContext senderContext, Props props, int poolSize, int? seed = null)

@@ -9,8 +9,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\Proto.Remote\Proto.Remote.csproj" />
-    <ProjectReference Include="..\Proto.Mailbox\Proto.Mailbox.csproj" />
-    <ProjectReference Include="..\Proto.Router\Proto.Router.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="Protos.proto" GrpcServices="Server" ProtoRoot=".; ..\..\src"/>

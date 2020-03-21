@@ -9,36 +9,23 @@ namespace Proto
     {
         private readonly IContext _context;
 
-        protected ActorContextDecorator(IContext context)
-        {
-            _context = context;
-        }
+        protected ActorContextDecorator(IContext context) => _context = context;
 
-        public virtual void Send(PID target, object message)
-        {
-            _context.Send(target, message);
-        }
+        public virtual void Send(PID target, object message) => _context.Send(target, message);
 
-        public virtual void Request(PID target, object message)
-        {
-            _context.Request(target, message);
-        }
+        public virtual void Request(PID target, object message) => _context.Request(target, message);
 
-        public virtual void Request(PID target, object message, PID sender)
-        {
-            _context.Request(target, message, sender);
-        }
+        public virtual void Request(PID target, object message, PID? sender) => _context.Request(target, message, sender);
 
-        public virtual Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout) =>
-            _context.RequestAsync<T>(target, message, timeout);
+        public virtual Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout) => _context.RequestAsync<T>(target, message, timeout);
 
-        public virtual Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken) =>
-            _context.RequestAsync<T>(target, message, cancellationToken);
+        public virtual Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
+            => _context.RequestAsync<T>(target, message, cancellationToken);
 
         public virtual Task<T> RequestAsync<T>(PID target, object message) => _context.RequestAsync<T>(target, message);
 
         public virtual MessageHeader Headers => _context.Headers;
-        public virtual object Message => _context.Message;
+        public virtual object? Message => _context.Message;
 
         public virtual Task Receive(MessageEnvelope envelope) => _context.Receive(envelope);
 
@@ -69,8 +56,7 @@ namespace Proto
 
         public virtual void Forward(PID target) => _context.Forward(target);
 
-        public virtual void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action) =>
-            _context.ReenterAfter(target, action);
+        public virtual void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action) => _context.ReenterAfter(target, action);
 
         public virtual void ReenterAfter(Task target, Action action) => _context.ReenterAfter(target, action);
 

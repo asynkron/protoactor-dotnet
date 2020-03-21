@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Proto.Mailbox
 {
-    internal static class MailboxStatus
+    static class MailboxStatus
     {
         public const int Idle = 0;
         public const int Busy = 1;
@@ -53,6 +53,9 @@ namespace Proto.Mailbox
             _systemMessages = systemMessages;
             _userMailbox = userMailbox;
             _stats = stats ?? new IMailboxStatistics[0];
+            
+            _dispatcher = NoopDispatcher.Instance;
+            _invoker = NoopInvoker.Instance;
         }
 
         public void PostUserMessage(object msg)
@@ -116,7 +119,7 @@ namespace Proto.Mailbox
 
         private bool ProcessMessages()
         {
-            object msg = null;
+            object? msg = null;
             try
             {
                 for (var i = 0; i < _dispatcher.Throughput; i++)

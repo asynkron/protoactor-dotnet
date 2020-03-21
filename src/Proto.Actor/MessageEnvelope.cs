@@ -62,12 +62,12 @@ namespace Proto
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static MessageHeader UnwrapHeader(object message) => (message as MessageEnvelope)?.Header;
+        public static MessageHeader UnwrapHeader(object? message) => (message as MessageEnvelope)?.Header ?? MessageHeader.Empty;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static object UnwrapMessage(object message) => message is MessageEnvelope r ? r.Message : message;
+        public static object? UnwrapMessage(object? message) => message is MessageEnvelope r ? r.Message : message;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static PID UnwrapSender(object message) => (message as MessageEnvelope)?.Sender;
+        public static PID? UnwrapSender(object? message) => (message as MessageEnvelope)?.Sender;
     }
 }

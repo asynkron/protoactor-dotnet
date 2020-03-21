@@ -11,9 +11,7 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext
-    {
-    }
+    public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext { }
 
     public class RootContext : IRootContext
     {
@@ -26,15 +24,16 @@ namespace Proto
             Headers = MessageHeader.Empty;
         }
 
-        public RootContext(ActorSystem system, MessageHeader messageHeader, params Func<Sender, Sender>[] middleware)
+        public RootContext(ActorSystem system, MessageHeader? messageHeader, params Func<Sender, Sender>[] middleware)
         {
             System = system;
+
             SenderMiddleware = middleware.Reverse()
-                .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner));
-            Headers = messageHeader;
+                .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner));
+            Headers = messageHeader ?? MessageHeader.Empty;
         }
 
-        private Sender SenderMiddleware { get; set; }
+        private Sender? SenderMiddleware { get; set; }
         public MessageHeader Headers { get; private set; }
 
         public PID? Parent => null;
@@ -60,15 +59,13 @@ namespace Proto
             return SpawnNamed(props, name);
         }
 
-        public object Message => null;
+        public object? Message => null;
 
-        public void Send(PID target, object message)
-            => SendUserMessage(target, message);
+        public void Send(PID target, object message) => SendUserMessage(target, message);
 
-        public void Request(PID target, object message)
-            => SendUserMessage(target, message);
+        public void Request(PID target, object message) => SendUserMessage(target, message);
 
-        public void Request(PID target, object message, PID sender)
+        public void Request(PID target, object message, PID? sender)
         {
             var envelope = new MessageEnvelope(message, sender, null);
             Send(target, envelope);
@@ -80,8 +77,7 @@ namespace Proto
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => RequestAsync(target, message, new FutureProcess<T>(System, cancellationToken));
 
-        public Task<T> RequestAsync<T>(PID target, object message)
-            => RequestAsync(target, message, new FutureProcess<T>(System));
+        public Task<T> RequestAsync<T>(PID target, object message) => RequestAsync(target, message, new FutureProcess<T>(System));
 
         public void Stop(PID pid)
         {
@@ -113,13 +109,14 @@ namespace Proto
 
         public RootContext WithHeaders(MessageHeader headers) => Copy(c => c.Headers = headers);
 
-        public RootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware) => Copy(c =>
-            {
-                SenderMiddleware = middleware.Reverse()
-                    .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner));
-            }
-        );
-
+        public RootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware)
+            => Copy(
+                c =>
+                {
+                    SenderMiddleware = middleware.Reverse()
+                        .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner));
+                }
+            );
 
         private RootContext Copy(Action<RootContext> mutator)
         {
@@ -131,7 +128,6 @@ namespace Proto
             mutator(copy);
             return copy;
         }
-
 
         private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
         {

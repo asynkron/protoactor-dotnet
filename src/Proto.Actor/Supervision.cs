@@ -23,7 +23,7 @@ namespace Proto
     public interface ISupervisor
     {
         IImmutableSet<PID> Children { get; }
-        void EscalateFailure(Exception reason, object message);
+        void EscalateFailure(Exception reason, object? message);
         void RestartChildren(Exception reason, params PID[] pids);
         void StopChildren(params PID[] pids);
         void ResumeChildren(params PID[] pids);
@@ -39,7 +39,7 @@ namespace Proto
 
     public interface ISupervisorStrategy
     {
-        void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause, object message);
+        void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause, object? message);
     }
 
     public delegate SupervisorDirective Decider(PID pid, Exception reason);
@@ -65,7 +65,7 @@ namespace Proto
         }
 
         public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
-            object message)
+            object? message)
         {
             var directive = _decider(child, reason);
 
@@ -139,7 +139,7 @@ namespace Proto
         }
 
         public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
-            object message)
+            object? message)
         {
             var directive = _decider(child, reason);
 
@@ -210,7 +210,7 @@ namespace Proto
         }
 
         public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
-            object message)
+            object? message)
         {
             if (rs.NumberOfFailures(_backoffWindow) == 0)
             {
@@ -234,7 +234,7 @@ namespace Proto
     {
         //always restart
         public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
-            object message)
+            object? message)
             => supervisor.RestartChildren(reason, child);
     }
 }

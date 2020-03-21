@@ -37,10 +37,7 @@ namespace Proto.Mailbox
             }
         }
 
-        public object Pop()
-        {
-            return _messages.TryDequeue(out var message) ? message : null;
-        }
+        public object? Pop() => _messages.TryDequeue(out var message) ? message : null;
 
         public bool HasMessages => !_messages.IsEmpty;
     }

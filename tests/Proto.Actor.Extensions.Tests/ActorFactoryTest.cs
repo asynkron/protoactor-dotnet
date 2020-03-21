@@ -51,12 +51,13 @@ namespace Proto.ActorExtensions.Tests
             var services = new ServiceCollection();
             var created = false;
 
-            Func<IActor> producer = () =>
+            IActor Producer()
             {
                 created = true;
                 return new SampleActor();
-            };
-            services.AddProtoActor(register => register.RegisterProps(typeof(SampleActor), p => p.WithProducer(producer)));
+            }
+
+            services.AddProtoActor(register => register.RegisterProps(typeof(SampleActor), p => p.WithProducer(Producer)));
 
             var provider = services.BuildServiceProvider();
             var factory = provider.GetRequiredService<IActorFactory>();

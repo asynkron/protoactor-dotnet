@@ -6,7 +6,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\PersistenceProviders\Proto.Persistence.Sqlite\Proto.Persistence.Sqlite.csproj" />
     <ProjectReference Include="..\..\..\src\Proto.Actor\Proto.Actor.csproj" />
-    <ProjectReference Include="..\..\..\src\Proto.Mailbox\Proto.Mailbox.csproj" />
     <ProjectReference Include="..\..\..\src\Proto.Persistence\Proto.Persistence.csproj" />
     <ProjectReference Include="..\Messages\Messages.csproj" />
   </ItemGroup>
