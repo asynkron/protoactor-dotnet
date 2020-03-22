@@ -10,8 +10,10 @@ namespace Proto.Router.Tests
     public class ConsistentHashGroupTests
     {
         private readonly ActorSystem ActorSystem = new ActorSystem();
+
         private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor())
             .WithMailbox(() => new TestMailbox());
+
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
         [Fact]
@@ -49,7 +51,7 @@ namespace Proto.Router.Tests
 
             ActorSystem.Root.Send(router, new Message("message1"));
             var routee4 = ActorSystem.Root.Spawn(MyActorProps);
-            ActorSystem.Root.Send(router, new RouterAddRoutee { PID = routee4 });
+            ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
             ActorSystem.Root.Send(router, new Message("message1"));
 
             Assert.Equal(2, await ActorSystem.Root.RequestAsync<int>(routee1, "received?", _timeout));
@@ -62,7 +64,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(ActorSystem);
 
-            ActorSystem.Root.Send(router, new RouterRemoveRoutee { PID = routee1 });
+            ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
 
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.PIDs);
@@ -75,7 +77,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(ActorSystem);
             var routee4 = ActorSystem.Root.Spawn(MyActorProps);
-            ActorSystem.Root.Send(router, new RouterAddRoutee { PID = routee4 });
+            ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
 
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.PIDs);
@@ -89,7 +91,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, _, _) = CreateRouterWith3Routees(ActorSystem);
 
-            ActorSystem.Root.Send(router, new RouterRemoveRoutee { PID = routee1 });
+            ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
             ActorSystem.Root.Send(router, new Message("message1"));
             Assert.Equal(0, await ActorSystem.Root.RequestAsync<int>(routee1, "received?", _timeout));
         }
@@ -99,7 +101,7 @@ namespace Proto.Router.Tests
         {
             var (router, _, _, _) = CreateRouterWith3Routees(ActorSystem);
             var routee4 = ActorSystem.Root.Spawn(MyActorProps);
-            ActorSystem.Root.Send(router, new RouterAddRoutee { PID = routee4 });
+            ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
             ActorSystem.Root.Send(router, new Message("message4"));
             Assert.Equal(1, await ActorSystem.Root.RequestAsync<int>(routee4, "received?", _timeout));
         }
@@ -113,7 +115,7 @@ namespace Proto.Router.Tests
             // routee1 handles "message1"
             Assert.Equal(1, await ActorSystem.Root.RequestAsync<int>(routee1, "received?", _timeout));
             // remove receiver
-            ActorSystem.Root.Send(router, new RouterRemoveRoutee { PID = routee1 });
+            ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
             // routee2 should now handle "message1"
             ActorSystem.Root.Send(router, new Message("message1"));
 
@@ -125,7 +127,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(ActorSystem);
 
-            ActorSystem.Root.Send(router, new RouterBroadcastMessage { Message = new Message("hello") });
+            ActorSystem.Root.Send(router, new RouterBroadcastMessage(new Message("hello")));
 
             Assert.Equal(1, await ActorSystem.Root.RequestAsync<int>(routee1, "received?", _timeout));
             Assert.Equal(1, await ActorSystem.Root.RequestAsync<int>(routee2, "received?", _timeout));
@@ -157,6 +159,7 @@ namespace Proto.Router.Tests
                 if (hashKey.EndsWith("message2")) return 19;
                 if (hashKey.EndsWith("message3")) return 29;
                 if (hashKey.EndsWith("message4")) return 39;
+
                 return 0;
             }
         }
@@ -169,6 +172,7 @@ namespace Proto.Router.Tests
             {
                 _value = value;
             }
+
             public string HashBy()
             {
                 return _value;
@@ -183,6 +187,7 @@ namespace Proto.Router.Tests
         internal class MyTestActor : IActor
         {
             private readonly List<string> _receivedMessages = new List<string>();
+
             public Task ReceiveAsync(IContext context)
             {
                 switch (context.Message)
@@ -194,6 +199,7 @@ namespace Proto.Router.Tests
                         _receivedMessages.Add(msg.ToString());
                         break;
                 }
+
                 return Actor.Done;
             }
         }

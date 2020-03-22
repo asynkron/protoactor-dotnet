@@ -9,8 +9,10 @@ namespace Proto.Router.Tests
     public class RoundRobinGroupTests
     {
         private readonly ActorSystem ActorSystem = new ActorSystem();
+
         private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor())
-                                                          .WithMailbox(() => new TestMailbox());
+            .WithMailbox(() => new TestMailbox());
+
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
         [Fact]
@@ -46,7 +48,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
 
-            ActorSystem.Root.Send(router, new RouterRemoveRoutee { PID = routee1 });
+            ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
 
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.PIDs);
@@ -59,7 +61,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
             var routee4 = ActorSystem.Root.Spawn(MyActorProps);
-            ActorSystem.Root.Send(router, new RouterAddRoutee { PID = routee4 });
+            ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
 
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.PIDs);
@@ -76,7 +78,7 @@ namespace Proto.Router.Tests
             ActorSystem.Root.Send(router, "0");
             ActorSystem.Root.Send(router, "0");
             ActorSystem.Root.Send(router, "0");
-            ActorSystem.Root.Send(router, new RouterRemoveRoutee { PID = routee1 });
+            ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
             // we should have 2 routees, so send 3 messages to ensure round robin happens
             ActorSystem.Root.Send(router, "3");
             ActorSystem.Root.Send(router, "3");
@@ -92,7 +94,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
             var routee4 = ActorSystem.Root.Spawn(MyActorProps);
-            ActorSystem.Root.Send(router, new RouterAddRoutee { PID = routee4 });
+            ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
             // should now have 4 routees, so need to send 4 messages to ensure all get them
             ActorSystem.Root.Send(router, "1");
             ActorSystem.Root.Send(router, "1");
@@ -110,7 +112,7 @@ namespace Proto.Router.Tests
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
 
-            ActorSystem.Root.Send(router, new RouterBroadcastMessage { Message = "hello" });
+            ActorSystem.Root.Send(router, new RouterBroadcastMessage("hello"));
 
             Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
             Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee2, "received?", _timeout));
@@ -132,6 +134,7 @@ namespace Proto.Router.Tests
         internal class MyTestActor : IActor
         {
             private string _received;
+
             public Task ReceiveAsync(IContext context)
             {
                 switch (context.Message)
@@ -143,6 +146,7 @@ namespace Proto.Router.Tests
                         _received = msg;
                         break;
                 }
+
                 return Actor.Done;
             }
         }

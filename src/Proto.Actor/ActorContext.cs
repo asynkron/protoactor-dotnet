@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
 using static Proto.Actor;
+// ReSharper disable RedundantAssignment
 
 namespace Proto
 {
@@ -78,7 +79,7 @@ namespace Proto
 
         public ActorSystem System { get; }
 
-        public ActorContext(ActorSystem system, Props props, PID parent, PID self)
+        public ActorContext(ActorSystem system, Props props, PID? parent, PID self)
         {
             System = system;
             _props = props;
@@ -97,17 +98,24 @@ namespace Proto
         public PID? Parent { get; }
         public PID Self { get; }
 
-        public object Message => MessageEnvelope.UnwrapMessage(_messageOrEnvelope);
+        public object? Message => MessageEnvelope.UnwrapMessage(_messageOrEnvelope);
 
-        public PID Sender => MessageEnvelope.UnwrapSender(_messageOrEnvelope);
+        public PID? Sender => MessageEnvelope.UnwrapSender(_messageOrEnvelope);
 
         public MessageHeader Headers => MessageEnvelope.UnwrapHeader(_messageOrEnvelope);
 
         public TimeSpan ReceiveTimeout { get; private set; }
 
-        public void Stash() => EnsureExtras().Stash.Push(_messageOrEnvelope);
+        public void Stash()
+        {
+            if (_messageOrEnvelope != null)
+                EnsureExtras().Stash.Push(_messageOrEnvelope);
+        }
 
-        public void Respond(object message) => Send(Sender, message);
+        public void Respond(object message)
+        {
+            if (Sender != null) Send(Sender, message);
+        }
 
         public PID Spawn(Props props)
         {
@@ -153,7 +161,9 @@ namespace Proto
             ReceiveTimeout = duration;
 
             EnsureExtras();
+#pragma warning disable 8602
             _extras.StopReceiveTimeoutTimer();
+#pragma warning restore 8602
 
             if (_extras.ReceiveTimeoutTimer == null)
             {
@@ -187,14 +197,18 @@ namespace Proto
 
         public void Forward(PID target)
         {
-            if (_messageOrEnvelope is SystemMessage)
+            switch (_messageOrEnvelope)
             {
-                //SystemMessage cannot be forwarded
-                Logger.LogWarning("SystemMessage cannot be forwarded. {0}", _messageOrEnvelope);
-                return;
+                case null:
+                    Logger.LogWarning("Message is null.");
+                    return;
+                case SystemMessage _:
+                    Logger.LogWarning("SystemMessage cannot be forwarded. {Message}", _messageOrEnvelope);
+                    return;
+                default:
+                    SendUserMessage(target, _messageOrEnvelope);
+                    break;
             }
-
-            SendUserMessage(target, _messageOrEnvelope);
         }
 
         public void Request(PID target, object message)
@@ -203,27 +217,26 @@ namespace Proto
             SendUserMessage(target, messageEnvelope);
         }
 
-        public void Request(PID target, object message, PID sender)
+        public void Request(PID target, object message, PID? sender)
         {
             var messageEnvelope = new MessageEnvelope(message, sender, null);
             SendUserMessage(target, messageEnvelope);
         }
 
-        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout) =>
-            RequestAsync(target, message, new FutureProcess<T>(System, timeout));
+        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
+            => RequestAsync(target, message, new FutureProcess<T>(System, timeout));
 
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => RequestAsync(target, message, new FutureProcess<T>(System, cancellationToken));
 
-        public Task<T> RequestAsync<T>(PID target, object message) =>
-            RequestAsync(target, message, new FutureProcess<T>(System));
+        public Task<T> RequestAsync<T>(PID target, object message) => RequestAsync(target, message, new FutureProcess<T>(System));
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
             var msg = _messageOrEnvelope;
             var cont = new Continuation(() => action(target), msg);
 
-            target.ContinueWith(t => { Self.SendSystemMessage(System, cont); });
+            target.ContinueWith(t => Self.SendSystemMessage(System, cont));
         }
 
         public void ReenterAfter(Task target, Action action)
@@ -238,7 +251,7 @@ namespace Proto
                 }, msg
             );
 
-            target.ContinueWith(t => { Self.SendSystemMessage(System, cont); });
+            target.ContinueWith(t => Self.SendSystemMessage(System, cont));
         }
 
         public Task Receive(MessageEnvelope envelope)
@@ -275,7 +288,7 @@ namespace Proto
             return future.Task;
         }
 
-        public void EscalateFailure(Exception reason, object message)
+        public void EscalateFailure(Exception reason, object? message)
         {
             var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
             Self.SendSystemMessage(System, SuspendMailbox.Instance);
@@ -350,7 +363,7 @@ namespace Proto
 
                 if (influenceTimeout)
                 {
-                    _extras.StopReceiveTimeoutTimer();
+                    _extras?.StopReceiveTimeoutTimer();
                 }
             }
 
@@ -361,10 +374,10 @@ namespace Proto
                 //special handle non completed tasks that need to reset ReceiveTimout
                 if (!res.IsCompleted)
                 {
-                    return res.ContinueWith(_ => _extras.ResetReceiveTimeoutTimer(ReceiveTimeout));
+                    return res.ContinueWith(_ => _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout));
                 }
 
-                _extras.ResetReceiveTimeoutTimer(ReceiveTimeout);
+                _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
             }
 
             return res;
@@ -399,7 +412,9 @@ namespace Proto
             }
 
             //are we using decorators, if so, ensure it has been created
+            #nullable disable
             return Actor.ReceiveAsync(_props.ContextDecoratorChain != null ? EnsureExtras().Context : this);
+            #nullable restore
         }
 
         private Task ProcessMessageAsync(object msg)
@@ -441,7 +456,7 @@ namespace Proto
             }
         }
 
-        private IActor IncarnateActor()
+        private IActor? IncarnateActor()
         {
             _state = ContextState.Alive;
             return _props.Producer();
@@ -477,7 +492,8 @@ namespace Proto
                     supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason, msg.Message);
                     break;
                 default:
-                    _props.SupervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason,
+                    _props.SupervisorStrategy.HandleFailure(
+                        this, msg.Who, msg.RestartStatistics, msg.Reason,
                         msg.Message
                     );
                     break;
@@ -496,7 +512,8 @@ namespace Proto
         }
 
         private void HandleRootFailure(Failure failure)
-            => Supervision.DefaultStrategy.HandleFailure(this, failure.Who, failure.RestartStatistics, failure.Reason,
+            => Supervision.DefaultStrategy.HandleFailure(
+                this, failure.Who, failure.RestartStatistics, failure.Reason,
                 failure.Message
             );
 
@@ -536,8 +553,8 @@ namespace Proto
             return _state switch
             {
                 ContextState.Restarting => RestartAsync(),
-                ContextState.Stopping => FinalizeStopAsync(),
-                _ => Done
+                ContextState.Stopping   => FinalizeStopAsync(),
+                _                       => Done
             };
         }
 

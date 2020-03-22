@@ -14,7 +14,7 @@ namespace Proto.Mailbox
     {
         Task InvokeSystemMessageAsync(object msg);
         Task InvokeUserMessageAsync(object msg);
-        void EscalateFailure(Exception reason, object message);
+        void EscalateFailure(Exception reason, object? message);
     }
 
     public interface IDispatcher
@@ -31,14 +31,20 @@ namespace Proto.Mailbox
 
     public sealed class SynchronousDispatcher : IDispatcher
     {
-        public int Throughput => 300;
+        private const int DefaultThroughput = 300;
+
+        public SynchronousDispatcher(int throughput = DefaultThroughput) => Throughput = throughput;
+        
+        public int Throughput { get; }
 
         public void Schedule(Func<Task> runner) => runner().Wait();
     }
 
     public sealed class ThreadPoolDispatcher : IDispatcher
     {
-        public ThreadPoolDispatcher() => Throughput = 300;
+        private const int DefaultThroughput = 300;
+        
+        public ThreadPoolDispatcher(int throughput = DefaultThroughput) => Throughput = throughput;
 
         public void Schedule(Func<Task> runner) => Task.Factory.StartNew(runner, TaskCreationOptions.None);
 
@@ -51,15 +57,33 @@ namespace Proto.Mailbox
     public sealed class CurrentSynchronizationContextDispatcher : IDispatcher
     {
         private readonly TaskScheduler _scheduler;
+        private const int DefaultThroughput = 300;
 
-        public CurrentSynchronizationContextDispatcher()
+        public CurrentSynchronizationContextDispatcher(int throughput = DefaultThroughput)
         {
             _scheduler = TaskScheduler.FromCurrentSynchronizationContext();
-            Throughput = 300;
+            Throughput = throughput;
         }
 
         public void Schedule(Func<Task> runner) => Task.Factory.StartNew(runner, CancellationToken.None, TaskCreationOptions.None, _scheduler);
 
-        public int Throughput { get; set; }
+        public int Throughput { get; }
+    }
+    
+    class NoopDispatcher: IDispatcher
+    {
+        internal static readonly IDispatcher Instance = new NoopDispatcher();
+        public int Throughput => 0;
+        public void Schedule(Func<Task> runner) => throw new NotImplementedException();
+    }
+    
+    class NoopInvoker : IMessageInvoker
+    {
+        internal static readonly IMessageInvoker Instance = new NoopInvoker();
+        public Task InvokeSystemMessageAsync(object msg) => throw new NotImplementedException();
+
+        public Task InvokeUserMessageAsync(object msg) => throw new NotImplementedException();
+
+        public void EscalateFailure(Exception reason, object? message) => throw new NotImplementedException();
     }
 }

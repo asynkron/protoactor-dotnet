@@ -95,7 +95,7 @@ namespace Proto.Mailbox
             }
         }
 
-        public bool TryDequeue(out object result)
+        public bool TryDequeue(out object? result)
         {
             do
             {
@@ -126,9 +126,9 @@ namespace Proto.Mailbox
             [FieldOffset(0)]
             public int Sequence;
             [FieldOffset(8)]
-            public object Element;
+            public object? Element;
 
-            public Cell(int sequence, object element)
+            public Cell(int sequence, object? element)
             {
                 Sequence = sequence;
                 Element = element;

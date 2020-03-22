@@ -18,7 +18,7 @@ namespace Proto
         MessageHeader Headers { get; }
 
         //TODO: should the current message of the actor be exposed to sender middleware?
-        object Message { get; }
+        object? Message { get; }
 
         /// <summary>
         ///     Send a message to a given PID target
@@ -39,7 +39,8 @@ namespace Proto
         /// </summary>
         /// <param name="target">The target PID</param>
         /// <param name="message">The message to send</param>
-        void Request(PID target, object message, PID sender);
+        /// <param name="sender">Message sender</param>
+        void Request(PID target, object message, PID? sender);
 
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.

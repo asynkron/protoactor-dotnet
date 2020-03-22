@@ -23,7 +23,7 @@ namespace Proto
 
         public virtual void Request(PID target, object message) => _context.Request(target, message);
 
-        public virtual void Request(PID target, object message, PID sender) =>
+        public virtual void Request(PID target, object message, PID? sender) =>
             _context.Request(target, message, sender);
 
         public virtual Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout) =>
@@ -36,7 +36,7 @@ namespace Proto
 
         public virtual MessageHeader Headers => _context.Headers;
 
-        public virtual object Message => _context.Message;
+        public virtual object? Message => _context.Message;
 
         public void Stop(PID pid) => _context.Stop(pid);
 
@@ -50,6 +50,6 @@ namespace Proto
         public virtual PID? Self => null;
         public virtual PID? Sender => null;
         public virtual IActor? Actor => null;
-        public virtual ActorSystem System => null;
+        public virtual ActorSystem System => ActorSystem.Default;
     }
 }

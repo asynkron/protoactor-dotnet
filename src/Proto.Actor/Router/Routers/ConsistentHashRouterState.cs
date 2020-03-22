@@ -13,8 +13,8 @@ namespace Proto.Router.Routers
     {
         private readonly Func<string, uint> _hash;
         private readonly int _replicaCount;
-        private HashRing _hashRing;
-        private Dictionary<string, PID> _routeeMap;
+        private HashRing? _hashRing;
+        private readonly Dictionary<string, PID> _routeeMap = new Dictionary<string, PID>();
         private readonly ISenderContext _senderContext;
 
         public ConsistentHashRouterState(ISenderContext senderContext, Func<string, uint> hash, int replicaCount)
@@ -28,7 +28,7 @@ namespace Proto.Router.Routers
 
         public override void SetRoutees(HashSet<PID> routees)
         {
-            _routeeMap = new Dictionary<string, PID>();
+            _routeeMap.Clear();
             var nodes = new List<string>();
 
             foreach (var pid in routees)
@@ -43,6 +43,9 @@ namespace Proto.Router.Routers
 
         public override void RouteMessage(object message)
         {
+            if (_hashRing == null)
+                throw new InvalidOperationException("Routees not set");
+
             var env = MessageEnvelope.Unwrap(message);
 
             if (env.message is IHashable hashable)

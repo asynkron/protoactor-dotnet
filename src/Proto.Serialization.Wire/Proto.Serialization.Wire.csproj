@@ -7,7 +7,6 @@
     <PackageReference Include="Wire" Version="0.8.2"/>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Proto.Mailbox\Proto.Mailbox.csproj"/>
     <ProjectReference Include="..\Proto.Remote\Proto.Remote.csproj"/>
   </ItemGroup>
 </Project>

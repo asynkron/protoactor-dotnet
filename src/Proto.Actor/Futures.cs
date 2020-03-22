@@ -10,25 +10,17 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    internal class FutureProcess<T> : Process
+    class FutureProcess<T> : Process
     {
-        private readonly CancellationTokenSource _cts;
+        private readonly CancellationTokenSource? _cts;
         private readonly TaskCompletionSource<T> _tcs;
 
-        internal FutureProcess(ActorSystem system, TimeSpan timeout) : this(system,new CancellationTokenSource(timeout))
-        {
-      
-        }
+        internal FutureProcess(ActorSystem system, TimeSpan timeout) : this(system, new CancellationTokenSource(timeout)) { }
 
-        internal FutureProcess(ActorSystem system, CancellationToken cancellationToken) : this(system,
-            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)
-        )
-        {
-        }
+        internal FutureProcess(ActorSystem system, CancellationToken cancellationToken)
+            : this(system, CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) { }
 
-        internal FutureProcess(ActorSystem system) : this(system, null)
-        {
-        }
+        internal FutureProcess(ActorSystem system) : this(system, null) { }
 
         private FutureProcess(ActorSystem system, CancellationTokenSource? cts) : base(system)
         {
@@ -81,7 +73,9 @@ namespace Proto
             {
                 if (msg is T || msg == null)
                 {
+                    #nullable disable
                     _tcs.TrySetResult((T) msg);
+                    #nullable enable
                 }
                 else
                 {
@@ -109,7 +103,9 @@ namespace Proto
 
             if (_cts == null || !_cts.IsCancellationRequested)
             {
+                #nullable disable
                 _tcs.TrySetResult(default);
+                #nullable restore
             }
 
             Stop(pid);

@@ -97,7 +97,7 @@ namespace Proto.TestKit
         /// </summary>
         /// <param name="producer"></param>
         /// <returns></returns>
-        public PID Spawn(Func<IActor> producer) => Context.Spawn(Props.FromProducer(producer));
+        public PID Spawn(Producer producer) => Context.Spawn(Props.FromProducer(producer));
 
         /// <summary>
         ///     Spawns a new child actor based on props and named with a unique ID.
@@ -115,7 +115,7 @@ namespace Proto.TestKit
         /// <param name="producer"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public PID SpawnNamed(Func<IActor> producer, string name) =>
+        public PID SpawnNamed(Producer producer, string name) =>
             Context.SpawnNamed(Props.FromProducer(producer), name);
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace Proto.TestKit
         /// <param name="producer"></param>
         /// <param name="prefix"></param>
         /// <returns></returns>
-        public PID SpawnPrefix(Func<IActor> producer, string prefix) =>
+        public PID SpawnPrefix(Producer producer, string prefix) =>
             Context.SpawnPrefix(Props.FromProducer(producer), prefix);
 
         /// <summary>

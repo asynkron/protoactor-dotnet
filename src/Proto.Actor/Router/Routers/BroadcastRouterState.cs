@@ -4,27 +4,20 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 
 namespace Proto.Router.Routers
 {
     class BroadcastRouterState : RouterState
     {
-        private HashSet<PID> _routees;
         private readonly ISenderContext _senderContext;
 
-        internal BroadcastRouterState(ISenderContext senderContext)
-        {
-            _senderContext = senderContext;
-        }
-
-        public override HashSet<PID> GetRoutees() => _routees;
-
-        public override void SetRoutees(HashSet<PID> routees) => _routees = routees;
+        internal BroadcastRouterState(ISenderContext senderContext) => _senderContext = senderContext;
 
         public override void RouteMessage(object message)
         {
-            foreach (var pid in _routees)
+            foreach (var pid in GetRoutees())
             {
                 _senderContext.Send(pid, message);
             }

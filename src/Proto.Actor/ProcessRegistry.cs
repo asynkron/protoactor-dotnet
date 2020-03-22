@@ -16,15 +16,12 @@ namespace Proto
         private const string NoHost = "nonhost";
         private readonly IList<Func<PID, Process>> _hostResolvers = new List<Func<PID, Process>>();
         private readonly HashedConcurrentDictionary _localActorRefs = new HashedConcurrentDictionary();
-        private string _host;
+        private string _host = NoHost;
         private int _port;
 
         private int _sequenceId;
 
-        public ProcessRegistry(ActorSystem system)
-        {
-            System = system;
-        }
+        public ProcessRegistry(ActorSystem system) => System = system;
 
         public ActorSystem System { get; }
 
