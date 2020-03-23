@@ -16,7 +16,7 @@ namespace Proto
         private Spawner? _spawner;
         public Producer Producer { get; private set; } = () => null;
         public MailboxProducer MailboxProducer { get; private set; } = ProduceDefaultMailbox;
-        public ISupervisorStrategy GuardianStrategy { get; private set; } = Supervision.DefaultStrategy;
+        public ISupervisorStrategy? GuardianStrategy { get; private set; }
         public ISupervisorStrategy SupervisorStrategy { get; private set; } = Supervision.DefaultStrategy;
         public IDispatcher Dispatcher { get; private set; } = Dispatchers.DefaultDispatcher;
 
