@@ -29,12 +29,17 @@ namespace {{CsNamespace}}
         }
 
 		{{#each Services}}	
-        internal Func<I{{Name}}> _{{Name}}Factory;
+        internal Func<String,I{{Name}}> _{{Name}}Factory;
+
+        public void {{Name}}Factory(Func<String, ICalculatorSettingGrain> factory) 
+        {
+            _CalculatorSettingGrainFactory = factory;
+            Cluster.Remote.RegisterKnownKind(""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor(this)));
+        } 
 
         public void {{Name}}Factory(Func<I{{Name}}> factory) 
         {
-            _{{Name}}Factory = factory;
-            Cluster.Remote.RegisterKnownKind(""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor(this)));
+            {{Name}}Factory(id => factory());
         } 
 
         public {{Name}}Client {{Name}}(string id) => new {{Name}}Client(Cluster, id);
@@ -135,7 +140,7 @@ namespace {{CsNamespace}}
             {
                 case Started _:
                 {
-                    _inner = _grains._{{Name}}Factory();
+                    _inner = _grains._{{Name}}Factory(context.Self.Id);
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
                     break;
                 }
