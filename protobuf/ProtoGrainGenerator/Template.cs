@@ -31,9 +31,9 @@ namespace {{CsNamespace}}
 		{{#each Services}}	
         internal Func<String,I{{Name}}> _{{Name}}Factory;
 
-        public void {{Name}}Factory(Func<String, ICalculatorSettingGrain> factory) 
+        public void {{Name}}Factory(Func<String, I{{Name}}> factory) 
         {
-            _CalculatorSettingGrainFactory = factory;
+            _{{Name}}Factory = factory;
             Cluster.Remote.RegisterKnownKind(""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor(this)));
         } 
 
