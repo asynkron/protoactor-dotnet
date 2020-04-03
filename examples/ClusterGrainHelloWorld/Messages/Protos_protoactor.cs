@@ -18,12 +18,17 @@ namespace Messages
             Cluster = cluster;
         }
 
-        internal Func<IHelloGrain> _HelloGrainFactory;
+        internal Func<String,IHelloGrain> _HelloGrainFactory;
 
-        public void HelloGrainFactory(Func<IHelloGrain> factory) 
+        public void HelloGrainFactory(Func<String, IHelloGrain> factory) 
         {
             _HelloGrainFactory = factory;
             Cluster.Remote.RegisterKnownKind("HelloGrain", Props.FromProducer(() => new HelloGrainActor(this)));
+        } 
+
+        public void HelloGrainFactory(Func<IHelloGrain> factory) 
+        {
+            HelloGrainFactory(id => factory());
         } 
 
         public HelloGrainClient HelloGrain(string id) => new HelloGrainClient(Cluster, id);
@@ -118,7 +123,7 @@ namespace Messages
             {
                 case Started _:
                 {
-                    _inner = _grains._HelloGrainFactory();
+                    _inner = _grains._HelloGrainFactory(context.Self.Id);
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
                     break;
                 }

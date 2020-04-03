@@ -4,7 +4,7 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/v3.8/main' >> /etc/apk/repositori
     apk update --no-cache && \
     apk add --no-cache bash libc6-compat=1.1.19-r11
 
-ADD ./bin/Release/netcoreapp3.1/linux-musl-x64/publish/ /app
+ADD ./bin/Release/netcoreapp3.1/publish/ /app
 
 WORKDIR /app
 EXPOSE 12000
