@@ -1,1 +1,0 @@
-dotnet ../../../protobuf/ProtoGrainGenerator/bin/Release/netcoreapp3.1/protograin.dll Protos.proto Protos_protoactor

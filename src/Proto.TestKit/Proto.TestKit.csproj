@@ -5,7 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.11.4" />
     <PackageReference Include="Grpc" Version="1.20.0" />
   </ItemGroup>
   

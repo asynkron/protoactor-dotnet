@@ -2,9 +2,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
-  
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\..\src\Proto.TestKit\Proto.TestKit.csproj" />
   </ItemGroup>
 </Project>

@@ -3,11 +3,9 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.12.0" />
   </ItemGroup>
-  
   <ItemGroup>
     <PackageReference Remove="AutoFixture.Xunit2"/>
     <PackageReference Remove="FluentAssertions" />
@@ -15,9 +13,7 @@
     <PackageReference Remove="xunit" />
     <PackageReference Remove="xunit.runner.visualstudio" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
   </ItemGroup>
-
 </Project>
