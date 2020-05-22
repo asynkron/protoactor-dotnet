@@ -18,7 +18,7 @@ namespace Proto.Cluster.WeightedMemberStrategy
         public WeightedMemberStrategy()
         {
             _members = new List<MemberStatus>();
-            _rdv = new Rendezvous(this);
+            _rdv = new Rendezvous();
             _wrr = new WeightedRoundRobin(this);
         }
 
@@ -28,7 +28,7 @@ namespace Proto.Cluster.WeightedMemberStrategy
         {
             _members.Add(member);
             _wrr.UpdateRR();
-            _rdv.UpdateRdv();
+            _rdv.UpdateMembers(_members);
         }
 
         public void UpdateMember(MemberStatus member)
@@ -52,7 +52,7 @@ namespace Proto.Cluster.WeightedMemberStrategy
                 {
                     _members.RemoveAt(i);
                     _wrr.UpdateRR();
-                    _rdv.UpdateRdv();
+                    _rdv.UpdateMembers(_members);
                     return;
                 }
             }
