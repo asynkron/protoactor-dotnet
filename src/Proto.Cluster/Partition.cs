@@ -219,18 +219,26 @@ namespace Proto.Cluster
         {
             _logger.LogInformation("Kind {Kind} member joined {Address}", _kind, msg.Address);
 
+            // Iterate through the actors in this parititon and try to check if the partition
+            // PID should be in is not the current one, if so initiates a transfer to the
+            // new partition.
             //TODO: right now we transfer ownership on a per actor basis.
             //this could be done in a batch
             //ownership is also racy, new nodes should maybe forward requests to neighbours (?)
+            int transferredActorCount = 0;
             foreach (var (actorId, _) in _partition.ToArray())
             {
                 var address = Cluster.MemberList.GetPartition(actorId, _kind);
 
                 if (!string.IsNullOrEmpty(address) && address != Cluster.System.ProcessRegistry.Address)
                 {
+                    transferredActorCount++;
                     TransferOwnership(actorId, address, context);
                 }
             }
+
+            if (transferredActorCount > 0)
+                _logger.LogInformation("Transferred {actors} PIDs to other nodes", transferredActorCount);
 
             foreach (var (actorId, sp) in _spawningProcs)
             {
