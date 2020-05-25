@@ -29,9 +29,13 @@ namespace Proto.Remote.Tests
         public void CanSerializeAndDeserializeJsonPID()
         {
             var serialization = new Serialization();
+            serialization.RegisterSerializer(
+                1,
+                priority: -1000,
+                new JsonSerializer(serialization));
             const string typeName = "actor.PID";
             var json = new JsonMessage(typeName, "{ \"Address\":\"123\", \"Id\":\"456\"}");
-            var bytes = serialization.Serialize(json, 1);
+            var bytes = serialization.Serialize(json, out var typename, out var serializerId);
             var deserialized = serialization.Deserialize(typeName, bytes, 1) as PID;
             Assert.NotNull(deserialized);
             Assert.Equal("123", deserialized.Address);
@@ -42,10 +46,14 @@ namespace Proto.Remote.Tests
         public void CanSerializeAndDeserializeJson()
         {
             var serialization = new Serialization();
+            serialization.RegisterSerializer(
+                1,
+                priority: -1000,
+                new JsonSerializer(serialization));
             serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
             const string typeName = "remote_test_messages.Ping";
             var json = new JsonMessage(typeName, "{ \"message\":\"Hello\"}");
-            var bytes = serialization.Serialize(json, 1);
+            var bytes = serialization.Serialize(json, out var typename, out var serializerId);
             var deserialized = serialization.Deserialize(typeName, bytes, 1) as Ping;
             Assert.NotNull(deserialized);
             Assert.Equal("Hello", deserialized.Message);
@@ -76,7 +84,7 @@ namespace Proto.Remote.Tests
 
             var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
             var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
-            Remote.SendMessage(remoteActor, envelope, 1);
+            Remote.SendMessage(remoteActor, envelope);
             await tcs.Task;
         }
 

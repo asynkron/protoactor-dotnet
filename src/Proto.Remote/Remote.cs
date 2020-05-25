@@ -148,11 +148,11 @@ namespace Proto.Remote
             return res;
         }
 
-        public void SendMessage(PID pid, object msg, int serializerId)
+        public void SendMessage(PID pid, object msg)
         {
             var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
 
-            var env = new RemoteDeliver(header, message, pid, sender, serializerId);
+            var env = new RemoteDeliver(header, message, pid, sender);
             _endpointManager.RemoteDeliver(env);
         }
     }

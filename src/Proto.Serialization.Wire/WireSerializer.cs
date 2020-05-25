@@ -98,5 +98,7 @@ namespace Proto.Serialization.Wire
         {
             return "";
         }
+
+        public bool CanSerialize(object obj) => true;
     }
 }

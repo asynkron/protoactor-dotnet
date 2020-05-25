@@ -43,7 +43,8 @@ namespace Proto.Remote
             return Task.FromResult(
                 new ConnectResponse
                 {
-                    DefaultSerializerId = Serialization.DefaultSerializerId
+                    DefaultSerializerId = 0,
+                    //DefaultSerializerId = Serialization.DefaultSerializerId
                 }
             );
         }

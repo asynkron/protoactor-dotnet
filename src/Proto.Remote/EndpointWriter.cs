@@ -17,7 +17,7 @@ namespace Proto.Remote
     {
         private static readonly ILogger Logger = Log.CreateLogger<EndpointWriter>();
 
-        private int _serializerId;
+        //private int _serializerId;
         private readonly string _address;
         private readonly CallOptions _callOptions;
         private readonly ChannelCredentials _channelCredentials;
@@ -78,7 +78,6 @@ namespace Proto.Remote
                 foreach (var rd in m)
                 {
                     var targetName = rd.Target.Id;
-                    var serializerId = rd.SerializerId == -1 ? _serializerId : rd.SerializerId;
 
                     if (!targetNames.TryGetValue(targetName, out var targetId))
                     {
@@ -86,7 +85,12 @@ namespace Proto.Remote
                         targetNameList.Add(targetName);
                     }
 
-                    var typeName = _serialization.GetTypeName(rd.Message, serializerId);
+                    string typeName;
+                    int serializerId;
+                    var bytes = _serialization.Serialize(
+                        rd.Message,
+                        out typeName,
+                        out serializerId);
 
                     if (!typeNames.TryGetValue(typeName, out var typeId))
                     {
@@ -101,8 +105,6 @@ namespace Proto.Remote
                         header = new MessageHeader();
                         header.HeaderData.Add(rd.Header.ToDictionary());
                     }
-
-                    var bytes = _serialization.Serialize(rd.Message, serializerId);
 
                     var envelope = new MessageEnvelope
                     {
@@ -181,7 +183,7 @@ namespace Proto.Remote
             Logger.LogDebug("Created channel and client for address {Address}", _address);
 
             var res = await _client.ConnectAsync(new ConnectRequest());
-            _serializerId = res.DefaultSerializerId;
+            //_serializerId = res.DefaultSerializerId;
             _stream = _client.Receive(_callOptions);
             _streamWriter = _stream.RequestStream;
 

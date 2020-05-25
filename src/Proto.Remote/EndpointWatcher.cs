@@ -96,7 +96,7 @@ namespace Proto.Remote
                         }
 
                         var w = new Unwatch(msg.Watcher);
-                        _remote.SendMessage(msg.Watchee, w, -1);
+                        _remote.SendMessage(msg.Watchee, w);
                         break;
                     }
                 case RemoteWatch msg:
@@ -111,7 +111,7 @@ namespace Proto.Remote
                         }
 
                         var w = new Watch(msg.Watcher);
-                        _remote.SendMessage(msg.Watchee, w, -1);
+                        _remote.SendMessage(msg.Watchee, w);
                         break;
                     }
                 case Stopped _:

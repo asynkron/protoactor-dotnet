@@ -55,21 +55,18 @@ namespace Proto.Remote
 
     public class RemoteDeliver
     {
-        public RemoteDeliver(Proto.MessageHeader header, object message, PID target, PID sender, int serializerId)
+        public RemoteDeliver(Proto.MessageHeader header, object message, PID target, PID sender)
         {
             Header = header;
             Message = message;
             Target = target;
             Sender = sender;
-            SerializerId = serializerId;
         }
 
         public Proto.MessageHeader Header { get; }
         public object Message { get; }
         public PID Target { get; }
         public PID Sender { get; }
-
-        public int SerializerId { get; }
     }
 
     public class JsonMessage

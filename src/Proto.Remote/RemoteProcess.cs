@@ -40,7 +40,7 @@ namespace Proto.Remote
                         break;
                     }
                 default:
-                    _remote.SendMessage(_pid, msg, -1);
+                    _remote.SendMessage(_pid, msg);
                     break;
             }
         }
