@@ -3,20 +3,34 @@ using Proto.Remote;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Proto.Serializer.MessagePack
 {
-    /// <summary>
-    /// Derive from this to speed up
-    /// ProtoMessagePackSerializer.CanSerialize function.
-    /// </summary>
-    public interface IMsgPackObject { }
-
     public class ProtoMessagePackSerializer : ISerializer
     {
         Dictionary<Type, string> typeToName = new Dictionary<Type, string>();
         Dictionary<string, Type> nameToType = new Dictionary<string, Type>();
         ConcurrentDictionary<Type, bool> canSerializeTypeMap = new ConcurrentDictionary<Type, bool>();
+
+        public static Dictionary<int, Type> ScanAssemblyForTypes(
+            Assembly assembly)
+        {
+            Dictionary<int, Type> types = new Dictionary<int, Type>();
+            foreach (Type type in assembly.GetTypes())
+            {
+                var attr = type.GetCustomAttribute<MessagePackIdAttribute>();
+                if (attr != null)
+                {
+                    // Check for duplicate.
+                    if (types.ContainsKey(attr.Id))
+                        throw new Exception($"Duplicate MessagePackId {attr.Id} - {type}");
+
+                    types.Add(attr.Id, type);
+                }
+            }
+            return types;
+        }
 
         public ProtoMessagePackSerializer(Dictionary<int, Type> idToType)
         {

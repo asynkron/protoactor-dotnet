@@ -2,16 +2,17 @@
 using Proto.Serializer.MessagePack;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace Messages
 {
-    [MessagePackObject]
+    [MessagePackId(0)]
     public class MsgPackPing : IMsgPackObject
     {
     }
 
-    [MessagePackObject]
+    [MessagePackId(1)]
     public class MsgPackPong : IMsgPackObject
     {
     }
@@ -20,11 +21,9 @@ namespace Messages
     {
         public static ProtoMessagePackSerializer Create()
         {
-            return new ProtoMessagePackSerializer(new Dictionary<int, Type>()
-                {
-                    { 0, typeof(MsgPackPing) },
-                    { 1, typeof(MsgPackPong) },
-                });
+            var assembly = Assembly.GetExecutingAssembly();
+            var types = ProtoMessagePackSerializer.ScanAssemblyForTypes(assembly);
+            return new ProtoMessagePackSerializer(types);
         }
     }
 }
