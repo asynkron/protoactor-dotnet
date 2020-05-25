@@ -5,11 +5,13 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Messages;
 using Proto;
 using Proto.Remote;
+using Proto.Serializer.MessagePack;
 using ProtosReflection = Messages.ProtosReflection;
 
 class Program
@@ -19,11 +21,15 @@ class Program
         var system = new ActorSystem();
         var context = new RootContext(system);
         var serialization = new Serialization();
+        serialization.RegisterSerializer(
+            2,
+            priority: 10,
+            MsgPackSerializerCreator.Create());
         serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
         var Remote = new Remote(system, serialization);
         Remote.Start("127.0.0.1", 12001);
 
-        var messageCount = 1000000;
+        var messageCount = 10000000;
         var wg = new AutoResetEvent(false);
         var props = Props.FromProducer(() => new LocalActor(0, messageCount, wg));
 
@@ -33,10 +39,13 @@ class Program
 
         var start = DateTime.Now;
         Console.WriteLine("Starting to send");
-        var msg = new Ping();
+        var msg = new Ping() { };
+        //var msg = new MsgPackPing() { };
         for (var i = 0; i < messageCount; i++)
         {
+            //Console.WriteLine($"Sending {i}");
             context.Send(remote, msg);
+            //context.RequestAsync<Pong>(remote, msg);
         }
         wg.WaitOne();
         var elapsed = DateTime.Now - start;
@@ -67,6 +76,7 @@ class Program
             switch (context.Message)
             {
                 case Pong _:
+                case MsgPackPong _:
                     _count++;
                     if (_count % 50000 == 0)
                     {

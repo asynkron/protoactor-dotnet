@@ -26,8 +26,12 @@ namespace Node2
                     _sender = sr.Sender;
                     context.Respond(new Start());
                     return Actor.Done;
-                case Ping _:
-                    context.Send(_sender, new Pong());
+                case Ping msg:
+                    context.Send(_sender, new Pong() { });
+                    return Actor.Done;
+                case MsgPackPing msg:
+                    //Console.WriteLine("Got MsgPackPing");
+                    context.Send(_sender, new MsgPackPong() { });
                     return Actor.Done;
                 default:
                     return Actor.Done;
@@ -42,6 +46,10 @@ namespace Node2
             var system = new ActorSystem();
             var context = new RootContext(system);
             var serialization = new Serialization();
+            serialization.RegisterSerializer(
+                2,
+                priority: 10,
+                MsgPackSerializerCreator.Create());
             serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             var Remote = new Remote(system, serialization);
             Remote.Start("127.0.0.1", 12000);

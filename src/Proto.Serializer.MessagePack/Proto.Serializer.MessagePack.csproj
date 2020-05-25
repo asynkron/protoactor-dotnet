@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MessagePack" Version="2.1.115" />
+    <PackageReference Include="MessagePack.ImmutableCollection" Version="2.1.115" />
+    <PackageReference Include="MessagePackAnalyzer" Version="2.1.115" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Proto.Remote\Proto.Remote.csproj" />
+  </ItemGroup>
+
+</Project>
