@@ -7,7 +7,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Persistence\Proto.Persistence.csproj" />
-    <ProjectReference Include="..\Proto.Actor.Tests\Proto.Actor.Tests.csproj" />
     <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
   </ItemGroup>
 </Project>

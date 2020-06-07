@@ -7,7 +7,6 @@
     <PackageReference Include="Grpc.Tools" Version="2.23.0" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\Proto.Remote\Proto.Remote.csproj" />
   </ItemGroup>
   <ItemGroup>

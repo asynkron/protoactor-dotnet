@@ -1,79 +1,85 @@
 ﻿using System;
 using chat.messages;
-using Jaeger;
-using Jaeger.Samplers;
-using OpenTracing.Util;
 using Proto;
-using Proto.OpenTracing;
 using Proto.Remote;
 
-class Program
+namespace Client
 {
-    static void Main(string[] args)
+    static class Program
     {
-        var tracer = new Tracer.Builder("Proto.Chat.Client")
-            .WithSampler(new ConstSampler(true))
-            .Build();
-
-        SpanSetup spanSetup = (span, message) => span.Log(message?.ToString());
-        var openTracingMiddleware = OpenTracingExtensions.OpenTracingSenderMiddleware(tracer);
-
-        var system = new ActorSystem();
-        var serialization = new Serialization();
-        serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
-        var remote = new Remote(system, serialization);
-        remote.Start("127.0.0.1", 0);
-        var server = new PID("127.0.0.1:8000", "chatserver");
-        var context = new RootContext(system, default, openTracingMiddleware);
-
-        var props = Props.FromFunc(ctx =>
+        static void Main()
         {
-            switch (ctx.Message)
-            {
-                case Connected connected:
-                    Console.WriteLine(connected.Message);
-                    break;
-                case SayResponse sayResponse:
-                    Console.WriteLine($"{sayResponse.UserName} {sayResponse.Message}");
-                    break;
-                case NickResponse nickResponse:
-                    Console.WriteLine($"{nickResponse.OldUserName} is now {nickResponse.NewUserName}");
-                    break;
-            }
-            return Actor.Done;
-        })
-        .WithOpenTracing(spanSetup, spanSetup, tracer);
+            var system = new ActorSystem();
+            var serialization = new Serialization();
+            serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
+            var remote = new Remote(system, serialization);
+            remote.Start("127.0.0.1", 0);
+            var server = new PID("127.0.0.1:8000", "chatserver");
+            var context = new RootContext(system);
 
-        var client = context.Spawn(props);
-        context.Send(server, new Connect
-        {
-            Sender = client
-        });
-        var nick = "Alex";
-        while (true)
-        {
-            var text = Console.ReadLine();
-            if (text.Equals("/exit"))
-            {
-                return;
-            }
-            if (text.StartsWith("/nick "))
-            {
-                var t = text.Split(' ')[1];
-                context.Send(server, new NickRequest
+            var props = Props.FromFunc(
+                ctx =>
                 {
-                    OldUserName = nick,
-                    NewUserName = t
-                });
-                nick = t;
-            }
-            else
-            {
-                context.Send(server, new SayRequest
+                    switch (ctx.Message)
+                    {
+                        case Connected connected:
+                            Console.WriteLine(connected.Message);
+                            break;
+                        case SayResponse sayResponse:
+                            Console.WriteLine($"{sayResponse.UserName} {sayResponse.Message}");
+                            break;
+                        case NickResponse nickResponse:
+                            Console.WriteLine($"{nickResponse.OldUserName} is now {nickResponse.NewUserName}");
+                            break;
+                    }
+
+                    return Actor.Done;
+                }
+            );
+
+            var client = context.Spawn(props);
+
+            context.Send(
+                server, new Connect
                 {
-                    UserName = nick,
-                    Message = text
-                });
+                    Sender = client
+                }
+            );
+            var nick = "Alex";
+
+            while (true)
+            {
+                var text = Console.ReadLine();
+
+                if (string.IsNullOrWhiteSpace(text))
+                    continue;
+
+                if (text.Equals("/exit"))
+                    return;
+
+                if (text.StartsWith("/nick "))
+                {
+                    var t = text.Split(' ')[1];
+
+                    context.Send(
+                        server, new NickRequest
+                        {
+                            OldUserName = nick,
+                            NewUserName = t
+                        }
+                    );
+                    nick = t;
+                }
+                else
+                {
+                    context.Send(
+                        server, new SayRequest
+                        {
+                            UserName = nick,
+                            Message = text
+                        }
+                    );
+                }
             }
         }
     }

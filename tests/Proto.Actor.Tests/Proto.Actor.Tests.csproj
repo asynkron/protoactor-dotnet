@@ -4,11 +4,6 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="Fixture\**" />
-    <EmbeddedResource Remove="Fixture\**" />
-    <None Remove="Fixture\**" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
   </ItemGroup>
