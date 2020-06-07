@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.11.4" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.23.0" PrivateAssets="All" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Proto.Actor\Proto.Actor.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="Protos.proto" GrpcServices="Server" ProtoRoot=".; ..\..\..\src" />
+  </ItemGroup>
+</Project>
