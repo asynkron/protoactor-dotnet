@@ -27,7 +27,7 @@ namespace Proto.Cluster
         public SimpleMemberStrategy()
         {
             _members = new List<MemberStatus>();
-            _rdv = new Rendezvous(this);
+            _rdv = new Rendezvous();
             _rr = new RoundRobin(this);
         }
 
@@ -36,7 +36,7 @@ namespace Proto.Cluster
         public void AddMember(MemberStatus member)
         {
             _members.Add(member);
-            _rdv.UpdateRdv();
+            _rdv.UpdateMembers(_members);
         }
 
         public void UpdateMember(MemberStatus member)
@@ -57,7 +57,7 @@ namespace Proto.Cluster
                 if (_members[i].Address != member.Address) continue;
 
                 _members.RemoveAt(i);
-                _rdv.UpdateRdv();
+                _rdv.UpdateMembers(_members);
                 return;
             }
         }

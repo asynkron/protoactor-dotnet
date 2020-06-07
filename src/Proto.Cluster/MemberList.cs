@@ -121,12 +121,20 @@ namespace Proto.Cluster
 
         private void UpdateAndNotify(MemberStatus @new, MemberStatus old)
         {
+            // Make sure that only Alive members are considered valid.
+            // This makes sure that the Members lists onyl contain alive nodes.
+            if (old != null && old.Alive == false)
+                old = null;
+            if (@new != null && @new.Alive == false)
+                @new = null;
+
             if (@new == null && old == null)
             {
                 return; //ignore
             }
-
-            if (@new == null)
+            
+            // Check if a node left.
+            if (@new == null && old != null)
             {
                 //update MemberStrategy
                 foreach (var k in old.Kinds)
@@ -152,7 +160,8 @@ namespace Proto.Cluster
                 return;
             }
 
-            if (old == null)
+            // Check if a new node joined.
+            if (@new != null && old == null)
             {
                 //update MemberStrategy
                 foreach (var k in @new.Kinds)
