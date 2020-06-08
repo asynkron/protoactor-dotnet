@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>true</IsPackable>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Grpc.Tools" Version="2.23.0" PrivateAssets="All" />
@@ -10,6 +11,6 @@
     <ProjectReference Include="..\Proto.Remote\Proto.Remote.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Protobuf Include="Protos.proto" GrpcServices="Server" ProtoRoot=".; ..\..\src"/>
+    <Protobuf Include="Protos.proto" GrpcServices="Server" ProtoRoot=".; ..\..\src" />
   </ItemGroup>
 </Project>

@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Proto.Cluster
 {
@@ -35,31 +36,23 @@ namespace Proto.Cluster
 
         public void AddMember(MemberStatus member)
         {
+            // Avoid adding the same member twice
+            if (_members.Any(x => x.Address == member.Address)) return;
+            
             _members.Add(member);
             _rdv.UpdateMembers(_members);
         }
 
         public void UpdateMember(MemberStatus member)
         {
-            for (int i = 0; i < _members.Count; i++)
-            {
-                if (_members[i].Address != member.Address) continue;
-
-                _members[i] = member;
-                return;
-            }
+            _members.RemoveAll(x => x.Address == member.Address);
+            _members.Add(member);
         }
 
         public void RemoveMember(MemberStatus member)
         {
-            for (int i = 0; i < _members.Count; i++)
-            {
-                if (_members[i].Address != member.Address) continue;
-
-                _members.RemoveAt(i);
-                _rdv.UpdateMembers(_members);
-                return;
-            }
+            _members.RemoveAll(x => x.Address == member.Address);
+            _rdv.UpdateMembers(_members);
         }
 
         public string GetPartition(string key) => _rdv.GetNode(key);

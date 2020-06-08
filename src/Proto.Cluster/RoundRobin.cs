@@ -8,21 +8,22 @@ namespace Proto.Cluster
 
         private readonly IMemberStrategy _memberStrategy;
 
-        public RoundRobin(IMemberStrategy memberStrategy)
-        {
-            _memberStrategy = memberStrategy;
-        }
+        public RoundRobin(IMemberStrategy memberStrategy) => _memberStrategy = memberStrategy;
 
         public string GetNode()
         {
             var members = _memberStrategy.GetAllMembers();
             var l = members.Count;
-            if (l == 0) return "";
-            if (l == 1) return members[0].Address;
-
-            var nv = Interlocked.Increment(ref _val);
-
-            return members[nv % l].Address;
+            switch (l)
+            {
+                case 0: return "";
+                case 1: return members[0].Address;
+                default:
+                {
+                    var nv = Interlocked.Increment(ref _val);
+                    return members[nv % l].Address;
+                }
+            }
         }
     }
 }

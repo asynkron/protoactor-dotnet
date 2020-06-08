@@ -12,9 +12,7 @@ namespace Proto.Router.Routers
 
         public BroadcastPoolRouterConfig(ISenderContext senderContext, int poolSize, Props routeeProps)
             : base(poolSize, routeeProps)
-        {
-            _senderContext = senderContext;
-        }
+            => _senderContext = senderContext;
 
         public override RouterState CreateRouterState() => new BroadcastRouterState(_senderContext);
     }

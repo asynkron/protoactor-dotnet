@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace Proto.Cluster
 {
+    [PublicAPI]
     public class GrainCallOptions
     {
         public static readonly GrainCallOptions Default = new GrainCallOptions();

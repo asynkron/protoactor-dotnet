@@ -11,7 +11,7 @@ namespace Proto.Persistence
 {
     public interface ISnapshotStore
     {
-        Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName);
+        Task<(object? Snapshot, long Index)> GetSnapshotAsync(string actorName);
         Task PersistSnapshotAsync(string actorName, long index, object snapshot);
         Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex);
     }

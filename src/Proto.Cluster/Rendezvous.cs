@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//   <copyright file="Rendezvous.cs" company="Asynkron HB">
+//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
+//   </copyright>
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,31 +21,34 @@ namespace Proto.Cluster
 
         struct MemberData
         {
-            public MemberStatus Status { get; set; }
-            public byte[] Hash { get; set; }
+            public MemberData(MemberStatus memberStatus)
+            {
+                Status = memberStatus;
+                Hash = Encoding.UTF8.GetBytes(memberStatus.Address);
+            }
+
+            public MemberStatus Status { get; }
+            public byte[] Hash { get; }
         }
 
-        private List<MemberData> _members = new List<MemberData>();
+        private MemberData[] _members = Array.Empty<MemberData>();
 
         public string GetNode(string key)
         {
-            if (_members == null || _members.Count == 0)
-                return "";
+            if (_members == null || _members.Length == 0) return "";
 
-            if (_members.Count == 1)
-                return _members[0].Status.Address;
+            if (_members.Length == 1) return _members[0].Status.Address;
 
             var keyBytes = Encoding.UTF8.GetBytes(key);
 
             uint maxScore = 0;
-            MemberStatus maxNode = null;
-            uint score;
+            MemberStatus? maxNode = null;
 
-            for (int i = 0; i < _members.Count; i++)
+            foreach (var member in _members)
             {
-                var member = _members[i];
                 var hashBytes = member.Hash;
-                score = RdvHash(hashBytes, keyBytes);
+                var score = RdvHash(hashBytes, keyBytes);
+
                 if (score > maxScore)
                 {
                     maxScore = score;
@@ -48,28 +56,15 @@ namespace Proto.Cluster
                 }
             }
 
-            return maxNode == null ? "" : maxNode.Address;
+            return maxNode?.Address ?? "";
         }
 
-        public void UpdateMembers(IEnumerable<MemberStatus> members)
-        {
-            // Store the members list to be used by GetNode().
-            _members.Clear();
-            foreach (var memberStatus in members)
-            {
-                // Skip members that are not alive.
-                if (memberStatus.Alive == false)
-                    continue;
-
-                // Calculate hash based on member's address.
-                byte[] hash = Encoding.UTF8.GetBytes(memberStatus.Address);
-                _members.Add(new MemberData()
-                {
-                    Status = memberStatus,
-                    Hash = hash,
-                });
-            }
-        }
+        // ReSharper disable once ParameterTypeCanBeEnumerable.Global
+        public void UpdateMembers(List<MemberStatus> members)
+            => _members = members
+                .Where(x => x.Alive)
+                .Select(x => new MemberData(x))
+                .ToArray();
 
         private static uint RdvHash(byte[] node, byte[] key)
         {
@@ -81,7 +76,7 @@ namespace Proto.Cluster
 
         private static byte[] MergeBytes(byte[] front, byte[] back)
         {
-            byte[] combined = new byte[front.Length + back.Length];
+            var combined = new byte[front.Length + back.Length];
             Array.Copy(front, combined, front.Length);
             Array.Copy(back, 0, combined, front.Length, back.Length);
             return combined;

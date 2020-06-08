@@ -16,73 +16,71 @@ namespace Proto.Cluster
     {
         private static readonly ILogger Logger = Log.CreateLogger("MemberList");
 
-        private readonly ReaderWriterLockSlim RwLock = new ReaderWriterLockSlim();
-        private readonly Dictionary<string, MemberStatus> Members = new Dictionary<string, MemberStatus>();
-        private readonly Dictionary<string, IMemberStrategy> MemberStrategyByKind = new Dictionary<string, IMemberStrategy>();
-        private readonly Cluster Cluster;
-        private Subscription<object> clusterTopologyEvnSub;
+        private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
+        private readonly Dictionary<string, MemberStatus> _members = new Dictionary<string, MemberStatus>();
+        private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind = new Dictionary<string, IMemberStrategy>();
+        private readonly Cluster _cluster;
 
-        public MemberList(Cluster cluster)
-        {
-            Cluster = cluster;
-        }
+        private Subscription<object>? _clusterTopologyEvnSub;
 
-        internal void Setup() => clusterTopologyEvnSub = Cluster.System.EventStream.Subscribe<ClusterTopologyEvent>(UpdateClusterTopology);
+        public MemberList(Cluster cluster) => _cluster = cluster;
 
-        internal void Stop() => Cluster.System.EventStream.Unsubscribe(clusterTopologyEvnSub.Id);
+        internal void Setup() => _clusterTopologyEvnSub = _cluster.System.EventStream.Subscribe<ClusterTopologyEvent>(UpdateClusterTopology);
+
+        internal void Stop() => _cluster.System.EventStream.Unsubscribe(_clusterTopologyEvnSub);
 
         internal string GetPartition(string name, string kind)
         {
-            var locked = RwLock.TryEnterReadLock(1000);
+            var locked = _rwLock.TryEnterReadLock(1000);
 
             while (!locked)
             {
                 Logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
-                locked = RwLock.TryEnterReadLock(1000);
+                locked = _rwLock.TryEnterReadLock(1000);
             }
 
             try
             {
-                return MemberStrategyByKind.TryGetValue(kind, out var memberStrategy)
+                return _memberStrategyByKind.TryGetValue(kind, out var memberStrategy)
                     ? memberStrategy.GetPartition(name)
                     : "";
             }
             finally
             {
-                RwLock.ExitReadLock();
+                _rwLock.ExitReadLock();
             }
         }
 
         internal string GetActivator(string kind)
         {
-            var locked = RwLock.TryEnterReadLock(1000);
+            var locked = _rwLock.TryEnterReadLock(1000);
 
             while (!locked)
             {
                 Logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
-                locked = RwLock.TryEnterReadLock(1000);
+                locked = _rwLock.TryEnterReadLock(1000);
             }
 
             try
             {
-                return MemberStrategyByKind.TryGetValue(kind, out var memberStrategy)
+                return _memberStrategyByKind.TryGetValue(kind, out var memberStrategy)
                     ? memberStrategy.GetActivator()
                     : "";
             }
             finally
             {
-                RwLock.ExitReadLock();
+                _rwLock.ExitReadLock();
             }
         }
 
-        internal void UpdateClusterTopology(ClusterTopologyEvent msg)
+        private void UpdateClusterTopology(ClusterTopologyEvent msg)
         {
-            var locked = RwLock.TryEnterWriteLock(1000);
+            var locked = _rwLock.TryEnterWriteLock(1000);
 
             while (!locked)
             {
                 Logger.LogDebug("MemberList did not acquire writer lock within 1 seconds, retry");
-                locked = RwLock.TryEnterWriteLock(1000);
+                locked = _rwLock.TryEnterWriteLock(1000);
             }
 
             try
@@ -97,7 +95,7 @@ namespace Proto.Cluster
 
                 //remove old ones whose address not exist in new address sets
                 //_members.ToList() duplicates _members, allow _members to be modified in Notify
-                foreach (var (address, old) in Members.ToList())
+                foreach (var (address, old) in _members.ToList())
                 {
                     if (!newMembersAddress.Contains(address))
                     {
@@ -108,93 +106,86 @@ namespace Proto.Cluster
                 //find all the entries that exist in the new set
                 foreach (var @new in msg.Statuses)
                 {
-                    Members.TryGetValue(@new.Address, out var old);
-                    Members[@new.Address] = @new;
+                    _members.TryGetValue(@new.Address, out var old);
+                    _members[@new.Address] = @new;
                     UpdateAndNotify(@new, old);
                 }
             }
             finally
             {
-                RwLock.ExitWriteLock();
+                _rwLock.ExitWriteLock();
             }
         }
 
-        private void UpdateAndNotify(MemberStatus @new, MemberStatus old)
+        private void UpdateAndNotify(MemberStatus? @new, MemberStatus? old)
         {
             // Make sure that only Alive members are considered valid.
-            // This makes sure that the Members lists onyl contain alive nodes.
-            if (old != null && old.Alive == false)
-                old = null;
-            if (@new != null && @new.Alive == false)
-                @new = null;
+            // This makes sure that the Members lists only contain alive nodes.
+            var oldMember = old == null || old.Alive == false ? null : old;
+            var newMember = @new == null || @new.Alive == false ? null : @new;
 
-            if (@new == null && old == null)
+            if (newMember == null)
             {
-                return; //ignore
-            }
-            
-            // Check if a node left.
-            if (@new == null && old != null)
-            {
-                //update MemberStrategy
-                foreach (var k in old.Kinds)
+                if (oldMember == null)
                 {
-                    if (MemberStrategyByKind.TryGetValue(k, out var ms))
-                    {
-                        ms.RemoveMember(old);
+                    return; //ignore
+                }
 
-                        if (ms.GetAllMembers().Count == 0)
-                            MemberStrategyByKind.Remove(k);
-                    }
+                //update MemberStrategy
+                foreach (var k in oldMember.Kinds)
+                {
+                    if (!_memberStrategyByKind.TryGetValue(k, out var ms)) continue;
+
+                    ms.RemoveMember(oldMember);
+
+                    if (ms.GetAllMembers().Count == 0) _memberStrategyByKind.Remove(k);
                 }
 
                 //notify left
-                var left = new MemberLeftEvent(old.Host, old.Port, old.Kinds);
-                Cluster.System.EventStream.Publish(left);
+                var left = new MemberLeftEvent(oldMember.Host, oldMember.Port, oldMember.Kinds);
+                _cluster.System.EventStream.Publish(left);
 
-                Members.Remove(old.Address);
+                _members.Remove(oldMember.Address);
 
-                var endpointTerminated = new EndpointTerminatedEvent { Address = old.Address };
-                Cluster.System.EventStream.Publish(endpointTerminated);
+                var endpointTerminated = new EndpointTerminatedEvent {Address = oldMember.Address};
+                _cluster.System.EventStream.Publish(endpointTerminated);
 
                 return;
             }
 
-            // Check if a new node joined.
-            if (@new != null && old == null)
+            if (oldMember == null)
             {
-                //update MemberStrategy
-                foreach (var k in @new.Kinds)
+                foreach (var k in newMember.Kinds)
                 {
-                    if (!MemberStrategyByKind.ContainsKey(k))
-                        MemberStrategyByKind[k] = Cluster.Config.MemberStrategyBuilder(k);
-                    MemberStrategyByKind[k].AddMember(@new);
+                    if (!_memberStrategyByKind.ContainsKey(k)) _memberStrategyByKind[k] = _cluster.Config!.MemberStrategyBuilder(k);
+                    _memberStrategyByKind[k].AddMember(newMember);
                 }
 
                 //notify joined
-                var joined = new MemberJoinedEvent(@new.Host, @new.Port, @new.Kinds);
-                Cluster.System.EventStream.Publish(joined);
+                var joined = new MemberJoinedEvent(newMember.Host, newMember.Port, newMember.Kinds);
+                _cluster.System.EventStream.Publish(joined);
 
                 return;
             }
 
             //update MemberStrategy
-            if (@new.Alive != old.Alive || @new.MemberId != old.MemberId || @new.StatusValue != null && !@new.StatusValue.IsSame(old.StatusValue))
+            if (newMember.Alive != oldMember.Alive || newMember.MemberId != oldMember.MemberId ||
+                newMember.StatusValue != null && !newMember.StatusValue.IsSame(oldMember.StatusValue))
             {
-                foreach (var k in @new.Kinds)
+                foreach (var k in newMember.Kinds)
                 {
-                    if (MemberStrategyByKind.TryGetValue(k, out var ms))
+                    if (_memberStrategyByKind.TryGetValue(k, out var ms))
                     {
-                        ms.UpdateMember(@new);
+                        ms.UpdateMember(newMember);
                     }
                 }
             }
 
             //notify changes
-            if (@new.MemberId != old.MemberId)
+            if (newMember.MemberId != oldMember.MemberId)
             {
-                var rejoined = new MemberRejoinedEvent(@new.Host, @new.Port, @new.Kinds);
-                Cluster.System.EventStream.Publish(rejoined);
+                var rejoined = new MemberRejoinedEvent(newMember.Host, newMember.Port, newMember.Kinds);
+                _cluster.System.EventStream.Publish(rejoined);
             }
         }
     }

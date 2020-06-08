@@ -12,13 +12,10 @@ namespace Proto.Remote
 {
     public class RemoteConfig
     {
-       
-        
-
         /// <summary>
         /// Gets or sets the ChannelOptions for the gRPC channel.
         /// </summary>
-        public IEnumerable<ChannelOption> ChannelOptions { get; set; }
+        public IEnumerable<ChannelOption> ChannelOptions { get; set; } = null!;
 
         /// <summary>
         /// Gets or sets the CallOptions for the gRPC channel.
@@ -40,7 +37,7 @@ namespace Proto.Remote
         /// If the remote system is behind e.g. a NAT or reverse proxy, this needs to be set to
         /// the external hostname in order for other systems to be able to connect to it.
         /// </summary>
-        public string AdvertisedHostname { get; set; }
+        public string AdvertisedHostname { get; set; } = null!;
 
         /// <summary>
         /// Gets or sets the advertised port for the remote system.

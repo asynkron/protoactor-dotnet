@@ -6,10 +6,12 @@
 
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 
 namespace Proto
 {
     //TODO: make immutable as the same envelope can be sent to multiple targets
+    [PublicAPI]
     public class MessageEnvelope
     {
         public MessageEnvelope(object message, PID? sender, MessageHeader? header)

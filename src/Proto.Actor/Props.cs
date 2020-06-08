@@ -7,10 +7,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using Proto.Mailbox;
 
 namespace Proto
 {
+    [PublicAPI]
     public sealed class Props
     {
         private Spawner? _spawner;

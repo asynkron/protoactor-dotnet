@@ -11,20 +11,25 @@ namespace Proto
 {
     public static class Extensions
     {
+        /// <summary>
+        /// Stop the current actor
+        /// </summary>
+        /// <param name="self">The actor instance to stop</param>
+        /// <param name="system">Actor system</param>
         public static void Stop(this IEnumerable<PID> self, ActorSystem system)
         {
             if (self == null)
             {
                 return;
             }
-            
+
             foreach (var pid in self)
             {
                 system.Root.Stop(pid);
             }
         }
-        
-        public static void SendSystemMessage( this IEnumerable<PID> self, SystemMessage message, ActorSystem system)
+
+        public static void SendSystemMessage(this IEnumerable<PID> self, SystemMessage message, ActorSystem system)
         {
             foreach (var pid in self)
             {
@@ -32,8 +37,10 @@ namespace Proto
             }
         }
 
-        public static void Deconstruct<TKey, TValue>(this KeyValuePair<TKey, TValue> self, out TKey key,
-            out TValue value)
+        public static void Deconstruct<TKey, TValue>(
+            this KeyValuePair<TKey, TValue> self, out TKey key,
+            out TValue value
+        )
         {
             key = self.Key;
             value = self.Value;

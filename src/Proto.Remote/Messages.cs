@@ -10,11 +10,12 @@ namespace Proto.Remote
 {
     public sealed class EndpointTerminatedEvent
     {
-        public string Address { get; set; }
+        public string Address { get; set; } = null!;
     }
+    
     public sealed class EndpointConnectedEvent
     {
-        public string Address { get; set; }
+        public string Address { get; set; } = null!;
     }
 
     public class RemoteTerminate

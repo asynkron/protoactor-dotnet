@@ -43,12 +43,7 @@ namespace Proto
                 return reff;
             }
 
-            if (_localActorRefs.TryGetValue(pid.Id, out var process))
-            {
-                return process;
-            }
-
-            return System.DeadLetter;
+            return _localActorRefs.TryGetValue(pid.Id, out var process) ? process : System.DeadLetter;
         }
 
         public Process GetLocal(string id)

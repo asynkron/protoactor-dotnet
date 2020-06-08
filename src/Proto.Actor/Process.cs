@@ -13,10 +13,8 @@ namespace Proto
     {
         protected ActorSystem System { get; }
 
-        public Process(ActorSystem system)
-        {
-            System = system;
-        }
+        protected Process(ActorSystem system) => System = system;
+        
         protected internal abstract void SendUserMessage(PID pid, object message);
 
         protected internal abstract void SendSystemMessage(PID pid, object message);
@@ -28,10 +26,7 @@ namespace Proto
     {
         private long _isDead;
 
-        public ActorProcess(ActorSystem system, IMailbox mailbox) : base(system)
-        {
-            Mailbox = mailbox;
-        }
+        public ActorProcess(ActorSystem system, IMailbox mailbox) : base(system) => Mailbox = mailbox;
 
         public IMailbox Mailbox { get; }
 
