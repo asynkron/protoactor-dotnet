@@ -11,14 +11,16 @@
     <LangVersion>8</LangVersion>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <AssemblyOriginatorKeyFile>../../ProtoActor.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>TRACE;DEBUG</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2019.1.3" PrivateAssets="All"/>
-    <PackageReference Include="MinVer" Version="2.1.0" PrivateAssets="All"/>
+    <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" PrivateAssets="All"/>
+    <PackageReference Include="MinVer" Version="2.3.0" PrivateAssets="All"/>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
   </ItemGroup>
 

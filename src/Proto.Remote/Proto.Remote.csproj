@@ -4,8 +4,8 @@
     <IsPackable>true</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Grpc" Version="2.27.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.23.0" PrivateAssets="All" />
+    <PackageReference Include="Grpc" Version="2.29.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.29.0" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />

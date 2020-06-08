@@ -2,6 +2,8 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsTestProject>false</IsTestProject>
+    <AssemblyOriginatorKeyFile>../../ProtoActor.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Remove="AutoFixture.Xunit2"/>
