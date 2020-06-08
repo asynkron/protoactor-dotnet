@@ -1,6 +1,6 @@
 ﻿using BenchmarkDotNet.Running;
 
-namespace Proto.Actor.Benchmarks
+namespace ProtoActorBenchmarks
 {
     public class Program
     {

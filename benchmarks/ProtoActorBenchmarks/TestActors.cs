@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
+using Proto;
 
-namespace Proto.Actor.Benchmarks
+namespace ProtoActorBenchmarks
 {
     public class PingActor : IActor
     {

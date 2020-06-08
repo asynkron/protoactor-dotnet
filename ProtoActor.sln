@@ -95,7 +95,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.TestKit.Tests", "test
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Actor.Benchmarks", "benchmarks\Proto.Actor.Benchmarks\Proto.Actor.Benchmarks.csproj", "{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtoActorBenchmarks", "benchmarks\ProtoActorBenchmarks\ProtoActorBenchmarks.csproj", "{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailboxBenchmark", "benchmarks\MailboxBenchmark\MailboxBenchmark.csproj", "{8849DD9F-CEB4-40D5-9DC0-EC6EDCA09E65}"
 EndProject
