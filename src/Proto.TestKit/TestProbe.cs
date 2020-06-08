@@ -57,15 +57,17 @@ namespace Proto.TestKit
         /// <inheritdoc />
         public void ExpectNoMessage(TimeSpan? timeAllowed = null)
         {
-            if (_messageQueue.TryTake(out var o, timeAllowed ?? TimeSpan.FromSeconds(1)))
-                throw new Exception($"Waited {timeAllowed} and received a message of type {o.GetType()}.");
+            var time = timeAllowed ?? TimeSpan.FromSeconds(1);
+            if (_messageQueue.TryTake(out var o, time))
+                throw new TestKitException($"Waited {time.Seconds} seconds and received a message of type {o.GetType()}");
         }
 
         /// <inheritdoc />
         public object? GetNextMessage(TimeSpan? timeAllowed = null)
         {
-            if (!_messageQueue.TryTake(out var output, timeAllowed ?? TimeSpan.FromSeconds(1)))
-                throw new TestKitException($"Waited {timeAllowed} but failed to receive a message.");
+            var time = timeAllowed ?? TimeSpan.FromSeconds(1);
+            if (!_messageQueue.TryTake(out var output, time))
+                throw new TestKitException($"Waited {time.Seconds} seconds but failed to receive a message");
 
             Sender = output?.Sender;
             return output?.Message;
@@ -168,7 +170,7 @@ namespace Proto.TestKit
                 }
             }
 
-            throw new Exception("Message not found");
+            throw new TestKitException("Message not found");
         }
 
         /// <inheritdoc />

@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Xunit;
 
 namespace Proto.TestKit.Tests
 {
-    [Collection("FactKitFacts"), Trait("Category", "FactKit")]
-    public class MessageFiltering : TestKit
+    public class MessageFilteringTests : TestKitBase
     {
+        public MessageFilteringTests() => SetUp();
 
         [Fact]
         public void CanRespondToAsyncRequest()
@@ -38,7 +39,8 @@ namespace Proto.TestKit.Tests
             Send(Probe, "hi");
             HundredTimes(i => Send(Probe, i));
 
-            Assert.Throws<Exception>(() => FishForMessage<DateTime>());
+            this.Invoking(x => FishForMessage<DateTime>())
+                .Should().Throw<Exception>().WithMessage("Message not found");
         }
 
         [Fact]
@@ -48,7 +50,8 @@ namespace Proto.TestKit.Tests
             Send(Probe, "hi");
             HundredTimes(i => Send(Probe, i));
 
-            Assert.Throws<Exception>(() => FishForMessage<string>(x => x.Equals("bye")));
+            this.Invoking(_ => FishForMessage<string>(x => x.Equals("bye")))
+                .Should().Throw<TestKitException>().WithMessage("Message not found");
         }
 
         [Fact]
@@ -78,7 +81,6 @@ namespace Proto.TestKit.Tests
             HundredTimes(i => GetNextMessage<int>(x => x == i));
         }
 
-
         [Fact]
         public void GetSucceeds()
         {
@@ -90,24 +92,28 @@ namespace Proto.TestKit.Tests
         public void GetFailsWrongType()
         {
             Send(Probe, "hi");
-            Assert.Throws<Exception>(() => GetNextMessage<DateTime>());
+            this.Invoking(_ => GetNextMessage<DateTime>())
+                .Should().Throw<TestKitException>().WithMessage("Message expected type System.DateTime, actual type System.String");
         }
 
         [Fact]
-        public void GetFailsNoMessage() => Assert.Throws<Exception>(() => GetNextMessage<DateTime>());
+        public void GetFailsNoMessage() => this.Invoking(_ => GetNextMessage<DateTime>())
+            .Should().Throw<TestKitException>().WithMessage("Waited 1 seconds but failed to receive a message");
 
         [Fact]
         public void GetFailsCondition()
         {
             Send(Probe, "hi");
-            Assert.Throws<Exception>(() => GetNextMessage<string>(x => x.Equals("bye")));
+            this.Invoking(_ => GetNextMessage<string>(x => x.Equals("bye")))
+                .Should().Throw<TestKitException>().WithMessage("Condition not met");
         }
 
         [Fact]
         public void ExpectNoMessageFails()
         {
             Send(Probe, "hi");
-            Assert.Throws<Exception>(() => ExpectNoMessage());
+            this.Invoking(_ => ExpectNoMessage())
+                .Should().Throw<TestKitException>().WithMessage("Waited 1 seconds and received a message of type Proto.TestKit.MessageAndSender");
         }
 
         [Fact]

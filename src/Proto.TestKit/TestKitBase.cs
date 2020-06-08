@@ -11,7 +11,7 @@ namespace Proto.TestKit
     /// General purpose testing base class
     /// </summary>
     [PublicAPI]
-    public abstract class TestKitBase : ITestProbe, ISpawnerContext
+    public class TestKitBase : ITestProbe, ISpawnerContext
     {
         /// <inheritdoc />
         public PID? Sender => Probe?.Sender;
