@@ -17,18 +17,13 @@ namespace Proto
             Id = id;
         }
 
-        internal PID(string address, string id, Process process) : this(address, id)
-        {
-            _process = process;
-        }
+        internal PID(string address, string id, Process process) : this(address, id) => _process = process;
 
         internal Process? Ref(ActorSystem system)
         {
-
-            var p = _process;
-            if (p != null)
+            if (_process != null)
             {
-                if (p is ActorProcess lp && lp.IsDead)
+                if (_process is ActorProcess actorProcess && actorProcess.IsDead)
                 {
                     _process = null;
                 }
@@ -43,7 +38,6 @@ namespace Proto
             }
 
             return _process;
-
         }
 
         internal void SendUserMessage(ActorSystem system, object message)
@@ -58,6 +52,6 @@ namespace Proto
             reff.SendSystemMessage(this, sys);
         }
 
-        public string ToShortString() => Address + "/" + Id;
+        public string ToShortString() => $"{Address}/{Id}";
     }
 }

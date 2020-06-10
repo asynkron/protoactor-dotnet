@@ -28,41 +28,38 @@ namespace Proto.Remote
     {
         private static readonly ILogger Logger = Log.CreateLogger(typeof(Remote).FullName);
 
-        private Server server;
-        private readonly Dictionary<string, Props> Kinds = new Dictionary<string, Props>();
-        public RemoteConfig RemoteConfig { get; private set; }
-        public PID ActivatorPid { get; private set; }
-
-        private EndpointReader _endpointReader;
-        private EndpointManager _endpointManager;
+        private Server _server = null!;
+        private EndpointReader _endpointReader = null!;
+        private EndpointManager _endpointManager = null!;
+        
+        private readonly Dictionary<string, Props> _kinds = new Dictionary<string, Props>();
         private readonly ActorSystem _system;
-        public Serialization Serialization
-        {
-            get;
-        }
+        
+        public RemoteConfig? RemoteConfig { get; private set; }
+        public PID? ActivatorPid { get; private set; }
 
-        public string[] GetKnownKinds() => Kinds.Keys.ToArray();
+        public Serialization Serialization { get; }
 
-        public void RegisterKnownKind(string kind, Props props) => Kinds.Add(kind, props);
+        public string[] GetKnownKinds() => _kinds.Keys.ToArray();
+
+        public void RegisterKnownKind(string kind, Props props) => _kinds.Add(kind, props);
 
         // Modified class in context of repo fork : https://github.com/Optis-World/protoactor-dotnet
-        public void UnregisterKnownKind(string kind) => Kinds.Remove(kind);
+        public void UnregisterKnownKind(string kind) => _kinds.Remove(kind);
 
         public Props GetKnownKind(string kind)
         {
-            if (Kinds.TryGetValue(kind, out var props))
+            if (!_kinds.TryGetValue(kind, out var props))
             {
-                return props;
+                throw new ArgumentException($"No Props found for kind '{kind}'");
             }
-
-            throw new ArgumentException($"No Props found for kind '{kind}'");
+            return props;
         }
 
         public Remote(ActorSystem system, Serialization serialization)
         {
             _system = system;
             Serialization = serialization;
-
         }
 
         public void Start(string hostname, int port) => Start(hostname, port, new RemoteConfig());
@@ -74,14 +71,14 @@ namespace Proto.Remote
             _endpointReader = new EndpointReader(_system, _endpointManager, Serialization);
             _system.ProcessRegistry.RegisterHostResolver(pid => new RemoteProcess(this, _system, _endpointManager, pid));
 
-            server = new Server
+            _server = new Server
             {
                 Services = { Remoting.BindService(_endpointReader) },
                 Ports = { new ServerPort(hostname, port, config.ServerCredentials) }
             };
-            server.Start();
+            _server.Start();
 
-            var boundPort = server.Ports.Single().BoundPort;
+            var boundPort = _server.Ports.Single().BoundPort;
             _system.ProcessRegistry.SetAddress(config.AdvertisedHostname ?? hostname, config.AdvertisedPort ?? boundPort);
             _endpointManager.Start();
             SpawnActivator();
@@ -98,11 +95,11 @@ namespace Proto.Remote
                     _endpointManager.Stop();
                     _endpointReader.Suspend(true);
                     StopActivator();
-                    await server.ShutdownAsync();
+                    await _server.ShutdownAsync();
                 }
                 else
                 {
-                    await server.KillAsync();
+                    await _server.KillAsync();
                 }
 
                 Logger.LogDebug(
@@ -112,7 +109,7 @@ namespace Proto.Remote
             }
             catch (Exception ex)
             {
-                await server.KillAsync();
+                await _server.KillAsync();
 
                 Logger.LogError(
                     ex, "Proto.Actor server stopped on {Address} with error: {Message}",
@@ -152,7 +149,7 @@ namespace Proto.Remote
         {
             var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
 
-            var env = new RemoteDeliver(header, message, pid, sender, serializerId);
+            var env = new RemoteDeliver(header!, message, pid, sender!, serializerId);
             _endpointManager.RemoteDeliver(env);
         }
     }

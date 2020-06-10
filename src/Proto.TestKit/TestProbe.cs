@@ -11,15 +11,23 @@ namespace Proto.TestKit
     /// <inheritdoc cref="ITestProbe" />
     public class TestProbe : IActor, ITestProbe
     {
-        internal class RequestReference
+        private class RequestReference { }
+
+        /// <inheritdoc />
+        public PID? Sender { get; private set; }
+
+        /// <inheritdoc />
+        public IContext Context
         {
+            get
+            {
+                if (_context == null) throw new InvalidOperationException("Probe context is null");
+
+                return _context;
+            }
+            private set => _context = value;
         }
-
-        /// <inheritdoc />
-        public PID Sender { get; private set; }
-
-        /// <inheritdoc />
-        public IContext Context { get; private set; }
+        private IContext? _context;
 
         private readonly BlockingCollection<MessageAndSender> _messageQueue = new BlockingCollection<MessageAndSender>();
 
@@ -32,14 +40,12 @@ namespace Proto.TestKit
                     Context = context;
                     break;
                 case RequestReference _:
-                    if (context.Sender != null)
-                        context.Respond(this);
+                    if (context.Sender != null) context.Respond(this);
                     break;
                 case Terminated _:
                     _messageQueue.Add(new MessageAndSender(context));
                     break;
-                case SystemMessage _:
-                    return Actor.Done;
+                case SystemMessage _: return Actor.Done;
                 default:
                     _messageQueue.Add(new MessageAndSender(context));
                     break;
@@ -48,22 +54,23 @@ namespace Proto.TestKit
             return Actor.Done;
         }
 
-
         /// <inheritdoc />
         public void ExpectNoMessage(TimeSpan? timeAllowed = null)
         {
-            if (_messageQueue.TryTake(out var o, timeAllowed ?? TimeSpan.FromSeconds(1)))
-                throw new Exception($"Waited {timeAllowed} and received a message of type {o.GetType()}.");
+            var time = timeAllowed ?? TimeSpan.FromSeconds(1);
+            if (_messageQueue.TryTake(out var o, time))
+                throw new TestKitException($"Waited {time.Seconds} seconds and received a message of type {o.GetType()}");
         }
 
         /// <inheritdoc />
-        public object GetNextMessage(TimeSpan? timeAllowed = null)
+        public object? GetNextMessage(TimeSpan? timeAllowed = null)
         {
-            if (!_messageQueue.TryTake(out var output, timeAllowed ?? TimeSpan.FromSeconds(1)))
-                throw new Exception($"Waited {timeAllowed} but failed to receive a message.");
+            var time = timeAllowed ?? TimeSpan.FromSeconds(1);
+            if (!_messageQueue.TryTake(out var output, time))
+                throw new TestKitException($"Waited {time.Seconds} seconds but failed to receive a message");
 
-            Sender = output.Sender;
-            return output.Message;
+            Sender = output?.Sender;
+            return output?.Message;
         }
 
         /// <inheritdoc />
@@ -71,18 +78,16 @@ namespace Proto.TestKit
         {
             var output = GetNextMessage(timeAllowed);
 
-            if (!(output is T))
-                throw new Exception($"Message expected type {typeof(T)}, actual type {output.GetType()}");
+            if (!(output is T)) throw new TestKitException($"Message expected type {typeof(T)}, actual type {output?.GetType()}");
 
-            return (T)output;
+            return (T) output;
         }
 
         /// <inheritdoc />
         public T GetNextMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null)
         {
             var output = GetNextMessage<T>(timeAllowed);
-            if (!when(output))
-                throw new Exception("Condition not met");
+            if (!when(output)) throw new TestKitException("Condition not met");
 
             return output;
         }
@@ -92,7 +97,8 @@ namespace Proto.TestKit
         {
             while (true)
             {
-                object message;
+                object? message;
+
                 try
                 {
                     message = GetNextMessage(timeAllowed);
@@ -112,6 +118,7 @@ namespace Proto.TestKit
             while (true)
             {
                 T message;
+
                 try
                 {
                     message = FishForMessage<T>(timeAllowed);
@@ -131,6 +138,7 @@ namespace Proto.TestKit
             while (true)
             {
                 T message;
+
                 try
                 {
                     message = FishForMessage(when, timeAllowed);
@@ -145,8 +153,7 @@ namespace Proto.TestKit
         }
 
         /// <inheritdoc />
-        public T FishForMessage<T>(TimeSpan? timeAllowed = null) =>
-            FishForMessage<T>(x => true, timeAllowed);
+        public T FishForMessage<T>(TimeSpan? timeAllowed = null) => FishForMessage<T>(x => true, timeAllowed);
 
         /// <inheritdoc />
         public T FishForMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null)
@@ -163,42 +170,36 @@ namespace Proto.TestKit
                 }
             }
 
-            throw new Exception("Message not found");
+            throw new TestKitException("Message not found");
         }
 
         /// <inheritdoc />
-        public void Send(PID target, object message) =>
-            Context.Send(target, message);
+        public void Send(PID target, object message) => Context.Send(target, message);
 
         /// <inheritdoc />
-        public void Request(PID target, object message) =>
-            Context.Request(target, message);
+        public void Request(PID target, object message) => Context.Request(target, message);
 
         /// <inheritdoc />
         public void Respond(object message)
         {
-            if (Sender == null)
-                return;
+            if (Sender == null) return;
 
             Send(Sender, message);
         }
 
         /// <inheritdoc />
-        public Task<T> RequestAsync<T>(PID target, object message) =>
-            Context.RequestAsync<T>(target, message);
+        public Task<T> RequestAsync<T>(PID target, object message) => Context.RequestAsync<T>(target, message);
 
         /// <inheritdoc />
-        public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken) =>
-            Context.RequestAsync<T>(target, message, cancellationToken);
+        public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
+            => Context.RequestAsync<T>(target, message, cancellationToken);
 
         /// <inheritdoc />
-        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeAllowed) =>
-            Context.RequestAsync<T>(target, message, timeAllowed);
+        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeAllowed) => Context.RequestAsync<T>(target, message, timeAllowed);
 
+        public static implicit operator PID?(TestProbe tp) => tp.Context.Self;
 
-        public static implicit operator PID(TestProbe tp) => tp.Context.Self;
-
-        public static implicit operator TestProbe(PID tpPid)
+        public static implicit operator TestProbe?(PID tpPid)
         {
             try
             {

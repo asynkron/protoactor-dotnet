@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace Proto
 {
-    internal class HashedConcurrentDictionary
+    class HashedConcurrentDictionary
     {
         private const int HashSize = 1024;
         private readonly Partition[] _partitions = new Partition[HashSize];
@@ -21,17 +21,6 @@ namespace Proto
                 _partitions[i] = new Partition();
             }
         }
-
-//        static ulong CalculateHash(string read)
-//        {
-//            var hashedValue = 3074457345618258791ul;
-//            for (var i = 0; i < read.Length; i++)
-//            {
-//                hashedValue += read[i];
-//                hashedValue *= 3074457345618258799ul;
-//            }
-//            return hashedValue;
-//        }
 
         private Partition GetPartition(string key)
         {
@@ -73,7 +62,7 @@ namespace Proto
             }
         }
 
-        public class Partition : Dictionary<string, Process>
+        private class Partition : Dictionary<string, Process>
         {
         }
     }

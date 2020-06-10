@@ -5,10 +5,12 @@
 // -----------------------------------------------------------------------
 
 using System;
+using JetBrains.Annotations;
 using Proto.Remote;
 
 namespace Proto.Cluster
 {
+    [PublicAPI]
     public class ClusterConfig
     {
         public string Name { get; }
@@ -18,7 +20,7 @@ namespace Proto.Cluster
 
         public RemoteConfig RemoteConfig { get; private set; }
         public TimeSpan TimeoutTimespan { get; private set; }
-        public IMemberStatusValue InitialMemberStatusValue { get; private set; }
+        public IMemberStatusValue? InitialMemberStatusValue { get; private set; }
         public IMemberStatusValueSerializer MemberStatusValueSerializer { get; private set; }
         public Func<string, IMemberStrategy> MemberStrategyBuilder { get; private set; }
 

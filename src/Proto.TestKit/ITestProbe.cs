@@ -14,12 +14,12 @@ namespace Proto.TestKit
         /// <summary>
         /// the sender of the last message retrieved from GetNextMessage or FishForMessage
         /// </summary>
-        PID Sender { get; }
+        PID? Sender { get; }
 
         /// <summary>
         /// the context of the test probe
         /// </summary>
-        IContext Context { get; }
+        IContext? Context { get; }
 
         /// <summary>
         /// this method will throw an exception if the probe receives a message within the time allowed
@@ -32,7 +32,7 @@ namespace Proto.TestKit
         /// </summary>
         /// <param name="timeAllowed"></param>
         /// <returns></returns>
-        object GetNextMessage(TimeSpan? timeAllowed = null);
+        object? GetNextMessage(TimeSpan? timeAllowed = null);
 
         /// <summary>
         /// gets the next message from the test probe

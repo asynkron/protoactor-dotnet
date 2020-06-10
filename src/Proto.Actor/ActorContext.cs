@@ -18,7 +18,7 @@ using static Proto.Actor;
 
 namespace Proto
 {
-    internal enum ContextState : byte
+    enum ContextState : byte
     {
         Alive,
         Restarting,
@@ -29,10 +29,7 @@ namespace Proto
     //Angels cry over this code, but it serves a purpose, lazily init of less frequently used features
     public class ActorContextExtras
     {
-        public ActorContextExtras(IContext context)
-        {
-            Context = context;
-        }
+        public ActorContextExtras(IContext context) => Context = context;
 
         public ImmutableHashSet<PID> Children { get; private set; } = ImmutableHashSet<PID>.Empty;
         public Timer? ReceiveTimeoutTimer { get; private set; }
@@ -57,15 +54,9 @@ namespace Proto
 
         public void RemoveChild(PID msgWho) => Children = Children.Remove(msgWho);
 
-        public void Watch(PID watcher)
-        {
-            Watchers = Watchers.Add(watcher);
-        }
+        public void Watch(PID watcher) => Watchers = Watchers.Add(watcher);
 
-        public void Unwatch(PID watcher)
-        {
-            Watchers = Watchers.Remove(watcher);
-        }
+        public void Unwatch(PID watcher) => Watchers = Watchers.Remove(watcher);
     }
 
     public class ActorContext : IMessageInvoker, IContext, ISupervisor
@@ -412,9 +403,7 @@ namespace Proto
             }
 
             //are we using decorators, if so, ensure it has been created
-            #nullable disable
-            return Actor.ReceiveAsync(_props.ContextDecoratorChain != null ? EnsureExtras().Context : this);
-            #nullable restore
+            return Actor!.ReceiveAsync(_props.ContextDecoratorChain != null ? EnsureExtras().Context : this);
         }
 
         private Task ProcessMessageAsync(object msg)

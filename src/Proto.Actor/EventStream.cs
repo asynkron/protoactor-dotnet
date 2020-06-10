@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
 
@@ -14,26 +15,31 @@ namespace Proto
 {
     public class EventStream : EventStream<object>
     {
-
-
         private readonly ILogger _logger = Log.CreateLogger<EventStream>();
 
         internal EventStream()
-        {
-            Subscribe(msg =>
+            => Subscribe(
+                msg =>
                 {
                     if (msg is DeadLetterEvent letter)
                     {
-                        _logger.LogInformation("[DeadLetter] '{0}' got '{1}:{2}' from '{3}'",
+                        _logger.LogInformation(
+                            "[DeadLetter] '{0}' got '{1}:{2}' from '{3}'",
                             letter.Pid.ToShortString(),
-                            letter.Message.GetType().Name, letter.Message, letter.Sender?.ToShortString()
+                            letter.Message.GetType().Name,
+                            letter.Message,
+                            letter.Sender?.ToShortString()
                         );
                     }
                 }
             );
-        }
     }
 
+    /// <summary>
+    /// Global event stream of a specific message type
+    /// </summary>
+    /// <typeparam name="T">Message type</typeparam>
+    [PublicAPI]
     public class EventStream<T>
     {
         private readonly ILogger _logger = Log.CreateLogger<EventStream<T>>();
@@ -41,13 +47,20 @@ namespace Proto
         private readonly ConcurrentDictionary<Guid, Subscription<T>> _subscriptions =
             new ConcurrentDictionary<Guid, Subscription<T>>();
 
-        internal EventStream()
-        {
-        }
+        internal EventStream() { }
 
+        /// <summary>
+        /// Subscribe to the specified message type
+        /// </summary>
+        /// <param name="action">Synchronous message handler</param>
+        /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher"/> by default</param>
+        /// <returns>A new subscription that can be used to unsubscribe</returns>
         public Subscription<T> Subscribe(Action<T> action, IDispatcher? dispatcher = null)
         {
-            var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, x =>
+            var sub = new Subscription<T>(
+                this,
+                dispatcher ?? Dispatchers.SynchronousDispatcher,
+                x =>
                 {
                     action(x);
                     return Actor.Done;
@@ -57,6 +70,12 @@ namespace Proto
             return sub;
         }
 
+        /// <summary>
+        /// Subscribe to the specified message type with an asynchronous handler
+        /// </summary>
+        /// <param name="action">Asynchronous message handler</param>
+        /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher"/> by default</param>
+        /// <returns>A new subscription that can be used to unsubscribe</returns>
         public Subscription<T> Subscribe(Func<T, Task> action, IDispatcher? dispatcher = null)
         {
             var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, action);
@@ -64,9 +83,18 @@ namespace Proto
             return sub;
         }
 
+        /// <summary>
+        /// Subscribe to the specified message type, which is a derived type from <see cref="T"/>
+        /// </summary>
+        /// <param name="action">Synchronous message handler</param>
+        /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher"/> by default</param>
+        /// <returns>A new subscription that can be used to unsubscribe</returns>
         public Subscription<T> Subscribe<TMsg>(Action<TMsg> action, IDispatcher? dispatcher = null) where TMsg : T
         {
-            var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, msg =>
+            var sub = new Subscription<T>(
+                this,
+                dispatcher ?? Dispatchers.SynchronousDispatcher,
+                msg =>
                 {
                     if (msg is TMsg typed)
                     {
@@ -81,11 +109,34 @@ namespace Proto
             return sub;
         }
 
+        /// <summary>
+        /// Subscribe to the specified message type, which is a derived type from <see cref="T"/>
+        /// </summary>
+        /// <param name="action">Asynchronous message handler</param>
+        /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher"/> by default</param>
+        /// <returns>A new subscription that can be used to unsubscribe</returns>
+        public Subscription<T> Subscribe<TMsg>(Func<TMsg, Task> action, IDispatcher? dispatcher = null) where TMsg : T
+        {
+            var sub = new Subscription<T>(
+                this,
+                dispatcher ?? Dispatchers.SynchronousDispatcher,
+                msg => msg is TMsg typed ? action(typed) : Actor.Done
+            );
+
+            _subscriptions.TryAdd(sub.Id, sub);
+            return sub;
+        }
+
+        /// <summary>
+        /// Publish a message to the event stream
+        /// </summary>
+        /// <param name="msg">A message to publish</param>
         public void Publish(T msg)
         {
             foreach (var sub in _subscriptions.Values)
             {
-                sub.Dispatcher.Schedule(() =>
+                sub.Dispatcher.Schedule(
+                    () =>
                     {
                         try
                         {
@@ -102,7 +153,21 @@ namespace Proto
             }
         }
 
+        /// <summary>
+        /// Remove a subscription by id
+        /// </summary>
+        /// <param name="id">Subscription id</param>
         public void Unsubscribe(Guid id) => _subscriptions.TryRemove(id, out _);
+
+        /// <summary>
+        /// Remove a subscription
+        /// </summary>
+        /// <param name="subscription"> A subscription to remove</param>
+        public void Unsubscribe(Subscription<T>? subscription)
+        {
+            if (subscription != null)
+                Unsubscribe(subscription.Id);
+        }
     }
 
     public class Subscription<T>

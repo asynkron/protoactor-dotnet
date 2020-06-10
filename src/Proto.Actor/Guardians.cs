@@ -17,14 +17,14 @@ namespace Proto
 
         public Guardians(ActorSystem system) => System = system;
 
-        private readonly ConcurrentDictionary<ISupervisorStrategy, GuardianProcess> GuardianStrategies =
+        private readonly ConcurrentDictionary<ISupervisorStrategy, GuardianProcess> _guardianStrategies =
             new ConcurrentDictionary<ISupervisorStrategy, GuardianProcess>();
 
         internal PID GetGuardianPID(ISupervisorStrategy strategy)
         {
             GuardianProcess ValueFactory(ISupervisorStrategy s) => new GuardianProcess(System, s);
 
-            var guardian = GuardianStrategies.GetOrAdd(strategy, ValueFactory);
+            var guardian = _guardianStrategies.GetOrAdd(strategy, ValueFactory);
             return guardian.Pid;
         }
     }

@@ -21,6 +21,6 @@ namespace Proto
             EventStream = new EventStream();
         }
         
-        public static ActorSystem Default = new ActorSystem();
+        public static readonly ActorSystem Default = new ActorSystem();
     }
 }

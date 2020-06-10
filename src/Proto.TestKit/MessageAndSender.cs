@@ -1,15 +1,13 @@
 ﻿namespace Proto.TestKit
 {
-    internal class MessageAndSender
+    class MessageAndSender
     {
-        public object Message { get; set; }
-        public PID Sender { get; set; }
+        public object? Message { get; }
+        public PID? Sender { get; }
 
-        public MessageAndSender(ISenderContext context) : this(context.Sender, context.Message)
-        {
-        }
+        public MessageAndSender(ISenderContext context) : this(context.Sender, context.Message) { }
 
-        public MessageAndSender(PID sender, object message)
+        private MessageAndSender(PID? sender, object? message)
         {
             Sender = sender;
             Message = message;

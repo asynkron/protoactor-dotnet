@@ -28,12 +28,12 @@ namespace Proto.Remote
 
         private static readonly ILogger Logger = Log.CreateLogger(typeof(EndpointManager).FullName);
 
-        private readonly ConnectionRegistry Connections = new ConnectionRegistry();
+        private readonly ConnectionRegistry _connections = new ConnectionRegistry();
         private readonly ActorSystem _system;
         private readonly Remote _remote;
-        private PID endpointSupervisor;
-        private Subscription<object> endpointTermEvnSub;
-        private Subscription<object> endpointConnEvnSub;
+        private PID? _endpointSupervisor;
+        private Subscription<object>? _endpointTermEvnSub;
+        private Subscription<object>? _endpointConnEvnSub;
 
         public EndpointManager(Remote remote, ActorSystem system)
         {
@@ -50,18 +50,18 @@ namespace Proto.Remote
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
                 .WithDispatcher(Mailbox.Dispatchers.SynchronousDispatcher);
 
-            endpointSupervisor = _system.Root.SpawnNamed(props, "EndpointSupervisor");
-            endpointTermEvnSub = _system.EventStream.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated);
-            endpointConnEvnSub = _system.EventStream.Subscribe<EndpointConnectedEvent>(OnEndpointConnected);
+            _endpointSupervisor = _system.Root.SpawnNamed(props, "EndpointSupervisor");
+            _endpointTermEvnSub = _system.EventStream.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated);
+            _endpointConnEvnSub = _system.EventStream.Subscribe<EndpointConnectedEvent>(OnEndpointConnected);
         }
 
         public void Stop()
         {
-            _system.EventStream.Unsubscribe(endpointTermEvnSub.Id);
-            _system.EventStream.Unsubscribe(endpointConnEvnSub.Id);
+            _system.EventStream.Unsubscribe(_endpointTermEvnSub);
+            _system.EventStream.Unsubscribe(_endpointConnEvnSub);
 
-            Connections.Clear();
-            _system.Root.Stop(endpointSupervisor);
+            _connections.Clear();
+            _system.Root.Stop(_endpointSupervisor);
             Logger.LogDebug("Stopped EndpointManager");
         }
 
@@ -69,7 +69,7 @@ namespace Proto.Remote
         {
             Logger.LogDebug("Endpoint {Address} terminated removing from connections", msg.Address);
 
-            if (!Connections.TryRemove(msg.Address, out var v)) return;
+            if (!_connections.TryRemove(msg.Address, out var v)) return;
 
             var endpoint = v.Value;
             _system.Root.Send(endpoint.Watcher, msg);
@@ -114,14 +114,14 @@ namespace Proto.Remote
 
         private Endpoint EnsureConnected(string address)
         {
-            var conn = Connections.GetOrAdd(
+            var conn = _connections.GetOrAdd(
                 address, v =>
                     new Lazy<Endpoint>(
                         () =>
                         {
                             Logger.LogDebug("Requesting new endpoint for {Address}", v);
 
-                            var endpoint = _system.Root.RequestAsync<Endpoint>(endpointSupervisor, v).Result;
+                            var endpoint = _system.Root.RequestAsync<Endpoint>(_endpointSupervisor!, v).Result;
 
                             Logger.LogDebug("Created new endpoint for {Address}", v);
 

@@ -12,29 +12,27 @@ namespace Proto.Cluster
 {
     class PidCache
     {
-        private PID watcher;
-        private Subscription<object> clusterTopologyEvnSub;
+        private PID _watcher = new PID();
+        private Subscription<object>? _clusterTopologyEvnSub;
 
-        private readonly ConcurrentDictionary<string, PID> Cache = new ConcurrentDictionary<string, PID>();
-        private readonly ConcurrentDictionary<string, string> ReverseCache = new ConcurrentDictionary<string, string>();
+        private readonly ConcurrentDictionary<string, PID> _cache = new ConcurrentDictionary<string, PID>();
+        private readonly ConcurrentDictionary<string, string> _reverseCache = new ConcurrentDictionary<string, string>();
 
-        public Cluster Cluster { get; }
+        private Cluster Cluster { get; }
 
-        internal PidCache(Cluster cluster)
-        {
-            Cluster = cluster;
-        }
+        internal PidCache(Cluster cluster) => Cluster = cluster;
+
         internal void Setup()
         {
             var props = Props.FromProducer(() => new PidCacheWatcher(this)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-            watcher = Cluster.System.Root.SpawnNamed(props, "PidCacheWatcher");
-            clusterTopologyEvnSub = Cluster.System.EventStream.Subscribe<MemberStatusEvent>(OnMemberStatusEvent);
+            _watcher = Cluster.System.Root.SpawnNamed(props, "PidCacheWatcher");
+            _clusterTopologyEvnSub = Cluster.System.EventStream.Subscribe<MemberStatusEvent>(OnMemberStatusEvent);
         }
 
         internal void Stop()
         {
-            Cluster.System.Root.Stop(watcher);
-            Cluster.System.EventStream.Unsubscribe(clusterTopologyEvnSub.Id);
+            Cluster.System.Root.Stop(_watcher);
+            Cluster.System.EventStream.Unsubscribe(_clusterTopologyEvnSub);
         }
 
         private void OnMemberStatusEvent(MemberStatusEvent evn)
@@ -45,15 +43,15 @@ namespace Proto.Cluster
             }
         }
 
-        internal bool TryGetCache(string name, out PID pid) => Cache.TryGetValue(name, out pid);
+        internal bool TryGetCache(string name, out PID pid) => _cache.TryGetValue(name, out pid);
 
         internal bool TryAddCache(string name, PID pid)
         {
-            if (!Cache.TryAdd(name, pid)) return false;
+            if (!_cache.TryAdd(name, pid)) return false;
 
             var key = pid.ToShortString();
-            ReverseCache.TryAdd(key, name);
-            Cluster.System.Root.Send(watcher, new WatchPidRequest(pid));
+            _reverseCache.TryAdd(key, name);
+            Cluster.System.Root.Send(_watcher, new WatchPidRequest(pid));
             return true;
         }
 
@@ -61,29 +59,21 @@ namespace Proto.Cluster
         {
             var key = pid.ToShortString();
 
-            if (ReverseCache.TryRemove(key, out var name))
+            if (_reverseCache.TryRemove(key, out var name))
             {
-                Cache.TryRemove(name, out _);
-            }
-        }
-
-        internal void RemoveCacheByName(string name)
-        {
-            if (Cache.TryRemove(name, out var pid))
-            {
-                ReverseCache.TryRemove(pid.ToShortString(), out _);
+                _cache.TryRemove(name, out _);
             }
         }
 
         private void RemoveCacheByMemberAddress(string memberAddress)
         {
-            foreach (var (name, pid) in Cache.ToArray())
+            foreach (var (name, pid) in _cache.ToArray())
             {
                 if (pid.Address == memberAddress)
                 {
-                    Cache.TryRemove(name, out _);
+                    _cache.TryRemove(name, out _);
                     var key = pid.ToShortString();
-                    ReverseCache.TryRemove(key, out _);
+                    _reverseCache.TryRemove(key, out _);
                 }
             }
         }
@@ -99,12 +89,10 @@ namespace Proto.Cluster
     class PidCacheWatcher : IActor
     {
         private readonly ILogger _logger = Log.CreateLogger<PidCacheWatcher>();
-        public PidCacheWatcher(PidCache pidCache)
-        {
-            PidCache = pidCache;
-        }
+        
+        public PidCacheWatcher(PidCache pidCache) => PidCache = pidCache;
 
-        public PidCache PidCache { get; }
+        private PidCache PidCache { get; }
 
         public Task ReceiveAsync(IContext context)
         {

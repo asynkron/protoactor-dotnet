@@ -23,10 +23,10 @@ namespace Proto.Remote
         private readonly ChannelCredentials _channelCredentials;
         private readonly IEnumerable<ChannelOption> _channelOptions;
 
-        private Channel _channel;
-        private Remoting.RemotingClient _client;
-        private AsyncDuplexStreamingCall<MessageBatch, Unit> _stream;
-        private IClientStreamWriter<MessageBatch> _streamWriter;
+        private Channel? _channel;
+        private Remoting.RemotingClient? _client;
+        private AsyncDuplexStreamingCall<MessageBatch, Unit>? _stream;
+        private IClientStreamWriter<MessageBatch>? _streamWriter;
         private readonly ActorSystem _system;
         private readonly Serialization _serialization;
 
@@ -59,7 +59,7 @@ namespace Proto.Remote
                 case Restarting _:
                     return RestartingAsync();
                 case EndpointTerminatedEvent _:
-                    context.Stop(context.Self);
+                    if (context.Self != null) context.Stop(context.Self);
                     return Actor.Done;
                 case IEnumerable<RemoteDeliver> m:
                     return Deliver(m);
@@ -94,7 +94,7 @@ namespace Proto.Remote
                         typeNameList.Add(typeName);
                     }
 
-                    MessageHeader header = null;
+                    MessageHeader? header = null;
 
                     if (rd.Header != null && rd.Header.Count > 0)
                     {

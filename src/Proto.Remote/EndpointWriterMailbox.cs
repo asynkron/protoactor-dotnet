@@ -27,8 +27,8 @@ namespace Proto.Remote
         private readonly IMailboxQueue _systemMessages = new UnboundedMailboxQueue();
         private readonly IMailboxQueue _userMessages = new UnboundedMailboxQueue();
         private readonly ActorSystem _system;
-        private IDispatcher _dispatcher;
-        private IMessageInvoker _invoker;
+        private IDispatcher? _dispatcher;
+        private IMessageInvoker? _invoker;
 
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
@@ -65,7 +65,7 @@ namespace Proto.Remote
 
         private async Task RunAsync()
         {
-            object m = null;
+            object? m = null;
 
             try
             {
@@ -73,7 +73,7 @@ namespace Proto.Remote
                     "[EndpointWriterMailbox] Running Mailbox Loop HasSystemMessages: {HasSystemMessages} HasUserMessages: {HasUserMessages} Suspended: {Suspended}",
                     _systemMessages.HasMessages, _userMessages.HasMessages, _suspended
                 );
-                var _ = _dispatcher.Throughput; //not used for batch mailbox
+                var _ = _dispatcher!.Throughput; //not used for batch mailbox
                 var batch = new List<RemoteDeliver>(_batchSize);
                 var sys = _systemMessages.Pop();
 
@@ -89,12 +89,12 @@ namespace Proto.Remote
                     };
 
                     m = sys;
-                    await _invoker.InvokeSystemMessageAsync(sys);
+                    await _invoker!.InvokeSystemMessageAsync(sys);
 
                     if (sys is Stop)
                     {
                         //Dump messages from user messages queue to deadletter 
-                        object usrMsg;
+                        object? usrMsg;
 
                         while ((usrMsg = _userMessages.Pop()) != null)
                         {
@@ -109,7 +109,7 @@ namespace Proto.Remote
                 if (!_suspended)
                 {
                     batch.Clear();
-                    object msg;
+                    object? msg;
 
                     while ((msg = _userMessages.Pop()) != null)
                     {
@@ -117,7 +117,7 @@ namespace Proto.Remote
 
                         if (msg is EndpointTerminatedEvent) //The mailbox was crashing when it received this particular message 
                         {
-                            await _invoker.InvokeUserMessageAsync(msg);
+                            await _invoker!.InvokeUserMessageAsync(msg);
                             continue;
                         }
 
@@ -133,7 +133,7 @@ namespace Proto.Remote
                     {
                         m = batch;
                         Logger.LogDebug("[EndpointWriterMailbox] Calling message invoker");
-                        await _invoker.InvokeUserMessageAsync(batch);
+                        await _invoker!.InvokeUserMessageAsync(batch);
                     }
                 }
             }
@@ -141,7 +141,7 @@ namespace Proto.Remote
             {
                 Logger.LogWarning(x, "[EndpointWriterMailbox] Exception in RunAsync");
                 _suspended = true;
-                _invoker.EscalateFailure(x, m);
+                _invoker!.EscalateFailure(x, m);
             }
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
@@ -156,7 +156,7 @@ namespace Proto.Remote
         {
             if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
             {
-                _dispatcher.Schedule(RunAsync);
+                _dispatcher!.Schedule(RunAsync);
             }
         }
     }

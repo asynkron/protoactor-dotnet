@@ -8,11 +8,13 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace Proto
 {
     public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext { }
 
+    [PublicAPI]
     public class RootContext : IRootContext
     {
         public ActorSystem System { get; }
@@ -79,8 +81,10 @@ namespace Proto
 
         public Task<T> RequestAsync<T>(PID target, object message) => RequestAsync(target, message, new FutureProcess<T>(System));
 
-        public void Stop(PID pid)
+        public void Stop(PID? pid)
         {
+            if (pid == null) return;
+            
             var reff = System.ProcessRegistry.Get(pid);
             reff.Stop(pid);
         }

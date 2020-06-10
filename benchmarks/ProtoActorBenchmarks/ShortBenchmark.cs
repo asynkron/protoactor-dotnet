@@ -1,9 +1,10 @@
 using System;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
+using Proto;
 using Proto.Mailbox;
 
-namespace Proto.Actor.Benchmarks
+namespace ProtoActorBenchmarks
 {
     [MemoryDiagnoser, InProcess]
     public class ShortBenchmark

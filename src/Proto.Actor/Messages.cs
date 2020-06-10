@@ -10,21 +10,15 @@ using Proto.Mailbox;
 
 namespace Proto
 {
-    public abstract class AutoReceiveMessage
-    {
-    }
+    public abstract class AutoReceiveMessage { }
 
-    public sealed partial class Terminated : SystemMessage
-    {
-    }
+    public sealed partial class Terminated : SystemMessage { }
 
     public sealed class Restarting
     {
         public static readonly Restarting Instance = new Restarting();
 
-        private Restarting()
-        {
-        }
+        private Restarting() { }
     }
 
     public class Failure : SystemMessage
@@ -43,7 +37,6 @@ namespace Proto
         public object? Message { get; }
     }
 
-    #nullable disable
     public sealed partial class Watch : SystemMessage
     {
         public Watch(PID watcher) => Watcher = watcher;
@@ -53,7 +46,6 @@ namespace Proto
     {
         public Unwatch(PID watcher) => Watcher = watcher;
     }
-    #nullable enable
 
     public sealed class Restart : SystemMessage
     {
@@ -71,41 +63,31 @@ namespace Proto
     {
         public static readonly Stopping Instance = new Stopping();
 
-        private Stopping()
-        {
-        }
+        private Stopping() { }
     }
 
     public sealed class Started : SystemMessage
     {
         public static readonly Started Instance = new Started();
 
-        private Started()
-        {
-        }
+        private Started() { }
     }
 
     public sealed class Stopped : AutoReceiveMessage
     {
         public static readonly Stopped Instance = new Stopped();
 
-        private Stopped()
-        {
-        }
+        private Stopped() { }
     }
 
     public class ReceiveTimeout : SystemMessage
     {
         public static readonly ReceiveTimeout Instance = new ReceiveTimeout();
 
-        private ReceiveTimeout()
-        {
-        }
+        private ReceiveTimeout() { }
     }
 
-    public interface INotInfluenceReceiveTimeout
-    {
-    }
+    public interface INotInfluenceReceiveTimeout { }
 
     public class Continuation : SystemMessage
     {

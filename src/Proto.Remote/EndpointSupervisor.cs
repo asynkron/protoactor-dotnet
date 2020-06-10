@@ -20,13 +20,16 @@ namespace Proto.Remote
         private readonly ActorSystem _system;
         private readonly Remote _remote;
         private readonly TimeSpan? _withinTimeSpan;
-        private CancellationTokenSource _cancelFutureRetries;
+        private CancellationTokenSource? _cancelFutureRetries;
 
         private int _backoff;
-        private string _address;
+        private string? _address;
 
         public EndpointSupervisor(Remote remote, ActorSystem system)
         {
+            if (remote.RemoteConfig == null)
+                throw new ArgumentException("Router hasn't been configured", nameof(remote));
+            
             _system = system;
             _remote = remote;
             _maxNrOfRetries = remote.RemoteConfig.EndpointWriterOptions.MaxRetries;
@@ -50,7 +53,7 @@ namespace Proto.Remote
 
         public void HandleFailure(
             ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
-            object message
+            object? message
         )
         {
             if (ShouldStop(rs))
@@ -60,11 +63,11 @@ namespace Proto.Remote
                     _address, reason
                 );
 
-                _cancelFutureRetries.Cancel();
+                _cancelFutureRetries?.Cancel();
                 supervisor.StopChildren(child);
                 _system.ProcessRegistry.Remove(child); //TODO: work out why this hangs around in the process registry
 
-                var terminated = new EndpointTerminatedEvent { Address = _address };
+                var terminated = new EndpointTerminatedEvent { Address = _address! };
                 _system.EventStream.Publish(terminated);
             }
             else
@@ -82,7 +85,7 @@ namespace Proto.Remote
                                 child.ToShortString(), duration, reason
                             );
                             supervisor.RestartChildren(reason, child);
-                        }, _cancelFutureRetries.Token
+                        }, _cancelFutureRetries!.Token
                     );
             }
         }
@@ -114,6 +117,9 @@ namespace Proto.Remote
 
         private static PID SpawnWriter(string address, ISpawnerContext context, ActorSystem system, Remote remote)
         {
+            if (remote.RemoteConfig == null)
+                throw new ArgumentException("Router hasn't been configured", nameof(remote));
+            
             var writerProps =
                 Props.FromProducer(
                         () => new EndpointWriter(system, remote.Serialization,

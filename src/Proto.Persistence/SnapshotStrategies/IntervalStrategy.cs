@@ -4,14 +4,8 @@ namespace Proto.Persistence.SnapshotStrategies
     {
         private readonly int _eventsPerSnapshot;
 
-        public IntervalStrategy(int eventsPerSnapshot)
-        {
-            _eventsPerSnapshot = eventsPerSnapshot;
-        }
+        public IntervalStrategy(int eventsPerSnapshot) => _eventsPerSnapshot = eventsPerSnapshot;
 
-        public bool ShouldTakeSnapshot(PersistedEvent persistedEvent)
-        {
-            return persistedEvent.Index % _eventsPerSnapshot == 0;
-        }
+        public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => persistedEvent.Index % _eventsPerSnapshot == 0;
     }
 }

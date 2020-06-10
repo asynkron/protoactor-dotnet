@@ -73,9 +73,7 @@ namespace Proto
             {
                 if (msg is T || msg == null)
                 {
-                    #nullable disable
-                    _tcs.TrySetResult((T) msg);
-                    #nullable enable
+                    _tcs.TrySetResult((T) msg!);
                 }
                 else
                 {

@@ -38,19 +38,13 @@ namespace Proto.Cluster
     public interface IMemberStatusValueSerializer
     {
         string Serialize(IMemberStatusValue val);
-        IMemberStatusValue Deserialize(string val);
+        IMemberStatusValue? Deserialize(string val);
     }
 
-    internal class NullMemberStatusValueSerializer : IMemberStatusValueSerializer
+    class NullMemberStatusValueSerializer : IMemberStatusValueSerializer
     {
-        public string Serialize(IMemberStatusValue val)
-        {
-            return "";
-        }
+        public string Serialize(IMemberStatusValue val) => "";
 
-        public IMemberStatusValue Deserialize(string val)
-        {
-            return null;
-        }
+        public IMemberStatusValue? Deserialize(string val) => null;
     }
 }

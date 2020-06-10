@@ -6,13 +6,8 @@ namespace Proto.Persistence.SnapshotStrategies
     {
         private readonly Type _eventType;
 
-        public EventTypeStrategy(Type eventType)
-        {
-            _eventType = eventType;
-        }
-        public bool ShouldTakeSnapshot(PersistedEvent persistedEvent)
-        {
-            return persistedEvent.Data.GetType() == _eventType;
-        }
+        public EventTypeStrategy(Type eventType) => _eventType = eventType;
+
+        public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => persistedEvent.Data.GetType() == _eventType;
     }
 }

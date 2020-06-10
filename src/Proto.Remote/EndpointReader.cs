@@ -100,7 +100,7 @@ namespace Proto.Remote
                                 break;
                             default:
                                 {
-                                    Proto.MessageHeader header = null;
+                                    Proto.MessageHeader? header = null;
 
                                     if (envelope.MessageHeader != null)
                                     {

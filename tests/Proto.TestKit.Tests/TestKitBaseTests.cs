@@ -1,18 +1,19 @@
-﻿using Xunit;
+﻿using FluentAssertions;
+using Xunit;
 
 namespace Proto.TestKit.Tests
 {
-    [Collection("TestKitTests"), Trait("Category", "TestKit")]
-    public class General : TestKit
+    public class TestKitBaseTests : TestKitBase
     {
-
+        public TestKitBaseTests() => SetUp();
+        
         [Fact]
         public void SenderIsSet()
         {
             Request(Probe, "hi");
-            Assert.Null(Sender);
+            Sender.Should().BeNull();
             GetNextMessage<string>();
-            Assert.NotNull(Sender);
+            Sender.Should().NotBeNull();
         }
 
         [Fact]
@@ -25,13 +26,13 @@ namespace Proto.TestKit.Tests
             b.Request(Probe, "hi");
             Send(Probe, "hi");
 
-            Assert.Null(Sender);
+            Sender.Should().BeNull();
             GetNextMessage<string>();
-            Assert.Equal(Sender, a.Context.Self);
+            Sender.Should().Be(a.Context.Self);
             GetNextMessage<string>();
-            Assert.Equal(Sender, b.Context.Self);
+            Sender.Should().Be(b.Context.Self);
             GetNextMessage<string>();
-            Assert.Null(Sender);
+            Sender.Should().BeNull();
         }
     }
 }
