@@ -141,6 +141,11 @@ namespace Proto.Mailbox
                             _invoker.EscalateFailure(t.Exception, msg);
                             continue;
                         }
+                        else if (t.IsCanceled)
+                        {
+                            _invoker.EscalateFailure(new TaskCanceledException(), msg);
+                            continue;
+                        }
                         if (!t.IsCompleted)
                         {
                             // if task didn't complete immediately, halt processing and reschedule a new run when task completes
@@ -163,6 +168,11 @@ namespace Proto.Mailbox
                         if (t.IsFaulted)
                         {
                             _invoker.EscalateFailure(t.Exception, msg);
+                            continue;
+                        }
+                        else if (t.IsCanceled)
+                        {
+                            _invoker.EscalateFailure(new TaskCanceledException(), msg);
                             continue;
                         }
                         if (!t.IsCompleted)
@@ -194,6 +204,10 @@ namespace Proto.Mailbox
             if (task.IsFaulted)
             {
                 _invoker.EscalateFailure(task.Exception, message);
+            }
+            else if (task.IsCanceled)
+            {
+                _invoker.EscalateFailure(new TaskCanceledException(), message);
             }
             else
             {
