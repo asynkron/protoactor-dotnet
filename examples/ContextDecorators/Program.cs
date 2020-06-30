@@ -23,10 +23,7 @@ namespace ContextDecorators
     {
         private readonly string _loggerName;
 
-        public LoggingDecorator(IContext context, string loggerName) : base(context)
-        {
-            _loggerName = loggerName;
-        }
+        public LoggingDecorator(IContext context, string loggerName) : base(context) => _loggerName = loggerName;
 
         //we are just logging this single method
         public override void Respond(object message)
@@ -36,6 +33,7 @@ namespace ContextDecorators
             Console.WriteLine($"{_loggerName} : Exit Respond");
         }
     }
+    
     class Program
     {
         static void Main(string[] args)

@@ -14,26 +14,18 @@ namespace Proto
     [PublicAPI]
     public class MessageEnvelope
     {
-        public MessageEnvelope(object message, PID? sender, MessageHeader? header)
+        public MessageEnvelope(object message, PID? sender, MessageHeader? header = null)
         {
             Sender = sender;
             Message = message;
-            Header = header;
+            Header = header ?? MessageHeader.Empty;
         }
 
         public PID? Sender { get; }
         public object Message { get; }
-        public MessageHeader? Header { get; }
+        public MessageHeader Header { get; }
 
-        public static MessageEnvelope Wrap(object message)
-        {
-            if (message is MessageEnvelope env)
-            {
-                return env;
-            }
-
-            return new MessageEnvelope(message, null, null);
-        }
+        public static MessageEnvelope Wrap(object message) => message is MessageEnvelope env ? env : new MessageEnvelope(message, null);
 
         public MessageEnvelope WithSender(PID sender) => new MessageEnvelope(Message, sender, Header);
 
@@ -43,25 +35,18 @@ namespace Proto
 
         public MessageEnvelope WithHeader(string key, string value)
         {
-            var header = (Header ?? new MessageHeader()).With(key, value);
+            var header = Header.With(key, value);
             return new MessageEnvelope(Message, Sender, header);
         }
 
         public MessageEnvelope WithHeaders(IEnumerable<KeyValuePair<string, string>> items)
         {
-            var header = (Header ?? new MessageHeader()).With(items);
+            var header = Header.With(items);
             return new MessageEnvelope(Message, Sender, header);
         }
 
-        public static (object message, PID? sender, MessageHeader? headers) Unwrap(object message)
-        {
-            if (message is MessageEnvelope envelope)
-            {
-                return (envelope.Message, envelope.Sender, envelope.Header);
-            }
-
-            return (message, null, null);
-        }
+        public static (object message, PID? sender, MessageHeader headers) Unwrap(object message)
+            => message is MessageEnvelope envelope ? (envelope.Message, envelope.Sender, envelope.Header) : (message, null, MessageHeader.Empty);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MessageHeader UnwrapHeader(object? message) => (message as MessageEnvelope)?.Header ?? MessageHeader.Empty;

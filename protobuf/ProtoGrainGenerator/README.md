@@ -1,14 +1,29 @@
-﻿// -----------------------------------------------------------------------
-//   <copyright file="Template.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
-//   </copyright>
-// -----------------------------------------------------------------------
+# Proto.Actor Grains Generator
 
-namespace ProtoBuf
-{
-    public static class Template
-    {
-        public const string Code = @"
+The tool can generate C# code for Proto.Actor grains from Protobuf RPC contracts.
+
+## Example
+
+For example, take the following Protobuf contract file:
+
+```proto
+syntax = "proto3";
+package messages;
+option csharp_namespace = "Messages";
+
+message HelloRequest {}
+message HelloResponse {
+    string Message=1;
+}
+
+service HelloGrain {
+	rpc SayHello(HelloRequest) returns (HelloResponse) {}
+}
+```
+
+When you run `protograin many *.proto` in the proto file directory, you will get the following code file:
+
+```csharp
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +32,7 @@ using Proto;
 using Proto.Cluster;
 using Proto.Remote;
 
-namespace {{CsNamespace}}
+namespace Messages
 {
     public class Grains
     {
@@ -25,61 +40,55 @@ namespace {{CsNamespace}}
 
         public Grains(Cluster cluster) => Cluster = cluster;
 
-		{{#each Services}}	
-        internal Func<string, I{{Name}}> Get{{Name}} { get; private set; }
+        internal Func<string, IHelloGrain> GetHelloGrain { get; private set; }
 
-        public void {{Name}}Factory(Func<string, I{{Name}}> factory) 
+        public void HelloGrainFactory(Func<string, IHelloGrain> factory) 
         {
-            Get{{Name}} = factory;
-            Cluster.Remote.RegisterKnownKind(""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor(this)));
+            GetHelloGrain = factory;
+            Cluster.Remote.RegisterKnownKind("HelloGrain", Props.FromProducer(() => new HelloGrainActor(this)));
         } 
 
-        public void {{Name}}Factory(Func<I{{Name}}> factory) => {{Name}}Factory(id => factory());
+        public void HelloGrainFactory(Func<IHelloGrain> factory) => HelloGrainFactory(id => factory());
 
-        public {{Name}}Client {{Name}}(string id) => new {{Name}}Client(Cluster, id);
-		{{/each}}
+        public HelloGrainClient HelloGrain(string id) => new HelloGrainClient(Cluster, id);
     }
 
-	{{#each Services}}	
-    public interface I{{Name}}
+    public interface IHelloGrain
     {
-		{{#each Methods}}
-        Task<{{OutputName}}> {{Name}}({{InputName}} request);
-		{{/each}}
+        Task<HelloResponse> SayHello(HelloRequest request);
     }
 
-    public class {{Name}}Client
+    public class HelloGrainClient
     {
         private readonly string _id;
         private readonly Cluster _cluster;
 
-        public {{Name}}Client(Cluster cluster, string id)
+        public HelloGrainClient(Cluster cluster, string id)
         {
             _id = id;
             _cluster = cluster;
         }
 
-		{{#each Methods}}
-        public Task<{{OutputName}}> {{Name}}({{InputName}} request) => {{Name}}(request, CancellationToken.None);
+        public Task<HelloResponse> SayHello(HelloRequest request) => SayHello(request, CancellationToken.None);
 
-        public async Task<{{OutputName}}> {{Name}}({{InputName}} request, CancellationToken ct, GrainCallOptions options = null)
+        public async Task<HelloResponse> SayHello(HelloRequest request, CancellationToken ct, GrainCallOptions options = null)
         {
             options ??= GrainCallOptions.Default;
             
             var gr = new GrainRequest
             {
-                MethodIndex = {{Index}},
+                MethodIndex = 0,
                 MessageData = request.ToByteString()
             };
 
-            async Task<{{OutputName}}> Inner() 
+            async Task<HelloResponse> Inner() 
             {
                 //resolve the grain
-                var (pid, statusCode) = await _cluster.GetAsync(_id, ""{{../Name}}"", ct);
+                var (pid, statusCode) = await _cluster.GetAsync(_id, "HelloGrain", ct);
 
                 if (statusCode != ResponseStatusCode.OK)
                 {
-                    throw new Exception($""Get PID failed with StatusCode: {statusCode}"");  
+                    throw new Exception($"Get PID failed with StatusCode: {statusCode}");  
                 }
 
                 //request the RPC method to be invoked
@@ -87,12 +96,11 @@ namespace {{CsNamespace}}
 
                 return res switch
                 {
-                    // normal response
+                    //did we get a response?
                     GrainResponse grainResponse => HelloResponse.Parser.ParseFrom(grainResponse.MessageData),
-                    // error response
+                    //did we get an error response?
                     GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
-                    // unsupported response
-                    _ => throw new NotSupportedException()
+                    _                                     => throw new NotSupportedException()
                 };
             }
 
@@ -112,15 +120,14 @@ namespace {{CsNamespace}}
             }
             return await Inner();
         }
-		{{/each}}
     }
 
-    public class {{Name}}Actor : IActor
+    public class HelloGrainActor : IActor
     {
-        private I{{Name}} _inner;
+        private IHelloGrain _inner;
         private readonly Grains _grains;
 
-        public {{Name}}Actor(Grains grains) => _grains = grains;
+        public HelloGrainActor(Grains grains) => _grains = grains;
 
         public async Task ReceiveAsync(IContext context)
         {
@@ -128,7 +135,7 @@ namespace {{CsNamespace}}
             {
                 case Started _:
                 {
-                    _inner = _grains.Get{{Name}}(context.Self!.Id);
+                    _inner = _grains.GetHelloGrain(context.Self!.Id);
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
                     break;
                 }
@@ -141,13 +148,12 @@ namespace {{CsNamespace}}
                 {
                     switch (request.MethodIndex)
                     {
-						{{#each Methods}}
-                        case {{Index}}:
+                        case 0:
                         {
-                            var r = {{InputName}}.Parser.ParseFrom(request.MessageData);
+                            var r = HelloRequest.Parser.ParseFrom(request.MessageData);
                             try
                             {
-                                var res = await _inner.{{Name}}(r);
+                                var res = await _inner.SayHello(r);
                                 var grainResponse = new GrainResponse
                                 {
                                     MessageData = res.ToByteString(),
@@ -165,7 +171,6 @@ namespace {{CsNamespace}}
 
                             break;
                         }
-						{{/each}}
                     }
 
                     break;
@@ -173,8 +178,5 @@ namespace {{CsNamespace}}
             }
         }
     }
-	{{/each}}	
 }
-";
-    }
-}
+```

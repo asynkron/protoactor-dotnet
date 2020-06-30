@@ -16,16 +16,15 @@ namespace GrainGenerator
     public class GrainGen : CommonCodeGenerator
     {
         public override string Name { get; }
+
         protected override string DefaultFileExtension => ".cs";
 
-        protected override string Escape(string identifier)
-        {
-            return identifier;
-        }
+        protected override string Escape(string identifier) => identifier;
 
         protected override void WriteFile(GeneratorContext ctx, FileDescriptorProto obj)
         {
             var file = ctx.File;
+
             var ast = new ProtoFile
             {
                 PackageName = file.Package,
@@ -33,36 +32,43 @@ namespace GrainGenerator
                 Messages = file
                     .MessageTypes
                     .ToArray()
-                    .Select(mt => new ProtoMessage { Name = mt.Name })
+                    .Select(mt => new ProtoMessage {Name = mt.Name})
                     .ToArray(),
                 Services = file
                     .Services
                     .ToArray()
-                    .Select(s => new ProtoService
-                    {
-                        Name = s.Name,
-                        Methods = s.Methods.ToArray().Select((m, i) => new ProtoMethod
+                    .Select(
+                        s => new ProtoService
                         {
-                            Index = i,
-                            Name = m.Name,
-                            InputName = RemovePackageName(m.InputType),
-                            OutputName = RemovePackageName(m.OutputType),
-                        }).ToArray()
-                    })
+                            Name = s.Name,
+                            Methods = s.Methods.ToArray()
+                                .Select(
+                                    (m, i) => new ProtoMethod
+                                    {
+                                        Index = i,
+                                        Name = m.Name,
+                                        InputName = RemovePackageName(m.InputType),
+                                        OutputName = RemovePackageName(m.OutputType),
+                                    }
+                                )
+                                .ToArray()
+                        }
+                    )
                     .ToArray()
             };
             var f = Handlebars.Compile(Template.Code);
 
             var result = f(ast);
             ctx.WriteLine(result);
+
+            static string RemovePackageName(ReadOnlySpan<char> type)
+            {
+                var index = type.LastIndexOf('.');
+                return type.Slice(index + 1).ToString();
+            }
         }
 
-        private string RemovePackageName(string type)
-        {
-            var parts = type.Split('.');
-            return parts.Last();
-        }
-
+        #region UnusedMethods
         protected override void WriteField(GeneratorContext ctx, FieldDescriptorProto obj, ref object state, OneOfStub[] oneOfs)
         {
             throw new NotImplementedException();
@@ -92,5 +98,6 @@ namespace GrainGenerator
         {
             throw new NotImplementedException();
         }
+        #endregion
     }
 }
