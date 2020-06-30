@@ -1,7 +1,0 @@
-<Project>
-  <PropertyGroup>
-    <LangVersion>8</LangVersion>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
-</Project>

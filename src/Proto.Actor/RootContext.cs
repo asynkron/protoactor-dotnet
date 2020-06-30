@@ -69,7 +69,7 @@ namespace Proto
 
         public void Request(PID target, object message, PID? sender)
         {
-            var envelope = new MessageEnvelope(message, sender, null);
+            var envelope = new MessageEnvelope(message, sender);
             Send(target, envelope);
         }
 
@@ -141,7 +141,7 @@ namespace Proto
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
         {
-            var messageEnvelope = new MessageEnvelope(message, future.Pid, null);
+            var messageEnvelope = new MessageEnvelope(message, future.Pid);
             SendUserMessage(target, messageEnvelope);
 
             return future.Task;

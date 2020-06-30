@@ -127,14 +127,13 @@ namespace Proto.Mailbox
                     if (Interlocked.Read(ref _systemMessageCount) > 0 && (msg = _systemMessages.Pop()) != null)
                     {
                         Interlocked.Decrement(ref _systemMessageCount);
-                        if (msg is SuspendMailbox)
+
+                        _suspended = msg switch
                         {
-                            _suspended = true;
-                        }
-                        else if (msg is ResumeMailbox)
-                        {
-                            _suspended = false;
-                        }
+                            SuspendMailbox _ => true,
+                            ResumeMailbox _  => false,
+                            _                => _suspended
+                        };
                         var t = _invoker.InvokeSystemMessageAsync(msg);
                         if (t.IsFaulted)
                         {

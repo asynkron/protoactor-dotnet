@@ -152,9 +152,7 @@ namespace Proto
             ReceiveTimeout = duration;
 
             EnsureExtras();
-#pragma warning disable 8602
-            _extras.StopReceiveTimeoutTimer();
-#pragma warning restore 8602
+            _extras!.StopReceiveTimeoutTimer();
 
             if (_extras.ReceiveTimeoutTimer == null)
             {
@@ -204,13 +202,13 @@ namespace Proto
 
         public void Request(PID target, object message)
         {
-            var messageEnvelope = new MessageEnvelope(message, Self, null);
+            var messageEnvelope = new MessageEnvelope(message, Self);
             SendUserMessage(target, messageEnvelope);
         }
 
         public void Request(PID target, object message, PID? sender)
         {
-            var messageEnvelope = new MessageEnvelope(message, sender, null);
+            var messageEnvelope = new MessageEnvelope(message, sender);
             SendUserMessage(target, messageEnvelope);
         }
 
@@ -426,7 +424,7 @@ namespace Proto
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
         {
-            var messageEnvelope = new MessageEnvelope(message, future.Pid, null);
+            var messageEnvelope = new MessageEnvelope(message, future.Pid);
             SendUserMessage(target, messageEnvelope);
             return future.Task;
         }

@@ -54,12 +54,8 @@ namespace Proto
                         Stop(pid);
                     }
                 );
-                Task = _tcs.Task;
             }
-            else
-            {
-                Task = _tcs.Task;
-            }
+            Task = _tcs.Task;
         }
 
         public PID Pid { get; }
@@ -101,9 +97,7 @@ namespace Proto
 
             if (_cts == null || !_cts.IsCancellationRequested)
             {
-                #nullable disable
                 _tcs.TrySetResult(default);
-                #nullable restore
             }
 
             Stop(pid);
