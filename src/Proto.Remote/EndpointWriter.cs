@@ -137,8 +137,6 @@ namespace Proto.Remote
             {
                 Logger.LogError("[EndpointWriter] gRPC Failed to send to address {Address}, reason No Connection available", _address);
                 return;
-
-                // throw new EndpointWriterException("gRPC Failed to send, reason No Connection available");
             }
 
             try
@@ -149,8 +147,8 @@ namespace Proto.Remote
             }
             catch (Exception x)
             {
-                context.Stash();
                 Logger.LogError("[EndpointWriter] gRPC Failed to send to address {Address}, reason {Message}", _address, x.Message);
+                context.Stash();
                 throw;
             }
         }
