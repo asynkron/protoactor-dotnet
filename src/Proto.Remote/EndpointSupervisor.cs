@@ -28,7 +28,7 @@ namespace Proto.Remote
         public EndpointSupervisor(Remote remote, ActorSystem system)
         {
             if (remote.RemoteConfig == null)
-                throw new ArgumentException("Router hasn't been configured", nameof(remote));
+                throw new ArgumentException("[EndpointSupervisor] Router hasn't been configured", nameof(remote));
             
             _system = system;
             _remote = remote;
@@ -59,7 +59,7 @@ namespace Proto.Remote
             if (ShouldStop(rs))
             {
                 Logger.LogWarning(
-                    "Stopping connection to address {Address} after retries expired because of {Reason}",
+                    "[EndpointSupervisor] Stopping connection to address {Address} after retries expired because of {Reason}",
                     _address, reason
                 );
 
@@ -81,7 +81,7 @@ namespace Proto.Remote
                         t =>
                         {
                             Logger.LogWarning(
-                                "Restarting {Actor} after {Duration} because of {Reason}",
+                                "[EndpointSupervisor] Restarting {Actor} after {Duration} because of {Reason}",
                                 child.ToShortString(), duration, reason
                             );
                             supervisor.RestartChildren(reason, child);

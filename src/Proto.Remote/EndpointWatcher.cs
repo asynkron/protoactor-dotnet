@@ -56,7 +56,7 @@ namespace Proto.Remote
                     }
                 case EndpointTerminatedEvent _:
                     {
-                        Logger.LogDebug("Handle terminated address {Address}", _address);
+                        Logger.LogDebug("[EndpointWatcher] Handle terminated address {Address}", _address);
 
                         foreach (var (id, pidSet) in _watched)
                         {
@@ -117,7 +117,7 @@ namespace Proto.Remote
                     }
                 case Stopped _:
                     {
-                        Logger.LogDebug("Stopped EndpointWatcher at {Address}", _address);
+                        Logger.LogDebug("[EndpointWatcher] Stopped at {Address}", _address);
                         break;
                     }
             }
@@ -143,7 +143,7 @@ namespace Proto.Remote
                     }
                 case EndpointConnectedEvent _:
                     {
-                        Logger.LogDebug("Handle restart address {Address}", _address);
+                        Logger.LogDebug("[EndpointWatcher] Handle restart address {Address}", _address);
                         _behavior.Become(ConnectedAsync);
                         break;
                     }

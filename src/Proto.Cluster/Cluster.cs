@@ -48,7 +48,7 @@ namespace Proto.Cluster
 
             Remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
 
-            Logger.LogInformation("Starting Proto.Actor cluster");
+            Logger.LogInformation("[Cluster] Starting...");
 
             var kinds = Remote.GetKnownKinds();
 
@@ -69,11 +69,12 @@ namespace Proto.Cluster
             );
             Config.ClusterProvider.MonitorMemberStatusChanges(this);
 
-            Logger.LogInformation("Started cluster");
+            Logger.LogInformation("[Cluster] Started");
         }
 
         public async Task Shutdown(bool graceful = true)
         {
+            Logger.LogInformation("[Cluster] Stopping...");
             if (graceful)
             {
                 await Config!.ClusterProvider.Shutdown(this);
@@ -88,7 +89,7 @@ namespace Proto.Cluster
 
             await Remote.Shutdown(graceful);
 
-            Logger.LogInformation("Stopped Cluster");
+            Logger.LogInformation("[Cluster] Stopped");
         }
 
         public Task<(PID?, ResponseStatusCode)> GetAsync(string name, string kind) => GetAsync(name, kind, CancellationToken.None);
@@ -114,7 +115,7 @@ namespace Proto.Cluster
                 Name = name
             };
 
-            Logger.LogDebug("Requesting remote PID from {Partition}:{Remote} {@Request}", address, remotePid, req);
+            Logger.LogDebug("[Cluster] Requesting remote PID from {Partition}:{Remote} {@Request}", address, remotePid, req);
 
             try
             {
@@ -133,12 +134,12 @@ namespace Proto.Cluster
             }
             catch (TimeoutException e)
             {
-                Logger.LogWarning(e, "Remote PID request timeout {@Request}", req);
+                Logger.LogWarning(e, "[Cluster] Remote PID request timeout {@Request}", req);
                 return (null, ResponseStatusCode.Timeout);
             }
             catch (Exception e)
             {
-                Logger.LogError(e, "Error occured requesting remote PID {@Request}", req);
+                Logger.LogError(e, "[Cluster] Error occured requesting remote PID {@Request}", req);
                 return (null, ResponseStatusCode.Error);
             }
         }

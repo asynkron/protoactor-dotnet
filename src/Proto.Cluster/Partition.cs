@@ -95,7 +95,7 @@ namespace Proto.Cluster
             switch (context.Message)
             {
                 case Started _:
-                    Logger.LogDebug("Started PartitionActor for {Kind}", _kind);
+                    Logger.LogDebug("[Partition] Started for {Kind}", _kind);
                     break;
                 case ActorPidRequest msg:
                     Spawn(msg, context);
@@ -144,7 +144,7 @@ namespace Proto.Cluster
             }
             else
             {
-                Logger.LogDebug("Kind {Kind} Take Ownership name: {Name}, pid: {Pid}", _kind, msg.Name, msg.Pid);
+                Logger.LogDebug("[Partition] Kind {Kind} Take Ownership name: {Name}, pid: {Pid}", _kind, msg.Name, msg.Pid);
                 _partition[msg.Name] = msg.Pid;
                 _reversePartition[msg.Pid] = msg.Name;
                 context.Watch(msg.Pid);
@@ -194,14 +194,14 @@ namespace Proto.Cluster
 
         private void MemberLeft(MemberLeftEvent memberLeft, IContext context)
         {
-            Logger.LogInformation("Kind {Kind} member left {Address}", _kind, memberLeft.Address);
+            Logger.LogInformation("[Partition] Kind {Kind} member left {Address}", _kind, memberLeft.Address);
 
             // If the left member is self, transfer remaining pids to others
             if (memberLeft.Address == Cluster.System.ProcessRegistry.Address)
             {
                 var transferredActorCount = TransferOwnership(context);
 
-                if (transferredActorCount > 0) Logger.LogInformation("Transferred {actors} PIDs to other nodes", transferredActorCount);
+                if (transferredActorCount > 0) Logger.LogInformation("[Partition] Transferred {actors} PIDs to other nodes", transferredActorCount);
             }
 
             RemoveAddressFromPartition(memberLeft.Address);
@@ -212,7 +212,7 @@ namespace Proto.Cluster
 
         private void MemberRejoined(MemberRejoinedEvent memberRejoined)
         {
-            Logger.LogInformation("Kind {Kind} member rejoined {Address}", _kind, memberRejoined.Address);
+            Logger.LogInformation("[Partition] Kind {Kind} member rejoined {Address}", _kind, memberRejoined.Address);
 
             RemoveAddressFromPartition(memberRejoined.Address);
 
@@ -222,11 +222,11 @@ namespace Proto.Cluster
 
         private void MemberJoined(MemberJoinedEvent msg, IContext context)
         {
-            Logger.LogInformation("Kind {Kind} member joined {Address}", _kind, msg.Address);
+            Logger.LogInformation("[Partition] Kind {Kind} member joined {Address}", _kind, msg.Address);
 
             var transferredActorCount = TransferOwnership(context);
 
-            if (transferredActorCount > 0) Logger.LogInformation("Transferred {actors} PIDs to other nodes", transferredActorCount);
+            if (transferredActorCount > 0) Logger.LogInformation("[Partition] Transferred {actors} PIDs to other nodes", transferredActorCount);
 
             foreach (var (actorId, sp) in _spawningProcs)
             {
@@ -278,7 +278,7 @@ namespace Proto.Cluster
             if (string.IsNullOrEmpty(activator))
             {
                 //No activator currently available, return unavailable
-                Logger.LogDebug("No members currently available");
+                Logger.LogDebug("[Partition] No members currently available");
                 context.Respond(ActorPidResponse.Unavailable);
                 return;
             }
@@ -345,7 +345,7 @@ namespace Proto.Cluster
                 if (string.IsNullOrEmpty(act))
                 {
                     //No activator currently available, return unavailable
-                    Logger.LogDebug("No activator currently available");
+                    Logger.LogDebug("[Partition] No activator currently available");
                     return ActorPidResponse.Unavailable;
                 }
 

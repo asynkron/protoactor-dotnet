@@ -43,7 +43,7 @@ namespace Proto.Remote
 
         public void Start()
         {
-            Logger.LogDebug("Started EndpointManager");
+            Logger.LogDebug("[EndpointManager] Started");
 
             var props = Props
                 .FromProducer(() => new EndpointSupervisor(_remote, _system))
@@ -62,12 +62,12 @@ namespace Proto.Remote
 
             _connections.Clear();
             _system.Root.Stop(_endpointSupervisor);
-            Logger.LogDebug("Stopped EndpointManager");
+            Logger.LogDebug("[EndpointManager] Stopped");
         }
 
         private void OnEndpointTerminated(EndpointTerminatedEvent msg)
         {
-            Logger.LogDebug("Endpoint {Address} terminated removing from connections", msg.Address);
+            Logger.LogDebug("[EndpointManager] Endpoint {Address} terminated removing from connections", msg.Address);
 
             if (!_connections.TryRemove(msg.Address, out var v)) return;
 
@@ -106,7 +106,7 @@ namespace Proto.Remote
             var endpoint = EnsureConnected(msg.Target.Address);
 
             Logger.LogDebug(
-                "Forwarding message {Message} from {From} for {Address} through EndpointWriter {Writer}",
+                "[EndpointManager] Forwarding message {Message} from {From} for {Address} through EndpointWriter {Writer}",
                 msg.Message?.GetType(), msg.Sender?.Address, msg.Target?.Address, endpoint.Writer
             );
             _system.Root.Send(endpoint.Writer, msg);
@@ -119,11 +119,11 @@ namespace Proto.Remote
                     new Lazy<Endpoint>(
                         () =>
                         {
-                            Logger.LogDebug("Requesting new endpoint for {Address}", v);
+                            Logger.LogDebug("[EndpointManager] Requesting new endpoint for {Address}", v);
 
                             var endpoint = _system.Root.RequestAsync<Endpoint>(_endpointSupervisor!, v).Result;
 
-                            Logger.LogDebug("Created new endpoint for {Address}", v);
+                            Logger.LogDebug("[EndpointManager] Created new endpoint for {Address}", v);
 
                             return endpoint;
                         }

@@ -52,10 +52,10 @@ namespace Proto.Remote
             switch (context.Message)
             {
                 case Started _:
-                    Logger.LogDebug("Starting Endpoint Writer");
+                    Logger.LogDebug("[EndpointWriter] Starting at {Address}", _address);
                     return StartedAsync();
                 case Stopped _:
-                    return StoppedAsync().ContinueWith(_ => Logger.LogDebug("Stopped EndpointWriter at {Address}", _address));
+                    return StoppedAsync().ContinueWith(_ => Logger.LogDebug("[EndpointWriter] Stopped at {Address}", _address));
                 case Restarting _:
                     return RestartingAsync();
                 case EndpointTerminatedEvent _:
@@ -123,7 +123,7 @@ namespace Proto.Remote
                 batch.Envelopes.AddRange(envelopes);
 
                 Logger.LogDebug(
-                    "EndpointWriter sending {Count} envelopes for {Address} while channel status is {State}",
+                    "[EndpointWriter] Sending {Count} envelopes for {Address} while channel status is {State}",
                     envelopes.Count, _address, _channel?.State
                 );
 
@@ -135,7 +135,7 @@ namespace Proto.Remote
         {
             if (_streamWriter == null)
             {
-                Logger.LogError("gRPC Failed to send to address {Address}, reason No Connection available", _address);
+                Logger.LogError("[EndpointWriter] gRPC Failed to send to address {Address}, reason No Connection available", _address);
                 return;
 
                 // throw new EndpointWriterException("gRPC Failed to send, reason No Connection available");
@@ -143,14 +143,14 @@ namespace Proto.Remote
 
             try
             {
-                Logger.LogDebug("Writing batch to {Address}", _address);
+                Logger.LogDebug("[EndpointWriter] Writing batch to {Address}", _address);
 
                 await _streamWriter.WriteAsync(batch);
             }
             catch (Exception x)
             {
                 context.Stash();
-                Logger.LogError("gRPC Failed to send to address {Address}, reason {Message}", _address, x.Message);
+                Logger.LogError("[EndpointWriter] gRPC Failed to send to address {Address}, reason {Message}", _address, x.Message);
                 throw;
             }
         }
@@ -161,31 +161,23 @@ namespace Proto.Remote
         //shutdown channel before stopping
         private Task StoppedAsync() => ShutDownChannel();
 
-        private Task ShutDownChannel()
-        {
-            if (_channel != null && _channel.State != ChannelState.Shutdown)
-            {
-                return _channel.ShutdownAsync();
-            }
-
-            return Actor.Done;
-        }
+        private Task ShutDownChannel() => _channel != null && _channel.State != ChannelState.Shutdown ? _channel.ShutdownAsync() : Actor.Done;
 
         private async Task StartedAsync()
         {
-            Logger.LogDebug("Connecting to address {Address}", _address);
+            Logger.LogDebug("[EndpointWriter] Connecting to address {Address}", _address);
 
             _channel = new Channel(_address, _channelCredentials, _channelOptions);
             _client = new Remoting.RemotingClient(_channel);
 
-            Logger.LogDebug("Created channel and client for address {Address}", _address);
+            Logger.LogDebug("[EndpointWriter] Created channel and client for address {Address}", _address);
 
             var res = await _client.ConnectAsync(new ConnectRequest());
             _serializerId = res.DefaultSerializerId;
             _stream = _client.Receive(_callOptions);
             _streamWriter = _stream.RequestStream;
 
-            Logger.LogDebug("Connected client for address {Address}", _address);
+            Logger.LogDebug("[EndpointWriter] Connected client for address {Address}", _address);
 
             var _ = Task.Run(
                 async () =>
@@ -196,7 +188,7 @@ namespace Proto.Remote
                     }
                     catch (Exception x)
                     {
-                        Logger.LogError("Lost connection to address {Address}, reason {Message}", _address, x.Message);
+                        Logger.LogError("[EndpointWriter] Lost connection to address {Address}, reason {Message}", _address, x.Message);
 
                         var terminated = new EndpointTerminatedEvent
                         {
@@ -207,7 +199,7 @@ namespace Proto.Remote
                 }
             );
 
-            Logger.LogDebug("Created reader for address {Address}", _address);
+            Logger.LogDebug("[EndpointWriter] Created reader for address {Address}", _address);
 
             var connected = new EndpointConnectedEvent
             {
@@ -215,12 +207,7 @@ namespace Proto.Remote
             };
             _system.EventStream.Publish(connected);
 
-            Logger.LogDebug("Connected to address {Address}", _address);
+            Logger.LogDebug("[EndpointWriter] Connected to address {Address}", _address);
         }
-    }
-
-    class EndpointWriterException : Exception
-    {
-        public EndpointWriterException(string message) : base(message) { }
     }
 }
