@@ -20,9 +20,9 @@ namespace Proto.Remote
         private readonly ActorSystem _system;
         private readonly Remote _remote;
         private readonly TimeSpan? _withinTimeSpan;
+        private readonly long _backoff;
+        
         private CancellationTokenSource? _cancelFutureRetries;
-
-        private int _backoff;
         private string? _address;
 
         public EndpointSupervisor(Remote remote, ActorSystem system)
@@ -34,7 +34,7 @@ namespace Proto.Remote
             _remote = remote;
             _maxNrOfRetries = remote.RemoteConfig.EndpointWriterOptions.MaxRetries;
             _withinTimeSpan = remote.RemoteConfig.EndpointWriterOptions.RetryTimeSpan;
-            _backoff = remote.RemoteConfig.EndpointWriterOptions.RetryBackOffms;
+            _backoff = TimeConvert.ToNanoseconds(remote.RemoteConfig.EndpointWriterOptions.RetryBackOffms);
         }
 
         public Task ReceiveAsync(IContext context)
@@ -72,9 +72,9 @@ namespace Proto.Remote
             }
             else
             {
-                _backoff *= 2;
-                var noise = _random.Next(_backoff);
-                var duration = TimeSpan.FromMilliseconds(_backoff + noise);
+                var backoff = rs.FailureCount * _backoff;
+                var noise = _random.Next(500);
+                var duration = TimeSpan.FromMilliseconds(TimeConvert.ToMilliseconds(backoff + noise));
 
                 Task.Delay(duration)
                     .ContinueWith(

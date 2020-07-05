@@ -164,10 +164,7 @@ namespace Proto.Cluster
         {
             foreach (var (_, sp) in _spawningProcs.Where(x => x.Value.SpawningAddress == address))
             {
-                if (sp.SpawningAddress == address)
-                {
-                    sp.TrySetResult(ActorPidResponse.Unavailable);
-                }
+                sp.TrySetResult(ActorPidResponse.Unavailable);
             }
         }
 
@@ -203,7 +200,7 @@ namespace Proto.Cluster
             if (memberLeft.Address == Cluster.System.ProcessRegistry.Address)
             {
                 var transferredActorCount = TransferOwnership(context);
-                
+
                 if (transferredActorCount > 0) Logger.LogInformation("Transferred {actors} PIDs to other nodes", transferredActorCount);
             }
 

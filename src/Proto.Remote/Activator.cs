@@ -13,11 +13,13 @@ namespace Proto.Remote
     {
         private readonly ActorSystem _system;
         private readonly Remote _remote;
+        
         public Activator(Remote remote, ActorSystem system)
         {
             _remote = remote;
             _system = system;
         }
+        
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
@@ -45,17 +47,6 @@ namespace Proto.Remote
                         };
                         context.Respond(response);
                     }
-                    catch (ActivatorException ex)
-                    {
-                        var response = new ActorPidResponse
-                        {
-                            StatusCode = ex.Code
-                        };
-                        context.Respond(response);
-
-                        if (!ex.DoNotThrow)
-                            throw;
-                    }
                     catch
                     {
                         var response = new ActorPidResponse
@@ -69,23 +60,6 @@ namespace Proto.Remote
                     break;
             }
             return Actor.Done;
-        }
-    }
-
-    public class ActivatorUnavailableException : ActivatorException
-    {
-        public ActivatorUnavailableException() : base((int)ResponseStatusCode.Unavailable, true) { }
-    }
-
-    public class ActivatorException : Exception
-    {
-        public int Code { get; }
-        public bool DoNotThrow { get; }
-
-        public ActivatorException(int code, bool doNotThrow = false)
-        {
-            Code = code;
-            DoNotThrow = doNotThrow;
         }
     }
 }
