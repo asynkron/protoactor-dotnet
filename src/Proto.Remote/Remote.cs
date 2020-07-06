@@ -118,16 +118,13 @@ namespace Proto.Remote
             }
         }
 
-        private void SpawnActivator()
-        {
-            var props = Props.FromProducer(() => new Activator(this, _system)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-            ActivatorPid = _system.Root.SpawnNamed(props, "activator");
-        }
-
-        private void StopActivator() => _system.Root.Stop(ActivatorPid);
-
-        public PID ActivatorForAddress(string address) => new PID(address, "activator");
-
+        /// <summary>
+        /// Span a remote actor with auto-generated name
+        /// </summary>
+        /// <param name="address">Remote node address</param>
+        /// <param name="kind">Actor kind, must be known on the remote node</param>
+        /// <param name="timeout">Timeout for the confirmation to be received from the remote node</param>
+        /// <returns></returns>
         public Task<ActorPidResponse> SpawnAsync(string address, string kind, TimeSpan timeout) => SpawnNamedAsync(address, "", kind, timeout);
 
         public async Task<ActorPidResponse> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
@@ -143,6 +140,8 @@ namespace Proto.Remote
             );
 
             return res;
+
+            static PID ActivatorForAddress(string address) => new PID(address, "activator");
         }
 
         public void SendMessage(PID pid, object msg, int serializerId)
@@ -152,5 +151,13 @@ namespace Proto.Remote
             var env = new RemoteDeliver(header!, message, pid, sender!, serializerId);
             _endpointManager.RemoteDeliver(env);
         }
+        
+        private void SpawnActivator()
+        {
+            var props = Props.FromProducer(() => new Activator(this, _system)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+            ActivatorPid = _system.Root.SpawnNamed(props, "activator");
+        }
+
+        private void StopActivator() => _system.Root.Stop(ActivatorPid);
     }
 }

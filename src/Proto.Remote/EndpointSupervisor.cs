@@ -20,21 +20,21 @@ namespace Proto.Remote
         private readonly ActorSystem _system;
         private readonly Remote _remote;
         private readonly TimeSpan? _withinTimeSpan;
+        private readonly long _backoff;
+        
         private CancellationTokenSource? _cancelFutureRetries;
-
-        private int _backoff;
         private string? _address;
 
         public EndpointSupervisor(Remote remote, ActorSystem system)
         {
             if (remote.RemoteConfig == null)
-                throw new ArgumentException("Router hasn't been configured", nameof(remote));
+                throw new ArgumentException("[EndpointSupervisor] Router hasn't been configured", nameof(remote));
             
             _system = system;
             _remote = remote;
             _maxNrOfRetries = remote.RemoteConfig.EndpointWriterOptions.MaxRetries;
             _withinTimeSpan = remote.RemoteConfig.EndpointWriterOptions.RetryTimeSpan;
-            _backoff = remote.RemoteConfig.EndpointWriterOptions.RetryBackOffms;
+            _backoff = TimeConvert.ToNanoseconds(remote.RemoteConfig.EndpointWriterOptions.RetryBackOffms);
         }
 
         public Task ReceiveAsync(IContext context)
@@ -59,7 +59,7 @@ namespace Proto.Remote
             if (ShouldStop(rs))
             {
                 Logger.LogWarning(
-                    "Stopping connection to address {Address} after retries expired because of {Reason}",
+                    "[EndpointSupervisor] Stopping connection to address {Address} after retries expired because of {Reason}",
                     _address, reason
                 );
 
@@ -72,16 +72,16 @@ namespace Proto.Remote
             }
             else
             {
-                _backoff *= 2;
-                var noise = _random.Next(_backoff);
-                var duration = TimeSpan.FromMilliseconds(_backoff + noise);
+                var backoff = rs.FailureCount * _backoff;
+                var noise = _random.Next(500);
+                var duration = TimeSpan.FromMilliseconds(TimeConvert.ToMilliseconds(backoff + noise));
 
                 Task.Delay(duration)
                     .ContinueWith(
                         t =>
                         {
                             Logger.LogWarning(
-                                "Restarting {Actor} after {Duration} because of {Reason}",
+                                "[EndpointSupervisor] Restarting {Actor} after {Duration} because of {Reason}",
                                 child.ToShortString(), duration, reason
                             );
                             supervisor.RestartChildren(reason, child);

@@ -99,7 +99,7 @@ namespace Proto.Cluster
             switch (context.Message)
             {
                 case Started _:
-                    _logger.LogDebug("Started PidCacheWatcher");
+                    _logger.LogDebug("[PidCacheWatcher] Started");
                     break;
                 case WatchPidRequest msg:
                     context.Watch(msg.Pid);

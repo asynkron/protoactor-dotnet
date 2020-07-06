@@ -200,13 +200,13 @@ namespace Proto
     public class ExponentialBackoffStrategy : ISupervisorStrategy
     {
         private readonly TimeSpan _backoffWindow;
-        private readonly TimeSpan _initialBackoff;
+        private readonly long _initialBackoffNs;
         private readonly Random _random = new Random();
 
         public ExponentialBackoffStrategy(TimeSpan backoffWindow, TimeSpan initialBackoff)
         {
             _backoffWindow = backoffWindow;
-            _initialBackoff = initialBackoff;
+            _initialBackoffNs = TimeConvert.ToNanoseconds(initialBackoff.TotalMilliseconds);
         }
 
         public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
@@ -219,15 +219,12 @@ namespace Proto
 
             rs.Fail();
 
-            var backoff = rs.FailureCount * ToNanoseconds(_initialBackoff);
+            var backoff = rs.FailureCount * _initialBackoffNs;
             var noise = _random.Next(500);
-            var duration = TimeSpan.FromMilliseconds(ToMilliseconds(backoff + noise));
+            var duration = TimeSpan.FromMilliseconds(TimeConvert.ToMilliseconds(backoff + noise));
             Task.Delay(duration).ContinueWith(t => supervisor.RestartChildren(reason, child));
         }
 
-        private static long ToNanoseconds(TimeSpan timeSpan) => Convert.ToInt64(timeSpan.TotalMilliseconds * 1000000);
-
-        private static long ToMilliseconds(long nanoseconds) => nanoseconds / 1000000;
     }
 
     public class AlwaysRestartStrategy : ISupervisorStrategy
@@ -236,5 +233,12 @@ namespace Proto
         public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
             object? message)
             => supervisor.RestartChildren(reason, child);
+    }
+
+    public static class TimeConvert
+    {
+        public static long ToNanoseconds(double milliseconds) => Convert.ToInt64(milliseconds * 1000000);
+
+        public static long ToMilliseconds(long nanoseconds) => nanoseconds / 1000000;
     }
 }
