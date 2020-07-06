@@ -35,13 +35,13 @@ namespace Proto
 
         public virtual object? Message => _context.Message;
 
-        public void Stop(PID pid) => _context.Stop(pid);
+        public virtual void Stop(PID pid) => _context.Stop(pid);
 
-        public Task StopAsync(PID pid) => _context.StopAsync(pid);
+        public virtual Task StopAsync(PID pid) => _context.StopAsync(pid);
 
-        public void Poison(PID pid) => _context.Poison(pid);
+        public virtual void Poison(PID pid) => _context.Poison(pid);
 
-        public Task PoisonAsync(PID pid) => _context.PoisonAsync(pid);
+        public virtual Task PoisonAsync(PID pid) => _context.PoisonAsync(pid);
 
         public virtual PID? Parent => null;
         public virtual PID? Self => null;
