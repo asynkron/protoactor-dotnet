@@ -35,9 +35,9 @@ namespace Proto.Cluster
             PidCache = new PidCache(this);
         }
 
-        public Partition Partition { get; }
-        public MemberList MemberList { get; }
-        public PidCache PidCache { get; }
+        internal Partition Partition { get; }
+        internal MemberList MemberList { get; }
+        internal PidCache PidCache { get; }
 
         public Task Start(string clusterName, string address, int port, IClusterProvider cp)
             => Start(new ClusterConfig(clusterName, address, port, cp));
@@ -118,7 +118,7 @@ namespace Proto.Cluster
                 Name = name
             };
 
-            Logger.LogDebug("[Cluster] Requesting remote PID from {Partition}:{Remote} {@Request}", address, remotePid, req);
+            Logger.LogTrace("[Cluster] Requesting remote PID from {Partition}:{Remote} {@Request}", address, remotePid, req);
 
             try
             {
@@ -132,7 +132,7 @@ namespace Proto.Cluster
                     PidCache.TryAddCache(name, resp.Pid);
                 }
 
-                Logger.LogDebug("[Cluster] Obtained remote PID {PID} from {Partition}:{Remote} {Status}", resp.Pid, address, remotePid, status);
+                Logger.LogTrace("[Cluster] Obtained remote PID {PID} from {Partition}:{Remote} {Status}", resp.Pid, address, remotePid, status);
                 return (resp.Pid, status);
             }
             catch (TimeoutException e)

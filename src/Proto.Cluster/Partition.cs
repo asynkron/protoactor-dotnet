@@ -13,7 +13,7 @@ using Proto.Remote;
 
 namespace Proto.Cluster
 {
-    public class Partition
+    class Partition
     {
         private readonly Dictionary<string, PID> _kindMap = new Dictionary<string, PID>();
 
@@ -82,7 +82,7 @@ namespace Proto.Cluster
         private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>();                      //PID to grain name
         private readonly Dictionary<string, SpawningProcess> _spawningProcs = new Dictionary<string, SpawningProcess>(); //spawning processes
 
-        public Cluster Cluster { get; }
+        private Cluster Cluster { get; }
 
         public PartitionActor(Cluster cluster, string kind)
         {
@@ -132,7 +132,7 @@ namespace Proto.Cluster
         {
             Logger.LogInformation("[Partition] Kind {Kind} member left {Address}", _kind, memberLeft.Address);
 
-            EnsureNewAddresses(context);
+            EnsureNewAddresses();
 
             // Process Spawning Process
             MakeUnavailable(memberLeft.Address);
@@ -142,7 +142,7 @@ namespace Proto.Cluster
         {
             Logger.LogInformation("[Partition] Kind {Kind} member rejoined {Address}", _kind, memberRejoined.Address);
 
-            EnsureNewAddresses(context);
+            EnsureNewAddresses();
 
             // Process Spawning Process
             MakeUnavailable(memberRejoined.Address);
@@ -162,7 +162,7 @@ namespace Proto.Cluster
 
             while (!Cluster.MemberList.IsMember(msg.Address)) { }
 
-            EnsureNewAddresses(context);
+            EnsureNewAddresses();
             Cluster.PidCache.EnsureNewAddress(_kind);
 
             foreach (var (name, sp) in _spawningProcs)
@@ -176,7 +176,7 @@ namespace Proto.Cluster
             }
         }
 
-        private void EnsureNewAddresses(IContext context)
+        private void EnsureNewAddresses()
         {
             foreach (var (name, pid) in _partition.ToArray())
             {
@@ -184,16 +184,16 @@ namespace Proto.Cluster
 
                 if (address != pid.Address)
                 {
-                    RemoveActorsWithChangedAddress(name, pid, context);
+                    RemoveActorsWithChangedAddress(name, pid);
                 }
             }
         }
 
-        private void RemoveActorsWithChangedAddress(string actorId, PID pid, IStopperContext context)
+        private void RemoveActorsWithChangedAddress(string name, PID pid)
         {
-            Logger.LogDebug("[Partition] Removing partition ownership for {Actor}", actorId);
+            Logger.LogDebug("[Partition] Removing partition ownership for {Actor}", name);
 
-            _partition.Remove(actorId);
+            _partition.Remove(name);
             _reversePartition.Remove(pid);
         }
 
