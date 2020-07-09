@@ -25,9 +25,13 @@ namespace Proto.Cluster
 
         public MemberList(Cluster cluster) => _cluster = cluster;
 
+        internal int MembersCount => _members.Count;
+
         internal void Setup() => _clusterTopologyEvnSub = _cluster.System.EventStream.Subscribe<ClusterTopologyEvent>(UpdateClusterTopology);
 
         internal void Stop() => _cluster.System.EventStream.Unsubscribe(_clusterTopologyEvnSub);
+
+        internal bool IsMember(string address) => _members.ContainsKey(address);
 
         internal string GetPartition(string name, string kind)
         {

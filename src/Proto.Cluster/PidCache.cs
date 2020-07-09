@@ -5,12 +5,15 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Mailbox;
 
 namespace Proto.Cluster
 {
-    class PidCache
+    public class PidCache
     {
         private PID _watcher = new PID();
         private Subscription<object>? _clusterTopologyEvnSub;
@@ -37,9 +40,12 @@ namespace Proto.Cluster
 
         private void OnMemberStatusEvent(MemberStatusEvent evn)
         {
-            if (evn is MemberLeftEvent || evn is MemberRejoinedEvent)
+            switch (evn)
             {
-                RemoveCacheByMemberAddress(evn.Address);
+                case MemberLeftEvent _:
+                case MemberRejoinedEvent _:
+                    RemoveCacheByMemberAddress(evn.Address);
+                    break;
             }
         }
 
@@ -69,13 +75,29 @@ namespace Proto.Cluster
         {
             foreach (var (name, pid) in _cache.ToArray())
             {
-                if (pid.Address == memberAddress)
+                if (pid.Address != memberAddress) continue;
+
+                _cache.TryRemove(name, out _);
+                var key = pid.ToShortString();
+                _reverseCache.TryRemove(key, out _);
+            }
+        }
+
+        internal void EnsureNewAddress(string kind)
+        {
+            foreach (var (name, pid) in _cache.ToArray())
+            {
+                var address = Cluster.MemberList.GetPartition(name, kind);
+
+                if (address != pid.Address)
                 {
-                    _cache.TryRemove(name, out _);
-                    var key = pid.ToShortString();
-                    _reverseCache.TryRemove(key, out _);
+                    RemoveCacheByPid(pid);
+                    
+                    if (pid.Address == Cluster.System.ProcessRegistry.Address)
+                        Cluster.System.Root.Stop(pid);
                 }
             }
+            
         }
     }
 
@@ -103,9 +125,11 @@ namespace Proto.Cluster
                     break;
                 case WatchPidRequest msg:
                     context.Watch(msg.Pid);
+                    _logger.LogDebug("[PidCacheWatcher] Started watching {Actor}", msg.Pid);
                     break;
                 case Terminated msg:
                     PidCache.RemoveCacheByPid(msg.Who);
+                    _logger.LogDebug("[PidCacheWatcher] Removed from cache {Actor}", msg.Who);
                     break;
             }
 

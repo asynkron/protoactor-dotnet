@@ -13,7 +13,7 @@ using Proto.Remote;
 
 namespace Proto.Cluster
 {
-    class Partition
+    public class Partition
     {
         private readonly Dictionary<string, PID> _kindMap = new Dictionary<string, PID>();
 
@@ -64,7 +64,7 @@ namespace Proto.Cluster
             Cluster.System.EventStream.Unsubscribe(_memberStatusSub);
         }
 
-        public PID PartitionForKind(string address, string kind) => new PID(address, "partition-" + kind);
+        public static PID PartitionForKind(string address, string kind) => new PID(address, "partition-" + kind);
     }
 
     class PartitionActor : IActor
@@ -78,10 +78,10 @@ namespace Proto.Cluster
         }
 
         private readonly string _kind;
-        private readonly Dictionary<string, PID> _partition = new Dictionary<string, PID>();        //actor/grain name to PID
-        private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>(); //PID to grain name
-
+        private readonly Dictionary<string, PID> _partition = new Dictionary<string, PID>();                             //actor/grain name to PID
+        private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>();                      //PID to grain name
         private readonly Dictionary<string, SpawningProcess> _spawningProcs = new Dictionary<string, SpawningProcess>(); //spawning processes
+
         public Cluster Cluster { get; }
 
         public PartitionActor(Cluster cluster, string kind)
@@ -103,14 +103,11 @@ namespace Proto.Cluster
                 case Terminated msg:
                     Terminated(msg);
                     break;
-                case TakeOwnership msg:
-                    TakeOwnership(msg, context);
-                    break;
                 case MemberJoinedEvent msg:
                     MemberJoined(msg, context);
                     break;
                 case MemberRejoinedEvent msg:
-                    MemberRejoined(msg);
+                    MemberRejoined(msg, context);
                     break;
                 case MemberLeftEvent msg:
                     MemberLeft(msg, context);
@@ -125,39 +122,30 @@ namespace Proto.Cluster
             //one of the actors we manage died, remove it from the lookup
             if (_reversePartition.TryGetValue(msg.Who, out var key))
             {
+                Logger.LogDebug("[Partition] Removing terminated actor {Actor}", key);
                 _partition.Remove(key);
                 _reversePartition.Remove(msg.Who);
             }
         }
 
-        private void TakeOwnership(TakeOwnership msg, IContext context)
+        private void MemberLeft(MemberLeftEvent memberLeft, IContext context)
         {
-            //Check again if I'm the owner
-            var address = Cluster.MemberList.GetPartition(msg.Name, _kind);
+            Logger.LogInformation("[Partition] Kind {Kind} member left {Address}", _kind, memberLeft.Address);
 
-            if (!string.IsNullOrEmpty(address) && address != Cluster.System.ProcessRegistry.Address)
-            {
-                //if not, forward to the correct owner
-                var owner = Cluster.Partition.PartitionForKind(address, _kind);
+            EnsureNewAddresses(context);
 
-                context.Send(owner, msg);
-            }
-            else
-            {
-                Logger.LogDebug("[Partition] Kind {Kind} Take Ownership name: {Name}, pid: {Pid}", _kind, msg.Name, msg.Pid);
-                _partition[msg.Name] = msg.Pid;
-                _reversePartition[msg.Pid] = msg.Name;
-                context.Watch(msg.Pid);
-            }
+            // Process Spawning Process
+            MakeUnavailable(memberLeft.Address);
         }
 
-        private void RemoveAddressFromPartition(string address)
+        private void MemberRejoined(MemberRejoinedEvent memberRejoined, IContext context)
         {
-            foreach (var (actorId, pid) in _partition.Where(x => x.Value.Address == address))
-            {
-                _partition.Remove(actorId);
-                _reversePartition.Remove(pid);
-            }
+            Logger.LogInformation("[Partition] Kind {Kind} member rejoined {Address}", _kind, memberRejoined.Address);
+
+            EnsureNewAddresses(context);
+
+            // Process Spawning Process
+            MakeUnavailable(memberRejoined.Address);
         }
 
         private void MakeUnavailable(string address)
@@ -168,69 +156,18 @@ namespace Proto.Cluster
             }
         }
 
-        private int TransferOwnership(IContext context)
-        {
-            // Iterate through the actors in this partition and try to check if the partition
-            // PID should be in is not the current one, if so initiates a transfer to the
-            // new partition.
-            var transferredActorCount = 0;
-
-            // TODO: right now we transfer ownership on a per actor basis.
-            // this could be done in a batch
-            // ownership is also racy, new nodes should maybe forward requests to neighbours (?)
-            foreach (var (actorId, _) in _partition.ToArray())
-            {
-                var address = Cluster.MemberList.GetPartition(actorId, _kind);
-
-                if (!string.IsNullOrEmpty(address) && address != Cluster.System.ProcessRegistry.Address)
-                {
-                    transferredActorCount++;
-                    TransferOwnership(actorId, address, context);
-                }
-            }
-
-            return transferredActorCount;
-        }
-
-        private void MemberLeft(MemberLeftEvent memberLeft, IContext context)
-        {
-            Logger.LogInformation("[Partition] Kind {Kind} member left {Address}", _kind, memberLeft.Address);
-
-            // If the left member is self, transfer remaining pids to others
-            if (memberLeft.Address == Cluster.System.ProcessRegistry.Address)
-            {
-                var transferredActorCount = TransferOwnership(context);
-
-                if (transferredActorCount > 0) Logger.LogInformation("[Partition] Transferred {actors} PIDs to other nodes", transferredActorCount);
-            }
-
-            RemoveAddressFromPartition(memberLeft.Address);
-
-            // Process Spawning Process
-            MakeUnavailable(memberLeft.Address);
-        }
-
-        private void MemberRejoined(MemberRejoinedEvent memberRejoined)
-        {
-            Logger.LogInformation("[Partition] Kind {Kind} member rejoined {Address}", _kind, memberRejoined.Address);
-
-            RemoveAddressFromPartition(memberRejoined.Address);
-
-            // Process Spawning Process
-            MakeUnavailable(memberRejoined.Address);
-        }
-
         private void MemberJoined(MemberJoinedEvent msg, IContext context)
         {
             Logger.LogInformation("[Partition] Kind {Kind} member joined {Address}", _kind, msg.Address);
 
-            var transferredActorCount = TransferOwnership(context);
+            while (!Cluster.MemberList.IsMember(msg.Address)) { }
 
-            if (transferredActorCount > 0) Logger.LogInformation("[Partition] Transferred {actors} PIDs to other nodes", transferredActorCount);
+            EnsureNewAddresses(context);
+            Cluster.PidCache.EnsureNewAddress(_kind);
 
-            foreach (var (actorId, sp) in _spawningProcs)
+            foreach (var (name, sp) in _spawningProcs)
             {
-                var address = Cluster.MemberList.GetPartition(actorId, _kind);
+                var address = Cluster.MemberList.GetPartition(name, _kind);
 
                 if (address != Cluster.System.ProcessRegistry.Address)
                 {
@@ -239,14 +176,25 @@ namespace Proto.Cluster
             }
         }
 
-        private void TransferOwnership(string actorId, string address, IContext context)
+        private void EnsureNewAddresses(IContext context)
         {
-            var pid = _partition[actorId];
-            var owner = Cluster.Partition.PartitionForKind(address, _kind);
-            context.Send(owner, new TakeOwnership {Name = actorId, Pid = pid});
+            foreach (var (name, pid) in _partition.ToArray())
+            {
+                var address = Cluster.MemberList.GetPartition(name, _kind);
+
+                if (address != pid.Address)
+                {
+                    RemoveActorsWithChangedAddress(name, pid, context);
+                }
+            }
+        }
+
+        private void RemoveActorsWithChangedAddress(string actorId, PID pid, IStopperContext context)
+        {
+            Logger.LogDebug("[Partition] Removing partition ownership for {Actor}", actorId);
+
             _partition.Remove(actorId);
             _reversePartition.Remove(pid);
-            context.Unwatch(pid);
         }
 
         private void Spawn(ActorPidRequest msg, IContext context)
@@ -254,6 +202,7 @@ namespace Proto.Cluster
             //Check if exist in current partition dictionary
             if (_partition.TryGetValue(msg.Name, out var pid))
             {
+                Logger.LogTrace("[Partition] Returning existing actor: {PID}", pid);
                 context.Respond(new ActorPidResponse {Pid = pid});
                 return;
             }
@@ -265,6 +214,7 @@ namespace Proto.Cluster
                     spawning.Task,
                     rst =>
                     {
+                        Logger.LogTrace("[Partition] Returning actor from the existing spawner: {PID}", pid);
                         context.Respond(rst.IsFaulted ? ActorPidResponse.Err : rst.Result);
                         return Actor.Done;
                     }
@@ -298,6 +248,7 @@ namespace Proto.Cluster
                     //This is necessary to avoid race condition during partition map transfering.
                     if (_partition.TryGetValue(msg.Name, out pid))
                     {
+                        Logger.LogTrace("[Partition] Returning existing actor: {PID}", pid);
                         context.Respond(new ActorPidResponse {Pid = pid});
                         return Actor.Done;
                     }
@@ -305,6 +256,7 @@ namespace Proto.Cluster
                     //Check if process is faulted
                     if (rst.IsFaulted)
                     {
+                        Logger.LogWarning("[Partition] Spawning failed: {PID}", pid);
                         context.Respond(ActorPidResponse.Err);
                         return Actor.Done;
                     }
@@ -319,6 +271,7 @@ namespace Proto.Cluster
                         context.Watch(pid);
                     }
 
+                    Logger.LogTrace("[Partition] Returning newly spawned: {PID}", pid);
                     context.Respond(pidResp);
                     return Actor.Done;
                 }

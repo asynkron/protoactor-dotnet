@@ -19,10 +19,12 @@ namespace Proto.Cluster
         private static readonly ILogger Logger = Log.CreateLogger(typeof(Cluster).FullName);
 
         internal ClusterConfig? Config { get; private set; }
-        
+
         public ActorSystem System { get; }
 
         public Remote.Remote Remote { get; }
+
+        public bool Ready => MemberList?.MembersCount > 0;
 
         public Cluster(ActorSystem system, Serialization serialization)
         {
@@ -33,9 +35,9 @@ namespace Proto.Cluster
             PidCache = new PidCache(this);
         }
 
-        internal Partition Partition { get; }
-        internal MemberList MemberList { get; }
-        internal PidCache PidCache { get; }
+        public Partition Partition { get; }
+        public MemberList MemberList { get; }
+        public PidCache PidCache { get; }
 
         public Task Start(string clusterName, string address, int port, IClusterProvider cp)
             => Start(new ClusterConfig(clusterName, address, port, cp));
@@ -75,6 +77,7 @@ namespace Proto.Cluster
         public async Task Shutdown(bool graceful = true)
         {
             Logger.LogInformation("[Cluster] Stopping...");
+
             if (graceful)
             {
                 await Config!.ClusterProvider.Shutdown(this);
@@ -124,13 +127,13 @@ namespace Proto.Cluster
                     : await System.Root.RequestAsync<ActorPidResponse>(remotePid, req, ct);
                 var status = (ResponseStatusCode) resp.StatusCode;
 
-                switch (status)
+                if (status == ResponseStatusCode.OK)
                 {
-                    case ResponseStatusCode.OK:
-                        PidCache.TryAddCache(name, resp.Pid);
-                        return (resp.Pid, status);
-                    default: return (resp.Pid, status);
+                    PidCache.TryAddCache(name, resp.Pid);
                 }
+
+                Logger.LogDebug("[Cluster] Obtained remote PID {PID} from {Partition}:{Remote} {Status}", resp.Pid, address, remotePid, status);
+                return (resp.Pid, status);
             }
             catch (TimeoutException e)
             {
