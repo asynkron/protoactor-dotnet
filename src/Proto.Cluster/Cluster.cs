@@ -56,7 +56,11 @@ namespace Proto.Cluster
             var kinds = Remote.GetKnownKinds();
 
             Partition.Setup(kinds);
-            PidCacheUpdater.Setup();
+            if (config.UsePidCache)
+            {
+                PidCacheUpdater.Setup();
+            }
+
             MemberList.Setup();
 
             var (host, port) = System.ProcessRegistry.GetAddress();
@@ -99,9 +103,13 @@ namespace Proto.Cluster
 
         public async Task<(PID?, ResponseStatusCode)> GetAsync(string name, string kind, CancellationToken ct)
         {
-            //Check Cache
-            if (PidCache.TryGetCache(name, out var pid)) return (pid, ResponseStatusCode.OK);
+            if (Config.UsePidCache)
+            {
+                //Check Cache
+                if (PidCache.TryGetCache(name, out var pid)) return (pid, ResponseStatusCode.OK);
+            }
 
+            //TODO: move this to IdentityLookup
             //Get Pid
             var address = MemberList.GetPartition(name, kind);
 
@@ -110,6 +118,7 @@ namespace Proto.Cluster
                 return (null, ResponseStatusCode.Unavailable);
             }
 
+            
             var remotePid = Partition.PartitionForKind(address, kind);
 
             var req = new ActorPidRequest
@@ -129,10 +138,14 @@ namespace Proto.Cluster
 
                 if (status == ResponseStatusCode.OK)
                 {
-                    if (PidCache.TryAddCache(name, resp.Pid))
+                    if (Config.UsePidCache)
                     {
-                        PidCacheUpdater.Watch(resp.Pid);
+                        if (PidCache.TryAddCache(name, resp.Pid))
+                        {
+                            PidCacheUpdater.Watch(resp.Pid);
+                        }
                     }
+
                     return (resp.Pid, status);
                 }
 

@@ -24,6 +24,8 @@ namespace Proto.Cluster
         public IMemberStatusValueSerializer MemberStatusValueSerializer { get; private set; }
         public Func<string, IMemberStrategy> MemberStrategyBuilder { get; private set; }
 
+        public bool UsePidCache { get; private set; } = true;
+
         public ClusterConfig(string name, string address, int port, IClusterProvider cp)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
@@ -64,6 +66,12 @@ namespace Proto.Cluster
         public ClusterConfig WithMemberStrategyBuilder(Func<string, IMemberStrategy> builder)
         {
             MemberStrategyBuilder = builder;
+            return this;
+        }
+
+        public ClusterConfig WithPidCache(bool usePidCache)
+        {
+            UsePidCache = usePidCache;
             return this;
         }
     }
