@@ -43,12 +43,26 @@ namespace Proto.Cluster.Tests
         [Fact]
         public void MemberLeft()
         {
+            //arrange
             var cache=new PidCache();
             var pid = new PID("member2:123", "some actor");
             cache.TryAddCache("someIdentity", pid);
             
+            var pid2 = new PID("member1:12", "some actor2");
+            cache.TryAddCache("someOtherIdentity", pid2);
+            
+            //act
             var left = new MemberLeftEvent("member2", 123, Array.Empty<string>());
             cache.OnMemberStatusEvent(left);
+            
+            //assert
+            //pids from member2 should be removed
+            var result = cache.TryGetCache("someIdentity", out _);
+            Assert.False(result);
+            
+            //pids from member1 should still be here
+            var result2 = cache.TryGetCache("someOtherIdentity", out _);
+            Assert.True(result2);
         }
     }
 }
