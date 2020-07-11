@@ -4,13 +4,15 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading;
 using System.Threading.Tasks;
+using Proto.Remote;
 
 namespace Proto.Cluster.IdentityLookup
 {
     public interface IIdentityLookup
     {
-        void Configure(ActorSystem system);
-        Task<PID> LookupIdentity(string identity);
+        Task<(PID?,ResponseStatusCode)> GetAsync(string identity,string kind, CancellationToken ct);
+        void Setup(Cluster cluster);
     }
 }

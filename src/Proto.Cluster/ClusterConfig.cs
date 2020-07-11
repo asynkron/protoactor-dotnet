@@ -6,6 +6,7 @@
 
 using System;
 using JetBrains.Annotations;
+using Proto.Cluster.IdentityLookup;
 using Proto.Remote;
 
 namespace Proto.Cluster
@@ -25,6 +26,8 @@ namespace Proto.Cluster
         public Func<string, IMemberStrategy> MemberStrategyBuilder { get; private set; }
 
         public bool UsePidCache { get; private set; } = true;
+
+        public IIdentityLookup IdentityLookup { get; private set; } 
 
         public ClusterConfig(string name, string address, int port, IClusterProvider cp)
         {
@@ -72,6 +75,12 @@ namespace Proto.Cluster
         public ClusterConfig WithPidCache(bool usePidCache)
         {
             UsePidCache = usePidCache;
+            return this;
+        }
+        
+        public ClusterConfig WithIdentityLookup(IIdentityLookup identityLookup)
+        {
+            IdentityLookup = identityLookup;
             return this;
         }
     }

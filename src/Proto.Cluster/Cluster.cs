@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Cluster.IdentityLookup;
 using Proto.Remote;
 
 namespace Proto.Cluster
@@ -39,6 +40,8 @@ namespace Proto.Cluster
         internal MemberList MemberList { get; }
         internal PidCache PidCache { get; }
         internal PidCacheUpdater PidCacheUpdater { get; }
+        
+        private IIdentityLookup? IdentityLookup { get; set; }
 
         public Task Start(string clusterName, string address, int port, IClusterProvider cp)
             => Start(new ClusterConfig(clusterName, address, port, cp));
@@ -47,6 +50,11 @@ namespace Proto.Cluster
         {
             Config = config;
 
+            //default to partition identity lookup
+            IdentityLookup = config.IdentityLookup ?? new PartitionIdentityLookup();
+
+            IdentityLookup.Setup(this);
+            
             Remote.Start(Config.Address, Config.Port, Config.RemoteConfig);
 
             Remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
@@ -99,68 +107,18 @@ namespace Proto.Cluster
             Logger.LogInformation("[Cluster] Stopped");
         }
 
-        public Task<(PID?, ResponseStatusCode)> GetAsync(string name, string kind) => GetAsync(name, kind, CancellationToken.None);
+        public Task<(PID?, ResponseStatusCode)> GetAsync(string identity, string kind) => GetAsync(identity, kind, CancellationToken.None);
 
-        public async Task<(PID?, ResponseStatusCode)> GetAsync(string name, string kind, CancellationToken ct)
+        public Task<(PID?, ResponseStatusCode)> GetAsync(string identity, string kind, CancellationToken ct)
         {
             if (Config.UsePidCache)
             {
                 //Check Cache
-                if (PidCache.TryGetCache(name, out var pid)) return (pid, ResponseStatusCode.OK);
+                if (PidCache.TryGetCache(identity, out var pid)) 
+                    return Task.FromResult((pid, ResponseStatusCode.OK));
             }
 
-            //TODO: move this to IdentityLookup
-            //Get Pid
-            var address = MemberList.GetPartition(name, kind);
-
-            if (string.IsNullOrEmpty(address))
-            {
-                return (null, ResponseStatusCode.Unavailable);
-            }
-
-            
-            var remotePid = Partition.PartitionForKind(address, kind);
-
-            var req = new ActorPidRequest
-            {
-                Kind = kind,
-                Name = name
-            };
-
-            Logger.LogDebug("[Cluster] Requesting remote PID from {Partition}:{Remote} {@Request}", address, remotePid, req);
-
-            try
-            {
-                var resp = ct == CancellationToken.None
-                    ? await System.Root.RequestAsync<ActorPidResponse>(remotePid, req, Config!.TimeoutTimespan)
-                    : await System.Root.RequestAsync<ActorPidResponse>(remotePid, req, ct);
-                var status = (ResponseStatusCode) resp.StatusCode;
-
-                if (status == ResponseStatusCode.OK)
-                {
-                    if (Config.UsePidCache)
-                    {
-                        if (PidCache.TryAddCache(name, resp.Pid))
-                        {
-                            PidCacheUpdater.Watch(resp.Pid);
-                        }
-                    }
-
-                    return (resp.Pid, status);
-                }
-
-                return (resp.Pid, status);
-            }
-            catch (TimeoutException e)
-            {
-                Logger.LogWarning(e, "[Cluster] Remote PID request timeout {@Request}", req);
-                return (null, ResponseStatusCode.Timeout);
-            }
-            catch (Exception e)
-            {
-                Logger.LogError(e, "[Cluster] Error occured requesting remote PID {@Request}", req);
-                return (null, ResponseStatusCode.Error);
-            }
+            return IdentityLookup.GetAsync(identity, kind, ct);
         }
     }
 }
