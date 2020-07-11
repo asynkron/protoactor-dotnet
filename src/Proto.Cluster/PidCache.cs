@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster
 {
-    class PidCache
+    internal class PidCache
     {
         private readonly ConcurrentDictionary<string, PID> _cacheIdentityToPid = new ConcurrentDictionary<string, PID>();
         private readonly ConcurrentDictionary<string, string> _cachePidToIdentity = new ConcurrentDictionary<string, string>();
@@ -19,7 +19,7 @@ namespace Proto.Cluster
         {
             if (evn is MemberLeftEvent || evn is MemberRejoinedEvent)
             {
-                RemoveCacheByMemberAddress(evn.Address);
+                RemoveByMemberAddress(evn.Address);
             }
         }
 
@@ -34,7 +34,7 @@ namespace Proto.Cluster
             return true;
         }
 
-        internal void RemoveCacheByPid(PID pid)
+        internal void RemoveByPid(PID pid)
         {
             var key = pid.ToShortString();
 
@@ -44,7 +44,7 @@ namespace Proto.Cluster
             }
         }
 
-        private void RemoveCacheByMemberAddress(string memberAddress)
+        private void RemoveByMemberAddress(string memberAddress)
         {
             foreach (var (identity, pid) in _cacheIdentityToPid.ToArray())
             {
@@ -86,7 +86,7 @@ namespace Proto.Cluster
                     context.Watch(msg.Pid);
                     break;
                 case Terminated msg:
-                    PidCache.RemoveCacheByPid(msg.Who);
+                    PidCache.RemoveByPid(msg.Who);
                     break;
             }
 
