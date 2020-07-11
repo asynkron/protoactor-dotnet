@@ -30,12 +30,15 @@ namespace Proto.Cluster
             Remote = new Remote.Remote(system, serialization);
             Partition = new Partition(this);
             MemberList = new MemberList(this);
-            PidCache = new PidCache(this);
+            
+            PidCache = new PidCache();
+            PidCacheUpdater = new PidCacheUpdater(this,PidCache);
         }
 
         internal Partition Partition { get; }
         internal MemberList MemberList { get; }
         internal PidCache PidCache { get; }
+        internal PidCacheUpdater PidCacheUpdater { get; }
 
         public Task Start(string clusterName, string address, int port, IClusterProvider cp)
             => Start(new ClusterConfig(clusterName, address, port, cp));
@@ -53,7 +56,7 @@ namespace Proto.Cluster
             var kinds = Remote.GetKnownKinds();
 
             Partition.Setup(kinds);
-            PidCache.Setup();
+            PidCacheUpdater.Setup();
             MemberList.Setup();
 
             var (host, port) = System.ProcessRegistry.GetAddress();
@@ -83,7 +86,7 @@ namespace Proto.Cluster
                 await Task.Delay(2000);
 
                 MemberList.Stop();
-                PidCache.Stop();
+                PidCacheUpdater.Stop();
                 Partition.Stop();
             }
 
@@ -124,13 +127,16 @@ namespace Proto.Cluster
                     : await System.Root.RequestAsync<ActorPidResponse>(remotePid, req, ct);
                 var status = (ResponseStatusCode) resp.StatusCode;
 
-                switch (status)
+                if (status == ResponseStatusCode.OK)
                 {
-                    case ResponseStatusCode.OK:
-                        PidCache.TryAddCache(name, resp.Pid);
-                        return (resp.Pid, status);
-                    default: return (resp.Pid, status);
+                    if (PidCache.TryAddCache(name, resp.Pid))
+                    {
+                        PidCacheUpdater.Watch(resp.Pid);
+                    }
+                    return (resp.Pid, status);
                 }
+
+                return (resp.Pid, status);
             }
             catch (TimeoutException e)
             {
