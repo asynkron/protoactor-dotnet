@@ -2,15 +2,15 @@
 
 namespace Proto.Cluster
 {
-    public class RoundRobin
+    public class RoundRobinMemberSelector
     {
         private int _val;
 
         private readonly IMemberStrategy _memberStrategy;
 
-        public RoundRobin(IMemberStrategy memberStrategy) => _memberStrategy = memberStrategy;
+        public RoundRobinMemberSelector(IMemberStrategy memberStrategy) => _memberStrategy = memberStrategy;
 
-        public string GetNode()
+        public string GetMember()
         {
             var members = _memberStrategy.GetAllMembers();
             var l = members.Count;

@@ -6,9 +6,11 @@
 
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 
 namespace Proto.Cluster
 {
+    [PublicAPI]
     public class MemberStatus
     {
         public MemberStatus(string memberId, string host, int port, IReadOnlyCollection<string> kinds, bool alive, IMemberStatusValue statusValue)
