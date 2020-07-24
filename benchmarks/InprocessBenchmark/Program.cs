@@ -25,7 +25,7 @@ public class Program
         const int batchSize = 100;
 
         Console.WriteLine("Dispatcher\t\tElapsed\t\tMsg/sec");
-        var tps = new[] { 300, 400, 500, 600, 700, 800, 900, 1000, 1500, 3000 };
+        var tps = new[] { 50,100,200,300, 400, 500, 600, 700, 800, 900 };
         foreach (var t in tps)
         {
             var d = new ThreadPoolDispatcher { Throughput = t };
@@ -75,12 +75,12 @@ public class Program
 
 public class Msg
 {
-    public Msg(PID sender)
+    public Msg(PID pingActor)
     {
-        Sender = sender;
+        PingActor = pingActor;
     }
 
-    public PID Sender { get; }
+    public PID PingActor { get; }
 }
 
 public class Start
@@ -100,7 +100,7 @@ public class EchoActor : IActor
         switch (context.Message)
         {
             case Msg msg:
-                context.Send(msg.Sender, msg);
+                context.Send(msg.PingActor, msg);
                 break;
         }
         return Done;
@@ -132,14 +132,16 @@ public class PingActor : IActor
                 SendBatch(context);
                 break;
             case Msg m:
-                _batch--;
+                _messageCount--;
 
                 if (_batch > 0)
                 {
                     break;
                 }
+                
+                context.Send(_targetPid,m);
 
-                if (!SendBatch(context))
+                if (_messageCount <= 0)
                 {
                     _wgStop.SetResult(true);
                 }
@@ -148,13 +150,8 @@ public class PingActor : IActor
         return Done;
     }
 
-    private bool SendBatch(IContext context)
+    private void SendBatch(IContext context)
     {
-        if (_messageCount <= 0)
-        {
-            return false;
-        }
-
         var m = new Msg(context.Self);
 
         for (var i = 0; i < _batchSize; i++)
@@ -163,7 +160,5 @@ public class PingActor : IActor
         }
 
         _messageCount -= _batchSize;
-        _batch = _batchSize;
-        return true;
     }
 }
