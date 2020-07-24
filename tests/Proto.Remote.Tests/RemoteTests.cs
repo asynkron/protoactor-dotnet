@@ -53,10 +53,8 @@ namespace Proto.Remote.Tests
         }
 
         [Fact, DisplayTestMethodName]
-        public async Task CanSendJsonAndReceiveToExistingRemote()
+        public void CanSendJsonAndReceiveToExistingRemote()
         {
-  
-            
             var remoteActor = new PID(RemoteManager.RemoteAddress, "EchoActorInstance");
             var tcs = new TaskCompletionSource<bool>();
             
