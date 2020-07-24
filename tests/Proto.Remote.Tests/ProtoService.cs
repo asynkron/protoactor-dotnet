@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Proto.Remote.Tests
 {
@@ -10,10 +11,10 @@ namespace Proto.Remote.Tests
         private readonly string _host;
         private Remote _remote;
         
-        public ProtoService(ILogger<ProtoService> logger,int port, string host)
+        public ProtoService(int port, string host)
         {
-
-            _logger = logger;
+            ILogger<ProtoService> log = NullLogger<ProtoService>.Instance;
+            _logger = log;
             _host = host;
             _port = port;
         }

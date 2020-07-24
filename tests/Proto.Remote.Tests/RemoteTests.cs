@@ -21,6 +21,7 @@ namespace Proto.Remote.Tests
 
         public RemoteTests(ITestOutputHelper testOutputHelper)
         {
+            (Remote, System) = RemoteManager.EnsureRemote();
             var factory = LogFactory.Create(testOutputHelper);
             Log.SetLoggerFactory(factory);
         }
@@ -54,13 +55,7 @@ namespace Proto.Remote.Tests
         [Fact, DisplayTestMethodName]
         public async Task CanSendJsonAndReceiveToExistingRemote()
         {
-            Console.WriteLine("hello");
-            ILogger<ProtoService> log = NullLogger<ProtoService>.Instance;
   
-            var service = new ProtoService(log,12000,"0.0.0.0");
-            await service.StartAsync();
-
-            var (Remote, System) = RemoteManager.EnsureRemote();
             
             var remoteActor = new PID(RemoteManager.RemoteAddress, "EchoActorInstance");
             var tcs = new TaskCompletionSource<bool>();
@@ -83,21 +78,26 @@ namespace Proto.Remote.Tests
             var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
             var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
             Remote.SendMessage(remoteActor, envelope, 1);
-            
-            await service.StopAsync();
         }
 
         [Fact, DisplayTestMethodName]
         public async Task CanSendAndReceiveToExistingRemote()
         {
+           
+
             var remoteActor = new PID(RemoteManager.RemoteAddress, "EchoActorInstance");
+            
             var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping { Message = "Hello" }, TimeSpan.FromMilliseconds(5000));
+
             Assert.Equal($"{RemoteManager.RemoteAddress} Hello", pong.Message);
+            
+           // await service.StopAsync();
         }
 
         [Fact, DisplayTestMethodName]
         public async Task WhenRemoteActorNotFound_RequestAsyncTimesOut()
         {
+
             var unknownRemoteActor = new PID(RemoteManager.RemoteAddress, "doesn't exist");
 
             await Assert.ThrowsAsync<TimeoutException>(
@@ -108,6 +108,7 @@ namespace Proto.Remote.Tests
         [Fact, DisplayTestMethodName]
         public async Task CanSpawnRemoteActor()
         {
+
             var remoteActorName = Guid.NewGuid().ToString();
 
             var remoteActorResp = await Remote.SpawnNamedAsync(
@@ -121,6 +122,7 @@ namespace Proto.Remote.Tests
         [Fact, DisplayTestMethodName]
         public async Task CanWatchRemoteActor()
         {
+  
             var remoteActor = await SpawnRemoteActor(RemoteManager.RemoteAddress);
             var localActor = await SpawnLocalActorAndWatch(remoteActor);
 
