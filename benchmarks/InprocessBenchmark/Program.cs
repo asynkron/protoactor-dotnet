@@ -114,6 +114,7 @@ public class PingActor : IActor
     private readonly TaskCompletionSource<bool> _wgStop;
     private int _batch;
     private int _messageCount;
+    private PID _targetPid;
 
     public PingActor(TaskCompletionSource<bool> wgStop, int messageCount, int batchSize)
     {
@@ -127,7 +128,8 @@ public class PingActor : IActor
         switch (context.Message)
         {
             case Start s:
-                SendBatch(context, s.Sender);
+                _targetPid = s.Sender;
+                SendBatch(context);
                 break;
             case Msg m:
                 _batch--;
@@ -137,7 +139,7 @@ public class PingActor : IActor
                     break;
                 }
 
-                if (!SendBatch(context, m.Sender))
+                if (!SendBatch(context))
                 {
                     _wgStop.SetResult(true);
                 }
@@ -146,9 +148,9 @@ public class PingActor : IActor
         return Done;
     }
 
-    private bool SendBatch(IContext context, PID sender)
+    private bool SendBatch(IContext context)
     {
-        if (_messageCount == 0)
+        if (_messageCount <= 0)
         {
             return false;
         }
@@ -157,7 +159,7 @@ public class PingActor : IActor
 
         for (var i = 0; i < _batchSize; i++)
         {
-            context.Send(sender, m);
+            context.Send(_targetPid, m);
         }
 
         _messageCount -= _batchSize;
