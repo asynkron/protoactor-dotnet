@@ -12,9 +12,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Actor", "src\Proto.Actor\Proto.Actor.csproj", "{7D13CCDD-6B93-45B8-BA88-761744601726}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{9AA2BCF0-19AB-4DD9-8D91-7D188E463806}"
-ProjectSection(SolutionItems) = preProject
-	tests\docker-compose.yml = tests\docker-compose.yml
-EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Router", "Router", "{DF1B4E58-8B85-49F0-A75B-5DC231D0FB8F}"
 EndProject
