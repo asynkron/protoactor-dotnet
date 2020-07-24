@@ -15,6 +15,4 @@ jobs:
       - name: Run tests netcoreapp3.1
         run: |
           dotnet build -c Release
-          docker-compose -f tests/docker-compose.yml up -d
           dotnet test -c Release
-          docker-compose -f tests/docker-compose.yml down
