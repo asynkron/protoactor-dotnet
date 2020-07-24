@@ -1,9 +1,8 @@
-using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Remote.Tests.Messages;
 
-namespace Proto.Remote.Tests.Node
+namespace Proto.Remote.Tests
 {
     public class EchoActor : IActor
     {

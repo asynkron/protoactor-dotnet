@@ -1,27 +1,25 @@
-using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Proto.Remote.Tests.Node
+namespace Proto.Remote.Tests
 {
-    public class ProtoService : IHostedService
+    public class ProtoService
     {
         private readonly ILogger<ProtoService> _logger;
         private readonly int _port;
         private readonly string _host;
         private Remote _remote;
-
-        public ProtoService(IConfiguration configuration, ILogger<ProtoService> logger, ILoggerFactory loggerFactory)
+        
+        public ProtoService(int port, string host)
         {
-            Log.SetLoggerFactory(loggerFactory);
-            _logger = logger;
-            _host = configuration["host"];
-            _port = configuration.GetValue<int>("port");
+            ILogger<ProtoService> log = NullLogger<ProtoService>.Instance;
+            _logger = log;
+            _host = host;
+            _port = port;
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public Task StartAsync()
         {
             _logger.LogInformation("ProtoService starting on {Host}:{Port}...", _host, _port);
 
@@ -40,7 +38,7 @@ namespace Proto.Remote.Tests.Node
             return Task.CompletedTask;
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        public Task StopAsync()
         {
             _logger.LogInformation("ProtoService stopping...");
             return _remote.Shutdown();

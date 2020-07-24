@@ -10,71 +10,52 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster
 {
-    class PidCache
+    internal class PidCache
     {
-        private PID _watcher = new PID();
-        private Subscription<object>? _clusterTopologyEvnSub;
+        private readonly ConcurrentDictionary<string, PID> _cacheIdentityToPid = new ConcurrentDictionary<string, PID>();
+        private readonly ConcurrentDictionary<string, string> _cachePidToIdentity = new ConcurrentDictionary<string, string>();
 
-        private readonly ConcurrentDictionary<string, PID> _cache = new ConcurrentDictionary<string, PID>();
-        private readonly ConcurrentDictionary<string, string> _reverseCache = new ConcurrentDictionary<string, string>();
-
-        private Cluster Cluster { get; }
-
-        internal PidCache(Cluster cluster) => Cluster = cluster;
-
-        internal void Setup()
-        {
-            var props = Props.FromProducer(() => new PidCacheWatcher(this)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-            _watcher = Cluster.System.Root.SpawnNamed(props, "PidCacheWatcher");
-            _clusterTopologyEvnSub = Cluster.System.EventStream.Subscribe<MemberStatusEvent>(OnMemberStatusEvent);
-        }
-
-        internal void Stop()
-        {
-            Cluster.System.Root.Stop(_watcher);
-            Cluster.System.EventStream.Unsubscribe(_clusterTopologyEvnSub);
-        }
-
-        private void OnMemberStatusEvent(MemberStatusEvent evn)
+        internal void OnMemberStatusEvent(MemberStatusEvent evn)
         {
             if (evn is MemberLeftEvent || evn is MemberRejoinedEvent)
             {
-                RemoveCacheByMemberAddress(evn.Address);
+                RemoveByMemberAddress(evn.Address);
             }
         }
 
-        internal bool TryGetCache(string name, out PID pid) => _cache.TryGetValue(name, out pid);
+        internal bool TryGetCache(string identity, out PID pid) => _cacheIdentityToPid.TryGetValue(identity, out pid);
 
-        internal bool TryAddCache(string name, PID pid)
+        internal bool TryAddCache(string identity, PID pid)
         {
-            if (!_cache.TryAdd(name, pid)) return false;
+            if (!_cacheIdentityToPid.TryAdd(identity, pid)) return false;
 
             var key = pid.ToShortString();
-            _reverseCache.TryAdd(key, name);
-            Cluster.System.Root.Send(_watcher, new WatchPidRequest(pid));
+            _cachePidToIdentity.TryAdd(key, identity);
             return true;
         }
 
-        internal void RemoveCacheByPid(PID pid)
+        internal void RemoveByPid(PID pid)
         {
             var key = pid.ToShortString();
 
-            if (_reverseCache.TryRemove(key, out var name))
+            if (_cachePidToIdentity.TryRemove(key, out var identity))
             {
-                _cache.TryRemove(name, out _);
+                _cacheIdentityToPid.TryRemove(identity, out _);
             }
         }
 
-        private void RemoveCacheByMemberAddress(string memberAddress)
+        private void RemoveByMemberAddress(string memberAddress)
         {
-            foreach (var (name, pid) in _cache.ToArray())
+            foreach (var (identity, pid) in _cacheIdentityToPid.ToArray())
             {
-                if (pid.Address == memberAddress)
+                if (pid.Address != memberAddress)
                 {
-                    _cache.TryRemove(name, out _);
-                    var key = pid.ToShortString();
-                    _reverseCache.TryRemove(key, out _);
+                    continue;
                 }
+
+                _cacheIdentityToPid.TryRemove(identity, out _);
+                var key = pid.ToShortString();
+                _cachePidToIdentity.TryRemove(key, out _);
             }
         }
     }
@@ -105,7 +86,7 @@ namespace Proto.Cluster
                     context.Watch(msg.Pid);
                     break;
                 case Terminated msg:
-                    PidCache.RemoveCacheByPid(msg.Who);
+                    PidCache.RemoveByPid(msg.Who);
                     break;
             }
 

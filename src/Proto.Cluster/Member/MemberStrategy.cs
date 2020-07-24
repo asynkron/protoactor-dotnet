@@ -23,13 +23,13 @@ namespace Proto.Cluster
     {
         private readonly List<MemberStatus> _members;
         private readonly Rendezvous _rdv;
-        private readonly RoundRobin _rr;
+        private readonly RoundRobinMemberSelector _rr;
 
         public SimpleMemberStrategy()
         {
             _members = new List<MemberStatus>();
             _rdv = new Rendezvous();
-            _rr = new RoundRobin(this);
+            _rr = new RoundRobinMemberSelector(this);
         }
 
         public List<MemberStatus> GetAllMembers() => _members;
@@ -42,21 +42,21 @@ namespace Proto.Cluster
             _members.Add(member);
             _rdv.UpdateMembers(_members);
         }
-
+        
         public void UpdateMember(MemberStatus member)
         {
             _members.RemoveAll(x => x.Address == member.Address);
             _members.Add(member);
         }
-
+        
         public void RemoveMember(MemberStatus member)
         {
             _members.RemoveAll(x => x.Address == member.Address);
             _rdv.UpdateMembers(_members);
         }
 
-        public string GetPartition(string key) => _rdv.GetNode(key);
+        public string GetPartition(string key) => _rdv.GetOwnerMemberByIdentity(key);
 
-        public string GetActivator() => _rr.GetNode();
+        public string GetActivator() => _rr.GetMember();
     }
 }

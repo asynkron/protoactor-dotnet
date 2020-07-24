@@ -33,13 +33,13 @@ namespace Proto.Cluster
 
         private MemberData[] _members = Array.Empty<MemberData>();
 
-        public string GetNode(string key)
+        public string GetOwnerMemberByIdentity(string identity)
         {
             if (_members == null || _members.Length == 0) return "";
 
             if (_members.Length == 1) return _members[0].Status.Address;
 
-            var keyBytes = Encoding.UTF8.GetBytes(key);
+            var keyBytes = Encoding.UTF8.GetBytes(identity);
 
             uint maxScore = 0;
             MemberStatus? maxNode = null;

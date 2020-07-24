@@ -15,8 +15,8 @@ namespace Proto.Remote.Tests
             remote = new Remote(system, serialization);
         }
 
-        private static Remote remote;
-        private static ActorSystem system;
+        private static readonly Remote remote;
+        private static readonly ActorSystem system;
 
         private static bool remoteStarted;
 
@@ -33,7 +33,12 @@ namespace Proto.Remote.Tests
                     RetryTimeSpan = TimeSpan.FromSeconds(120)
                 }
             };
+            
+            var service = new ProtoService(12000,"0.0.0.0");
+            service.StartAsync().Wait();
+            
             remote.Start(GetLocalIp(), 12001, config);
+            
             remoteStarted = true;
 
             return (remote, system);
