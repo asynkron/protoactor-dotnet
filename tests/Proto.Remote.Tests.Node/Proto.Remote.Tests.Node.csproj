@@ -5,15 +5,15 @@
     <IsTestProject>false</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Remove="AutoFixture.Xunit2"/>
-    <PackageReference Remove="FluentAssertions"/>
-    <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
-    <PackageReference Remove="xunit"/>
-    <PackageReference Remove="xunit.runner.visualstudio"/>
+    <PackageReference Remove="AutoFixture.Xunit2" />
+    <PackageReference Remove="FluentAssertions" />
+    <PackageReference Remove="Microsoft.NET.Test.Sdk" />
+    <PackageReference Remove="xunit" />
+    <PackageReference Remove="xunit.runner.visualstudio" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj"/>
-    <ProjectReference Include="..\Proto.Remote.Tests.Messages\Proto.Remote.Tests.Messages.csproj"/>
+    <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
+    <ProjectReference Include="..\Proto.Remote.Tests.Messages\Proto.Remote.Tests.Messages.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="appsettings.json">

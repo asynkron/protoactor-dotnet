@@ -6,6 +6,7 @@ using Xunit;
 using System.Threading.Tasks;
 using Divergic.Logging.Xunit;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Proto.Remote.Tests.Messages;
 using Xunit.Abstractions;
 // ReSharper disable MethodHasAsyncOverload
@@ -20,7 +21,6 @@ namespace Proto.Remote.Tests
 
         public RemoteTests(ITestOutputHelper testOutputHelper)
         {
-            (Remote, System) = RemoteManager.EnsureRemote();
             var factory = LogFactory.Create(testOutputHelper);
             Log.SetLoggerFactory(factory);
         }
@@ -54,11 +54,17 @@ namespace Proto.Remote.Tests
         [Fact, DisplayTestMethodName]
         public async Task CanSendJsonAndReceiveToExistingRemote()
         {
-            var remoteActor = new PID(RemoteManager.RemoteAddress, "EchoActorInstance");
-            var ct = new CancellationTokenSource(3000);
-            var tcs = new TaskCompletionSource<bool>();
-            ct.Token.Register(() => { tcs.TrySetCanceled(); });
+            Console.WriteLine("hello");
+            ILogger<ProtoService> log = NullLogger<ProtoService>.Instance;
+  
+            var service = new ProtoService(log,12000,"0.0.0.0");
+            await service.StartAsync();
 
+            var (Remote, System) = RemoteManager.EnsureRemote();
+            
+            var remoteActor = new PID(RemoteManager.RemoteAddress, "EchoActorInstance");
+            var tcs = new TaskCompletionSource<bool>();
+            
             var localActor = System.Root.Spawn(
                 Props.FromFunc(
                     ctx =>
@@ -73,11 +79,12 @@ namespace Proto.Remote.Tests
                     }
                 )
             );
-
+            
             var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
             var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
             Remote.SendMessage(remoteActor, envelope, 1);
-            await tcs.Task;
+            
+            await service.StopAsync();
         }
 
         [Fact, DisplayTestMethodName]
