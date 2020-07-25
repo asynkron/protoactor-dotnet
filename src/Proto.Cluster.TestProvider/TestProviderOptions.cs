@@ -18,10 +18,5 @@ namespace Proto.Cluster.Testing
         /// Default value is 10 seconds
         /// </summary>
         public TimeSpan DeregisterCritical { get; set; } = TimeSpan.FromSeconds(30);
-
-        /// <summary>
-        /// Default value is 20 seconds
-        /// </summary>
-        public TimeSpan BlockingWaitTime { get; set; } = TimeSpan.FromSeconds(20);
     }
 }

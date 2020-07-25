@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Proto.Cluster.Testing;
+using Proto.Remote;
 using Xunit;
 
 namespace Proto.Cluster.Tests
@@ -64,5 +65,46 @@ namespace Proto.Cluster.Tests
             
             Assert.False(first.Alive);
         }
+        
+        [Fact]
+        public async Task InMemAgentServiceShouldBeAliveAfterTTLRefresh()
+        {
+            var agent = new InMemAgent();
+            agent.RegisterService(new AgentServiceRegistration
+            {
+                ID = "abc",
+                Address = "LocalHost",
+                Kinds = new []{"SomeKind"},
+                Port = 8080
+            });
+
+
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            agent.RefreshServiceTTL("abc");
+
+            var services = agent.GetServicesHealth();
+            var first = services.First();
+    
+            Assert.True(first.Alive);
+        }
+        
+        
+        [Fact]
+        public async Task ClusterShouldContainOneAliveNode()
+        {
+            var agent = new InMemAgent();
+            var provider = new TestProvider(new TestProviderOptions(),  agent);
+            
+            var system = new ActorSystem();
+            var serialization = new Serialization();
+            var cluster = new Cluster(system,serialization);
+            await cluster.Start("cluster1", "localhost", 8080, provider);
+            
+            var services = agent.GetServicesHealth();
+            var first = services.First();
+            Assert.True(first.Alive);
+            await cluster.Shutdown();
+        }
+        
     }
 }
