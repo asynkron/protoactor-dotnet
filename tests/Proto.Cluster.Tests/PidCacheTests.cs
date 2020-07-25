@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Proto.Cluster.Tests
 {
-    [Trait("Category", "Remote")]
+    [Trait("Category", "Cluster")]
     public class PidCacheTests
     {
 

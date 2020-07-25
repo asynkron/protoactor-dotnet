@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Timer = System.Timers.Timer;
@@ -18,11 +19,14 @@ namespace Proto.Cluster.Testing
         private string _clusterName;
         private ActorSystem _system;
         private static readonly ILogger Logger = Log.CreateLogger<TestProvider>();
+        private readonly InMemAgent _agent;
+        private IMemberStatusValueSerializer _statusValueSerializer;
 
 
-        public TestProvider(TestProviderOptions options)
+        public TestProvider(TestProviderOptions options,InMemAgent agent)
         {
             _options = options;
+            _agent = agent;
         }
         
 
@@ -34,38 +38,43 @@ namespace Proto.Cluster.Testing
             _id = $"{clusterName}@{address}:{port}";
             _clusterName = clusterName;
             _system = cluster.System;
+            _statusValueSerializer = statusValueSerializer;
 
             StartTTLTimer();
+            
+            _agent.RegisterService(new AgentServiceRegistration
+            {
+                Address= address,
+                ID = _id,
+                Kinds = kinds,
+                Port = port,
+            });
             
             return Actor.Done;
         }
 
         private async Task NotifyStatuses(ulong index)
         {
-            //TODO: how do we query the inmem store fore changes? RX?
-            var statuses = InMemAgent.GetServicesHealth(
-                _clusterName, new QueryOptions
-                {
-                    WaitIndex = index,
-                    WaitTime = _options.BlockingWaitTime
-                }
-            );
+            var statuses = _agent.GetServicesHealth();
 
             Logger.LogDebug("TestAgent response: {@Response}", (object) statuses);
 
-            // var memberStatuses =
-            //     statuses.Select(
-            //             x => new MemberStatus(
-            //                 x.Service.ID, x.Service.Address, x.Service.Port, x.Service.Tags,
-            //                 x.Checks.All(c => c.Status.Status != "critical"),
-            //                 _statusValueSerializer.Deserialize(x.Service.Meta["StatusValue"])
-            //             )
-            //         )
-            //         .ToList();
+            var memberStatuses =
+                statuses.Select(
+                        x => new MemberStatus(
+                            x.ID, 
+                            x.Host, 
+                            x.Port, 
+                            x.Kinds,
+                            x.Alive,
+                            _statusValueSerializer.Deserialize(x.StatusValue)
+                        )
+                    )
+                    .ToList();
 
 
-       //     var res = new ClusterTopologyEvent(memberStatuses);
-         //   _system.EventStream.Publish(res);
+           var res = new ClusterTopologyEvent(memberStatuses);
+           _system.EventStream.Publish(res);
         }
 
         private void StartTTLTimer()
@@ -79,7 +88,7 @@ namespace Proto.Cluster.Testing
 
         private void RefreshTTL()
         {
-            InMemAgent.RefreshServiceTTL(_id);
+            _agent.RefreshServiceTTL(_id);
         }
 
         public Task DeregisterMemberAsync(Cluster cluster)
@@ -87,19 +96,13 @@ namespace Proto.Cluster.Testing
             Logger.LogDebug("Unregistering service {Service}", _id);
 
             _ttlReportTimer.Stop();
-            InMemAgent.DeregisterService(_id);
+            _agent.DeregisterService(_id);
             return Task.CompletedTask;
         }
 
         public Task ShutdownAsync(Cluster cluster)
         {
             return DeregisterMemberAsync(cluster);
-        }
-
-        public void MonitorMemberStatusChanges(Cluster cluster)
-        {
-            //TODO start listening to status changes
-            
         }
     }
 }

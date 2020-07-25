@@ -1,27 +1,55 @@
 using System;
+using System.Collections.Concurrent;
+using System.Linq;
 
 namespace Proto.Cluster.Testing
 {
-    internal class InMemAgent
+    public class AgentServiceStatus
     {
-        public static  object[] GetServicesHealth(string clusterName, QueryOptions queryOptions)
+        public string ID { get; set; }
+        public DateTimeOffset TTL { get; set; }
+        public bool Alive => DateTimeOffset.Now - TTL <= TimeSpan.FromSeconds(5);
+
+        public string Host { get; set; }
+
+        public int Port { get; set; }
+
+        public string[] Kinds { get; set; }
+        public string StatusValue { get; set; } //what goes here?
+    }
+    public class InMemAgent
+    {
+        
+        private readonly ConcurrentDictionary<string,AgentServiceStatus> _services = new ConcurrentDictionary<string, AgentServiceStatus>();
+        public  AgentServiceStatus[] GetServicesHealth()
         {
-            throw new NotImplementedException();
+            return _services.Values.ToArray();
         }
 
-        public static void RegisterService(AgentServiceRegistration registration)
+        public void RegisterService(AgentServiceRegistration registration)
         {
-            throw new NotImplementedException();
+            _services.TryAdd(registration.ID, new AgentServiceStatus
+            {
+                ID = registration.ID,
+                TTL = DateTimeOffset.Now,
+                Kinds = registration.Kinds,
+                Host = registration.Address,
+                Port = registration.Port,
+            });
         }
 
-        public static void DeregisterService(string id)
+        public void DeregisterService(string id)
         {
-            throw new NotImplementedException();
+            _services.TryRemove(id,out _);
         }
 
-        public static void RefreshServiceTTL(string id)
+        public void RefreshServiceTTL(string id)
         {
-            throw new NotImplementedException();
+            //TODO: this is racy, but yolo for now
+            if (_services.TryGetValue(id,out var service))
+            {
+                service.TTL = DateTimeOffset.Now;
+            }
         }
     }
 }
