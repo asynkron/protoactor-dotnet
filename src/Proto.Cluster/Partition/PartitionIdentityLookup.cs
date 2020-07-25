@@ -10,7 +10,7 @@ namespace Proto.Cluster
     public class PartitionIdentityLookup : IIdentityLookup
     {
         private Cluster _cluster;
-        private static readonly ILogger Logger = Log.CreateLogger(typeof(PartitionIdentityLookup).FullName);
+        private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityLookup>();
 
         public async Task<(PID?,ResponseStatusCode)> GetAsync(string identity,string kind, CancellationToken ct)
         {
