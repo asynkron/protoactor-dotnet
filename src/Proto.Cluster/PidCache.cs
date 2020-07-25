@@ -15,13 +15,7 @@ namespace Proto.Cluster
         private readonly ConcurrentDictionary<string, PID> _cacheIdentityToPid = new ConcurrentDictionary<string, PID>();
         private readonly ConcurrentDictionary<string, string> _cachePidToIdentity = new ConcurrentDictionary<string, string>();
 
-        internal void OnMemberStatusEvent(MemberStatusEvent evn)
-        {
-            if (evn is MemberLeftEvent || evn is MemberRejoinedEvent)
-            {
-                RemoveByMemberAddress(evn.Address);
-            }
-        }
+
 
         internal bool TryGetCache(string identity, out PID pid) => _cacheIdentityToPid.TryGetValue(identity, out pid);
 
@@ -44,7 +38,7 @@ namespace Proto.Cluster
             }
         }
 
-        private void RemoveByMemberAddress(string memberAddress)
+        internal void RemoveByMemberAddress(string memberAddress)
         {
             foreach (var (identity, pid) in _cacheIdentityToPid.ToArray())
             {

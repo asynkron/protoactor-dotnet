@@ -30,9 +30,8 @@ namespace Proto.Cluster
             System = system;
             Remote = new Remote.Remote(system, serialization);
             Partition = new Partition(this);
-            MemberList = new MemberList(this);
-            
             PidCache = new PidCache();
+            MemberList = new MemberList(this);
             PidCacheUpdater = new PidCacheUpdater(this,PidCache);
         }
 
@@ -68,9 +67,6 @@ namespace Proto.Cluster
             {
                 PidCacheUpdater.Setup();
             }
-
-
-            //setup memberlist
 
             var (host, port) = System.ProcessRegistry.GetAddress();
 
