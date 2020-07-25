@@ -73,7 +73,7 @@ namespace Proto.Cluster
 
             var (host, port) = System.ProcessRegistry.GetAddress();
 
-            await Config.ClusterProvider.RegisterMemberAsync(
+            await Config.ClusterProvider.StartAsync(
                 this,
                 Config.Name,
                 host,
@@ -82,7 +82,6 @@ namespace Proto.Cluster
                 Config.InitialMemberStatusValue,
                 Config.MemberStatusValueSerializer
             );
-            Config.ClusterProvider.MonitorMemberStatusChanges(this);
 
             Logger.LogInformation("[Cluster] Started");
         }
@@ -92,7 +91,7 @@ namespace Proto.Cluster
             Logger.LogInformation("[Cluster] Stopping...");
             if (graceful)
             {
-                await Config!.ClusterProvider.Shutdown(this);
+                await Config!.ClusterProvider.ShutdownAsync(this);
 
                 //This is to wait ownership transferring complete.
                 await Task.Delay(2000);

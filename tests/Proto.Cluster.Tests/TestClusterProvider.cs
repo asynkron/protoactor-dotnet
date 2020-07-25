@@ -4,7 +4,7 @@ namespace Proto.Cluster.Tests
 {
     public class TestClusterProvider : IClusterProvider
     {
-        public Task RegisterMemberAsync(Cluster cluster, string clusterName, string h, int p, string[] kinds, IMemberStatusValue statusValue, IMemberStatusValueSerializer serializer)
+        public Task StartAsync(Cluster cluster, string clusterName, string h, int p, string[] kinds, IMemberStatusValue statusValue, IMemberStatusValueSerializer serializer)
         {
             return Task.FromResult(0);
         }
@@ -23,7 +23,7 @@ namespace Proto.Cluster.Tests
             return Task.FromResult(0);
         }
 
-        public Task Shutdown(Cluster cluster)
+        public Task ShutdownAsync(Cluster cluster)
         {
             return Task.FromResult(0);
         }

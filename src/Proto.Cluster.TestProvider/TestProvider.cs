@@ -26,7 +26,7 @@ namespace Proto.Cluster.Testing
         }
         
 
-        public Task RegisterMemberAsync(Cluster cluster,
+        public Task StartAsync(Cluster cluster,
             string clusterName, string address, int port, string[] kinds, IMemberStatusValue statusValue,
             IMemberStatusValueSerializer statusValueSerializer
         )
@@ -91,7 +91,7 @@ namespace Proto.Cluster.Testing
             return Task.CompletedTask;
         }
 
-        public Task Shutdown(Cluster cluster)
+        public Task ShutdownAsync(Cluster cluster)
         {
             return DeregisterMemberAsync(cluster);
         }
@@ -100,13 +100,6 @@ namespace Proto.Cluster.Testing
         {
             //TODO start listening to status changes
             
-        }
-
-        public Task UpdateMemberStatusValueAsync(Cluster cluster, IMemberStatusValue statusValue)
-        {
-            //who calls this?
-            //cluster.System.Root.Send(_clusterMonitor, new Messages.UpdateStatusValue { StatusValue = statusValue });
-            return Actor.Done;
         }
     }
 }

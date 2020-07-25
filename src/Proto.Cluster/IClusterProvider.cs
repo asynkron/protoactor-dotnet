@@ -12,14 +12,11 @@ namespace Proto.Cluster
     [PublicAPI]
     public interface IClusterProvider
     {
-        Task RegisterMemberAsync(
+        Task StartAsync(
             Cluster cluster, string clusterName, string host, int port, string[] kinds,
             IMemberStatusValue? statusValue, IMemberStatusValueSerializer serializer
         );
 
-        void MonitorMemberStatusChanges(Cluster cluster);
-        Task UpdateMemberStatusValueAsync(Cluster cluster, IMemberStatusValue statusValue);
-        Task DeregisterMemberAsync(Cluster cluster);
-        Task Shutdown(Cluster cluster);
+        Task ShutdownAsync(Cluster cluster);
     }
 }
