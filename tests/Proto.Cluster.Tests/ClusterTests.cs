@@ -93,18 +93,42 @@ namespace Proto.Cluster.Tests
         public async Task ClusterShouldContainOneAliveNode()
         {
             var agent = new InMemAgent();
-            var provider = new TestProvider(new TestProviderOptions(),  agent);
             
-            var system = new ActorSystem();
-            var serialization = new Serialization();
-            var cluster = new Cluster(system,serialization);
-            await cluster.Start("cluster1", "localhost", 8080, provider);
-            
+            var cluster = await NewCluster(agent,8080);
+
             var services = agent.GetServicesHealth();
             var first = services.First();
             Assert.True(first.Alive);
+            Assert.True(services.Length == 1);
+            
             await cluster.Shutdown();
         }
         
+        [Fact]
+        public async Task ClusterShouldContainTwoAliveNode()
+        {
+            var agent = new InMemAgent();
+            
+            var cluster1 = await NewCluster(agent,8080);
+            var cluster2 = await NewCluster(agent,8081);
+
+            var services = agent.GetServicesHealth();
+  
+            Assert.True(services.Length == 2);
+            Assert.True(services.All(m => m.Alive));
+            
+            await cluster1.Shutdown();
+            await cluster2.Shutdown();
+        }
+
+        private static async Task<Cluster> NewCluster(InMemAgent agent,int port)
+        {
+            var provider = new TestProvider(new TestProviderOptions(),  agent);
+            var system = new ActorSystem();
+            var serialization = new Serialization();
+            var cluster = new Cluster(system, serialization);
+            await cluster.Start("cluster1", "localhost", port, provider);
+            return cluster;
+        }
     }
 }
