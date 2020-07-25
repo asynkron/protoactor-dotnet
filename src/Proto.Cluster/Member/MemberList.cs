@@ -15,20 +15,15 @@ namespace Proto.Cluster
     //TODO: check usage and threadsafety.
     public class MemberList
     {
-        private static readonly ILogger Logger = Log.CreateLogger("MemberList");
+        private static readonly ILogger Logger = Log.CreateLogger<MemberList>();
 
         private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
         private readonly Dictionary<string, MemberStatus> _members = new Dictionary<string, MemberStatus>();
         private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind = new Dictionary<string, IMemberStrategy>();
         private readonly Cluster _cluster;
-
-        private Subscription<object>? _clusterTopologyEvnSub;
+        
 
         public MemberList(Cluster cluster) => _cluster = cluster;
-
-        internal void Setup() => _clusterTopologyEvnSub = _cluster.System.EventStream.Subscribe<ClusterTopologyEvent>(UpdateClusterTopology);
-
-        internal void Stop() => _cluster.System.EventStream.Unsubscribe(_clusterTopologyEvnSub);
 
         internal string GetPartition(string name, string kind)
         {
@@ -74,7 +69,7 @@ namespace Proto.Cluster
             }
         }
 
-        private void UpdateClusterTopology(ClusterTopologyEvent msg)
+        public void UpdateClusterTopology(IReadOnlyCollection<MemberStatus> statuses)
         {
             var locked = _rwLock.TryEnterWriteLock(1000);
 
@@ -89,7 +84,7 @@ namespace Proto.Cluster
                 //get all new members address sets
                 var newMembersAddress = new HashSet<string>();
 
-                foreach (var status in msg.Statuses)
+                foreach (var status in statuses)
                 {
                     newMembersAddress.Add(status.Address);
                 }
@@ -105,7 +100,7 @@ namespace Proto.Cluster
                 }
 
                 //find all the entries that exist in the new set
-                foreach (var @new in msg.Statuses)
+                foreach (var @new in statuses)
                 {
                     _members.TryGetValue(@new.Address, out var old);
                     _members[@new.Address] = @new;

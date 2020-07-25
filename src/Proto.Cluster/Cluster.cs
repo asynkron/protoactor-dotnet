@@ -69,7 +69,8 @@ namespace Proto.Cluster
                 PidCacheUpdater.Setup();
             }
 
-            MemberList.Setup();
+
+            //setup memberlist
 
             var (host, port) = System.ProcessRegistry.GetAddress();
 
@@ -80,7 +81,8 @@ namespace Proto.Cluster
                 port,
                 kinds,
                 Config.InitialMemberStatusValue,
-                Config.MemberStatusValueSerializer
+                Config.MemberStatusValueSerializer,
+                MemberList
             );
 
             Logger.LogInformation("[Cluster] Started");
@@ -93,10 +95,6 @@ namespace Proto.Cluster
             {
                 await Config!.ClusterProvider.ShutdownAsync(this);
 
-                //This is to wait ownership transferring complete.
-                await Task.Delay(2000);
-
-                MemberList.Stop();
                 PidCacheUpdater.Stop();
                 Partition.Stop();
             }

@@ -21,6 +21,7 @@ namespace Proto.Cluster.Testing
         private static readonly ILogger Logger = Log.CreateLogger<TestProvider>();
         private readonly InMemAgent _agent;
         private IMemberStatusValueSerializer _statusValueSerializer;
+        private MemberList _memberList;
 
 
         public TestProvider(TestProviderOptions options,InMemAgent agent)
@@ -31,14 +32,14 @@ namespace Proto.Cluster.Testing
         
 
         public Task StartAsync(Cluster cluster,
-            string clusterName, string address, int port, string[] kinds, IMemberStatusValue statusValue,
-            IMemberStatusValueSerializer statusValueSerializer
-        )
+            string clusterName, string address, int port, string[] kinds, IMemberStatusValue? statusValue,
+            IMemberStatusValueSerializer statusValueSerializer, MemberList memberList)
         {
             _id = $"{clusterName}@{address}:{port}";
             _clusterName = clusterName;
             _system = cluster.System;
             _statusValueSerializer = statusValueSerializer;
+            _memberList = memberList;
 
             StartTTLTimer();
             
@@ -72,9 +73,7 @@ namespace Proto.Cluster.Testing
                     )
                     .ToList();
 
-
-           var res = new ClusterTopologyEvent(memberStatuses);
-           _system.EventStream.Publish(res);
+            _memberList.UpdateClusterTopology(memberStatuses);
         }
 
         private void StartTTLTimer()

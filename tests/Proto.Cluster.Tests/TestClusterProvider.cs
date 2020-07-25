@@ -4,7 +4,8 @@ namespace Proto.Cluster.Tests
 {
     public class TestClusterProvider : IClusterProvider
     {
-        public Task StartAsync(Cluster cluster, string clusterName, string h, int p, string[] kinds, IMemberStatusValue statusValue, IMemberStatusValueSerializer serializer)
+        public Task StartAsync(Cluster cluster, string clusterName, string h, int p, string[] kinds,
+            IMemberStatusValue? statusValue, IMemberStatusValueSerializer serializer, MemberList memberList)
         {
             return Task.FromResult(0);
         }
