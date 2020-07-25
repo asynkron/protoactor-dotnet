@@ -1,4 +1,4 @@
-namespace Proto.Cluster.Consul {
+namespace Proto.Cluster.Testing {
     static class Messages
     {
         public class RegisterMember

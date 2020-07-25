@@ -1,6 +1,6 @@
 using System;
 
-namespace Proto.Cluster.Consul
+namespace Proto.Cluster.Testing
 {
     public class TestProviderOptions
     {

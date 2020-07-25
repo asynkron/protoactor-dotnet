@@ -4,75 +4,108 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using System.Threading.Tasks;
-using Consul;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
+using Timer = System.Timers.Timer;
 
-namespace Proto.Cluster.Consul
+namespace Proto.Cluster.Testing
 {
     public class TestProvider : IClusterProvider
     {
         private readonly TestProviderOptions _options;
-        private readonly Action<ConsulClientConfiguration> _consulConfig;
-        private PID _clusterMonitor;
+        private Timer _ttlReportTimer;
+        private string _id;
+        private string _clusterName;
+        private ActorSystem _system;
+        private static readonly ILogger Logger = Log.CreateLogger<TestProvider>();
 
-        public TestProvider(TestProviderOptions options) : this(options, config => { }) { }
 
-        public TestProvider(TestProviderOptions options, Action<ConsulClientConfiguration> consulConfig)
+        public TestProvider(TestProviderOptions options)
         {
             _options = options;
-            _consulConfig = consulConfig;
         }
-
-        public TestProvider(IOptions<TestProviderOptions> options) : this(options.Value, config => { }) { }
-
-        public TestProvider(IOptions<TestProviderOptions> options, Action<ConsulClientConfiguration> consulConfig)
-            : this(options.Value, consulConfig) { }
+        
 
         public Task RegisterMemberAsync(Cluster cluster,
             string clusterName, string address, int port, string[] kinds, IMemberStatusValue statusValue,
             IMemberStatusValueSerializer statusValueSerializer
         )
         {
-            var props = Props
-                .FromProducer(() => new TestClusterMonitor(cluster.System, _options, _consulConfig))
-                .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
-                .WithDispatcher(Mailbox.Dispatchers.SynchronousDispatcher);
-            _clusterMonitor = cluster.System.Root.SpawnNamed(props, "ClusterMonitor");
+            _id = $"{clusterName}@{address}:{port}";
+            _clusterName = clusterName;
+            _system = cluster.System;
 
-            cluster.System.Root.Send(
-                _clusterMonitor, new Messages.RegisterMember
+            StartTTLTimer();
+            
+            return Actor.Done;
+        }
+
+        private async Task NotifyStatuses(ulong index)
+        {
+            //TODO: how do we query the inmem store fore changes? RX?
+            var statuses = InMemAgent.GetServicesHealth(
+                _clusterName, new QueryOptions
                 {
-                    ClusterName = clusterName,
-                    Address = address,
-                    Port = port,
-                    Kinds = kinds,
-                    StatusValue = statusValue,
-                    StatusValueSerializer = statusValueSerializer
+                    WaitIndex = index,
+                    WaitTime = _options.BlockingWaitTime
                 }
             );
 
-            return Actor.Done;
+            Logger.LogDebug("TestAgent response: {@Response}", (object) statuses);
+
+            // var memberStatuses =
+            //     statuses.Select(
+            //             x => new MemberStatus(
+            //                 x.Service.ID, x.Service.Address, x.Service.Port, x.Service.Tags,
+            //                 x.Checks.All(c => c.Status.Status != "critical"),
+            //                 _statusValueSerializer.Deserialize(x.Service.Meta["StatusValue"])
+            //             )
+            //         )
+            //         .ToList();
+
+
+       //     var res = new ClusterTopologyEvent(memberStatuses);
+         //   _system.EventStream.Publish(res);
+        }
+
+        private void StartTTLTimer()
+        {
+            _ttlReportTimer = new Timer(_options.RefreshTtl.TotalMilliseconds);
+            _ttlReportTimer.Elapsed += (sender, args) => { RefreshTTL(); };
+            _ttlReportTimer.Enabled = true;
+            _ttlReportTimer.AutoReset = true;
+            _ttlReportTimer.Start();
+        }
+
+        private void RefreshTTL()
+        {
+            InMemAgent.RefreshServiceTTL(_id);
         }
 
         public Task DeregisterMemberAsync(Cluster cluster)
         {
-            cluster.System.Root.Send(_clusterMonitor, new Messages.DeregisterMember());
-            return Actor.Done;
+            Logger.LogDebug("Unregistering service {Service}", _id);
+
+            _ttlReportTimer.Stop();
+            InMemAgent.DeregisterService(_id);
+            return Task.CompletedTask;
         }
 
         public Task Shutdown(Cluster cluster)
         {
-            cluster.System.Root.Stop(_clusterMonitor);
-            return Task.CompletedTask;
+            return DeregisterMemberAsync(cluster);
         }
 
-        public void MonitorMemberStatusChanges(Cluster cluster) => cluster.System.Root.Send(_clusterMonitor, new Messages.CheckStatus { Index = 0 });
+        public void MonitorMemberStatusChanges(Cluster cluster)
+        {
+            //TODO start listening to status changes
+            
+        }
 
         public Task UpdateMemberStatusValueAsync(Cluster cluster, IMemberStatusValue statusValue)
         {
-            cluster.System.Root.Send(_clusterMonitor, new Messages.UpdateStatusValue { StatusValue = statusValue });
+            //who calls this?
+            //cluster.System.Root.Send(_clusterMonitor, new Messages.UpdateStatusValue { StatusValue = statusValue });
             return Actor.Done;
         }
     }

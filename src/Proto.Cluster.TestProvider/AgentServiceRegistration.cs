@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Proto.Cluster.Consul
+namespace Proto.Cluster.Testing
 {
     internal class AgentServiceRegistration
     {
