@@ -117,7 +117,7 @@ namespace Proto.Cluster
                     return Task.FromResult((pid, ResponseStatusCode.OK));
             }
 
-            return IdentityLookup.GetAsync(identity, kind, ct);
+            return IdentityLookup!.GetAsync(identity, kind, ct);
         }
     }
 }
