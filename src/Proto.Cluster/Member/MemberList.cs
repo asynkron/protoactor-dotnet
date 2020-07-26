@@ -25,6 +25,7 @@ namespace Proto.Cluster
 
         public MemberList(Cluster cluster) => _cluster = cluster;
 
+        //TODO: should this really live here, or be moved to PartitionManager?
         internal string GetPartition(string name, string kind)
         {
             var locked = _rwLock.TryEnterReadLock(1000);

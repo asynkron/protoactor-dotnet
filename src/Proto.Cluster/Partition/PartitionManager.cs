@@ -8,14 +8,20 @@ using System.Collections.Generic;
 
 namespace Proto.Cluster
 {
-    internal class Partition
+    //This class keeps track of all partitions. 
+    //it spawns one partition actor per known kind
+    //then  each partition actor PID is stored in a lookup
+    internal class PartitionManager
     {
         private readonly Dictionary<string, PID> _kindMap = new Dictionary<string, PID>();
 
         private Subscription<object>? _memberStatusSub;
-        private Cluster Cluster { get; }
+        private readonly Cluster _cluster;
 
-        internal Partition(Cluster cluster) => Cluster = cluster;
+        internal PartitionManager(Cluster cluster)
+        {
+            _cluster = cluster;
+        }
 
         public void Setup(string[] kinds)
         {
@@ -25,14 +31,14 @@ namespace Proto.Cluster
                 _kindMap[kind] = pid;
             }
 
-            _memberStatusSub = Cluster.System.EventStream.Subscribe<MemberStatusEvent>(
+            _memberStatusSub = _cluster.System.EventStream.Subscribe<MemberStatusEvent>(
                 msg =>
                 {
                     foreach (var kind in msg.Kinds)
                     {
                         if (_kindMap.TryGetValue(kind, out var kindPid))
                         {
-                            Cluster.System.Root.Send(kindPid, msg);
+                            _cluster.System.Root.Send(kindPid, msg);
                         }
                     }
                 }
@@ -42,9 +48,9 @@ namespace Proto.Cluster
         private PID SpawnPartitionActor(string kind)
         {
             var props = Props
-                .FromProducer(() => new PartitionActor(Cluster, kind, this))
+                .FromProducer(() => new PartitionActor(_cluster, kind, this))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-            var pid = Cluster.System.Root.SpawnNamed(props, "partition-" + kind);
+            var pid = _cluster.System.Root.SpawnNamed(props, "partition-" + kind);
             return pid;
         }
 
@@ -52,13 +58,16 @@ namespace Proto.Cluster
         {
             foreach (var kind in _kindMap.Values)
             {
-                Cluster.System.Root.Stop(kind);
+                _cluster.System.Root.Stop(kind);
             }
 
             _kindMap.Clear();
-            Cluster.System.EventStream.Unsubscribe(_memberStatusSub);
+            _cluster.System.EventStream.Unsubscribe(_memberStatusSub);
         }
 
-        public PID PartitionForKind(string address, string kind) => new PID(address, "partition-" + kind);
+        public PID PartitionForKind(string address, string kind)
+        {
+            return _kindMap[kind];
+        }
     }
 }

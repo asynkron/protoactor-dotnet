@@ -23,14 +23,14 @@ namespace Proto.Cluster
 
         // private readonly Partition _partition;
         private readonly Dictionary<string, SpawningProcess> _spawningProcs = new Dictionary<string, SpawningProcess>(); //spawning processes
-        private Partition _partition;
+        private PartitionManager _partitionManager;
         public Cluster Cluster { get; }
 
-        public PartitionActor(Cluster cluster, string kind, Partition partition)
+        public PartitionActor(Cluster cluster, string kind, PartitionManager partitionManager)
         {
             Cluster = cluster;
             _kind = kind; 
-            _partition = partition;
+            _partitionManager = partitionManager;
         }
 
         public Task ReceiveAsync(IContext context)
@@ -81,7 +81,7 @@ namespace Proto.Cluster
             if (!string.IsNullOrEmpty(address) && address != Cluster.System.ProcessRegistry.Address)
             {
                 //if not, forward to the correct owner
-                var owner = _partition.PartitionForKind(address, _kind);
+                var owner = _partitionManager.PartitionForKind(address, _kind);
 
                 context.Send(owner, msg);
             }
@@ -185,7 +185,7 @@ namespace Proto.Cluster
         private void TransferOwnership(string actorId, string address, IContext context)
         {
             var pid = _partitionLookup[actorId];
-            var owner = _partition.PartitionForKind(address, _kind);
+            var owner = _partitionManager.PartitionForKind(address, _kind);
             context.Send(owner, new TakeOwnership {Name = actorId, Pid = pid});
             _partitionLookup.Remove(actorId);
             _reversePartition.Remove(pid);
