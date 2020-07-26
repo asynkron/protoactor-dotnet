@@ -29,13 +29,13 @@ namespace Proto.Cluster
         {
             System = system;
             Remote = new Remote.Remote(system, serialization);
-            Partition = new Partition(this);
+
             PidCache = new PidCache();
             MemberList = new MemberList(this);
             PidCacheUpdater = new PidCacheUpdater(this,PidCache);
         }
 
-        internal Partition Partition { get; }
+
         internal MemberList MemberList { get; }
         internal PidCache PidCache { get; }
         internal PidCacheUpdater PidCacheUpdater { get; }
@@ -52,7 +52,7 @@ namespace Proto.Cluster
             //default to partition identity lookup
             IdentityLookup = config.IdentityLookup ?? new PartitionIdentityLookup();
 
-            IdentityLookup.Setup(this);
+           
             
             Remote.Start(Config.Address, Config.Port, Config.RemoteConfig);
 
@@ -61,8 +61,10 @@ namespace Proto.Cluster
             Logger.LogInformation("[Cluster] Starting...");
 
             var kinds = Remote.GetKnownKinds();
+            IdentityLookup.Setup(this, kinds);
+            
 
-            Partition.Setup(kinds);
+
             if (config.UsePidCache)
             {
                 PidCacheUpdater.Setup();
@@ -92,7 +94,7 @@ namespace Proto.Cluster
                 await Config!.ClusterProvider.ShutdownAsync(this);
 
                 PidCacheUpdater.Stop();
-                Partition.Stop();
+                IdentityLookup.Stop();
             }
 
             await Remote.Shutdown(graceful);

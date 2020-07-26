@@ -42,7 +42,7 @@ namespace Proto.Cluster
         private PID SpawnPartitionActor(string kind)
         {
             var props = Props
-                .FromProducer(() => new PartitionActor(Cluster, kind))
+                .FromProducer(() => new PartitionActor(Cluster, kind, this))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
             var pid = Cluster.System.Root.SpawnNamed(props, "partition-" + kind);
             return pid;
