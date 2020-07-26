@@ -31,6 +31,7 @@ namespace Proto.Cluster
                 _kindMap[kind] = pid;
             }
 
+            //TODO: should we have some other form of notification here?
             _memberStatusSub = _cluster.System.EventStream.Subscribe<MemberStatusEvent>(
                 msg =>
                 {

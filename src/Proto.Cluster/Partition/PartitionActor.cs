@@ -23,7 +23,7 @@ namespace Proto.Cluster
 
         // private readonly Partition _partition;
         private readonly Dictionary<string, SpawningProcess> _spawningProcs = new Dictionary<string, SpawningProcess>(); //spawning processes
-        private PartitionManager _partitionManager;
+        private readonly PartitionManager _partitionManager;
         public Cluster Cluster { get; }
 
         public PartitionActor(Cluster cluster, string kind, PartitionManager partitionManager)
