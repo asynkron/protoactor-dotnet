@@ -5,6 +5,10 @@
 # Proto.Actor
 Ultra-fast, distributed, cross-platform actors.
 
+## Bootcamp Training
+
+[https://github.com/AsynkronIT/protoactor-bootcamp](https://github.com/AsynkronIT/protoactor-bootcamp)
+
 ## Installing
 
 Using NuGet Package Manager Console:
