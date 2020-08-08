@@ -13,6 +13,7 @@ namespace Proto.Cluster.IdentityLookup
     public interface IIdentityLookup
     {
         Task<(PID?,ResponseStatusCode)> GetAsync(string identity,string kind, CancellationToken ct);
-        void Setup(Cluster cluster);
+        void Setup(Cluster cluster, string[] kinds);
+        void Stop();
     }
 }

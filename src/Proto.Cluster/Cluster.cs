@@ -29,14 +29,13 @@ namespace Proto.Cluster
         {
             System = system;
             Remote = new Remote.Remote(system, serialization);
-            Partition = new Partition(this);
-            MemberList = new MemberList(this);
-            
+
             PidCache = new PidCache();
+            MemberList = new MemberList(this);
             PidCacheUpdater = new PidCacheUpdater(this,PidCache);
         }
 
-        internal Partition Partition { get; }
+
         internal MemberList MemberList { get; }
         internal PidCache PidCache { get; }
         internal PidCacheUpdater PidCacheUpdater { get; }
@@ -53,7 +52,7 @@ namespace Proto.Cluster
             //default to partition identity lookup
             IdentityLookup = config.IdentityLookup ?? new PartitionIdentityLookup();
 
-            IdentityLookup.Setup(this);
+           
             
             Remote.Start(Config.Address, Config.Port, Config.RemoteConfig);
 
@@ -62,27 +61,27 @@ namespace Proto.Cluster
             Logger.LogInformation("[Cluster] Starting...");
 
             var kinds = Remote.GetKnownKinds();
+            IdentityLookup.Setup(this, kinds);
+            
 
-            Partition.Setup(kinds);
+
             if (config.UsePidCache)
             {
                 PidCacheUpdater.Setup();
             }
 
-            MemberList.Setup();
-
             var (host, port) = System.ProcessRegistry.GetAddress();
 
-            await Config.ClusterProvider.RegisterMemberAsync(
+            await Config.ClusterProvider.StartAsync(
                 this,
                 Config.Name,
                 host,
                 port,
                 kinds,
                 Config.InitialMemberStatusValue,
-                Config.MemberStatusValueSerializer
+                Config.MemberStatusValueSerializer,
+                MemberList
             );
-            Config.ClusterProvider.MonitorMemberStatusChanges(this);
 
             Logger.LogInformation("[Cluster] Started");
         }
@@ -92,14 +91,10 @@ namespace Proto.Cluster
             Logger.LogInformation("[Cluster] Stopping...");
             if (graceful)
             {
-                await Config!.ClusterProvider.Shutdown(this);
+                await Config!.ClusterProvider.ShutdownAsync(this);
 
-                //This is to wait ownership transferring complete.
-                await Task.Delay(2000);
-
-                MemberList.Stop();
                 PidCacheUpdater.Stop();
-                Partition.Stop();
+                IdentityLookup.Stop();
             }
 
             await Remote.Shutdown(graceful);
@@ -118,7 +113,7 @@ namespace Proto.Cluster
                     return Task.FromResult((pid, ResponseStatusCode.OK));
             }
 
-            return IdentityLookup.GetAsync(identity, kind, ct);
+            return IdentityLookup!.GetAsync(identity, kind, ct);
         }
     }
 }

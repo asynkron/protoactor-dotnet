@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Proto.Cluster.Tests
 {
-    [Trait("Category", "Remote")]
+    [Trait("Category", "Cluster")]
     public class PidCacheTests
     {
 
@@ -52,8 +52,7 @@ namespace Proto.Cluster.Tests
             cache.TryAddCache("someOtherIdentity", pid2);
             
             //act
-            var left = new MemberLeftEvent("member2", 123, Array.Empty<string>());
-            cache.OnMemberStatusEvent(left);
+            cache.RemoveByMemberAddress("member2:123");
             
             //assert
             //pids from member2 should be removed

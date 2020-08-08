@@ -10,7 +10,8 @@ namespace Proto.Cluster
     public class PartitionIdentityLookup : IIdentityLookup
     {
         private Cluster _cluster;
-        private static readonly ILogger Logger = Log.CreateLogger(typeof(PartitionIdentityLookup).FullName);
+        private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityLookup>();
+        private PartitionManager PartitionManager { get;  set; }
 
         public async Task<(PID?,ResponseStatusCode)> GetAsync(string identity,string kind, CancellationToken ct)
         {
@@ -23,7 +24,7 @@ namespace Proto.Cluster
             }
 
             
-            var remotePid = _cluster.Partition.PartitionForKind(address, kind);
+            var remotePid = PartitionManager.PartitionForKind(address, kind);
 
             var req = new ActorPidRequest
             {
@@ -67,9 +68,16 @@ namespace Proto.Cluster
             }
         }
 
-        public void Setup(Cluster cluster)
+        public void Setup(Cluster cluster, string[] kinds)
         {
             _cluster = cluster;
+            PartitionManager = new PartitionManager(cluster);
+            PartitionManager.Setup(kinds);
+        }
+
+        public void Stop()
+        {
+            PartitionManager.Stop();
         }
     }
 }
