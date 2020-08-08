@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-//   <copyright file="IRouterConfig.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
+//   <copyright file="IRouterConfig.cs" company="Asynkron AB">
+//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
