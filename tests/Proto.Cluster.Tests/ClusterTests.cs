@@ -171,6 +171,10 @@ namespace Proto.Cluster.Tests
         [Fact]
         public async Task ClusterShouldSpawnActors()
         {
+            
+            //TODO:
+            //In mem agent fails as of now since it does not raise change events
+            
             var agent = new InMemAgent();
             
             var prop = Props.FromFunc(context =>

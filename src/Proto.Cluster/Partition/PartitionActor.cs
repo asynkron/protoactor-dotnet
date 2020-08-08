@@ -41,7 +41,7 @@ namespace Proto.Cluster
                     Logger.LogDebug("[Partition] Started for {Kind}", _kind);
                     break;
                 case ActorPidRequest msg:
-                    Spawn(msg, context);
+                    GetOrSpawn(msg, context);
                     break;
                 case Terminated msg:
                     Terminated(msg);
@@ -192,7 +192,7 @@ namespace Proto.Cluster
             context.Unwatch(pid);
         }
 
-        private void Spawn(ActorPidRequest msg, IContext context)
+        private void GetOrSpawn(ActorPidRequest msg, IContext context)
         {
             //Check if exist in current partition dictionary
             if (_partitionLookup.TryGetValue(msg.Name, out var pid))
