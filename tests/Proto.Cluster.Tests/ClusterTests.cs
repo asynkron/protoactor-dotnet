@@ -171,10 +171,6 @@ namespace Proto.Cluster.Tests
         [Fact]
         public async Task ClusterShouldSpawnActors()
         {
-            
-            //TODO:
-            //In mem agent fails as of now since it does not raise change events
-            
             var agent = new InMemAgent();
             
             var prop = Props.FromFunc(context =>
@@ -191,16 +187,21 @@ namespace Proto.Cluster.Tests
             var cluster1 = await NewCluster(agent,8080,("echo", prop));
             var cluster2 = await NewCluster(agent,8081,("echo", prop));
 
+     
+
             var (pid,response) = await cluster1.GetAsync("myactor", "echo");
             
             _logger.LogDebug("Response = {0}",response);
             _logger.LogDebug("PID = {0}",pid);
+
             
             Assert.Equal(ResponseStatusCode.OK,response);
             Assert.NotNull(pid);
+            
+ 
 
-            await cluster1.Shutdown();
-            await cluster2.Shutdown();
+            await cluster1.Shutdown(false);
+            await cluster2.Shutdown(false);
         }
 
         private static async Task<Cluster> NewCluster(InMemAgent agent, int port,

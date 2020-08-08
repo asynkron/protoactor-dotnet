@@ -17,9 +17,13 @@ namespace Proto.Cluster.Testing
         public string[] Kinds { get; set; }
         public string StatusValue { get; set; } //what goes here?
     }
-    public class InMemAgent
+    public sealed class InMemAgent
     {
-        
+        public event EventHandler StatusUpdate;
+
+        private void OnStatusUpdate(EventArgs e) => StatusUpdate?.Invoke(this, e);
+       
+
         private readonly ConcurrentDictionary<string,AgentServiceStatus> _services = new ConcurrentDictionary<string, AgentServiceStatus>();
         public  AgentServiceStatus[] GetServicesHealth()
         {
@@ -36,11 +40,13 @@ namespace Proto.Cluster.Testing
                 Host = registration.Address,
                 Port = registration.Port,
             });
+            OnStatusUpdate(EventArgs.Empty);
         }
 
         public void DeregisterService(string id)
         {
             _services.TryRemove(id,out _);
+            OnStatusUpdate(EventArgs.Empty);
         }
 
         public void RefreshServiceTTL(string id)

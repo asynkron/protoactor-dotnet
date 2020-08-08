@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -28,8 +29,14 @@ namespace Proto.Cluster.Testing
         {
             _options = options;
             _agent = agent;
+            agent.StatusUpdate += AgentOnStatusUpdate;
         }
-        
+
+        private void AgentOnStatusUpdate(object sender, EventArgs e)
+        {
+            NotifyStatuses(0);
+        }
+
 
         public Task StartAsync(Cluster cluster,
             string clusterName, string address, int port, string[] kinds, IMemberStatusValue? statusValue,
