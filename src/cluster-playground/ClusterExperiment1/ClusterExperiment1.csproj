@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp5.0</TargetFramework>
+        <OutputType>Exe</OutputType>
+        <LangVersion>8</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\experimental\Proto.Cluster.MongoIdentityLookup\Proto.Cluster.MongoIdentityLookup.csproj" />
+      <ProjectReference Include="..\..\Proto.Cluster\Proto.Cluster.csproj" />
+      <ProjectReference Include="..\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
+    </ItemGroup>
+
+</Project>

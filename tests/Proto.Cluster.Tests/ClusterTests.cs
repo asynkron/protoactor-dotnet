@@ -220,7 +220,7 @@ namespace Proto.Cluster.Tests
             var config = new ClusterConfig("cluster1", "localhost", port, provider)
                 .WithPidCache(false);
 
-            await cluster.Start(config);
+            await cluster.StartAsync(config);
             return cluster;
         }
     }

@@ -42,10 +42,10 @@ namespace Proto.Cluster
         
         private IIdentityLookup? IdentityLookup { get; set; }
 
-        public Task Start(string clusterName, string address, int port, IClusterProvider cp)
-            => Start(new ClusterConfig(clusterName, address, port, cp));
+        public Task StartAsync(string clusterName, string address, int port, IClusterProvider cp)
+            => StartAsync(new ClusterConfig(clusterName, address, port, cp));
 
-        public async Task Start(ClusterConfig config)
+        public async Task StartAsync(ClusterConfig config)
         {
             Config = config;
 
