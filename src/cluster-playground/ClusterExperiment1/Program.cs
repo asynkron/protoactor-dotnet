@@ -27,7 +27,8 @@ namespace ClusterExperiment1
             var cluster1 = new Cluster(system1,new Serialization());
             await cluster1.StartAsync(new ClusterConfig("mycluster","127.0.0.1",8090,consul1));
 
-     //       await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8090);
+            await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8090);
+            Console.WriteLine("Found cluster1 member join event");
 
             //node 2
             var system2 = new ActorSystem();
@@ -36,6 +37,7 @@ namespace ClusterExperiment1
             await cluster2.StartAsync(new ClusterConfig("mycluster","127.0.0.1",8091,consul2));
             
             await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8091);
+            Console.WriteLine("Found cluster2 member join event");
 
             Console.ReadLine();
         }
