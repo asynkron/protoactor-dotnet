@@ -74,7 +74,7 @@ namespace Proto
                 while (_events.TryDequeue(out var @event))
                 {
                     Console.WriteLine($"Got event {@event}");
-                    foreach (var expectation in _expectations)
+                    foreach (var expectation in _expectations.ToArray())
                     {
                         Console.WriteLine("Evaluating " + expectation);
                         expectation.Evaluate(@event);

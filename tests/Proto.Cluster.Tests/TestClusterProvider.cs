@@ -24,7 +24,7 @@ namespace Proto.Cluster.Tests
             return Task.FromResult(0);
         }
 
-        public Task ShutdownAsync(Cluster cluster)
+        public Task ShutdownAsync()
         {
             return Task.FromResult(0);
         }

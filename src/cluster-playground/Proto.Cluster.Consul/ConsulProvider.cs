@@ -75,8 +75,9 @@ namespace Proto.Cluster.Consul
         }
 
 
-        public async Task ShutdownAsync(Cluster cluster)
+        public async Task ShutdownAsync()
         {
+            Console.WriteLine("Shutting down consul provider");
             //flag for shutdown. used in thread loops
             _shutdown = true;
             //DeregisterService
@@ -112,6 +113,8 @@ namespace Proto.Cluster.Consul
                     _client.Agent.PassTTL("service:" + _id, "").Wait();
                     Thread.Sleep(_refreshTtl);
                 }
+                
+                Console.WriteLine("Exiting TTL loop");
             }) {IsBackground = true};
             t.Start();
         }

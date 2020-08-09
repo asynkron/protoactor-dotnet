@@ -91,13 +91,13 @@ namespace Proto.Cluster
             Logger.LogInformation("[Cluster] Stopping...");
             if (graceful)
             {
-                await Config!.ClusterProvider.ShutdownAsync(this);
-
                 PidCacheUpdater.Stop();
                 IdentityLookup.Stop();
             }
-
+            
+            await Config!.ClusterProvider.ShutdownAsync();
             await Remote.Shutdown(graceful);
+            
 
             Logger.LogInformation("[Cluster] Stopped");
         }

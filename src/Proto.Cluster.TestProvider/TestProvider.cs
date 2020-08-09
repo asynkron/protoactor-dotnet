@@ -96,19 +96,15 @@ namespace Proto.Cluster.Testing
         {
             _agent.RefreshServiceTTL(_id);
         }
+        
 
-        public Task DeregisterMemberAsync(Cluster cluster)
+        public Task ShutdownAsync()
         {
             Logger.LogDebug("Unregistering service {Service}", _id);
 
             _ttlReportTimer.Stop();
             _agent.DeregisterService(_id);
             return Task.CompletedTask;
-        }
-
-        public Task ShutdownAsync(Cluster cluster)
-        {
-            return DeregisterMemberAsync(cluster);
         }
     }
 }
