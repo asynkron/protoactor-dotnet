@@ -8,6 +8,7 @@ namespace Proto
         private readonly Func<object, bool> _predicate;
         private readonly TaskCompletionSource<object> _source = new TaskCompletionSource<object>();
         private bool _done;
+        public bool Done => _done;
 
         public Task<object> Task => _source.Task;
 

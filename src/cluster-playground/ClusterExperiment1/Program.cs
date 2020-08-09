@@ -22,19 +22,21 @@ namespace ClusterExperiment1
             var consul1 = new ConsulProvider(new ConsulProviderOptions());
             var cluster1 = new Cluster(system1,new Serialization());
             await cluster1.StartAsync(new ClusterConfig("mycluster","127.0.0.1",8090,consul1));
+
+            system1.EventStream.Publish("hello");
+            await probe1.Expect<string>(s => s == "hello");
+            Console.WriteLine("starting...");
             
-            var e1 = await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8090);
-            Console.WriteLine($"Got {e1}");
-            
+            await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8090);
+
             //node 2
             var system2 = new ActorSystem();
             var consul2 = new ConsulProvider(new ConsulProviderOptions());
             var cluster2 = new Cluster(system2,new Serialization());
             await cluster2.StartAsync(new ClusterConfig("mycluster","127.0.0.1",8091,consul2));
             
-            var e2= await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8091);
-            Console.WriteLine($"Got {e2}");    
-            
+            await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8091);
+
             Console.ReadLine();
         }
     }
