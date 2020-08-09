@@ -98,7 +98,7 @@ namespace Proto.Cluster.Testing
         }
         
 
-        public Task ShutdownAsync()
+        public Task ShutdownAsync(bool graceful)
         {
             Logger.LogDebug("Unregistering service {Service}", _id);
 

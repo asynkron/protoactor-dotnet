@@ -15,6 +15,6 @@ namespace Proto.Cluster
         Task StartAsync(Cluster cluster, string clusterName, string host, int port, string[] kinds,
             IMemberStatusValue? statusValue, IMemberStatusValueSerializer serializer, MemberList memberList);
 
-        Task ShutdownAsync();
+        Task ShutdownAsync(bool graceful);
     }
 }

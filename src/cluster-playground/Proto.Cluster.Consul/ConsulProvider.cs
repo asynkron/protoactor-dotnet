@@ -75,11 +75,15 @@ namespace Proto.Cluster.Consul
         }
 
 
-        public async Task ShutdownAsync()
+        public async Task ShutdownAsync(bool graceful)
         {
             Console.WriteLine("Shutting down consul provider");
             //flag for shutdown. used in thread loops
             _shutdown = true;
+            if (!graceful)
+            {
+                return;
+            }
             //DeregisterService
             await DeregisterServiceAsync();
             //DeleteProcess

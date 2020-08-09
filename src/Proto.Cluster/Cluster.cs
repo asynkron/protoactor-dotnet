@@ -95,7 +95,7 @@ namespace Proto.Cluster
                 IdentityLookup.Stop();
             }
             
-            await Config!.ClusterProvider.ShutdownAsync();
+            await Config!.ClusterProvider.ShutdownAsync(graceful);
             await Remote.Shutdown(graceful);
             
 
