@@ -112,7 +112,7 @@ public class PingActor : IActor
 {
     private readonly int _batchSize;
     private readonly TaskCompletionSource<bool> _wgStop;
-    private int _batch;
+
     private int _messageCount;
     private PID _targetPid;
 
@@ -133,11 +133,6 @@ public class PingActor : IActor
                 break;
             case Msg m:
                 _messageCount--;
-
-                if (_batch > 0)
-                {
-                    break;
-                }
                 
                 context.Send(_targetPid,m);
 
