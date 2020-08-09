@@ -2,6 +2,8 @@
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
@@ -14,6 +16,8 @@ namespace ClusterExperiment1
 
         public static async Task Main()
         {
+
+            Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Debug)));
             //node 1
             var system1 = new ActorSystem();
 
@@ -23,11 +27,7 @@ namespace ClusterExperiment1
             var cluster1 = new Cluster(system1,new Serialization());
             await cluster1.StartAsync(new ClusterConfig("mycluster","127.0.0.1",8090,consul1));
 
-            system1.EventStream.Publish("hello");
-            await probe1.Expect<string>(s => s == "hello");
-            Console.WriteLine("starting...");
-            
-            await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8090);
+     //       await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8090);
 
             //node 2
             var system2 = new ActorSystem();
