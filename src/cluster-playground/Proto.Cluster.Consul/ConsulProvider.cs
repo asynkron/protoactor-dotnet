@@ -18,9 +18,9 @@ namespace Proto.Cluster.Consul
     {
         private readonly TimeSpan _blockingWaitTime;
         private readonly ConsulClient _client;
-        private readonly TimeSpan _deregisterCritical;
-        private readonly TimeSpan _refreshTtl;
-        private readonly TimeSpan _serviceTtl;
+        private readonly TimeSpan _deregisterCritical; //this is how long the service exists in consul before disappearing when unhealthy, min 1 min
+        private readonly TimeSpan _serviceTtl; //this is how long the service is healthy without a ttl refresh
+        private readonly TimeSpan _refreshTtl;  //this is the refresh rate of TTL, should be smaller than the above
         private string _address;
 
         private Cluster _cluster;
