@@ -21,8 +21,7 @@ namespace Proto.Cluster
 
         public RemoteConfig RemoteConfig { get; private set; }
         public TimeSpan TimeoutTimespan { get; private set; }
-        public IMemberStatusValue? InitialMemberStatusValue { get; private set; }
-        public IMemberStatusValueSerializer MemberStatusValueSerializer { get; private set; }
+
         public Func<string, IMemberStrategy> MemberStrategyBuilder { get; private set; }
 
         public bool UsePidCache { get; private set; } = true;
@@ -38,7 +37,6 @@ namespace Proto.Cluster
             
             RemoteConfig = new RemoteConfig();
             TimeoutTimespan = TimeSpan.FromSeconds(5);
-            MemberStatusValueSerializer = new NullMemberStatusValueSerializer();
             MemberStrategyBuilder = kind => new SimpleMemberStrategy();
         }
 
@@ -53,19 +51,7 @@ namespace Proto.Cluster
             TimeoutTimespan = TimeSpan.FromSeconds(timeoutSeconds);
             return this;
         }
-
-        public ClusterConfig WithInitialMemberStatusValue(IMemberStatusValue statusValue)
-        {
-            InitialMemberStatusValue = statusValue;
-            return this;
-        }
-
-        public ClusterConfig WithMemberStatusValueSerializer(IMemberStatusValueSerializer serializer)
-        {
-            MemberStatusValueSerializer = serializer;
-            return this;
-        }
-
+        
         public ClusterConfig WithMemberStrategyBuilder(Func<string, IMemberStrategy> builder)
         {
             MemberStrategyBuilder = builder;

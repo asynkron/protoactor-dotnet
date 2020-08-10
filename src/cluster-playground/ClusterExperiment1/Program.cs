@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson.IO;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Remote;
+using static Newtonsoft.Json.JsonConvert;
 
 namespace ClusterExperiment1
 {
@@ -16,9 +18,16 @@ namespace ClusterExperiment1
 
             //arrange
             Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Debug)));
-            
+
             //node 1
             var system1 = new ActorSystem();
+            system1.EventStream.Subscribe(e =>
+                {
+                    var json = SerializeObject(e);
+                    Console.WriteLine(json);
+                }
+            );
+            
             var probe1 = new EventProbe(system1.EventStream);
             var consul1 = new ConsulProvider(new ConsulProviderOptions());
             var cluster1 = new Cluster(system1,new Serialization());

@@ -21,7 +21,6 @@ namespace Proto.Cluster.Testing
         private ActorSystem _system;
         private static readonly ILogger Logger = Log.CreateLogger<TestProvider>();
         private readonly InMemAgent _agent;
-        private IMemberStatusValueSerializer _statusValueSerializer;
         private MemberList _memberList;
 
 
@@ -39,13 +38,11 @@ namespace Proto.Cluster.Testing
 
 
         public Task StartAsync(Cluster cluster,
-            string clusterName, string address, int port, string[] kinds, IMemberStatusValue? statusValue,
-            IMemberStatusValueSerializer statusValueSerializer, MemberList memberList)
+            string clusterName, string address, int port, string[] kinds, MemberList memberList)
         {
             _id = $"{clusterName}@{address}:{port}";
             _clusterName = clusterName;
             _system = cluster.System;
-            _statusValueSerializer = statusValueSerializer;
             _memberList = memberList;
 
             StartTTLTimer();
@@ -74,8 +71,7 @@ namespace Proto.Cluster.Testing
                             x.Host, 
                             x.Port, 
                             x.Kinds,
-                            x.Alive,
-                            _statusValueSerializer.Deserialize(x.StatusValue)
+                            x.Alive
                         )
                     )
                     .ToList();

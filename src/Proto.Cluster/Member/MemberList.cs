@@ -171,8 +171,7 @@ namespace Proto.Cluster
             }
 
             //update MemberStrategy
-            if (newMember.Alive != oldMember.Alive || newMember.MemberId != oldMember.MemberId ||
-                newMember.StatusValue != null && !newMember.StatusValue.IsSame(oldMember.StatusValue))
+            if (newMember.Alive != oldMember.Alive || newMember.MemberId != oldMember.MemberId)
             {
                 foreach (var k in newMember.Kinds)
                 {

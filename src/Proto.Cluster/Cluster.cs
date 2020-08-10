@@ -78,8 +78,6 @@ namespace Proto.Cluster
                 host,
                 port,
                 kinds,
-                Config.InitialMemberStatusValue,
-                Config.MemberStatusValueSerializer,
                 MemberList
             );
 
