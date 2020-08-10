@@ -17,7 +17,7 @@ namespace Proto.Cluster
     [PublicAPI]
     public class Cluster
     {
-        private static readonly ILogger Logger = Log.CreateLogger(typeof(Cluster).FullName);
+        private static readonly ILogger Logger = Log.CreateLogger<Cluster>();
 
         internal ClusterConfig? Config { get; private set; }
         

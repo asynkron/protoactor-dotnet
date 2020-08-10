@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Grpc" Version="2.27.0" />
+    <PackageReference Include="Grpc.HealthCheck" Version="2.31.0" />
     <PackageReference Include="Grpc.Tools" Version="2.23.0" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
@@ -13,5 +14,6 @@
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="Protos.proto" GrpcServices="Client;Server" ProtoRoot=".; ..\..\src" />
+    <None Remove="HealthCheck.proto" />
   </ItemGroup>
 </Project>

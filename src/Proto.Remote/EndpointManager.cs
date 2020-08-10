@@ -10,23 +10,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
-    public class Endpoint
-    {
-        public Endpoint(PID writer, PID watcher)
-        {
-            Writer = writer;
-            Watcher = watcher;
-        }
-
-        public PID Writer { get; }
-        public PID Watcher { get; }
-    }
-
     public class EndpointManager
     {
         private class ConnectionRegistry : ConcurrentDictionary<string, Lazy<Endpoint>> { }
 
-        private static readonly ILogger Logger = Log.CreateLogger(typeof(EndpointManager).FullName);
+        private static readonly ILogger Logger = Log.CreateLogger<EndpointManager>();
 
         private readonly ConnectionRegistry _connections = new ConnectionRegistry();
         private readonly ActorSystem _system;

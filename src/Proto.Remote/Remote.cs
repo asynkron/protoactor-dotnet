@@ -20,16 +20,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Grpc.Health.V1;
+using Grpc.HealthCheck;
 using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
     public class Remote
     {
-        private static readonly ILogger Logger = Log.CreateLogger(typeof(Remote).FullName);
+        private static readonly ILogger Logger = Log.CreateLogger<Remote>();
 
         private Server _server = null!;
         private EndpointReader _endpointReader = null!;
+        private HealthServiceImpl _healthCheck = null!;
         private EndpointManager _endpointManager = null!;
         
         private readonly Dictionary<string, Props> _kinds = new Dictionary<string, Props>();
@@ -69,11 +72,15 @@ namespace Proto.Remote
             RemoteConfig = config;
             _endpointManager = new EndpointManager(this, _system);
             _endpointReader = new EndpointReader(_system, _endpointManager, Serialization);
+            _healthCheck = new HealthServiceImpl();
             _system.ProcessRegistry.RegisterHostResolver(pid => new RemoteProcess(this, _system, _endpointManager, pid));
 
             _server = new Server
             {
-                Services = { Remoting.BindService(_endpointReader) },
+                Services = { 
+                    Remoting.BindService(_endpointReader),
+                    Health.BindService(_healthCheck) 
+                },
                 Ports = { new ServerPort(hostname, port, config.ServerCredentials) }
             };
             _server.Start();

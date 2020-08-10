@@ -138,7 +138,8 @@ namespace Proto.Cluster.Consul
                 Check = new AgentServiceCheck
                 {
                     DeregisterCriticalServiceAfter = _deregisterCritical,
-                    TTL = _serviceTtl
+                    TTL = _serviceTtl,
+                    
                 },
                 Meta = new Dictionary<string,string>
                 {
