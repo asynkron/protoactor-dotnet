@@ -32,5 +32,4 @@ namespace Proto.Cluster
             return $"MemberStatus Address:{Address} ID:{MemberId}";
         }
     }
-
 }
