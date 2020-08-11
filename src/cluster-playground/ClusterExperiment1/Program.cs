@@ -27,8 +27,8 @@ namespace ClusterExperiment1
                     Console.WriteLine(json);
                 }
             );
-            
-            var probe1 = new EventProbe(system1.EventStream);
+
+            var probe1 = system1.EventStream.GetProbe();
             var consul1 = new ConsulProvider(new ConsulProviderOptions());
             var cluster1 = new Cluster(system1,new Serialization());
             

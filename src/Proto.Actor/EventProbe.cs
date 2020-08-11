@@ -7,18 +7,23 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public class EventProbe
+    public static class EventStreamExtensions
     {
-        private EventStream _eventStream;
-        private readonly Subscription<object> _subscription;
-        private readonly List<EventExpectation> _expectations = new List<EventExpectation>();
-        private readonly ConcurrentQueue<object> _events = new ConcurrentQueue<object>();
-        private readonly object _lock = new object();
-
-        public EventProbe(EventStream eventStream)
+        public static EventProbe<T> GetProbe<T>(this EventStream<T> eventStream)
         {
-            _eventStream = eventStream;
-            _subscription = _eventStream.Subscribe(e =>
+            return new EventProbe<T>(eventStream);
+        }
+    }
+    public class EventProbe<T>
+    {
+        private readonly Subscription<T> _subscription;
+        private readonly ConcurrentQueue<T> _events = new ConcurrentQueue<T>();
+        private readonly object _lock = new object();
+        private EventExpectation<T> _currentExpectation;
+
+        public EventProbe(EventStream<T> eventStream) 
+        {
+            _subscription = eventStream.Subscribe(e =>
                 {
                     _events.Enqueue(e);
                     NotifyChanges();
@@ -26,31 +31,31 @@ namespace Proto
             );
         }
 
-        public Task Expect<T>()
+        public Task Expect<TE>() where TE : T
         {
             lock (_lock)
             {
-                var expectation = new EventExpectation(@event => @event is T);
-                _expectations.Add(expectation);
+                var expectation = new EventExpectation<T>(@event => @event is TE);
+                _currentExpectation = expectation;
                 NotifyChanges();
                 return expectation.Task;
             }
         }
 
-        public Task<object> Expect<T>(Func<T, bool> predicate)
+        public Task<T> Expect<TE>(Func<TE, bool> predicate) where TE : T
         {
             lock (_lock)
             {
-                var expectation = new EventExpectation(@event =>
+                var expectation = new EventExpectation<T>(@event =>
                     {
                         return @event switch
                         {
-                            T e when predicate(e) => true,
+                            TE e when predicate(e) => true,
                             _ => false
                         };
                     }
                 );
-                _expectations.Add(expectation);
+                _currentExpectation = expectation;
                 NotifyChanges();
                 return expectation.Task;
             }
@@ -58,33 +63,27 @@ namespace Proto
 
         public void Stop()
         {
+            _currentExpectation = null;
             _subscription.Unsubscribe();
         }
-        
+
         //TODO: make lockfree
         private void NotifyChanges()
         {
             lock (_lock)
             {
-                if (_expectations.Count == 0)
+                if (_currentExpectation == null)
                 {
                     return;
                 }
-                
+
                 while (_events.TryDequeue(out var @event))
                 {
-                    Console.WriteLine($"Got event {@event}");
-                    foreach (var expectation in _expectations.ToArray())
+                    _currentExpectation.Evaluate(@event);
+                    if (_currentExpectation.Done)
                     {
-                        Console.WriteLine("Evaluating " + expectation);
-                        expectation.Evaluate(@event);
-                        if (expectation.Done)
-                        {
-                            Console.WriteLine("Expectation done");
-                        }
+                        _currentExpectation = null;
                     }
-                    
-                    _expectations.RemoveAll(ex => ex.Done);
                 }
             }
         }

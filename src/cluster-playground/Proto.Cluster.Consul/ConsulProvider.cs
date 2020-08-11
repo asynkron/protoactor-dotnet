@@ -29,7 +29,7 @@ namespace Proto.Cluster.Consul
         private string _id;
         private ulong _index;
         private string[] _kinds;
-        private MemberList _memberlist;
+        private MemberList _memberList;
         private int _port;
         private bool _shutdown;
 
@@ -67,7 +67,7 @@ namespace Proto.Cluster.Consul
             _kinds = kinds;
             _index = 0;
 
-            _memberlist = memberList;
+            _memberList = memberList;
 
             await RegisterMemberAsync();
 
@@ -185,7 +185,7 @@ namespace Proto.Cluster.Consul
 
             //why is this not updated via the ClusterTopologyEvents?
             //because following events is messy
-            _memberlist.UpdateClusterTopology(memberStatuses);
+            _memberList.UpdateClusterTopology(memberStatuses);
             var res = new ClusterTopologyEvent(memberStatuses);
             _cluster.System.EventStream.Publish(res);
         }
