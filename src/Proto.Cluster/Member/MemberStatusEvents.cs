@@ -36,7 +36,7 @@ namespace Proto.Cluster
 
         public override string ToString()
         {
-            return GetType().Name + " Address:" + Address;
+            return $"{GetType().Name} Address:{Address} ID:{Id}";
         }
     }
 

@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -16,6 +17,8 @@ namespace Proto.Cluster
     [PublicAPI]
     public class Cluster
     {
+        public Guid Id { get; } = Guid.NewGuid();
+        
         private static readonly ILogger Logger = Log.CreateLogger<Cluster>();
 
         internal ClusterConfig? Config { get; private set; }

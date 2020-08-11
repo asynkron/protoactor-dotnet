@@ -32,7 +32,7 @@ namespace Proto.Cluster
 
             while (!locked)
             {
-                _logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
+                _logger.LogDebug($"{_cluster.Id} MemberList did not acquire reader lock within 1 seconds, retry");
                 locked = _rwLock.TryEnterReadLock(1000);
             }
 
@@ -54,7 +54,7 @@ namespace Proto.Cluster
 
             while (!locked)
             {
-                _logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
+                _logger.LogDebug($"{_cluster.Id}MemberList did not acquire reader lock within 1 seconds, retry");
                 locked = _rwLock.TryEnterReadLock(1000);
             }
 
@@ -76,7 +76,7 @@ namespace Proto.Cluster
 
             while (!locked)
             {
-                _logger.LogDebug("MemberList did not acquire writer lock within 1 seconds, retry");
+                _logger.LogDebug($"{_cluster.Id} MemberList did not acquire writer lock within 1 seconds, retry");
                 locked = _rwLock.TryEnterWriteLock(1000);
             }
 
@@ -140,14 +140,14 @@ namespace Proto.Cluster
                 //notify left
                 var left = new MemberLeftEvent(oldMember.MemberId, oldMember.Host, oldMember.Port, oldMember.Kinds);
                 _cluster.System.EventStream.Publish(left);
-                _logger.LogInformation($"Published event {left}");
+                _logger.LogInformation($"{_cluster.Id} Published event {left}");
                 
                 _cluster.PidCache.RemoveByMemberAddress($"{oldMember.Host}:{oldMember.Port}");
                 _members.Remove(oldMember.MemberId);
 
                 var endpointTerminated = new EndpointTerminatedEvent {Address = oldMember.Address};
                 _cluster.System.EventStream.Publish(endpointTerminated);
-                _logger.LogInformation($"Published event {endpointTerminated}");
+                _logger.LogInformation($"{_cluster.Id} Published event {endpointTerminated}");
 
                 return;
             }
@@ -163,7 +163,7 @@ namespace Proto.Cluster
                 //notify joined
                 var joined = new MemberJoinedEvent(newMember.MemberId, newMember.Host, newMember.Port, newMember.Kinds);
                 _cluster.System.EventStream.Publish(joined);
-                _logger.LogInformation($"Published event {joined}");
+                _logger.LogInformation($"{_cluster.Id} Published event {joined}");
                 
                 
                 _cluster.PidCache.RemoveByMemberAddress($"{newMember.Host}:{newMember.Port}");
