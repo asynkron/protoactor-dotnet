@@ -3,23 +3,22 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public class EventExpectation<T>
+    internal class EventExpectation<T>
     {
-        private readonly Func<object, bool> _predicate;
+        private readonly Func<T, bool> _predicate;
         private readonly TaskCompletionSource<T> _source = new TaskCompletionSource<T>();
-        private bool _done;
-        public bool Done => _done;
+        public bool Done { get; private set; }
 
         public Task<T> Task => _source.Task;
 
-        public EventExpectation(Func<object, bool> predicate)
+        public EventExpectation(Func<T, bool> predicate)
         {
             _predicate = predicate;
         }
 
         public void Evaluate(T @event)
         {
-            if (_done)
+            if (Done)
             {
                 return;
             }
@@ -29,7 +28,7 @@ namespace Proto
                 return;
             }
 
-            _done = true;
+            Done = true;
             _source.SetResult(@event);
         }
     }

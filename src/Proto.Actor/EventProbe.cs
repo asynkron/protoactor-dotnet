@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace Proto
 {
@@ -14,14 +12,16 @@ namespace Proto
             return new EventProbe<T>(eventStream);
         }
     }
+
+    [PublicAPI]
     public class EventProbe<T>
     {
         private readonly Subscription<T> _subscription;
         private readonly ConcurrentQueue<T> _events = new ConcurrentQueue<T>();
         private readonly object _lock = new object();
-        private EventExpectation<T> _currentExpectation;
+        private EventExpectation<T>? _currentExpectation;
 
-        public EventProbe(EventStream<T> eventStream) 
+        public EventProbe(EventStream<T> eventStream)
         {
             _subscription = eventStream.Subscribe(e =>
                 {
@@ -63,8 +63,11 @@ namespace Proto
 
         public void Stop()
         {
-            _currentExpectation = null;
-            _subscription.Unsubscribe();
+            lock (_lock)
+            {
+                _currentExpectation = null;
+                _subscription.Unsubscribe();
+            }
         }
 
         //TODO: make lockfree
@@ -72,17 +75,15 @@ namespace Proto
         {
             lock (_lock)
             {
-                if (_currentExpectation == null)
+                if (_currentExpectation != null)
                 {
-                    return;
-                }
-
-                while (_events.TryDequeue(out var @event))
-                {
-                    _currentExpectation.Evaluate(@event);
-                    if (_currentExpectation.Done)
+                    while (_events.TryDequeue(out var @event))
                     {
-                        _currentExpectation = null;
+                        _currentExpectation.Evaluate(@event);
+                        if (_currentExpectation.Done)
+                        {
+                            _currentExpectation = null;
+                        }
                     }
                 }
             }
