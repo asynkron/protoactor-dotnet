@@ -73,7 +73,7 @@ namespace Proto.Cluster
         private void TakeOwnership(TakeOwnership msg, IContext context)
         {
             //Check again if I'm the owner
-            var address = Cluster.MemberList.GetPartition(msg.Name, _kind);
+            var address = Cluster.MemberList.GetMemberFromIdentityAndKind(msg.Name, _kind);
 
             if (!string.IsNullOrEmpty(address) && address != Cluster.System.ProcessRegistry.Address)
             {
@@ -120,7 +120,7 @@ namespace Proto.Cluster
             // ownership is also racy, new nodes should maybe forward requests to neighbours (?)
             foreach (var (actorId, _) in _partitionLookup.ToArray())
             {
-                var address = Cluster.MemberList.GetPartition(actorId, _kind);
+                var address = Cluster.MemberList.GetMemberFromIdentityAndKind(actorId, _kind);
 
                 if (!string.IsNullOrEmpty(address) && address != Cluster.System.ProcessRegistry.Address)
                 {
@@ -160,7 +160,7 @@ namespace Proto.Cluster
 
             foreach (var (actorId, sp) in _spawningProcs)
             {
-                var address = Cluster.MemberList.GetPartition(actorId, _kind);
+                var address = Cluster.MemberList.GetMemberFromIdentityAndKind(actorId, _kind);
 
                 if (address != Cluster.System.ProcessRegistry.Address)
                 {

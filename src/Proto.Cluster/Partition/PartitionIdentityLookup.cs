@@ -16,7 +16,7 @@ namespace Proto.Cluster
         public async Task<(PID?,ResponseStatusCode)> GetAsync(string identity,string kind, CancellationToken ct)
         {
             //Get Pid
-            var address = _cluster.MemberList.GetPartition(identity, kind);
+            var address = _cluster.MemberList.GetMemberFromIdentityAndKind(identity, kind);
 
             if (string.IsNullOrEmpty(address))
             {

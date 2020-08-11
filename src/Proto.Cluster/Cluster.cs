@@ -4,7 +4,6 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -51,14 +50,12 @@ namespace Proto.Cluster
 
             //default to partition identity lookup
             IdentityLookup = config.IdentityLookup ?? new PartitionIdentityLookup();
-
-           
             
             Remote.Start(Config.Address, Config.Port, Config.RemoteConfig);
 
             Remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
 
-            Logger.LogInformation("Starting...");
+            Logger.LogInformation("Starting");
 
             var kinds = Remote.GetKnownKinds();
             IdentityLookup.Setup(this, kinds);

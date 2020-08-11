@@ -25,9 +25,8 @@ namespace Proto.Cluster
         
 
         public MemberList(Cluster cluster) => _cluster = cluster;
-
-        //TODO: should this really live here, or be moved to PartitionManager?
-        internal string GetPartition(string name, string kind)
+        
+        internal string GetMemberFromIdentityAndKind(string identity, string kind)
         {
             var locked = _rwLock.TryEnterReadLock(1000);
 
@@ -40,7 +39,7 @@ namespace Proto.Cluster
             try
             {
                 return _memberStrategyByKind.TryGetValue(kind, out var memberStrategy)
-                    ? memberStrategy.GetPartition(name)
+                    ? memberStrategy.GetPartition(identity)
                     : "";
             }
             finally
