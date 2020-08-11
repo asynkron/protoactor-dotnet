@@ -27,7 +27,7 @@ namespace Proto.Cluster.Consul
 
         private Cluster _cluster;
         private string _consulServiceName; //name of the custer, in consul this means the name of the service
-        private bool _deregistered;
+        private volatile bool _deregistered;
         private string _consulServiceInstanceId; //the specific instance id of this node in consul
  
         private ulong _index;
@@ -173,6 +173,10 @@ namespace Proto.Cluster.Consul
                     WaitTime = _blockingWaitTime
                 }
             ).Result;
+            if (_deregistered)
+            {
+                return;
+            }
             _logger.LogDebug($"{_cluster.Id} Got status updates from Consul");
 
             _index = statuses.LastIndex;
