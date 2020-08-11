@@ -58,7 +58,7 @@ namespace Proto.Cluster
 
             Remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
 
-            Logger.LogInformation("[Cluster] Starting...");
+            Logger.LogInformation("Starting...");
 
             var kinds = Remote.GetKnownKinds();
             IdentityLookup.Setup(this, kinds);
@@ -81,12 +81,12 @@ namespace Proto.Cluster
                 MemberList
             );
 
-            Logger.LogInformation("[Cluster] Started");
+            Logger.LogInformation("Started");
         }
 
         public async Task Shutdown(bool graceful = true)
         {
-            Logger.LogInformation("[Cluster] Stopping...");
+            Logger.LogInformation("Stopping");
             if (graceful)
             {
                 PidCacheUpdater.Stop();
@@ -96,8 +96,7 @@ namespace Proto.Cluster
             await Config!.ClusterProvider.ShutdownAsync(graceful);
             await Remote.Shutdown(graceful);
             
-
-            Logger.LogInformation("[Cluster] Stopped");
+            Logger.LogInformation("Stopped");
         }
 
         public Task<(PID?, ResponseStatusCode)> GetAsync(string identity, string kind) => GetAsync(identity, kind, CancellationToken.None);

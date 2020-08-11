@@ -139,15 +139,16 @@ namespace Proto.Cluster
                 }
 
                 //notify left
-                _logger.LogInformation($"Member left {oldMember}");
                 var left = new MemberLeftEvent(oldMember.MemberId, oldMember.Host, oldMember.Port, oldMember.Kinds);
                 _cluster.System.EventStream.Publish(left);
+                _logger.LogInformation($"Published event {left}");
                 
                 _cluster.PidCache.RemoveByMemberAddress($"{oldMember.Host}:{oldMember.Port}");
                 _members.Remove(oldMember.MemberId);
 
                 var endpointTerminated = new EndpointTerminatedEvent {Address = oldMember.Address};
                 _cluster.System.EventStream.Publish(endpointTerminated);
+                _logger.LogInformation($"Published event {endpointTerminated}");
 
                 return;
             }
@@ -161,9 +162,9 @@ namespace Proto.Cluster
                 }
 
                 //notify joined
-                _logger.LogInformation($"Member joined {newMember}");
                 var joined = new MemberJoinedEvent(newMember.MemberId, newMember.Host, newMember.Port, newMember.Kinds);
                 _cluster.System.EventStream.Publish(joined);
+                _logger.LogInformation($"Published event {joined}");
                 
                 
                 _cluster.PidCache.RemoveByMemberAddress($"{newMember.Host}:{newMember.Port}");

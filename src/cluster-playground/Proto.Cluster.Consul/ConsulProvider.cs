@@ -29,6 +29,7 @@ namespace Proto.Cluster.Consul
         private string _clusterName;
         private bool _deregistered;
         private string _id;
+        private Guid _memberId;
         private ulong _index;
         private string[] _kinds;
         private MemberList _memberList;
@@ -61,8 +62,9 @@ namespace Proto.Cluster.Consul
         public async Task StartAsync(Cluster cluster, string clusterName, string host, int port, string[] kinds,
             MemberList memberList)
         {
+            _memberId = Guid.NewGuid();
             _cluster = cluster;
-            _id = $"{clusterName}@{host}:{port}";
+            _id = $"{clusterName}@{host}:{port}-"+_memberId;
             _clusterName = clusterName;
             _address = host;
             _port = port;
@@ -81,7 +83,7 @@ namespace Proto.Cluster.Consul
         public async Task ShutdownAsync(bool graceful)
         {
             
-            _logger.LogInformation("Shutting down consul provider");
+            _logger.LogInformation($"{_id} Shutting down consul provider");
             //flag for shutdown. used in thread loops
             _shutdown = true;
             if (!graceful)
@@ -161,7 +163,7 @@ namespace Proto.Cluster.Consul
         private async Task DeregisterServiceAsync()
         {
             await _client.Agent.ServiceDeregister(_id);
-            _logger.LogInformation("Deregistered service");
+            _logger.LogInformation($"{_id} Deregistered service");
         }
 
         private void BlockingNotifyStatuses()
@@ -172,7 +174,7 @@ namespace Proto.Cluster.Consul
                     WaitTime = _blockingWaitTime
                 }
             ).Result;
-            _logger.LogInformation("Got status updates from Consul");
+            _logger.LogDebug($"{_id} Got status updates from Consul");
 
             _index = statuses.LastIndex;
             
