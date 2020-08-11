@@ -20,31 +20,33 @@ namespace Proto.Cluster
 
     public abstract class MemberStatusEvent
     {
-        protected MemberStatusEvent(string host, int port, IReadOnlyCollection<string> kinds)
+        protected MemberStatusEvent(Guid id, string host, int port, IReadOnlyCollection<string> kinds)
         {
+            Id = id;
             Host = host ?? throw new ArgumentNullException(nameof(host));
             Kinds = kinds ?? throw new ArgumentNullException(nameof(kinds));
             Port = port;
         }
 
+        public Guid Id { get; }
         public string Address => Host + ":" + Port;
         public string Host { get; }
         public int Port { get; }
         public IReadOnlyCollection<string> Kinds { get; }
+
+        public override string ToString()
+        {
+            return GetType().Name + " Address:" + Address;
+        }
     }
 
     public class MemberJoinedEvent : MemberStatusEvent
     {
-        public MemberJoinedEvent(string host, int port, IReadOnlyCollection<string> kinds) : base(host, port, kinds) { }
-    }
-
-    public class MemberRejoinedEvent : MemberStatusEvent
-    {
-        public MemberRejoinedEvent(string host, int port, IReadOnlyCollection<string> kinds) : base(host, port, kinds) { }
+        public MemberJoinedEvent(Guid id, string host, int port, IReadOnlyCollection<string> kinds) : base(id, host, port, kinds) { }
     }
 
     public class MemberLeftEvent : MemberStatusEvent
     {
-        public MemberLeftEvent(string host, int port, IReadOnlyCollection<string> kinds) : base(host, port, kinds) { }
+        public MemberLeftEvent(Guid id, string host, int port, IReadOnlyCollection<string> kinds) : base(id, host, port, kinds) { }
     }
 }

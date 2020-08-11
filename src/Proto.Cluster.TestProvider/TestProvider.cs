@@ -16,7 +16,7 @@ namespace Proto.Cluster.Testing
     {
         private readonly TestProviderOptions _options;
         private Timer _ttlReportTimer;
-        private string _id;
+        private Guid _id;
         private string _clusterName;
         private ActorSystem _system;
         private static readonly ILogger Logger = Log.CreateLogger<TestProvider>();
@@ -33,14 +33,14 @@ namespace Proto.Cluster.Testing
 
         private void AgentOnStatusUpdate(object sender, EventArgs e)
         {
-            NotifyStatuses(0);
+            NotifyStatuses();
         }
 
 
         public Task StartAsync(Cluster cluster,
             string clusterName, string address, int port, string[] kinds, MemberList memberList)
         {
-            _id = $"{clusterName}@{address}:{port}";
+            _id = Guid.NewGuid();
             _clusterName = clusterName;
             _system = cluster.System;
             _memberList = memberList;
@@ -58,7 +58,7 @@ namespace Proto.Cluster.Testing
             return Actor.Done;
         }
 
-        private async Task NotifyStatuses(ulong index)
+        private async Task NotifyStatuses()
         {
             var statuses = _agent.GetServicesHealth();
 
@@ -70,8 +70,7 @@ namespace Proto.Cluster.Testing
                             x.ID, 
                             x.Host, 
                             x.Port, 
-                            x.Kinds,
-                            x.Alive
+                            x.Kinds
                         )
                     )
                     .ToList();

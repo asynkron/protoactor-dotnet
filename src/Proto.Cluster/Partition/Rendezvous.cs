@@ -62,7 +62,6 @@ namespace Proto.Cluster
         // ReSharper disable once ParameterTypeCanBeEnumerable.Global
         public void UpdateMembers(List<MemberStatus> members)
             => _members = members
-                .Where(x => x.Alive)
                 .Select(x => new MemberData(x))
                 .ToArray();
 

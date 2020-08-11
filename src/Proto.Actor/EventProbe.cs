@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 
 namespace Proto
 {
@@ -16,6 +17,7 @@ namespace Proto
     [PublicAPI]
     public class EventProbe<T>
     {
+        private readonly ILogger _logger = Log.CreateLogger<EventProbe<T>>();
         private readonly Subscription<T> _subscription;
         private readonly ConcurrentQueue<T> _events = new ConcurrentQueue<T>();
         private readonly object _lock = new object();
@@ -25,8 +27,11 @@ namespace Proto
         {
             _subscription = eventStream.Subscribe(e =>
                 {
-                    _events.Enqueue(e);
-                    NotifyChanges();
+                    lock (_lock)
+                    {
+                        _events.Enqueue(e);
+                        NotifyChanges();
+                    }
                 }
             );
         }
@@ -55,6 +60,7 @@ namespace Proto
                         };
                     }
                 );
+                _logger.LogDebug("Setting expectation");
                 _currentExpectation = expectation;
                 NotifyChanges();
                 return expectation.Task;
@@ -73,19 +79,17 @@ namespace Proto
         //TODO: make lockfree
         private void NotifyChanges()
         {
-            lock (_lock)
+            while (_currentExpectation != null && _events.TryDequeue(out var @event))
             {
-                if (_currentExpectation != null)
+                if (_currentExpectation.Evaluate(@event))
                 {
-                    while (_events.TryDequeue(out var @event))
-                    {
-                        _currentExpectation.Evaluate(@event);
-                        if (_currentExpectation.Done)
-                        {
-                            _currentExpectation = null;
-                        }
-                    }
+                    _logger.LogInformation($"Got expected event {@event} ");
+                    _logger.LogDebug("Removing expectation");
+                    _currentExpectation = null;
+                    return;
                 }
+
+                _logger.LogInformation($"Got unexpected {@event}, ignoring");
             }
         }
     }

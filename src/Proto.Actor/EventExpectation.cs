@@ -6,8 +6,7 @@ namespace Proto
     internal class EventExpectation<T>
     {
         private readonly Func<T, bool> _predicate;
-        private readonly TaskCompletionSource<T> _source = new TaskCompletionSource<T>();
-        public bool Done { get; private set; }
+        private readonly TaskCompletionSource<T> _source = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public Task<T> Task => _source.Task;
 
@@ -16,20 +15,15 @@ namespace Proto
             _predicate = predicate;
         }
 
-        public void Evaluate(T @event)
+        public bool Evaluate(T @event)
         {
-            if (Done)
-            {
-                return;
-            }
-            
             if (!_predicate(@event))
             {
-                return;
+                return false;
             }
-
-            Done = true;
+            
             _source.SetResult(@event);
+            return true;
         }
     }
 }

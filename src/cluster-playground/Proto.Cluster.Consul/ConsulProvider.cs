@@ -10,12 +10,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Consul;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Proto.Cluster.Consul
 {
     public class ConsulProvider : IClusterProvider
     {
+        private readonly ILogger _logger = Log.CreateLogger<ConsulProvider>();
         private readonly TimeSpan _blockingWaitTime;
         private readonly ConsulClient _client;
         private readonly TimeSpan _deregisterCritical; //this is how long the service exists in consul before disappearing when unhealthy, min 1 min
@@ -78,7 +80,8 @@ namespace Proto.Cluster.Consul
 
         public async Task ShutdownAsync(bool graceful)
         {
-            Console.WriteLine("Shutting down consul provider");
+            
+            _logger.LogInformation("Shutting down consul provider");
             //flag for shutdown. used in thread loops
             _shutdown = true;
             if (!graceful)
@@ -158,6 +161,7 @@ namespace Proto.Cluster.Consul
         private async Task DeregisterServiceAsync()
         {
             await _client.Agent.ServiceDeregister(_id);
+            _logger.LogInformation("Deregistered service");
         }
 
         private void BlockingNotifyStatuses()
@@ -168,18 +172,19 @@ namespace Proto.Cluster.Consul
                     WaitTime = _blockingWaitTime
                 }
             ).Result;
+            _logger.LogInformation("Got status updates from Consul");
 
             _index = statuses.LastIndex;
             
             var memberStatuses =
                 statuses
                     .Response
+                    .Where(v => IsAlive(v.Checks)) //only include members that are alive
                     .Select(v => new MemberStatus(
-                            v.Service.Meta["id"], 
+                            Guid.Parse(v.Service.Meta["id"]), 
                             v.Service.Address, 
                             v.Service.Port, 
-                            v.Service.Tags, 
-                            IsAlive(v.Checks))
+                            v.Service.Tags)
                     )
                 .ToArray();
 

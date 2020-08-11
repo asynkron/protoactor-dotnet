@@ -30,7 +30,7 @@ namespace Proto.Cluster.Tests
             var agent = new InMemAgent();
             agent.RegisterService(new AgentServiceRegistration
             {
-                ID = "abc",
+                ID = Guid.NewGuid(),
                 Address = "LocalHost",
                 Kinds = new []{"SomeKind"},
                 Port = 8080
@@ -48,7 +48,7 @@ namespace Proto.Cluster.Tests
             var agent = new InMemAgent();
             agent.RegisterService(new AgentServiceRegistration
             {
-                ID = "abc",
+                ID = Guid.NewGuid(),
                 Address = "LocalHost",
                 Kinds = new []{"SomeKind"},
                 Port = 8080
@@ -65,7 +65,7 @@ namespace Proto.Cluster.Tests
             var agent = new InMemAgent();
             agent.RegisterService(new AgentServiceRegistration
             {
-                ID = "abc",
+                ID = Guid.NewGuid(),
                 Address = "LocalHost",
                 Kinds = new []{"SomeKind"},
                 Port = 8080
@@ -82,10 +82,11 @@ namespace Proto.Cluster.Tests
         [Fact]
         public async Task InMemAgentServiceShouldBeAliveAfterTTLRefresh()
         {
+            var id = Guid.NewGuid();
             var agent = new InMemAgent();
             agent.RegisterService(new AgentServiceRegistration
             {
-                ID = "abc",
+                ID = id,
                 Address = "LocalHost",
                 Kinds = new []{"SomeKind"},
                 Port = 8080
@@ -93,7 +94,7 @@ namespace Proto.Cluster.Tests
 
 
             await Task.Delay(TimeSpan.FromSeconds(5));
-            agent.RefreshServiceTTL("abc");
+            agent.RefreshServiceTTL(id);
 
             var services = agent.GetServicesHealth();
             var first = services.First();

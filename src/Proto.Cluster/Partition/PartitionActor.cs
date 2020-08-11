@@ -52,9 +52,6 @@ namespace Proto.Cluster
                 case MemberJoinedEvent msg:
                     MemberJoined(msg, context);
                     break;
-                case MemberRejoinedEvent msg:
-                    MemberRejoined(msg);
-                    break;
                 case MemberLeftEvent msg:
                     MemberLeft(msg, context);
                     break;
@@ -151,16 +148,6 @@ namespace Proto.Cluster
 
             // Process Spawning Process
             MakeUnavailable(memberLeft.Address);
-        }
-
-        private void MemberRejoined(MemberRejoinedEvent memberRejoined)
-        {
-            Logger.LogInformation("[Partition] Kind {Kind} member rejoined {Address}", _kind, memberRejoined.Address);
-
-            RemoveAddressFromPartition(memberRejoined.Address);
-
-            // Process Spawning Process
-            MakeUnavailable(memberRejoined.Address);
         }
 
         private void MemberJoined(MemberJoinedEvent msg, IContext context)

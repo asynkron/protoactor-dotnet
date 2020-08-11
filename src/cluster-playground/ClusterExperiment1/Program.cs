@@ -17,17 +17,10 @@ namespace ClusterExperiment1
         {
 
             //arrange
-            Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Debug)));
+            Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
 
             //node 1
             var system1 = new ActorSystem();
-            system1.EventStream.Subscribe(e =>
-                {
-                    var json = SerializeObject(e);
-                    Console.WriteLine(json);
-                }
-            );
-
             var probe1 = system1.EventStream.GetProbe();
             var consul1 = new ConsulProvider(new ConsulProviderOptions());
             var cluster1 = new Cluster(system1,new Serialization());
@@ -40,19 +33,11 @@ namespace ClusterExperiment1
             
             //act
             await cluster1.StartAsync(new ClusterConfig("mycluster","127.0.0.1",8090,consul1));
-            
             await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8090);
-            Console.WriteLine("cluster1, Found cluster1 member join event");
-            
             await cluster2.StartAsync(new ClusterConfig("mycluster","127.0.0.1",8091,consul2));
-            
             await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8091);
-            Console.WriteLine("cluster1, Found cluster2 member join event");
-
-            cluster2.Shutdown(false);
-            
+             cluster2.Shutdown(false);
             await probe1.Expect<MemberLeftEvent>(e => e.Port == 8091);
-            Console.WriteLine("cluster1, Found cluster2 member left event");
 
             Console.ReadLine();
         }
