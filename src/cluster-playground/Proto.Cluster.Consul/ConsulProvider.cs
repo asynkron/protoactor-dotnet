@@ -17,7 +17,7 @@ namespace Proto.Cluster.Consul
 {
     public class ConsulProvider : IClusterProvider
     {
-        private readonly ILogger _logger = Log.CreateLogger<ConsulProvider>();
+        private ILogger _logger;
         private readonly TimeSpan _blockingWaitTime;
         private readonly ConsulClient _client;
         private readonly TimeSpan _deregisterCritical; //this is how long the service exists in consul before disappearing when unhealthy, min 1 min
@@ -46,7 +46,6 @@ namespace Proto.Cluster.Consul
             _refreshTtl = options.RefreshTtl.Value;
             _deregisterCritical = options.DeregisterCritical.Value;
             _blockingWaitTime = options.BlockingWaitTime.Value;
-
             _client = new ConsulClient(consulConfig);
         }
 
@@ -63,14 +62,15 @@ namespace Proto.Cluster.Consul
             MemberList memberList)
         {
             _cluster = cluster;
-            _consulServiceInstanceId = $"{clusterName}@{host}:{port}-"+_cluster.Id;
+            _consulServiceInstanceId = $"{clusterName}-{_cluster.Id}@{host}:{port}";
             _consulServiceName = clusterName;
             _address = host;
             _port = port;
             _kinds = kinds;
             _index = 0;
-
             _memberList = memberList;
+            
+            _logger = Log.CreateLogger($"ConsulProvider-{_cluster.Id}");
 
             await RegisterMemberAsync();
 
@@ -82,7 +82,7 @@ namespace Proto.Cluster.Consul
         public async Task ShutdownAsync(bool graceful)
         {
             
-            _logger.LogInformation($"{_cluster.Id} Shutting down consul provider");
+            _logger.LogInformation("Shutting down consul provider");
             //flag for shutdown. used in thread loops
             _shutdown = true;
             if (!graceful)
@@ -123,7 +123,7 @@ namespace Proto.Cluster.Consul
                         Thread.Sleep(_refreshTtl);
                     }
 
-                    _logger.LogInformation($"{_cluster.Id} Exiting TTL loop");
+                    _logger.LogInformation("Exiting TTL loop");
                 }
             ) {IsBackground = true};
             t.Start();
@@ -162,7 +162,7 @@ namespace Proto.Cluster.Consul
         private async Task DeregisterServiceAsync()
         {
             await _client.Agent.ServiceDeregister(_consulServiceInstanceId);
-            _logger.LogInformation($"{_cluster.Id} Deregistered service");
+            _logger.LogInformation("Deregistered service");
         }
 
         private void BlockingNotifyStatuses()
@@ -177,7 +177,7 @@ namespace Proto.Cluster.Consul
             {
                 return;
             }
-            _logger.LogDebug($"{_cluster.Id} Got status updates from Consul");
+            _logger.LogDebug("Got status updates from Consul");
 
             _index = statuses.LastIndex;
             

@@ -16,7 +16,7 @@ namespace Proto.Cluster
     //TODO: check usage and threadsafety.
     public class MemberList
     {
-        private static readonly ILogger _logger = Log.CreateLogger<MemberList>();
+        private static ILogger _logger;
 
         private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
         private readonly Dictionary<Guid, MemberStatus> _members = new Dictionary<Guid, MemberStatus>();
@@ -24,15 +24,19 @@ namespace Proto.Cluster
         private readonly Cluster _cluster;
         
 
-        public MemberList(Cluster cluster) => _cluster = cluster;
-        
+        public MemberList(Cluster cluster)
+        {
+            _cluster = cluster;
+            _logger = Log.CreateLogger($"MemberList-{_cluster.Id}");
+        }
+
         internal string GetMemberFromIdentityAndKind(string identity, string kind)
         {
             var locked = _rwLock.TryEnterReadLock(1000);
 
             while (!locked)
             {
-                _logger.LogDebug($"{_cluster.Id} MemberList did not acquire reader lock within 1 seconds, retry");
+                _logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
                 locked = _rwLock.TryEnterReadLock(1000);
             }
 
@@ -54,7 +58,7 @@ namespace Proto.Cluster
 
             while (!locked)
             {
-                _logger.LogDebug($"{_cluster.Id}MemberList did not acquire reader lock within 1 seconds, retry");
+                _logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
                 locked = _rwLock.TryEnterReadLock(1000);
             }
 
@@ -76,7 +80,7 @@ namespace Proto.Cluster
 
             while (!locked)
             {
-                _logger.LogDebug($"{_cluster.Id} MemberList did not acquire writer lock within 1 seconds, retry");
+                _logger.LogDebug("MemberList did not acquire writer lock within 1 seconds, retry");
                 locked = _rwLock.TryEnterWriteLock(1000);
             }
 
@@ -140,7 +144,7 @@ namespace Proto.Cluster
                 //notify left
                 
                 var left = new MemberLeftEvent(oldMember.MemberId, oldMember.Host, oldMember.Port, oldMember.Kinds);
-                _logger.LogInformation($"{_cluster.Id} Published event {left}");
+                _logger.LogInformation($"Published event {left}");
                 _cluster.System.EventStream.Publish(left);
 
                 
@@ -148,7 +152,7 @@ namespace Proto.Cluster
                 _members.Remove(oldMember.MemberId);
 
                 var endpointTerminated = new EndpointTerminatedEvent {Address = oldMember.Address};
-                _logger.LogInformation($"{_cluster.Id} Published event {endpointTerminated}");
+                _logger.LogInformation($"Published event {endpointTerminated}");
                 _cluster.System.EventStream.Publish(endpointTerminated);
                 
 
@@ -165,7 +169,8 @@ namespace Proto.Cluster
 
                 //notify joined
                 var joined = new MemberJoinedEvent(newMember.MemberId, newMember.Host, newMember.Port, newMember.Kinds);
-                _logger.LogInformation($"{_cluster.Id} Published event {joined}");
+                
+                _logger.LogInformation($"Published event {joined}");
                 _cluster.System.EventStream.Publish(joined);
                 
                 _cluster.PidCache.RemoveByMemberAddress($"{newMember.Host}:{newMember.Port}");

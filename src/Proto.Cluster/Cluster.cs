@@ -18,8 +18,8 @@ namespace Proto.Cluster
     public class Cluster
     {
         public Guid Id { get; } = Guid.NewGuid();
-        
-        private static readonly ILogger Logger = Log.CreateLogger<Cluster>();
+
+        private static ILogger _logger;
 
         internal ClusterConfig? Config { get; private set; }
         
@@ -29,6 +29,7 @@ namespace Proto.Cluster
 
         public Cluster(ActorSystem system, Serialization serialization)
         {
+            _logger = Log.CreateLogger($"Cluster-{Id}");
             System = system;
             Remote = new Remote.Remote(system, serialization);
 
@@ -58,7 +59,7 @@ namespace Proto.Cluster
 
             Remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
 
-            Logger.LogInformation("Starting");
+            _logger.LogInformation("Starting");
 
             var kinds = Remote.GetKnownKinds();
             IdentityLookup.Setup(this, kinds);
@@ -81,12 +82,12 @@ namespace Proto.Cluster
                 MemberList
             );
 
-            Logger.LogInformation("Started");
+            _logger.LogInformation("Started");
         }
 
         public async Task Shutdown(bool graceful = true)
         {
-            Logger.LogInformation("Stopping");
+            _logger.LogInformation("Stopping");
             if (graceful)
             {
                 PidCacheUpdater.Stop();
@@ -96,7 +97,7 @@ namespace Proto.Cluster
             await Config!.ClusterProvider.ShutdownAsync(graceful);
             await Remote.Shutdown(graceful);
             
-            Logger.LogInformation("Stopped");
+            _logger.LogInformation("Stopped");
         }
 
         public Task<(PID?, ResponseStatusCode)> GetAsync(string identity, string kind) => GetAsync(identity, kind, CancellationToken.None);

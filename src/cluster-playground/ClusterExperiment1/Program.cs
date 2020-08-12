@@ -38,6 +38,7 @@ namespace ClusterExperiment1
             await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8091);
              cluster2.Shutdown(false);
             await probe1.Expect<MemberLeftEvent>(e => e.Port == 8091);
+            await probe1.Expect<EndpointTerminatedEvent>(e => e.Address.EndsWith("8091"));
 
             Console.ReadLine();
         }
