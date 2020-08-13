@@ -74,13 +74,19 @@ namespace Proto.Cluster
 
         public PID PartitionForKind(string kind)
         {
+            //TODO: make a proper solution.
+            
+            //this is to handle cases where there are race conditions where someone believes there are other nodes that can handle a kind
+            //but those nodes have simply not joined yet.
+            //give a tiny bit of time for things to sync up
+            
             for (var i = 0; i < 5; i++)
             {
                 if (_kindMap.TryGetValue(kind, out var pid))
                 {
                     return pid;
                 }
-                Thread.Sleep(500);
+                Thread.Sleep(100);
             }
             
             throw new ArgumentException($"Tried to get partition for kind '{kind}', but none was found");
