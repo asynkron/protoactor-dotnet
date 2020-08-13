@@ -19,9 +19,9 @@ namespace Proto.Cluster
     {
         public Guid Id { get; } = Guid.NewGuid();
 
-        private static ILogger _logger;
+        private static ILogger _logger = null!;
 
-        internal ClusterConfig? Config { get; private set; }
+        internal ClusterConfig Config { get; private set; } = null!;
         
         public ActorSystem System { get; }
 
@@ -90,8 +90,8 @@ namespace Proto.Cluster
             _logger.LogInformation("Stopping");
             if (graceful)
             {
-                PidCacheUpdater.Stop();
-                IdentityLookup.Stop();
+                PidCacheUpdater!.Stop();
+                IdentityLookup!.Stop();
             }
             
             await Config!.ClusterProvider.ShutdownAsync(graceful);
@@ -108,7 +108,7 @@ namespace Proto.Cluster
             {
                 //Check Cache
                 if (PidCache.TryGetCache(identity, out var pid)) 
-                    return Task.FromResult((pid, ResponseStatusCode.OK));
+                    return Task.FromResult<(PID?, ResponseStatusCode)>((pid, ResponseStatusCode.OK));
             }
 
             return IdentityLookup!.GetAsync(identity, kind, ct);

@@ -5,24 +5,30 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Proto.Cluster.Utils;
 using Proto.Remote;
 
 namespace Proto.Cluster
 {
+    //This class is responsible for figuring out what members are currently active in the cluster
+    //it will receive a list of memberstatuses from the IClusterProvider
+    //from that, we calculate a delta, which members joined, or left.
+    
     //TODO: check usage and threadsafety.
     public class MemberList
     {
-        private static ILogger _logger;
+        private static ILogger _logger = null!;
 
         private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
         private readonly Dictionary<Guid, MemberStatus> _members = new Dictionary<Guid, MemberStatus>();
         private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind = new Dictionary<string, IMemberStrategy>();
         private readonly Cluster _cluster;
-        
+        private readonly ConcurrentSet<Guid> _bannedMembers = new ConcurrentSet<Guid>();
 
         public MemberList(Cluster cluster)
         {
@@ -144,6 +150,11 @@ namespace Proto.Cluster
                 //notify left
                 
                 var left = new MemberLeftEvent(oldMember.MemberId, oldMember.Host, oldMember.Port, oldMember.Kinds);
+                
+                //remember that this member has left, may never join cluster again
+                //that is, this ID may never join again, any cluster on the same host and port is fine
+                //as long as it is a new clean instance
+                _bannedMembers.Add(left.Id);
                 _logger.LogInformation($"Published event {left}");
                 _cluster.System.EventStream.Publish(left);
 

@@ -26,7 +26,7 @@ namespace Proto.Cluster
 
         public bool UsePidCache { get; private set; } = true;
 
-        public IIdentityLookup IdentityLookup { get; private set; } 
+        public IIdentityLookup IdentityLookup { get; private set; } = null!;
 
         public ClusterConfig(string name, string address, int port, IClusterProvider cp)
         {

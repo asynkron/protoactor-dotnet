@@ -9,9 +9,9 @@ namespace Proto.Cluster
 {
     public class PartitionIdentityLookup : IIdentityLookup
     {
-        private Cluster _cluster;
-        private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityLookup>();
-        private PartitionManager PartitionManager { get;  set; }
+        private Cluster _cluster = null!;
+        private readonly ILogger _logger = Log.CreateLogger<PartitionIdentityLookup>();
+        private PartitionManager _partitionManager = null!;
 
         public async Task<(PID?,ResponseStatusCode)> GetAsync(string identity,string kind, CancellationToken ct)
         {
@@ -26,7 +26,7 @@ namespace Proto.Cluster
             //TODO: naive basic case, just spawn the actor on the address we got back
 
             
-            var remotePid = PartitionManager.PartitionForKind(kind);
+            var remotePid = _partitionManager.PartitionForKind(kind);
 
             var req = new ActorPidRequest
             {
@@ -34,7 +34,7 @@ namespace Proto.Cluster
                 Name = identity
             };
 
-            Logger.LogDebug("[Cluster] Requesting remote PID from {Partition}:{Remote} {@Request}", address, remotePid, req);
+            _logger.LogDebug("[Cluster] Requesting remote PID from {Partition}:{Remote} {@Request}", address, remotePid, req);
 
             try
             {
@@ -43,29 +43,24 @@ namespace Proto.Cluster
                     : await _cluster.System.Root.RequestAsync<ActorPidResponse>(remotePid, req, ct);
                 var status = (ResponseStatusCode) resp.StatusCode;
 
-                if (status == ResponseStatusCode.OK)
+                if (status == ResponseStatusCode.OK && _cluster!.Config!.UsePidCache)
                 {
-                    if (_cluster.Config.UsePidCache)
+                    if (_cluster.PidCache.TryAddCache(identity, resp.Pid))
                     {
-                        if (_cluster.PidCache.TryAddCache(identity, resp.Pid))
-                        {
-                            _cluster.PidCacheUpdater.Watch(resp.Pid);
-                        }
+                        _cluster.PidCacheUpdater.Watch(resp.Pid);
                     }
-
-                    return (resp.Pid, status);
                 }
 
                 return (resp.Pid, status);
             }
             catch (TimeoutException e)
             {
-                Logger.LogWarning(e, "[Cluster] Remote PID request timeout {@Request}", req);
+                _logger.LogWarning(e, "[Cluster] Remote PID request timeout {@Request}", req);
                 return (null, ResponseStatusCode.Timeout);
             }
             catch (Exception e)
             {
-                Logger.LogError(e, "[Cluster] Error occured requesting remote PID {@Request}", req);
+                _logger.LogError(e, "[Cluster] Error occured requesting remote PID {@Request}", req);
                 return (null, ResponseStatusCode.Error);
             }
         }
@@ -73,13 +68,13 @@ namespace Proto.Cluster
         public void Setup(Cluster cluster, string[] kinds)
         {
             _cluster = cluster;
-            PartitionManager = new PartitionManager(cluster);
-            PartitionManager.Setup(kinds);
+            _partitionManager = new PartitionManager(cluster);
+            _partitionManager.Setup(kinds);
         }
 
         public void Stop()
         {
-            PartitionManager.Stop();
+            _partitionManager.Stop();
         }
     }
 }

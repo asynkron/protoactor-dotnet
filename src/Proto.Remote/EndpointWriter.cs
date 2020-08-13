@@ -59,7 +59,10 @@ namespace Proto.Remote
                 case Restarting _:
                     return RestartingAsync();
                 case EndpointTerminatedEvent _:
-                    if (context.Self != null) context.Stop(context.Self);
+                    if (context.Self != null) //TODO: how can Self ever be null?
+                    {
+                        context.Stop(context.Self);
+                    }
                     return Actor.Done;
                 case IEnumerable<RemoteDeliver> m:
                     return Deliver(m);
@@ -159,10 +162,19 @@ namespace Proto.Remote
         //shutdown channel before stopping
         private Task StoppedAsync() => ShutDownChannel();
 
-        private Task ShutDownChannel() => _channel != null && _channel.State != ChannelState.Shutdown ? _channel.ShutdownAsync() : Actor.Done;
+        private Task ShutDownChannel()
+        {
+            if (_channel != null && _channel.State != ChannelState.Shutdown)
+            {
+                return _channel.ShutdownAsync();
+            }
+
+            return Actor.Done;
+        }
 
         private async Task StartedAsync()
         {
+
             Logger.LogDebug("[EndpointWriter] Connecting to address {Address}", _address);
 
             _channel = new Channel(_address, _channelCredentials, _channelOptions);
@@ -186,7 +198,9 @@ namespace Proto.Remote
                     }
                     catch (Exception x)
                     {
-                        Logger.LogError("[EndpointWriter] Lost connection to address {Address}, reason {Message}", _address, x.Message);
+                        Logger.LogError("[EndpointWriter] Lost connection to address {Address}, reason {Message}",
+                            _address, x.Message
+                        );
 
                         var terminated = new EndpointTerminatedEvent
                         {

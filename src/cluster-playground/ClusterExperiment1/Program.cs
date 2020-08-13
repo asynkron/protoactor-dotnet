@@ -21,7 +21,16 @@ namespace ClusterExperiment1
             Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
 
 
-            
+            var helloProps = Props.FromFunc(ctx =>
+                {
+                    if (ctx.Message is HelloRequest)
+                    {
+                        ctx.Respond(new HelloResponse());
+                    }
+
+                    return Actor.Done;
+                }
+            );
             
             //node 1
             var system1 = new ActorSystem();
@@ -37,15 +46,7 @@ namespace ClusterExperiment1
             var serialization2 = new Serialization();
             serialization2.RegisterFileDescriptor(MessagesReflection.Descriptor);
             var cluster2 = new Cluster(system2,serialization2);
-            cluster2.Remote.RegisterKnownKind("hello", Props.FromFunc(ctx =>
-            {
-                if (ctx.Message is HelloRequest)
-                {
-                    ctx.Respond(new HelloResponse());
-                }
-               
-                return Actor.Done;
-            }));
+            cluster2.Remote.RegisterKnownKind("hello", helloProps);
             
             
             //act
@@ -61,7 +62,7 @@ namespace ClusterExperiment1
             
             Console.WriteLine("Got response!");
 
-            cluster2.Shutdown(false);
+            cluster2.Shutdown(false); //skip await on purpose, we want to see that expected events are still correct w/o waiting
             await probe1.Expect<MemberLeftEvent>(e => e.Port == 8091);
             await probe1.Expect<EndpointTerminatedEvent>(e => e.Address.EndsWith("8091"));
             

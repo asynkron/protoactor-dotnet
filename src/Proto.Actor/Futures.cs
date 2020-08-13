@@ -97,7 +97,7 @@ namespace Proto
 
             if (_cts == null || !_cts.IsCancellationRequested)
             {
-                _tcs.TrySetResult(default);
+                _tcs.TrySetResult(default!);
             }
 
             Stop(pid);
