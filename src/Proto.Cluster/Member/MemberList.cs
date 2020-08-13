@@ -161,10 +161,10 @@ namespace Proto.Cluster
 
             if (oldMember == null)
             {
-                foreach (var k in newMember.Kinds)
+                foreach (var kind in newMember.Kinds)
                 {
-                    if (!_memberStrategyByKind.ContainsKey(k)) _memberStrategyByKind[k] = _cluster.Config!.MemberStrategyBuilder(k);
-                    _memberStrategyByKind[k].AddMember(newMember);
+                    if (!_memberStrategyByKind.ContainsKey(kind)) _memberStrategyByKind[kind] = _cluster.Config!.MemberStrategyBuilder(kind);
+                    _memberStrategyByKind[kind].AddMember(newMember);
                 }
 
                 //notify joined

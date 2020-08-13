@@ -15,16 +15,18 @@ namespace Proto.Cluster
 
         public async Task<(PID?,ResponseStatusCode)> GetAsync(string identity,string kind, CancellationToken ct)
         {
-            //Get Pid
+            //Get address to node owning this ID
             var address = _cluster.MemberList.GetMemberFromIdentityAndKind(identity, kind);
 
             if (string.IsNullOrEmpty(address))
             {
                 return (null, ResponseStatusCode.Unavailable);
             }
+            
+            //TODO: naive basic case, just spawn the actor on the address we got back
 
             
-            var remotePid = PartitionManager.PartitionForKind(address, kind);
+            var remotePid = PartitionManager.PartitionForKind(kind);
 
             var req = new ActorPidRequest
             {

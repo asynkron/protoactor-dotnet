@@ -19,7 +19,7 @@ namespace Proto.Cluster
     {
         private static readonly HashAlgorithm HashAlgorithm = FNV1A32.Create();
 
-        struct MemberData
+        readonly struct MemberData
         {
             public MemberData(MemberStatus memberStatus)
             {

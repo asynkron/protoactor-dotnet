@@ -9,7 +9,7 @@ namespace Proto.Cluster
 {
     internal class PartitionActor : IActor
     {
-        private static readonly ILogger Logger = Log.CreateLogger<PartitionActor>();
+        private readonly ILogger _logger;
 
         private class SpawningProcess : TaskCompletionSource<ActorPidResponse>
         {
@@ -28,6 +28,7 @@ namespace Proto.Cluster
 
         public PartitionActor(Cluster cluster, string kind, PartitionManager partitionManager)
         {
+            _logger = Log.CreateLogger("PartitionActor-" + cluster.Id);
             Cluster = cluster;
             _kind = kind; 
             _partitionManager = partitionManager;
@@ -38,7 +39,7 @@ namespace Proto.Cluster
             switch (context.Message)
             {
                 case Started _:
-                    Logger.LogDebug("[Partition] Started for {Kind}", _kind);
+                    _logger.LogDebug("Started for {Kind}", _kind);
                     break;
                 case ActorPidRequest msg:
                     GetOrSpawn(msg, context);
@@ -78,13 +79,13 @@ namespace Proto.Cluster
             if (!string.IsNullOrEmpty(address) && address != Cluster.System.ProcessRegistry.Address)
             {
                 //if not, forward to the correct owner
-                var owner = _partitionManager.PartitionForKind(address, _kind);
+                var owner = _partitionManager.PartitionForKind(_kind);
 
                 context.Send(owner, msg);
             }
             else
             {
-                Logger.LogDebug("[Partition] Kind {Kind} Take Ownership name: {Name}, pid: {Pid}", _kind, msg.Name, msg.Pid);
+                _logger.LogDebug("Kind {Kind} Take Ownership name: {Name}, pid: {Pid}", _kind, msg.Name, msg.Pid);
                 _partitionLookup[msg.Name] = msg.Pid;
                 _reversePartition[msg.Pid] = msg.Name;
                 context.Watch(msg.Pid);
@@ -108,7 +109,7 @@ namespace Proto.Cluster
             }
         }
 
-        private int TransferOwnership(IContext context)
+        private void TransferOwnership(IContext context)
         {
             // Iterate through the actors in this partition and try to check if the partition
             // PID should be in is not the current one, if so initiates a transfer to the
@@ -129,20 +130,21 @@ namespace Proto.Cluster
                 }
             }
 
-            return transferredActorCount;
+            if (transferredActorCount > 0)
+            {
+                _logger.LogInformation($"Transferred {transferredActorCount} PIDs to other nodes");
+            }
+            
         }
 
         private void MemberLeft(MemberLeftEvent memberLeft, IContext context)
         {
-            Logger.LogInformation("[Partition] Kind {Kind} member left {Address}", _kind, memberLeft.Address);
+            _logger.LogInformation("Kind {Kind} member left {Address}", _kind, memberLeft.Address);
 
-            // If the left member is self, transfer remaining pids to others
-            if (memberLeft.Address == Cluster.System.ProcessRegistry.Address)
-            {
-                var transferredActorCount = TransferOwnership(context);
 
-                if (transferredActorCount > 0) Logger.LogInformation("[Partition] Transferred {actors} PIDs to other nodes", transferredActorCount);
-            }
+            //always do this when a member leaves, we need to redistribute the distributed-hash-table
+            //no ifs or elses, just always
+            TransferOwnership(context);
 
             RemoveAddressFromPartition(memberLeft.Address);
 
@@ -152,11 +154,9 @@ namespace Proto.Cluster
 
         private void MemberJoined(MemberJoinedEvent msg, IContext context)
         {
-            Logger.LogInformation("[Partition] Kind {Kind} member joined {Address}", _kind, msg.Address);
+            _logger.LogInformation("Kind '{Kind}' member {Address} joined", _kind, msg.Address);
 
-            var transferredActorCount = TransferOwnership(context);
-
-            if (transferredActorCount > 0) Logger.LogInformation("[Partition] Transferred {actors} PIDs to other nodes", transferredActorCount);
+            TransferOwnership(context);
 
             foreach (var (actorId, sp) in _spawningProcs)
             {
@@ -172,7 +172,7 @@ namespace Proto.Cluster
         private void TransferOwnership(string actorId, string address, IContext context)
         {
             var pid = _partitionLookup[actorId];
-            var owner = _partitionManager.PartitionForKind(address, _kind);
+            var owner = _partitionManager.PartitionForKind(_kind);
             context.Send(owner, new TakeOwnership {Name = actorId, Pid = pid});
             _partitionLookup.Remove(actorId);
             _reversePartition.Remove(pid);
@@ -208,7 +208,7 @@ namespace Proto.Cluster
             if (string.IsNullOrEmpty(activator))
             {
                 //No activator currently available, return unavailable
-                Logger.LogDebug("[Partition] No members currently available");
+                _logger.LogDebug("[Partition] No members currently available");
                 context.Respond(ActorPidResponse.Unavailable);
                 return;
             }
@@ -277,7 +277,7 @@ namespace Proto.Cluster
                 if (string.IsNullOrEmpty(act))
                 {
                     //No activator currently available, return unavailable
-                    Logger.LogDebug("[Partition] No activator currently available");
+                    _logger.LogDebug("[Partition] No activator currently available");
                     return ActorPidResponse.Unavailable;
                 }
 
