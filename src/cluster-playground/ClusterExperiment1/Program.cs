@@ -31,7 +31,7 @@ namespace ClusterExperiment1
 
 
             //act
-            await cluster1.StartAsync(new ClusterConfig("mycluster","127.0.0.1",8090,consul1));
+            await cluster1.StartAsync(new ClusterConfig("mycluster","127.0.0.1",8090,consul1).WithPidCache(false));
             await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8090);
             //node 2
             var cluster2 = SpawnMember(8091);
@@ -58,6 +58,7 @@ namespace ClusterExperiment1
         
             var (pid2, status2) = await cluster1.GetAsync("myactor2", "hello");
             Console.WriteLine(pid2);
+            Console.WriteLine(status2);
             var response2 = await system1.Root.RequestAsync<HelloResponse>(pid2, new HelloRequest());
             Console.WriteLine("Got response!");
 
