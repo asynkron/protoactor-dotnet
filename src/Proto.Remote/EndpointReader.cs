@@ -94,7 +94,7 @@ namespace Proto.Remote
                                     break;
                                 }
                             case SystemMessage sys:
-                                Logger.LogDebug("[EndpointReader] Forwarding remote system message {@Message}", sys);
+                                Logger.LogDebug("[EndpointReader] Forwarding remote system message {@MessageType}:{@Message}",sys.GetType().Name, sys);
 
                                 target.SendSystemMessage(_system, sys);
                                 break;

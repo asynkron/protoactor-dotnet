@@ -71,14 +71,16 @@ namespace Proto.Cluster
 
             if (!string.IsNullOrEmpty(address) && address != _cluster.System.ProcessRegistry.Address)
             {
+                //TODO: this gets the wrong owner....
+                //FIX FIX
                 //if not, forward to the correct owner
                 var owner = _partitionManager.PartitionForKind(_kind);
-
+                _logger.LogError("Identity is not mine {Identity} forwarding to correct owner {Owner} ", msg.Name, owner);
                 context.Send(owner, msg);
             }
             else
             {
-                _logger.LogDebug("Kind {Kind} Take Ownership name: {Name}, pid: {Pid}", _kind, msg.Name, msg.Pid);
+                _logger.LogError("Kind {Kind} Take Ownership name: {Name}, pid: {Pid}", _kind, msg.Name, msg.Pid);
                 _partitionLookup[msg.Name] = msg.Pid;
                 _reversePartition[msg.Pid] = msg.Name;
                 context.Watch(msg.Pid);
@@ -146,6 +148,8 @@ namespace Proto.Cluster
         private void TransferOwnership(string actorId, string address, IContext context)
         {
             var pid = _partitionLookup[actorId];
+            
+            //TODO: THIS IS WRONG FIX FIX
             var owner = _partitionManager.PartitionForKind(_kind);
             context.Send(owner, new TakeOwnership {Name = actorId, Pid = pid});
             _partitionLookup.Remove(actorId);

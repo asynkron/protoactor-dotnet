@@ -19,9 +19,6 @@ namespace ClusterExperiment1
             //arrange
             Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
 
-
-
-            
             //node 1
             var system1 = new ActorSystem();
             var probe1 = system1.EventStream.GetProbe();
@@ -42,7 +39,7 @@ namespace ClusterExperiment1
             var cluster3 = SpawnMember(8092);
             await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8092);
 
-            var (pid,status) = await cluster1.GetAsync("myactor", "hello");
+            var (pid,status) = await cluster1.GetAsync("myactor2", "hello");
             if (status != ResponseStatusCode.OK)
             {
                 Console.WriteLine("BUG!");
@@ -58,18 +55,11 @@ namespace ClusterExperiment1
             cluster2.Shutdown(false); //skip await on purpose, we want to see that expected events are still correct w/o waiting
             await probe1.Expect<MemberLeftEvent>(e => e.Port == 8091);
             await probe1.Expect<EndpointTerminatedEvent>(e => e.Address.EndsWith("8091"));
-
-            while (true)
-            {
-                var (pid2, status2) = await cluster1.GetAsync("myactor", "hello");
-                if (pid2 != null)
-                {
-                    Console.WriteLine(pid2);
-                    break;
-                }
-                Console.WriteLine(status);
-                Thread.Sleep(100);
-            }
+        
+            var (pid2, status2) = await cluster1.GetAsync("myactor2", "hello");
+            Console.WriteLine(pid2);
+            var response2 = await system1.Root.RequestAsync<HelloResponse>(pid2, new HelloRequest());
+            Console.WriteLine("Got response!");
 
             Console.ReadLine();
         }
@@ -83,6 +73,10 @@ namespace ClusterExperiment1
             var cluster2 = new Cluster(system2, serialization2);
             var helloProps = Props.FromFunc(ctx =>
                 {
+                    if (ctx.Message is Started)
+                    {
+                        Console.WriteLine("I started " + ctx.Self);
+                    }
                     if (ctx.Message is HelloRequest)
                     {
                         ctx.Respond(new HelloResponse());

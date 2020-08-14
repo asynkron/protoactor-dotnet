@@ -17,6 +17,7 @@ namespace Proto.Cluster
         {
             //Get address to node owning this ID
             var address = _cluster.MemberList.GetMemberFromIdentityAndKind(identity, kind);
+            _logger.LogDebug("Identity belongs to {address}", address);
 
             if (string.IsNullOrEmpty(address))
             {
