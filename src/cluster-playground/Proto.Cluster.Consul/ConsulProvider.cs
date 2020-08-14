@@ -29,7 +29,7 @@ namespace Proto.Cluster.Consul
         private readonly TimeSpan _deregisterCritical; //this is how long the service exists in consul before disappearing when unhealthy, min 1 min
         private readonly TimeSpan _serviceTtl; //this is how long the service is healthy without a ttl refresh
         private readonly TimeSpan _refreshTtl;  //this is the refresh rate of TTL, should be smaller than the above
-        private string _address;
+        private string _host;
 
         private Cluster _cluster;
         private string _consulServiceName; //name of the custer, in consul this means the name of the service
@@ -70,7 +70,7 @@ namespace Proto.Cluster.Consul
             _cluster = cluster;
             _consulServiceInstanceId = $"{clusterName}-{_cluster.Id}@{host}:{port}";
             _consulServiceName = clusterName;
-            _address = host;
+            _host = host;
             _port = port;
             _kinds = kinds;
             _index = 0;
@@ -143,7 +143,7 @@ namespace Proto.Cluster.Consul
                 ID = _consulServiceInstanceId,
                 Name = _consulServiceName,
                 Tags = _kinds.ToArray(),
-                Address = _address,
+                Address = _host,
                 Port = _port,
                 Check = new AgentServiceCheck
                 {
