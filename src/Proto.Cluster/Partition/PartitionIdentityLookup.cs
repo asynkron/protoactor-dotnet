@@ -23,10 +23,7 @@ namespace Proto.Cluster
             {
                 return (null, ResponseStatusCode.Unavailable);
             }
-            
-            //TODO: naive basic case, just spawn the actor on the address we got back
 
-            
             var remotePid = _partitionManager.PartitionForKind(kind);
 
             var req = new ActorPidRequest

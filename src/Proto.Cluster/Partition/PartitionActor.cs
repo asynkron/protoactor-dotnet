@@ -184,7 +184,7 @@ namespace Proto.Cluster
                 spawning,
                 rst =>
                 {
-
+                    _logger.LogError(_cluster.System.ProcessRegistry.Address);
                     //Check if exist in current partition dictionary
                     //This is necessary to avoid race condition during partition map transfering.
                     if (_partitionLookup.TryGetValue(msg.Name, out pid))
@@ -220,6 +220,7 @@ namespace Proto.Cluster
         {
             try
             {
+                _logger.LogDebug("Spawning Remote Actor {Activator} {Identity} {Kind}", activator,req.Name,req.Kind);
                 return await _cluster.Remote.SpawnNamedAsync(activator, req.Name, req.Kind, _cluster.Config!.TimeoutTimespan);
             }
             catch (TimeoutException)
