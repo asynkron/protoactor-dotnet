@@ -4,9 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using System.Collections.Concurrent;
-using System.Threading;
 
 namespace Proto.Cluster
 {
@@ -31,25 +29,6 @@ namespace Proto.Cluster
             {
                 SpawnPartitionActor(kind);
             }
-
-            //TODO: should we have some other form of notification here?
-            _memberStatusSub = _cluster.System.EventStream.Subscribe<MemberStatusEvent>(
-                msg =>
-                {
-                    foreach (var kind in msg.Kinds)
-                    {
-                        //spawn if not existing
-                        if (!_kindMap.TryGetValue(kind, out _))
-                        {
-                            SpawnPartitionActor(kind);
-                        }
-
-                        var kindPid = _kindMap[kind];
-                        _cluster.System.Root.Send(kindPid, msg);
-                        
-                    }
-                }
-            );
         }
 
         private void SpawnPartitionActor(string kind)
@@ -72,26 +51,6 @@ namespace Proto.Cluster
             _cluster.System.EventStream.Unsubscribe(_memberStatusSub);
         }
 
-        public PID LocalPartitionForKind(string kind)
-        {
-            //TODO: make a proper solution.
-            
-            //this is to handle cases where there are race conditions where someone believes there are other nodes that can handle a kind
-            //but those nodes have simply not joined yet.
-            //give a tiny bit of time for things to sync up
-            
-            for (var i = 0; i < 5; i++)
-            {
-                if (_kindMap.TryGetValue(kind, out var pid))
-                {
-                    return pid;
-                }
-                Thread.Sleep(100);
-            }
-            
-            throw new ArgumentException($"Tried to get partition for kind '{kind}', but none was found");
-        }
-        
         public PID RemotePartitionForKind(string address, string kind)
         {
             return new PID(address, "partition-" + kind);
