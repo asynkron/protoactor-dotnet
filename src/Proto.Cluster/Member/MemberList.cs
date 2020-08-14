@@ -96,6 +96,11 @@ namespace Proto.Cluster
 
             try
             {
+                //TLDR:
+                //this method basically filters out any member status in the banned list
+                //then makes a delta between new and old members
+                //notifying the cluster accordingly which members left or joined
+
                 //these are all members that are currently active
                 var nonBannedStatuses =
                     statuses
@@ -108,7 +113,7 @@ namespace Proto.Cluster
                         .Select(s => s.MemberId)
                         .ToImmutableHashSet();
 
-                //these are all members that existed before, but are not in the current nonBanneMemberStatuses
+                //these are all members that existed before, but are not in the current nonBannedMemberStatuses
                 var membersThatLeft =
                     _members
                         .Where(m => !newMemberIds.Contains(m.Key))
@@ -122,11 +127,11 @@ namespace Proto.Cluster
                 }
 
                 //these are all members that are new and did not exist before
-                var membersThatJoined = 
+                var membersThatJoined =
                     nonBannedStatuses
                         .Where(m => !_members.ContainsKey(m.MemberId))
                         .ToArray();
-                
+
                 //notify that these members joined
                 foreach (var memberThatJoined in membersThatJoined)
                 {
@@ -159,7 +164,9 @@ namespace Proto.Cluster
 
             //notify left
 
-            var left = new MemberLeftEvent(memberThatLeft.MemberId, memberThatLeft.Host, memberThatLeft.Port, memberThatLeft.Kinds);
+            var left = new MemberLeftEvent(memberThatLeft.MemberId, memberThatLeft.Host, memberThatLeft.Port,
+                memberThatLeft.Kinds
+            );
 
             //remember that this member has left, may never join cluster again
             //that is, this ID may never join again, any cluster on the same host and port is fine
@@ -181,7 +188,7 @@ namespace Proto.Cluster
         {
             //TODO: looks fishy, no locks, are we sure this is safe? it is using private state _vars
 
-            _members.Add(newMember.MemberId,newMember);
+            _members.Add(newMember.MemberId, newMember);
 
             foreach (var kind in newMember.Kinds)
             {
@@ -200,7 +207,6 @@ namespace Proto.Cluster
             _cluster.System.EventStream.Publish(joined);
 
             _cluster.PidCache.RemoveByMemberAddress($"{newMember.Host}:{newMember.Port}");
-
         }
     }
 }
