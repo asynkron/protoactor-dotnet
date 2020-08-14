@@ -72,7 +72,7 @@ namespace Proto.Cluster
             _cluster.System.EventStream.Unsubscribe(_memberStatusSub);
         }
 
-        public PID PartitionForKind(string kind)
+        public PID LocalPartitionForKind(string kind)
         {
             //TODO: make a proper solution.
             
@@ -90,6 +90,11 @@ namespace Proto.Cluster
             }
             
             throw new ArgumentException($"Tried to get partition for kind '{kind}', but none was found");
+        }
+        
+        public PID RemotePartitionForKind(string address, string kind)
+        {
+            return new PID(address, "partition-" + kind);
         }
     }
 }
