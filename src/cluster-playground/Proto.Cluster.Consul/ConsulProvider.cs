@@ -15,6 +15,12 @@ using Microsoft.Extensions.Options;
 
 namespace Proto.Cluster.Consul
 {
+    //TLDR;
+    //this class has a very simple responsibility, poll consul for status updates.
+    //then transform these statuses to MemberStatus messages and pass on to the 
+    //cluster MemberList instance
+    //
+    //Helper functionality: register, deregister and refresh TTL
     public class ConsulProvider : IClusterProvider
     {
         private ILogger _logger;
