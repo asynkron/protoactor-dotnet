@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
 using Microsoft.Extensions.Logging;
@@ -48,6 +49,8 @@ namespace ClusterExperiment1
                 return;
             }
 
+            Console.WriteLine(pid);
+
             var response = await system1.Root.RequestAsync<HelloResponse>(pid, new HelloRequest());
             
             Console.WriteLine("Got response!");
@@ -55,7 +58,20 @@ namespace ClusterExperiment1
             cluster2.Shutdown(false); //skip await on purpose, we want to see that expected events are still correct w/o waiting
             await probe1.Expect<MemberLeftEvent>(e => e.Port == 8091);
             await probe1.Expect<EndpointTerminatedEvent>(e => e.Address.EndsWith("8091"));
-            
+
+            while (true)
+            {
+                var (pid2, status2) = await cluster1.GetAsync("myactor", "hello");
+                if (pid2 != null)
+                {
+                    Console.WriteLine(pid2);
+                    break;
+                }
+                Console.WriteLine(status);
+                Thread.Sleep(100);
+            }
+
+            Console.ReadLine();
         }
 
         private static Cluster SpawnMember(int port)
