@@ -5,8 +5,8 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -18,17 +18,21 @@ namespace Proto.Cluster
     //This class is responsible for figuring out what members are currently active in the cluster
     //it will receive a list of memberstatuses from the IClusterProvider
     //from that, we calculate a delta, which members joined, or left.
-    
+
     //TODO: check usage and threadsafety.
     public class MemberList
     {
         private static ILogger _logger = null!;
 
-        private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
-        private readonly Dictionary<Guid, MemberStatus> _members = new Dictionary<Guid, MemberStatus>();
-        private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind = new Dictionary<string, IMemberStrategy>();
-        private readonly Cluster _cluster;
+        //TODO: actually use this to prevent banned members from rejoining
         private readonly ConcurrentSet<Guid> _bannedMembers = new ConcurrentSet<Guid>();
+        private readonly Cluster _cluster;
+        private readonly Dictionary<Guid, MemberStatus> _members = new Dictionary<Guid, MemberStatus>();
+
+        private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind =
+            new Dictionary<string, IMemberStrategy>();
+
+        private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
 
         public MemberList(Cluster cluster)
         {
@@ -92,30 +96,41 @@ namespace Proto.Cluster
 
             try
             {
-                //get all new members id sets
-                var newMemberIds = new HashSet<Guid>();
+                //these are all members that are currently active
+                var nonBannedStatuses =
+                    statuses
+                        .Where(s => !_bannedMembers.Contains(s.MemberId))
+                        .ToArray();
 
-                foreach (var status in statuses)
+                //these are the member IDs hashset of currently active members
+                var newMemberIds =
+                    nonBannedStatuses
+                        .Select(s => s.MemberId)
+                        .ToImmutableHashSet();
+
+                //these are all members that existed before, but are not in the current nonBanneMemberStatuses
+                var membersThatLeft =
+                    _members
+                        .Where(m => !newMemberIds.Contains(m.Key))
+                        .Select(m => m.Value)
+                        .ToArray();
+
+                //notify that these members left
+                foreach (var memberThatLeft in membersThatLeft)
                 {
-                    newMemberIds.Add(status.MemberId);
+                    MemberLeave(memberThatLeft);
                 }
 
-                //remove old ones whose address not exist in new address sets
-                //_members.ToList() duplicates _members, allow _members to be modified in Notify
-                foreach (var (id, old) in _members.ToList())
+                //these are all members that are new and did not exist before
+                var membersThatJoined = 
+                    nonBannedStatuses
+                        .Where(m => !_members.ContainsKey(m.MemberId))
+                        .ToArray();
+                
+                //notify that these members joined
+                foreach (var memberThatJoined in membersThatJoined)
                 {
-                    if (!newMemberIds.Contains(id))
-                    {
-                        UpdateAndNotify(null, old);
-                    }
-                }
-
-                //find all the entries that exist in the new set
-                foreach (var @new in statuses)
-                {
-                    _members.TryGetValue(@new.MemberId, out var old);
-                    _members[@new.MemberId] = @new;
-                    UpdateAndNotify(@new, old);
+                    MemberJoin(memberThatJoined);
                 }
             }
             finally
@@ -124,70 +139,68 @@ namespace Proto.Cluster
             }
         }
 
-        private void UpdateAndNotify(MemberStatus? newMember, MemberStatus? oldMember)
+        private void MemberLeave(MemberStatus memberThatLeft)
+        {
+            //update MemberStrategy
+            foreach (var k in memberThatLeft.Kinds)
+            {
+                if (!_memberStrategyByKind.TryGetValue(k, out var ms))
+                {
+                    continue;
+                }
+
+                ms.RemoveMember(memberThatLeft);
+
+                if (ms.GetAllMembers().Count == 0)
+                {
+                    _memberStrategyByKind.Remove(k);
+                }
+            }
+
+            //notify left
+
+            var left = new MemberLeftEvent(memberThatLeft.MemberId, memberThatLeft.Host, memberThatLeft.Port, memberThatLeft.Kinds);
+
+            //remember that this member has left, may never join cluster again
+            //that is, this ID may never join again, any cluster on the same host and port is fine
+            //as long as it is a new clean instance
+            _bannedMembers.Add(left.Id);
+            _logger.LogInformation($"Published event {left}");
+            _cluster.System.EventStream.Publish(left);
+
+
+            _cluster.PidCache.RemoveByMemberAddress($"{memberThatLeft.Host}:{memberThatLeft.Port}");
+            _members.Remove(memberThatLeft.MemberId);
+
+            var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
+            _logger.LogInformation($"Published event {endpointTerminated}");
+            _cluster.System.EventStream.Publish(endpointTerminated);
+        }
+
+        private void MemberJoin(MemberStatus newMember)
         {
             //TODO: looks fishy, no locks, are we sure this is safe? it is using private state _vars
 
+            _members.Add(newMember.MemberId,newMember);
 
-
-            if (newMember == null)
+            foreach (var kind in newMember.Kinds)
             {
-                if (oldMember == null)
+                if (!_memberStrategyByKind.ContainsKey(kind))
                 {
-                    return; //ignore
+                    _memberStrategyByKind[kind] = _cluster.Config!.MemberStrategyBuilder(kind);
                 }
 
-                //update MemberStrategy
-                foreach (var k in oldMember.Kinds)
-                {
-                    if (!_memberStrategyByKind.TryGetValue(k, out var ms)) continue;
-
-                    ms.RemoveMember(oldMember);
-
-                    if (ms.GetAllMembers().Count == 0) _memberStrategyByKind.Remove(k);
-                }
-
-                //notify left
-                
-                var left = new MemberLeftEvent(oldMember.MemberId, oldMember.Host, oldMember.Port, oldMember.Kinds);
-                
-                //remember that this member has left, may never join cluster again
-                //that is, this ID may never join again, any cluster on the same host and port is fine
-                //as long as it is a new clean instance
-                _bannedMembers.Add(left.Id);
-                _logger.LogInformation($"Published event {left}");
-                _cluster.System.EventStream.Publish(left);
-
-                
-                _cluster.PidCache.RemoveByMemberAddress($"{oldMember.Host}:{oldMember.Port}");
-                _members.Remove(oldMember.MemberId);
-
-                var endpointTerminated = new EndpointTerminatedEvent {Address = oldMember.Address};
-                _logger.LogInformation($"Published event {endpointTerminated}");
-                _cluster.System.EventStream.Publish(endpointTerminated);
-                
-
-                return;
+                _memberStrategyByKind[kind].AddMember(newMember);
             }
 
-            if (oldMember == null)
-            {
-                foreach (var kind in newMember.Kinds)
-                {
-                    if (!_memberStrategyByKind.ContainsKey(kind)) _memberStrategyByKind[kind] = _cluster.Config!.MemberStrategyBuilder(kind);
-                    _memberStrategyByKind[kind].AddMember(newMember);
-                }
+            //notify joined
+            var joined = new MemberJoinedEvent(newMember.MemberId, newMember.Host, newMember.Port, newMember.Kinds);
 
-                //notify joined
-                var joined = new MemberJoinedEvent(newMember.MemberId, newMember.Host, newMember.Port, newMember.Kinds);
-                
-                _logger.LogInformation($"Published event {joined}");
-                _cluster.System.EventStream.Publish(joined);
-                
-                _cluster.PidCache.RemoveByMemberAddress($"{newMember.Host}:{newMember.Port}");
+            _logger.LogInformation($"Published event {joined}");
+            _cluster.System.EventStream.Publish(joined);
 
-             
-            }
+            _cluster.PidCache.RemoveByMemberAddress($"{newMember.Host}:{newMember.Port}");
+
         }
     }
 }
