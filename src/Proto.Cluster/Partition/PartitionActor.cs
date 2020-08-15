@@ -134,7 +134,7 @@ namespace Proto.Cluster
 
         private void MemberLeft(MemberLeftEvent msg, IContext context)
         {
-            _partitionManager.Selector.AddMember(msg.Member);
+            _partitionManager.Selector.RemoveMember(msg.Member);
             //always do this when a member leaves, we need to redistribute the distributed-hash-table
             //no ifs or elses, just always
             EvaluateAndTransferOwnership(context);

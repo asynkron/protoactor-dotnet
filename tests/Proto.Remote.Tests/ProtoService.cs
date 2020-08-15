@@ -41,7 +41,7 @@ namespace Proto.Remote.Tests
         public Task StopAsync()
         {
             _logger.LogInformation("ProtoService stopping...");
-            return _remote.Shutdown();
+            return _remote.ShutdownAsync();
         }
     }
 }

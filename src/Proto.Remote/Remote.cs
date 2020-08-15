@@ -22,10 +22,12 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Health.V1;
 using Grpc.HealthCheck;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
+    [PublicAPI]
     public class Remote
     {
         private static readonly ILogger Logger = Log.CreateLogger<Remote>();
@@ -93,7 +95,7 @@ namespace Proto.Remote
             Logger.LogDebug("Starting Proto.Actor server on {Host}:{Port} ({Address})", hostname, boundPort, _system.ProcessRegistry.Address);
         }
 
-        public async Task Shutdown(bool graceful = true)
+        public async Task ShutdownAsync(bool graceful = true)
         {
             try
             {
@@ -102,7 +104,7 @@ namespace Proto.Remote
                     _endpointManager.Stop();
                     _endpointReader.Suspend(true);
                     StopActivator();
-                    await _server.ShutdownAsync();
+                    await _server.KillAsync(); //TODO: was ShutdownAsync but that never returns?
                 }
                 else
                 {

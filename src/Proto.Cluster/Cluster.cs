@@ -85,17 +85,17 @@ namespace Proto.Cluster
             _logger.LogInformation("Started");
         }
 
-        public async Task Shutdown(bool graceful = true)
+        public async Task ShutdownAsync(bool graceful = true)
         {
             _logger.LogInformation("Stopping");
             if (graceful)
             {
-                PidCacheUpdater!.Stop();
-                IdentityLookup!.Stop();
+                PidCacheUpdater!.Shutdown();
+                IdentityLookup!.Shutdown();
             }
             
             await Config!.ClusterProvider.ShutdownAsync(graceful);
-            await Remote.Shutdown(graceful);
+            await Remote.ShutdownAsync(graceful);
             
             _logger.LogInformation("Stopped");
         }

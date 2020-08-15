@@ -17,7 +17,7 @@ namespace Proto.Cluster
             _watcher = Cluster.System.Root.SpawnNamed(props, "PidCacheWatcher");
         }
         
-        internal void Stop()
+        internal void Shutdown()
         {
             Cluster.System.Root.Stop(_watcher);
         }

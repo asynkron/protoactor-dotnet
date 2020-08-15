@@ -115,7 +115,7 @@ namespace Proto.Cluster.Tests
             Assert.True(first.Alive);
             Assert.True(services.Length == 1);
             
-            await cluster.Shutdown();
+            await cluster.ShutdownAsync();
         }
         
         [Fact]
@@ -130,7 +130,7 @@ namespace Proto.Cluster.Tests
             var ttl1 = first.TTL;
             SpinWait.SpinUntil(() => ttl1 != first.TTL, TimeSpan.FromSeconds(10));
             Assert.NotEqual(ttl1,first.TTL);
-            await cluster.Shutdown();
+            await cluster.ShutdownAsync();
         }
         
         [Fact]
@@ -146,8 +146,8 @@ namespace Proto.Cluster.Tests
             Assert.True(services.Length == 2);
             Assert.True(services.All(m => m.Alive));
             
-            await cluster1.Shutdown();
-            await cluster2.Shutdown();
+            await cluster1.ShutdownAsync();
+            await cluster2.ShutdownAsync();
         }
         
         [Fact]
@@ -158,7 +158,7 @@ namespace Proto.Cluster.Tests
             var cluster1 = await NewCluster(agent,8080);
             var cluster2 = await NewCluster(agent,8081);
             
-            await cluster1.Shutdown();
+            await cluster1.ShutdownAsync();
 
             var services = agent.GetServicesHealth();
   
@@ -166,7 +166,7 @@ namespace Proto.Cluster.Tests
             Assert.True(services.All(m => m.Alive));
             
             
-            await cluster2.Shutdown();
+            await cluster2.ShutdownAsync();
         }
         
         [Fact]
@@ -201,8 +201,8 @@ namespace Proto.Cluster.Tests
             
  
 
-            await cluster1.Shutdown(false);
-            await cluster2.Shutdown(false);
+            await cluster1.ShutdownAsync(false);
+            await cluster2.ShutdownAsync(false);
         }
 
         private static async Task<Cluster> NewCluster(InMemAgent agent, int port,

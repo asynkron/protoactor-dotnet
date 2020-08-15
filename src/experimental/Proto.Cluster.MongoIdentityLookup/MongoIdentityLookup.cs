@@ -43,7 +43,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             _kinds = kinds;
         }
 
-        public void Stop()
+        public void Shutdown()
         {
 
         }

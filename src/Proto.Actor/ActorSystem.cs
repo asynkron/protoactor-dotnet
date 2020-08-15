@@ -1,5 +1,8 @@
+using JetBrains.Annotations;
+
 namespace Proto
 {
+    [PublicAPI]
     public class ActorSystem
     {
         public ProcessRegistry ProcessRegistry { get; }

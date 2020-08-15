@@ -70,7 +70,7 @@ namespace Proto.Cluster
             _partitionManager.Setup();
         }
 
-        public void Stop()
+        public void Shutdown()
         {
             _partitionManager.Stop();
         }
