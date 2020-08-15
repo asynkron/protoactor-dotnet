@@ -65,7 +65,7 @@ namespace Proto.Cluster
         private void TakeOwnership(TakeOwnership msg, IContext context)
         {
             //Check again if I'm still the owner of the identity
-            var address = _cluster.MemberList.GetIdentityOwnerMemberFromIdentityAndKind(msg.Name, msg.Kind);
+            var address = _partitionManager.Selector.GetPartition(msg.Name);
 
             if (!string.IsNullOrEmpty(address) && address != _cluster.System.ProcessRegistry.Address)
             {
@@ -112,7 +112,7 @@ namespace Proto.Cluster
             
             foreach (var (identity, (pid, kind)) in _partitionLookup.ToArray())
             {
-                var shouldBeOwnerAddress = _cluster.MemberList.GetIdentityOwnerMemberFromIdentityAndKind(identity,kind);
+                var shouldBeOwnerAddress = _partitionManager.Selector.GetPartition(identity);
 
                 if (string.IsNullOrEmpty(shouldBeOwnerAddress) || shouldBeOwnerAddress == myAddress)
                 {
@@ -132,18 +132,20 @@ namespace Proto.Cluster
             
         }
 
-        private void MemberLeft(MemberLeftEvent memberLeft, IContext context)
+        private void MemberLeft(MemberLeftEvent msg, IContext context)
         {
+            _partitionManager.Selector.AddMember(msg.Member);
             //always do this when a member leaves, we need to redistribute the distributed-hash-table
             //no ifs or elses, just always
             EvaluateAndTransferOwnership(context);
 
-            RemoveAddressFromPartition(memberLeft.Address);
+            RemoveAddressFromPartition(msg.Member.Address);
 
         }
 
         private void MemberJoined(MemberJoinedEvent msg, IContext context)
         {
+            _partitionManager.Selector.AddMember(msg.Member);
             EvaluateAndTransferOwnership(context);
         }
 

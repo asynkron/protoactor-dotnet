@@ -32,12 +32,12 @@ namespace ClusterExperiment1
 
             //act
             await cluster1.StartAsync(new ClusterConfig("mycluster","127.0.0.1",8090,consul1).WithPidCache(false));
-            await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8090);
+            await probe1.Expect<MemberJoinedEvent>(e => e.Member.Port == 8090);
             //node 2
             var cluster2 = SpawnMember(8091);
-            await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8091);
+            await probe1.Expect<MemberJoinedEvent>(e => e.Member.Port == 8091);
             var cluster3 = SpawnMember(8092);
-            await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8092);
+            await probe1.Expect<MemberJoinedEvent>(e => e.Member.Port == 8092);
 
             var (pid,status) = await cluster1.GetAsync("myactor3", "hello");
             if (status != ResponseStatusCode.OK)
@@ -53,7 +53,7 @@ namespace ClusterExperiment1
             Console.WriteLine("Got response!");
 
             cluster2.Shutdown(false); //skip await on purpose, we want to see that expected events are still correct w/o waiting
-            await probe1.Expect<MemberLeftEvent>(e => e.Port == 8091);
+            await probe1.Expect<MemberLeftEvent>(e => e.Member.Port == 8091);
             await probe1.Expect<EndpointTerminatedEvent>(e => e.Address.EndsWith("8091"));
         
             var (pid2, status2) = await cluster1.GetAsync("myactor4", "hello");

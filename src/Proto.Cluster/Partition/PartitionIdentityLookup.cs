@@ -16,7 +16,7 @@ namespace Proto.Cluster
         public async Task<(PID?,ResponseStatusCode)> GetAsync(string identity,string kind, CancellationToken ct)
         {
             //Get address to node owning this ID
-            var address = _cluster.MemberList.GetIdentityOwnerMemberFromIdentityAndKind(identity, kind);
+            var address = _partitionManager.Selector.GetPartition(identity);
             _logger.LogError("Identity belongs to {address}", address);
 
             if (string.IsNullOrEmpty(address))

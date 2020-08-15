@@ -32,7 +32,7 @@ namespace Proto.Cluster
         private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind =
             new Dictionary<string, IMemberStrategy>();
         
-        private readonly SimpleMemberStrategy _allMembers = new SimpleMemberStrategy();
+
 
         private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
 
@@ -40,28 +40,6 @@ namespace Proto.Cluster
         {
             _cluster = cluster;
             _logger = Log.CreateLogger($"MemberList-{_cluster.Id}");
-        }
-
-        internal string GetIdentityOwnerMemberFromIdentityAndKind(string identity, string kind)
-        {
-            var locked = _rwLock.TryEnterReadLock(1000);
-
-            while (!locked)
-            {
-                _logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
-                locked = _rwLock.TryEnterReadLock(1000);
-            }
-
-            try
-            {
-                var member = _allMembers.GetPartition(identity) ?? "";
-                _logger.LogDebug("Got {member} from a set of {MemberCount}",member,_allMembers.Count);
-                return member;
-            }
-            finally
-            {
-                _rwLock.ExitReadLock();
-            }
         }
 
         internal string GetActivator(string kind)
@@ -148,7 +126,6 @@ namespace Proto.Cluster
 
         private void MemberLeave(MemberStatus memberThatLeft)
         {
-            _allMembers.RemoveMember(memberThatLeft);
             //update MemberStrategy
             foreach (var k in memberThatLeft.Kinds)
             {
@@ -167,14 +144,12 @@ namespace Proto.Cluster
 
             //notify left
 
-            var left = new MemberLeftEvent(memberThatLeft.MemberId, memberThatLeft.Host, memberThatLeft.Port,
-                memberThatLeft.Kinds
-            );
+            var left = new MemberLeftEvent(memberThatLeft);
 
             //remember that this member has left, may never join cluster again
             //that is, this ID may never join again, any cluster on the same host and port is fine
             //as long as it is a new clean instance
-            _bannedMembers.Add(left.Id);
+            _bannedMembers.Add(memberThatLeft.MemberId);
             _logger.LogInformation("Published event {@MemberLeft}",left);
             _cluster.System.EventStream.Publish(left);
 
@@ -189,7 +164,6 @@ namespace Proto.Cluster
 
         private void MemberJoin(MemberStatus newMember)
         {
-            _allMembers.AddMember(newMember);
             //TODO: looks fishy, no locks, are we sure this is safe? it is using private state _vars
 
             _members.Add(newMember.MemberId, newMember);
@@ -206,7 +180,7 @@ namespace Proto.Cluster
             }
 
             //notify joined
-            var joined = new MemberJoinedEvent(newMember.MemberId, newMember.Host, newMember.Port, newMember.Kinds);
+            var joined = new MemberJoinedEvent(newMember);
 
             _logger.LogInformation("Published event {@MemberJoined}",joined);
             _cluster.System.EventStream.Publish(joined);
