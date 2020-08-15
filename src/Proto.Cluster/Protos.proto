@@ -7,6 +7,7 @@ import "Proto.Actor/Protos.proto";
 message TakeOwnership {
     actor.PID pid = 1;
     string name = 2;
+    string kind = 3;
 }
 
 message GrainRequest {

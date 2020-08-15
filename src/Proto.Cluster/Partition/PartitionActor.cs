@@ -10,8 +10,7 @@ namespace Proto.Cluster
     internal class PartitionActor : IActor
     {
         private readonly ILogger _logger;
-        private readonly string _kind;
-        private readonly Dictionary<string, PID> _partitionLookup = new Dictionary<string, PID>();        //actor/grain name to PID
+        private readonly Dictionary<string, (PID pid, string kind)> _partitionLookup = new Dictionary<string, (PID pid, string kind)>();        //actor/grain name to PID
         private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>(); //PID to grain name
 
         // private readonly Partition _partition;
@@ -19,11 +18,10 @@ namespace Proto.Cluster
         private readonly PartitionManager _partitionManager;
         private readonly Cluster _cluster;
 
-        public PartitionActor(Cluster cluster, string kind, PartitionManager partitionManager)
+        public PartitionActor(Cluster cluster, PartitionManager partitionManager)
         {
             _logger = Log.CreateLogger("PartitionActor-" + cluster.Id);
             _cluster = cluster;
-            _kind = kind; 
             _partitionManager = partitionManager;
         }
 
@@ -32,7 +30,7 @@ namespace Proto.Cluster
             switch (context.Message)
             {
                 case Started _:
-                    _logger.LogDebug("Started for {Kind}", _kind);
+                    _logger.LogDebug("Started");
                     break;
                 case ActorPidRequest msg:
                     GetOrSpawn(msg, context);
@@ -67,19 +65,19 @@ namespace Proto.Cluster
         private void TakeOwnership(TakeOwnership msg, IContext context)
         {
             //Check again if I'm still the owner of the identity
-            var address = _cluster.MemberList.GetMemberFromIdentityAndKind(msg.Name, _kind);
+            var address = _cluster.MemberList.GetMemberFromIdentityAndKind(msg.Name, msg.Kind);
 
             if (!string.IsNullOrEmpty(address) && address != _cluster.System.ProcessRegistry.Address)
             {
                 //if not, forward to the correct owner
-                var owner = _partitionManager.RemotePartitionForKind(address, _kind);
+                var owner = _partitionManager.RemotePartitionForKind(address);
                 _logger.LogError("Identity is not mine {Identity} forwarding to correct owner {Owner} ", msg.Name, owner);
                 context.Send(owner, msg);
             }
             else
             {
-                _logger.LogError("Kind {Kind} Take Ownership name: {Name}, pid: {Pid}", _kind, msg.Name, msg.Pid);
-                _partitionLookup[msg.Name] = msg.Pid;
+                _logger.LogError("Kind ??? Take Ownership name: {Name}, pid: {Pid}", msg.Name, msg.Pid);
+                _partitionLookup[msg.Name] = (msg.Pid,msg.Kind);
                 _reversePartition[msg.Pid] = msg.Name;
                 context.Watch(msg.Pid);
             }
@@ -87,15 +85,15 @@ namespace Proto.Cluster
 
         private void RemoveAddressFromPartition(string address)
         {
-            foreach (var (actorId, pid) in _partitionLookup.Where(x => x.Value.Address == address).ToArray())
+            foreach (var (actorId, info) in _partitionLookup.Where(x => x.Value.pid.Address == address).ToArray())
             {
                 _partitionLookup.Remove(actorId);
-                _reversePartition.Remove(pid);
+                _reversePartition.Remove(info.pid);
             }
         }
         
 
-        private void TransferOwnership(IContext context)
+        private void EvaluateAndTransferOwnership(IContext context)
         {
             // Iterate through the actors in this partition and try to check if the partition
             // PID should be in is not the current one, if so initiates a transfer to the
@@ -105,14 +103,14 @@ namespace Proto.Cluster
             // TODO: right now we transfer ownership on a per actor basis.
             // this could be done in a batch
             // ownership is also racy, new nodes should maybe forward requests to neighbours (?)
-            foreach (var (actorId, _) in _partitionLookup.ToArray())
+            foreach (var (actorId, info) in _partitionLookup.ToArray())
             {
-                var address = _cluster.MemberList.GetMemberFromIdentityAndKind(actorId, _kind);
+                var address = _cluster.MemberList.GetMemberFromIdentityAndKind(actorId,info.kind);
 
                 if (!string.IsNullOrEmpty(address) && address != _cluster.System.ProcessRegistry.Address)
                 {
                     transferredActorCount++;
-                    TransferOwnership(actorId, address, context);
+                    TransferOwnershipOfActor(actorId, info.kind,info.pid, address, context);
                 }
             }
 
@@ -125,12 +123,9 @@ namespace Proto.Cluster
 
         private void MemberLeft(MemberLeftEvent memberLeft, IContext context)
         {
-            _logger.LogInformation("Kind {Kind} member left {Address}", _kind, memberLeft.Address);
-
-
             //always do this when a member leaves, we need to redistribute the distributed-hash-table
             //no ifs or elses, just always
-            TransferOwnership(context);
+            EvaluateAndTransferOwnership(context);
 
             RemoveAddressFromPartition(memberLeft.Address);
 
@@ -138,17 +133,13 @@ namespace Proto.Cluster
 
         private void MemberJoined(MemberJoinedEvent msg, IContext context)
         {
-            _logger.LogInformation("Kind '{Kind}' member {Address} joined", _kind, msg.Address);
-
-            TransferOwnership(context);
+            EvaluateAndTransferOwnership(context);
         }
 
-        private void TransferOwnership(string actorId, string address, IContext context)
+        private void TransferOwnershipOfActor(string actorId, string kind, PID pid, string address, IContext context)
         {
-            var pid = _partitionLookup[actorId];
-            
-            var owner = _partitionManager.RemotePartitionForKind(address, _kind);
-            context.Send(owner, new TakeOwnership {Name = actorId, Pid = pid});
+            var owner = _partitionManager.RemotePartitionForKind(address);
+            context.Send(owner, new TakeOwnership {Name = actorId,Kind = kind, Pid = pid});
             _partitionLookup.Remove(actorId);
             _reversePartition.Remove(pid);
             context.Unwatch(pid);
@@ -157,9 +148,9 @@ namespace Proto.Cluster
         private void GetOrSpawn(ActorPidRequest msg, IContext context)
         {
             //Check if exist in current partition dictionary
-            if (_partitionLookup.TryGetValue(msg.Name, out var pid))
+            if (_partitionLookup.TryGetValue(msg.Name, out var info))
             {
-                context.Respond(new ActorPidResponse {Pid = pid});
+                context.Respond(new ActorPidResponse {Pid = info.pid});
                 return;
             }
             
@@ -174,7 +165,7 @@ namespace Proto.Cluster
                 return;
             }
 
-            var spawning = Spawning(msg, activator);
+            var spawning = SpawnRemoteActor(msg, activator);
             
             //Await SpawningProcess
             context.ReenterAfter(
@@ -183,9 +174,9 @@ namespace Proto.Cluster
                 {
                     //Check if exist in current partition dictionary
                     //This is necessary to avoid race condition during partition map transfering.
-                    if (_partitionLookup.TryGetValue(msg.Name, out pid))
+                    if (_partitionLookup.TryGetValue(msg.Name, out info))
                     {
-                        context.Respond(new ActorPidResponse {Pid = pid});
+                        context.Respond(new ActorPidResponse {Pid = info.pid});
                         return Actor.Done;
                     }
 
@@ -200,8 +191,9 @@ namespace Proto.Cluster
 
                     if ((ResponseStatusCode) pidResp.StatusCode == ResponseStatusCode.OK)
                     {
-                        pid = pidResp.Pid;
-                        _partitionLookup[msg.Name] = pid;
+                        var pid = pidResp.Pid;
+
+                        _partitionLookup[msg.Name] = (pid,msg.Kind);
                         _reversePartition[pid] = msg.Name;
                         context.Watch(pid);
                     }
@@ -212,7 +204,7 @@ namespace Proto.Cluster
             );
         }
 
-        private async Task<ActorPidResponse> Spawning(ActorPidRequest req, string activator)
+        private async Task<ActorPidResponse> SpawnRemoteActor(ActorPidRequest req, string activator)
         {
             try
             {

@@ -24,7 +24,7 @@ namespace Proto.Cluster
                 return (null, ResponseStatusCode.Unavailable);
             }
 
-            var remotePid = _partitionManager.RemotePartitionForKind(address, kind);
+            var remotePid = _partitionManager.RemotePartitionForKind(address);
 
             var req = new ActorPidRequest
             {
@@ -67,7 +67,7 @@ namespace Proto.Cluster
         {
             _cluster = cluster;
             _partitionManager = new PartitionManager(cluster);
-            _partitionManager.Setup(kinds);
+            _partitionManager.Setup();
         }
 
         public void Stop()
