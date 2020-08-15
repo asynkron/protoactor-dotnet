@@ -13,7 +13,7 @@ namespace Proto.Cluster
     {
         List<MemberStatus> GetAllMembers();
         void AddMember(MemberStatus member);
-        void UpdateMember(MemberStatus member);
+
         void RemoveMember(MemberStatus member);
         string GetPartition(string key);
         string GetActivator();
@@ -34,6 +34,7 @@ namespace Proto.Cluster
 
         public List<MemberStatus> GetAllMembers() => _members;
 
+        //TODO: account for Member.MemberId
         public void AddMember(MemberStatus member)
         {
             // Avoid adding the same member twice
@@ -43,12 +44,7 @@ namespace Proto.Cluster
             _rdv.UpdateMembers(_members);
         }
         
-        public void UpdateMember(MemberStatus member)
-        {
-            _members.RemoveAll(x => x.Address == member.Address);
-            _members.Add(member);
-        }
-        
+        //TODO: account for Member.MemberId
         public void RemoveMember(MemberStatus member)
         {
             _members.RemoveAll(x => x.Address == member.Address);

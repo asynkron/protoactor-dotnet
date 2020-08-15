@@ -50,7 +50,7 @@ namespace Proto
             var dispatcher = props.Dispatcher;
             var process = new ActorProcess(system, mailbox);
             var (pid, absent) = system.ProcessRegistry.TryAdd(name, process);
-
+ 
             if (!absent)
             {
                 throw new ProcessNameExistException(name, pid);

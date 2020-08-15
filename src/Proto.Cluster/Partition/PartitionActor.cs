@@ -103,20 +103,31 @@ namespace Proto.Cluster
             // TODO: right now we transfer ownership on a per actor basis.
             // this could be done in a batch
             // ownership is also racy, new nodes should maybe forward requests to neighbours (?)
-            foreach (var (actorId, info) in _partitionLookup.ToArray())
-            {
-                var address = _cluster.MemberList.GetMemberFromIdentityAndKind(actorId,info.kind);
+            //
+            // this is best effort only, some actor identities might be lost in void
+            // leading to duplicate activations of an identity
+            //
 
-                if (!string.IsNullOrEmpty(address) && address != _cluster.System.ProcessRegistry.Address)
+            var myAddress = _cluster.System.ProcessRegistry.Address;
+            
+            foreach (var (identity, (pid, kind)) in _partitionLookup.ToArray())
+            {
+                var shouldBeOwnerAddress = _cluster.MemberList.GetMemberFromIdentityAndKind(identity,kind);
+
+                if (string.IsNullOrEmpty(shouldBeOwnerAddress) || shouldBeOwnerAddress == myAddress)
                 {
-                    transferredActorCount++;
-                    TransferOwnershipOfActor(actorId, info.kind,info.pid, address, context);
+                    continue;
                 }
+                
+                //this actorId should be owned by shouldBrOwnerAddress
+
+                transferredActorCount++;
+                TransferOwnershipOfActor(identity, kind,pid, shouldBeOwnerAddress, context);
             }
 
             if (transferredActorCount > 0)
             {
-                _logger.LogInformation($"Transferred {transferredActorCount} PIDs to other nodes");
+                _logger.LogInformation("Transferred {TransferCount} PIDs to other nodes", transferredActorCount);
             }
             
         }
