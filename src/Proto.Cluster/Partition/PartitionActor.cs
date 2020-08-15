@@ -65,7 +65,7 @@ namespace Proto.Cluster
         private void TakeOwnership(TakeOwnership msg, IContext context)
         {
             //Check again if I'm still the owner of the identity
-            var address = _cluster.MemberList.GetMemberFromIdentityAndKind(msg.Name, msg.Kind);
+            var address = _cluster.MemberList.GetIdentityOwnerMemberFromIdentityAndKind(msg.Name, msg.Kind);
 
             if (!string.IsNullOrEmpty(address) && address != _cluster.System.ProcessRegistry.Address)
             {
@@ -112,7 +112,7 @@ namespace Proto.Cluster
             
             foreach (var (identity, (pid, kind)) in _partitionLookup.ToArray())
             {
-                var shouldBeOwnerAddress = _cluster.MemberList.GetMemberFromIdentityAndKind(identity,kind);
+                var shouldBeOwnerAddress = _cluster.MemberList.GetIdentityOwnerMemberFromIdentityAndKind(identity,kind);
 
                 if (string.IsNullOrEmpty(shouldBeOwnerAddress) || shouldBeOwnerAddress == myAddress)
                 {

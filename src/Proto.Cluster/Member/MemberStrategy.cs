@@ -25,6 +25,8 @@ namespace Proto.Cluster
         private readonly Rendezvous _rdv;
         private readonly RoundRobinMemberSelector _rr;
 
+        public int Count => _members.Count;
+
         public SimpleMemberStrategy()
         {
             _members = new List<MemberStatus>();

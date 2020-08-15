@@ -39,7 +39,7 @@ namespace ClusterExperiment1
             var cluster3 = SpawnMember(8092);
             await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8092);
 
-            var (pid,status) = await cluster1.GetAsync("myactor2", "hello");
+            var (pid,status) = await cluster1.GetAsync("myactor6", "hello");
             if (status != ResponseStatusCode.OK)
             {
                 Console.WriteLine("BUG!");
@@ -56,7 +56,7 @@ namespace ClusterExperiment1
             await probe1.Expect<MemberLeftEvent>(e => e.Port == 8091);
             await probe1.Expect<EndpointTerminatedEvent>(e => e.Address.EndsWith("8091"));
         
-            var (pid2, status2) = await cluster1.GetAsync("myactor2", "hello");
+            var (pid2, status2) = await cluster1.GetAsync("myactor4", "hello");
             Console.WriteLine(pid2);
             Console.WriteLine(status2);
             var response2 = await system1.Root.RequestAsync<HelloResponse>(pid2, new HelloRequest());

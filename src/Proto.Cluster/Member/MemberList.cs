@@ -31,6 +31,8 @@ namespace Proto.Cluster
 
         private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind =
             new Dictionary<string, IMemberStrategy>();
+        
+        private readonly SimpleMemberStrategy _allMembers = new SimpleMemberStrategy();
 
         private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
 
@@ -40,7 +42,7 @@ namespace Proto.Cluster
             _logger = Log.CreateLogger($"MemberList-{_cluster.Id}");
         }
 
-        internal string GetMemberFromIdentityAndKind(string identity, string kind)
+        internal string GetIdentityOwnerMemberFromIdentityAndKind(string identity, string kind)
         {
             var locked = _rwLock.TryEnterReadLock(1000);
 
@@ -52,9 +54,9 @@ namespace Proto.Cluster
 
             try
             {
-                return _memberStrategyByKind.TryGetValue(kind, out var memberStrategy)
-                    ? memberStrategy.GetPartition(identity)
-                    : "";
+                var member = _allMembers.GetPartition(identity) ?? "";
+                _logger.LogDebug("Got {member} from a set of {MemberCount}",member,_allMembers.Count);
+                return member;
             }
             finally
             {
@@ -146,6 +148,7 @@ namespace Proto.Cluster
 
         private void MemberLeave(MemberStatus memberThatLeft)
         {
+            _allMembers.RemoveMember(memberThatLeft);
             //update MemberStrategy
             foreach (var k in memberThatLeft.Kinds)
             {
@@ -186,6 +189,7 @@ namespace Proto.Cluster
 
         private void MemberJoin(MemberStatus newMember)
         {
+            _allMembers.AddMember(newMember);
             //TODO: looks fishy, no locks, are we sure this is safe? it is using private state _vars
 
             _members.Add(newMember.MemberId, newMember);
@@ -197,6 +201,7 @@ namespace Proto.Cluster
                     _memberStrategyByKind[kind] = _cluster.Config!.MemberStrategyBuilder(kind);
                 }
 
+                //TODO: this doesnt work, just use the same strategy for all kinds...
                 _memberStrategyByKind[kind].AddMember(newMember);
             }
 
