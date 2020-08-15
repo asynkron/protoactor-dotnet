@@ -15,7 +15,6 @@ namespace Proto.Cluster
         void AddMember(MemberStatus member);
 
         void RemoveMember(MemberStatus member);
-        string GetPartition(string key);
         string GetActivator();
     }
 

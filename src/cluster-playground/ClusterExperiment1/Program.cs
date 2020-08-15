@@ -39,7 +39,7 @@ namespace ClusterExperiment1
             var cluster3 = SpawnMember(8092);
             await probe1.Expect<MemberJoinedEvent>(e => e.Port == 8092);
 
-            var (pid,status) = await cluster1.GetAsync("myactor6", "hello");
+            var (pid,status) = await cluster1.GetAsync("myactor3", "hello");
             if (status != ResponseStatusCode.OK)
             {
                 Console.WriteLine("BUG!");
