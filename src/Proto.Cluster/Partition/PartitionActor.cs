@@ -13,16 +13,21 @@ namespace Proto.Cluster.Partition
         private readonly Dictionary<string, (PID pid, string kind)> _partitionLookup = new Dictionary<string, (PID pid, string kind)>();        //actor/grain name to PID
         private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>(); //PID to grain name
 
-        // private readonly Partition _partition;
+
 
         private readonly PartitionManager _partitionManager;
         private readonly Cluster _cluster;
+        private readonly PID _partitionActor;
 
         public PartitionActor(Cluster cluster, PartitionManager partitionManager)
         {
             _logger = Log.CreateLogger("PartitionActor-" + cluster.Id);
             _cluster = cluster;
             _partitionManager = partitionManager;
+            var partitionActorProps =
+                Props.FromProducer(() => new PartitionActivator(_cluster.Remote, _cluster.System));
+
+            _partitionActor = _cluster.System.Root.SpawnNamed(partitionActorProps, "partition-activator");
         }
 
         public Task ReceiveAsync(IContext context)
@@ -168,9 +173,9 @@ namespace Proto.Cluster.Partition
             }
             
             //Get activator
-            var activator = _cluster.MemberList.GetActivator(msg.Kind);
+            var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind);
 
-            if (string.IsNullOrEmpty(activator))
+            if (string.IsNullOrEmpty(activatorAddress))
             {
                 //No activator currently available, return unavailable
                 _logger.LogWarning("[Partition] No members currently available");
@@ -178,7 +183,7 @@ namespace Proto.Cluster.Partition
                 return;
             }
 
-            var spawning = SpawnRemoteActor(msg, activator);
+            var spawning = SpawnRemoteActor(msg, activatorAddress);
             
             //Await SpawningProcess
             context.ReenterAfter(
@@ -222,7 +227,7 @@ namespace Proto.Cluster.Partition
             try
             {
                 _logger.LogDebug("Spawning Remote Actor {Activator} {Identity} {Kind}", activator,req.Name,req.Kind);
-                return await _cluster.Remote.SpawnNamedAsync(activator, req.Name, req.Kind, _cluster.Config!.TimeoutTimespan);
+                return await SpawnNamedAsync(activator, req.Name, req.Kind, _cluster.Config!.TimeoutTimespan);
             }
             catch (TimeoutException)
             {
@@ -232,6 +237,23 @@ namespace Proto.Cluster.Partition
             {
                 return ActorPidResponse.Err;
             }
+        }
+        
+        private async Task<ActorPidResponse> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
+        {
+            var activator = ActivatorForAddress(address);
+
+            var res = await _cluster.System.Root.RequestAsync<ActorPidResponse>(
+                activator, new ActorPidRequest
+                {
+                    Kind = kind,
+                    Name = name
+                }, timeout
+            );
+
+            return res;
+
+            static PID ActivatorForAddress(string address) => new PID(address, "partition-activator");
         }
     }
 }

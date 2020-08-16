@@ -9,7 +9,7 @@ namespace Proto.Cluster.Partition
     //helper to interact with partition actors on this and other members
     internal class PartitionManager
     {
-        private PID _actor;
+        private PID _actor = null!;
         private readonly Cluster _cluster;
         internal PartitionMemberSelector Selector { get; } = new PartitionMemberSelector();
 
