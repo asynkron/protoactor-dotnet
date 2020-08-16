@@ -3,6 +3,9 @@ using System.Linq;
 
 namespace Proto.Cluster.Partition
 {
+    
+    //this class is responsible for translating between Identity->member
+    //this is the key algorithm for the distributed hash table
     internal class PartitionMemberSelector 
     {
         private readonly List<MemberStatus> _members;

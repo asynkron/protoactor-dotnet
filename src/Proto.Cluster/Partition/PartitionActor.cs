@@ -7,17 +7,20 @@ using Proto.Remote;
 
 namespace Proto.Cluster.Partition
 {
+    //This actor is responsible to keep track of identities owned by this member
+    //it does not manage the cluster spawned actors itself, only identity->remote PID management
+    //TLDR; this is a partition/bucket in the distributed hash table which makes up the identity lookup
+    //
+    //for spawning/activating cluster actors see PartitionActivator.cs
     internal class PartitionActor : IActor
     {
         private readonly ILogger _logger;
         private readonly Dictionary<string, (PID pid, string kind)> _partitionLookup = new Dictionary<string, (PID pid, string kind)>();        //actor/grain name to PID
         private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>(); //PID to grain name
-
-
-
+        
         private readonly PartitionManager _partitionManager;
         private readonly Cluster _cluster;
-        private readonly PID _partitionActor;
+        private readonly PID _partitionActivator;
 
         public PartitionActor(Cluster cluster, PartitionManager partitionManager)
         {
@@ -27,7 +30,7 @@ namespace Proto.Cluster.Partition
             var partitionActorProps =
                 Props.FromProducer(() => new PartitionActivator(_cluster.Remote, _cluster.System));
 
-            _partitionActor = _cluster.System.Root.SpawnNamed(partitionActorProps, "partition-activator");
+            _partitionActivator = _cluster.System.Root.SpawnNamed(partitionActorProps, "partition-activator");
         }
 
         public Task ReceiveAsync(IContext context)
@@ -105,7 +108,7 @@ namespace Proto.Cluster.Partition
             // new partition.
             var transferredActorCount = 0;
 
-            // TODO: right now we transfer ownership on a per actor basis.
+            // TODO: Do not do this here, do it in PartitionActivator...
             // this could be done in a batch
             // ownership is also racy, new nodes should maybe forward requests to neighbours (?)
             //
@@ -191,7 +194,7 @@ namespace Proto.Cluster.Partition
                 rst =>
                 {
                     //Check if exist in current partition dictionary
-                    //This is necessary to avoid race condition during partition map transfering.
+                    //This is necessary to avoid race condition during partition map transfer.
                     if (_partitionLookup.TryGetValue(msg.Name, out info))
                     {
                         context.Respond(new ActorPidResponse {Pid = info.pid});
@@ -239,6 +242,7 @@ namespace Proto.Cluster.Partition
             }
         }
         
+        //identical to Remote.SpawnNamedAsync, just using the special partition-activator for spawning
         private async Task<ActorPidResponse> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
         {
             var activator = ActivatorForAddress(address);
