@@ -75,12 +75,12 @@ namespace Proto.Cluster.Partition
             {
                 //if not, forward to the correct owner
                 var owner = _partitionManager.RemotePartitionIdentityActor(address);
-                _logger.LogError("Identity is not mine {Identity} forwarding to correct owner {Owner} ", msg.Name, owner);
+                _logger.LogDebug("Identity is not mine {Identity} forwarding to correct owner {Owner} ", msg.Name, owner);
                 context.Send(owner, msg);
             }
             else
             {
-                _logger.LogError("Kind ??? Take Ownership name: {Name}, pid: {Pid}", msg.Name, msg.Pid);
+                _logger.LogDebug("Taking Ownership of: {Name}, pid: {Pid}", msg.Name, msg.Pid);
                 _partitionLookup[msg.Name] = (msg.Pid,msg.Kind);
                 _reversePartition[msg.Pid] = msg.Name;
                 context.Watch(msg.Pid);

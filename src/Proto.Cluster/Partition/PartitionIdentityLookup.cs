@@ -15,6 +15,7 @@ namespace Proto.Cluster.Partition
 
         public async Task<(PID?,ResponseStatusCode)> GetAsync(string identity,string kind, CancellationToken ct)
         {
+            
             //Get address to node owning this ID
             var address = _partitionManager.Selector.GetIdentityOwner(identity);
             _logger.LogDebug("Identity belongs to {address}", address);
@@ -32,7 +33,7 @@ namespace Proto.Cluster.Partition
                 Name = identity
             };
 
-            _logger.LogDebug("[Cluster] Requesting remote PID from {Partition}:{Remote} {@Request}", address, remotePid, req);
+            _logger.LogDebug("Requesting remote PID from {Partition}:{Remote} {@Request}", address, remotePid, req);
 
             try
             {
