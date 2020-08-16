@@ -4,7 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-namespace Proto.Cluster
+namespace Proto.Cluster.Partition
 {
     //helper to interact with partition actors on this and other members
     internal class PartitionManager

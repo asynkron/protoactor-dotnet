@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Remote;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.Partition
 {
     internal class PartitionActor : IActor
     {

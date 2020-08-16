@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Proto.Cluster.IdentityLookup;
 using Proto.Remote;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.Partition
 {
     public class PartitionIdentityLookup : IIdentityLookup
     {

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.Partition
 {
     internal class PartitionMemberSelector 
     {
