@@ -108,6 +108,30 @@ namespace Proto
             _subscriptions.TryAdd(sub.Id, sub);
             return sub;
         }
+        
+        
+        public Subscription<T> Subscribe<TMsg>(ISenderContext context,params PID[] pids) where TMsg : T
+        {
+            var sub = new Subscription<T>(
+                this,
+                Dispatchers.SynchronousDispatcher,
+                msg =>
+                {
+                    if (msg is TMsg)
+                    {
+                        foreach (var pid in pids)
+                        {
+                            context.Send(pid, msg);    
+                        }
+                    }
+
+                    return Actor.Done;
+                }
+            );
+
+            _subscriptions.TryAdd(sub.Id, sub);
+            return sub;
+        }
 
         /// <summary>
         /// Subscribe to the specified message type, which is a derived type from <see cref="T"/>

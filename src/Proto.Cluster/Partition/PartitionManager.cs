@@ -9,38 +9,43 @@ namespace Proto.Cluster.Partition
     //helper to interact with partition actors on this and other members
     internal class PartitionManager
     {
-        private PID _actor = null!;
+        private PID _partitionActor = null!;
+        private PID _partitionActivator = null!;
         private readonly Cluster _cluster;
+        private readonly ActorSystem _system;
+        private readonly IRootContext _context;
         internal PartitionMemberSelector Selector { get; } = new PartitionMemberSelector();
 
 
         internal PartitionManager(Cluster cluster)
         {
             _cluster = cluster;
+            _system = cluster.System;
+            _context = _system.Root;
         }
 
         public void Setup()
         {
-            SpawnPartitionActor();
-        }
-
-        private void SpawnPartitionActor()
-        {
-            _cluster.System.EventStream.Subscribe<MemberStatusEvent>(e =>
-                {
-                    _cluster.System.Root.Send(_actor,e);
-                }
-            );
-            
-            var props = Props
+            var partitionActorProps = Props
                 .FromProducer(() => new PartitionActor(_cluster, this))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-             _actor = _cluster.System.Root.SpawnNamed(props, "partition-actor");
+            _partitionActor = _context.SpawnNamed(partitionActorProps, "partition-actor");
+            
+            var partitionActivatorProps =
+                Props.FromProducer(() => new PartitionActivator(_cluster.Remote, _cluster.System));
+            _partitionActivator = _context.SpawnNamed(partitionActivatorProps, "partition-activator");
+
+            _system.EventStream.Subscribe<MemberStatusEvent>(_context, 
+                _partitionActor,
+                _partitionActivator
+            );
         }
 
-        public void Stop()
+
+        public void Shutdown()
         {
-            _cluster.System.Root.Stop(_actor);
+            _context.Stop(_partitionActor);
+            _context.Stop(_partitionActivator);
         }
 
         public PID RemotePartitionForKind(string address)

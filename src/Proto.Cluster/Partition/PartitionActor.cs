@@ -20,18 +20,14 @@ namespace Proto.Cluster.Partition
         
         private readonly PartitionManager _partitionManager;
         private readonly Cluster _cluster;
-        private readonly PID _partitionActivator;
+
 
         public PartitionActor(Cluster cluster, PartitionManager partitionManager)
         {
             _logger = Log.CreateLogger("PartitionActor-" + cluster.Id);
             _cluster = cluster;
             _partitionManager = partitionManager;
-            var partitionActorProps =
-                Props.FromProducer(() => new PartitionActivator(_cluster.Remote, _cluster.System));
-
-            _partitionActivator = _cluster.System.Root.SpawnNamed(partitionActorProps, "partition-activator");
-        }
+          }
 
         public Task ReceiveAsync(IContext context)
         {
