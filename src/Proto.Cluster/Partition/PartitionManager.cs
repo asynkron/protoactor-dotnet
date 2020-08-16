@@ -15,6 +15,8 @@ namespace Proto.Cluster.Partition
         private readonly ActorSystem _system;
         private readonly IRootContext _context;
         internal PartitionMemberSelector Selector { get; } = new PartitionMemberSelector();
+        internal const string PartitionActorName = "partition-actor";
+        internal const string PartitionActivatorName = "partition-activator";
 
 
         internal PartitionManager(Cluster cluster)
@@ -29,11 +31,11 @@ namespace Proto.Cluster.Partition
             var partitionActorProps = Props
                 .FromProducer(() => new PartitionActor(_cluster, this))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-            _partitionActor = _context.SpawnNamed(partitionActorProps, "partition-actor");
+            _partitionActor = _context.SpawnNamed(partitionActorProps, PartitionActorName);
             
             var partitionActivatorProps =
-                Props.FromProducer(() => new PartitionActivator(_cluster.Remote, _cluster.System));
-            _partitionActivator = _context.SpawnNamed(partitionActivatorProps, "partition-activator");
+                Props.FromProducer(() => new PartitionActivator(_cluster, this));
+            _partitionActivator = _context.SpawnNamed(partitionActivatorProps, PartitionActivatorName);
 
             _system.EventStream.Subscribe<MemberStatusEvent>(_context, 
                 _partitionActor,
@@ -48,9 +50,8 @@ namespace Proto.Cluster.Partition
             _context.Stop(_partitionActivator);
         }
 
-        public PID RemotePartitionForKind(string address)
-        {
-            return new PID(address, "partition-actor");
-        }
+        public PID RemotePartitionActor(string address) => new PID(address, PartitionActorName);
+
+        public PID RemotePartitionActivator(string address) => new PID(address, PartitionActivatorName);
     }
 }

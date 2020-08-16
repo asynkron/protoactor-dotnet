@@ -9,15 +9,21 @@ using Proto.Remote;
 
 namespace Proto.Cluster.Partition
 {
-    public class PartitionActivator : IActor
+    internal class PartitionActivator : IActor
     {
+        private readonly Cluster _cluster;
         private readonly ActorSystem _system;
         private readonly Remote.Remote _remote;
+        private readonly IRootContext _context;
+        private readonly PartitionManager _partitionManager;
         
-        public PartitionActivator(Remote.Remote remote, ActorSystem system)
+        public PartitionActivator(Cluster cluster, PartitionManager partitionManager)
         {
-            _remote = remote;
-            _system = system;
+            _cluster = cluster;
+            _remote = _cluster.Remote;
+            _system = _cluster.System;
+            _context = _system.Root;
+            _partitionManager = partitionManager;
         }
         
         public Task ReceiveAsync(IContext context)
@@ -34,7 +40,7 @@ namespace Proto.Cluster.Partition
 
                     try
                     {
-                        var pid = _system.Root.SpawnNamed(props, name);
+                        var pid = _context.SpawnNamed(props, name);
                         var response = new ActorPidResponse { Pid = pid };
                         context.Respond(response);
                     }

@@ -24,7 +24,7 @@ namespace Proto.Cluster.Partition
 
         public PartitionActor(Cluster cluster, PartitionManager partitionManager)
         {
-            _logger = Log.CreateLogger("PartitionActor-" + cluster.Id);
+            _logger = Log.CreateLogger($"{nameof(PartitionActor)}-{cluster.Id}");
             _cluster = cluster;
             _partitionManager = partitionManager;
           }
@@ -74,7 +74,7 @@ namespace Proto.Cluster.Partition
             if (!string.IsNullOrEmpty(address) && address != _cluster.System.ProcessRegistry.Address)
             {
                 //if not, forward to the correct owner
-                var owner = _partitionManager.RemotePartitionForKind(address);
+                var owner = _partitionManager.RemotePartitionActor(address);
                 _logger.LogError("Identity is not mine {Identity} forwarding to correct owner {Owner} ", msg.Name, owner);
                 context.Send(owner, msg);
             }
@@ -140,7 +140,7 @@ namespace Proto.Cluster.Partition
         {
             _partitionManager.Selector.RemoveMember(msg.Member);
             //always do this when a member leaves, we need to redistribute the distributed-hash-table
-            //no ifs or elses, just always
+            //no ifs or else, just always
             EvaluateAndTransferOwnership(context);
 
             RemoveAddressFromPartition(msg.Member.Address);
@@ -155,7 +155,7 @@ namespace Proto.Cluster.Partition
 
         private void TransferOwnershipOfActor(string actorId, string kind, PID pid, string address, IContext context)
         {
-            var owner = _partitionManager.RemotePartitionForKind(address);
+            var owner = _partitionManager.RemotePartitionActor(address);
             context.Send(owner, new TakeOwnership {Name = actorId,Kind = kind, Pid = pid});
             _partitionLookup.Remove(actorId);
             _reversePartition.Remove(pid);
@@ -241,7 +241,7 @@ namespace Proto.Cluster.Partition
         //identical to Remote.SpawnNamedAsync, just using the special partition-activator for spawning
         private async Task<ActorPidResponse> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
         {
-            var activator = ActivatorForAddress(address);
+            var activator = _partitionManager.RemotePartitionActivator(address);
 
             var res = await _cluster.System.Root.RequestAsync<ActorPidResponse>(
                 activator, new ActorPidRequest
@@ -252,8 +252,6 @@ namespace Proto.Cluster.Partition
             );
 
             return res;
-
-            static PID ActivatorForAddress(string address) => new PID(address, "partition-activator");
         }
     }
 }
