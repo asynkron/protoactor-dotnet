@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -44,7 +45,7 @@ namespace Proto.Cluster.Partition
             }
         }
 
-        public string GetPartition(string key)
+        public string GetIdentityOwner(string key)
         {
             lock (_lock)
             {

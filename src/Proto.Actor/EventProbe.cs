@@ -83,13 +83,12 @@ namespace Proto
             {
                 if (_currentExpectation.Evaluate(@event))
                 {
-                    _logger.LogInformation($"Got expected event {@event} ");
-                    _logger.LogDebug("Removing expectation");
+                    _logger.LogDebug("Got expected event {@event} ",@event);
                     _currentExpectation = null;
                     return;
                 }
 
-                _logger.LogInformation($"Got unexpected {@event}, ignoring");
+                _logger.LogDebug("Got unexpected {@event}, ignoring", @event);
             }
         }
     }

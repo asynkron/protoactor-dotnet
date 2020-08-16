@@ -16,15 +16,15 @@ namespace Proto.Cluster.Partition
         public async Task<(PID?,ResponseStatusCode)> GetAsync(string identity,string kind, CancellationToken ct)
         {
             //Get address to node owning this ID
-            var address = _partitionManager.Selector.GetPartition(identity);
-            _logger.LogError("Identity belongs to {address}", address);
+            var address = _partitionManager.Selector.GetIdentityOwner(identity);
+            _logger.LogDebug("Identity belongs to {address}", address);
 
             if (string.IsNullOrEmpty(address))
             {
                 return (null, ResponseStatusCode.Unavailable);
             }
 
-            var remotePid = _partitionManager.RemotePartitionActor(address);
+            var remotePid = _partitionManager.RemotePartitionIdentityActor(address);
 
             var req = new ActorPidRequest
             {

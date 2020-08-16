@@ -12,7 +12,7 @@ namespace Proto.Cluster.Partition
     //TLDR; this is a partition/bucket in the distributed hash table which makes up the identity lookup
     //
     //for spawning/activating cluster actors see PartitionActivator.cs
-    internal class PartitionActor : IActor
+    internal class PartitionIdentityActor : IActor
     {
         private readonly ILogger _logger;
         private readonly Dictionary<string, (PID pid, string kind)> _partitionLookup = new Dictionary<string, (PID pid, string kind)>();        //actor/grain name to PID
@@ -22,9 +22,9 @@ namespace Proto.Cluster.Partition
         private readonly Cluster _cluster;
 
 
-        public PartitionActor(Cluster cluster, PartitionManager partitionManager)
+        public PartitionIdentityActor(Cluster cluster, PartitionManager partitionManager)
         {
-            _logger = Log.CreateLogger($"{nameof(PartitionActor)}-{cluster.Id}");
+            _logger = Log.CreateLogger($"{nameof(PartitionIdentityActor)}-{cluster.Id}");
             _cluster = cluster;
             _partitionManager = partitionManager;
           }
@@ -69,12 +69,12 @@ namespace Proto.Cluster.Partition
         private void TakeOwnership(TakeOwnership msg, IContext context)
         {
             //Check again if I'm still the owner of the identity
-            var address = _partitionManager.Selector.GetPartition(msg.Name);
+            var address = _partitionManager.Selector.GetIdentityOwner(msg.Name);
 
             if (!string.IsNullOrEmpty(address) && address != _cluster.System.ProcessRegistry.Address)
             {
                 //if not, forward to the correct owner
-                var owner = _partitionManager.RemotePartitionActor(address);
+                var owner = _partitionManager.RemotePartitionIdentityActor(address);
                 _logger.LogError("Identity is not mine {Identity} forwarding to correct owner {Owner} ", msg.Name, owner);
                 context.Send(owner, msg);
             }
@@ -87,6 +87,8 @@ namespace Proto.Cluster.Partition
             }
         }
 
+        //removes any lookup to actors in a node that left
+        //these actors are considered to be non existing now
         private void RemoveAddressFromPartition(string address)
         {
             foreach (var (actorId, info) in _partitionLookup.Where(x => x.Value.pid.Address == address).ToArray())
@@ -97,36 +99,26 @@ namespace Proto.Cluster.Partition
         }
         
 
-        private void EvaluateAndTransferOwnership(IContext context)
+        private void ClearInvalidOwnership(IContext context)
         {
-            // Iterate through the actors in this partition and try to check if the partition
-            // PID should be in is not the current one, if so initiates a transfer to the
-            // new partition.
             var transferredActorCount = 0;
+            //loop over all identities we own, if we are no longer the algorithmic owner, clear ownership
 
-            // TODO: Do not do this here, do it in PartitionActivator...
-            // this could be done in a batch
-            // ownership is also racy, new nodes should maybe forward requests to neighbours (?)
-            //
-            // this is best effort only, some actor identities might be lost in void
-            // leading to duplicate activations of an identity
-            //
-
-            var myAddress = _cluster.System.ProcessRegistry.Address;
+            var myAddress = context.Self.Address;
             
             foreach (var (identity, (pid, kind)) in _partitionLookup.ToArray())
             {
-                var shouldBeOwnerAddress = _partitionManager.Selector.GetPartition(identity);
+                var shouldBeOwnerAddress = _partitionManager.Selector.GetIdentityOwner(identity);
 
-                if (string.IsNullOrEmpty(shouldBeOwnerAddress) || shouldBeOwnerAddress == myAddress)
+                if (shouldBeOwnerAddress == myAddress)
                 {
                     continue;
                 }
-                
-                //this actorId should be owned by shouldBrOwnerAddress
 
                 transferredActorCount++;
-                TransferOwnershipOfActor(identity, kind,pid, shouldBeOwnerAddress, context);
+                _partitionLookup.Remove(identity);
+                _reversePartition.Remove(pid);
+                context.Unwatch(pid);
             }
 
             if (transferredActorCount > 0)
@@ -138,10 +130,9 @@ namespace Proto.Cluster.Partition
 
         private void MemberLeft(MemberLeftEvent msg, IContext context)
         {
-            _partitionManager.Selector.RemoveMember(msg.Member);
             //always do this when a member leaves, we need to redistribute the distributed-hash-table
             //no ifs or else, just always
-            EvaluateAndTransferOwnership(context);
+            ClearInvalidOwnership(context);
 
             RemoveAddressFromPartition(msg.Member.Address);
 
@@ -149,17 +140,7 @@ namespace Proto.Cluster.Partition
 
         private void MemberJoined(MemberJoinedEvent msg, IContext context)
         {
-            _partitionManager.Selector.AddMember(msg.Member);
-            EvaluateAndTransferOwnership(context);
-        }
-
-        private void TransferOwnershipOfActor(string actorId, string kind, PID pid, string address, IContext context)
-        {
-            var owner = _partitionManager.RemotePartitionActor(address);
-            context.Send(owner, new TakeOwnership {Name = actorId,Kind = kind, Pid = pid});
-            _partitionLookup.Remove(actorId);
-            _reversePartition.Remove(pid);
-            context.Unwatch(pid);
+            ClearInvalidOwnership(context);
         }
 
         private void GetOrSpawn(ActorPidRequest msg, IContext context)
@@ -241,7 +222,7 @@ namespace Proto.Cluster.Partition
         //identical to Remote.SpawnNamedAsync, just using the special partition-activator for spawning
         private async Task<ActorPidResponse> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
         {
-            var activator = _partitionManager.RemotePartitionActivator(address);
+            var activator = _partitionManager.RemotePartitionPlacementActor(address);
 
             var res = await _cluster.System.Root.RequestAsync<ActorPidResponse>(
                 activator, new ActorPidRequest

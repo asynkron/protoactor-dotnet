@@ -150,15 +150,15 @@ namespace Proto.Cluster
             //that is, this ID may never join again, any cluster on the same host and port is fine
             //as long as it is a new clean instance
             _bannedMembers.Add(memberThatLeft.MemberId);
-            _logger.LogInformation("Published event {@MemberLeft}",left);
+            _logger.LogDebug("Published event {@MemberLeft}",left);
             _cluster.System.EventStream.Publish(left);
 
 
-            _cluster.PidCache.RemoveByMemberAddress($"{memberThatLeft.Host}:{memberThatLeft.Port}");
+            _cluster.PidCache.RemoveByMemberAddress(memberThatLeft.Address);
             _members.Remove(memberThatLeft.MemberId);
 
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
-            _logger.LogInformation("Published event {@EndpointTerminated}",endpointTerminated);
+            _logger.LogDebug("Published event {@EndpointTerminated}",endpointTerminated);
             _cluster.System.EventStream.Publish(endpointTerminated);
         }
 
@@ -182,7 +182,7 @@ namespace Proto.Cluster
             //notify joined
             var joined = new MemberJoinedEvent(newMember);
 
-            _logger.LogInformation("Published event {@MemberJoined}",joined);
+            _logger.LogDebug("Published event {@MemberJoined}",joined);
             _cluster.System.EventStream.Publish(joined);
 
             _cluster.PidCache.RemoveByMemberAddress($"{newMember.Host}:{newMember.Port}");

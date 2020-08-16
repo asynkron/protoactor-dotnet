@@ -15,8 +15,8 @@ namespace Proto.Cluster.Partition
         private readonly ActorSystem _system;
         private readonly IRootContext _context;
         internal PartitionMemberSelector Selector { get; } = new PartitionMemberSelector();
-        internal const string PartitionActorName = "partition-actor";
-        internal const string PartitionActivatorName = "partition-activator";
+        internal const string PartitionIdentityActorName = "partition-actor";
+        internal const string PartitionPlacementActorName = "partition-activator";
 
 
         internal PartitionManager(Cluster cluster)
@@ -29,18 +29,32 @@ namespace Proto.Cluster.Partition
         public void Setup()
         {
             var partitionActorProps = Props
-                .FromProducer(() => new PartitionActor(_cluster, this))
+                .FromProducer(() => new PartitionIdentityActor(_cluster, this))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-            _partitionActor = _context.SpawnNamed(partitionActorProps, PartitionActorName);
+            _partitionActor = _context.SpawnNamed(partitionActorProps, PartitionIdentityActorName);
             
             var partitionActivatorProps =
-                Props.FromProducer(() => new PartitionActivator(_cluster, this));
-            _partitionActivator = _context.SpawnNamed(partitionActivatorProps, PartitionActivatorName);
+                Props.FromProducer(() => new PartitionPlacementActor(_cluster, this));
+            _partitionActivator = _context.SpawnNamed(partitionActivatorProps, PartitionPlacementActorName);
 
-            _system.EventStream.Subscribe<MemberStatusEvent>(_context, 
-                _partitionActor,
-                _partitionActivator
+            //synchronous subscribe to keep accurate
+
+            //make sure selector is updated first
+            _system.EventStream.Subscribe<MemberJoinedEvent>(e =>
+                {
+                    Selector.AddMember(e.Member);
+                    _context.Send(_partitionActor, e);
+                    _context.Send(_partitionActivator,e);
+                }
             );
+            _system.EventStream.Subscribe<MemberLeftEvent>(e =>
+                {
+                    Selector.RemoveMember(e.Member);
+                    _context.Send(_partitionActor, e);
+                    _context.Send(_partitionActivator,e);
+                }
+            );
+
         }
 
 
@@ -50,8 +64,8 @@ namespace Proto.Cluster.Partition
             _context.Stop(_partitionActivator);
         }
 
-        public PID RemotePartitionActor(string address) => new PID(address, PartitionActorName);
+        public PID RemotePartitionIdentityActor(string address) => new PID(address, PartitionIdentityActorName);
 
-        public PID RemotePartitionActivator(string address) => new PID(address, PartitionActivatorName);
+        public PID RemotePartitionPlacementActor(string address) => new PID(address, PartitionPlacementActorName);
     }
 }
