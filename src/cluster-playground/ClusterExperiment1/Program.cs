@@ -53,8 +53,8 @@ namespace ClusterExperiment1
             
             Console.WriteLine("Got response!");
 
-             cluster2.ShutdownAsync(false); //kill this node, can also be non graceful to simulate outage
-            await probe1.Expect<MemberLeftEvent>(e => e.Member.Port == 8091);
+             await cluster2.ShutdownAsync(false); //kill this node, can also be non graceful to simulate outage
+          //  await probe1.Expect<MemberLeftEvent>(e => e.Member.Port == 8091);
 //            await probe1.Expect<EndpointTerminatedEvent>(e => e.Address.EndsWith("8091"));
 
             while (true)
