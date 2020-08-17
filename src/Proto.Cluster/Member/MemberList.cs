@@ -77,6 +77,7 @@ namespace Proto.Cluster
 
         //if the new leader is different from the current leader
         //notify via the event stream
+        //TODO: cluster state update really. not only leader
         public void UpdateLeader(LeaderInfo leader)
         {
             //TODO: could likely be done better
