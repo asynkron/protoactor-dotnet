@@ -105,6 +105,11 @@ namespace Proto.Cluster
 
             _logger.LogInformation("Leader updated {Leader}",leader?.MemberId);
             _eventStream.Publish(new LeaderElectedEvent(leader,oldLeader));
+
+            if (IsLeader)
+            {
+                _logger.LogWarning("I AM LEADER!");
+            }
         }
 
         public bool IsLeader => _cluster.Id.Equals(_leader?.MemberId);
