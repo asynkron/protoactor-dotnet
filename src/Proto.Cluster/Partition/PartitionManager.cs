@@ -4,6 +4,8 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using Proto.Cluster.Events;
+
 namespace Proto.Cluster.Partition
 {
     //helper to interact with partition actors on this and other members

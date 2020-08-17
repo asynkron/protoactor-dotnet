@@ -8,6 +8,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Cluster.Data;
 using Timer = System.Timers.Timer;
 
 namespace Proto.Cluster.Testing
@@ -66,7 +67,7 @@ namespace Proto.Cluster.Testing
 
             var memberStatuses =
                 statuses.Select(
-                        x => new MemberStatus(
+                        x => new MemberInfo(
                             x.ID, 
                             x.Host, 
                             x.Port, 

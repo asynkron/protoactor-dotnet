@@ -10,6 +10,8 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Proto.Cluster.Data;
+using Proto.Cluster.Events;
 using Proto.Cluster.Utils;
 using Proto.Remote;
 
@@ -27,12 +29,16 @@ namespace Proto.Cluster
         //TODO: actually use this to prevent banned members from rejoining
         private readonly ConcurrentSet<Guid> _bannedMembers = new ConcurrentSet<Guid>();
         private readonly Cluster _cluster;
-        private readonly Dictionary<Guid, MemberStatus> _members = new Dictionary<Guid, MemberStatus>();
+        private readonly ActorSystem _system;
+        private readonly IRootContext _root;
+        private readonly EventStream _eventStream;
+        
+        private readonly Dictionary<Guid, MemberInfo> _members = new Dictionary<Guid, MemberInfo>();
 
         private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind =
             new Dictionary<string, IMemberStrategy>();
 
-        private LeaderStatus _leader;
+        private LeaderInfo _leader;
 
 
         private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
@@ -40,6 +46,10 @@ namespace Proto.Cluster
         public MemberList(Cluster cluster)
         {
             _cluster = cluster;
+            _system = _cluster.System;
+            _root = _system.Root;
+            _eventStream = _system.EventStream;
+            
             _logger = Log.CreateLogger($"MemberList-{_cluster.Id}");
         }
 
@@ -65,20 +75,25 @@ namespace Proto.Cluster
             }
         }
 
-        public void UpdateLeader(LeaderStatus leader)
+        //if the new leader is different from the current leader
+        //notify via the event stream
+        public void UpdateLeader(LeaderInfo leader)
         {
             if (leader?.MemberId == _leader?.MemberId)
             {
                 return;
             }
 
+            var oldLeader = _leader;
+
             _leader = leader;
             _logger.LogWarning("Leader updated {Leader}",leader.MemberId);
+            _eventStream.Publish(new LeaderElectedEvent(leader,oldLeader));
         }
 
         public bool IsLeader => _cluster.Id == _leader?.MemberId;
 
-        public void UpdateClusterTopology(IReadOnlyCollection<MemberStatus> statuses)
+        public void UpdateClusterTopology(IReadOnlyCollection<MemberInfo> statuses)
         {
             var locked = _rwLock.TryEnterWriteLock(1000);
 
@@ -138,7 +153,7 @@ namespace Proto.Cluster
             }
         }
 
-        private void MemberLeave(MemberStatus memberThatLeft)
+        private void MemberLeave(MemberInfo memberThatLeft)
         {
             //update MemberStrategy
             foreach (var k in memberThatLeft.Kinds)
@@ -176,7 +191,7 @@ namespace Proto.Cluster
             _cluster.System.EventStream.Publish(endpointTerminated);
         }
 
-        private void MemberJoin(MemberStatus newMember)
+        private void MemberJoin(MemberInfo newMember)
         {
             //TODO: looks fishy, no locks, are we sure this is safe? it is using private state _vars
 

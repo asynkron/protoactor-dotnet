@@ -15,6 +15,8 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Proto.Cluster.Data;
+using Proto.Cluster.Events;
 
 namespace Proto.Cluster.Consul
 {
@@ -143,7 +145,7 @@ namespace Proto.Cluster.Consul
                             statuses
                                 .Response
                                 .Where(v => IsAlive(v.Checks)) //only include members that are alive
-                                .Select(v => new MemberStatus(
+                                .Select(v => new MemberInfo(
                                         Guid.Parse(v.Service.Meta["id"]),
                                         v.Service.Address,
                                         v.Service.Port,
@@ -228,7 +230,7 @@ namespace Proto.Cluster.Consul
                             var leader = JsonConvert.DeserializeObject<ConsulLeader>(json2);
                             waitIndex = res.LastIndex;
 
-                            _memberList.UpdateLeader(new LeaderStatus(leader.MemberId,leader.Host,leader.Port));
+                            _memberList.UpdateLeader(new LeaderInfo(leader.MemberId,leader.Host,leader.Port));
                         }
                     }
                     catch (Exception x)

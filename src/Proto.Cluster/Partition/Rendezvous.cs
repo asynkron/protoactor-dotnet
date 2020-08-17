@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Proto.Cluster.Data;
 
 namespace Proto.Cluster
 {
@@ -30,13 +31,13 @@ namespace Proto.Cluster
 
             if (_members.Length == 1)
             {
-                return _members[0].Status.Address;
+                return _members[0].Info.Address;
             }
 
             var keyBytes = Encoding.UTF8.GetBytes(identity);
 
             uint maxScore = 0;
-            MemberStatus? maxNode = null;
+            MemberInfo? maxNode = null;
 
             foreach (var member in _members)
             {
@@ -46,7 +47,7 @@ namespace Proto.Cluster
                 if (score > maxScore)
                 {
                     maxScore = score;
-                    maxNode = member.Status;
+                    maxNode = member.Info;
                 }
             }
 
@@ -54,7 +55,7 @@ namespace Proto.Cluster
         }
 
         // ReSharper disable once ParameterTypeCanBeEnumerable.Global
-        public void UpdateMembers(List<MemberStatus> members)
+        public void UpdateMembers(List<MemberInfo> members)
             => _members = members
                 .Select(x => new MemberData(x))
                 .ToArray();
@@ -77,13 +78,13 @@ namespace Proto.Cluster
 
         private readonly struct MemberData
         {
-            public MemberData(MemberStatus memberStatus)
+            public MemberData(MemberInfo memberInfo)
             {
-                Status = memberStatus;
-                Hash = Encoding.UTF8.GetBytes(memberStatus.Address);
+                Info = memberInfo;
+                Hash = Encoding.UTF8.GetBytes(memberInfo.Address);
             }
 
-            public MemberStatus Status { get; }
+            public MemberInfo Info { get; }
             public byte[] Hash { get; }
         }
     }

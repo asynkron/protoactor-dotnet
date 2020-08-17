@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Cluster.Events;
 using Proto.Remote;
 
 namespace Proto.Cluster.Partition

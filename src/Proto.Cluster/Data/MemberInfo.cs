@@ -8,12 +8,12 @@ using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.Data
 {
     [PublicAPI]
-    public class MemberStatus
+    public class MemberInfo
     {
-        public MemberStatus(Guid memberId, string host, int port, IReadOnlyCollection<string> kinds)
+        public MemberInfo(Guid memberId, string host, int port, IReadOnlyCollection<string> kinds)
         {
             MemberId = memberId;
             Host = host ?? throw new ArgumentNullException(nameof(host));

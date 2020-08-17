@@ -4,30 +4,18 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Proto.Cluster.Data;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.Events
 {
-    public class ClusterTopologyEvent
-    {
-        public ClusterTopologyEvent(IEnumerable<MemberStatus> statuses)
-        {
-            Statuses = statuses?.ToArray() ?? throw new ArgumentNullException(nameof(statuses));
-        }
-
-        public IReadOnlyCollection<MemberStatus> Statuses { get; }
-    }
-
     public abstract class MemberStatusEvent
     {
-        protected MemberStatusEvent(MemberStatus member)
+        protected MemberStatusEvent(MemberInfo member)
         {
             Member = member;
         }
 
-        public MemberStatus Member { get; }
+        public MemberInfo Member { get; }
 
 
         public override string ToString() => $"{GetType().Name} Address:{Member.Address} ID:{Member.MemberId}";
@@ -35,14 +23,14 @@ namespace Proto.Cluster
 
     public class MemberJoinedEvent : MemberStatusEvent
     {
-        public MemberJoinedEvent(MemberStatus member) : base(member)
+        public MemberJoinedEvent(MemberInfo member) : base(member)
         {
         }
     }
 
     public class MemberLeftEvent : MemberStatusEvent
     {
-        public MemberLeftEvent(MemberStatus member) : base(member)
+        public MemberLeftEvent(MemberInfo member) : base(member)
         {
         }
     }

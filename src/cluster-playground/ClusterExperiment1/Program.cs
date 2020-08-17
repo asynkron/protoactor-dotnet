@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
+using Proto.Cluster.Events;
 using Proto.Remote;
 
 namespace ClusterExperiment1

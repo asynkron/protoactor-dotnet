@@ -1,12 +1,12 @@
 using System;
 using JetBrains.Annotations;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.Data
 {
     [PublicAPI]
-    public class LeaderStatus
+    public class LeaderInfo
     {
-        public LeaderStatus(Guid memberId, string host, int port)
+        public LeaderInfo(Guid memberId, string host, int port)
         {
             MemberId = memberId;
             Host = host ?? throw new ArgumentNullException(nameof(host));

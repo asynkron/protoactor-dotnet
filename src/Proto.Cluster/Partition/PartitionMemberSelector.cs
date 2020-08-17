@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Proto.Cluster.Data;
 
 namespace Proto.Cluster.Partition
 {
@@ -8,12 +9,12 @@ namespace Proto.Cluster.Partition
     internal class PartitionMemberSelector
     {
         private readonly object _lock = new object();
-        private readonly List<MemberStatus> _members;
+        private readonly List<MemberInfo> _members;
         private readonly Rendezvous _rdv;
 
         public PartitionMemberSelector()
         {
-            _members = new List<MemberStatus>();
+            _members = new List<MemberInfo>();
             _rdv = new Rendezvous();
         }
 
@@ -21,7 +22,7 @@ namespace Proto.Cluster.Partition
 
 
         //TODO: account for Member.MemberId
-        public void AddMember(MemberStatus member)
+        public void AddMember(MemberInfo member)
         {
             lock (_lock)
             {
@@ -37,7 +38,7 @@ namespace Proto.Cluster.Partition
         }
 
         //TODO: account for Member.MemberId
-        public void RemoveMember(MemberStatus member)
+        public void RemoveMember(MemberInfo member)
         {
             lock (_lock)
             {
