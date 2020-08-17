@@ -58,6 +58,8 @@ namespace Proto.Cluster.Consul
         private MemberList _memberList;
         private int _port;
         private bool _shutdown;
+        private string _consulSessionId;
+        private string _consulLeaderKey;
 
         public ConsulProvider(ConsulProviderOptions options) : this(options, config => { })
         {
@@ -117,6 +119,11 @@ namespace Proto.Cluster.Consul
             await DeregisterServiceAsync();
 
             _deregistered = true;
+        }
+
+        public Task UpdateClusterState(ClusterState state)
+        {
+            return Task.CompletedTask;
         }
 
         private void StartMonitorMemberStatusChangesLoop()
@@ -194,6 +201,11 @@ namespace Proto.Cluster.Consul
                         };
                         var sessionRes = await _client.Session.Create(se);
                         var sessionId = sessionRes.Response;
+                        
+                        //this is used so that leader can update shared cluster state
+                        _consulSessionId = sessionId;
+                        _consulLeaderKey = leaderKey;
+                        
                         var json = JsonConvert.SerializeObject(new ConsulLeader
                             {
                                 Host = _host,

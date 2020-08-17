@@ -102,5 +102,7 @@ namespace Proto.Cluster.Testing
             _agent.DeregisterService(_id);
             return Task.CompletedTask;
         }
+
+        public Task UpdateClusterState(ClusterState state) => throw new NotImplementedException();
     }
 }

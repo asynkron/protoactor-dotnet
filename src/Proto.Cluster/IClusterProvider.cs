@@ -6,6 +6,7 @@
 
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Proto.Cluster.Data;
 
 namespace Proto.Cluster
 {
@@ -16,5 +17,7 @@ namespace Proto.Cluster
             MemberList memberList);
 
         Task ShutdownAsync(bool graceful);
+
+        Task UpdateClusterState(ClusterState state);
     }
 }

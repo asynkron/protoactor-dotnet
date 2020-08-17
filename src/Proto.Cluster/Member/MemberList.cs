@@ -38,7 +38,7 @@ namespace Proto.Cluster
         private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind =
             new Dictionary<string, IMemberStrategy>();
 
-        private LeaderInfo _leader;
+        private LeaderInfo? _leader;
 
 
         private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
@@ -87,11 +87,11 @@ namespace Proto.Cluster
             var oldLeader = _leader;
 
             _leader = leader;
-            _logger.LogWarning("Leader updated {Leader}",leader.MemberId);
+            _logger.LogWarning("Leader updated {Leader}",leader?.MemberId);
             _eventStream.Publish(new LeaderElectedEvent(leader,oldLeader));
         }
 
-        public bool IsLeader => _cluster.Id == _leader?.MemberId;
+        public bool IsLeader => _cluster.Id.Equals(_leader?.MemberId);
 
         public void UpdateClusterTopology(IReadOnlyCollection<MemberInfo> statuses)
         {
