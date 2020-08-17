@@ -228,7 +228,7 @@ namespace Proto.Cluster.Consul
                             var leader = JsonConvert.DeserializeObject<ConsulLeader>(json);
                             waitIndex = res.LastIndex;
 
-                            _logger.LogError("Leader is {leader}", json2);
+                            _memberList.UpdateLeader(new LeaderStatus(leader.MemberId,leader.Host,leader.Port));
                         }
                     }
                     catch (Exception x)

@@ -32,6 +32,8 @@ namespace Proto.Cluster
         private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind =
             new Dictionary<string, IMemberStrategy>();
 
+        private LeaderStatus _leader;
+
 
         private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
 
@@ -61,6 +63,17 @@ namespace Proto.Cluster
             {
                 _rwLock.ExitReadLock();
             }
+        }
+
+        public void UpdateLeader(LeaderStatus leader)
+        {
+            if (leader?.MemberId == _leader?.MemberId)
+            {
+                return;
+            }
+
+            _leader = leader;
+            _logger.LogWarning("Leader updated {Leader}",leader.MemberId);
         }
 
         public void UpdateClusterTopology(IReadOnlyCollection<MemberStatus> statuses)
