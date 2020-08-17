@@ -79,6 +79,13 @@ namespace Proto.Cluster
         //notify via the event stream
         public void UpdateLeader(LeaderInfo leader)
         {
+            if (leader?.BannedMembers != null)
+            {
+//TODO: add banned members to own banned members
+            }
+
+
+
             if (leader?.MemberId == _leader?.MemberId)
             {
                 return;
@@ -155,6 +162,16 @@ namespace Proto.Cluster
 
         private void MemberLeave(MemberInfo memberThatLeft)
         {
+            if (IsLeader)
+            {
+                var banned = _bannedMembers.ToArray();
+                _cluster.Provider.UpdateClusterState(new ClusterState
+                    {
+                        BannedMembers = banned
+                    }
+                );
+            }
+
             //update MemberStrategy
             foreach (var k in memberThatLeft.Kinds)
             {

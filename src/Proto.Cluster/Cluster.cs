@@ -73,7 +73,9 @@ namespace Proto.Cluster
 
             var (host, port) = System.ProcessRegistry.GetAddress();
 
-            await Config.ClusterProvider.StartAsync(
+            Provider = Config.ClusterProvider;
+            
+            await Provider.StartAsync(
                 this,
                 Config.Name,
                 host,
@@ -84,6 +86,8 @@ namespace Proto.Cluster
 
             _logger.LogInformation("Started");
         }
+
+        internal IClusterProvider Provider { get; set; }
 
         public async Task ShutdownAsync(bool graceful = true)
         {

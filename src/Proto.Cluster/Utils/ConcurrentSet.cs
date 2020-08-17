@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Linq;
 
 namespace Proto.Cluster.Utils
 {
@@ -17,5 +18,7 @@ namespace Proto.Cluster.Utils
         {
             _inner.TryRemove(key, out _);
         }
+
+        public T[] ToArray() => _inner.Keys.ToArray();
     }
 }

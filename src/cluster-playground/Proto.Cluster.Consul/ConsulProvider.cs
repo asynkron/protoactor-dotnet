@@ -25,6 +25,8 @@ namespace Proto.Cluster.Consul
         public string Host { get; set; }
         public int Port { get; set; }
         public Guid MemberId { get; set; }
+
+        public Guid[] BannedMembers { get; set; }
     }
 
     //TLDR;
@@ -121,9 +123,26 @@ namespace Proto.Cluster.Consul
             _deregistered = true;
         }
 
-        public Task UpdateClusterState(ClusterState state)
+        public async Task UpdateClusterState(ClusterState state)
         {
-            return Task.CompletedTask;
+            var json = JsonConvert.SerializeObject(new ConsulLeader
+                {
+                    Host = _host,
+                    Port = _port,
+                    MemberId = _cluster.Id,
+                    BannedMembers = state.BannedMembers
+                }
+            );
+            var kvp = new KVPair(_consulLeaderKey)
+            {
+                Key = _consulLeaderKey,
+                Session = _consulSessionId,
+                Value = Encoding.UTF8.GetBytes(json)
+            };
+
+            var res = await _client.KV.Acquire(kvp);
+            
+
         }
 
         private void StartMonitorMemberStatusChangesLoop()
@@ -210,7 +229,8 @@ namespace Proto.Cluster.Consul
                             {
                                 Host = _host,
                                 Port = _port,
-                                MemberId = _cluster.Id
+                                MemberId = _cluster.Id,
+                                BannedMembers = new Guid[]{}
                             }
                         );
                         var kvp = new KVPair(leaderKey)
@@ -221,6 +241,7 @@ namespace Proto.Cluster.Consul
                         };
 
                         var acquire = await _client.KV.Acquire(kvp);
+                        
 
 
                         //don't await this, it will block forever
@@ -242,7 +263,7 @@ namespace Proto.Cluster.Consul
                             var leader = JsonConvert.DeserializeObject<ConsulLeader>(json2);
                             waitIndex = res.LastIndex;
 
-                            _memberList.UpdateLeader(new LeaderInfo(leader.MemberId,leader.Host,leader.Port));
+                            _memberList.UpdateLeader(new LeaderInfo(leader.MemberId,leader.Host,leader.Port, leader.BannedMembers));
                         }
                     }
                     catch (Exception x)
