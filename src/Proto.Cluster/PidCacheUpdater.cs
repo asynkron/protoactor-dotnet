@@ -1,22 +1,25 @@
 namespace Proto.Cluster
 {
-    class PidCacheUpdater
+    internal class PidCacheUpdater
     {
-        private PID _watcher = new PID();
         private readonly PidCache _cache;
-        private Cluster Cluster { get; }
+        private PID _watcher = new PID();
+
         internal PidCacheUpdater(Cluster cluster, PidCache cache)
         {
             Cluster = cluster;
             _cache = cache;
         }
 
+        private Cluster Cluster { get; }
+
         internal void Setup()
         {
-            var props = Props.FromProducer(() => new PidCacheWatcher(_cache)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+            var props = Props.FromProducer(() => new PidCacheWatcher(_cache))
+                .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
             _watcher = Cluster.System.Root.SpawnNamed(props, "PidCacheWatcher");
         }
-        
+
         internal void Shutdown()
         {
             Cluster.System.Root.Stop(_watcher);
@@ -26,6 +29,5 @@ namespace Proto.Cluster
         {
             Cluster.System.Root.Send(_watcher, new WatchPidRequest(pid));
         }
-        
     }
 }

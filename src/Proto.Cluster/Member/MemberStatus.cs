@@ -27,9 +27,6 @@ namespace Proto.Cluster
         public int Port { get; }
         public IReadOnlyCollection<string> Kinds { get; }
 
-        public override string ToString()
-        {
-            return $"MemberStatus Address:{Address} ID:{MemberId}";
-        }
+        public override string ToString() => $"MemberStatus Address:{Address} ID:{MemberId}";
     }
 }

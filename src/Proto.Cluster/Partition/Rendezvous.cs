@@ -13,31 +13,25 @@ using System.Text;
 namespace Proto.Cluster
 {
     /// <summary>
-    /// A dotnet port of rendezvous.go
+    ///     A dotnet port of rendezvous.go
     /// </summary>
     public class Rendezvous
     {
         private static readonly HashAlgorithm HashAlgorithm = FNV1A32.Create();
 
-        readonly struct MemberData
-        {
-            public MemberData(MemberStatus memberStatus)
-            {
-                Status = memberStatus;
-                Hash = Encoding.UTF8.GetBytes(memberStatus.Address);
-            }
-
-            public MemberStatus Status { get; }
-            public byte[] Hash { get; }
-        }
-
         private MemberData[] _members = Array.Empty<MemberData>();
 
         public string GetOwnerMemberByIdentity(string identity)
         {
-            if (_members == null || _members.Length == 0) return "";
+            if (_members == null || _members.Length == 0)
+            {
+                return "";
+            }
 
-            if (_members.Length == 1) return _members[0].Status.Address;
+            if (_members.Length == 1)
+            {
+                return _members[0].Status.Address;
+            }
 
             var keyBytes = Encoding.UTF8.GetBytes(identity);
 
@@ -79,6 +73,18 @@ namespace Proto.Cluster
             Array.Copy(front, combined, front.Length);
             Array.Copy(back, 0, combined, front.Length, back.Length);
             return combined;
+        }
+
+        private readonly struct MemberData
+        {
+            public MemberData(MemberStatus memberStatus)
+            {
+                Status = memberStatus;
+                Hash = Encoding.UTF8.GetBytes(memberStatus.Address);
+            }
+
+            public MemberStatus Status { get; }
+            public byte[] Hash { get; }
         }
     }
 }

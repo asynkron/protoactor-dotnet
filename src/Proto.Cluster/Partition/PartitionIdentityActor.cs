@@ -14,12 +14,14 @@ namespace Proto.Cluster.Partition
     //for spawning/activating cluster actors see PartitionActivator.cs
     internal class PartitionIdentityActor : IActor
     {
-        private readonly ILogger _logger;
-        private readonly Dictionary<string, (PID pid, string kind)> _partitionLookup = new Dictionary<string, (PID pid, string kind)>();        //actor/grain name to PID
-        private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>(); //PID to grain name
-        
-        private readonly PartitionManager _partitionManager;
         private readonly Cluster _cluster;
+        private readonly ILogger _logger;
+
+        private readonly Dictionary<string, (PID pid, string kind)> _partitionLookup =
+            new Dictionary<string, (PID pid, string kind)>(); //actor/grain name to PID
+
+        private readonly PartitionManager _partitionManager;
+        private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>(); //PID to grain name
 
 
         public PartitionIdentityActor(Cluster cluster, PartitionManager partitionManager)
@@ -27,7 +29,7 @@ namespace Proto.Cluster.Partition
             _logger = Log.CreateLogger($"{nameof(PartitionIdentityActor)}-{cluster.Id}");
             _cluster = cluster;
             _partitionManager = partitionManager;
-          }
+        }
 
         public Task ReceiveAsync(IContext context)
         {
@@ -75,13 +77,14 @@ namespace Proto.Cluster.Partition
             {
                 //if not, forward to the correct owner
                 var owner = _partitionManager.RemotePartitionIdentityActor(address);
-                _logger.LogDebug("Identity is not mine {Identity} forwarding to correct owner {Owner} ", msg.Name, owner);
+                _logger.LogDebug("Identity is not mine {Identity} forwarding to correct owner {Owner} ", msg.Name, owner
+                );
                 context.Send(owner, msg);
             }
             else
             {
                 _logger.LogDebug("Taking Ownership of: {Name}, pid: {Pid}", msg.Name, msg.Pid);
-                _partitionLookup[msg.Name] = (msg.Pid,msg.Kind);
+                _partitionLookup[msg.Name] = (msg.Pid, msg.Kind);
                 _reversePartition[msg.Pid] = msg.Name;
                 context.Watch(msg.Pid);
             }
@@ -97,7 +100,7 @@ namespace Proto.Cluster.Partition
                 _reversePartition.Remove(info.pid);
             }
         }
-        
+
 
         private void ClearInvalidOwnership(IContext context)
         {
@@ -105,7 +108,7 @@ namespace Proto.Cluster.Partition
             //loop over all identities we own, if we are no longer the algorithmic owner, clear ownership
 
             var myAddress = context.Self.Address;
-            
+
             foreach (var (identity, (pid, kind)) in _partitionLookup.ToArray())
             {
                 var shouldBeOwnerAddress = _partitionManager.Selector.GetIdentityOwner(identity);
@@ -125,7 +128,6 @@ namespace Proto.Cluster.Partition
             {
                 _logger.LogInformation("Transferred {TransferCount} PIDs to other nodes", transferredActorCount);
             }
-            
         }
 
         private void MemberLeft(MemberLeftEvent msg, IContext context)
@@ -135,7 +137,6 @@ namespace Proto.Cluster.Partition
             ClearInvalidOwnership(context);
 
             RemoveAddressFromPartition(msg.Member.Address);
-
         }
 
         private void MemberJoined(MemberJoinedEvent msg, IContext context)
@@ -151,7 +152,7 @@ namespace Proto.Cluster.Partition
                 context.Respond(new ActorPidResponse {Pid = info.pid});
                 return;
             }
-            
+
             //Get activator
             var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind);
 
@@ -164,7 +165,7 @@ namespace Proto.Cluster.Partition
             }
 
             var spawning = SpawnRemoteActor(msg, activatorAddress);
-            
+
             //Await SpawningProcess
             context.ReenterAfter(
                 spawning,
@@ -191,7 +192,7 @@ namespace Proto.Cluster.Partition
                     {
                         var pid = pidResp.Pid;
 
-                        _partitionLookup[msg.Name] = (pid,msg.Kind);
+                        _partitionLookup[msg.Name] = (pid, msg.Kind);
                         _reversePartition[pid] = msg.Name;
                         context.Watch(pid);
                     }
@@ -206,7 +207,7 @@ namespace Proto.Cluster.Partition
         {
             try
             {
-                _logger.LogDebug("Spawning Remote Actor {Activator} {Identity} {Kind}", activator,req.Name,req.Kind);
+                _logger.LogDebug("Spawning Remote Actor {Activator} {Identity} {Kind}", activator, req.Name, req.Kind);
                 return await SpawnNamedAsync(activator, req.Name, req.Kind, _cluster.Config!.TimeoutTimespan);
             }
             catch (TimeoutException)
@@ -218,7 +219,7 @@ namespace Proto.Cluster.Partition
                 return ActorPidResponse.Err;
             }
         }
-        
+
         //identical to Remote.SpawnNamedAsync, just using the special partition-activator for spawning
         private async Task<ActorPidResponse> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
         {

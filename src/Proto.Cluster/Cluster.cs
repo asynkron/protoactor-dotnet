@@ -18,15 +18,7 @@ namespace Proto.Cluster
     [PublicAPI]
     public class Cluster
     {
-        public Guid Id { get; } = Guid.NewGuid();
-
         private static ILogger _logger = null!;
-
-        internal ClusterConfig Config { get; private set; } = null!;
-        
-        public ActorSystem System { get; }
-
-        public Remote.Remote Remote { get; }
 
         public Cluster(ActorSystem system, Serialization serialization)
         {
@@ -36,14 +28,22 @@ namespace Proto.Cluster
 
             PidCache = new PidCache();
             MemberList = new MemberList(this);
-            PidCacheUpdater = new PidCacheUpdater(this,PidCache);
+            PidCacheUpdater = new PidCacheUpdater(this, PidCache);
         }
+
+        public Guid Id { get; } = Guid.NewGuid();
+
+        internal ClusterConfig Config { get; private set; } = null!;
+
+        public ActorSystem System { get; }
+
+        public Remote.Remote Remote { get; }
 
 
         internal MemberList MemberList { get; }
         internal PidCache PidCache { get; }
         internal PidCacheUpdater PidCacheUpdater { get; }
-        
+
         private IIdentityLookup? IdentityLookup { get; set; }
 
         public Task StartAsync(string clusterName, string address, int port, IClusterProvider cp)
@@ -55,7 +55,7 @@ namespace Proto.Cluster
 
             //default to partition identity lookup
             IdentityLookup = config.IdentityLookup ?? new PartitionIdentityLookup();
-            
+
             Remote.Start(Config.Address, Config.Port, Config.RemoteConfig);
 
             Remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
@@ -64,7 +64,6 @@ namespace Proto.Cluster
 
             var kinds = Remote.GetKnownKinds();
             IdentityLookup.Setup(this, kinds);
-            
 
 
             if (config.UsePidCache)
@@ -94,22 +93,25 @@ namespace Proto.Cluster
                 PidCacheUpdater!.Shutdown();
                 IdentityLookup!.Shutdown();
             }
-            
+
             await Config!.ClusterProvider.ShutdownAsync(graceful);
             await Remote.ShutdownAsync(graceful);
-            
+
             _logger.LogInformation("Stopped");
         }
 
-        public Task<(PID?, ResponseStatusCode)> GetAsync(string identity, string kind) => GetAsync(identity, kind, CancellationToken.None);
+        public Task<(PID?, ResponseStatusCode)> GetAsync(string identity, string kind) =>
+            GetAsync(identity, kind, CancellationToken.None);
 
         public Task<(PID?, ResponseStatusCode)> GetAsync(string identity, string kind, CancellationToken ct)
         {
             if (Config.UsePidCache)
             {
                 //Check Cache
-                if (PidCache.TryGetCache(identity, out var pid)) 
+                if (PidCache.TryGetCache(identity, out var pid))
+                {
                     return Task.FromResult<(PID?, ResponseStatusCode)>((pid, ResponseStatusCode.OK));
+                }
             }
 
             return IdentityLookup!.GetAsync(identity, kind, ct);

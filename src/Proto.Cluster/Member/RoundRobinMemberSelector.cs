@@ -4,11 +4,13 @@ namespace Proto.Cluster
 {
     public class RoundRobinMemberSelector
     {
+        private readonly IMemberStrategy _memberStrategy;
         private int _val;
 
-        private readonly IMemberStrategy _memberStrategy;
-
-        public RoundRobinMemberSelector(IMemberStrategy memberStrategy) => _memberStrategy = memberStrategy;
+        public RoundRobinMemberSelector(IMemberStrategy memberStrategy)
+        {
+            _memberStrategy = memberStrategy;
+        }
 
         public string GetMember()
         {

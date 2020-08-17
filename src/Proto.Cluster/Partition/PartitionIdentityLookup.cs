@@ -9,13 +9,12 @@ namespace Proto.Cluster.Partition
 {
     public class PartitionIdentityLookup : IIdentityLookup
     {
-        private Cluster _cluster = null!;
         private readonly ILogger _logger = Log.CreateLogger<PartitionIdentityLookup>();
+        private Cluster _cluster = null!;
         private PartitionManager _partitionManager = null!;
 
-        public async Task<(PID?,ResponseStatusCode)> GetAsync(string identity,string kind, CancellationToken ct)
+        public async Task<(PID?, ResponseStatusCode)> GetAsync(string identity, string kind, CancellationToken ct)
         {
-            
             //Get address to node owning this ID
             var address = _partitionManager.Selector.GetIdentityOwner(identity);
             _logger.LogDebug("Identity belongs to {address}", address);
@@ -38,7 +37,9 @@ namespace Proto.Cluster.Partition
             try
             {
                 var resp = ct == CancellationToken.None
-                    ? await _cluster.System.Root.RequestAsync<ActorPidResponse>(remotePid, req, _cluster.Config!.TimeoutTimespan)
+                    ? await _cluster.System.Root.RequestAsync<ActorPidResponse>(remotePid, req,
+                        _cluster.Config!.TimeoutTimespan
+                    )
                     : await _cluster.System.Root.RequestAsync<ActorPidResponse>(remotePid, req, ct);
                 var status = (ResponseStatusCode) resp.StatusCode;
 

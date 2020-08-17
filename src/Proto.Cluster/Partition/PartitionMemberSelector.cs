@@ -1,26 +1,24 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Proto.Cluster.Partition
 {
-    
     //this class is responsible for translating between Identity->member
     //this is the key algorithm for the distributed hash table
-    internal class PartitionMemberSelector 
+    internal class PartitionMemberSelector
     {
+        private readonly object _lock = new object();
         private readonly List<MemberStatus> _members;
         private readonly Rendezvous _rdv;
-        private readonly object _lock = new object();
-
-        public int Count => _members.Count;
 
         public PartitionMemberSelector()
         {
             _members = new List<MemberStatus>();
             _rdv = new Rendezvous();
         }
-        
+
+        public int Count => _members.Count;
+
 
         //TODO: account for Member.MemberId
         public void AddMember(MemberStatus member)
@@ -28,13 +26,16 @@ namespace Proto.Cluster.Partition
             lock (_lock)
             {
                 // Avoid adding the same member twice
-                if (_members.Any(x => x.Address == member.Address)) return;
+                if (_members.Any(x => x.Address == member.Address))
+                {
+                    return;
+                }
 
                 _members.Add(member);
                 _rdv.UpdateMembers(_members);
             }
         }
-        
+
         //TODO: account for Member.MemberId
         public void RemoveMember(MemberStatus member)
         {

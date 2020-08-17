@@ -40,6 +40,19 @@ namespace ClusterExperiment1
             var cluster3 = SpawnMember(8092);
             await probe1.Expect<MemberJoinedEvent>(e => e.Member.Port == 8092);
 
+            // Task.Run(async () =>
+            //     {
+            //         for (int i = 0; i < 90; i++)
+            //         {
+            //             SpawnMember(8093+i);
+            //          //   cluster1.GetAsync("a" + i, "hello");
+            //             await Task.Delay(1000);
+            //         }
+            //     }
+            // );
+            
+            
+            
             var (pid,status) = await cluster1.GetAsync("myactor2", "hello");
             if (status != ResponseStatusCode.OK)
             {
@@ -53,7 +66,7 @@ namespace ClusterExperiment1
             
             Console.WriteLine("Got response!");
 
-             await cluster2.ShutdownAsync(false); //kill this node, can also be non graceful to simulate outage
+       //      await cluster2.ShutdownAsync(false); //kill this node, can also be non graceful to simulate outage
           //  await probe1.Expect<MemberLeftEvent>(e => e.Member.Port == 8091);
 //            await probe1.Expect<EndpointTerminatedEvent>(e => e.Address.EndsWith("8091"));
 
@@ -66,7 +79,8 @@ namespace ClusterExperiment1
                     Console.WriteLine(status2);
                     var response2 = await system1.Root.RequestAsync<HelloResponse>(pid2, new HelloRequest());
                     Console.WriteLine("Got response!");
-                    break;
+                    Thread.Sleep(1000);
+                    continue;
                 }
 
                 Console.WriteLine("error " + status2);

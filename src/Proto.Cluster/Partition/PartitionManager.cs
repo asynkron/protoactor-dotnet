@@ -9,14 +9,13 @@ namespace Proto.Cluster.Partition
     //helper to interact with partition actors on this and other members
     internal class PartitionManager
     {
-        private PID _partitionActor = null!;
-        private PID _partitionActivator = null!;
-        private readonly Cluster _cluster;
-        private readonly ActorSystem _system;
-        private readonly IRootContext _context;
-        internal PartitionMemberSelector Selector { get; } = new PartitionMemberSelector();
         internal const string PartitionIdentityActorName = "partition-actor";
         internal const string PartitionPlacementActorName = "partition-activator";
+        private readonly Cluster _cluster;
+        private readonly IRootContext _context;
+        private readonly ActorSystem _system;
+        private PID _partitionActivator = null!;
+        private PID _partitionActor = null!;
 
 
         internal PartitionManager(Cluster cluster)
@@ -26,13 +25,15 @@ namespace Proto.Cluster.Partition
             _context = _system.Root;
         }
 
+        internal PartitionMemberSelector Selector { get; } = new PartitionMemberSelector();
+
         public void Setup()
         {
             var partitionActorProps = Props
                 .FromProducer(() => new PartitionIdentityActor(_cluster, this))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
             _partitionActor = _context.SpawnNamed(partitionActorProps, PartitionIdentityActorName);
-            
+
             var partitionActivatorProps =
                 Props.FromProducer(() => new PartitionPlacementActor(_cluster, this));
             _partitionActivator = _context.SpawnNamed(partitionActivatorProps, PartitionPlacementActorName);
@@ -44,17 +45,16 @@ namespace Proto.Cluster.Partition
                 {
                     Selector.AddMember(e.Member);
                     _context.Send(_partitionActor, e);
-                    _context.Send(_partitionActivator,e);
+                    _context.Send(_partitionActivator, e);
                 }
             );
             _system.EventStream.Subscribe<MemberLeftEvent>(e =>
                 {
                     Selector.RemoveMember(e.Member);
                     _context.Send(_partitionActor, e);
-                    _context.Send(_partitionActivator,e);
+                    _context.Send(_partitionActivator, e);
                 }
             );
-
         }
 
 

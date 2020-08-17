@@ -13,7 +13,9 @@ namespace Proto.Cluster
     public class ClusterTopologyEvent
     {
         public ClusterTopologyEvent(IEnumerable<MemberStatus> statuses)
-            => Statuses = statuses?.ToArray() ?? throw new ArgumentNullException(nameof(statuses));
+        {
+            Statuses = statuses?.ToArray() ?? throw new ArgumentNullException(nameof(statuses));
+        }
 
         public IReadOnlyCollection<MemberStatus> Statuses { get; }
     }
@@ -25,22 +27,23 @@ namespace Proto.Cluster
             Member = member;
         }
 
-        public MemberStatus Member { get;  }
+        public MemberStatus Member { get; }
 
 
-        public override string ToString()
-        {
-            return $"{GetType().Name} Address:{Member.Address} ID:{Member.MemberId}";
-        }
+        public override string ToString() => $"{GetType().Name} Address:{Member.Address} ID:{Member.MemberId}";
     }
 
     public class MemberJoinedEvent : MemberStatusEvent
     {
-        public MemberJoinedEvent(MemberStatus member) : base(member) { }
+        public MemberJoinedEvent(MemberStatus member) : base(member)
+        {
+        }
     }
 
     public class MemberLeftEvent : MemberStatusEvent
     {
-        public MemberLeftEvent(MemberStatus member) : base(member) { }
+        public MemberLeftEvent(MemberStatus member) : base(member)
+        {
+        }
     }
 }

@@ -31,7 +31,6 @@ namespace Proto.Cluster
 
         private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind =
             new Dictionary<string, IMemberStrategy>();
-        
 
 
         private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
@@ -150,7 +149,7 @@ namespace Proto.Cluster
             //that is, this ID may never join again, any cluster on the same host and port is fine
             //as long as it is a new clean instance
             _bannedMembers.Add(memberThatLeft.MemberId);
-            _logger.LogDebug("Published event {@MemberLeft}",left);
+            _logger.LogDebug("Published event {@MemberLeft}", left);
             _cluster.System.EventStream.Publish(left);
 
 
@@ -158,7 +157,7 @@ namespace Proto.Cluster
             _members.Remove(memberThatLeft.MemberId);
 
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
-            _logger.LogDebug("Published event {@EndpointTerminated}",endpointTerminated);
+            _logger.LogDebug("Published event {@EndpointTerminated}", endpointTerminated);
             _cluster.System.EventStream.Publish(endpointTerminated);
         }
 
@@ -182,7 +181,7 @@ namespace Proto.Cluster
             //notify joined
             var joined = new MemberJoinedEvent(newMember);
 
-            _logger.LogDebug("Published event {@MemberJoined}",joined);
+            _logger.LogDebug("Published event {@MemberJoined}", joined);
             _cluster.System.EventStream.Publish(joined);
 
             _cluster.PidCache.RemoveByMemberAddress($"{newMember.Host}:{newMember.Port}");

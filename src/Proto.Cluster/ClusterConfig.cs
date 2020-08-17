@@ -14,6 +14,18 @@ namespace Proto.Cluster
     [PublicAPI]
     public class ClusterConfig
     {
+        public ClusterConfig(string name, string address, int port, IClusterProvider cp)
+        {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Address = address ?? throw new ArgumentNullException(nameof(address));
+            Port = port;
+            ClusterProvider = cp ?? throw new ArgumentNullException(nameof(cp));
+
+            RemoteConfig = new RemoteConfig();
+            TimeoutTimespan = TimeSpan.FromSeconds(5);
+            MemberStrategyBuilder = kind => new SimpleMemberStrategy();
+        }
+
         public string Name { get; }
         public string Address { get; }
         public int Port { get; }
@@ -28,18 +40,6 @@ namespace Proto.Cluster
 
         public IIdentityLookup IdentityLookup { get; private set; } = null!;
 
-        public ClusterConfig(string name, string address, int port, IClusterProvider cp)
-        {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            Address = address ?? throw new ArgumentNullException(nameof(address));
-            Port = port;
-            ClusterProvider = cp ?? throw new ArgumentNullException(nameof(cp));
-            
-            RemoteConfig = new RemoteConfig();
-            TimeoutTimespan = TimeSpan.FromSeconds(5);
-            MemberStrategyBuilder = kind => new SimpleMemberStrategy();
-        }
-
         public ClusterConfig WithRemoteConfig(RemoteConfig remoteConfig)
         {
             RemoteConfig = remoteConfig;
@@ -51,7 +51,7 @@ namespace Proto.Cluster
             TimeoutTimespan = TimeSpan.FromSeconds(timeoutSeconds);
             return this;
         }
-        
+
         public ClusterConfig WithMemberStrategyBuilder(Func<string, IMemberStrategy> builder)
         {
             MemberStrategyBuilder = builder;
@@ -63,7 +63,7 @@ namespace Proto.Cluster
             UsePidCache = usePidCache;
             return this;
         }
-        
+
         public ClusterConfig WithIdentityLookup(IIdentityLookup identityLookup)
         {
             IdentityLookup = identityLookup;
