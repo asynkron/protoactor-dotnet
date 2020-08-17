@@ -79,17 +79,22 @@ namespace Proto.Cluster
         //notify via the event stream
         public void UpdateLeader(LeaderInfo leader)
         {
+            //TODO: could likely be done better
             if (leader?.BannedMembers != null)
             {
                 foreach (var b in leader.BannedMembers)
                 {
-                    Console.WriteLine("Banned!!" + b);
                     _bannedMembers.Add(b);
                 }
             }
             
             if (leader?.MemberId == _leader?.MemberId)
             {
+                //leader is the same as before, ignore
+                //this can happen eg. if you run blocking queries with consul
+                //if nothing changes within the blocking time, you will still get a result,
+                //we will still get this notification.
+                //we use the memberlist to diff the data against current state
                 return;
             }
 
