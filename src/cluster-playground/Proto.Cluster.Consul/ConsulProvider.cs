@@ -253,8 +253,8 @@ namespace Proto.Cluster.Consul
 
                                 if (res.Response?.Value == null)
                                 {
-                                    _logger.LogError("Got null from session");
-                                    await Task.Delay(500);
+                                    _logger.LogWarning("No leader info was found");
+                                    await Task.Delay(1000);
                                     continue;
                                 }
 
