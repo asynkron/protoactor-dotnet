@@ -81,20 +81,23 @@ namespace Proto.Cluster
         {
             if (leader?.BannedMembers != null)
             {
-//TODO: add banned members to own banned members
+                foreach (var b in leader.BannedMembers)
+                {
+                    Console.WriteLine("Banned!!" + b);
+                    _bannedMembers.Add(b);
+                }
             }
-
-
-
+            
             if (leader?.MemberId == _leader?.MemberId)
             {
                 return;
             }
 
             var oldLeader = _leader;
-
+            
             _leader = leader;
-            _logger.LogWarning("Leader updated {Leader}",leader?.MemberId);
+
+            _logger.LogInformation("Leader updated {Leader}",leader?.MemberId);
             _eventStream.Publish(new LeaderElectedEvent(leader,oldLeader));
         }
 
@@ -162,16 +165,6 @@ namespace Proto.Cluster
 
         private void MemberLeave(MemberInfo memberThatLeft)
         {
-            if (IsLeader)
-            {
-                var banned = _bannedMembers.ToArray();
-                _cluster.Provider.UpdateClusterState(new ClusterState
-                    {
-                        BannedMembers = banned
-                    }
-                );
-            }
-
             //update MemberStrategy
             foreach (var k in memberThatLeft.Kinds)
             {
@@ -206,6 +199,16 @@ namespace Proto.Cluster
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
             _logger.LogDebug("Published event {@EndpointTerminated}", endpointTerminated);
             _cluster.System.EventStream.Publish(endpointTerminated);
+            
+            if (IsLeader)
+            {
+                var banned = _bannedMembers.ToArray();
+                _cluster.Provider.UpdateClusterState(new ClusterState
+                    {
+                        BannedMembers = banned
+                    }
+                );
+            }
         }
 
         private void MemberJoin(MemberInfo newMember)

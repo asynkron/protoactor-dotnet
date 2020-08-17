@@ -140,9 +140,12 @@ namespace Proto.Cluster.Consul
                 Value = Encoding.UTF8.GetBytes(json)
             };
 
-            var res = await _client.KV.Acquire(kvp);
-            
+            var updated = await _client.KV.Acquire(kvp);
 
+            if (!updated.Response)
+            {
+                _logger.LogError("Failed to update cluster state");
+            }
         }
 
         private void StartMonitorMemberStatusChangesLoop()
@@ -216,7 +219,8 @@ namespace Proto.Cluster.Consul
                         var se = new SessionEntry
                         {
                             Behavior = SessionBehavior.Delete,
-                            Name = leaderKey
+                            Name = leaderKey,
+                            TTL = TimeSpan.FromSeconds(10)
                         };
                         var sessionRes = await _client.Session.Create(se);
                         var sessionId = sessionRes.Response;
@@ -251,7 +255,7 @@ namespace Proto.Cluster.Consul
                         var waitIndex = 0ul;
                         while (!_shutdown)
                         {
-                            var res = await _client.KV.Get(leaderKey, new QueryOptions()
+                            var res = await _client.KV.Get(leaderKey, new QueryOptions
                                 {
                                     Consistency = ConsistencyMode.Default,
                                     WaitIndex = waitIndex,
