@@ -25,8 +25,6 @@ namespace Proto.Cluster.Consul
         public string Host { get; set; }
         public int Port { get; set; }
         public Guid MemberId { get; set; }
-
-        public Guid[] BannedMembers { get; set; }
     }
 
     //TLDR;
@@ -125,18 +123,9 @@ namespace Proto.Cluster.Consul
 
         public async Task UpdateClusterState(ClusterState state)
         {
-            var json = JsonConvert.SerializeObject(new ConsulLeader
-                {
-                    Host = _host,
-                    Port = _port,
-                    MemberId = _cluster.Id,
-                    BannedMembers = state.BannedMembers
-                }
-            );
-            var kvp = new KVPair(_consulLeaderKey)
+            var json = JsonConvert.SerializeObject(state.BannedMembers);
+            var kvp = new KVPair($"{_consulServiceName}/banned")
             {
-                Key = _consulLeaderKey,
-                Session = _consulSessionId,
                 Value = Encoding.UTF8.GetBytes(json)
             };
 
@@ -224,17 +213,16 @@ namespace Proto.Cluster.Consul
                         };
                         var sessionRes = await _client.Session.Create(se);
                         var sessionId = sessionRes.Response;
-                        
+
                         //this is used so that leader can update shared cluster state
                         _consulSessionId = sessionId;
                         _consulLeaderKey = leaderKey;
-                        
+
                         var json = JsonConvert.SerializeObject(new ConsulLeader
                             {
                                 Host = _host,
                                 Port = _port,
                                 MemberId = _cluster.Id,
-                                BannedMembers = new Guid[]{}
                             }
                         );
                         var kvp = new KVPair(leaderKey)
@@ -244,9 +232,6 @@ namespace Proto.Cluster.Consul
                             Value = Encoding.UTF8.GetBytes(json)
                         };
 
-                        var acquire = await _client.KV.Acquire(kvp);
-                        
-
 
                         //don't await this, it will block forever
                         _client.Session.RenewPeriodic(TimeSpan.FromSeconds(1), sessionId, CancellationToken.None
@@ -255,19 +240,47 @@ namespace Proto.Cluster.Consul
                         var waitIndex = 0ul;
                         while (!_shutdown)
                         {
-                            var res = await _client.KV.Get(leaderKey, new QueryOptions
-                                {
-                                    Consistency = ConsistencyMode.Default,
-                                    WaitIndex = waitIndex,
-                                    WaitTime = TimeSpan.FromSeconds(20)
-                                }
-                            );
-                            var value = res.Response.Value;
-                            var json2 = Encoding.UTF8.GetString(value);
-                            var leader = JsonConvert.DeserializeObject<ConsulLeader>(json2);
-                            waitIndex = res.LastIndex;
+                            try
+                            {
+                                await _client.KV.Acquire(kvp);
+                                var res = await _client.KV.Get(leaderKey, new QueryOptions
+                                    {
+                                        Consistency = ConsistencyMode.Default,
+                                        WaitIndex = waitIndex,
+                                        WaitTime = TimeSpan.FromSeconds(20)
+                                    }
+                                );
 
-                            _memberList.UpdateLeader(new LeaderInfo(leader.MemberId,leader.Host,leader.Port, leader.BannedMembers));
+                                if (res.Response?.Value == null)
+                                {
+                                    _logger.LogError("Got null from session");
+                                    await Task.Delay(500);
+                                    continue;
+                                }
+
+                                var value = res.Response.Value;
+                                var json2 = Encoding.UTF8.GetString(value);
+                                var leader = JsonConvert.DeserializeObject<ConsulLeader>(json2);
+                                waitIndex = res.LastIndex;
+
+                                var bannedMembers = Array.Empty<Guid>();
+                                var banned = await _client.KV.Get(_consulServiceName + "/banned");
+
+                                if (banned.Response?.Value != null)
+                                {
+                                    var json3 = Encoding.UTF8.GetString(banned.Response.Value);
+                                    bannedMembers = JsonConvert.DeserializeObject<Guid[]>(json3);
+                                }
+
+                                _memberList.UpdateLeader(new LeaderInfo(leader.MemberId, leader.Host, leader.Port,
+                                        bannedMembers
+                                    )
+                                );
+                            }
+                            catch (Exception x)
+                            {
+                                _logger.LogError("Failed to read session data {x}", x);
+                            }
                         }
                     }
                     catch (Exception x)

@@ -55,6 +55,7 @@ namespace Proto.Cluster.Partition
 
         private void HandleOwnershipTransfer(IContext context)
         {
+            var count = 0;
             foreach (var (identity, (pid, kind, oldOwnerAddress)) in _myActors)
             {
                 var newOwnerAddress = _partitionManager.Selector.GetIdentityOwner(identity);
@@ -65,7 +66,13 @@ namespace Proto.Cluster.Partition
                     );
                     var owner = _partitionManager.RemotePartitionIdentityActor(newOwnerAddress);
                     context.Send(owner, new TakeOwnership {Name = identity, Kind = kind, Pid = pid});
+                    count++;
                 }
+            }
+
+            if (count > 0)
+            {
+                _logger.LogInformation("Transferred {Count} actor ownership to other members", count);
             }
         }
 

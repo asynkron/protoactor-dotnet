@@ -41,16 +41,16 @@ namespace ClusterExperiment1
             var cluster3 = SpawnMember(8092);
             await probe1.Expect<MemberJoinedEvent>(e => e.Member.Port == 8092);
 
-            // Task.Run(async () =>
-            //     {
-            //         for (int i = 0; i < 90; i++)
-            //         {
-            //             SpawnMember(8093+i);
-            //          //   cluster1.GetAsync("a" + i, "hello");
-            //             await Task.Delay(1000);
-            //         }
-            //     }
-            // );
+            Task.Run(async () =>
+                {
+                    for (int i = 0; i < 90; i++)
+                    {
+                        SpawnMember(8093+i);
+                     //   cluster1.GetAsync("a" + i, "hello");
+                        await Task.Delay(1000);
+                    }
+                }
+            );
             await cluster2.ShutdownAsync(true); //kill this node, can also be non graceful to simulate outage
             var cluster4 = SpawnMember(8093);
             
