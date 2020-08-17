@@ -76,6 +76,8 @@ namespace Proto.Cluster
             _logger.LogWarning("Leader updated {Leader}",leader.MemberId);
         }
 
+        public bool IsLeader => _cluster.Id == _leader?.MemberId;
+
         public void UpdateClusterTopology(IReadOnlyCollection<MemberStatus> statuses)
         {
             var locked = _rwLock.TryEnterWriteLock(1000);
