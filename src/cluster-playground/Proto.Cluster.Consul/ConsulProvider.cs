@@ -225,7 +225,7 @@ namespace Proto.Cluster.Consul
                             );
                             var value = res.Response.Value;
                             var json2 = Encoding.UTF8.GetString(value);
-                            var leader = JsonConvert.DeserializeObject<ConsulLeader>(json);
+                            var leader = JsonConvert.DeserializeObject<ConsulLeader>(json2);
                             waitIndex = res.LastIndex;
 
                             _memberList.UpdateLeader(new LeaderStatus(leader.MemberId,leader.Host,leader.Port));
