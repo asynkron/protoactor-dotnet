@@ -129,7 +129,7 @@ namespace Proto.Cluster.Consul
                 Value = Encoding.UTF8.GetBytes(json)
             };
 
-            var updated = await _client.KV.Acquire(kvp);
+            var updated = await _client.KV.Put(kvp);
 
             if (!updated.Response)
             {

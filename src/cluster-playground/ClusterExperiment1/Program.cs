@@ -81,7 +81,7 @@ namespace ClusterExperiment1
                     Console.WriteLine(status2);
                     var response2 = await system1.Root.RequestAsync<HelloResponse>(pid2, new HelloRequest());
                     Console.WriteLine("Got response!");
-                    Thread.Sleep(1000);
+                    Thread.Sleep(100);
                     continue;
                 }
 
