@@ -47,7 +47,7 @@ namespace ClusterExperiment1
                     {
                         SpawnMember(8093+i);
                      //   cluster1.GetAsync("a" + i, "hello");
-                        await Task.Delay(1000);
+                        await Task.Delay(10000);
                     }
                 }
             );
@@ -83,7 +83,7 @@ namespace ClusterExperiment1
                     Console.WriteLine(status2);
                     var response2 = await system1.Root.RequestAsync<HelloResponse>(pid2, new HelloRequest());
                     Console.WriteLine("Got response!");
-                 //   Thread.Sleep(100);
+                    Thread.Sleep(100);
                     continue;
                 }
 
