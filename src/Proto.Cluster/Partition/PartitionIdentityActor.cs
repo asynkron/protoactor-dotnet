@@ -74,20 +74,38 @@ namespace Proto.Cluster.Partition
             //Check again if I'm still the owner of the identity
             var address = _partitionManager.Selector.GetIdentityOwner(msg.Name);
 
+            
             if (!string.IsNullOrEmpty(address) && address != _cluster.System.ProcessRegistry.Address)
             {
+                //after live testing, this strategy works extremely well. 
                 //if not, forward to the correct owner
                 var owner = _partitionManager.RemotePartitionIdentityActor(address);
-                _logger.LogDebug("Identity is not mine {Identity} forwarding to correct owner {Owner} ", msg.Name, owner
-                );
+                _logger.LogDebug("Identity is not mine {Identity} forwarding to correct owner {Owner} ", msg.Name, owner);
                 context.Send(owner, msg);
             }
             else
             {
-                _logger.LogDebug("Taking Ownership of: {Name}, pid: {Pid}", msg.Name, msg.Pid);
-                _partitionLookup[msg.Name] = (msg.Pid, msg.Kind);
-                _reversePartition[msg.Pid] = msg.Name;
-                context.Watch(msg.Pid);
+                if (_partitionLookup.TryGetValue(msg.Name,out var existing))
+                {
+                    //these are the same, that's good, just ignore message
+                    //should not really be possible, but let's guard against it..
+                    if (existing.pid.Address == msg.Pid.Address)
+                    {
+                        _logger.LogDebug("Received TakeOwnership message but already knows about this Identity {Identity} {Pid}",msg.Name,existing.pid);
+                        return;
+                    }
+
+                    _logger.LogWarning("Duplicate activation detected för Identity '{Identity}', Known {KnownPid}, Other {OtherPid}, Stopping Other",msg.Name,msg.Pid,existing.pid);
+                    //kill duplicate activation...
+                    _cluster.System.Root.Stop(msg.Pid);
+                }
+                else
+                {
+                    _logger.LogDebug("Taking Ownership of: {Name}, pid: {Pid}", msg.Name, msg.Pid);
+                    _partitionLookup[msg.Name] = (msg.Pid, msg.Kind);
+                    _reversePartition[msg.Pid] = msg.Name;
+                    context.Watch(msg.Pid);
+                }
             }
         }
 

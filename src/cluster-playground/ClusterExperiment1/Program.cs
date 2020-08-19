@@ -72,16 +72,18 @@ namespace ClusterExperiment1
           //  await probe1.Expect<MemberLeftEvent>(e => e.Member.Port == 8091);
 //            await probe1.Expect<EndpointTerminatedEvent>(e => e.Address.EndsWith("8091"));
 
+            var rnd = new Random();
             while (true)
             {
-                var (pid2, status2) = await cluster1.GetAsync("myactor2", "hello");
+                var id = rnd.Next(0, 100);
+                var (pid2, status2) = await cluster1.GetAsync("myactor" + id, "hello");
                 if (status2 == ResponseStatusCode.OK)
                 {
                     Console.WriteLine(pid2);
                     Console.WriteLine(status2);
                     var response2 = await system1.Root.RequestAsync<HelloResponse>(pid2, new HelloRequest());
                     Console.WriteLine("Got response!");
-                    Thread.Sleep(100);
+                 //   Thread.Sleep(100);
                     continue;
                 }
 
