@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Events;
@@ -56,7 +57,7 @@ namespace Proto.Cluster.Partition
         private void HandleOwnershipTransfer(IContext context)
         {
             var count = 0;
-            foreach (var (identity, (pid, kind, oldOwnerAddress)) in _myActors)
+            foreach (var (identity, (pid, kind, oldOwnerAddress)) in _myActors.ToArray())
             {
                 var newOwnerAddress = _partitionManager.Selector.GetIdentityOwner(identity);
                 if (newOwnerAddress != oldOwnerAddress)
@@ -66,6 +67,7 @@ namespace Proto.Cluster.Partition
                     );
                     var owner = _partitionManager.RemotePartitionIdentityActor(newOwnerAddress);
                     context.Send(owner, new TakeOwnership {Name = identity, Kind = kind, Pid = pid});
+                    _myActors[identity] = (pid, kind, newOwnerAddress);
                     count++;
                 }
             }

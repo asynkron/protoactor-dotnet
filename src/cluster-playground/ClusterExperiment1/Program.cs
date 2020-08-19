@@ -22,36 +22,34 @@ namespace ClusterExperiment1
 
             //node 1
             var system1 = new ActorSystem();
-            var probe1 = system1.EventStream.GetProbe();
+    //        var probe1 = system1.EventStream.GetProbe();
             var consul1 = new ConsulProvider(new ConsulProviderOptions());
             var serialization1 = new Serialization();
             serialization1.RegisterFileDescriptor(MessagesReflection.Descriptor);
             var cluster1 = new Cluster(system1,serialization1);
-            
-
-            
-
 
             //act
             await cluster1.StartAsync(new ClusterConfig("mycluster","127.0.0.1",8090,consul1).WithPidCache(false));
-            await probe1.Expect<MemberJoinedEvent>(e => e.Member.Port == 8090);
+   
+      //      await probe1.Expect<MemberJoinedEvent>(e => e.Member.Port == 8090);
             //node 2
             var cluster2 = SpawnMember(8091);
-            await probe1.Expect<MemberJoinedEvent>(e => e.Member.Port == 8091);
+      //      await probe1.Expect<MemberJoinedEvent>(e => e.Member.Port == 8091);
             var cluster3 = SpawnMember(8092);
-            await probe1.Expect<MemberJoinedEvent>(e => e.Member.Port == 8092);
-
+      //      await probe1.Expect<MemberJoinedEvent>(e => e.Member.Port == 8092);
+      await Task.Delay(2000);
+      
             Task.Run(async () =>
                 {
                     for (int i = 0; i < 90; i++)
                     {
                         SpawnMember(8093+i);
-                     //   cluster1.GetAsync("a" + i, "hello");
+     
                         await Task.Delay(10000);
                     }
                 }
             );
-            await cluster2.ShutdownAsync(true); //kill this node, can also be non graceful to simulate outage
+            //await cluster2.ShutdownAsync(true); //kill this node, can also be non graceful to simulate outage
             var cluster4 = SpawnMember(8093);
             
             
@@ -75,19 +73,35 @@ namespace ClusterExperiment1
             var rnd = new Random();
             while (true)
             {
-                var id = rnd.Next(0, 100);
-                var (pid2, status2) = await cluster1.GetAsync("myactor" + id, "hello");
-                if (status2 == ResponseStatusCode.OK)
+                try
                 {
-                    Console.WriteLine(pid2);
-                    Console.WriteLine(status2);
-                    var response2 = await system1.Root.RequestAsync<HelloResponse>(pid2, new HelloRequest());
-                    Console.WriteLine("Got response!");
-                    Thread.Sleep(100);
-                    continue;
-                }
+                    var id = rnd.Next(0, 100);
+                    Console.WriteLine("Getting PID...");
+                    var (pid2, status2) = await cluster1.GetAsync("myactor" + id, "hello",
+                        new CancellationTokenSource(TimeSpan.FromSeconds(2)).Token
+                    );
+                    if (status2 == ResponseStatusCode.OK)
+                    {
+                        Console.WriteLine(pid2);
+                        Console.WriteLine(status2);
+                        system1.Root.RequestAsync<HelloResponse>(pid2, new HelloRequest(), TimeSpan.FromSeconds(2))
+                            .ContinueWith(
+                                res =>
+                                {
+                                    Console.WriteLine("Got response!");
+                                }
+                            );
+                        
+                 //       Thread.Sleep(100);
+                        continue;
+                    }
 
-                Console.WriteLine("error " + status2);
+                    Console.WriteLine("error " + status2);
+                }
+                catch (Exception x)
+                {
+                    Console.WriteLine(x);
+                }
             }
 
             Console.ReadLine();
@@ -109,6 +123,11 @@ namespace ClusterExperiment1
                     if (ctx.Message is HelloRequest)
                     {
                         ctx.Respond(new HelloResponse());
+                    }
+
+                    if (ctx.Message is Stop)
+                    {
+                        Console.WriteLine("IM STOPPING!! " + ctx.Self);
                     }
 
                     return Actor.Done;

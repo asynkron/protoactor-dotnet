@@ -80,7 +80,7 @@ namespace Proto.Cluster.Partition
                 //after live testing, this strategy works extremely well. 
                 //if not, forward to the correct owner
                 var owner = _partitionManager.RemotePartitionIdentityActor(address);
-                _logger.LogDebug("Identity is not mine {Identity} forwarding to correct owner {Owner} ", msg.Name, owner);
+                _logger.LogWarning("Identity is not mine {Identity} forwarding to correct owner {Owner} ", msg.Name, owner);
                 context.Send(owner, msg);
             }
             else
@@ -91,7 +91,7 @@ namespace Proto.Cluster.Partition
                     //should not really be possible, but let's guard against it..
                     if (existing.pid.Address == msg.Pid.Address)
                     {
-                        _logger.LogDebug("Received TakeOwnership message but already knows about this Identity {Identity} {Pid}",msg.Name,existing.pid);
+                        _logger.LogWarning("Received TakeOwnership message but already knows about this Identity {Identity} {Pid}",msg.Name,existing.pid);
                         return;
                     }
 
