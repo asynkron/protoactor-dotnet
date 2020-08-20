@@ -16,7 +16,6 @@ namespace Proto.Cluster.Partition
     internal class PartitionPlacementActor : IActor
     {
         private readonly Cluster _cluster;
-        private readonly IRootContext _context;
         private readonly ILogger _logger;
 
         private readonly Dictionary<string, (PID pid, string kind, string identityOwner)> _myActors =
@@ -31,9 +30,34 @@ namespace Proto.Cluster.Partition
             _cluster = cluster;
             _remote = _cluster.Remote;
             _system = _cluster.System;
-            _context = _system.Root;
             _partitionManager = partitionManager;
             _logger = Log.CreateLogger($"{nameof(PartitionPlacementActor)}-{cluster.Id}");
+            _system.EventStream.Subscribe<DeadLetterEvent>(dl =>
+                {
+                    if (dl.Pid.Id.StartsWith(PartitionManager.PartitionPlacementActorName))
+                    {
+                        var id = dl.Pid.Id.Substring(PartitionManager.PartitionPlacementActorName.Length+1);
+                        
+                        //TODO: this is wrong, we need the placement owner...
+                        // var owner = _partitionManager.Selector.GetIdentityOwner(id);
+                        //
+                        // //this actor does not live on this node, 
+                        // if (owner != _system.ProcessRegistry.Address)
+                        // {
+                        //     var pid = new PID(owner,dl.Pid.Id);
+                        //     var msg = dl.Message;
+                        //     var sender = dl.Sender;
+                        //
+                        //     _system.Root.Request(pid,msg,sender);
+                        //     _logger.LogError("Got Deadletter message for gain actor '{Identity}', forwarding",id);
+                        //
+                        // }
+                        
+                    
+                    }
+
+                }
+            );
         }
 
         public Task ReceiveAsync(IContext context)
@@ -90,7 +114,7 @@ namespace Proto.Cluster.Partition
             try
             {
                 //spawn and remember this actor
-                var pid = _context.SpawnNamed(props, name);
+                var pid = context.SpawnNamed(props, name);
                 _myActors[name] = (pid, msg.Kind, context.Sender.Address);
 
                 var response = new ActorPidResponse {Pid = pid};

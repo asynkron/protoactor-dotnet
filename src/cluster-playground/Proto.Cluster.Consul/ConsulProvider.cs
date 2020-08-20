@@ -121,6 +121,8 @@ namespace Proto.Cluster.Consul
             _deregistered = true;
         }
 
+        //TODO: this is never signalled to rest of cluster
+        //it gets hidden until leader blocking wait ends
         public async Task UpdateClusterState(ClusterState state)
         {
             var json = JsonConvert.SerializeObject(state.BannedMembers);
@@ -242,7 +244,9 @@ namespace Proto.Cluster.Consul
                         {
                             try
                             {
-                                await _client.KV.Acquire(kvp);
+                                var aquired = await _client.KV.Acquire(kvp);
+                                var isLeader = aquired.Response;
+                                
                                 var res = await _client.KV.Get(leaderKey, new QueryOptions
                                     {
                                         Consistency = ConsistencyMode.Default,
@@ -250,10 +254,11 @@ namespace Proto.Cluster.Consul
                                         WaitTime = TimeSpan.FromSeconds(20)
                                     }
                                 );
+                                
 
                                 if (res.Response?.Value == null)
                                 {
-                                    _logger.LogWarning("No leader info was found");
+                                    _logger.LogError("No leader info was found");
                                     await Task.Delay(1000);
                                     continue;
                                 }

@@ -45,7 +45,7 @@ namespace ClusterExperiment1
                     {
                         SpawnMember(8093+i);
      
-                        await Task.Delay(10000);
+                        await Task.Delay(3000);
                     }
                 }
             );
