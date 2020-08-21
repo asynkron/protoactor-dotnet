@@ -24,6 +24,7 @@ namespace Proto.Cluster.Partition
         private readonly PartitionManager _partitionManager;
         private readonly Remote.Remote _remote;
         private readonly ActorSystem _system;
+        private ulong _eventId;
 
         public PartitionPlacementActor(Cluster cluster, PartitionManager partitionManager)
         {
@@ -65,10 +66,13 @@ namespace Proto.Cluster.Partition
         {
             switch (context.Message)
             {
-                case ClusterTopology _:
-                    //TODO: check what needs to be transferred
-                    HandleOwnershipTransfer(context);
-
+                case ClusterTopology msg:
+                    //only handle newer events
+                    if (_eventId < msg.EventId)
+                    {
+                        _eventId = msg.EventId;
+                        HandleOwnershipTransfer(context);
+                    }
                     break;
                 case ActorPidRequest msg:
                     HandleActorPidRequest(context, msg);
@@ -90,7 +94,7 @@ namespace Proto.Cluster.Partition
                         newOwnerAddress
                     );
                     var owner = _partitionManager.RemotePartitionIdentityActor(newOwnerAddress);
-                    context.Send(owner, new TakeOwnership {Name = identity, Kind = kind, Pid = pid});
+                    context.Send(owner, new TakeOwnership {Name = identity, Kind = kind, Pid = pid, EventId = _eventId});
                     _myActors[identity] = (pid, kind, newOwnerAddress);
                     count++;
                 }

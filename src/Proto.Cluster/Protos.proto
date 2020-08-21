@@ -8,6 +8,7 @@ message TakeOwnership {
     actor.PID pid = 1;
     string name = 2;
     string kind = 3;
+    uint64 eventId = 4;
 }
 
 message GrainRequest {

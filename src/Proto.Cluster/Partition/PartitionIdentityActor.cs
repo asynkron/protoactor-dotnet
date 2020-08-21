@@ -23,6 +23,7 @@ namespace Proto.Cluster.Partition
 
         private readonly PartitionManager _partitionManager;
         private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>(); //PID to grain name
+        private ulong _eventId;
 
 
         public PartitionIdentityActor(Cluster cluster, PartitionManager partitionManager)
@@ -50,7 +51,12 @@ namespace Proto.Cluster.Partition
                     break;
 
                 case ClusterTopology msg:
-                    ClusterTopology(msg, context);
+                    if (_eventId < msg.EventId)
+                    {
+                        _eventId = msg.EventId;
+                        ClusterTopology(msg, context);
+                    }
+
                     break;
             }
 
@@ -82,6 +88,10 @@ namespace Proto.Cluster.Partition
 
         private void TakeOwnership(TakeOwnership msg, IContext context)
         {
+            if (msg.EventId < _eventId)
+            {
+                _logger.LogError("Got outdated event");
+            }
             //Check again if I'm still the owner of the identity
             var address = _partitionManager.Selector.GetIdentityOwner(msg.Name);
 
