@@ -80,7 +80,7 @@ namespace Proto.Cluster.Partition
                 //after live testing, this strategy works extremely well. 
                 //if not, forward to the correct owner
                 var owner = _partitionManager.RemotePartitionIdentityActor(address);
-                _logger.LogWarning("Identity is not mine {Identity} forwarding to correct owner {Owner} ", msg.Name, owner);
+                _logger.LogWarning("Identity '{Identity}' is not mine {Self}, forwarding to correct owner {Owner} ", msg.Name,context.Self, owner);
                 context.Send(owner, msg);
             }
             else
@@ -91,17 +91,17 @@ namespace Proto.Cluster.Partition
                     //should not really be possible, but let's guard against it..
                     if (existing.pid.Address == msg.Pid.Address)
                     {
-                        _logger.LogWarning("Received TakeOwnership message but already knows about this Identity {Identity} {Pid}",msg.Name,existing.pid);
+                        _logger.LogDebug("Received TakeOwnership message but already knows about this Identity {Identity} {Pid}",msg.Name,existing.pid);
                         return;
                     }
 
-                    _logger.LogWarning("Duplicate activation detected for Identity '{Identity}', Known {KnownPid}, Other {OtherPid}, Stopping Other",msg.Name,msg.Pid,existing.pid);
+                    _logger.LogWarning("Duplicate activation detected for Identity '{Identity}', Known {KnownPid}, Other {OtherPid}, Stopping Other",msg.Name,existing.pid,msg.Pid);
                     //kill duplicate activation...
                     _cluster.System.Root.Stop(msg.Pid);
                 }
                 else
                 {
-                    _logger.LogDebug("Taking Ownership of: {Name}, pid: {Pid}", msg.Name, msg.Pid);
+                    _logger.LogWarning("Taking Ownership of: {Identity}, pid: {Pid}", msg.Name, msg.Pid);
                     _partitionLookup[msg.Name] = (msg.Pid, msg.Kind);
                     _reversePartition[msg.Pid] = msg.Name;
                     context.Watch(msg.Pid);
@@ -123,7 +123,6 @@ namespace Proto.Cluster.Partition
 
         private void ClearInvalidOwnership(IContext context)
         {
-            var transferredActorCount = 0;
             //loop over all identities we own, if we are no longer the algorithmic owner, clear ownership
 
             var myAddress = context.Self.Address;
@@ -136,16 +135,9 @@ namespace Proto.Cluster.Partition
                 {
                     continue;
                 }
-
-                transferredActorCount++;
                 _partitionLookup.Remove(identity);
                 _reversePartition.Remove(pid);
                 context.Unwatch(pid);
-            }
-
-            if (transferredActorCount > 0)
-            {
-                _logger.LogInformation("Transferred {TransferCount} PIDs to other nodes", transferredActorCount);
             }
         }
 
@@ -190,6 +182,10 @@ namespace Proto.Cluster.Partition
                 spawning,
                 rst =>
                 {
+                    //TODO: as this is async, there might come in multiple ActorPidRequests asking for this
+                    //Identity, causing multiple activations
+                    
+                    
                     //Check if exist in current partition dictionary
                     //This is necessary to avoid race condition during partition map transfer.
                     if (_partitionLookup.TryGetValue(msg.Name, out info))

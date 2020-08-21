@@ -75,8 +75,8 @@ namespace ClusterExperiment1
             {
                 try
                 {
-                    var id = "myactor" + rnd.Next(0, 100);
-                    Console.WriteLine($"Sending request {id}");
+                    var id = "myactor" + rnd.Next(0, 10);
+                //    Console.WriteLine($"Sending request {id}");
                     var res = await cluster1.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                         CancellationToken.None
                     );
@@ -87,7 +87,7 @@ namespace ClusterExperiment1
                     }
                     else
                     {
-                        Console.WriteLine("Got response");
+                  //      Console.WriteLine("Got response");
                     }
                 }
                 catch (Exception x)
