@@ -38,7 +38,16 @@ namespace Proto.Cluster.Partition
                     {
                         var id = dl.Pid.Id.Substring(PartitionManager.PartitionPlacementActorName.Length + 1);
 
-                        if (dl.Sender != null)
+                        if (dl.Message is Watch watch)
+                        {
+                            //we got a deadletter watch, reply with a terminated event
+                            _system.Root.Send(watch.Watcher, new Terminated
+                            {
+                                AddressTerminated = false,
+                                Who = dl.Pid
+                            });
+                        }
+                        else if (dl.Sender != null)
                         {
                             _system.Root.Send(dl.Sender, new VoidResponse());
                             _logger.LogWarning("Got Deadletter message {Message} for gain actor '{Identity}' from {Sender}, sending void response", dl.Message, id,dl.Sender);
@@ -107,7 +116,7 @@ namespace Proto.Cluster.Partition
             {
                 //spawn and remember this actor
                 var pid = context.SpawnNamed(props, name);
-                _myActors[name] = (pid, msg.Kind, context.Sender.Address);
+                _myActors[name] = (pid, msg.Kind, context.Sender!.Address);
 
                 var response = new ActorPidResponse {Pid = pid};
                 context.Respond(response);

@@ -64,6 +64,7 @@ namespace Proto.Cluster.Partition
             //one of the actors we manage died, remove it from the lookup
             if (_reversePartition.TryGetValue(msg.Who, out var key))
             {
+                _logger.LogDebug("Terminated {Pid}",msg.Who);
                 _partitionLookup.Remove(key);
                 _reversePartition.Remove(msg.Who);
             }
@@ -80,7 +81,7 @@ namespace Proto.Cluster.Partition
                 //after live testing, this strategy works extremely well. 
                 //if not, forward to the correct owner
                 var owner = _partitionManager.RemotePartitionIdentityActor(address);
-                _logger.LogWarning("Identity '{Identity}' is not mine {Self}, forwarding to correct owner {Owner} ", msg.Name,context.Self, owner);
+                _logger.LogDebug("Identity '{Identity}' is not mine {Self}, forwarding to correct owner {Owner} ", msg.Name,context.Self, owner);
                 context.Send(owner, msg);
             }
             else
@@ -94,14 +95,37 @@ namespace Proto.Cluster.Partition
                         _logger.LogDebug("Received TakeOwnership message but already knows about this Identity {Identity} {Pid}",msg.Name,existing.pid);
                         return;
                     }
+                    
+                    //TODO:
+                    //this is tricky, if we have two duplicate activations, both are telling this node to take ownership 
+                    //we need an idempotent way to decide which one to keep, so we dont end up stopping both 
+                    //
+                    //one easy approach is to always keep the one with the lowest or highest address ordinal
 
-                    _logger.LogWarning("Duplicate activation detected for Identity '{Identity}', Known {KnownPid}, Other {OtherPid}, Stopping Other",msg.Name,existing.pid,msg.Pid);
-                    //kill duplicate activation...
-                    _cluster.System.Root.Stop(msg.Pid);
+                    if (String.CompareOrdinal(existing.pid.Address, msg.Pid.Address) < 0)
+                    {
+                        _logger.LogWarning("Duplicate activation detected for Identity '{Identity}', Known {KnownPid}, Other {OtherPid}, Stopping Other",msg.Name,existing.pid,msg.Pid);
+                    
+                        //kill duplicate activation...
+                        _cluster.System.Root.Stop(msg.Pid);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Duplicate activation detected for Identity '{Identity}', Known {KnownPid}, Other {OtherPid}, Stopping Known",msg.Name,existing.pid,msg.Pid);
+
+                        _partitionLookup[msg.Name] = (msg.Pid, msg.Kind);
+                        _reversePartition[msg.Pid] = msg.Name;
+                        context.Watch(msg.Pid);
+                        //kill duplicate activation...
+                        _cluster.System.Root.Stop(existing.pid);
+                    }
+                    
+
+
                 }
                 else
                 {
-                    _logger.LogWarning("Taking Ownership of: {Identity}, pid: {Pid}", msg.Name, msg.Pid);
+                    _logger.LogDebug("Taking Ownership of: {Identity}, pid: {Pid}", msg.Name, msg.Pid);
                     _partitionLookup[msg.Name] = (msg.Pid, msg.Kind);
                     _reversePartition[msg.Pid] = msg.Name;
                     context.Watch(msg.Pid);
