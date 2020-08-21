@@ -6,7 +6,7 @@ namespace Proto.Cluster.Data
     [PublicAPI]
     public class LeaderInfo
     {
-        public LeaderInfo(Guid memberId, string host, int port, Guid[] bannedMembers)
+        public LeaderInfo(Guid memberId, string host, int port, string[] bannedMembers)
         {
             MemberId = memberId;
             Host = host ?? throw new ArgumentNullException(nameof(host));
@@ -14,7 +14,7 @@ namespace Proto.Cluster.Data
             BannedMembers = bannedMembers;
         }
 
-        public Guid[] BannedMembers { get; }
+        public string[] BannedMembers { get; }
 
         public string Address => Host + ":" + Port;
         public Guid MemberId { get; }

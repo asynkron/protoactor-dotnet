@@ -4,6 +4,6 @@ namespace Proto.Cluster.Data
 {
     public class ClusterState
     {
-        public Guid[] BannedMembers { get; set; }
+        public string[] BannedMembers { get; set; }
     }
 }

@@ -9,20 +9,14 @@ namespace Proto.Cluster.Partition
     internal class PartitionMemberSelector
     {
         private readonly object _lock = new object();
-        private readonly List<MemberInfo> _members;
-        private readonly Rendezvous _rdv;
-
-        public PartitionMemberSelector()
-        {
-            _members = new List<MemberInfo>();
-            _rdv = new Rendezvous();
-        }
+        private readonly List<Member> _members = new List<Member>();
+        private readonly Rendezvous _rdv = new Rendezvous();
 
         public int Count => _members.Count;
 
 
         //TODO: account for Member.MemberId
-        public void AddMember(MemberInfo member)
+        public void AddMember(Member member)
         {
             lock (_lock)
             {
@@ -38,7 +32,7 @@ namespace Proto.Cluster.Partition
         }
 
         //TODO: account for Member.MemberId
-        public void RemoveMember(MemberInfo member)
+        public void RemoveMember(Member member)
         {
             lock (_lock)
             {

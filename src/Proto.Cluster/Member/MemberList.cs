@@ -27,13 +27,13 @@ namespace Proto.Cluster
         private static ILogger _logger = null!;
 
         //TODO: actually use this to prevent banned members from rejoining
-        private readonly ConcurrentSet<Guid> _bannedMembers = new ConcurrentSet<Guid>();
+        private readonly ConcurrentSet<string> _bannedMembers = new ConcurrentSet<string>();
         private readonly Cluster _cluster;
         private readonly ActorSystem _system;
         private readonly IRootContext _root;
         private readonly EventStream _eventStream;
         
-        private readonly Dictionary<Guid, MemberInfo> _members = new Dictionary<Guid, MemberInfo>();
+        private readonly Dictionary<string, Member> _members = new Dictionary<string, Member>();
 
         private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind =
             new Dictionary<string, IMemberStrategy>();
@@ -114,7 +114,7 @@ namespace Proto.Cluster
 
         public bool IsLeader => _cluster.Id.Equals(_leader?.MemberId);
 
-        public void UpdateClusterTopology(IReadOnlyCollection<MemberInfo> statuses)
+        public void UpdateClusterTopology(IReadOnlyCollection<Member> statuses, ulong eventId)
         {
             var locked = _rwLock.TryEnterWriteLock(1000);
 
@@ -126,6 +126,8 @@ namespace Proto.Cluster
 
             try
             {
+                var topology = new ClusterTopology {EventId = eventId};
+
                 //TLDR:
                 //this method basically filters out any member status in the banned list
                 //then makes a delta between new and old members
@@ -134,13 +136,13 @@ namespace Proto.Cluster
                 //these are all members that are currently active
                 var nonBannedStatuses =
                     statuses
-                        .Where(s => !_bannedMembers.Contains(s.MemberId))
+                        .Where(s => !_bannedMembers.Contains(s.Id))
                         .ToArray();
 
                 //these are the member IDs hashset of currently active members
                 var newMemberIds =
                     nonBannedStatuses
-                        .Select(s => s.MemberId)
+                        .Select(s => s.Id)
                         .ToImmutableHashSet();
 
                 //these are all members that existed before, but are not in the current nonBannedMemberStatuses
@@ -154,19 +156,33 @@ namespace Proto.Cluster
                 foreach (var memberThatLeft in membersThatLeft)
                 {
                     MemberLeave(memberThatLeft);
+                    topology.Left.Add(new Member
+                    {
+                        Host = memberThatLeft.Host,
+                        Port = memberThatLeft.Port,
+                        Id =  memberThatLeft.Id
+                    });
                 }
 
                 //these are all members that are new and did not exist before
                 var membersThatJoined =
                     nonBannedStatuses
-                        .Where(m => !_members.ContainsKey(m.MemberId))
+                        .Where(m => !_members.ContainsKey(m.Id))
                         .ToArray();
 
                 //notify that these members joined
                 foreach (var memberThatJoined in membersThatJoined)
                 {
                     MemberJoin(memberThatJoined);
+                    topology.Joined.Add(new Member
+                    {
+                        Host = memberThatJoined.Host,
+                        Port = memberThatJoined.Port,
+                        Id =  memberThatJoined.Id
+                    });
                 }
+                
+                _eventStream.Publish(topology);
             }
             finally
             {
@@ -174,7 +190,7 @@ namespace Proto.Cluster
             }
         }
 
-        private void MemberLeave(MemberInfo memberThatLeft)
+        private void MemberLeave(Member memberThatLeft)
         {
             //update MemberStrategy
             foreach (var k in memberThatLeft.Kinds)
@@ -192,20 +208,10 @@ namespace Proto.Cluster
                 }
             }
 
-            //notify left
-
-            var left = new MemberLeftEvent(memberThatLeft);
-
-            //remember that this member has left, may never join cluster again
-            //that is, this ID may never join again, any cluster on the same host and port is fine
-            //as long as it is a new clean instance
-            _bannedMembers.Add(memberThatLeft.MemberId);
-            _logger.LogDebug("Published event {@MemberLeft}", left);
-            _cluster.System.EventStream.Publish(left);
-
+            _bannedMembers.Add(memberThatLeft.Id);
 
             _cluster.PidCache.RemoveByMemberAddress(memberThatLeft.Address);
-            _members.Remove(memberThatLeft.MemberId);
+            _members.Remove(memberThatLeft.Id);
 
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
             _logger.LogDebug("Published event {@EndpointTerminated}", endpointTerminated);
@@ -222,11 +228,11 @@ namespace Proto.Cluster
             }
         }
 
-        private void MemberJoin(MemberInfo newMember)
+        private void MemberJoin(Member newMember)
         {
             //TODO: looks fishy, no locks, are we sure this is safe? it is using private state _vars
 
-            _members.Add(newMember.MemberId, newMember);
+            _members.Add(newMember.Id, newMember);
 
             foreach (var kind in newMember.Kinds)
             {
@@ -238,12 +244,6 @@ namespace Proto.Cluster
                 //TODO: this doesnt work, just use the same strategy for all kinds...
                 _memberStrategyByKind[kind].AddMember(newMember);
             }
-
-            //notify joined
-            var joined = new MemberJoinedEvent(newMember);
-
-            _logger.LogDebug("Published event {@MemberJoined}", joined);
-            _cluster.System.EventStream.Publish(joined);
 
             _cluster.PidCache.RemoveByMemberAddress($"{newMember.Host}:{newMember.Port}");
         }

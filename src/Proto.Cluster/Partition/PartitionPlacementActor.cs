@@ -65,8 +65,7 @@ namespace Proto.Cluster.Partition
         {
             switch (context.Message)
             {
-                case MemberLeftEvent _:
-                case MemberJoinedEvent _:
+                case ClusterTopology _:
                     //TODO: check what needs to be transferred
                     HandleOwnershipTransfer(context);
 

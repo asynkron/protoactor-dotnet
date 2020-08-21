@@ -9,9 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using Proto.Cluster.Data;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.Partition
 {
     /// <summary>
     ///     A dotnet port of rendezvous.go
@@ -37,7 +36,7 @@ namespace Proto.Cluster
             var keyBytes = Encoding.UTF8.GetBytes(identity);
 
             uint maxScore = 0;
-            MemberInfo? maxNode = null;
+            Member? maxNode = null;
 
             foreach (var member in _members)
             {
@@ -55,7 +54,7 @@ namespace Proto.Cluster
         }
 
         // ReSharper disable once ParameterTypeCanBeEnumerable.Global
-        public void UpdateMembers(List<MemberInfo> members)
+        public void UpdateMembers(List<Member> members)
             => _members = members
                 .Select(x => new MemberData(x))
                 .ToArray();
@@ -78,13 +77,13 @@ namespace Proto.Cluster
 
         private readonly struct MemberData
         {
-            public MemberData(MemberInfo memberInfo)
+            public MemberData(Member memberInfo)
             {
                 Info = memberInfo;
                 Hash = Encoding.UTF8.GetBytes(memberInfo.Address);
             }
 
-            public MemberInfo Info { get; }
+            public Member Info { get; }
             public byte[] Hash { get; }
         }
     }

@@ -43,16 +43,18 @@ namespace Proto.Cluster.Partition
             //synchronous subscribe to keep accurate
 
             //make sure selector is updated first
-            _system.EventStream.Subscribe<MemberJoinedEvent>(e =>
+            _system.EventStream.Subscribe<ClusterTopology>(e =>
                 {
-                    Selector.AddMember(e.Member);
-                    _context.Send(_partitionActor, e);
-                    _context.Send(_partitionActivator, e);
-                }
-            );
-            _system.EventStream.Subscribe<MemberLeftEvent>(e =>
-                {
-                    Selector.RemoveMember(e.Member);
+                    foreach (var member in e.Joined)
+                    {
+                        Selector.AddMember(member);
+                    }
+                    
+                    foreach (var member in e.Left)
+                    {
+                        Selector.RemoveMember(member);
+                    }
+                    
                     _context.Send(_partitionActor, e);
                     _context.Send(_partitionActivator, e);
                 }

@@ -165,23 +165,31 @@ namespace Proto.Cluster.Consul
                             statuses
                                 .Response
                                 .Where(v => IsAlive(v.Checks)) //only include members that are alive
-                                .Select(v => new MemberInfo(
-                                        Guid.Parse(v.Service.Meta["id"]),
-                                        v.Service.Address,
-                                        v.Service.Port,
-                                        v.Service.Tags
-                                    )
-                                )
+                                .Select(ToMember)
                                 .ToArray();
 
                         //why is this not updated via the ClusterTopologyEvents?
                         //because following events is messy
-                        _memberList.UpdateClusterTopology(memberStatuses);
+                        _memberList.UpdateClusterTopology(memberStatuses,waitIndex);
                         var res = new ClusterTopologyEvent(memberStatuses);
                         _cluster.System.EventStream.Publish(res);
                     }
                 }
             );
+
+            Member ToMember(ServiceEntry v)
+            {
+                var member = new Member
+                {
+                    Id = v.Service.Meta["id"],
+                    Host = v.Service.Address,
+                    Port = v.Service.Port,
+                };
+                
+                member.Kinds.AddRange(v.Service.Tags);
+
+                return member;
+            }
         }
 
 
@@ -268,13 +276,13 @@ namespace Proto.Cluster.Consul
                                 var leader = JsonConvert.DeserializeObject<ConsulLeader>(json2);
                                 waitIndex = res.LastIndex;
 
-                                var bannedMembers = Array.Empty<Guid>();
+                                var bannedMembers = Array.Empty<string>();
                                 var banned = await _client.KV.Get(_consulServiceName + "/banned");
 
                                 if (banned.Response?.Value != null)
                                 {
                                     var json3 = Encoding.UTF8.GetString(banned.Response.Value);
-                                    bannedMembers = JsonConvert.DeserializeObject<Guid[]>(json3);
+                                    bannedMembers = JsonConvert.DeserializeObject<string[]>(json3);
                                 }
 
                                 _memberList.UpdateLeader(new LeaderInfo(leader.MemberId, leader.Host, leader.Port,

@@ -22,3 +22,20 @@ message GrainResponse {
 message GrainErrorResponse {
     string err = 1;
 }
+
+
+
+message Member {
+    string host=1;
+    int32 port=2;
+    string id=3;
+    repeated string kinds=4;
+}
+
+message ClusterTopology {
+    uint64 event_id=1;
+    repeated Member members=2;
+    repeated Member joined=3;
+    repeated Member left=4;
+    repeated Member banned=5;
+}

@@ -48,15 +48,25 @@ namespace Proto.Cluster.Partition
                 case TakeOwnership msg:
                     TakeOwnership(msg, context);
                     break;
-                case MemberJoinedEvent msg:
-                    MemberJoined(msg, context);
-                    break;
-                case MemberLeftEvent msg:
-                    MemberLeft(msg, context);
+
+                case ClusterTopology msg:
+                    ClusterTopology(msg, context);
                     break;
             }
 
             return Actor.Done;
+        }
+
+        public void ClusterTopology(ClusterTopology msg, IContext context)
+        {
+            //always do this when a member leaves, we need to redistribute the distributed-hash-table
+            //no ifs or else, just always
+            ClearInvalidOwnership(context);
+
+            foreach (var member in msg.Left)
+            {
+                RemoveAddressFromPartition(member.Address);
+            }
         }
 
         private void Terminated(Terminated msg)
@@ -119,9 +129,6 @@ namespace Proto.Cluster.Partition
                         //kill duplicate activation...
                         _cluster.System.Root.Stop(existing.pid);
                     }
-                    
-
-
                 }
                 else
                 {
@@ -149,7 +156,7 @@ namespace Proto.Cluster.Partition
         {
             //loop over all identities we own, if we are no longer the algorithmic owner, clear ownership
 
-            var myAddress = context.Self.Address;
+            var myAddress = context.Self!.Address;
 
             foreach (var (identity, (pid, kind)) in _partitionLookup.ToArray())
             {
@@ -165,19 +172,19 @@ namespace Proto.Cluster.Partition
             }
         }
 
-        private void MemberLeft(MemberLeftEvent msg, IContext context)
-        {
-            //always do this when a member leaves, we need to redistribute the distributed-hash-table
-            //no ifs or else, just always
-            ClearInvalidOwnership(context);
-
-            RemoveAddressFromPartition(msg.Member.Address);
-        }
-
-        private void MemberJoined(MemberJoinedEvent msg, IContext context)
-        {
-            ClearInvalidOwnership(context);
-        }
+        // private void MemberLeft(Member member, IContext context)
+        // {
+        //     //always do this when a member leaves, we need to redistribute the distributed-hash-table
+        //     //no ifs or else, just always
+        //     ClearInvalidOwnership(context);
+        //
+        //     RemoveAddressFromPartition(member.Address);
+        // }
+        //
+        // private void MemberJoined(Member member, IContext context)
+        // {
+        //     ClearInvalidOwnership(context);
+        // }
 
         private void GetOrSpawn(ActorPidRequest msg, IContext context)
         {
