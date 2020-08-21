@@ -99,7 +99,7 @@ namespace Proto.Cluster.Partition
 
             if (count > 0)
             {
-                _logger.LogInformation("Transferred {Count} actor ownership to other members", count);
+                _logger.LogDebug("Transferred {Count} actor ownership to other members", count);
             }
         }
 
