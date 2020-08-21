@@ -58,6 +58,7 @@ namespace ClusterExperiment1
                         }
                         else
                         {
+                            Console.Write(".");
                             //      Console.WriteLine("Got response");
                         }
                     }
