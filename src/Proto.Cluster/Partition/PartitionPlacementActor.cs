@@ -41,11 +41,11 @@ namespace Proto.Cluster.Partition
                         if (dl.Sender != null)
                         {
                             _system.Root.Send(dl.Sender, new VoidResponse());
-                            _logger.LogWarning("Got Deadletter message for gain actor '{Identity}' from {Sender}, sending void response", id,dl.Sender);
+                            _logger.LogWarning("Got Deadletter message {Message} for gain actor '{Identity}' from {Sender}, sending void response", dl.Message, id,dl.Sender);
                         }
                         else
                         {
-                            _logger.LogError("Got Deadletter message for gain actor '{Identity}', use `Request` for grain communication ", id);    
+                            _logger.LogWarning("Got Deadletter message {Message} for gain actor '{Identity}', use `Request` for grain communication ", dl.Message, id);    
                         }
                     }
                 }

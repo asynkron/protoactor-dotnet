@@ -120,5 +120,27 @@ namespace Proto.Cluster
 
             return IdentityLookup!.GetAsync(identity, kind, ct);
         }
+
+        public async Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct)
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                var (pid,status) = await GetAsync(identity, kind, ct);
+                if (status != ResponseStatusCode.OK && status != ResponseStatusCode.ProcessNameAlreadyExist)
+                {
+                    continue;
+                }
+
+                var res = await System.Root.RequestAsync<T>(pid, message, ct);
+                if (res != null)
+                {
+                    return res;
+                }
+
+                await Task.Delay(i * 10, ct);
+            }
+
+            return default!;
+        }
     }
 }

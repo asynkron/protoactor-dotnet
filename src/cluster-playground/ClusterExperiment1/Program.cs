@@ -75,24 +75,20 @@ namespace ClusterExperiment1
             {
                 try
                 {
-                    var id = rnd.Next(0, 100);
-                    Console.WriteLine("Getting PID...");
-                    var (pid2, status2) = await cluster1.GetAsync("myactor" + id, "hello",
-                        new CancellationTokenSource(TimeSpan.FromSeconds(2)).Token
+                    var id = "myactor" + rnd.Next(0, 100);
+                    Console.WriteLine($"Sending request {id}");
+                    var res = await cluster1.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+                        CancellationToken.None
                     );
-                    if (status2 == ResponseStatusCode.OK)
+
+                    if (res == null)
                     {
-                        Console.WriteLine(pid2);
-                        Console.WriteLine(status2);
-                        var res = await system1.Root.RequestAsync<HelloResponse>(pid2, new HelloRequest(),
-                            TimeSpan.FromSeconds(2));
-
-                        Console.WriteLine(res == default ? "Void response, try again" : "Got response");
-                        //       Thread.Sleep(100);
-                        continue;
+                        Console.WriteLine("Got void response");
                     }
-
-                    Console.WriteLine("error " + status2);
+                    else
+                    {
+                        Console.WriteLine("Got response");
+                    }
                 }
                 catch (Exception x)
                 {
