@@ -36,26 +36,18 @@ namespace Proto.Cluster.Partition
                 {
                     if (dl.Pid.Id.StartsWith(PartitionManager.PartitionPlacementActorName))
                     {
-                        var id = dl.Pid.Id.Substring(PartitionManager.PartitionPlacementActorName.Length+1);
-                        
-                        //TODO: this is wrong, we need the placement owner...
-                        // var owner = _partitionManager.Selector.GetIdentityOwner(id);
-                        //
-                        // //this actor does not live on this node, 
-                        // if (owner != _system.ProcessRegistry.Address)
-                        // {
-                        //     var pid = new PID(owner,dl.Pid.Id);
-                        //     var msg = dl.Message;
-                        //     var sender = dl.Sender;
-                        //
-                        //     _system.Root.Request(pid,msg,sender);
-                        //     _logger.LogError("Got Deadletter message for gain actor '{Identity}', forwarding",id);
-                        //
-                        // }
-                        
-                    
-                    }
+                        var id = dl.Pid.Id.Substring(PartitionManager.PartitionPlacementActorName.Length + 1);
 
+                        if (dl.Sender != null)
+                        {
+                            _system.Root.Send(dl.Sender, new VoidResponse());
+                            _logger.LogWarning("Got Deadletter message for gain actor '{Identity}' from {Sender}, sending void response", id,dl.Sender);
+                        }
+                        else
+                        {
+                            _logger.LogError("Got Deadletter message for gain actor '{Identity}', use `Request` for grain communication ", id);    
+                        }
+                    }
                 }
             );
         }

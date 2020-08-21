@@ -251,7 +251,7 @@ namespace Proto.Cluster.Consul
                                     {
                                         Consistency = ConsistencyMode.Default,
                                         WaitIndex = waitIndex,
-                                        WaitTime = TimeSpan.FromSeconds(20)
+                                        WaitTime = TimeSpan.FromSeconds(3)
                                     }
                                 );
                                 
@@ -287,6 +287,9 @@ namespace Proto.Cluster.Consul
                                 _logger.LogError("Failed to read session data {x}", x);
                             }
                         }
+
+                        await _client.KV.Release(kvp);
+                        await _client.Session.Destroy(sessionId);
                     }
                     catch (Exception x)
                     {

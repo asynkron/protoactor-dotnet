@@ -10,6 +10,9 @@ message PID {
 //user messages
 message PoisonPill {}
 
+//special event to terminate/fail ongoing Future requests
+message VoidResponse {}
+
 //system messages
 message Watch {
   PID Watcher = 1;

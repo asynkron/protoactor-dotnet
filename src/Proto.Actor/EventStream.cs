@@ -16,9 +16,11 @@ namespace Proto
     public class EventStream : EventStream<object>
     {
         private readonly ILogger _logger = Log.CreateLogger<EventStream>();
-
+        
         internal EventStream()
-            => Subscribe(
+        {
+            
+            Subscribe(
                 msg =>
                 {
                     if (msg is DeadLetterEvent letter)
@@ -33,6 +35,7 @@ namespace Proto
                     }
                 }
             );
+        }
     }
 
     /// <summary>

@@ -37,24 +37,21 @@ namespace Proto
 
             Pid = pid;
 
-            if (_cts != null)
-            {
-                _cts.Token.Register(
-                    () =>
+            _cts?.Token.Register(
+                () =>
+                {
+                    if (_tcs.Task.IsCompleted)
                     {
-                        if (_tcs.Task.IsCompleted)
-                        {
-                            return;
-                        }
-
-                        _tcs.TrySetException(
-                            new TimeoutException("Request didn't receive any Response within the expected time.")
-                        );
-
-                        Stop(pid);
+                        return;
                     }
-                );
-            }
+
+                    _tcs.TrySetException(
+                        new TimeoutException("Request didn't receive any Response within the expected time.")
+                    );
+
+                    Stop(pid);
+                }
+            );
             Task = _tcs.Task;
         }
 
@@ -67,17 +64,23 @@ namespace Proto
 
             try
             {
-                if (msg is T || msg == null)
+                switch (msg)
                 {
-                    _tcs.TrySetResult((T) msg!);
-                }
-                else
-                {
-                    _tcs.TrySetException(
-                        new InvalidOperationException(
-                            $"Unexpected message. Was type {msg.GetType()} but expected {typeof(T)}"
-                        )
-                    );
+                    //special void message, e.g. the party on the other end does no longer exist and cannot respond
+                    case VoidResponse _:
+                        _tcs.TrySetResult(default!);
+                        break;
+                    case T _:
+                    case null:
+                        _tcs.TrySetResult((T) msg!);
+                        break;
+                    default:
+                        _tcs.TrySetException(
+                            new InvalidOperationException(
+                                $"Unexpected message. Was type {msg.GetType()} but expected {typeof(T)}"
+                            )
+                        );
+                        break;
                 }
             }
             finally

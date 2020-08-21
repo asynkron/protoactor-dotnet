@@ -14,6 +14,8 @@ namespace Proto
         public DeadLetterProcess DeadLetter { get; }
 
         public EventStream EventStream { get; }
+        
+        
 
         public ActorSystem()
         {
@@ -22,6 +24,8 @@ namespace Proto
             DeadLetter = new DeadLetterProcess(this);
             Guardians = new Guardians(this);
             EventStream = new EventStream();
+            var eventStreamProcess = new EventStreamProcess(this);
+            ProcessRegistry.TryAdd("eventstream", eventStreamProcess);
         }
         
         public static readonly ActorSystem Default = new ActorSystem();

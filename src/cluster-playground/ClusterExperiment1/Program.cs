@@ -84,15 +84,11 @@ namespace ClusterExperiment1
                     {
                         Console.WriteLine(pid2);
                         Console.WriteLine(status2);
-                        system1.Root.RequestAsync<HelloResponse>(pid2, new HelloRequest(), TimeSpan.FromSeconds(2))
-                            .ContinueWith(
-                                res =>
-                                {
-                                    Console.WriteLine("Got response!");
-                                }
-                            );
-                        
-                 //       Thread.Sleep(100);
+                        var res = await system1.Root.RequestAsync<HelloResponse>(pid2, new HelloRequest(),
+                            TimeSpan.FromSeconds(2));
+
+                        Console.WriteLine(res == default ? "Void response, try again" : "Got response");
+                        //       Thread.Sleep(100);
                         continue;
                     }
 
@@ -125,7 +121,7 @@ namespace ClusterExperiment1
                         ctx.Respond(new HelloResponse());
                     }
 
-                    if (ctx.Message is Stop)
+                    if (ctx.Message is Stopped)
                     {
                         Console.WriteLine("IM STOPPING!! " + ctx.Self);
                     }

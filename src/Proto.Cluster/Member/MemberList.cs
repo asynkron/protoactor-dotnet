@@ -247,5 +247,18 @@ namespace Proto.Cluster
 
             _cluster.PidCache.RemoveByMemberAddress($"{newMember.Host}:{newMember.Port}");
         }
+
+        /// <summary>
+        /// broadcast a message to all members eventstream
+        /// </summary>
+        /// <param name="message"></param>
+        public void BroadcastEvent(object message)
+        {
+            foreach (var m in _members)
+            {
+                var pid = new PID(m.Value.Address,"eventstream");
+                _system.Root.Send(pid,message);
+            }
+        }
     }
 }

@@ -95,7 +95,7 @@ namespace Proto.Cluster.Partition
                         return;
                     }
 
-                    _logger.LogWarning("Duplicate activation detected för Identity '{Identity}', Known {KnownPid}, Other {OtherPid}, Stopping Other",msg.Name,msg.Pid,existing.pid);
+                    _logger.LogWarning("Duplicate activation detected for Identity '{Identity}', Known {KnownPid}, Other {OtherPid}, Stopping Other",msg.Name,msg.Pid,existing.pid);
                     //kill duplicate activation...
                     _cluster.System.Root.Stop(msg.Pid);
                 }
