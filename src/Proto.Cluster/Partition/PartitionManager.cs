@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System.Linq;
 using Proto.Cluster.Events;
 
 namespace Proto.Cluster.Partition
@@ -42,21 +43,19 @@ namespace Proto.Cluster.Partition
 
             //synchronous subscribe to keep accurate
 
+            var eventId = 0ul;
             //make sure selector is updated first
             _system.EventStream.Subscribe<ClusterTopology>(e =>
                 {
-                    foreach (var member in e.Joined)
+                    if (e.EventId > eventId)
                     {
-                        Selector.AddMember(member);
+                        eventId = e.EventId;
+                        _cluster.MemberList.BroadcastEvent(e);
+                        
+                        Selector.Update(e.Members.ToArray());
+                        _context.Send(_partitionActor, e);
+                        _context.Send(_partitionActivator, e);
                     }
-                    
-                    foreach (var member in e.Left)
-                    {
-                        Selector.RemoveMember(member);
-                    }
-                    
-                    _context.Send(_partitionActor, e);
-                    _context.Send(_partitionActivator, e);
                 }
             );
         }

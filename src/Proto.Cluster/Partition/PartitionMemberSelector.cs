@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
-using Proto.Cluster.Data;
 
 namespace Proto.Cluster.Partition
 {
@@ -15,29 +13,12 @@ namespace Proto.Cluster.Partition
         public int Count => _members.Count;
 
 
-        //TODO: account for Member.MemberId
-        public void AddMember(Member member)
+        
+        public void Update(Member[] members)
         {
             lock (_lock)
             {
-                // Avoid adding the same member twice
-                if (_members.Any(x => x.Address == member.Address))
-                {
-                    return;
-                }
-
-                _members.Add(member);
-                _rdv.UpdateMembers(_members);
-            }
-        }
-
-        //TODO: account for Member.MemberId
-        public void RemoveMember(Member member)
-        {
-            lock (_lock)
-            {
-                _members.RemoveAll(x => x.Address == member.Address);
-                _rdv.UpdateMembers(_members);
+                _rdv.UpdateMembers(members);
             }
         }
 

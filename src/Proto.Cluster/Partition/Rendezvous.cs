@@ -54,7 +54,7 @@ namespace Proto.Cluster.Partition
         }
 
         // ReSharper disable once ParameterTypeCanBeEnumerable.Global
-        public void UpdateMembers(List<Member> members)
+        public void UpdateMembers(IEnumerable<Member> members)
             => _members = members
                 .Select(x => new MemberData(x))
                 .ToArray();

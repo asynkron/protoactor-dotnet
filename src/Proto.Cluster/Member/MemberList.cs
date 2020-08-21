@@ -4,7 +4,6 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -181,6 +180,8 @@ namespace Proto.Cluster
                         Id =  memberThatJoined.Id
                     });
                 }
+
+                topology.Members.AddRange(_members.Values);
                 
                 _eventStream.Publish(topology);
             }

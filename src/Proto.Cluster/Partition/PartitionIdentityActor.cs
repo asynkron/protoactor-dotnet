@@ -182,20 +182,6 @@ namespace Proto.Cluster.Partition
             }
         }
 
-        // private void MemberLeft(Member member, IContext context)
-        // {
-        //     //always do this when a member leaves, we need to redistribute the distributed-hash-table
-        //     //no ifs or else, just always
-        //     ClearInvalidOwnership(context);
-        //
-        //     RemoveAddressFromPartition(member.Address);
-        // }
-        //
-        // private void MemberJoined(Member member, IContext context)
-        // {
-        //     ClearInvalidOwnership(context);
-        // }
-
         private void GetOrSpawn(ActorPidRequest msg, IContext context)
         {
             //Check if exist in current partition dictionary
@@ -216,11 +202,19 @@ namespace Proto.Cluster.Partition
                 return;
             }
 
-            var spawning = SpawnRemoteActor(msg, activatorAddress);
+            //What is this?
+            //incase the actor of msg.Name is not yet spawned. there could be multiple reentrant
+            //messages requesting it, we just reuse the same task for all those
+            //once spawned, the key is removed from this dict
+            if (!_spawns.TryGetValue(msg.Name, out var res))
+            {
+                res = SpawnRemoteActor(msg, activatorAddress);
+                _spawns.Add(msg.Name, res);
+            }
 
             //Await SpawningProcess
             context.ReenterAfter(
-                spawning,
+                res,
                 rst =>
                 {
                     //TODO: as this is async, there might come in multiple ActorPidRequests asking for this
@@ -254,11 +248,13 @@ namespace Proto.Cluster.Partition
                     }
 
                     context.Respond(pidResp);
+                    _spawns.Remove(msg.Name);
                     return Actor.Done;
                 }
             );
         }
 
+        private Dictionary<string, Task<ActorPidResponse>> _spawns = new Dictionary<string, Task<ActorPidResponse>>();
         private async Task<ActorPidResponse> SpawnRemoteActor(ActorPidRequest req, string activator)
         {
             try
