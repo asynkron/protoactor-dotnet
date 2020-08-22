@@ -34,7 +34,7 @@ namespace ClusterExperiment1
                     var rnd = new Random();
                     while (true)
                     {
-                        var id = "myactor" + rnd.Next(0, 100);
+                        var id = "myactor" + rnd.Next(0, 1000);
                         //    Console.WriteLine($"Sending request {id}");
                         var res = await cluster1.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                             CancellationToken.None

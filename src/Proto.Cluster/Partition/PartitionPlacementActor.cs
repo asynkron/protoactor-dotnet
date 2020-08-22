@@ -117,7 +117,7 @@ namespace Proto.Cluster.Partition
             //always respond, this is request response msg
             context.Respond(response);
 
-            _logger.LogInformation("Transferred {Count} actor ownership to other members", count);
+            _logger.LogDebug("Transferred {Count} actor ownership to other members", count);
         }
 
         private void HandleActorPidRequest(IContext context, ActorPidRequest msg)
