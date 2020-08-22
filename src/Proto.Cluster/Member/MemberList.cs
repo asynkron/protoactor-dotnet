@@ -255,7 +255,7 @@ namespace Proto.Cluster
         /// <param name="message"></param>
         public void BroadcastEvent(object message)
         {
-            foreach (var m in _members)
+            foreach (var m in _members.ToArray())
             {
                 var pid = new PID(m.Value.Address,"eventstream");
                 _system.Root.Send(pid,message);

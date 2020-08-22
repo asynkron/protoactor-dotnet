@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -71,12 +72,20 @@ namespace Proto.Cluster.Partition
         {
             //always do this when a member leaves, we need to redistribute the distributed-hash-table
             //no ifs or else, just always
-            ClearInvalidOwnership(context);
+            //ClearInvalidOwnership(context);
 
-            foreach (var member in msg.Left)
+            var members = msg.Members.ToDictionary(m => m.Address, m => m);
+            
+            //scan through all id lookups and remove cases where the address is no longer part of cluster members
+            foreach (var (actorId, (pid, _)) in _partitionLookup.ToArray())
             {
-                RemoveAddressFromPartition(member.Address);
+                if (!members.ContainsKey(pid.Address))
+                {
+                    _partitionLookup.Remove(actorId);
+                    _reversePartition.Remove(pid);
+                }
             }
+
         }
 
         private void Terminated(Terminated msg)
@@ -101,7 +110,7 @@ namespace Proto.Cluster.Partition
                 //after live testing, this strategy works extremely well. 
                 //if not, forward to the correct owner
                 var owner = _partitionManager.RemotePartitionIdentityActor(address);
-                _logger.LogInformation("Identity '{Identity}' is not mine {Self}, forwarding to correct owner {Owner} ", msg.Name,context.Self, owner);
+                _logger.LogDebug("Identity '{Identity}' is not mine {Self}, forwarding to correct owner {Owner} ", msg.Name,context.Self, owner);
                 context.Send(owner, msg);
             }
             else
@@ -150,17 +159,6 @@ namespace Proto.Cluster.Partition
             }
         }
 
-        //removes any lookup to actors in a node that left
-        //these actors are considered to be non existing now
-        private void RemoveAddressFromPartition(string address)
-        {
-            foreach (var (actorId, info) in _partitionLookup.Where(x => x.Value.pid.Address == address).ToArray())
-            {
-                _partitionLookup.Remove(actorId);
-                _reversePartition.Remove(info.pid);
-            }
-        }
-
 
         private void ClearInvalidOwnership(IContext context)
         {
@@ -168,7 +166,7 @@ namespace Proto.Cluster.Partition
 
             var myAddress = context.Self!.Address;
 
-            foreach (var (identity, (pid, kind)) in _partitionLookup.ToArray())
+            foreach (var (identity, (pid, _)) in _partitionLookup.ToArray())
             {
                 var shouldBeOwnerAddress = _partitionManager.Selector.GetIdentityOwner(identity);
 
@@ -293,17 +291,34 @@ namespace Proto.Cluster.Partition
         }
 
         //identical to Remote.SpawnNamedAsync, just using the special partition-activator for spawning
-        private async Task<ActorPidResponse> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
+        private async Task<ActorPidResponse> SpawnNamedAsync(string address, string identity, string kind, TimeSpan timeout)
         {
             var activator = _partitionManager.RemotePartitionPlacementActor(address);
 
+            var eventId = _eventId;
             var res = await _cluster.System.Root.RequestAsync<ActorPidResponse>(
                 activator, new ActorPidRequest
                 {
                     Kind = kind,
-                    Name = name
+                    Name = identity
                 }, timeout
             );
+            if (_partitionLookup.TryGetValue(identity,out var existing))
+            {
+                _logger.LogWarning("Spawned remote actor but got ownership of other during the time {Identity}", identity);
+
+                if (res.Pid != null)
+                {
+                    //kill newly spawned actor
+                    _cluster.System.Root.Send(res.Pid,Stop.Instance);
+                }
+
+                return new ActorPidResponse
+                {
+                    Pid = existing.pid,
+                    StatusCode = (int) ResponseStatusCode.OK
+                };
+            }
 
             return res;
         }
