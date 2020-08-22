@@ -90,8 +90,8 @@ namespace Proto.Cluster.Partition
                 var newOwnerAddress = _partitionManager.Selector.GetIdentityOwner(identity);
                 if (newOwnerAddress != oldOwnerAddress)
                 {
-                    _logger.LogDebug("TRANSFER {pid} FROM {oldOwnerAddress} TO {newOwnerAddress}", pid, oldOwnerAddress,
-                        newOwnerAddress
+                    _logger.LogInformation("TRANSFER {pid} FROM {oldOwnerAddress} TO {newOwnerAddress} -- {EventId}", pid, oldOwnerAddress,
+                        newOwnerAddress, _eventId
                     );
                     var owner = _partitionManager.RemotePartitionIdentityActor(newOwnerAddress);
                     context.Send(owner, new TakeOwnership {Name = identity, Kind = kind, Pid = pid, EventId = _eventId});

@@ -39,6 +39,7 @@ namespace Proto.Cluster.Partition
             switch (context.Message)
             {
                 case Started _:
+                    _lastEventTimestamp = DateTime.Now;
                     _logger.LogDebug("Started");
                     break;
                 case ActorPidRequest msg:
@@ -56,7 +57,7 @@ namespace Proto.Cluster.Partition
                     {
                         _eventId = msg.EventId;
                         _lastEventTimestamp = DateTime.Now;
-                        _logger.LogError("--- Topology change --- {EventId} --- pausing interactions for 1 sec ---",_eventId);
+                        _logger.LogWarning("--- Topology change --- {EventId} --- pausing interactions for 1 sec ---",_eventId);
                         ClusterTopology(msg, context);
                     }
 
@@ -91,10 +92,6 @@ namespace Proto.Cluster.Partition
 
         private void TakeOwnership(TakeOwnership msg, IContext context)
         {
-            // if (msg.EventId < _eventId)
-            // {
-            //     _logger.LogError("Got outdated event");
-            // }
             //Check again if I'm still the owner of the identity
             var address = _partitionManager.Selector.GetIdentityOwner(msg.Name);
 
@@ -104,7 +101,7 @@ namespace Proto.Cluster.Partition
                 //after live testing, this strategy works extremely well. 
                 //if not, forward to the correct owner
                 var owner = _partitionManager.RemotePartitionIdentityActor(address);
-                _logger.LogDebug("Identity '{Identity}' is not mine {Self}, forwarding to correct owner {Owner} ", msg.Name,context.Self, owner);
+                _logger.LogInformation("Identity '{Identity}' is not mine {Self}, forwarding to correct owner {Owner} ", msg.Name,context.Self, owner);
                 context.Send(owner, msg);
             }
             else
@@ -125,27 +122,27 @@ namespace Proto.Cluster.Partition
                     //
                     //one easy approach is to always keep the one with the lowest or highest address ordinal
 
-                    if (String.CompareOrdinal(existing.pid.Address, msg.Pid.Address) < 0)
-                    {
+                    // if (String.CompareOrdinal(existing.pid.Address, msg.Pid.Address) < 0)
+                    // {
                         _logger.LogWarning("Duplicate activation detected for Identity '{Identity}', Known {KnownPid}, Other {OtherPid}, Stopping Other",msg.Name,existing.pid,msg.Pid);
                     
                         //kill duplicate activation...
                         _cluster.System.Root.Stop(msg.Pid);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Duplicate activation detected for Identity '{Identity}', Known {KnownPid}, Other {OtherPid}, Stopping Known",msg.Name,existing.pid,msg.Pid);
-
-                        _partitionLookup[msg.Name] = (msg.Pid, msg.Kind);
-                        _reversePartition[msg.Pid] = msg.Name;
-                        context.Watch(msg.Pid);
-                        //kill duplicate activation...
-                        _cluster.System.Root.Stop(existing.pid);
-                    }
+                    // }
+                    // else
+                    // {
+                    //     _logger.LogWarning("Duplicate activation detected for Identity '{Identity}', Known {KnownPid}, Other {OtherPid}, Stopping Known",msg.Name,existing.pid,msg.Pid);
+                    //
+                    //     _partitionLookup[msg.Name] = (msg.Pid, msg.Kind);
+                    //     _reversePartition[msg.Pid] = msg.Name;
+                    //     context.Watch(msg.Pid);
+                    //     //kill duplicate activation...
+                    //     _cluster.System.Root.Stop(existing.pid);
+                    // }
                 }
                 else
                 {
-                    _logger.LogDebug("Taking Ownership of: {Identity}, pid: {Pid}", msg.Name, msg.Pid);
+                    _logger.LogInformation("Taking Ownership of: {Identity}, pid: {Pid}", msg.Name, msg.Pid);
                     _partitionLookup[msg.Name] = (msg.Pid, msg.Kind);
                     _reversePartition[msg.Pid] = msg.Name;
                     context.Watch(msg.Pid);
