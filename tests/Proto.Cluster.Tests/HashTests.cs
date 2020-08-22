@@ -9,7 +9,7 @@ namespace Proto.Cluster.Tests
         public void EnsureHashingIsConsistent()
         {
             var rsv = new Rendezvous();
-            var members = new Member[]
+            var members = new[]
             {
                 new Member
                 {

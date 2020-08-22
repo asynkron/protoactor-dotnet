@@ -80,10 +80,10 @@ namespace Proto.Cluster.Partition
 
         private readonly struct MemberData
         {
-            public MemberData(Member memberInfo)
+            public MemberData(Member member)
             {
-                Info = memberInfo;
-                Hash = Encoding.UTF8.GetBytes(memberInfo.Address);
+                Info = member;
+                Hash = Encoding.UTF8.GetBytes(member.Address);
             }
 
             public Member Info { get; }

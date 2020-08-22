@@ -26,6 +26,9 @@ namespace Proto.Cluster.Partition
         private DateTime _lastEventTimestamp;
         private readonly Rendezvous _rdv = new Rendezvous();
 
+        private readonly Dictionary<string, Task<ActorPidResponse>> _spawns = new Dictionary<string, Task<ActorPidResponse>>();
+        private Member[] _members;
+
 
         public PartitionIdentityActor(Cluster cluster, PartitionManager partitionManager)
         {
@@ -53,10 +56,13 @@ namespace Proto.Cluster.Partition
                     {
                         _eventId = msg.EventId;
                         _lastEventTimestamp = DateTime.Now;
+                        _members = msg.Members.ToArray();
+                        _rdv.UpdateMembers(_members);
+                        
                         _logger.LogWarning("--- Topology change --- {EventId} --- pausing interactions for 1 sec ---",
                             _eventId
                         );
-                        _rdv.UpdateMembers(msg.Members);
+                        
                         await ClusterTopology(msg, context);
                     }
 
@@ -75,6 +81,8 @@ namespace Proto.Cluster.Partition
                     Address = context.Self.Address,
                     Pid = context.Self,
                 };
+
+                requestMsg.Members.AddRange(msg.Members);
 
                 var activatorPid = _partitionManager.RemotePartitionPlacementActor(member.Address);
 
@@ -272,7 +280,6 @@ namespace Proto.Cluster.Partition
             return false;
         }
 
-        private Dictionary<string, Task<ActorPidResponse>> _spawns = new Dictionary<string, Task<ActorPidResponse>>();
 
         private async Task<ActorPidResponse> SpawnRemoteActor(ActorPidRequest req, string activator)
         {

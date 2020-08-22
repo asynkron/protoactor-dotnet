@@ -17,12 +17,12 @@ namespace Proto.Cluster.Partition
         private readonly Cluster _cluster;
         private readonly ILogger _logger;
 
-        private readonly Dictionary<string, (PID pid, string kind, string identityOwner)> _myActors =
-            new Dictionary<string, (PID pid, string kind, string identityOwner)>();
-        
+        private readonly Dictionary<string, (PID pid, string kind)> _myActors =
+            new Dictionary<string, (PID pid, string kind)>();
+
         private readonly Remote.Remote _remote;
         private readonly ActorSystem _system;
-        private ulong _eventId;
+
         private readonly Rendezvous _rdv = new Rendezvous();
 
         public PartitionPlacementActor(Cluster cluster)
@@ -41,63 +41,38 @@ namespace Proto.Cluster.Partition
                         {
                             //we got a deadletter watch, reply with a terminated event
                             _system.Root.Send(watch.Watcher, new Terminated
-                            {
-                                AddressTerminated = false,
-                                Who = dl.Pid
-                            });
+                                {
+                                    AddressTerminated = false,
+                                    Who = dl.Pid
+                                }
+                            );
                         }
                         else if (dl.Sender != null)
                         {
                             _system.Root.Send(dl.Sender, new VoidResponse());
-                            _logger.LogWarning("Got Deadletter message {Message} for gain actor '{Identity}' from {Sender}, sending void response", dl.Message, id,dl.Sender);
+                            _logger.LogWarning(
+                                "Got Deadletter message {Message} for gain actor '{Identity}' from {Sender}, sending void response",
+                                dl.Message, id, dl.Sender
+                            );
                         }
                         else
                         {
-                            _logger.LogWarning("Got Deadletter message {Message} for gain actor '{Identity}', use `Request` for grain communication ", dl.Message, id);    
+                            _logger.LogWarning(
+                                "Got Deadletter message {Message} for gain actor '{Identity}', use `Request` for grain communication ",
+                                dl.Message, id
+                            );
                         }
                     }
                 }
             );
         }
-        
-        private void SendLater(object msg, IContext context)
-        {
-            var self = context.Self;
-            var sender = context.Sender;
-            Task.Delay(100).ContinueWith(t => context.Request(self, msg,sender));
-        }
-
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
                 case IdentityHandoverRequest msg:
-
-                    //if we are not up to date with the topology event as the requester.
-                    //try again once we are
-                    if (msg.EventId > _eventId)
-                    {
-                        SendLater(msg,context);
-                        return Actor.Done;
-                    }
-
-                    //the other node is dated, respond empty message
-                    if (msg.EventId < _eventId)
-                    {
-                        context.Respond(new IdentityHandoverResponse());
-                        return Actor.Done;
-                    }
-
                     //this node is in sync with the requester, go ahead and transfer
                     HandleOwnershipTransfer(msg, context);
-                    break;
-                case ClusterTopology msg:
-                    //only handle newer events
-                    if (_eventId < msg.EventId)
-                    {
-                        _eventId = msg.EventId;
-                        _rdv.UpdateMembers(msg.Members);
-                    }
                     break;
                 case ActorPidRequest msg:
                     HandleActorPidRequest(context, msg);
@@ -107,31 +82,42 @@ namespace Proto.Cluster.Partition
             return Actor.Done;
         }
 
+        //this is pure, we do not change any state or actually move anything
+        //the requester also provide its own view of the world in terms of members
         private void HandleOwnershipTransfer(IdentityHandoverRequest msg, IContext context)
         {
             var count = 0;
             var response = new IdentityHandoverResponse();
+            _rdv.UpdateMembers(msg.Members);
             _logger.LogDebug("Handling IdentityHandoverRequest");
-            
-            foreach (var (identity, (pid, kind, oldOwnerAddress)) in _myActors.ToArray())
+
+            foreach (var member in msg.Members)
+            {
+                _logger.LogInformation(member.Address);
+            }
+
+            foreach (var (identity, (pid, kind)) in _myActors.ToArray())
             {
                 var ownerAddress = _rdv.GetOwnerMemberByIdentity(identity);
 
+
                 if (ownerAddress != msg.Address)
                 {
+                    _logger.LogInformation("{Identity} belongs to {OwnerAddress} - {EventId}", identity, ownerAddress,
+                        ownerAddress, msg.EventId
+                    );
                     continue;
                 }
 
-                _logger.LogInformation("TRANSFER {pid} FROM {oldOwnerAddress} TO {newOwnerAddress} -- {EventId}", pid, oldOwnerAddress,
-                    ownerAddress, _eventId
+                _logger.LogInformation("TRANSFER {pid} TO {newOwnerAddress} -- {EventId}", pid, ownerAddress,
+                    msg.EventId
                 );
-                var actor = new TakeOwnership {Name = identity, Kind = kind, Pid = pid, EventId = _eventId};
+                var actor = new TakeOwnership {Name = identity, Kind = kind, Pid = pid, EventId = msg.EventId};
                 response.Actors.Add(actor);
-                _myActors[identity] = (pid, kind, ownerAddress);
                 count++;
             }
-            
-            _logger.LogDebug("Responding to IdentityHandoverRequest");
+
+            _logger.LogError("Responding to IdentityHandoverRequest");
             //always respond, this is request response msg
             context.Respond(response);
 
@@ -154,7 +140,7 @@ namespace Proto.Cluster.Partition
             {
                 //spawn and remember this actor
                 var pid = context.SpawnNamed(props, name);
-                _myActors[name] = (pid, msg.Kind, context.Sender!.Address);
+                _myActors[name] = (pid, msg.Kind);
 
                 var response = new ActorPidResponse {Pid = pid};
                 context.Respond(response);
