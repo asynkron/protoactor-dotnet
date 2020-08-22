@@ -16,30 +16,30 @@ namespace ClusterExperiment1
         {
             Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
             var logger = Log.CreateLogger(nameof(Program));
-            
+
             var system1 = new ActorSystem();
             var consul1 = new ConsulProvider(new ConsulProviderOptions());
             var serialization1 = new Serialization();
             serialization1.RegisterFileDescriptor(MessagesReflection.Descriptor);
             var cluster1 = new Cluster(system1, serialization1);
             await cluster1.StartAsync(new ClusterConfig("mycluster", "127.0.0.1", 8090, consul1).WithPidCache(false));
-            SpawnMember(0);
-            SpawnMember(0);
-            SpawnMember(0);
+            SpawnMember(8091);
+            SpawnMember(8092);
+            SpawnMember(8093);
 
             await Task.Delay(1000);
 
-            Task.Run(async () =>
-                {
-                    for (int i = 0; i < 20; i++)
-                    {
-                        logger.LogInformation(">>>>>>>>>>> " + i);
-                        SpawnMember(0);
-
-                        await Task.Delay(3000);
-                    }
-                }
-            );
+            // Task.Run(async () =>
+            //     {
+            //         for (int i = 0; i < 3; i++)
+            //         {
+            //             logger.LogInformation(">>>>>>>>>>> " + i);
+            //             SpawnMember(8094);
+            //
+            //             await Task.Delay(3000);
+            //         }
+            //     }
+            // );
 
             Task.Run(async () =>
                 {
@@ -61,12 +61,19 @@ namespace ClusterExperiment1
                             //Console.Write(".");
                             //      Console.WriteLine("Got response");
                         }
+
+                        //    await Task.Delay(10);
                     }
                 }
             );
 
-
-            Console.ReadLine();
+            int port = 8094;
+            
+            while (true)
+            {
+                Console.ReadLine();
+                SpawnMember(port++);
+            }
         }
 
 
@@ -87,6 +94,7 @@ namespace ClusterExperiment1
     public class HelloActor : IActor
     {
         private readonly ILogger _log = Log.CreateLogger<HelloActor>();
+
         public Task ReceiveAsync(IContext ctx)
         {
             if (ctx.Message is Started)

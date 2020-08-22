@@ -24,6 +24,7 @@ namespace Proto.Cluster.Partition
         private readonly PartitionManager _partitionManager;
         private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>(); //PID to grain name
         private ulong _eventId;
+        private DateTime _lastEventTimestamp;
 
 
         public PartitionIdentityActor(Cluster cluster, PartitionManager partitionManager)
@@ -54,6 +55,8 @@ namespace Proto.Cluster.Partition
                     if (_eventId < msg.EventId)
                     {
                         _eventId = msg.EventId;
+                        _lastEventTimestamp = DateTime.Now;
+                        _logger.LogError("--- Topology change --- {EventId} --- pausing interactions for 1 sec ---",_eventId);
                         ClusterTopology(msg, context);
                     }
 
@@ -88,10 +91,10 @@ namespace Proto.Cluster.Partition
 
         private void TakeOwnership(TakeOwnership msg, IContext context)
         {
-            if (msg.EventId < _eventId)
-            {
-                _logger.LogError("Got outdated event");
-            }
+            // if (msg.EventId < _eventId)
+            // {
+            //     _logger.LogError("Got outdated event");
+            // }
             //Check again if I'm still the owner of the identity
             var address = _partitionManager.Selector.GetIdentityOwner(msg.Name);
 
@@ -184,10 +187,17 @@ namespace Proto.Cluster.Partition
 
         private void GetOrSpawn(ActorPidRequest msg, IContext context)
         {
+
+            
             //Check if exist in current partition dictionary
             if (_partitionLookup.TryGetValue(msg.Name, out var info))
             {
                 context.Respond(new ActorPidResponse {Pid = info.pid});
+                return;
+            }
+            
+            if (SendLater(msg, context))
+            {
                 return;
             }
 
@@ -252,6 +262,19 @@ namespace Proto.Cluster.Partition
                     return Actor.Done;
                 }
             );
+        }
+
+        private bool SendLater(object msg, IContext context)
+        {
+            //TODO: buffer this in a queue and consume once we are past timestamp
+            if (DateTime.Now <= _lastEventTimestamp.AddSeconds(1))
+            {
+                var self = context.Self;
+                Task.Delay(100).ContinueWith(t => { _cluster.System.Root.Send(self, msg); });
+                return true;
+            }
+
+            return false;
         }
 
         private Dictionary<string, Task<ActorPidResponse>> _spawns = new Dictionary<string, Task<ActorPidResponse>>();
