@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Proto.Cluster.Events;
 using Proto.Remote;
 
 namespace Proto.Cluster.Partition
@@ -26,6 +24,7 @@ namespace Proto.Cluster.Partition
         private readonly Dictionary<PID, string> _reversePartition = new Dictionary<PID, string>(); //PID to grain name
         private ulong _eventId;
         private DateTime _lastEventTimestamp;
+        private readonly Rendezvous _rdv = new Rendezvous();
 
 
         public PartitionIdentityActor(Cluster cluster, PartitionManager partitionManager)
@@ -35,7 +34,7 @@ namespace Proto.Cluster.Partition
             _partitionManager = partitionManager;
         }
 
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
@@ -49,33 +48,63 @@ namespace Proto.Cluster.Partition
                 case Terminated msg:
                     Terminated(msg);
                     break;
-                case TakeOwnership msg:
-                    TakeOwnership(msg, context);
-                    break;
+                // case TakeOwnership msg:
+                //     TakeOwnership(msg, context);
+                //     break;
 
                 case ClusterTopology msg:
                     if (_eventId < msg.EventId)
                     {
                         _eventId = msg.EventId;
                         _lastEventTimestamp = DateTime.Now;
-                        _logger.LogWarning("--- Topology change --- {EventId} --- pausing interactions for 1 sec ---",_eventId);
-                        ClusterTopology(msg, context);
+                        _logger.LogWarning("--- Topology change --- {EventId} --- pausing interactions for 1 sec ---",
+                            _eventId
+                        );
+                        _rdv.UpdateMembers(msg.Members);
+                        await ClusterTopology(msg, context);
                     }
 
                     break;
             }
-
-            return Actor.Done;
         }
 
-        public void ClusterTopology(ClusterTopology msg, IContext context)
+        private async Task ClusterTopology(ClusterTopology msg, IContext context)
         {
+            var requests = new List<Task<IdentityHandoverResponse>>();
+            foreach (var member in msg.Members)
+            {
+                var requestMsg = new IdentityHandoverRequest
+                {
+                    EventId = _eventId,
+                    Address = context.Self.Address,
+                    Pid = context.Self,
+                };
+
+                var activatorPid = _partitionManager.RemotePartitionPlacementActor(member.Address);
+
+                var request = context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg);
+                requests.Add(request);
+            }
+
+            _logger.LogDebug("Requesting ownerships");
+            //TODO: add timeout
+            var responses = await Task.WhenAll(requests);
+            _logger.LogError("Got ownerships {EventId}",_eventId);
+
+            foreach (var response in responses)
+            {
+                foreach (var actor in response.Actors)
+                {
+                    TakeOwnership(actor, context);
+                }
+            }
+
             //always do this when a member leaves, we need to redistribute the distributed-hash-table
             //no ifs or else, just always
             //ClearInvalidOwnership(context);
 
             var members = msg.Members.ToDictionary(m => m.Address, m => m);
-            
+
             //scan through all id lookups and remove cases where the address is no longer part of cluster members
             foreach (var (actorId, (pid, _)) in _partitionLookup.ToArray())
             {
@@ -85,7 +114,6 @@ namespace Proto.Cluster.Partition
                     _reversePartition.Remove(pid);
                 }
             }
-
         }
 
         private void Terminated(Terminated msg)
@@ -93,7 +121,7 @@ namespace Proto.Cluster.Partition
             //one of the actors we manage died, remove it from the lookup
             if (_reversePartition.TryGetValue(msg.Who, out var key))
             {
-                _logger.LogDebug("Terminated {Pid}",msg.Who);
+                _logger.LogDebug("Terminated {Pid}", msg.Who);
                 _partitionLookup.Remove(key);
                 _reversePartition.Remove(msg.Who);
             }
@@ -102,29 +130,33 @@ namespace Proto.Cluster.Partition
         private void TakeOwnership(TakeOwnership msg, IContext context)
         {
             //Check again if I'm still the owner of the identity
-            var address = _partitionManager.Selector.GetIdentityOwner(msg.Name);
-
+            var address = _rdv.GetOwnerMemberByIdentity(msg.Name);
             
             if (!string.IsNullOrEmpty(address) && address != _cluster.System.ProcessRegistry.Address)
             {
                 //after live testing, this strategy works extremely well. 
                 //if not, forward to the correct owner
                 var owner = _partitionManager.RemotePartitionIdentityActor(address);
-                _logger.LogDebug("Identity '{Identity}' is not mine {Self}, forwarding to correct owner {Owner} ", msg.Name,context.Self, owner);
+                _logger.LogDebug("Identity '{Identity}' is not mine {Self}, forwarding to correct owner {Owner} ",
+                    msg.Name, context.Self, owner
+                );
                 context.Send(owner, msg);
             }
             else
             {
-                if (_partitionLookup.TryGetValue(msg.Name,out var existing))
+                if (_partitionLookup.TryGetValue(msg.Name, out var existing))
                 {
                     //these are the same, that's good, just ignore message
                     //should not really be possible, but let's guard against it..
                     if (existing.pid.Address == msg.Pid.Address)
                     {
-                        _logger.LogDebug("Received TakeOwnership message but already knows about this Identity {Identity} {Pid}",msg.Name,existing.pid);
+                        _logger.LogDebug(
+                            "Received TakeOwnership message but already knows about this Identity {Identity} {Pid}",
+                            msg.Name, existing.pid
+                        );
                         return;
                     }
-                    
+
                     //TODO:
                     //this is tricky, if we have two duplicate activations, both are telling this node to take ownership 
                     //we need an idempotent way to decide which one to keep, so we dont end up stopping both 
@@ -133,10 +165,13 @@ namespace Proto.Cluster.Partition
 
                     // if (String.CompareOrdinal(existing.pid.Address, msg.Pid.Address) < 0)
                     // {
-                        _logger.LogWarning("Duplicate activation detected for Identity '{Identity}', Known {KnownPid}, Other {OtherPid}, Stopping Other",msg.Name,existing.pid,msg.Pid);
-                    
-                        //kill duplicate activation...
-                        _cluster.System.Root.Stop(msg.Pid);
+                    _logger.LogWarning(
+                        "Duplicate activation detected for Identity '{Identity}', Known {KnownPid}, Other {OtherPid}, Stopping Other",
+                        msg.Name, existing.pid, msg.Pid
+                    );
+
+                    //kill duplicate activation...
+                    _cluster.System.Root.Stop(msg.Pid);
                     // }
                     // else
                     // {
@@ -174,6 +209,7 @@ namespace Proto.Cluster.Partition
                 {
                     continue;
                 }
+
                 _partitionLookup.Remove(identity);
                 _reversePartition.Remove(pid);
                 context.Unwatch(pid);
@@ -182,15 +218,13 @@ namespace Proto.Cluster.Partition
 
         private void GetOrSpawn(ActorPidRequest msg, IContext context)
         {
-
-            
             //Check if exist in current partition dictionary
             if (_partitionLookup.TryGetValue(msg.Name, out var info))
             {
                 context.Respond(new ActorPidResponse {Pid = info.pid});
                 return;
             }
-            
+
             if (SendLater(msg, context))
             {
                 return;
@@ -224,8 +258,8 @@ namespace Proto.Cluster.Partition
                 {
                     //TODO: as this is async, there might come in multiple ActorPidRequests asking for this
                     //Identity, causing multiple activations
-                    
-                    
+
+
                     //Check if exist in current partition dictionary
                     //This is necessary to avoid race condition during partition map transfer.
                     if (_partitionLookup.TryGetValue(msg.Name, out info))
@@ -262,7 +296,7 @@ namespace Proto.Cluster.Partition
         private bool SendLater(object msg, IContext context)
         {
             //TODO: buffer this in a queue and consume once we are past timestamp
-            if (DateTime.Now <= _lastEventTimestamp.AddSeconds(1))
+            if (DateTime.Now <= _lastEventTimestamp.AddSeconds(5))
             {
                 var self = context.Self;
                 Task.Delay(100).ContinueWith(t => { _cluster.System.Root.Send(self, msg); });
@@ -273,6 +307,7 @@ namespace Proto.Cluster.Partition
         }
 
         private Dictionary<string, Task<ActorPidResponse>> _spawns = new Dictionary<string, Task<ActorPidResponse>>();
+
         private async Task<ActorPidResponse> SpawnRemoteActor(ActorPidRequest req, string activator)
         {
             try
@@ -291,7 +326,8 @@ namespace Proto.Cluster.Partition
         }
 
         //identical to Remote.SpawnNamedAsync, just using the special partition-activator for spawning
-        private async Task<ActorPidResponse> SpawnNamedAsync(string address, string identity, string kind, TimeSpan timeout)
+        private async Task<ActorPidResponse> SpawnNamedAsync(string address, string identity, string kind,
+            TimeSpan timeout)
         {
             var activator = _partitionManager.RemotePartitionPlacementActor(address);
 
@@ -303,14 +339,16 @@ namespace Proto.Cluster.Partition
                     Name = identity
                 }, timeout
             );
-            if (_partitionLookup.TryGetValue(identity,out var existing))
+            if (_partitionLookup.TryGetValue(identity, out var existing))
             {
-                _logger.LogWarning("Spawned remote actor but got ownership of other during the time {Identity}", identity);
+                _logger.LogWarning("Spawned remote actor but got ownership of other during the time {Identity}",
+                    identity
+                );
 
                 if (res.Pid != null)
                 {
                     //kill newly spawned actor
-                    _cluster.System.Root.Send(res.Pid,Stop.Instance);
+                    _cluster.System.Root.Send(res.Pid, Stop.Instance);
                 }
 
                 return new ActorPidResponse

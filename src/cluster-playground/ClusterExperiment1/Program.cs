@@ -61,8 +61,8 @@ namespace ClusterExperiment1
                             Console.Write(".");
                             //      Console.WriteLine("Got response");
                         }
-
-                        //    await Task.Delay(10);
+                        
+                        await Task.Delay(20);
                     }
                 }
             );

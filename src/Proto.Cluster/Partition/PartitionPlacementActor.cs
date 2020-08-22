@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Proto.Cluster.Events;
 using Proto.Remote;
 
 namespace Proto.Cluster.Partition
@@ -20,18 +19,17 @@ namespace Proto.Cluster.Partition
 
         private readonly Dictionary<string, (PID pid, string kind, string identityOwner)> _myActors =
             new Dictionary<string, (PID pid, string kind, string identityOwner)>();
-
-        private readonly PartitionManager _partitionManager;
+        
         private readonly Remote.Remote _remote;
         private readonly ActorSystem _system;
         private ulong _eventId;
+        private readonly Rendezvous _rdv = new Rendezvous();
 
-        public PartitionPlacementActor(Cluster cluster, PartitionManager partitionManager)
+        public PartitionPlacementActor(Cluster cluster)
         {
             _cluster = cluster;
             _remote = _cluster.Remote;
             _system = _cluster.System;
-            _partitionManager = partitionManager;
             _logger = Log.CreateLogger($"{nameof(PartitionPlacementActor)}-{cluster.Id}");
             _system.EventStream.Subscribe<DeadLetterEvent>(dl =>
                 {
@@ -61,17 +59,44 @@ namespace Proto.Cluster.Partition
                 }
             );
         }
+        
+        private void SendLater(object msg, IContext context)
+        {
+            var self = context.Self;
+            var sender = context.Sender;
+            Task.Delay(100).ContinueWith(t => context.Request(self, msg,sender));
+        }
 
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
+                case IdentityHandoverRequest msg:
+
+                    //if we are not up to date with the topology event as the requester.
+                    //try again once we are
+                    if (msg.EventId > _eventId)
+                    {
+                        SendLater(msg,context);
+                        return Actor.Done;
+                    }
+
+                    //the other node is dated, respond empty message
+                    if (msg.EventId < _eventId)
+                    {
+                        context.Respond(new IdentityHandoverResponse());
+                        return Actor.Done;
+                    }
+
+                    //this node is in sync with the requester, go ahead and transfer
+                    HandleOwnershipTransfer(msg, context);
+                    break;
                 case ClusterTopology msg:
                     //only handle newer events
                     if (_eventId < msg.EventId)
                     {
                         _eventId = msg.EventId;
-                        HandleOwnershipTransfer(context);
+                        _rdv.UpdateMembers(msg.Members);
                     }
                     break;
                 case ActorPidRequest msg:
@@ -82,23 +107,33 @@ namespace Proto.Cluster.Partition
             return Actor.Done;
         }
 
-        private void HandleOwnershipTransfer(IContext context)
+        private void HandleOwnershipTransfer(IdentityHandoverRequest msg, IContext context)
         {
             var count = 0;
+            var response = new IdentityHandoverResponse();
+            _logger.LogDebug("Handling IdentityHandoverRequest");
+            
             foreach (var (identity, (pid, kind, oldOwnerAddress)) in _myActors.ToArray())
             {
-                var newOwnerAddress = _partitionManager.Selector.GetIdentityOwner(identity);
-                if (newOwnerAddress != oldOwnerAddress)
+                var ownerAddress = _rdv.GetOwnerMemberByIdentity(identity);
+
+                if (ownerAddress != msg.Address)
                 {
-                    _logger.LogDebug("TRANSFER {pid} FROM {oldOwnerAddress} TO {newOwnerAddress} -- {EventId}", pid, oldOwnerAddress,
-                        newOwnerAddress, _eventId
-                    );
-                    var owner = _partitionManager.RemotePartitionIdentityActor(newOwnerAddress);
-                    context.Send(owner, new TakeOwnership {Name = identity, Kind = kind, Pid = pid, EventId = _eventId});
-                    _myActors[identity] = (pid, kind, newOwnerAddress);
-                    count++;
+                    continue;
                 }
+
+                _logger.LogDebug("TRANSFER {pid} FROM {oldOwnerAddress} TO {newOwnerAddress} -- {EventId}", pid, oldOwnerAddress,
+                    ownerAddress, _eventId
+                );
+                var actor = new TakeOwnership {Name = identity, Kind = kind, Pid = pid, EventId = _eventId};
+                response.Actors.Add(actor);
+                _myActors[identity] = (pid, kind, ownerAddress);
+                count++;
             }
+            
+            _logger.LogDebug("Responding to IdentityHandoverRequest");
+            //always respond, this is request response msg
+            context.Respond(response);
 
             if (count > 0)
             {
