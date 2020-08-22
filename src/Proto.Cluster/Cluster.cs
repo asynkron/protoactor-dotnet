@@ -22,7 +22,7 @@ namespace Proto.Cluster
 
         public Cluster(ActorSystem system, Serialization serialization)
         {
-            _logger = Log.CreateLogger($"Cluster-{Id}");
+            
             System = system;
             Remote = new Remote.Remote(system, serialization);
 
@@ -55,11 +55,9 @@ namespace Proto.Cluster
 
             //default to partition identity lookup
             IdentityLookup = config.IdentityLookup ?? new PartitionIdentityLookup();
-
             Remote.Start(Config.Address, Config.Port, Config.RemoteConfig);
-
             Remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-
+            _logger = Log.CreateLogger($"Cluster-{LoggerId}");
             _logger.LogInformation("Starting");
 
             var kinds = Remote.GetKnownKinds();
@@ -142,5 +140,7 @@ namespace Proto.Cluster
 
             return default!;
         }
+
+        public string LoggerId => System.ProcessRegistry.Address;
     }
 }

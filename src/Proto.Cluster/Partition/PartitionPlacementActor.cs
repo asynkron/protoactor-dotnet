@@ -30,7 +30,7 @@ namespace Proto.Cluster.Partition
             _cluster = cluster;
             _remote = _cluster.Remote;
             _system = _cluster.System;
-            _logger = Log.CreateLogger($"{nameof(PartitionPlacementActor)}-{cluster.Id}");
+            _logger = Log.CreateLogger($"{nameof(PartitionPlacementActor)}-{cluster.LoggerId}");
             _system.EventStream.Subscribe<DeadLetterEvent>(dl =>
                 {
                     if (dl.Pid.Id.StartsWith(PartitionManager.PartitionPlacementActorName))
@@ -122,7 +122,7 @@ namespace Proto.Cluster.Partition
                     continue;
                 }
 
-                _logger.LogDebug("TRANSFER {pid} FROM {oldOwnerAddress} TO {newOwnerAddress} -- {EventId}", pid, oldOwnerAddress,
+                _logger.LogInformation("TRANSFER {pid} FROM {oldOwnerAddress} TO {newOwnerAddress} -- {EventId}", pid, oldOwnerAddress,
                     ownerAddress, _eventId
                 );
                 var actor = new TakeOwnership {Name = identity, Kind = kind, Pid = pid, EventId = _eventId};

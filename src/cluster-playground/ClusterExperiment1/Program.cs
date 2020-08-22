@@ -29,24 +29,12 @@ namespace ClusterExperiment1
 
             await Task.Delay(1000);
 
-            // Task.Run(async () =>
-            //     {
-            //         for (int i = 0; i < 3; i++)
-            //         {
-            //             logger.LogInformation(">>>>>>>>>>> " + i);
-            //             SpawnMember(8094);
-            //
-            //             await Task.Delay(3000);
-            //         }
-            //     }
-            // );
-
             Task.Run(async () =>
                 {
                     var rnd = new Random();
                     while (true)
                     {
-                        var id = "myactor" + rnd.Next(0, 100);
+                        var id = "myactor" + rnd.Next(0, 10);
                         //    Console.WriteLine($"Sending request {id}");
                         var res = await cluster1.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                             CancellationToken.None
@@ -61,18 +49,20 @@ namespace ClusterExperiment1
                             Console.Write(".");
                             //      Console.WriteLine("Got response");
                         }
-                        
-                        await Task.Delay(20);
+
+                        //await Task.Delay(0);
                     }
                 }
             );
 
             int port = 8094;
-            
+
             while (true)
             {
                 Console.ReadLine();
-                Console.WriteLine("-----------------------------------------------------------------------------------------");
+                Console.WriteLine(
+                    "-----------------------------------------------------------------------------------------"
+                );
                 SpawnMember(port++);
             }
         }

@@ -95,7 +95,7 @@ namespace Proto.Cluster.Consul
 
             _memberList = memberList;
 
-            _logger = Log.CreateLogger($"ConsulProvider-{_cluster.Id}");
+            _logger = Log.CreateLogger($"ConsulProvider-{_cluster.LoggerId}");
 
             await RegisterMemberAsync();
 

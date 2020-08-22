@@ -55,9 +55,12 @@ namespace Proto.Cluster.Partition
 
         // ReSharper disable once ParameterTypeCanBeEnumerable.Global
         public void UpdateMembers(IEnumerable<Member> members)
-            => _members = members
+        {
+            _members = members
+                .OrderBy(m => m.Address)
                 .Select(x => new MemberData(x))
                 .ToArray();
+        }
 
         private static uint RdvHash(byte[] node, byte[] key)
         {

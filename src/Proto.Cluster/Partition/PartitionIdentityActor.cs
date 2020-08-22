@@ -29,7 +29,7 @@ namespace Proto.Cluster.Partition
 
         public PartitionIdentityActor(Cluster cluster, PartitionManager partitionManager)
         {
-            _logger = Log.CreateLogger($"{nameof(PartitionIdentityActor)}-{cluster.Id}");
+            _logger = Log.CreateLogger($"{nameof(PartitionIdentityActor)}-{cluster.LoggerId}");
             _cluster = cluster;
             _partitionManager = partitionManager;
         }
@@ -48,10 +48,6 @@ namespace Proto.Cluster.Partition
                 case Terminated msg:
                     Terminated(msg);
                     break;
-                // case TakeOwnership msg:
-                //     TakeOwnership(msg, context);
-                //     break;
-
                 case ClusterTopology msg:
                     if (_eventId < msg.EventId)
                     {
@@ -96,8 +92,18 @@ namespace Proto.Cluster.Partition
                 foreach (var actor in response.Actors)
                 {
                     TakeOwnership(actor, context);
+
+                    if (!_partitionLookup.ContainsKey(actor.Name))
+                    {
+                        _logger.LogError("Ownership bug, we should own {Identity}",actor.Name);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("I have ownership of {Identity}",actor.Name);
+                    }
                 }
             }
+            
 
             //always do this when a member leaves, we need to redistribute the distributed-hash-table
             //no ifs or else, just always
@@ -129,69 +135,19 @@ namespace Proto.Cluster.Partition
 
         private void TakeOwnership(TakeOwnership msg, IContext context)
         {
-            //Check again if I'm still the owner of the identity
-            var address = _rdv.GetOwnerMemberByIdentity(msg.Name);
-            
-            if (!string.IsNullOrEmpty(address) && address != _cluster.System.ProcessRegistry.Address)
+            if (_partitionLookup.TryGetValue(msg.Name, out var existing))
             {
-                //after live testing, this strategy works extremely well. 
-                //if not, forward to the correct owner
-                var owner = _partitionManager.RemotePartitionIdentityActor(address);
-                _logger.LogDebug("Identity '{Identity}' is not mine {Self}, forwarding to correct owner {Owner} ",
-                    msg.Name, context.Self, owner
-                );
-                context.Send(owner, msg);
-            }
-            else
-            {
-                if (_partitionLookup.TryGetValue(msg.Name, out var existing))
+                //these are the same, that's good, just ignore message
+                if (existing.pid.Address == msg.Pid.Address)
                 {
-                    //these are the same, that's good, just ignore message
-                    //should not really be possible, but let's guard against it..
-                    if (existing.pid.Address == msg.Pid.Address)
-                    {
-                        _logger.LogDebug(
-                            "Received TakeOwnership message but already knows about this Identity {Identity} {Pid}",
-                            msg.Name, existing.pid
-                        );
-                        return;
-                    }
-
-                    //TODO:
-                    //this is tricky, if we have two duplicate activations, both are telling this node to take ownership 
-                    //we need an idempotent way to decide which one to keep, so we dont end up stopping both 
-                    //
-                    //one easy approach is to always keep the one with the lowest or highest address ordinal
-
-                    // if (String.CompareOrdinal(existing.pid.Address, msg.Pid.Address) < 0)
-                    // {
-                    _logger.LogWarning(
-                        "Duplicate activation detected for Identity '{Identity}', Known {KnownPid}, Other {OtherPid}, Stopping Other",
-                        msg.Name, existing.pid, msg.Pid
-                    );
-
-                    //kill duplicate activation...
-                    _cluster.System.Root.Stop(msg.Pid);
-                    // }
-                    // else
-                    // {
-                    //     _logger.LogWarning("Duplicate activation detected for Identity '{Identity}', Known {KnownPid}, Other {OtherPid}, Stopping Known",msg.Name,existing.pid,msg.Pid);
-                    //
-                    //     _partitionLookup[msg.Name] = (msg.Pid, msg.Kind);
-                    //     _reversePartition[msg.Pid] = msg.Name;
-                    //     context.Watch(msg.Pid);
-                    //     //kill duplicate activation...
-                    //     _cluster.System.Root.Stop(existing.pid);
-                    // }
-                }
-                else
-                {
-                    _logger.LogDebug("Taking Ownership of: {Identity}, pid: {Pid}", msg.Name, msg.Pid);
-                    _partitionLookup[msg.Name] = (msg.Pid, msg.Kind);
-                    _reversePartition[msg.Pid] = msg.Name;
-                    context.Watch(msg.Pid);
+                    return;
                 }
             }
+
+            _logger.LogDebug("Taking Ownership of: {Identity}, pid: {Pid}", msg.Name, msg.Pid);
+            _partitionLookup[msg.Name] = (msg.Pid, msg.Kind);
+            _reversePartition[msg.Pid] = msg.Name;
+            context.Watch(msg.Pid);
         }
 
 
@@ -203,7 +159,7 @@ namespace Proto.Cluster.Partition
 
             foreach (var (identity, (pid, _)) in _partitionLookup.ToArray())
             {
-                var shouldBeOwnerAddress = _partitionManager.Selector.GetIdentityOwner(identity);
+                var shouldBeOwnerAddress = _rdv.GetOwnerMemberByIdentity(identity);
 
                 if (shouldBeOwnerAddress == myAddress)
                 {
@@ -218,6 +174,16 @@ namespace Proto.Cluster.Partition
 
         private void GetOrSpawn(ActorPidRequest msg, IContext context)
         {
+            var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Name);
+            if (ownerAddress != context.Self.Address)
+            {
+                var ownerPid = _partitionManager.RemotePartitionIdentityActor(ownerAddress);
+                _logger.LogWarning("Tried to spawn on wrong node, forwarding");
+                context.Forward(ownerPid);
+
+                return;
+            }
+            
             //Check if exist in current partition dictionary
             if (_partitionLookup.TryGetValue(msg.Name, out var info))
             {
@@ -236,13 +202,13 @@ namespace Proto.Cluster.Partition
             if (string.IsNullOrEmpty(activatorAddress))
             {
                 //No activator currently available, return unavailable
-                _logger.LogWarning("[Partition] No members currently available");
+                _logger.LogWarning("No members currently available");
                 context.Respond(ActorPidResponse.Unavailable);
                 return;
             }
 
             //What is this?
-            //incase the actor of msg.Name is not yet spawned. there could be multiple reentrant
+            //in case the actor of msg.Name is not yet spawned. there could be multiple re-entrant
             //messages requesting it, we just reuse the same task for all those
             //once spawned, the key is removed from this dict
             if (!_spawns.TryGetValue(msg.Name, out var res))
@@ -332,6 +298,7 @@ namespace Proto.Cluster.Partition
             var activator = _partitionManager.RemotePartitionPlacementActor(address);
 
             var eventId = _eventId;
+            _logger.LogError("Spawning with event {EventId} {Identity}",eventId,identity);
             var res = await _cluster.System.Root.RequestAsync<ActorPidResponse>(
                 activator, new ActorPidRequest
                 {
@@ -339,24 +306,6 @@ namespace Proto.Cluster.Partition
                     Name = identity
                 }, timeout
             );
-            if (_partitionLookup.TryGetValue(identity, out var existing))
-            {
-                _logger.LogWarning("Spawned remote actor but got ownership of other during the time {Identity}",
-                    identity
-                );
-
-                if (res.Pid != null)
-                {
-                    //kill newly spawned actor
-                    _cluster.System.Root.Send(res.Pid, Stop.Instance);
-                }
-
-                return new ActorPidResponse
-                {
-                    Pid = existing.pid,
-                    StatusCode = (int) ResponseStatusCode.OK
-                };
-            }
 
             return res;
         }
