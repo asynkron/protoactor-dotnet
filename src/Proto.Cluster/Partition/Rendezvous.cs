@@ -17,8 +17,7 @@ namespace Proto.Cluster.Partition
     /// </summary>
     public class Rendezvous
     {
-
-
+        
         private MemberData[] _members = Array.Empty<MemberData>();
 
         public string GetOwnerMemberByIdentity(string identity)
@@ -64,9 +63,11 @@ namespace Proto.Cluster.Partition
 
         private static uint RdvHash(byte[] node, byte[] key)
         {
-            HashAlgorithm HashAlgorithm = FNV1A32.Create();
+            //TODO: this is silly expensive, fix it..
+            //the FNV1A32 mutates interanlly, so we cant use instance var with this....
+            using HashAlgorithm hashAlgorithm = FNV1A32.Create();
             var hashBytes = MergeBytes(key, node);
-            var digest = HashAlgorithm.ComputeHash(hashBytes);
+            var digest = hashAlgorithm.ComputeHash(hashBytes);
             var hash = BitConverter.ToUInt32(digest, 0);
             return hash;
         }
