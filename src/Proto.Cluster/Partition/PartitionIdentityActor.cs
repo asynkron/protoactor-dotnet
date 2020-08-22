@@ -93,7 +93,7 @@ namespace Proto.Cluster.Partition
             _logger.LogDebug("Requesting ownerships");
             //TODO: add timeout
             var responses = await Task.WhenAll(requests);
-            _logger.LogError("Got ownerships {EventId}",_eventId);
+            _logger.LogDebug("Got ownerships {EventId}",_eventId);
 
             foreach (var response in responses)
             {
@@ -107,7 +107,7 @@ namespace Proto.Cluster.Partition
                     }
                     else
                     {
-                        _logger.LogInformation("I have ownership of {Identity}",actor.Name);
+                        _logger.LogDebug("I have ownership of {Identity}",actor.Name);
                     }
                 }
             }
@@ -303,9 +303,11 @@ namespace Proto.Cluster.Partition
             TimeSpan timeout)
         {
             var activator = _partitionManager.RemotePartitionPlacementActor(address);
-
             var eventId = _eventId;
-            _logger.LogError("Spawning with event {EventId} {Identity}",eventId,identity);
+            // var members = string.Join(", ", _members.Select(m => m.Address));
+            // _logger.LogError(members);
+
+            _logger.LogDebug("Spawning with event {EventId} {Identity}",eventId,identity);
             var res = await _cluster.System.Root.RequestAsync<ActorPidResponse>(
                 activator, new ActorPidRequest
                 {

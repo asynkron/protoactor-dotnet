@@ -88,43 +88,30 @@ namespace Proto.Cluster.Partition
         {
             var count = 0;
             var response = new IdentityHandoverResponse();
+            var requestAddress = msg.Address;
             _rdv.UpdateMembers(msg.Members);
-            _logger.LogDebug("Handling IdentityHandoverRequest");
-
-            foreach (var member in msg.Members)
-            {
-                _logger.LogInformation(member.Address);
-            }
-
+            _logger.LogDebug("Handling IdentityHandoverRequest - request from " + requestAddress);
+            
             foreach (var (identity, (pid, kind)) in _myActors.ToArray())
             {
                 var ownerAddress = _rdv.GetOwnerMemberByIdentity(identity);
-
-
-                if (ownerAddress != msg.Address)
+                
+                if (ownerAddress != requestAddress)
                 {
-                    _logger.LogInformation("{Identity} belongs to {OwnerAddress} - {EventId}", identity, ownerAddress,
-                        ownerAddress, msg.EventId
-                    );
                     continue;
                 }
 
-                _logger.LogInformation("TRANSFER {pid} TO {newOwnerAddress} -- {EventId}", pid, ownerAddress,
+                _logger.LogDebug("TRANSFER {Identity} TO {newOwnerAddress} -- {EventId}", identity, ownerAddress,
                     msg.EventId
                 );
                 var actor = new TakeOwnership {Name = identity, Kind = kind, Pid = pid, EventId = msg.EventId};
                 response.Actors.Add(actor);
                 count++;
             }
-
-            _logger.LogError("Responding to IdentityHandoverRequest");
             //always respond, this is request response msg
             context.Respond(response);
 
-            if (count > 0)
-            {
-                _logger.LogDebug("Transferred {Count} actor ownership to other members", count);
-            }
+            _logger.LogDebug("Transferred {Count} actor ownership to other members", count);
         }
 
         private void HandleActorPidRequest(IContext context, ActorPidRequest msg)
