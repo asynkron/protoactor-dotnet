@@ -66,6 +66,7 @@ namespace Proto.Cluster.Partition
                 }
             );
         }
+
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
@@ -89,25 +90,22 @@ namespace Proto.Cluster.Partition
             var count = 0;
             var response = new IdentityHandoverResponse();
             var requestAddress = context.Sender.Address;
+            var _rdv = new Rendezvous();
             _rdv.UpdateMembers(msg.Members);
-            _logger.LogDebug("Handling IdentityHandoverRequest - request from " + requestAddress);
-
-            var members = string.Join(", ",msg.Members.Select(m => m.Address));
-            _logger.LogInformation(members);
-            
-
+            //  _logger.LogDebug("Handling IdentityHandoverRequest - request from " + requestAddress);
+            //  _logger.LogDebug(msg.Members.ToLogString());
 
             foreach (var (identity, (pid, kind)) in _myActors.ToArray())
             {
                 var ownerAddress = _rdv.GetOwnerMemberByIdentity(identity);
-                
+
                 if (ownerAddress != requestAddress)
                 {
-                    _logger.LogInformation("{Identity} belongs to {OwnerAddress} - {EventId}", identity, ownerAddress, msg.EventId);
+                    //       _logger.LogInformation("{Identity} belongs to {OwnerAddress} - {EventId}", identity, ownerAddress, msg.EventId);
                     continue;
                 }
 
-                _logger.LogInformation("TRANSFER {Identity} TO {newOwnerAddress} -- {EventId}", identity, ownerAddress,
+                _logger.LogDebug("TRANSFER {Identity} TO {newOwnerAddress} -- {EventId}", identity, ownerAddress,
                     msg.EventId
                 );
                 var actor = new TakeOwnership {Name = identity, Kind = kind, Pid = pid, EventId = msg.EventId};
@@ -118,9 +116,8 @@ namespace Proto.Cluster.Partition
 
             //always respond, this is request response msg
             context.Respond(response);
-            
-            _logger.LogError("Transferred {Count} actor ownership to other members", count);
 
+            _logger.LogInformation("Transferred {Count} actor ownership to other members", count);
         }
 
         private void HandleActorPidRequest(IContext context, ActorPidRequest msg)

@@ -17,7 +17,7 @@ namespace Proto.Cluster.Partition
     /// </summary>
     public class Rendezvous
     {
-        private static readonly HashAlgorithm HashAlgorithm = FNV1A32.Create();
+
 
         private MemberData[] _members = Array.Empty<MemberData>();
 
@@ -64,6 +64,7 @@ namespace Proto.Cluster.Partition
 
         private static uint RdvHash(byte[] node, byte[] key)
         {
+            HashAlgorithm HashAlgorithm = FNV1A32.Create();
             var hashBytes = MergeBytes(key, node);
             var digest = HashAlgorithm.ComputeHash(hashBytes);
             var hash = BitConverter.ToUInt32(digest, 0);

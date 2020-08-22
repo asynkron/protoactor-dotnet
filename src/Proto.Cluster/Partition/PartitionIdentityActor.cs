@@ -65,8 +65,10 @@ namespace Proto.Cluster.Partition
         {
             _eventId = msg.EventId;
             _lastEventTimestamp = DateTime.Now;
-            _members = msg.Members.ToArray();
-            _rdv.UpdateMembers(_members);
+            var members = msg.Members.ToArray();
+            _members = members;
+            
+            _rdv.UpdateMembers(members);
                         
             _logger.LogWarning("--- Topology change --- {EventId} --- pausing interactions for 1 sec ---",
                 _eventId
@@ -79,9 +81,9 @@ namespace Proto.Cluster.Partition
                 Address = context.Self!.Address,
             };
 
-            requestMsg.Members.AddRange(_members);
+            requestMsg.Members.AddRange(members);
             
-            foreach (var member in _members)
+            foreach (var member in members)
             {
                 var activatorPid = _partitionManager.RemotePartitionPlacementActor(member.Address);
                 var request = context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg);
@@ -91,7 +93,7 @@ namespace Proto.Cluster.Partition
             _logger.LogDebug("Requesting ownerships");
             //TODO: add timeout
             var responses = await Task.WhenAll(requests);
-            _logger.LogError("Got ownerships {EventId}",_eventId);
+            _logger.LogInformation("Got ownerships {EventId}",_eventId);
 
             foreach (var response in responses)
             {
@@ -99,19 +101,13 @@ namespace Proto.Cluster.Partition
                 {
                     TakeOwnership(actor, context);
 
-                    var tmp = _rdv.GetOwnerMemberByIdentity(actor.Name);
-                    if (tmp != context.Self.Address)
-                    {
-                        _logger.LogError("IM NOT CONSISTENT WITH MYSELF!!!!" + tmp + "  " + context.Self.Address);
-                    }
-
                     if (!_partitionLookup.ContainsKey(actor.Name))
                     {
                         _logger.LogError("Ownership bug, we should own {Identity}",actor.Name);
                     }
                     else
                     {
-                        _logger.LogInformation("I have ownership of {Identity}",actor.Name);
+                        _logger.LogDebug("I have ownership of {Identity}",actor.Name);
                     }
                 }
             }
@@ -121,12 +117,12 @@ namespace Proto.Cluster.Partition
             //no ifs or else, just always
             //ClearInvalidOwnership(context);
 
-            var members = msg.Members.ToDictionary(m => m.Address, m => m);
+            var membersLookup = msg.Members.ToDictionary(m => m.Address, m => m);
 
             //scan through all id lookups and remove cases where the address is no longer part of cluster members
             foreach (var (actorId, (pid, _)) in _partitionLookup.ToArray())
             {
-                if (!members.ContainsKey(pid.Address))
+                if (!membersLookup.ContainsKey(pid.Address))
                 {
                     _partitionLookup.Remove(actorId);
                     _reversePartition.Remove(pid);
@@ -309,10 +305,9 @@ namespace Proto.Cluster.Partition
             var activator = _partitionManager.RemotePartitionPlacementActor(address);
 
             var eventId = _eventId;
-            var members = string.Join(", ", _members.Select(m => m.Address));
-            _logger.LogError(members);
+       //     _logger.LogDebug(_members.ToLogString());
 
-            _logger.LogError("Spawning with event {EventId} {Identity}",eventId,identity);
+       //     _logger.LogDebug("Spawning with event {EventId} {Identity}",eventId,identity);
             var res = await _cluster.System.Root.RequestAsync<ActorPidResponse>(
                 activator, new ActorPidRequest
                 {
