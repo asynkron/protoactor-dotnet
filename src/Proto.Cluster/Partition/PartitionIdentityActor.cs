@@ -151,7 +151,7 @@ namespace Proto.Cluster.Partition
                 }
                 else
                 {
-                    _logger.LogInformation("Taking Ownership of: {Identity}, pid: {Pid}", msg.Name, msg.Pid);
+                    _logger.LogDebug("Taking Ownership of: {Identity}, pid: {Pid}", msg.Name, msg.Pid);
                     _partitionLookup[msg.Name] = (msg.Pid, msg.Kind);
                     _reversePartition[msg.Pid] = msg.Name;
                     context.Watch(msg.Pid);

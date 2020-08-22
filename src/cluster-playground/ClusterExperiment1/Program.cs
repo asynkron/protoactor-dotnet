@@ -46,7 +46,7 @@ namespace ClusterExperiment1
                     var rnd = new Random();
                     while (true)
                     {
-                        var id = "myactor" + rnd.Next(0, 10);
+                        var id = "myactor" + rnd.Next(0, 100);
                         //    Console.WriteLine($"Sending request {id}");
                         var res = await cluster1.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                             CancellationToken.None
@@ -58,7 +58,7 @@ namespace ClusterExperiment1
                         }
                         else
                         {
-                            //Console.Write(".");
+                            Console.Write(".");
                             //      Console.WriteLine("Got response");
                         }
 
@@ -72,6 +72,7 @@ namespace ClusterExperiment1
             while (true)
             {
                 Console.ReadLine();
+                Console.WriteLine("-----------------------------------------------------------------------------------------");
                 SpawnMember(port++);
             }
         }
@@ -99,7 +100,8 @@ namespace ClusterExperiment1
         {
             if (ctx.Message is Started)
             {
-                _log.LogInformation("I started " + ctx.Self);
+                //just to highlight when this happens
+                _log.LogError("I started " + ctx.Self);
             }
 
             if (ctx.Message is HelloRequest)
@@ -109,7 +111,8 @@ namespace ClusterExperiment1
 
             if (ctx.Message is Stopped)
             {
-                _log.LogInformation("IM STOPPING!! " + ctx.Self);
+                //just to highlight when this happens
+                _log.LogError("IM STOPPING!! " + ctx.Self);
             }
 
             return Actor.Done;
