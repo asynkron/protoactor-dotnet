@@ -88,30 +88,39 @@ namespace Proto.Cluster.Partition
         {
             var count = 0;
             var response = new IdentityHandoverResponse();
-            var requestAddress = msg.Address;
+            var requestAddress = context.Sender.Address;
             _rdv.UpdateMembers(msg.Members);
             _logger.LogDebug("Handling IdentityHandoverRequest - request from " + requestAddress);
+
+            var members = string.Join(", ",msg.Members.Select(m => m.Address));
+            _logger.LogInformation(members);
             
+
+
             foreach (var (identity, (pid, kind)) in _myActors.ToArray())
             {
                 var ownerAddress = _rdv.GetOwnerMemberByIdentity(identity);
                 
                 if (ownerAddress != requestAddress)
                 {
+                    _logger.LogInformation("{Identity} belongs to {OwnerAddress} - {EventId}", identity, ownerAddress, msg.EventId);
                     continue;
                 }
 
-                _logger.LogDebug("TRANSFER {Identity} TO {newOwnerAddress} -- {EventId}", identity, ownerAddress,
+                _logger.LogInformation("TRANSFER {Identity} TO {newOwnerAddress} -- {EventId}", identity, ownerAddress,
                     msg.EventId
                 );
                 var actor = new TakeOwnership {Name = identity, Kind = kind, Pid = pid, EventId = msg.EventId};
                 response.Actors.Add(actor);
                 count++;
             }
+
+
             //always respond, this is request response msg
             context.Respond(response);
+            
+            _logger.LogError("Transferred {Count} actor ownership to other members", count);
 
-            _logger.LogDebug("Transferred {Count} actor ownership to other members", count);
         }
 
         private void HandleActorPidRequest(IContext context, ActorPidRequest msg)

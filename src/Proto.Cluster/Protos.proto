@@ -5,10 +5,9 @@ option csharp_namespace = "Proto.Cluster";
 import "Proto.Actor/Protos.proto";
 
 message IdentityHandoverRequest {
-    actor.PID pid = 1;
-    uint64 event_id = 2;
-    string address = 3;
-    repeated Member members=4;
+    uint64 event_id = 1;
+    string address = 2;
+    repeated Member members=3;
 }
 
 message IdentityHandoverResponse {

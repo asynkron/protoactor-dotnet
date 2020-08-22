@@ -53,18 +53,9 @@ namespace Proto.Cluster.Partition
                     break;
                 case ClusterTopology msg:
                     if (_eventId < msg.EventId)
-                    {
-                        _eventId = msg.EventId;
-                        _lastEventTimestamp = DateTime.Now;
-                        _members = msg.Members.ToArray();
-                        _rdv.UpdateMembers(_members);
-                        
-                        _logger.LogWarning("--- Topology change --- {EventId} --- pausing interactions for 1 sec ---",
-                            _eventId
-                        );
-                        
+                    
                         await ClusterTopology(msg, context);
-                    }
+
 
                     break;
             }
@@ -72,20 +63,27 @@ namespace Proto.Cluster.Partition
 
         private async Task ClusterTopology(ClusterTopology msg, IContext context)
         {
+            _eventId = msg.EventId;
+            _lastEventTimestamp = DateTime.Now;
+            _members = msg.Members.ToArray();
+            _rdv.UpdateMembers(_members);
+                        
+            _logger.LogWarning("--- Topology change --- {EventId} --- pausing interactions for 1 sec ---",
+                _eventId
+            );
+            
             var requests = new List<Task<IdentityHandoverResponse>>();
-            foreach (var member in msg.Members)
+            var requestMsg = new IdentityHandoverRequest
             {
-                var requestMsg = new IdentityHandoverRequest
-                {
-                    EventId = _eventId,
-                    Address = context.Self.Address,
-                    Pid = context.Self,
-                };
+                EventId = _eventId,
+                Address = context.Self!.Address,
+            };
 
-                requestMsg.Members.AddRange(msg.Members);
-
+            requestMsg.Members.AddRange(_members);
+            
+            foreach (var member in _members)
+            {
                 var activatorPid = _partitionManager.RemotePartitionPlacementActor(member.Address);
-
                 var request = context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg);
                 requests.Add(request);
             }
@@ -93,7 +91,7 @@ namespace Proto.Cluster.Partition
             _logger.LogDebug("Requesting ownerships");
             //TODO: add timeout
             var responses = await Task.WhenAll(requests);
-            _logger.LogDebug("Got ownerships {EventId}",_eventId);
+            _logger.LogError("Got ownerships {EventId}",_eventId);
 
             foreach (var response in responses)
             {
@@ -101,13 +99,19 @@ namespace Proto.Cluster.Partition
                 {
                     TakeOwnership(actor, context);
 
+                    var tmp = _rdv.GetOwnerMemberByIdentity(actor.Name);
+                    if (tmp != context.Self.Address)
+                    {
+                        _logger.LogError("IM NOT CONSISTENT WITH MYSELF!!!!" + tmp + "  " + context.Self.Address);
+                    }
+
                     if (!_partitionLookup.ContainsKey(actor.Name))
                     {
                         _logger.LogError("Ownership bug, we should own {Identity}",actor.Name);
                     }
                     else
                     {
-                        _logger.LogDebug("I have ownership of {Identity}",actor.Name);
+                        _logger.LogInformation("I have ownership of {Identity}",actor.Name);
                     }
                 }
             }
@@ -303,11 +307,12 @@ namespace Proto.Cluster.Partition
             TimeSpan timeout)
         {
             var activator = _partitionManager.RemotePartitionPlacementActor(address);
-            var eventId = _eventId;
-            // var members = string.Join(", ", _members.Select(m => m.Address));
-            // _logger.LogError(members);
 
-            _logger.LogDebug("Spawning with event {EventId} {Identity}",eventId,identity);
+            var eventId = _eventId;
+            var members = string.Join(", ", _members.Select(m => m.Address));
+            _logger.LogError(members);
+
+            _logger.LogError("Spawning with event {EventId} {Identity}",eventId,identity);
             var res = await _cluster.System.Root.RequestAsync<ActorPidResponse>(
                 activator, new ActorPidRequest
                 {

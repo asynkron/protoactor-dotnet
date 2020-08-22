@@ -68,10 +68,11 @@ namespace Proto.Cluster.Tests
                 },
             };
             
-            rsv.UpdateMembers(members);
+            
 
             for (int i = 0; i < 100; i++)
             {
+                rsv.UpdateMembers(members);
                 var res = rsv.GetOwnerMemberByIdentity("myactor4");
             
                 Assert.Equal("127.0.0.1:8100",res);
@@ -118,10 +119,11 @@ namespace Proto.Cluster.Tests
                 },
             };
             
-            rsv.UpdateMembers(members);
+            
 
             for (int i = 0; i < 100; i++)
             {
+                rsv.UpdateMembers(members);
                 var res = rsv.GetOwnerMemberByIdentity("myactor4");
 
                 Assert.Equal("127.0.0.1:8095", res);
