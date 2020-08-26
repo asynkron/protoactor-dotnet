@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Proto.Remote;
 
 namespace Proto.Cluster.Partition
 {
@@ -23,8 +22,6 @@ namespace Proto.Cluster.Partition
         private readonly Remote.Remote _remote;
         private readonly ActorSystem _system;
 
-        private readonly Rendezvous _rdv = new Rendezvous();
-
         public PartitionPlacementActor(Cluster cluster)
         {
             _cluster = cluster;
@@ -37,17 +34,7 @@ namespace Proto.Cluster.Partition
                     {
                         var id = dl.Pid.Id.Substring(PartitionManager.PartitionPlacementActorName.Length + 1);
 
-                        if (dl.Message is Watch watch)
-                        {
-                            //we got a deadletter watch, reply with a terminated event
-                            _system.Root.Send(watch.Watcher, new Terminated
-                                {
-                                    AddressTerminated = false,
-                                    Who = dl.Pid
-                                }
-                            );
-                        }
-                        else if (dl.Sender != null)
+                        if (dl.Sender != null)
                         {
                             _system.Root.Send(dl.Sender, new VoidResponse());
                             _logger.LogWarning(
@@ -73,10 +60,10 @@ namespace Proto.Cluster.Partition
             {
                 case IdentityHandoverRequest msg:
                     //this node is in sync with the requester, go ahead and transfer
-                    HandleOwnershipTransfer(msg, context);
+                    HandleIdentityHandoverRequest(msg, context);
                     break;
-                case ActorPidRequest msg:
-                    HandleActorPidRequest(context, msg);
+                case ActivationRequest msg:
+                    HandleActivationRequest(context, msg);
                     break;
             }
 
@@ -85,19 +72,20 @@ namespace Proto.Cluster.Partition
 
         //this is pure, we do not change any state or actually move anything
         //the requester also provide its own view of the world in terms of members
-        private void HandleOwnershipTransfer(IdentityHandoverRequest msg, IContext context)
+        private void HandleIdentityHandoverRequest(IdentityHandoverRequest msg, IContext context)
         {
             var count = 0;
             var response = new IdentityHandoverResponse();
             var requestAddress = context.Sender.Address;
-            var _rdv = new Rendezvous();
-            _rdv.UpdateMembers(msg.Members);
+            
+            var rdv = new Rendezvous();
+            rdv.UpdateMembers(msg.Members);
             //  _logger.LogDebug("Handling IdentityHandoverRequest - request from " + requestAddress);
             //  _logger.LogDebug(msg.Members.ToLogString());
 
             foreach (var (identity, (pid, kind)) in _myActors.ToArray())
             {
-                var ownerAddress = _rdv.GetOwnerMemberByIdentity(identity);
+                var ownerAddress = rdv.GetOwnerMemberByIdentity(identity);
 
                 if (ownerAddress != requestAddress)
                 {
@@ -108,7 +96,7 @@ namespace Proto.Cluster.Partition
                 _logger.LogDebug("TRANSFER {Identity} TO {newOwnerAddress} -- {EventId}", identity, ownerAddress,
                     msg.EventId
                 );
-                var actor = new TakeOwnership {Name = identity, Kind = kind, Pid = pid, EventId = msg.EventId};
+                var actor = new Activation {Identity = identity, Kind = kind, Pid = pid, EventId = msg.EventId};
                 response.Actors.Add(actor);
                 count++;
             }
@@ -120,38 +108,40 @@ namespace Proto.Cluster.Partition
             _logger.LogDebug("Transferred {Count} actor ownership to other members", count);
         }
 
-        private void HandleActorPidRequest(IContext context, ActorPidRequest msg)
+        private void HandleActivationRequest(IContext context, ActivationRequest msg)
         {
             var props = _remote.GetKnownKind(msg.Kind);
-            var name = msg.Name;
-            if (string.IsNullOrEmpty(name))
+            var identity = msg.Identity;
+            if (string.IsNullOrEmpty(identity))
             {
-                name = _system.ProcessRegistry.NextId();
+                identity = _system.ProcessRegistry.NextId();
             }
 
             try
             {
                 //spawn and remember this actor
-                var pid = context.SpawnNamed(props, name);
-                _myActors[name] = (pid, msg.Kind);
+                var pid = context.SpawnPrefix(props, identity);
+                _myActors[identity] = (pid, msg.Kind);
 
-                var response = new ActorPidResponse {Pid = pid};
+                var response = new ActivationResponse
+                {
+                    Pid = pid
+                };
                 context.Respond(response);
             }
             catch (ProcessNameExistException ex)
             {
-                var response = new ActorPidResponse
+                var response = new ActivationResponse
                 {
-                    Pid = ex.Pid,
-                    StatusCode = (int) ResponseStatusCode.ProcessNameAlreadyExist
+                    Pid = ex.Pid
                 };
                 context.Respond(response);
             }
             catch
             {
-                var response = new ActorPidResponse
+                var response = new ActivationResponse
                 {
-                    StatusCode = (int) ResponseStatusCode.Error
+                    Pid = null
                 };
                 context.Respond(response);
 

@@ -102,17 +102,17 @@ namespace Proto.Cluster
             _logger.LogInformation("Stopped");
         }
 
-        public Task<(PID?, ResponseStatusCode)> GetAsync(string identity, string kind) =>
+        public Task<PID> GetAsync(string identity, string kind) =>
             GetAsync(identity, kind, CancellationToken.None);
 
-        public Task<(PID?, ResponseStatusCode)> GetAsync(string identity, string kind, CancellationToken ct)
+        public Task<PID> GetAsync(string identity, string kind, CancellationToken ct)
         {
             if (Config.UsePidCache)
             {
                 //Check Cache
                 if (PidCache.TryGetCache(identity, out var pid))
                 {
-                    return Task.FromResult<(PID?, ResponseStatusCode)>((pid, ResponseStatusCode.OK));
+                    return Task.FromResult(pid);
                 }
             }
 
@@ -123,9 +123,10 @@ namespace Proto.Cluster
         {
             for (int i = 0; i < 10; i++)
             {
-                var (pid,status) = await GetAsync(identity, kind, ct);
-                if (status != ResponseStatusCode.OK && status != ResponseStatusCode.ProcessNameAlreadyExist)
+                var pid = await GetAsync(identity, kind, ct);
+                if (pid == null)
                 {
+                    await Task.Delay(i * 10, ct);
                     continue;
                 }
 

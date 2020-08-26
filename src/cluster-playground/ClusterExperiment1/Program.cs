@@ -14,6 +14,13 @@ namespace ClusterExperiment1
     {
         public static async Task Main()
         {
+            Console.WriteLine("Press enter to start");
+            Console.WriteLine();
+            Console.WriteLine("Red = spawned grains");
+            Console.WriteLine("Yellow = cluster topology events");
+            Console.WriteLine("Each '.' is a request/response call to one of the grains");
+            Console.WriteLine("Enter spawns a new node in the cluster");
+            Console.ReadLine();
             Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
             var logger = Log.CreateLogger(nameof(Program));
 
@@ -21,11 +28,13 @@ namespace ClusterExperiment1
             var consul1 = new ConsulProvider(new ConsulProviderOptions());
             var serialization1 = new Serialization();
             serialization1.RegisterFileDescriptor(MessagesReflection.Descriptor);
-            var cluster1 = new Cluster(system1, serialization1);
-            await cluster1.StartAsync(new ClusterConfig("mycluster", "127.0.0.1", 8090, consul1).WithPidCache(false));
-            SpawnMember(8091);
-            SpawnMember(8092);
-            SpawnMember(8093);
+            var c1 = new Cluster(system1, serialization1);
+            await c1.StartAsync(new ClusterConfig("mycluster", "127.0.0.1", 8090, consul1).WithPidCache(false));
+            var c2= SpawnMember(8091);
+            var c3 = SpawnMember(8092);
+            var c4 = SpawnMember(8093);
+
+            var c = new[] {c1, c2, c3, c4};
 
             await Task.Delay(1000);
 
@@ -35,8 +44,9 @@ namespace ClusterExperiment1
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, 1000);
+                        var i = rnd.Next(0, 3);
                         //    Console.WriteLine($"Sending request {id}");
-                        var res = await cluster1.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+                        var res = await c[i].RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                             CancellationToken.None
                         );
 

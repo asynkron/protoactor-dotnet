@@ -13,7 +13,7 @@ namespace Proto.Cluster.Partition
         private Cluster _cluster = null!;
         private PartitionManager _partitionManager = null!;
 
-        public async Task<(PID?, ResponseStatusCode)> GetAsync(string identity, string kind, CancellationToken ct)
+        public async Task<PID> GetAsync(string identity, string kind, CancellationToken ct)
         {
             //Get address to node owning this ID
             var address = _partitionManager.Selector.GetIdentityOwner(identity);
@@ -21,15 +21,15 @@ namespace Proto.Cluster.Partition
 
             if (string.IsNullOrEmpty(address))
             {
-                return (null, ResponseStatusCode.Unavailable);
+                return null;
             }
 
             var remotePid = _partitionManager.RemotePartitionIdentityActor(address);
 
-            var req = new ActorPidRequest
+            var req = new ActivationRequest
             {
                 Kind = kind,
-                Name = identity
+                Identity = identity
             };
 
             _logger.LogDebug("Requesting remote PID from {Partition}:{Remote} {@Request}", address, remotePid, req);
@@ -37,13 +37,12 @@ namespace Proto.Cluster.Partition
             try
             {
                 var resp = ct == CancellationToken.None
-                    ? await _cluster.System.Root.RequestAsync<ActorPidResponse>(remotePid, req,
+                    ? await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req,
                         _cluster.Config!.TimeoutTimespan
                     )
-                    : await _cluster.System.Root.RequestAsync<ActorPidResponse>(remotePid, req, ct);
-                var status = (ResponseStatusCode) resp.StatusCode;
+                    : await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
 
-                if (status == ResponseStatusCode.OK && _cluster!.Config!.UsePidCache)
+                if (resp.Pid != null && _cluster!.Config!.UsePidCache)
                 {
                     if (_cluster.PidCache.TryAddCache(identity, resp.Pid))
                     {
@@ -51,17 +50,17 @@ namespace Proto.Cluster.Partition
                     }
                 }
 
-                return (resp.Pid, status);
+                return resp.Pid;
             }
             catch (TimeoutException e)
             {
                 _logger.LogWarning(e, "[Cluster] Remote PID request timeout {@Request}", req);
-                return (null, ResponseStatusCode.Timeout);
+                return null;
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "[Cluster] Error occured requesting remote PID {@Request}", req);
-                return (null, ResponseStatusCode.Error);
+                return null;
             }
         }
 
