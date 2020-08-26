@@ -25,7 +25,10 @@ message Activation {
 }
 
 message ActivationTerminated {
-    Activation who = 1;
+    actor.PID pid = 1;
+    string identity = 2;
+    string kind = 3;
+    uint64 eventId = 4;
 }
 
 message ActivationRequest {

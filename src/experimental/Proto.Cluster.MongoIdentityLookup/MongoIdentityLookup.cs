@@ -23,17 +23,18 @@ namespace Proto.Cluster.MongoIdentityLookup
             _pids = db.GetCollection<PidLookup>("pids");
         }
 
-        public async Task<PID> GetAsync(string identity, string kind, CancellationToken ct)
+        public Task<PID> GetAsync(string identity, string kind, CancellationToken ct)
         {
             var key = $"{_clusterName}-{kind}-{identity}";
             var pidLookup = _pids.AsQueryable().FirstOrDefault(x => x.Key == key);
-            if (pidLookup != null)
+            if (pidLookup == null)
             {
-                var pid = new PID(pidLookup.Address,pidLookup.Identity);
-                return pid;
+                return Task.FromResult((PID) null);
             }
 
-            return null;
+            var pid = new PID(pidLookup.Address,pidLookup.Identity);
+            return Task.FromResult(pid);
+
         }
 
         public void Setup(Cluster cluster, string[] kinds)

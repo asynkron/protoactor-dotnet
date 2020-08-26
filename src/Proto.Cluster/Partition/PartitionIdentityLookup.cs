@@ -13,7 +13,7 @@ namespace Proto.Cluster.Partition
         private Cluster _cluster = null!;
         private PartitionManager _partitionManager = null!;
 
-        public async Task<PID> GetAsync(string identity, string kind, CancellationToken ct)
+        public async Task<PID?> GetAsync(string identity, string kind, CancellationToken ct)
         {
             //Get address to node owning this ID
             var address = _partitionManager.Selector.GetIdentityOwner(identity);

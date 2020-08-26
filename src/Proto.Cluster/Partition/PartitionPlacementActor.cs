@@ -21,12 +21,16 @@ namespace Proto.Cluster.Partition
 
         private readonly Remote.Remote _remote;
         private readonly ActorSystem _system;
+        private ulong _eventId;
+        private readonly Rendezvous _rdv = new Rendezvous();
+        private readonly PartitionManager _partitionManager;
 
-        public PartitionPlacementActor(Cluster cluster)
+        public PartitionPlacementActor(Cluster cluster, PartitionManager partitionManager)
         {
             _cluster = cluster;
             _remote = _cluster.Remote;
             _system = _cluster.System;
+            _partitionManager = partitionManager;
             _logger = Log.CreateLogger($"{nameof(PartitionPlacementActor)}-{cluster.LoggerId}");
             _system.EventStream.Subscribe<DeadLetterEvent>(dl =>
                 {
@@ -58,9 +62,15 @@ namespace Proto.Cluster.Partition
         {
             switch (context.Message)
             {
+                case Terminated msg:
+                    HandleTerminated(context,msg);
+                    break;
+                case ClusterTopology msg:
+                    HandleClusterTopology(msg);
+                    break;
                 case IdentityHandoverRequest msg:
                     //this node is in sync with the requester, go ahead and transfer
-                    HandleIdentityHandoverRequest(msg, context);
+                    HandleIdentityHandoverRequest(context, msg);
                     break;
                 case ActivationRequest msg:
                     HandleActivationRequest(context, msg);
@@ -70,9 +80,39 @@ namespace Proto.Cluster.Partition
             return Actor.Done;
         }
 
+        private void HandleTerminated(IContext context, Terminated msg)
+        {
+            //TODO: this can be done better
+            var (identity, (pid,kind)) = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(msg.Who));
+            
+            var activationTerminated = new ActivationTerminated
+            {
+                Pid = pid,
+                Kind = kind,
+                EventId = _eventId,
+                Identity = identity,
+            };
+
+            var ownerAddress = _rdv.GetOwnerMemberByIdentity(identity);
+            var ownerPid = _partitionManager.RemotePartitionIdentityActor(ownerAddress);
+            
+            context.Send(ownerPid, activationTerminated);
+        }
+
+        private void HandleClusterTopology(ClusterTopology msg)
+        {
+            if (msg.EventId > _eventId)
+            {
+                _eventId = msg.EventId;
+                var members = msg.Members.ToArray();
+                _rdv.UpdateMembers(members);
+                _eventId = msg.EventId;
+            }
+        }
+
         //this is pure, we do not change any state or actually move anything
         //the requester also provide its own view of the world in terms of members
-        private void HandleIdentityHandoverRequest(IdentityHandoverRequest msg, IContext context)
+        private void HandleIdentityHandoverRequest(IContext context, IdentityHandoverRequest msg)
         {
             var count = 0;
             var response = new IdentityHandoverResponse();

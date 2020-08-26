@@ -38,7 +38,7 @@ namespace ClusterExperiment1
 
             await Task.Delay(1000);
 
-            Task.Run(async () =>
+            _ = Task.Run(async () =>
                 {
                     var rnd = new Random();
                     while (true)

@@ -38,7 +38,7 @@ namespace Proto.Cluster.Partition
             _partitionActor = _context.SpawnNamed(partitionActorProps, PartitionIdentityActorName);
 
             var partitionActivatorProps =
-                Props.FromProducer(() => new PartitionPlacementActor(_cluster));
+                Props.FromProducer(() => new PartitionPlacementActor(_cluster, this));
             _partitionActivator = _context.SpawnNamed(partitionActivatorProps, PartitionPlacementActorName);
 
             //synchronous subscribe to keep accurate

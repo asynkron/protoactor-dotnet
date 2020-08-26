@@ -46,7 +46,7 @@ namespace Proto.Cluster.Partition
                     GetOrSpawn(msg, context);
                     break;
                 case ActivationTerminated msg:
-                    ActivationTerminated(msg);
+                    ActivationTerminated(msg, context);
                     break;
                 case ClusterTopology msg:
                     if (_eventId < msg.EventId)
@@ -95,7 +95,7 @@ namespace Proto.Cluster.Partition
             {
                 foreach (var actor in response.Actors)
                 {
-                    TakeOwnership(actor, context);
+                    TakeOwnership(actor);
 
                     if (!_partitionLookup.ContainsKey(actor.Identity))
                     {
@@ -125,14 +125,24 @@ namespace Proto.Cluster.Partition
             }
         }
 
-        private void ActivationTerminated(ActivationTerminated msg)
+        private void ActivationTerminated(ActivationTerminated msg, IContext context)
         { 
+            var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
+            if (ownerAddress != context.Self.Address)
+            {
+                var ownerPid = _partitionManager.RemotePartitionIdentityActor(ownerAddress);
+                _logger.LogWarning("Tried to terminate activation on wrong node, forwarding");
+                context.Forward(ownerPid);
+
+                return;
+            }
+            
             //TODO: handle correct incarnation/version
-            _logger.LogDebug("Terminated {Pid}", msg.Who);
-            _partitionLookup.Remove(msg.Who.Identity);
+            _logger.LogDebug("Terminated {Pid}", msg.Pid);
+            _partitionLookup.Remove(msg.Identity);
         }
 
-        private void TakeOwnership(Activation msg, IContext context)
+        private void TakeOwnership(Activation msg)
         {
             if (_partitionLookup.TryGetValue(msg.Identity, out var existing))
             {
@@ -145,7 +155,6 @@ namespace Proto.Cluster.Partition
 
             _logger.LogDebug("Taking Ownership of: {Identity}, pid: {Pid}", msg.Identity, msg.Pid);
             _partitionLookup[msg.Identity] = (msg.Pid, msg.Kind);
-            context.Watch(msg.Pid);
         }
 
 

@@ -244,7 +244,7 @@ namespace Proto.Cluster.Consul
 
 
                         //don't await this, it will block forever
-                        _client.Session.RenewPeriodic(TimeSpan.FromSeconds(1), sessionId, CancellationToken.None
+                        _ = _client.Session.RenewPeriodic(TimeSpan.FromSeconds(1), sessionId, CancellationToken.None
                         );
 
                         var waitIndex = 0ul;
