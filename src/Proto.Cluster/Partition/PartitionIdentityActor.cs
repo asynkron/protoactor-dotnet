@@ -91,10 +91,10 @@ namespace Proto.Cluster.Partition
 
             try
             {
-                _logger.LogError("Requesting ownerships");
+                _logger.LogDebug("Requesting ownerships");
                 //TODO: add timeout
                 var responses = await Task.WhenAll(requests);
-                _logger.LogError("Got ownerships {EventId}", _eventId);
+                _logger.LogDebug("Got ownerships {EventId}", _eventId);
 
                 foreach (var response in responses)
                 {

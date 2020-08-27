@@ -24,7 +24,7 @@ namespace Proto.Cluster
     //TODO: check usage and threadsafety.
     public class MemberList
     {
-        private static ILogger _logger = null!;
+        private readonly ILogger _logger = null!;
 
         //TODO: actually use this to prevent banned members from rejoining
         private readonly ConcurrentSet<string> _bannedMembers = new ConcurrentSet<string>();
