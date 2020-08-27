@@ -65,6 +65,9 @@ namespace Proto.Cluster.Partition
             var members = msg.Members.ToArray();
 
             _rdv.UpdateMembers(members);
+
+            //remove all identities we do no longer own.
+           _partitionLookup.Clear();
                         
             _logger.LogWarning("--- Topology change --- {EventId} --- pausing interactions for 1 sec ---",
                 _eventId
@@ -82,32 +85,39 @@ namespace Proto.Cluster.Partition
             foreach (var member in members)
             {
                 var activatorPid = _partitionManager.RemotePartitionPlacementActor(member.Address);
-                var request = context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg);
+                var request = context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg,TimeSpan.FromSeconds(5));
                 requests.Add(request);
             }
 
-            _logger.LogDebug("Requesting ownerships");
-            //TODO: add timeout
-            var responses = await Task.WhenAll(requests);
-            _logger.LogDebug("Got ownerships {EventId}",_eventId);
-
-            foreach (var response in responses)
+            try
             {
-                foreach (var actor in response.Actors)
-                {
-                    TakeOwnership(actor);
+                _logger.LogError("Requesting ownerships");
+                //TODO: add timeout
+                var responses = await Task.WhenAll(requests);
+                _logger.LogError("Got ownerships {EventId}", _eventId);
 
-                    if (!_partitionLookup.ContainsKey(actor.Identity))
+                foreach (var response in responses)
+                {
+                    foreach (var actor in response.Actors)
                     {
-                        _logger.LogError("Ownership bug, we should own {Identity}",actor.Identity);
-                    }
-                    else
-                    {
-                        _logger.LogDebug("I have ownership of {Identity}",actor.Identity);
+                        TakeOwnership(actor);
+
+                        if (!_partitionLookup.ContainsKey(actor.Identity))
+                        {
+                            _logger.LogError("Ownership bug, we should own {Identity}", actor.Identity);
+                        }
+                        else
+                        {
+                            _logger.LogDebug("I have ownership of {Identity}", actor.Identity);
+                        }
                     }
                 }
             }
-            
+            catch (Exception x)
+            {
+                _logger.LogError("Failed to get identities");
+            }
+
 
             //always do this when a member leaves, we need to redistribute the distributed-hash-table
             //no ifs or else, just always

@@ -36,7 +36,14 @@ namespace Proto.Cluster.Partition
                 {
                     if (dl.Pid.Id.StartsWith(PartitionManager.PartitionPlacementActorName))
                     {
-                        var id = dl.Pid.Id.Substring(PartitionManager.PartitionPlacementActorName.Length + 1);
+                        var kvp = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(dl.Pid));
+
+                        if (kvp.Equals(default))
+                        {
+                            return;
+                        }
+                        
+                        var id = kvp.Key;
 
                         if (dl.Sender != null)
                         {

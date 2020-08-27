@@ -22,12 +22,9 @@ namespace Proto.Cluster
 
         public Cluster(ActorSystem system, Serialization serialization)
         {
-            
             System = system;
             Remote = new Remote.Remote(system, serialization);
-
             PidCache = new PidCache();
-            MemberList = new MemberList(this);
             PidCacheUpdater = new PidCacheUpdater(this, PidCache);
         }
 
@@ -40,7 +37,7 @@ namespace Proto.Cluster
         public Remote.Remote Remote { get; }
 
 
-        internal MemberList MemberList { get; }
+        internal MemberList MemberList { get; private set; }
         internal PidCache PidCache { get; }
         internal PidCacheUpdater PidCacheUpdater { get; }
 
@@ -53,12 +50,14 @@ namespace Proto.Cluster
         {
             Config = config;
 
+  
             //default to partition identity lookup
             IdentityLookup = config.IdentityLookup ?? new PartitionIdentityLookup();
             Remote.Start(Config.Address, Config.Port, Config.RemoteConfig);
             Remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             _logger = Log.CreateLogger($"Cluster-{LoggerId}");
             _logger.LogInformation("Starting");
+            MemberList = new MemberList(this);
 
             var kinds = Remote.GetKnownKinds();
             IdentityLookup.Setup(this, kinds);

@@ -36,6 +36,18 @@ namespace ClusterExperiment1
 
             var c = new[] {c1, c2, c3, c4};
 
+
+            Task.Run(async () =>
+                {
+                    await Task.Delay(10000);
+                    c3.ShutdownAsync(true);
+
+                    // await Task.Delay(5000);
+                    // c4.ShutdownAsync(true);
+
+                }
+            );
+
             await Task.Delay(1000);
 
             _ = Task.Run(async () =>
@@ -43,7 +55,7 @@ namespace ClusterExperiment1
                     var rnd = new Random();
                     while (true)
                     {
-                        var id = "myactor" + rnd.Next(0, 1000);
+                        var id = "myactor" + rnd.Next(0, 4);
                         var i = rnd.Next(0, 3);
                         //    Console.WriteLine($"Sending request {id}");
                         var res = await c[i].RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),

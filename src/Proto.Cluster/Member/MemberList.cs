@@ -49,7 +49,7 @@ namespace Proto.Cluster
             _root = _system.Root;
             _eventStream = _system.EventStream;
             
-            _logger = Log.CreateLogger($"MemberList-{_cluster.Id}");
+            _logger = Log.CreateLogger($"MemberList-{_cluster.LoggerId}");
         }
 
         internal string GetActivator(string kind)
@@ -215,18 +215,18 @@ namespace Proto.Cluster
             _members.Remove(memberThatLeft.Id);
 
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
-            _logger.LogDebug("Published event {@EndpointTerminated}", endpointTerminated);
+            _logger.LogWarning("Published event {@EndpointTerminated}", endpointTerminated);
             _cluster.System.EventStream.Publish(endpointTerminated);
             
-            if (IsLeader)
-            {
-                var banned = _bannedMembers.ToArray();
-                _cluster.Provider.UpdateClusterState(new ClusterState
-                    {
-                        BannedMembers = banned
-                    }
-                );
-            }
+            // if (IsLeader)
+            // {
+            //     var banned = _bannedMembers.ToArray();
+            //     _cluster.Provider.UpdateClusterState(new ClusterState
+            //         {
+            //             BannedMembers = banned
+            //         }
+            //     );
+            // }
         }
 
         private void MemberJoin(Member newMember)

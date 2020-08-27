@@ -11,6 +11,8 @@ namespace Proto.Remote
     public sealed class EndpointTerminatedEvent
     {
         public string Address { get; set; } = null!;
+
+        public override string ToString() => $"EndpointTerminatedEvent: {Address}";
     }
     
     public sealed class EndpointConnectedEvent
