@@ -56,7 +56,7 @@ namespace ClusterExperiment1
                     {
                         try
                         {
-                            var id = "myactor" + rnd.Next(0, 10);
+                            var id = "myactor" + rnd.Next(0, 1000);
                             var i = rnd.Next(0, 2);
                             //    Console.WriteLine($"Sending request {id}");
                             var res = await c1.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
@@ -112,14 +112,15 @@ namespace ClusterExperiment1
 
     public class HelloActor : IActor
     {
-        private readonly ILogger _log = Log.CreateLogger<HelloActor>();
+     //   private readonly ILogger _log = Log.CreateLogger<HelloActor>();
 
         public Task ReceiveAsync(IContext ctx)
         {
             if (ctx.Message is Started)
             {
+                Console.Write("#");
                 //just to highlight when this happens
-                _log.LogError("I started " + ctx.Self);
+             //   _log.LogError("I started " + ctx.Self);
             }
 
             if (ctx.Message is HelloRequest)
@@ -130,7 +131,7 @@ namespace ClusterExperiment1
             if (ctx.Message is Stopped)
             {
                 //just to highlight when this happens
-                _log.LogError("IM STOPPING!! " + ctx.Self);
+            //    _log.LogError("IM STOPPING!! " + ctx.Self);
             }
 
             return Actor.Done;
