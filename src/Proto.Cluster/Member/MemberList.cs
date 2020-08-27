@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -257,8 +258,16 @@ namespace Proto.Cluster
         {
             foreach (var m in _members.ToArray())
             {
-                var pid = new PID(m.Value.Address,"eventstream");
-                _system.Root.Send(pid,message);
+                var pid = new PID(m.Value.Address, "eventstream");
+                try
+                {
+                    
+                    _system.Root.Send(pid, message);
+                }
+                catch(Exception)
+                {
+                    _logger.LogError("Failed to broadcast {Message} to {Pid}",message,pid);
+                }
             }
         }
     }

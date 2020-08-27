@@ -56,9 +56,9 @@ namespace ClusterExperiment1
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, 4);
-                        var i = rnd.Next(0, 3);
+                       // var i = rnd.Next(0, 3);
                         //    Console.WriteLine($"Sending request {id}");
-                        var res = await c[i].RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+                        var res = await c1.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                             CancellationToken.None
                         );
 

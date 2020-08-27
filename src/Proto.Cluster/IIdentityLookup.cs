@@ -6,13 +6,12 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Proto.Remote;
 
 namespace Proto.Cluster.IdentityLookup
 {
     public interface IIdentityLookup
     {
-        Task<PID> GetAsync(string identity, string kind, CancellationToken ct);
+        Task<PID?> GetAsync(string identity, string kind, CancellationToken ct);
         void Setup(Cluster cluster, string[] kinds);
         void Shutdown();
     }

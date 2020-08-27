@@ -101,17 +101,17 @@ namespace Proto.Cluster
             _logger.LogInformation("Stopped");
         }
 
-        public Task<PID> GetAsync(string identity, string kind) =>
+        public Task<PID?> GetAsync(string identity, string kind) =>
             GetAsync(identity, kind, CancellationToken.None);
 
-        public Task<PID> GetAsync(string identity, string kind, CancellationToken ct)
+        public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct)
         {
             if (Config.UsePidCache)
             {
                 //Check Cache
                 if (PidCache.TryGetCache(identity, out var pid))
                 {
-                    return Task.FromResult(pid);
+                    return Task.FromResult<PID?>(pid);
                 }
             }
 
@@ -120,11 +120,12 @@ namespace Proto.Cluster
 
         public async Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct)
         {
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 var pid = await GetAsync(identity, kind, ct);
                 if (pid == null)
                 {
+                    _logger.LogInformation("Got null pid for {Identity}",identity);
                     await Task.Delay(i * 10, ct);
                     continue;
                 }
@@ -134,6 +135,8 @@ namespace Proto.Cluster
                 {
                     return res;
                 }
+                
+                _logger.LogInformation("Got null response from request to {Identity}",identity);
 
                 await Task.Delay(i * 10, ct);
             }
