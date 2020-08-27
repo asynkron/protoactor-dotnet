@@ -122,11 +122,12 @@ namespace Proto.Cluster
         {
             for (var i = 0; i < 10; i++)
             {
+                var delay = Math.Max(i * 2, 10);
                 var pid = await GetAsync(identity, kind, ct);
                 if (pid == null)
                 {
                     _logger.LogInformation("Got null pid for {Identity}",identity);
-                    await Task.Delay(i * 10, ct);
+                    await Task.Delay(delay,CancellationToken.None);
                     continue;
                 }
 
@@ -138,7 +139,7 @@ namespace Proto.Cluster
                 
                 _logger.LogInformation("Got null response from request to {Identity}",identity);
 
-                await Task.Delay(i * 10, ct);
+                await Task.Delay(delay, CancellationToken.None);
             }
 
             return default!;

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Proto.Remote;
 
 namespace Proto.Cluster.Partition
 {
@@ -41,6 +40,11 @@ namespace Proto.Cluster.Partition
                 case Started _:
                     _lastEventTimestamp = DateTime.Now;
                     _logger.LogDebug("Started");
+             //       context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+                    break;
+                case ReceiveTimeout _:
+                    context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+                    _logger.LogInformation("I am idle");
                     break;
                 case ActivationRequest msg:
                     GetOrSpawn(msg, context);
@@ -92,7 +96,8 @@ namespace Proto.Cluster.Partition
             try
             {
                 _logger.LogDebug("Requesting ownerships");
-                //TODO: add timeout
+                
+                //built in timeout on each request above
                 var responses = await Task.WhenAll(requests);
                 _logger.LogDebug("Got ownerships {EventId}", _eventId);
 
@@ -106,7 +111,7 @@ namespace Proto.Cluster.Partition
                         {
                             _logger.LogError("Ownership bug, we should own {Identity}", actor.Identity);
                         }
-                        else
+                        else 
                         {
                             _logger.LogDebug("I have ownership of {Identity}", actor.Identity);
                         }
@@ -167,25 +172,6 @@ namespace Proto.Cluster.Partition
             _partitionLookup[msg.Identity] = (msg.Pid, msg.Kind);
         }
 
-
-        private void ClearInvalidOwnership(IContext context)
-        {
-            //loop over all identities we own, if we are no longer the algorithmic owner, clear ownership
-
-            var myAddress = context.Self!.Address;
-
-            foreach (var (identity, (pid, _)) in _partitionLookup.ToArray())
-            {
-                var shouldBeOwnerAddress = _rdv.GetOwnerMemberByIdentity(identity);
-
-                if (shouldBeOwnerAddress == myAddress)
-                {
-                    continue;
-                }
-
-                _partitionLookup.Remove(identity);
-            }
-        }
 
         private void GetOrSpawn(ActivationRequest msg, IContext context)
         {

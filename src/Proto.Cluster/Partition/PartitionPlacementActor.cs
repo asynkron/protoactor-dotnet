@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -69,6 +70,13 @@ namespace Proto.Cluster.Partition
         {
             switch (context.Message)
             {
+                case Started _:
+                  //  context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+                    break;
+                case ReceiveTimeout _:
+                    context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+                    _logger.LogInformation("I am idle");
+                    break;
                 case Terminated msg:
                     HandleTerminated(context,msg);
                     break;

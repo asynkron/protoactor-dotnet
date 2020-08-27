@@ -44,7 +44,6 @@ namespace ClusterExperiment1
 
                     // await Task.Delay(5000);
                     // c4.ShutdownAsync(true);
-
                 }
             );
 
@@ -55,21 +54,28 @@ namespace ClusterExperiment1
                     var rnd = new Random();
                     while (true)
                     {
-                        var id = "myactor" + rnd.Next(0, 1000);
-                        var i = rnd.Next(0, 2);
-                        //    Console.WriteLine($"Sending request {id}");
-                        var res = await c1.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                            CancellationToken.None
-                        );
+                        try
+                        {
+                            var id = "myactor" + rnd.Next(0, 10);
+                            var i = rnd.Next(0, 2);
+                            //    Console.WriteLine($"Sending request {id}");
+                            var res = await c1.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+                                new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token
+                            );
 
-                        if (res == null)
-                        {
-                            logger.LogError("Got void response");
+                            if (res == null)
+                            {
+                                logger.LogError("Got void response");
+                            }
+                            else
+                            {
+                                Console.Write(".");
+                                //      Console.WriteLine("Got response");
+                            }
                         }
-                        else
+                        catch (Exception x)
                         {
-                            Console.Write(".");
-                            //      Console.WriteLine("Got response");
+                            logger.LogError("banana");
                         }
 
                         //await Task.Delay(0);
