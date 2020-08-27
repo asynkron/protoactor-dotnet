@@ -40,7 +40,7 @@ namespace ClusterExperiment1
             Task.Run(async () =>
                 {
                     await Task.Delay(15000);
-                    await c4.ShutdownAsync(true);
+                    await c4.ShutdownAsync(false);
 
                     // await Task.Delay(5000);
                     // c4.ShutdownAsync(true);
