@@ -13,6 +13,10 @@ namespace Proto.Cluster.Partition
     //for spawning/activating cluster actors see PartitionActivator.cs
     internal class PartitionIdentityActor : IActor
     {
+        private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(5);
+        private static readonly TimeSpan HandoverTimeout = TimeSpan.FromSeconds(5);
+        private static readonly TimeSpan SendLaterTimeout = TimeSpan.FromSeconds(5);
+        
         private readonly Cluster _cluster;
         private readonly ILogger _logger;
 
@@ -56,7 +60,7 @@ namespace Proto.Cluster.Partition
 
         private Task ReceiveTimeout(IContext context)
         {
-            context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+            context.SetReceiveTimeout(IdleTimeout);
             _logger.LogInformation("I am idle");
             return Actor.Done;
         }
@@ -77,8 +81,8 @@ namespace Proto.Cluster.Partition
             //remove all identities we do no longer own.
             _partitionLookup.Clear();
 
-            _logger.LogWarning("--- Topology change --- {EventId} --- pausing interactions for 1 sec ---",
-                _eventId
+            _logger.LogWarning("Topology change --- {EventId} --- pausing interactions for {Timeout}",
+                _eventId, SendLaterTimeout
             );
 
             var requests = new List<Task<IdentityHandoverResponse>>();
@@ -94,7 +98,7 @@ namespace Proto.Cluster.Partition
             {
                 var activatorPid = _partitionManager.RemotePartitionPlacementActor(member.Address);
                 var request =
-                    context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg, TimeSpan.FromSeconds(5));
+                    context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg, HandoverTimeout);
                 requests.Add(request);
             }
 
@@ -263,7 +267,7 @@ namespace Proto.Cluster.Partition
         private bool SendLater(object msg, IContext context)
         {
             //TODO: buffer this in a queue and consume once we are past timestamp
-            if (DateTime.Now > _lastEventTimestamp.AddSeconds(5))
+            if (DateTime.Now > _lastEventTimestamp.Add(SendLaterTimeout))
             {
                 return false;
             }

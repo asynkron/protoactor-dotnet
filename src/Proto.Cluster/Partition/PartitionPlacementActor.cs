@@ -36,32 +36,35 @@ namespace Proto.Cluster.Partition
             _logger = Log.CreateLogger($"{nameof(PartitionPlacementActor)}-{cluster.LoggerId}");
             _system.EventStream.Subscribe<DeadLetterEvent>(dl =>
                 {
-                    if (dl.Pid.Id.StartsWith(PartitionManager.PartitionPlacementActorName))
+                    if (!dl.Pid.Id.StartsWith(PartitionManager.PartitionPlacementActorName))
                     {
-                        var kvp = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(dl.Pid));
+                        return;
+                    }
 
-                        if (kvp.Equals(default))
-                        {
-                            return;
-                        }
+                    var kvp = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(dl.Pid));
 
-                        var id = kvp.Key;
+                    //TODO: wrong
+                    if (kvp.Equals(default))
+                    {
+                        return;
+                    }
 
-                        if (dl.Sender != null)
-                        {
-                            _system.Root.Send(dl.Sender, new VoidResponse());
-                            _logger.LogWarning(
-                                "Got Deadletter message {Message} for gain actor '{Identity}' from {Sender}, sending void response",
-                                dl.Message, id, dl.Sender
-                            );
-                        }
-                        else
-                        {
-                            _logger.LogWarning(
-                                "Got Deadletter message {Message} for gain actor '{Identity}', use `Request` for grain communication ",
-                                dl.Message, id
-                            );
-                        }
+                    var id = kvp.Key;
+
+                    if (dl.Sender != null)
+                    {
+                        _system.Root.Send(dl.Sender, new VoidResponse());
+                        _logger.LogWarning(
+                            "Got Deadletter message {Message} for gain actor '{Identity}' from {Sender}, sending void response",
+                            dl.Message, id, dl.Sender
+                        );
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            "Got Deadletter message {Message} for gain actor '{Identity}', use `Request` for grain communication ",
+                            dl.Message, id
+                        );
                     }
                 }
             );
@@ -88,7 +91,7 @@ namespace Proto.Cluster.Partition
 
         private Task HandleTerminated(IContext context, Terminated msg)
         {
-            //TODO: this can be done better
+            //TODO: this can be done better, might be better to have a reverse lookup to find the pid fast
             var (identity, (pid, kind)) = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(msg.Who));
 
             var activationTerminated = new ActivationTerminated
@@ -108,13 +111,15 @@ namespace Proto.Cluster.Partition
 
         private Task HandleClusterTopology(ClusterTopology msg)
         {
-            if (msg.EventId > _eventId)
+            if (msg.EventId <= _eventId)
             {
-                _eventId = msg.EventId;
-                var members = msg.Members.ToArray();
-                _rdv.UpdateMembers(members);
-                _eventId = msg.EventId;
+                return Actor.Done;
             }
+
+            _eventId = msg.EventId;
+            var members = msg.Members.ToArray();
+            _rdv.UpdateMembers(members);
+            _eventId = msg.EventId;
 
             return Actor.Done;
         }
@@ -125,7 +130,7 @@ namespace Proto.Cluster.Partition
         {
             var count = 0;
             var response = new IdentityHandoverResponse();
-            var requestAddress = context.Sender.Address;
+            var requestAddress = context.Sender!.Address;
 
             var rdv = new Rendezvous();
             rdv.UpdateMembers(msg.Members);
