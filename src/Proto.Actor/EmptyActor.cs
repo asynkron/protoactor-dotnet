@@ -2,7 +2,7 @@
 
 namespace Proto
 {
-    class EmptyActor : IActor
+    internal class EmptyActor : IActor
     {
         private readonly Receive _receive;
 

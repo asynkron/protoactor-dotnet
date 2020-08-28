@@ -37,7 +37,7 @@ namespace ClusterExperiment1
             var c = new[] {c1, c2, c3};
 
 
-            Task.Run(async () =>
+            _ = Task.Run(async () =>
                 {
                     await Task.Delay(15000);
                     await c4.ShutdownAsync(false);
@@ -47,7 +47,7 @@ namespace ClusterExperiment1
                 }
             );
 
-            await Task.Delay(1000);
+
 
             _ = Task.Run(async () =>
                 {
@@ -73,7 +73,7 @@ namespace ClusterExperiment1
                                 //      Console.WriteLine("Got response");
                             }
                         }
-                        catch (Exception x)
+                        catch (Exception)
                         {
                             logger.LogError("banana");
                         }

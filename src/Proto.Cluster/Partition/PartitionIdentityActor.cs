@@ -13,9 +13,9 @@ namespace Proto.Cluster.Partition
     //for spawning/activating cluster actors see PartitionActivator.cs
     internal class PartitionIdentityActor : IActor
     {
-        private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(5);
-        private static readonly TimeSpan HandoverTimeout = TimeSpan.FromSeconds(5);
-        private static readonly TimeSpan SendLaterTimeout = TimeSpan.FromSeconds(5);
+        private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(5); //for how long do we wait before sending a ReceiveTimeout message?  (useful for liveliness checks on the actor, log it to show the actor is alive)
+        private static readonly TimeSpan HandoverTimeout = TimeSpan.FromSeconds(3); //for how long do we wait when performing a identity handover?
+        private static readonly TimeSpan TopologyChangeTimeout = TimeSpan.FromSeconds(5); //for how long do we wait after a topology change before we allow spawning new actors?
         
         private readonly Cluster _cluster;
         private readonly ILogger _logger;
@@ -49,8 +49,10 @@ namespace Proto.Cluster.Partition
                 ActivationRequest msg      => GetOrSpawn(msg, context),
                 ActivationTerminated msg   => ActivationTerminated(msg, context),
                 ClusterTopology msg        => ClusterTopology(msg, context),
-                _                          => Actor.Done
+                _                          => Unhandled()
             };
+
+        private static Task Unhandled() => Actor.Done;
 
         private Task Start()
         {
@@ -84,7 +86,7 @@ namespace Proto.Cluster.Partition
             _partitionLookup.Clear();
 
             _logger.LogWarning("Topology change --- {EventId} --- pausing interactions for {Timeout}",
-                _eventId, SendLaterTimeout
+                _eventId, TopologyChangeTimeout
             );
 
             var requests = new List<Task<IdentityHandoverResponse>>();
@@ -269,7 +271,7 @@ namespace Proto.Cluster.Partition
         private bool SendLater(object msg, IContext context)
         {
             //TODO: buffer this in a queue and consume once we are past timestamp
-            if (DateTime.Now > _lastEventTimestamp.Add(SendLaterTimeout))
+            if (DateTime.Now > _lastEventTimestamp.Add(TopologyChangeTimeout))
             {
                 return false;
             }

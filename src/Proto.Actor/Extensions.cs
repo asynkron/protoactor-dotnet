@@ -16,7 +16,7 @@ namespace Proto
         /// </summary>
         /// <param name="self">The actor instance to stop</param>
         /// <param name="system">Actor system</param>
-        public static void Stop(this IEnumerable<PID> self, ActorSystem system)
+        internal static void Stop(this IEnumerable<PID> self, ActorSystem system)
         {
             if (self == null)
             {
@@ -29,7 +29,7 @@ namespace Proto
             }
         }
 
-        public static void SendSystemMessage(this IEnumerable<PID> self, SystemMessage message, ActorSystem system)
+        internal static void SendSystemMessage(this IEnumerable<PID> self, SystemMessage message, ActorSystem system)
         {
             foreach (var pid in self)
             {
