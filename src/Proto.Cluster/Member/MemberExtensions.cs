@@ -7,7 +7,7 @@ namespace Proto.Cluster
     {
         public static string ToLogString(this IEnumerable<Member> self)
         {
-            var members = "[" + string.Join(", ",self.Select(m => m.Address)) + "]";
+            var members = "[" + string.Join(", ", self.Select(m => m.Address)) + "]";
             return members;
         }
     }

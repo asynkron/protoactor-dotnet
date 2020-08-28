@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System.Linq;
-using Proto.Cluster.Events;
 
 namespace Proto.Cluster.Partition
 {
@@ -51,7 +50,7 @@ namespace Proto.Cluster.Partition
                     {
                         eventId = e.EventId;
                         _cluster.MemberList.BroadcastEvent(e);
-                        
+
                         Selector.Update(e.Members.ToArray());
                         _context.Send(_partitionActor, e);
                         _context.Send(_partitionActivator, e);

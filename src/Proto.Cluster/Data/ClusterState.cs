@@ -1,5 +1,3 @@
-using System;
-
 namespace Proto.Cluster.Data
 {
     public class ClusterState

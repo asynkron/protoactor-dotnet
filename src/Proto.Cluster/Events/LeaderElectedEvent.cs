@@ -12,9 +12,7 @@ namespace Proto.Cluster.Events
             OldLeader = oldLeader;
         }
 
-        public LeaderInfo NewLeader { get;  }
-        public LeaderInfo OldLeader { get;  }
-        
-        
+        public LeaderInfo NewLeader { get; }
+        public LeaderInfo OldLeader { get; }
     }
 }

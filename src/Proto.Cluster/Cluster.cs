@@ -43,6 +43,10 @@ namespace Proto.Cluster
 
         private IIdentityLookup? IdentityLookup { get; set; }
 
+        internal IClusterProvider Provider { get; set; }
+
+        public string LoggerId => System.ProcessRegistry.Address;
+
         public Task StartAsync(string clusterName, string address, int port, IClusterProvider cp)
             => StartAsync(new ClusterConfig(clusterName, address, port, cp));
 
@@ -50,7 +54,7 @@ namespace Proto.Cluster
         {
             Config = config;
 
-  
+
             //default to partition identity lookup
             IdentityLookup = config.IdentityLookup ?? new PartitionIdentityLookup();
             Remote.Start(Config.Address, Config.Port, Config.RemoteConfig);
@@ -71,7 +75,7 @@ namespace Proto.Cluster
             var (host, port) = System.ProcessRegistry.GetAddress();
 
             Provider = Config.ClusterProvider;
-            
+
             await Provider.StartAsync(
                 this,
                 Config.Name,
@@ -83,8 +87,6 @@ namespace Proto.Cluster
 
             _logger.LogInformation("Started");
         }
-
-        internal IClusterProvider Provider { get; set; }
 
         public async Task ShutdownAsync(bool graceful = true)
         {
@@ -126,8 +128,8 @@ namespace Proto.Cluster
                 var pid = await GetAsync(identity, kind, ct);
                 if (pid == null)
                 {
-                    _logger.LogInformation("Got null pid for {Identity}",identity);
-                    await Task.Delay(delay,CancellationToken.None);
+                    _logger.LogInformation("Got null pid for {Identity}", identity);
+                    await Task.Delay(delay, CancellationToken.None);
                     continue;
                 }
 
@@ -136,15 +138,13 @@ namespace Proto.Cluster
                 {
                     return res;
                 }
-                
-                _logger.LogInformation("Got null response from request to {Identity}",identity);
+
+                _logger.LogInformation("Got null response from request to {Identity}", identity);
 
                 await Task.Delay(delay, CancellationToken.None);
             }
 
             return default!;
         }
-
-        public string LoggerId => System.ProcessRegistry.Address;
     }
 }

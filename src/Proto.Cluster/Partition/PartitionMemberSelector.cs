@@ -13,7 +13,6 @@ namespace Proto.Cluster.Partition
         public int Count => _members.Count;
 
 
-        
         public void Update(Member[] members)
         {
             lock (_lock)

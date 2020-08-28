@@ -24,24 +24,24 @@ namespace Proto.Cluster
     //TODO: check usage and threadsafety.
     public class MemberList
     {
-        private readonly ILogger _logger = null!;
-
         //TODO: actually use this to prevent banned members from rejoining
         private readonly ConcurrentSet<string> _bannedMembers = new ConcurrentSet<string>();
         private readonly Cluster _cluster;
-        private readonly ActorSystem _system;
-        private readonly IRootContext _root;
         private readonly EventStream _eventStream;
-        
+        private readonly ILogger _logger = null!;
+
         private readonly Dictionary<string, Member> _members = new Dictionary<string, Member>();
 
         private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind =
             new Dictionary<string, IMemberStrategy>();
 
-        private LeaderInfo? _leader;
+        private readonly IRootContext _root;
 
 
         private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
+        private readonly ActorSystem _system;
+
+        private LeaderInfo? _leader;
 
         public MemberList(Cluster cluster)
         {
@@ -49,9 +49,11 @@ namespace Proto.Cluster
             _system = _cluster.System;
             _root = _system.Root;
             _eventStream = _system.EventStream;
-            
+
             _logger = Log.CreateLogger($"MemberList-{_cluster.LoggerId}");
         }
+
+        public bool IsLeader => _cluster.Id.Equals(_leader?.MemberId);
 
         internal string GetActivator(string kind)
         {
@@ -88,7 +90,7 @@ namespace Proto.Cluster
                     _bannedMembers.Add(b);
                 }
             }
-            
+
             if (leader?.MemberId == _leader?.MemberId)
             {
                 //leader is the same as before, ignore
@@ -100,19 +102,17 @@ namespace Proto.Cluster
             }
 
             var oldLeader = _leader;
-            
+
             _leader = leader;
 
-            _logger.LogInformation("Leader updated {Leader}",leader?.MemberId);
-            _eventStream.Publish(new LeaderElectedEvent(leader,oldLeader));
+            _logger.LogInformation("Leader updated {Leader}", leader?.MemberId);
+            _eventStream.Publish(new LeaderElectedEvent(leader, oldLeader));
 
             if (IsLeader)
             {
                 _logger.LogWarning("I AM LEADER!");
             }
         }
-
-        public bool IsLeader => _cluster.Id.Equals(_leader?.MemberId);
 
         public void UpdateClusterTopology(IReadOnlyCollection<Member> statuses, ulong eventId)
         {
@@ -157,11 +157,12 @@ namespace Proto.Cluster
                 {
                     MemberLeave(memberThatLeft);
                     topology.Left.Add(new Member
-                    {
-                        Host = memberThatLeft.Host,
-                        Port = memberThatLeft.Port,
-                        Id =  memberThatLeft.Id
-                    });
+                        {
+                            Host = memberThatLeft.Host,
+                            Port = memberThatLeft.Port,
+                            Id = memberThatLeft.Id
+                        }
+                    );
                 }
 
                 //these are all members that are new and did not exist before
@@ -175,15 +176,16 @@ namespace Proto.Cluster
                 {
                     MemberJoin(memberThatJoined);
                     topology.Joined.Add(new Member
-                    {
-                        Host = memberThatJoined.Host,
-                        Port = memberThatJoined.Port,
-                        Id =  memberThatJoined.Id
-                    });
+                        {
+                            Host = memberThatJoined.Host,
+                            Port = memberThatJoined.Port,
+                            Id = memberThatJoined.Id
+                        }
+                    );
                 }
 
                 topology.Members.AddRange(_members.Values);
-                
+
                 _eventStream.Publish(topology);
             }
             finally
@@ -218,7 +220,7 @@ namespace Proto.Cluster
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
             _logger.LogWarning("Published event {@EndpointTerminated}", endpointTerminated);
             _cluster.System.EventStream.Publish(endpointTerminated);
-            
+
             // if (IsLeader)
             // {
             //     var banned = _bannedMembers.ToArray();
@@ -251,7 +253,7 @@ namespace Proto.Cluster
         }
 
         /// <summary>
-        /// broadcast a message to all members eventstream
+        ///     broadcast a message to all members eventstream
         /// </summary>
         /// <param name="message"></param>
         public void BroadcastEvent(object message)
@@ -261,12 +263,11 @@ namespace Proto.Cluster
                 var pid = new PID(m.Value.Address, "eventstream");
                 try
                 {
-                    
                     _system.Root.Send(pid, message);
                 }
-                catch(Exception)
+                catch (Exception)
                 {
-                    _logger.LogError("Failed to broadcast {Message} to {Pid}",message,pid);
+                    _logger.LogError("Failed to broadcast {Message} to {Pid}", message, pid);
                 }
             }
         }

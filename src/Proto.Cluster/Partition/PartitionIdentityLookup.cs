@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.IdentityLookup;
-using Proto.Remote;
 
 namespace Proto.Cluster.Partition
 {

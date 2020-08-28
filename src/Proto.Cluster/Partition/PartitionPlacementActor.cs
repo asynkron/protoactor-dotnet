@@ -20,11 +20,12 @@ namespace Proto.Cluster.Partition
         private readonly Dictionary<string, (PID pid, string kind)> _myActors =
             new Dictionary<string, (PID pid, string kind)>();
 
+        private readonly PartitionManager _partitionManager;
+        private readonly Rendezvous _rdv = new Rendezvous();
+
         private readonly Remote.Remote _remote;
         private readonly ActorSystem _system;
         private ulong _eventId;
-        private readonly Rendezvous _rdv = new Rendezvous();
-        private readonly PartitionManager _partitionManager;
 
         public PartitionPlacementActor(Cluster cluster, PartitionManager partitionManager)
         {
@@ -43,7 +44,7 @@ namespace Proto.Cluster.Partition
                         {
                             return;
                         }
-                        
+
                         var id = kvp.Key;
 
                         if (dl.Sender != null)
@@ -71,14 +72,14 @@ namespace Proto.Cluster.Partition
             switch (context.Message)
             {
                 case Started _:
-                  //  context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+                    //  context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
                     break;
                 case ReceiveTimeout _:
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
                     _logger.LogInformation("I am idle");
                     break;
                 case Terminated msg:
-                    HandleTerminated(context,msg);
+                    HandleTerminated(context, msg);
                     break;
                 case ClusterTopology msg:
                     HandleClusterTopology(msg);
@@ -98,19 +99,19 @@ namespace Proto.Cluster.Partition
         private void HandleTerminated(IContext context, Terminated msg)
         {
             //TODO: this can be done better
-            var (identity, (pid,kind)) = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(msg.Who));
-            
+            var (identity, (pid, kind)) = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(msg.Who));
+
             var activationTerminated = new ActivationTerminated
             {
                 Pid = pid,
                 Kind = kind,
                 EventId = _eventId,
-                Identity = identity,
+                Identity = identity
             };
 
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(identity);
             var ownerPid = _partitionManager.RemotePartitionIdentityActor(ownerAddress);
-            
+
             context.Send(ownerPid, activationTerminated);
         }
 
@@ -132,7 +133,7 @@ namespace Proto.Cluster.Partition
             var count = 0;
             var response = new IdentityHandoverResponse();
             var requestAddress = context.Sender.Address;
-            
+
             var rdv = new Rendezvous();
             rdv.UpdateMembers(msg.Members);
             //  _logger.LogDebug("Handling IdentityHandoverRequest - request from " + requestAddress);

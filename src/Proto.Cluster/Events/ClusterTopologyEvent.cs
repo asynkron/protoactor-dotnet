@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Proto.Cluster.Data;
 
 namespace Proto.Cluster.Events
 {

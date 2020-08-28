@@ -17,7 +17,6 @@ namespace Proto.Cluster.Partition
     /// </summary>
     public class Rendezvous
     {
-        
         private MemberData[] _members = Array.Empty<MemberData>();
 
         public string GetOwnerMemberByIdentity(string identity)
