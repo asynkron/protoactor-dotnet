@@ -12,8 +12,19 @@ namespace ClusterExperiment1
 {
     public static class Program
     {
-        public static async Task Main()
+        private static async Task RunFollower()
         {
+            Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
+            var cluster = SpawnMember(0);
+
+            Console.ReadLine();
+        }
+        
+        private static async Task RunLeader()
+        {
+            Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
+            var logger = Log.CreateLogger(nameof(Program));
+            
             Console.WriteLine("Press enter to start");
             Console.WriteLine();
             Console.WriteLine("Red = spawned grains");
@@ -21,34 +32,15 @@ namespace ClusterExperiment1
             Console.WriteLine("Each '.' is a request/response call to one of the grains");
             Console.WriteLine("Enter spawns a new node in the cluster");
             Console.ReadLine();
-            Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
-            var logger = Log.CreateLogger(nameof(Program));
-
+            
             var system1 = new ActorSystem();
             var consul1 = new ConsulProvider(new ConsulProviderOptions());
             var serialization1 = new Serialization();
             serialization1.RegisterFileDescriptor(MessagesReflection.Descriptor);
             var c1 = new Cluster(system1, serialization1);
             await c1.StartAsync(new ClusterConfig("mycluster", "127.0.0.1", 8090, consul1).WithPidCache(false));
-            var c2= SpawnMember(8091);
-            var c3 = SpawnMember(8092);
-            var c4 = SpawnMember(8093);
-
-            var c = new[] {c1, c2, c3};
-
-
-            _ = Task.Run(async () =>
-                {
-                    await Task.Delay(15000);
-                    await c4.ShutdownAsync(false);
-
-                    // await Task.Delay(5000);
-                    // c4.ShutdownAsync(true);
-                }
-            );
-
-
-
+            
+         
             _ = Task.Run(async () =>
                 {
                     var rnd = new Random();
@@ -75,23 +67,25 @@ namespace ClusterExperiment1
                         }
                         catch (Exception)
                         {
-                            logger.LogError("banana");
+                            logger.LogError("Request timeout");
                         }
-
-                        //await Task.Delay(0);
                     }
                 }
             );
 
-            int port = 8094;
 
-            while (true)
+            Console.ReadLine();
+        }
+        
+        public static async Task Main(string[] args)
+        {
+            if (args.Length == 0)
             {
-                Console.ReadLine();
-                Console.WriteLine(
-                    "-----------------------------------------------------------------------------------------"
-                );
-                SpawnMember(port++);
+                await RunLeader();
+            }
+            else
+            {
+                await RunFollower();
             }
         }
 

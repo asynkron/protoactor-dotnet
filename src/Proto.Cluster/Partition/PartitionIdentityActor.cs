@@ -217,7 +217,7 @@ namespace Proto.Cluster.Partition
             if (string.IsNullOrEmpty(activatorAddress))
             {
                 //No activator currently available, return unavailable
-                _logger.LogWarning("No members currently available");
+                _logger.LogWarning("No members currently available for kind {Kind}",msg.Kind);
                 context.Respond(new ActivationResponse {Pid = null});
                 return Actor.Done;
             }
