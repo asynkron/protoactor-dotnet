@@ -31,18 +31,20 @@ namespace Proto.Cluster.Partition
 
         private ulong _eventId;
         private DateTime _lastEventTimestamp;
+        private readonly string _myAddress;
 
         public PartitionIdentityActor(Cluster cluster, PartitionManager partitionManager)
         {
             _logger = Log.CreateLogger($"{nameof(PartitionIdentityActor)}-{cluster.LoggerId}");
             _cluster = cluster;
             _partitionManager = partitionManager;
+            _myAddress = cluster.System.ProcessRegistry.Address;
         }
 
         public Task ReceiveAsync(IContext context) =>
             context.Message switch
             {
-                Started _                  => Start(context),
+                Started _                  => Start(),
                 ReceiveTimeout _           => ReceiveTimeout(context),
                 ActivationRequest msg      => GetOrSpawn(msg, context),
                 ActivationTerminated msg   => ActivationTerminated(msg, context),
@@ -50,7 +52,7 @@ namespace Proto.Cluster.Partition
                 _                          => Actor.Done
             };
 
-        private Task Start(IContext context)
+        private Task Start()
         {
             _lastEventTimestamp = DateTime.Now;
             _logger.LogDebug("Started");
@@ -89,7 +91,7 @@ namespace Proto.Cluster.Partition
             var requestMsg = new IdentityHandoverRequest
             {
                 EventId = _eventId,
-                Address = context.Self!.Address
+                Address = _myAddress
             };
 
             requestMsg.Members.AddRange(members);
@@ -152,7 +154,7 @@ namespace Proto.Cluster.Partition
         private Task ActivationTerminated(ActivationTerminated msg, IContext context)
         {
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
-            if (ownerAddress != context.Self.Address)
+            if (ownerAddress != _myAddress)
             {
                 var ownerPid = _partitionManager.RemotePartitionIdentityActor(ownerAddress);
                 _logger.LogWarning("Tried to terminate activation on wrong node, forwarding");
@@ -186,7 +188,7 @@ namespace Proto.Cluster.Partition
         private Task GetOrSpawn(ActivationRequest msg, IContext context)
         {
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
-            if (ownerAddress != context.Self.Address)
+            if (ownerAddress != _myAddress)
             {
                 var ownerPid = _partitionManager.RemotePartitionIdentityActor(ownerAddress);
                 _logger.LogWarning("Tried to spawn on wrong node, forwarding");
@@ -272,8 +274,14 @@ namespace Proto.Cluster.Partition
                 return false;
             }
 
-            var self = context.Self;
-            Task.Delay(100).ContinueWith(t => { _cluster.System.Root.Send(self, msg); });
+            var self = context.Self!;
+            _ = Task.Run(async () =>
+                {
+                    await Task.Delay(100);
+                    _cluster.System.Root.Send(self, msg);
+                }
+            );
+            
             return true;
 
         }
