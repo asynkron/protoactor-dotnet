@@ -67,36 +67,26 @@ namespace Proto.Cluster.Partition
             );
         }
 
-        public Task ReceiveAsync(IContext context)
-        {
-            switch (context.Message)
+        public Task ReceiveAsync(IContext context) =>
+            context.Message switch
             {
-                case Started _:
-                    //  context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
-                    break;
-                case ReceiveTimeout _:
-                    context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
-                    _logger.LogInformation("I am idle");
-                    break;
-                case Terminated msg:
-                    HandleTerminated(context, msg);
-                    break;
-                case ClusterTopology msg:
-                    HandleClusterTopology(msg);
-                    break;
-                case IdentityHandoverRequest msg:
-                    //this node is in sync with the requester, go ahead and transfer
-                    HandleIdentityHandoverRequest(context, msg);
-                    break;
-                case ActivationRequest msg:
-                    HandleActivationRequest(context, msg);
-                    break;
-            }
+                Started _                   => Actor.Done, //  context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+                ReceiveTimeout _            => ReceiveTimeout(context),
+                Terminated msg              => HandleTerminated(context, msg),
+                ClusterTopology msg         => HandleClusterTopology(msg),
+                IdentityHandoverRequest msg => HandleIdentityHandoverRequest(context, msg),
+                ActivationRequest msg       => HandleActivationRequest(context, msg),
+                _                           => Actor.Done
+            };
 
+        private Task ReceiveTimeout(IContext context)
+        {
+            context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+            _logger.LogInformation("I am idle");
             return Actor.Done;
         }
 
-        private void HandleTerminated(IContext context, Terminated msg)
+        private Task HandleTerminated(IContext context, Terminated msg)
         {
             //TODO: this can be done better
             var (identity, (pid, kind)) = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(msg.Who));
@@ -113,9 +103,10 @@ namespace Proto.Cluster.Partition
             var ownerPid = _partitionManager.RemotePartitionIdentityActor(ownerAddress);
 
             context.Send(ownerPid, activationTerminated);
+            return Actor.Done;
         }
 
-        private void HandleClusterTopology(ClusterTopology msg)
+        private Task HandleClusterTopology(ClusterTopology msg)
         {
             if (msg.EventId > _eventId)
             {
@@ -124,11 +115,13 @@ namespace Proto.Cluster.Partition
                 _rdv.UpdateMembers(members);
                 _eventId = msg.EventId;
             }
+
+            return Actor.Done;
         }
 
         //this is pure, we do not change any state or actually move anything
         //the requester also provide its own view of the world in terms of members
-        private void HandleIdentityHandoverRequest(IContext context, IdentityHandoverRequest msg)
+        private Task HandleIdentityHandoverRequest(IContext context, IdentityHandoverRequest msg)
         {
             var count = 0;
             var response = new IdentityHandoverResponse();
@@ -162,9 +155,10 @@ namespace Proto.Cluster.Partition
             context.Respond(response);
 
             _logger.LogDebug("Transferred {Count} actor ownership to other members", count);
+            return Actor.Done;
         }
 
-        private void HandleActivationRequest(IContext context, ActivationRequest msg)
+        private Task HandleActivationRequest(IContext context, ActivationRequest msg)
         {
             var props = _remote.GetKnownKind(msg.Kind);
             var identity = msg.Identity;
@@ -203,6 +197,8 @@ namespace Proto.Cluster.Partition
 
                 throw;
             }
+
+            return Actor.Done;
         }
     }
 }

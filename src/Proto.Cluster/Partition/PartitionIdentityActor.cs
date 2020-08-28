@@ -35,38 +35,39 @@ namespace Proto.Cluster.Partition
             _partitionManager = partitionManager;
         }
 
-        public async Task ReceiveAsync(IContext context)
-        {
-            switch (context.Message)
+        public Task ReceiveAsync(IContext context) =>
+            context.Message switch
             {
-                case Started _:
-                    _lastEventTimestamp = DateTime.Now;
-                    _logger.LogDebug("Started");
-                    //       context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
-                    break;
-                case ReceiveTimeout _:
-                    context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
-                    _logger.LogInformation("I am idle");
-                    break;
-                case ActivationRequest msg:
-                    GetOrSpawn(msg, context);
-                    break;
-                case ActivationTerminated msg:
-                    ActivationTerminated(msg, context);
-                    break;
-                case ClusterTopology msg:
-                    if (_eventId < msg.EventId)
+                Started _                  => Start(context),
+                ReceiveTimeout _           => ReceiveTimeout(context),
+                ActivationRequest msg      => GetOrSpawn(msg, context),
+                ActivationTerminated msg   => ActivationTerminated(msg, context),
+                ClusterTopology msg        => ClusterTopology(msg, context),
+                _                          => Actor.Done
+            };
 
-                    {
-                        await ClusterTopology(msg, context);
-                    }
+        private Task Start(IContext context)
+        {
+            _lastEventTimestamp = DateTime.Now;
+            _logger.LogDebug("Started");
+            //       context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+            return Actor.Done;
+        }
 
-                    break;
-            }
+        private Task ReceiveTimeout(IContext context)
+        {
+            context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+            _logger.LogInformation("I am idle");
+            return Actor.Done;
         }
 
         private async Task ClusterTopology(ClusterTopology msg, IContext context)
         {
+            if (_eventId >= msg.EventId)
+            {
+                return;
+            }
+
             _eventId = msg.EventId;
             _lastEventTimestamp = DateTime.Now;
             var members = msg.Members.ToArray();
@@ -144,7 +145,7 @@ namespace Proto.Cluster.Partition
             }
         }
 
-        private void ActivationTerminated(ActivationTerminated msg, IContext context)
+        private Task ActivationTerminated(ActivationTerminated msg, IContext context)
         {
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
             if (ownerAddress != context.Self.Address)
@@ -153,12 +154,13 @@ namespace Proto.Cluster.Partition
                 _logger.LogWarning("Tried to terminate activation on wrong node, forwarding");
                 context.Forward(ownerPid);
 
-                return;
+                return Actor.Done;
             }
 
             //TODO: handle correct incarnation/version
             _logger.LogDebug("Terminated {Pid}", msg.Pid);
             _partitionLookup.Remove(msg.Identity);
+            return Actor.Done;
         }
 
         private void TakeOwnership(Activation msg)
@@ -177,7 +179,7 @@ namespace Proto.Cluster.Partition
         }
 
 
-        private void GetOrSpawn(ActivationRequest msg, IContext context)
+        private Task GetOrSpawn(ActivationRequest msg, IContext context)
         {
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
             if (ownerAddress != context.Self.Address)
@@ -186,19 +188,19 @@ namespace Proto.Cluster.Partition
                 _logger.LogWarning("Tried to spawn on wrong node, forwarding");
                 context.Forward(ownerPid);
 
-                return;
+                return Actor.Done;
             }
 
             //Check if exist in current partition dictionary
             if (_partitionLookup.TryGetValue(msg.Identity, out var info))
             {
                 context.Respond(new ActivationResponse {Pid = info.pid});
-                return;
+                return Actor.Done;
             }
 
             if (SendLater(msg, context))
             {
-                return;
+                return Actor.Done;
             }
 
             //Get activator
@@ -209,7 +211,7 @@ namespace Proto.Cluster.Partition
                 //No activator currently available, return unavailable
                 _logger.LogWarning("No members currently available");
                 context.Respond(new ActivationResponse {Pid = null});
-                return;
+                return Actor.Done;
             }
 
             //What is this?
@@ -254,19 +256,22 @@ namespace Proto.Cluster.Partition
                     return Actor.Done;
                 }
             );
+            
+            return Actor.Done;
         }
 
         private bool SendLater(object msg, IContext context)
         {
             //TODO: buffer this in a queue and consume once we are past timestamp
-            if (DateTime.Now <= _lastEventTimestamp.AddSeconds(5))
+            if (DateTime.Now > _lastEventTimestamp.AddSeconds(5))
             {
-                var self = context.Self;
-                Task.Delay(100).ContinueWith(t => { _cluster.System.Root.Send(self, msg); });
-                return true;
+                return false;
             }
 
-            return false;
+            var self = context.Self;
+            Task.Delay(100).ContinueWith(t => { _cluster.System.Root.Send(self, msg); });
+            return true;
+
         }
 
 
