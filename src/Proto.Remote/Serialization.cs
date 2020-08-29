@@ -26,6 +26,7 @@ namespace Proto.Remote
         {
             _serialization = serialization;
         }
+
         public ByteString Serialize(object obj)
         {
             if (obj is JsonMessage jsonMessage)
@@ -59,6 +60,7 @@ namespace Proto.Remote
             {
                 throw new ArgumentException("obj must be of type IMessage", nameof(obj));
             }
+
             return message.Descriptor.File.Package + "." + message.Descriptor.Name;
         }
     }
@@ -71,6 +73,7 @@ namespace Proto.Remote
         {
             _serialization = serialization;
         }
+
         public ByteString Serialize(object obj)
         {
             var message = obj as IMessage;
@@ -91,14 +94,15 @@ namespace Proto.Remote
             {
                 throw new ArgumentException("obj must be of type IMessage", nameof(obj));
             }
+
             return message.Descriptor.File.Package + "." + message.Descriptor.Name;
         }
     }
 
     public class Serialization
     {
-        internal readonly Dictionary<string, MessageParser> TypeLookup = new Dictionary<string, MessageParser>();
         private readonly List<ISerializer> Serializers = new List<ISerializer>();
+        internal readonly Dictionary<string, MessageParser> TypeLookup = new Dictionary<string, MessageParser>();
 
         public Serialization()
         {
@@ -132,6 +136,7 @@ namespace Proto.Remote
 
         public string GetTypeName(object message, int serializerId) => Serializers[serializerId].GetTypeName(message);
 
-        public object Deserialize(string typeName, ByteString bytes, int serializerId) => Serializers[serializerId].Deserialize(bytes, typeName);
+        public object Deserialize(string typeName, ByteString bytes, int serializerId) =>
+            Serializers[serializerId].Deserialize(bytes, typeName);
     }
 }

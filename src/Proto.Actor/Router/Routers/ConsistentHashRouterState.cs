@@ -9,13 +9,13 @@ using System.Collections.Generic;
 
 namespace Proto.Router.Routers
 {
-    class ConsistentHashRouterState : RouterState
+    internal class ConsistentHashRouterState : RouterState
     {
         private readonly Func<string, uint> _hash;
         private readonly int _replicaCount;
-        private HashRing? _hashRing;
         private readonly Dictionary<string, PID> _routeeMap = new Dictionary<string, PID>();
         private readonly ISenderContext _senderContext;
+        private HashRing? _hashRing;
 
         public ConsistentHashRouterState(ISenderContext senderContext, Func<string, uint> hash, int replicaCount)
         {
@@ -44,7 +44,9 @@ namespace Proto.Router.Routers
         public override void RouteMessage(object message)
         {
             if (_hashRing == null)
+            {
                 throw new InvalidOperationException("Routees not set");
+            }
 
             var env = MessageEnvelope.Unwrap(message);
 
@@ -59,7 +61,9 @@ namespace Proto.Router.Routers
             }
             else
             {
-                throw new NotSupportedException($"Message of type '{message.GetType().Name}' does not implement IHashable");
+                throw new NotSupportedException(
+                    $"Message of type '{message.GetType().Name}' does not implement IHashable"
+                );
             }
         }
     }

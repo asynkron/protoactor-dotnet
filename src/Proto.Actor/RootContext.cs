@@ -12,13 +12,13 @@ using JetBrains.Annotations;
 
 namespace Proto
 {
-    public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext { }
+    public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext
+    {
+    }
 
     [PublicAPI]
     public class RootContext : IRootContext
     {
-        public ActorSystem System { get; }
-
         public RootContext(ActorSystem system)
         {
             System = system;
@@ -36,6 +36,7 @@ namespace Proto
         }
 
         private Sender? SenderMiddleware { get; set; }
+        public ActorSystem System { get; }
         public MessageHeader Headers { get; private set; }
 
         public PID? Parent => null;
@@ -51,7 +52,9 @@ namespace Proto
 
         public PID SpawnNamed(Props props, string name)
         {
-            var parent = props.GuardianStrategy != null ? System.Guardians.GetGuardianPID(props.GuardianStrategy) : null;
+            var parent = props.GuardianStrategy != null
+                ? System.Guardians.GetGuardianPID(props.GuardianStrategy)
+                : null;
             return props.Spawn(System, name, parent);
         }
 
@@ -79,12 +82,16 @@ namespace Proto
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => RequestAsync(target, message, new FutureProcess<T>(System, cancellationToken));
 
-        public Task<T> RequestAsync<T>(PID target, object message) => RequestAsync(target, message, new FutureProcess<T>(System));
+        public Task<T> RequestAsync<T>(PID target, object message) =>
+            RequestAsync(target, message, new FutureProcess<T>(System));
 
         public void Stop(PID? pid)
         {
-            if (pid == null) return;
-            
+            if (pid == null)
+            {
+                return;
+            }
+
             var reff = System.ProcessRegistry.Get(pid);
             reff.Stop(pid);
         }

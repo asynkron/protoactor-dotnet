@@ -224,7 +224,6 @@ namespace Proto
             var duration = TimeSpan.FromMilliseconds(TimeConvert.ToMilliseconds(backoff + noise));
             Task.Delay(duration).ContinueWith(t => supervisor.RestartChildren(reason, child));
         }
-
     }
 
     public class AlwaysRestartStrategy : ISupervisorStrategy

@@ -10,17 +10,24 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    class FutureProcess<T> : Process
+    internal class FutureProcess<T> : Process
     {
         private readonly CancellationTokenSource? _cts;
         private readonly TaskCompletionSource<T> _tcs;
 
-        internal FutureProcess(ActorSystem system, TimeSpan timeout) : this(system, new CancellationTokenSource(timeout)) { }
+        internal FutureProcess(ActorSystem system, TimeSpan timeout) : this(system, new CancellationTokenSource(timeout)
+        )
+        {
+        }
 
         internal FutureProcess(ActorSystem system, CancellationToken cancellationToken)
-            : this(system, CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) { }
+            : this(system, CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+        {
+        }
 
-        internal FutureProcess(ActorSystem system) : this(system, null) { }
+        internal FutureProcess(ActorSystem system) : this(system, null)
+        {
+        }
 
         private FutureProcess(ActorSystem system, CancellationTokenSource? cts) : base(system)
         {

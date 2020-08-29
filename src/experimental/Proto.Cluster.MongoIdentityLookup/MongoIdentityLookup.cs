@@ -3,18 +3,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using MongoDB.Driver;
 using Proto.Cluster.IdentityLookup;
-using Proto.Remote;
 
 namespace Proto.Cluster.MongoIdentityLookup
 {
-    
-    public class MongoIdentityLookup : IIdentityLookup 
+    public class MongoIdentityLookup : IIdentityLookup
     {
+        private readonly string _clusterName;
         private Cluster _cluster;
         private IMongoDatabase _db;
         private string[] _kinds;
-        private readonly string _clusterName;
-        private IMongoCollection<PidLookup> _pids;
+        private readonly IMongoCollection<PidLookup> _pids;
 
         public MongoIdentityLookup(string clusterName, IMongoDatabase db)
         {
@@ -32,9 +30,8 @@ namespace Proto.Cluster.MongoIdentityLookup
                 return Task.FromResult((PID) null);
             }
 
-            var pid = new PID(pidLookup.Address,pidLookup.Identity);
+            var pid = new PID(pidLookup.Address, pidLookup.Identity);
             return Task.FromResult(pid);
-
         }
 
         public void Setup(Cluster cluster, string[] kinds)
@@ -45,7 +42,6 @@ namespace Proto.Cluster.MongoIdentityLookup
 
         public void Shutdown()
         {
-
         }
     }
 }

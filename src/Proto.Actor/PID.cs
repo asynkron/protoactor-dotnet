@@ -17,7 +17,10 @@ namespace Proto
             Id = id;
         }
 
-        internal PID(string address, string id, Process process) : this(address, id) => _process = process;
+        internal PID(string address, string id, Process process) : this(address, id)
+        {
+            _process = process;
+        }
 
         internal Process? Ref(ActorSystem system)
         {
@@ -46,7 +49,7 @@ namespace Proto
             reff.SendUserMessage(this, message);
         }
 
-        public void SendSystemMessage(ActorSystem system,object sys)
+        public void SendSystemMessage(ActorSystem system, object sys)
         {
             var reff = Ref(system) ?? system.ProcessRegistry.Get(this);
             reff.SendSystemMessage(this, sys);

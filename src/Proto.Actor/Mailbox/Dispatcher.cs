@@ -33,8 +33,11 @@ namespace Proto.Mailbox
     {
         private const int DefaultThroughput = 300;
 
-        public SynchronousDispatcher(int throughput = DefaultThroughput) => Throughput = throughput;
-        
+        public SynchronousDispatcher(int throughput = DefaultThroughput)
+        {
+            Throughput = throughput;
+        }
+
         public int Throughput { get; }
 
         public void Schedule(Func<Task> runner) => runner().Wait();
@@ -43,8 +46,11 @@ namespace Proto.Mailbox
     public sealed class ThreadPoolDispatcher : IDispatcher
     {
         private const int DefaultThroughput = 300;
-        
-        public ThreadPoolDispatcher(int throughput = DefaultThroughput) => Throughput = throughput;
+
+        public ThreadPoolDispatcher(int throughput = DefaultThroughput)
+        {
+            Throughput = throughput;
+        }
 
         public void Schedule(Func<Task> runner) => Task.Factory.StartNew(runner, TaskCreationOptions.None);
 
@@ -52,12 +58,13 @@ namespace Proto.Mailbox
     }
 
     /// <summary>
-    /// This must be created on the UI thread after a SynchronizationContext has been created.  Otherwise, an error will occur.
+    ///     This must be created on the UI thread after a SynchronizationContext has been created.  Otherwise, an error will
+    ///     occur.
     /// </summary>
     public sealed class CurrentSynchronizationContextDispatcher : IDispatcher
     {
-        private readonly TaskScheduler _scheduler;
         private const int DefaultThroughput = 300;
+        private readonly TaskScheduler _scheduler;
 
         public CurrentSynchronizationContextDispatcher(int throughput = DefaultThroughput)
         {
@@ -65,19 +72,20 @@ namespace Proto.Mailbox
             Throughput = throughput;
         }
 
-        public void Schedule(Func<Task> runner) => Task.Factory.StartNew(runner, CancellationToken.None, TaskCreationOptions.None, _scheduler);
+        public void Schedule(Func<Task> runner) =>
+            Task.Factory.StartNew(runner, CancellationToken.None, TaskCreationOptions.None, _scheduler);
 
         public int Throughput { get; }
     }
-    
-    class NoopDispatcher: IDispatcher
+
+    internal class NoopDispatcher : IDispatcher
     {
         internal static readonly IDispatcher Instance = new NoopDispatcher();
         public int Throughput => 0;
         public void Schedule(Func<Task> runner) => throw new NotImplementedException();
     }
-    
-    class NoopInvoker : IMessageInvoker
+
+    internal class NoopInvoker : IMessageInvoker
     {
         internal static readonly IMessageInvoker Instance = new NoopInvoker();
         public Task InvokeSystemMessageAsync(object msg) => throw new NotImplementedException();

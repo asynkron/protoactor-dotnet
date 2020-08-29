@@ -18,7 +18,9 @@ namespace Proto.Router.Routers
         public virtual HashSet<PID> GetRoutees()
         {
             if (_routees == null)
+            {
                 throw new InvalidOperationException("Routees not set");
+            }
 
             return _routees;
         }
@@ -26,7 +28,9 @@ namespace Proto.Router.Routers
         protected List<PID> GetValues()
         {
             if (_values == null)
+            {
                 throw new InvalidOperationException("Routees not set");
+            }
 
             return _values;
         }

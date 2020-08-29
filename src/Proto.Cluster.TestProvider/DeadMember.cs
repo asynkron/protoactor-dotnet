@@ -15,10 +15,12 @@ namespace Proto.Cluster.Testing
         public DateTimeOffset FoundDeadAt { get; }
         public TimeSpan DeregisterInterval { get; }
 
-        public bool Equals(DeadMember other) => !ReferenceEquals(null, other) && (ReferenceEquals(this, other) || MemberId == other.MemberId);
+        public bool Equals(DeadMember other) => !ReferenceEquals(null, other) &&
+                                                (ReferenceEquals(this, other) || MemberId == other.MemberId);
 
         public override bool Equals(object obj)
-            => !ReferenceEquals(null, obj) && (ReferenceEquals(this, obj) || obj.GetType() == GetType() && Equals((DeadMember)obj));
+            => !ReferenceEquals(null, obj) &&
+               (ReferenceEquals(this, obj) || obj.GetType() == GetType() && Equals((DeadMember) obj));
 
         public override int GetHashCode() => MemberId != null ? MemberId.GetHashCode() : 0;
     }

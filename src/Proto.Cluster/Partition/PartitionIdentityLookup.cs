@@ -8,8 +8,8 @@ namespace Proto.Cluster.Partition
 {
     public class PartitionIdentityLookup : IIdentityLookup
     {
-        private ILogger _logger;
         private Cluster _cluster = null!;
+        private ILogger _logger;
         private PartitionManager _partitionManager = null!;
 
         public async Task<PID?> GetAsync(string identity, string kind, CancellationToken ct)
@@ -51,9 +51,10 @@ namespace Proto.Cluster.Partition
 
                 return resp.Pid;
             }
+            //TODO: decide if we throw or return null
             catch (TimeoutException)
             {
-                _logger.LogWarning("Remote PID request timeout {@Request}", req);
+                _logger.LogDebug("Remote PID request timeout {@Request}", req);
                 return null;
             }
             catch (Exception e)
@@ -67,7 +68,7 @@ namespace Proto.Cluster.Partition
         {
             _cluster = cluster;
             _partitionManager = new PartitionManager(cluster);
-            _logger = Log.CreateLogger(nameof(PartitionIdentityLookup)+"-" + _cluster.LoggerId);
+            _logger = Log.CreateLogger(nameof(PartitionIdentityLookup) + "-" + _cluster.LoggerId);
             _partitionManager.Setup();
         }
 

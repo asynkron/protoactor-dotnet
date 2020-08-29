@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Proto.Mailbox
 {
-    static class MailboxStatus
+    internal static class MailboxStatus
     {
         public const int Idle = 0;
         public const int Busy = 1;
@@ -26,12 +26,14 @@ namespace Proto.Mailbox
 
     public static class BoundedMailbox
     {
-        public static IMailbox Create(int size, params IMailboxStatistics[] stats) => new DefaultMailbox(new UnboundedMailboxQueue(), new BoundedMailboxQueue(size), stats);
+        public static IMailbox Create(int size, params IMailboxStatistics[] stats) =>
+            new DefaultMailbox(new UnboundedMailboxQueue(), new BoundedMailboxQueue(size), stats);
     }
 
     public static class UnboundedMailbox
     {
-        public static IMailbox Create(params IMailboxStatistics[] stats) => new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue(), stats);
+        public static IMailbox Create(params IMailboxStatistics[] stats) =>
+            new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue(), stats);
     }
 
     public class DefaultMailbox : IMailbox
@@ -43,20 +45,21 @@ namespace Proto.Mailbox
         private IMessageInvoker _invoker;
 
         private int _status = MailboxStatus.Idle;
-        private long _systemMessageCount;
         private bool _suspended;
+        private long _systemMessageCount;
 
-        public int Status => _status;
-
-        public DefaultMailbox(IMailboxQueue systemMessages, IMailboxQueue userMailbox, params IMailboxStatistics[] stats)
+        public DefaultMailbox(IMailboxQueue systemMessages, IMailboxQueue userMailbox,
+            params IMailboxStatistics[] stats)
         {
             _systemMessages = systemMessages;
             _userMailbox = userMailbox;
             _stats = stats ?? new IMailboxStatistics[0];
-            
+
             _dispatcher = NoopDispatcher.Instance;
             _invoker = NoopInvoker.Instance;
         }
+
+        public int Status => _status;
 
         public void PostUserMessage(object msg)
         {
@@ -65,6 +68,7 @@ namespace Proto.Mailbox
             {
                 t.MessagePosted(msg);
             }
+
             Schedule();
         }
 
@@ -76,6 +80,7 @@ namespace Proto.Mailbox
             {
                 t.MessagePosted(msg);
             }
+
             Schedule();
         }
 
@@ -99,7 +104,9 @@ namespace Proto.Mailbox
 
             if (!done)
                 // mailbox is halted, awaiting completion of a message task, upon which mailbox will be rescheduled
+            {
                 return Task.FromResult(0);
+            }
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
@@ -114,6 +121,7 @@ namespace Proto.Mailbox
                     t.MailboxEmpty();
                 }
             }
+
             return Task.FromResult(0);
         }
 
@@ -140,27 +148,33 @@ namespace Proto.Mailbox
                             _invoker.EscalateFailure(t.Exception, msg);
                             continue;
                         }
-                        else if (t.IsCanceled)
+
+                        if (t.IsCanceled)
                         {
                             _invoker.EscalateFailure(new TaskCanceledException(), msg);
                             continue;
                         }
+
                         if (!t.IsCompleted)
                         {
                             // if task didn't complete immediately, halt processing and reschedule a new run when task completes
                             t.ContinueWith(RescheduleOnTaskComplete, msg);
                             return false;
                         }
+
                         foreach (var t1 in _stats)
                         {
                             t1.MessageReceived(msg);
                         }
+
                         continue;
                     }
+
                     if (_suspended)
                     {
                         break;
                     }
+
                     if ((msg = _userMailbox.Pop()) != null)
                     {
                         var t = _invoker.InvokeUserMessageAsync(msg);
@@ -169,17 +183,20 @@ namespace Proto.Mailbox
                             _invoker.EscalateFailure(t.Exception, msg);
                             continue;
                         }
-                        else if (t.IsCanceled)
+
+                        if (t.IsCanceled)
                         {
                             _invoker.EscalateFailure(new TaskCanceledException(), msg);
                             continue;
                         }
+
                         if (!t.IsCompleted)
                         {
                             // if task didn't complete immediately, halt processing and reschedule a new run when task completes
                             t.ContinueWith(RescheduleOnTaskComplete, msg);
                             return false;
                         }
+
                         foreach (var t1 in _stats)
                         {
                             t1.MessageReceived(msg);
@@ -195,6 +212,7 @@ namespace Proto.Mailbox
             {
                 _invoker.EscalateFailure(e, msg);
             }
+
             return true;
         }
 
@@ -215,6 +233,7 @@ namespace Proto.Mailbox
                     t.MessageReceived(message);
                 }
             }
+
             _dispatcher.Schedule(RunAsync);
         }
 
@@ -229,24 +248,27 @@ namespace Proto.Mailbox
     }
 
     /// <summary>
-    /// Extension point for getting notifications about mailbox events
+    ///     Extension point for getting notifications about mailbox events
     /// </summary>
     public interface IMailboxStatistics
     {
         /// <summary>
-        /// This method is invoked when the mailbox is started
+        ///     This method is invoked when the mailbox is started
         /// </summary>
         void MailboxStarted();
+
         /// <summary>
-        /// This method is invoked when a message is posted to the mailbox.
+        ///     This method is invoked when a message is posted to the mailbox.
         /// </summary>
         void MessagePosted(object message);
+
         /// <summary>
-        /// This method is invoked when a message has been received by the invoker associated with the mailbox.
+        ///     This method is invoked when a message has been received by the invoker associated with the mailbox.
         /// </summary>
         void MessageReceived(object message);
+
         /// <summary>
-        /// This method is invoked when all messages in the mailbox have been received.
+        ///     This method is invoked when all messages in the mailbox have been received.
         /// </summary>
         void MailboxEmpty();
     }

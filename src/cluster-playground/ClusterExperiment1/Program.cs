@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
@@ -16,27 +15,31 @@ namespace ClusterExperiment1
         private static async Task RunFollower()
         {
             Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole(o =>
-            {
-                o.IncludeScopes = true;
-                o.UseUtcTimestamp = true;
+                        {
+                            o.IncludeScopes = true;
+                            o.UseUtcTimestamp = true;
+                        }
+                    ).SetMinimumLevel(LogLevel.Information)
+                )
+            );
 
-            }).SetMinimumLevel(LogLevel.Information)));
-            
             var cluster = SpawnMember(0);
 
             Console.ReadLine();
         }
-        
+
         private static async Task RunLeader()
         {
             Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole(o =>
-            {
-                o.IncludeScopes = true;
-                o.UseUtcTimestamp = true;
-
-            }).SetMinimumLevel(LogLevel.Information)));
+                        {
+                            o.IncludeScopes = true;
+                            o.UseUtcTimestamp = true;
+                        }
+                    ).SetMinimumLevel(LogLevel.Information)
+                )
+            );
             var logger = Log.CreateLogger(nameof(Program));
-            
+
             Console.WriteLine("Press enter to start");
             Console.WriteLine();
             Console.WriteLine("Red = spawned grains");
@@ -44,15 +47,15 @@ namespace ClusterExperiment1
             Console.WriteLine("Each '.' is a request/response call to one of the grains");
             Console.WriteLine("Enter spawns a new node in the cluster");
             Console.ReadLine();
-            
+
             var system1 = new ActorSystem();
             var consul1 = new ConsulProvider(new ConsulProviderOptions());
             var serialization1 = new Serialization();
             serialization1.RegisterFileDescriptor(MessagesReflection.Descriptor);
             var c1 = new Cluster(system1, serialization1);
             await c1.StartAsync(new ClusterConfig("mycluster", "127.0.0.1", 8090, consul1).WithPidCache(false));
-            
-         
+
+
             _ = Task.Run(async () =>
                 {
                     var rnd = new Random();
@@ -85,7 +88,7 @@ namespace ClusterExperiment1
 
             Console.ReadLine();
         }
-        
+
         public static async Task Main(string[] args)
         {
             if (args.Length == 0)
@@ -115,7 +118,7 @@ namespace ClusterExperiment1
 
     public class HelloActor : IActor
     {
-     //   private readonly ILogger _log = Log.CreateLogger<HelloActor>();
+        //   private readonly ILogger _log = Log.CreateLogger<HelloActor>();
 
         public Task ReceiveAsync(IContext ctx)
         {
@@ -134,7 +137,7 @@ namespace ClusterExperiment1
             if (ctx.Message is Stopped)
             {
                 //just to highlight when this happens
-            //    _log.LogWarning("I stopped" + ctx.Self);
+                //    _log.LogWarning("I stopped" + ctx.Self);
             }
 
             return Actor.Done;

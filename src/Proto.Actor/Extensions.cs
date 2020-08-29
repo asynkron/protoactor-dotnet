@@ -12,7 +12,7 @@ namespace Proto
     public static class Extensions
     {
         /// <summary>
-        /// Stop the current actor
+        ///     Stop the current actor
         /// </summary>
         /// <param name="self">The actor instance to stop</param>
         /// <param name="system">Actor system</param>

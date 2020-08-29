@@ -16,10 +16,9 @@ namespace Proto
     public class EventStream : EventStream<object>
     {
         private readonly ILogger _logger = Log.CreateLogger<EventStream>();
-        
+
         internal EventStream()
         {
-            
             Subscribe(
                 msg =>
                 {
@@ -39,7 +38,7 @@ namespace Proto
     }
 
     /// <summary>
-    /// Global event stream of a specific message type
+    ///     Global event stream of a specific message type
     /// </summary>
     /// <typeparam name="T">Message type</typeparam>
     [PublicAPI]
@@ -50,13 +49,15 @@ namespace Proto
         private readonly ConcurrentDictionary<Guid, Subscription<T>> _subscriptions =
             new ConcurrentDictionary<Guid, Subscription<T>>();
 
-        internal EventStream() { }
+        internal EventStream()
+        {
+        }
 
         /// <summary>
-        /// Subscribe to the specified message type
+        ///     Subscribe to the specified message type
         /// </summary>
         /// <param name="action">Synchronous message handler</param>
-        /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher"/> by default</param>
+        /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
         /// <returns>A new subscription that can be used to unsubscribe</returns>
         public Subscription<T> Subscribe(Action<T> action, IDispatcher? dispatcher = null)
         {
@@ -74,10 +75,10 @@ namespace Proto
         }
 
         /// <summary>
-        /// Subscribe to the specified message type with an asynchronous handler
+        ///     Subscribe to the specified message type with an asynchronous handler
         /// </summary>
         /// <param name="action">Asynchronous message handler</param>
-        /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher"/> by default</param>
+        /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
         /// <returns>A new subscription that can be used to unsubscribe</returns>
         public Subscription<T> Subscribe(Func<T, Task> action, IDispatcher? dispatcher = null)
         {
@@ -87,10 +88,10 @@ namespace Proto
         }
 
         /// <summary>
-        /// Subscribe to the specified message type, which is a derived type from <see cref="T"/>
+        ///     Subscribe to the specified message type, which is a derived type from <see cref="T" />
         /// </summary>
         /// <param name="action">Synchronous message handler</param>
-        /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher"/> by default</param>
+        /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
         /// <returns>A new subscription that can be used to unsubscribe</returns>
         public Subscription<T> Subscribe<TMsg>(Action<TMsg> action, IDispatcher? dispatcher = null) where TMsg : T
         {
@@ -111,9 +112,9 @@ namespace Proto
             _subscriptions.TryAdd(sub.Id, sub);
             return sub;
         }
-        
-        
-        public Subscription<T> Subscribe<TMsg>(ISenderContext context,params PID[] pids) where TMsg : T
+
+
+        public Subscription<T> Subscribe<TMsg>(ISenderContext context, params PID[] pids) where TMsg : T
         {
             var sub = new Subscription<T>(
                 this,
@@ -124,7 +125,7 @@ namespace Proto
                     {
                         foreach (var pid in pids)
                         {
-                            context.Send(pid, msg);    
+                            context.Send(pid, msg);
                         }
                     }
 
@@ -137,10 +138,10 @@ namespace Proto
         }
 
         /// <summary>
-        /// Subscribe to the specified message type, which is a derived type from <see cref="T"/>
+        ///     Subscribe to the specified message type, which is a derived type from <see cref="T" />
         /// </summary>
         /// <param name="action">Asynchronous message handler</param>
-        /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher"/> by default</param>
+        /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
         /// <returns>A new subscription that can be used to unsubscribe</returns>
         public Subscription<T> Subscribe<TMsg>(Func<TMsg, Task> action, IDispatcher? dispatcher = null) where TMsg : T
         {
@@ -155,7 +156,7 @@ namespace Proto
         }
 
         /// <summary>
-        /// Publish a message to the event stream
+        ///     Publish a message to the event stream
         /// </summary>
         /// <param name="msg">A message to publish</param>
         public void Publish(T msg)
@@ -181,19 +182,21 @@ namespace Proto
         }
 
         /// <summary>
-        /// Remove a subscription by id
+        ///     Remove a subscription by id
         /// </summary>
         /// <param name="id">Subscription id</param>
         public void Unsubscribe(Guid id) => _subscriptions.TryRemove(id, out _);
 
         /// <summary>
-        /// Remove a subscription
+        ///     Remove a subscription
         /// </summary>
         /// <param name="subscription"> A subscription to remove</param>
         public void Unsubscribe(Subscription<T>? subscription)
         {
             if (subscription != null)
+            {
                 Unsubscribe(subscription.Id);
+            }
         }
     }
 

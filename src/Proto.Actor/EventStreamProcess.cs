@@ -1,11 +1,10 @@
-using System;
-using JetBrains.Annotations;
-
 namespace Proto
 {
     public class EventStreamProcess : Process
     {
-        public EventStreamProcess(ActorSystem system) : base(system) {}
+        public EventStreamProcess(ActorSystem system) : base(system)
+        {
+        }
 
         protected internal override void SendUserMessage(PID pid, object message)
         {

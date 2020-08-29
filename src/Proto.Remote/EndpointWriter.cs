@@ -16,19 +16,19 @@ namespace Proto.Remote
     public class EndpointWriter : IActor
     {
         private static readonly ILogger Logger = Log.CreateLogger<EndpointWriter>();
-
-        private int _serializerId;
         private readonly string _address;
         private readonly CallOptions _callOptions;
         private readonly ChannelCredentials _channelCredentials;
         private readonly IEnumerable<ChannelOption> _channelOptions;
+        private readonly Serialization _serialization;
+        private readonly ActorSystem _system;
 
         private Channel? _channel;
         private Remoting.RemotingClient? _client;
+
+        private int _serializerId;
         private AsyncDuplexStreamingCall<MessageBatch, Unit>? _stream;
         private IClientStreamWriter<MessageBatch>? _streamWriter;
-        private readonly ActorSystem _system;
-        private readonly Serialization _serialization;
 
         public EndpointWriter(
             ActorSystem system,
@@ -55,7 +55,9 @@ namespace Proto.Remote
                     Logger.LogDebug("[EndpointWriter] Starting at {Address}", _address);
                     return StartedAsync();
                 case Stopped _:
-                    return StoppedAsync().ContinueWith(_ => Logger.LogDebug("[EndpointWriter] Stopped at {Address}", _address));
+                    return StoppedAsync().ContinueWith(_ =>
+                        Logger.LogDebug("[EndpointWriter] Stopped at {Address}", _address)
+                    );
                 case Restarting _:
                     return RestartingAsync();
                 case EndpointTerminatedEvent _:
@@ -63,6 +65,7 @@ namespace Proto.Remote
                     {
                         context.Stop(context.Self);
                     }
+
                     return Actor.Done;
                 case IEnumerable<RemoteDeliver> m:
                     return Deliver(m);
@@ -114,7 +117,7 @@ namespace Proto.Remote
                         Target = targetId,
                         TypeId = typeId,
                         SerializerId = serializerId,
-                        MessageHeader = header,
+                        MessageHeader = header
                     };
 
                     envelopes.Add(envelope);
@@ -138,7 +141,10 @@ namespace Proto.Remote
         {
             if (_streamWriter == null)
             {
-                Logger.LogError("[EndpointWriter] gRPC Failed to send to address {Address}, reason No Connection available", _address);
+                Logger.LogError(
+                    "[EndpointWriter] gRPC Failed to send to address {Address}, reason No Connection available",
+                    _address
+                );
                 return;
             }
 
@@ -150,7 +156,9 @@ namespace Proto.Remote
             }
             catch (Exception x)
             {
-                Logger.LogError("[EndpointWriter] gRPC Failed to send to address {Address}, reason {Message}", _address, x.Message);
+                Logger.LogError("[EndpointWriter] gRPC Failed to send to address {Address}, reason {Message}", _address,
+                    x.Message
+                );
                 context.Stash();
                 throw;
             }
@@ -160,11 +168,7 @@ namespace Proto.Remote
         private Task RestartingAsync() => ShutDownChannel();
 
         //shutdown channel before stopping
-        private Task StoppedAsync()
-        {
-            
-            return ShutDownChannel();
-        }
+        private Task StoppedAsync() => ShutDownChannel();
 
         private Task ShutDownChannel()
         {
@@ -178,7 +182,6 @@ namespace Proto.Remote
 
         private async Task StartedAsync()
         {
-
             Logger.LogDebug("[EndpointWriter] Connecting to address {Address}", _address);
 
             _channel = new Channel(_address, _channelCredentials, _channelOptions);

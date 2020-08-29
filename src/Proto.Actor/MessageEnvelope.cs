@@ -25,7 +25,8 @@ namespace Proto
         public object Message { get; }
         public MessageHeader Header { get; }
 
-        public static MessageEnvelope Wrap(object message) => message is MessageEnvelope env ? env : new MessageEnvelope(message, null);
+        public static MessageEnvelope Wrap(object message) =>
+            message is MessageEnvelope env ? env : new MessageEnvelope(message, null);
 
         public MessageEnvelope WithSender(PID sender) => new MessageEnvelope(Message, sender, Header);
 
@@ -46,10 +47,13 @@ namespace Proto
         }
 
         public static (object message, PID? sender, MessageHeader headers) Unwrap(object message)
-            => message is MessageEnvelope envelope ? (envelope.Message, envelope.Sender, envelope.Header) : (message, null, MessageHeader.Empty);
+            => message is MessageEnvelope envelope
+                ? (envelope.Message, envelope.Sender, envelope.Header)
+                : (message, null, MessageHeader.Empty);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static MessageHeader UnwrapHeader(object? message) => (message as MessageEnvelope)?.Header ?? MessageHeader.Empty;
+        public static MessageHeader UnwrapHeader(object? message) =>
+            (message as MessageEnvelope)?.Header ?? MessageHeader.Empty;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static object? UnwrapMessage(object? message) => message is MessageEnvelope r ? r.Message : message;

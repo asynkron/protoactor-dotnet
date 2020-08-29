@@ -14,19 +14,20 @@ namespace Proto.Cluster.Partition
     internal class PartitionIdentityActor : IActor
     {
         //for how long do we wait before sending a ReceiveTimeout message?  (useful for liveliness checks on the actor, log it to show the actor is alive)
-        private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(5); 
-        
+        private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(5);
+
         //for how long do we wait when performing a identity handover?
-        private static readonly TimeSpan HandoverTimeout = TimeSpan.FromSeconds(3); 
-        
+        private static readonly TimeSpan HandoverTimeout = TimeSpan.FromSeconds(3);
+
         //for how long do we wait after a topology change before we allow spawning new actors?
         //do note that this happens after a topology change which can be triggered by a timed out unhealthy service in the cluster provider
         //the time before the cluster becomes responsive again is TopologyChangeTimeout + Time for service to be unhealthy
-        
-        private static readonly TimeSpan TopologyChangeTimeout = TimeSpan.FromSeconds(3); 
-        
+
+        private static readonly TimeSpan TopologyChangeTimeout = TimeSpan.FromSeconds(3);
+
         private readonly Cluster _cluster;
         private readonly ILogger _logger;
+        private readonly string _myAddress;
 
         private readonly Dictionary<string, (PID pid, string kind)> _partitionLookup =
             new Dictionary<string, (PID pid, string kind)>(); //actor/grain name to PID
@@ -39,7 +40,6 @@ namespace Proto.Cluster.Partition
 
         private ulong _eventId;
         private DateTime _lastEventTimestamp;
-        private readonly string _myAddress;
 
         public PartitionIdentityActor(Cluster cluster, PartitionManager partitionManager)
         {
@@ -52,12 +52,12 @@ namespace Proto.Cluster.Partition
         public Task ReceiveAsync(IContext context) =>
             context.Message switch
             {
-                Started _                  => Start(),
-                ReceiveTimeout _           => ReceiveTimeout(context),
-                ActivationRequest msg      => GetOrSpawn(msg, context),
-                ActivationTerminated msg   => ActivationTerminated(msg, context),
-                ClusterTopology msg        => ClusterTopology(msg, context),
-                _                          => Unhandled()
+                Started _                => Start(),
+                ReceiveTimeout _         => ReceiveTimeout(context),
+                ActivationRequest msg    => GetOrSpawn(msg, context),
+                ActivationTerminated msg => ActivationTerminated(msg, context),
+                ClusterTopology msg      => ClusterTopology(msg, context),
+                _                        => Unhandled()
             };
 
         private static Task Unhandled() => Actor.Done;
@@ -225,7 +225,7 @@ namespace Proto.Cluster.Partition
             if (string.IsNullOrEmpty(activatorAddress))
             {
                 //No activator currently available, return unavailable
-                _logger.LogWarning("No members currently available for kind {Kind}",msg.Kind);
+                _logger.LogWarning("No members currently available for kind {Kind}", msg.Kind);
                 context.Respond(new ActivationResponse {Pid = null});
                 return Actor.Done;
             }
@@ -272,7 +272,7 @@ namespace Proto.Cluster.Partition
                     return Actor.Done;
                 }
             );
-            
+
             return Actor.Done;
         }
 
@@ -291,9 +291,8 @@ namespace Proto.Cluster.Partition
                     _cluster.System.Root.Send(self, msg);
                 }
             );
-            
-            return true;
 
+            return true;
         }
 
 

@@ -12,17 +12,18 @@ namespace Proto.Mailbox
 {
     public class NonBlockingBoundedMailbox : IMailboxQueue
     {
+        private readonly int _maxSize;
+
+        private readonly ConcurrentQueue<object> _messages = new ConcurrentQueue<object>();
+        private readonly Action<object> _overflowAction;
+        private readonly TimeSpan _timeout;
+
         public NonBlockingBoundedMailbox(int maxSize, Action<object> overflowAction, TimeSpan timeout)
         {
             _maxSize = maxSize;
             _overflowAction = overflowAction;
             _timeout = timeout;
         }
-
-        private readonly ConcurrentQueue<object> _messages = new ConcurrentQueue<object>();
-        private readonly int _maxSize;
-        private readonly Action<object> _overflowAction;
-        private readonly TimeSpan _timeout;
 
         public void Push(object message)
         {
@@ -31,7 +32,7 @@ namespace Proto.Mailbox
                 //this will be racy, but best effort is good enough..
                 _messages.Enqueue(message);
             }
-            else 
+            else
             {
                 _overflowAction(message);
             }

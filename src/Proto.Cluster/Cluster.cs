@@ -119,7 +119,7 @@ namespace Proto.Cluster
 
             return IdentityLookup!.GetAsync(identity, kind, ct);
         }
-        
+
         public async Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct)
         {
             var i = 0;
@@ -130,19 +130,20 @@ namespace Proto.Cluster
                 var pid = await GetAsync(identity, kind, ct);
                 if (pid == null)
                 {
-                    await Task.Delay(delay,CancellationToken.None);
+                    await Task.Delay(delay, CancellationToken.None);
                     continue;
                 }
 
                 var res = await System.Root.RequestAsync<T>(pid, message, ct);
                 if (res == null)
                 {
-                    await Task.Delay(delay,CancellationToken.None);
+                    await Task.Delay(delay, CancellationToken.None);
                     continue;
                 }
 
                 return res;
             }
+
             return default!;
         }
     }

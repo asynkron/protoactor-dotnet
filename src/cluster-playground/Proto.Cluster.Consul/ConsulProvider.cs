@@ -37,29 +37,30 @@ namespace Proto.Cluster.Consul
     [PublicAPI]
     public class ConsulProvider : IClusterProvider
     {
-        private ILogger _logger;
         private readonly TimeSpan _blockingWaitTime;
         private readonly ConsulClient _client;
 
         private readonly TimeSpan
             _deregisterCritical; //this is how long the service exists in consul before disappearing when unhealthy, min 1 min
 
-        private readonly TimeSpan _serviceTtl; //this is how long the service is healthy without a ttl refresh
         private readonly TimeSpan _refreshTtl; //this is the refresh rate of TTL, should be smaller than the above
-        private string _host;
+
+        private readonly TimeSpan _serviceTtl; //this is how long the service is healthy without a ttl refresh
 
         private Cluster _cluster;
-        private string _consulServiceName; //name of the custer, in consul this means the name of the service
-        private volatile bool _deregistered;
+        private string _consulLeaderKey;
         private string _consulServiceInstanceId; //the specific instance id of this node in consul
+        private string _consulServiceName; //name of the custer, in consul this means the name of the service
+        private string _consulSessionId;
+        private volatile bool _deregistered;
+        private string _host;
 
 
         private string[] _kinds;
+        private ILogger _logger;
         private MemberList _memberList;
         private int _port;
         private bool _shutdown;
-        private string _consulSessionId;
-        private string _consulLeaderKey;
 
         public ConsulProvider(ConsulProviderOptions options) : this(options, config => { })
         {
@@ -170,7 +171,7 @@ namespace Proto.Cluster.Consul
 
                         //why is this not updated via the ClusterTopologyEvents?
                         //because following events is messy
-                        _memberList.UpdateClusterTopology(memberStatuses,waitIndex);
+                        _memberList.UpdateClusterTopology(memberStatuses, waitIndex);
                         var res = new ClusterTopologyEvent(memberStatuses);
                         _cluster.System.EventStream.Publish(res);
                     }
@@ -183,9 +184,9 @@ namespace Proto.Cluster.Consul
                 {
                     Id = v.Service.Meta["id"],
                     Host = v.Service.Address,
-                    Port = v.Service.Port,
+                    Port = v.Service.Port
                 };
-                
+
                 member.Kinds.AddRange(v.Service.Tags);
 
                 return member;
@@ -232,7 +233,7 @@ namespace Proto.Cluster.Consul
                             {
                                 Host = _host,
                                 Port = _port,
-                                MemberId = _cluster.Id,
+                                MemberId = _cluster.Id
                             }
                         );
                         var kvp = new KVPair(leaderKey)
@@ -254,7 +255,7 @@ namespace Proto.Cluster.Consul
                             {
                                 var aquired = await _client.KV.Acquire(kvp);
                                 var isLeader = aquired.Response;
-                                
+
                                 var res = await _client.KV.Get(leaderKey, new QueryOptions
                                     {
                                         Consistency = ConsistencyMode.Default,
@@ -262,7 +263,7 @@ namespace Proto.Cluster.Consul
                                         WaitTime = TimeSpan.FromSeconds(3)
                                     }
                                 );
-                                
+
 
                                 if (res.Response?.Value == null)
                                 {
@@ -320,7 +321,7 @@ namespace Proto.Cluster.Consul
                 Check = new AgentServiceCheck
                 {
                     DeregisterCriticalServiceAfter = _deregisterCritical,
-                    TTL = _serviceTtl,
+                    TTL = _serviceTtl
                 },
                 Meta = new Dictionary<string, string>
                 {

@@ -8,19 +8,16 @@ namespace Proto
 {
     public static class EventStreamExtensions
     {
-        public static EventProbe<T> GetProbe<T>(this EventStream<T> eventStream)
-        {
-            return new EventProbe<T>(eventStream);
-        }
+        public static EventProbe<T> GetProbe<T>(this EventStream<T> eventStream) => new EventProbe<T>(eventStream);
     }
 
     [PublicAPI]
     public class EventProbe<T>
     {
-        private readonly ILogger _logger = Log.CreateLogger<EventProbe<T>>();
-        private readonly Subscription<T> _subscription;
         private readonly ConcurrentQueue<T> _events = new ConcurrentQueue<T>();
         private readonly object _lock = new object();
+        private readonly ILogger _logger = Log.CreateLogger<EventProbe<T>>();
+        private readonly Subscription<T> _subscription;
         private EventExpectation<T>? _currentExpectation;
 
         public EventProbe(EventStream<T> eventStream)
@@ -56,7 +53,7 @@ namespace Proto
                         return @event switch
                         {
                             TE e when predicate(e) => true,
-                            _ => false
+                            _                      => false
                         };
                     }
                 );
@@ -83,7 +80,7 @@ namespace Proto
             {
                 if (_currentExpectation.Evaluate(@event))
                 {
-                    _logger.LogDebug("Got expected event {@event} ",@event);
+                    _logger.LogDebug("Got expected event {@event} ", @event);
                     _currentExpectation = null;
                     return;
                 }

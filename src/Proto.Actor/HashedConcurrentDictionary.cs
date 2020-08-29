@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace Proto
 {
-    class HashedConcurrentDictionary
+    internal class HashedConcurrentDictionary
     {
         private const int HashSize = 1024;
         private readonly Partition[] _partitions = new Partition[HashSize];

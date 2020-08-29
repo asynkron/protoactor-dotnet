@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Proto
 {
@@ -22,7 +21,10 @@ namespace Proto
 
         private int _sequenceId;
 
-        public ProcessRegistry(ActorSystem system) => System = system;
+        public ProcessRegistry(ActorSystem system)
+        {
+            System = system;
+        }
 
         public ActorSystem System { get; }
 
@@ -45,7 +47,6 @@ namespace Proto
             }
 
             return reff;
-
         }
 
         public Process GetLocal(string id)

@@ -4,6 +4,8 @@ namespace Proto.TestKit
 {
     public class TestKitException : Exception
     {
-        public TestKitException(string message) : base(message) { }
+        public TestKitException(string message) : base(message)
+        {
+        }
     }
 }

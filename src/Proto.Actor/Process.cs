@@ -11,10 +11,13 @@ namespace Proto
 {
     public abstract class Process
     {
+        protected Process(ActorSystem system)
+        {
+            System = system;
+        }
+
         protected ActorSystem System { get; }
 
-        protected Process(ActorSystem system) => System = system;
-        
         protected internal abstract void SendUserMessage(PID pid, object message);
 
         protected internal abstract void SendSystemMessage(PID pid, object message);
@@ -26,7 +29,10 @@ namespace Proto
     {
         private long _isDead;
 
-        public ActorProcess(ActorSystem system, IMailbox mailbox) : base(system) => Mailbox = mailbox;
+        public ActorProcess(ActorSystem system, IMailbox mailbox) : base(system)
+        {
+            Mailbox = mailbox;
+        }
 
         public IMailbox Mailbox { get; }
 
@@ -36,7 +42,7 @@ namespace Proto
             private set => Interlocked.Exchange(ref _isDead, value ? 1 : 0);
         }
 
-        protected internal override void SendUserMessage(PID pid, object message) => 
+        protected internal override void SendUserMessage(PID pid, object message) =>
             Mailbox.PostUserMessage(message);
 
         protected internal override void SendSystemMessage(PID pid, object message) =>

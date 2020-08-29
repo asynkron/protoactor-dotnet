@@ -8,7 +8,10 @@ namespace Proto.Router.Messages
 {
     public class RouterRemoveRoutee : RouterManagementMessage
     {
-        public RouterRemoveRoutee(PID pid) => PID = pid;
+        public RouterRemoveRoutee(PID pid)
+        {
+            PID = pid;
+        }
 
         public PID PID { get; }
     }

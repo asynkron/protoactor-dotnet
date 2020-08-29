@@ -7,21 +7,20 @@
 using System;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using Proto.Mailbox;
 
 namespace Proto.Remote
 {
     public class EndpointManager
     {
-        private class ConnectionRegistry : ConcurrentDictionary<string, Lazy<Endpoint>> { }
-
         private static readonly ILogger Logger = Log.CreateLogger<EndpointManager>();
 
         private readonly ConnectionRegistry _connections = new ConnectionRegistry();
-        private readonly ActorSystem _system;
         private readonly Remote _remote;
+        private readonly ActorSystem _system;
+        private Subscription<object>? _endpointConnEvnSub;
         private PID? _endpointSupervisor;
         private Subscription<object>? _endpointTermEvnSub;
-        private Subscription<object>? _endpointConnEvnSub;
 
         public EndpointManager(Remote remote, ActorSystem system)
         {
@@ -36,7 +35,7 @@ namespace Proto.Remote
             var props = Props
                 .FromProducer(() => new EndpointSupervisor(_remote, _system))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
-                .WithDispatcher(Mailbox.Dispatchers.SynchronousDispatcher);
+                .WithDispatcher(Dispatchers.SynchronousDispatcher);
 
             _endpointSupervisor = _system.Root.SpawnNamed(props, "EndpointSupervisor");
             _endpointTermEvnSub = _system.EventStream.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated);
@@ -57,7 +56,10 @@ namespace Proto.Remote
         {
             Logger.LogDebug("[EndpointManager] Endpoint {Address} terminated removing from connections", msg.Address);
 
-            if (!_connections.TryRemove(msg.Address, out var v)) return;
+            if (!_connections.TryRemove(msg.Address, out var v))
+            {
+                return;
+            }
 
             var endpoint = v.Value;
             _system.Root.Send(endpoint.Watcher, msg);
@@ -118,6 +120,10 @@ namespace Proto.Remote
                     )
             );
             return conn.Value;
+        }
+
+        private class ConnectionRegistry : ConcurrentDictionary<string, Lazy<Endpoint>>
+        {
         }
     }
 }

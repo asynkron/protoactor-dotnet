@@ -4,8 +4,8 @@ namespace Proto.Persistence.SnapshotStrategies
 {
     public class TimeStrategy : ISnapshotStrategy
     {
-        private readonly TimeSpan _interval;
         private readonly Func<DateTime> _getNow;
+        private readonly TimeSpan _interval;
         private DateTime _lastTaken;
 
         public TimeStrategy(TimeSpan interval, Func<DateTime>? getNow = null)
@@ -18,7 +18,10 @@ namespace Proto.Persistence.SnapshotStrategies
         public bool ShouldTakeSnapshot(PersistedEvent persistedEvent)
         {
             var now = _getNow();
-            if (_lastTaken.Add(_interval) > now) return false;
+            if (_lastTaken.Add(_interval) > now)
+            {
+                return false;
+            }
 
             _lastTaken = now;
             return true;

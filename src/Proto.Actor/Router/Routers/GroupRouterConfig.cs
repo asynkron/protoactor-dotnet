@@ -25,6 +25,7 @@ namespace Proto.Router.Routers
             {
                 context.Watch(pid);
             }
+
             router.SetRoutees(_routees);
         }
     }

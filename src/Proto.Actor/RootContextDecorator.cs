@@ -8,7 +8,10 @@ namespace Proto
     {
         private readonly IRootContext _context;
 
-        protected RootContextDecorator(IRootContext context) => _context = context;
+        protected RootContextDecorator(IRootContext context)
+        {
+            _context = context;
+        }
 
         public virtual PID Spawn(Props props) => _context.Spawn(props);
 

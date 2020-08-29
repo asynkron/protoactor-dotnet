@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace Proto.Router.Routers
 {
-    abstract class PoolRouterConfig : RouterConfig
+    internal abstract class PoolRouterConfig : RouterConfig
     {
         private readonly int _poolSize;
         private readonly Props _routeeProps;

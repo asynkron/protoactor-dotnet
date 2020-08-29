@@ -14,11 +14,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
 using static Proto.Actor;
+
 // ReSharper disable RedundantAssignment
 
 namespace Proto
 {
-    enum ContextState : byte
+    internal enum ContextState : byte
     {
         Alive,
         Restarting,
@@ -29,7 +30,10 @@ namespace Proto
     //Angels cry over this code, but it serves a purpose, lazily init of less frequently used features
     public class ActorContextExtras
     {
-        public ActorContextExtras(IContext context) => Context = context;
+        public ActorContextExtras(IContext context)
+        {
+            Context = context;
+        }
 
         public ImmutableHashSet<PID> Children { get; private set; } = ImmutableHashSet<PID>.Empty;
         public Timer? ReceiveTimeoutTimer { get; private set; }
@@ -68,8 +72,6 @@ namespace Proto
         private object? _messageOrEnvelope;
         private ContextState _state;
 
-        public ActorSystem System { get; }
-
         public ActorContext(ActorSystem system, Props props, PID? parent, PID self)
         {
             System = system;
@@ -83,6 +85,8 @@ namespace Proto
         }
 
         private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
+
+        public ActorSystem System { get; }
         IReadOnlyCollection<PID> IContext.Children => Children;
 
         public IActor? Actor { get; private set; }
@@ -100,12 +104,17 @@ namespace Proto
         public void Stash()
         {
             if (_messageOrEnvelope != null)
+            {
                 EnsureExtras().Stash.Push(_messageOrEnvelope);
+            }
         }
 
         public void Respond(object message)
         {
-            if (Sender != null) Send(Sender, message);
+            if (Sender != null)
+            {
+                Send(Sender, message);
+            }
         }
 
         public PID Spawn(Props props)
@@ -218,7 +227,8 @@ namespace Proto
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => RequestAsync(target, message, new FutureProcess<T>(System, cancellationToken));
 
-        public Task<T> RequestAsync<T>(PID target, object message) => RequestAsync(target, message, new FutureProcess<T>(System));
+        public Task<T> RequestAsync<T>(PID target, object message) =>
+            RequestAsync(target, message, new FutureProcess<T>(System));
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
@@ -374,7 +384,8 @@ namespace Proto
 
         public IImmutableSet<PID> Children => _extras?.Children ?? EmptyChildren;
 
-        public void RestartChildren(Exception reason, params PID[] pids) => pids.SendSystemMessage(new Restart(reason), System);
+        public void RestartChildren(Exception reason, params PID[] pids) =>
+            pids.SendSystemMessage(new Restart(reason), System);
 
         public void StopChildren(params PID[] pids) => pids.SendSystemMessage(Proto.Stop.Instance, System);
 

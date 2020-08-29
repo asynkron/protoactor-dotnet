@@ -13,12 +13,15 @@ namespace Proto
 {
     public class Guardians
     {
-        public ActorSystem System { get; }
-
-        public Guardians(ActorSystem system) => System = system;
-
         private readonly ConcurrentDictionary<ISupervisorStrategy, GuardianProcess> _guardianStrategies =
             new ConcurrentDictionary<ISupervisorStrategy, GuardianProcess>();
+
+        public Guardians(ActorSystem system)
+        {
+            System = system;
+        }
+
+        public ActorSystem System { get; }
 
         internal PID GetGuardianPID(ISupervisorStrategy strategy)
         {
@@ -29,7 +32,7 @@ namespace Proto
         }
     }
 
-    class GuardianProcess : Process, ISupervisor
+    internal class GuardianProcess : Process, ISupervisor
     {
         private readonly ISupervisorStrategy _supervisorStrategy;
 
@@ -50,11 +53,14 @@ namespace Proto
 
         public PID Pid { get; }
 
-        public IImmutableSet<PID> Children => throw new MemberAccessException("Guardian does not hold its children PIDs.");
+        public IImmutableSet<PID> Children =>
+            throw new MemberAccessException("Guardian does not hold its children PIDs.");
 
-        public void EscalateFailure(Exception reason, object? message) => throw new InvalidOperationException("Guardian cannot escalate failure.");
+        public void EscalateFailure(Exception reason, object? message) =>
+            throw new InvalidOperationException("Guardian cannot escalate failure.");
 
-        public void RestartChildren(Exception reason, params PID[] pids) => pids?.SendSystemMessage(new Restart(reason), System);
+        public void RestartChildren(Exception reason, params PID[] pids) =>
+            pids?.SendSystemMessage(new Restart(reason), System);
 
         public void StopChildren(params PID[] pids) => pids?.Stop(System);
 

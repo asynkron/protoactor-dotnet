@@ -114,7 +114,7 @@ namespace Proto.Cluster
             }
             else
             {
-                _logger.LogInformation("{Address}:{Id} is leader!",leader?.Address,leader?.MemberId);
+                _logger.LogInformation("{Address}:{Id} is leader!", leader?.Address, leader?.MemberId);
             }
         }
 

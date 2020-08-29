@@ -15,8 +15,12 @@ namespace Proto
 
         public ILogger CreateLogger(string name) => NullLogger.Instance;
 
-        public void AddProvider(ILoggerProvider provider) { }
+        public void AddProvider(ILoggerProvider provider)
+        {
+        }
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+        }
     }
 }

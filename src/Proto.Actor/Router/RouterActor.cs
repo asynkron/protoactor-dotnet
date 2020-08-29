@@ -33,6 +33,7 @@ namespace Proto.Router
                 _wg.Set();
                 return Actor.Done;
             }
+
             if (context.Message is RouterAddRoutee addRoutee)
             {
                 var r = _routerState.GetRoutees();
@@ -40,11 +41,13 @@ namespace Proto.Router
                 {
                     return Actor.Done;
                 }
+
                 context.Watch(addRoutee.PID);
                 r.Add(addRoutee.PID);
                 _routerState.SetRoutees(r);
                 return Actor.Done;
             }
+
             if (context.Message is RouterRemoveRoutee removeRoutee)
             {
                 var r = _routerState.GetRoutees();
@@ -52,11 +55,13 @@ namespace Proto.Router
                 {
                     return Actor.Done;
                 }
+
                 context.Unwatch(removeRoutee.PID);
                 r.Remove(removeRoutee.PID);
                 _routerState.SetRoutees(r);
                 return Actor.Done;
             }
+
             if (context.Message is RouterBroadcastMessage broadcastMessage)
             {
                 var sender = context.Sender;
@@ -64,13 +69,16 @@ namespace Proto.Router
                 {
                     context.Request(routee, broadcastMessage.Message, sender);
                 }
+
                 return Actor.Done;
             }
+
             if (context.Message is RouterGetRoutees)
             {
                 var r = _routerState.GetRoutees().ToList();
                 context.Respond(new Routees(r));
             }
+
             return Actor.Done;
         }
     }
