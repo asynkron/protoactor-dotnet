@@ -16,8 +16,9 @@ namespace ClusterExperiment1
         {
             Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole(o =>
                         {
-                            o.IncludeScopes = true;
-                            o.UseUtcTimestamp = true;
+                            o.IncludeScopes = false;
+                            o.UseUtcTimestamp = false;
+                            o.TimestampFormat = "hh:mm:ss:fff - ";
                         }
                     ).SetMinimumLevel(LogLevel.Information)
                 )
@@ -32,8 +33,9 @@ namespace ClusterExperiment1
         {
             Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole(o =>
                         {
-                            o.IncludeScopes = true;
-                            o.UseUtcTimestamp = true;
+                            o.IncludeScopes = false;
+                            o.UseUtcTimestamp = false;
+                            o.TimestampFormat = "hh:mm:ss:fff - ";
                         }
                     ).SetMinimumLevel(LogLevel.Information)
                 )

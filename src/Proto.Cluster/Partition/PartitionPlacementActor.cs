@@ -17,15 +17,21 @@ namespace Proto.Cluster.Partition
         private readonly Cluster _cluster;
         private readonly ILogger _logger;
 
-        private readonly Dictionary<string, (PID pid, string kind)> _myActors =
-            new Dictionary<string, (PID pid, string kind)>();
+        //pid -> the actor that we have created here
+        //kind -> the actor kind
+        //eventId -> the cluster wide eventId when this actor was created
+        private readonly Dictionary<string, (PID pid, string kind, ulong eventId)> _myActors =
+            new Dictionary<string, (PID pid, string kind, ulong eventId)>();
 
         private readonly PartitionManager _partitionManager;
         private readonly Rendezvous _rdv = new Rendezvous();
 
         private readonly Remote.Remote _remote;
         private readonly ActorSystem _system;
-        private ulong _eventId;
+        
+        //cluster wide eventId.
+        //this is useful for knowing if we are in sync with, ahead of or behind other nodes requests
+        private ulong _eventId; 
 
         public PartitionPlacementActor(Cluster cluster, PartitionManager partitionManager)
         {
@@ -34,71 +40,44 @@ namespace Proto.Cluster.Partition
             _system = _cluster.System;
             _partitionManager = partitionManager;
             _logger = Log.CreateLogger($"{nameof(PartitionPlacementActor)}-{cluster.LoggerId}");
-            // _system.EventStream.Subscribe<DeadLetterEvent>(dl =>
-            //     {
-            //         if (!dl.Pid.Id.StartsWith(PartitionManager.PartitionPlacementActorName))
-            //         {
-            //             return;
-            //         }
-            //
-            //         var kvp = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(dl.Pid));
-            //
-            //         //TODO: wrong
-            //         if (kvp.Equals(default))
-            //         {
-            //             return;
-            //         }
-            //
-            //         var id = kvp.Key;
-            //
-            //         if (dl.Sender != null)
-            //         {
-            //             _system.Root.Send(dl.Sender, new VoidResponse());
-            //             _logger.LogWarning(
-            //                 "Got Deadletter message {Message} for gain actor '{Identity}' from {Sender}, sending void response",
-            //                 dl.Message, id, dl.Sender
-            //             );
-            //         }
-            //         else
-            //         {
-            //             _logger.LogWarning(
-            //                 "Got Deadletter message {Message} for gain actor '{Identity}', use `Request` for grain communication ",
-            //                 dl.Message, id
-            //             );
-            //         }
-            //     }
-            // );
         }
 
         public Task ReceiveAsync(IContext context) =>
             context.Message switch
             {
-                Started _                   => Actor.Done, //  context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+                Started _                   => Started(context),
                 ReceiveTimeout _            => ReceiveTimeout(context),
-                Terminated msg              => HandleTerminated(context, msg),
-                ClusterTopology msg         => HandleClusterTopology(msg),
-                IdentityHandoverRequest msg => HandleIdentityHandoverRequest(context, msg),
-                ActivationRequest msg       => HandleActivationRequest(context, msg),
+                Terminated msg              => Terminated(context, msg),
+                ClusterTopology msg         => ClusterTopology(msg),
+                IdentityHandoverRequest msg => IdentityHandoverRequest(context, msg),
+                ActivationRequest msg       => ActivationRequest(context, msg),
                 _                           => Actor.Done
             };
+
+        private Task Started(IContext context)
+        {
+            context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+            return Actor.Done;
+        }
 
         private Task ReceiveTimeout(IContext context)
         {
             context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
-            _logger.LogInformation("I am idle");
+            var count = _myActors.Count;
+            _logger.LogInformation("Statistics: Actor Count {ActorCount}", count);
             return Actor.Done;
         }
 
-        private Task HandleTerminated(IContext context, Terminated msg)
+        private Task Terminated(IContext context, Terminated msg)
         {
-            //TODO: this can be done better, might be better to have a reverse lookup to find the pid fast
-            var (identity, (pid, kind)) = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(msg.Who));
+            //TODO: if this turns out to be perf intensive, lets look at optimizations for reverse lookups
+            var (identity, (pid, kind, eventId)) = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(msg.Who));
 
             var activationTerminated = new ActivationTerminated
             {
                 Pid = pid,
                 Kind = kind,
-                EventId = _eventId,
+                EventId = eventId,
                 Identity = identity
             };
 
@@ -109,48 +88,49 @@ namespace Proto.Cluster.Partition
             return Actor.Done;
         }
 
-        private Task HandleClusterTopology(ClusterTopology msg)
+        private Task ClusterTopology(ClusterTopology msg)
         {
+            //ignore outdated events
             if (msg.EventId <= _eventId)
             {
                 return Actor.Done;
             }
 
             _eventId = msg.EventId;
-            var members = msg.Members.ToArray();
-            _rdv.UpdateMembers(members);
-            _eventId = msg.EventId;
+            _rdv.UpdateMembers(msg.Members);
 
             return Actor.Done;
         }
 
         //this is pure, we do not change any state or actually move anything
         //the requester also provide its own view of the world in terms of members
-        private Task HandleIdentityHandoverRequest(IContext context, IdentityHandoverRequest msg)
+        //TLDR; we are not using any topology state from this actor itself
+        private Task IdentityHandoverRequest(IContext context, IdentityHandoverRequest msg)
         {
             var count = 0;
             var response = new IdentityHandoverResponse();
             var requestAddress = context.Sender!.Address;
 
+            //use a local selector, which is based on the requesters view of the world
             var rdv = new Rendezvous();
             rdv.UpdateMembers(msg.Members);
-            //  _logger.LogDebug("Handling IdentityHandoverRequest - request from " + requestAddress);
-            //  _logger.LogDebug(msg.Members.ToLogString());
-
-            foreach (var (identity, (pid, kind)) in _myActors.ToArray())
+            
+            foreach (var (identity, (pid, kind, eventId)) in _myActors)
             {
+                //who owns this identity according to the requesters memberlist?
                 var ownerAddress = rdv.GetOwnerMemberByIdentity(identity);
 
+                //this identity is not owned by the requester
                 if (ownerAddress != requestAddress)
                 {
-                    //       _logger.LogInformation("{Identity} belongs to {OwnerAddress} - {EventId}", identity, ownerAddress, msg.EventId);
                     continue;
                 }
 
-                _logger.LogDebug("TRANSFER {Identity} TO {newOwnerAddress} -- {EventId}", identity, ownerAddress,
+                _logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {EventId}", identity, ownerAddress,
                     msg.EventId
                 );
-                var actor = new Activation {Identity = identity, Kind = kind, Pid = pid, EventId = msg.EventId};
+                
+                var actor = new Activation {Identity = identity, Kind = kind, Pid = pid, EventId = eventId};
                 response.Actors.Add(actor);
                 count++;
             }
@@ -163,34 +143,40 @@ namespace Proto.Cluster.Partition
             return Actor.Done;
         }
 
-        private Task HandleActivationRequest(IContext context, ActivationRequest msg)
+        private Task ActivationRequest(IContext context, ActivationRequest msg)
         {
             var props = _remote.GetKnownKind(msg.Kind);
             var identity = msg.Identity;
-            if (string.IsNullOrEmpty(identity))
-            {
-                identity = _system.ProcessRegistry.NextId();
-            }
 
             try
             {
-                //spawn and remember this actor
-                var pid = context.SpawnPrefix(props, identity);
-                _myActors[identity] = (pid, msg.Kind);
+                if (_myActors.TryGetValue(identity, out var existing))
+                {
+                    //TODO: should we use identity+kind as key?
 
-                var response = new ActivationResponse
+                    //this identity already exists
+                    var response = new ActivationResponse
+                    {
+                        Pid = existing.pid
+                    };
+                    context.Respond(response);
+                }
+                else
                 {
-                    Pid = pid
-                };
-                context.Respond(response);
-            }
-            catch (ProcessNameExistException ex)
-            {
-                var response = new ActivationResponse
-                {
-                    Pid = ex.Pid
-                };
-                context.Respond(response);
+                    //this actor did not exist, lets spawn a new activation
+                    
+                    //spawn and remember this actor
+                    //as this id is unique for this activation (id+counter)
+                    //we cannot get ProcessNameAlreadyExists exception here
+                    var pid = context.SpawnPrefix(props, identity);
+                    _myActors[identity] = (pid, msg.Kind, _eventId);
+
+                    var response = new ActivationResponse
+                    {
+                        Pid = pid
+                    };
+                    context.Respond(response);
+                }
             }
             catch
             {
@@ -199,8 +185,6 @@ namespace Proto.Cluster.Partition
                     Pid = null
                 };
                 context.Respond(response);
-
-                throw;
             }
 
             return Actor.Done;
