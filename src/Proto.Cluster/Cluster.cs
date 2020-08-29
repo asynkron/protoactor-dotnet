@@ -119,33 +119,30 @@ namespace Proto.Cluster
 
             return IdentityLookup!.GetAsync(identity, kind, ct);
         }
-
-        //TODO: this retries with a timeout CT. we need a new CT per retry
-        public async Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct2)
+        
+        public async Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct)
         {
-            for (var i = 0; i < 20; i++)
+            var i = 0;
+            while (!ct.IsCancellationRequested)
             {
-                var ct = new CancellationTokenSource(5000).Token;
-                var delay = i * 10;
-                var pid = await GetAsync(identity, kind,ct);
+                var delay = i * 20;
+                i++;
+                var pid = await GetAsync(identity, kind, ct);
                 if (pid == null)
                 {
-                    _logger.LogDebug("Got null pid for {Identity}", identity);
-                    await Task.Delay(delay, CancellationToken.None);
+                    await Task.Delay(delay,CancellationToken.None);
                     continue;
                 }
 
                 var res = await System.Root.RequestAsync<T>(pid, message, ct);
-                if (res != null)
+                if (res == null)
                 {
-                    return res;
+                    await Task.Delay(delay,CancellationToken.None);
+                    continue;
                 }
 
-                _logger.LogDebug("Got null response from request to {Identity}", identity);
-
-                await Task.Delay(delay, CancellationToken.None);
+                return res;
             }
-
             return default!;
         }
     }

@@ -224,16 +224,6 @@ namespace Proto.Cluster
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
             _logger.LogInformation("Published event {@EndpointTerminated}", endpointTerminated);
             _cluster.System.EventStream.Publish(endpointTerminated);
-
-            // if (IsLeader)
-            // {
-            //     var banned = _bannedMembers.ToArray();
-            //     _cluster.Provider.UpdateClusterState(new ClusterState
-            //         {
-            //             BannedMembers = banned
-            //         }
-            //     );
-            // }
         }
 
         private void MemberJoin(Member newMember)

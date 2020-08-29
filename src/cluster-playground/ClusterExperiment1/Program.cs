@@ -61,20 +61,17 @@ namespace ClusterExperiment1
                         try
                         {
                             var id = "myactor" + rnd.Next(0, 1000);
-                            var i = rnd.Next(0, 2);
-                            //    Console.WriteLine($"Sending request {id}");
                             var res = await c1.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                                 new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token
                             );
 
                             if (res == null)
                             {
-                                logger.LogError("Got void response");
+                                logger.LogError("Null response");
                             }
                             else
                             {
                                 Console.Write(".");
-                                //      Console.WriteLine("Got response");
                             }
                         }
                         catch (Exception)
