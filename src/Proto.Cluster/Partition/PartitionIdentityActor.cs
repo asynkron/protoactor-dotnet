@@ -13,9 +13,17 @@ namespace Proto.Cluster.Partition
     //for spawning/activating cluster actors see PartitionActivator.cs
     internal class PartitionIdentityActor : IActor
     {
-        private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(5); //for how long do we wait before sending a ReceiveTimeout message?  (useful for liveliness checks on the actor, log it to show the actor is alive)
-        private static readonly TimeSpan HandoverTimeout = TimeSpan.FromSeconds(3); //for how long do we wait when performing a identity handover?
-        private static readonly TimeSpan TopologyChangeTimeout = TimeSpan.FromSeconds(5); //for how long do we wait after a topology change before we allow spawning new actors?
+        //for how long do we wait before sending a ReceiveTimeout message?  (useful for liveliness checks on the actor, log it to show the actor is alive)
+        private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(5); 
+        
+        //for how long do we wait when performing a identity handover?
+        private static readonly TimeSpan HandoverTimeout = TimeSpan.FromSeconds(3); 
+        
+        //for how long do we wait after a topology change before we allow spawning new actors?
+        //do note that this happens after a topology change which can be triggered by a timed out unhealthy service in the cluster provider
+        //the time before the cluster becomes responsive again is TopologyChangeTimeout + Time for service to be unhealthy
+        
+        private static readonly TimeSpan TopologyChangeTimeout = TimeSpan.FromSeconds(3); 
         
         private readonly Cluster _cluster;
         private readonly ILogger _logger;

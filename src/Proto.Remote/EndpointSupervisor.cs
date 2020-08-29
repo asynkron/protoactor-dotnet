@@ -28,7 +28,7 @@ namespace Proto.Remote
         public EndpointSupervisor(Remote remote, ActorSystem system)
         {
             if (remote.RemoteConfig == null)
-                throw new ArgumentException("[EndpointSupervisor] Router hasn't been configured", nameof(remote));
+                throw new ArgumentException("RemoteConfig may not be null", nameof(remote));
             
             _system = system;
             _remote = remote;
@@ -59,7 +59,7 @@ namespace Proto.Remote
             if (ShouldStop(rs))
             {
                 Logger.LogError(
-                    "[EndpointSupervisor] Stopping connection to address {Address} after retries expired because of {Reason}",
+                    "Stopping connection to address {Address} after retries expired because of {Reason}",
                     _address, reason.GetType().Name
                 );
 
@@ -82,7 +82,7 @@ namespace Proto.Remote
                         t =>
                         {
                             Logger.LogWarning(
-                                "[EndpointSupervisor] Restarting {Actor} after {Duration} because of {Reason}",
+                                "Restarting {Actor} after {Duration} because of {Reason}",
                                 child.ToShortString(), duration, reason.GetType().Name
                             );
                             supervisor.RestartChildren(reason, child);
@@ -119,7 +119,7 @@ namespace Proto.Remote
         private static PID SpawnWriter(string address, ISpawnerContext context, ActorSystem system, Remote remote)
         {
             if (remote.RemoteConfig == null)
-                throw new ArgumentException("Router hasn't been configured", nameof(remote));
+                throw new ArgumentException("RemoteConfig may not be null", nameof(remote));
             
             var writerProps =
                 Props.FromProducer(
