@@ -139,7 +139,8 @@ namespace Proto.Remote
             }
             catch (Exception x)
             {
-                Logger.LogWarning("[EndpointWriterMailbox] Exception in RunAsync because of {Reason}", x.GetType().Name);
+                //This is already logged in the supervisor
+                //Logger.LogWarning("[EndpointWriterMailbox] Exception in RunAsync because of {Reason}", x.GetType().Name);
                 _suspended = true;
                 _invoker!.EscalateFailure(x, m);
             }

@@ -110,7 +110,11 @@ namespace Proto.Cluster
 
             if (IsLeader)
             {
-                _logger.LogWarning("I AM LEADER!");
+                _logger.LogInformation("I am leader!");
+            }
+            else
+            {
+                _logger.LogInformation("{Address}:{Id} is leader!",leader?.Address,leader?.MemberId);
             }
         }
 

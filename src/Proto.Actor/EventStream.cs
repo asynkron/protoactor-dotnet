@@ -26,10 +26,10 @@ namespace Proto
                     if (msg is DeadLetterEvent letter)
                     {
                         _logger.LogInformation(
-                            "[DeadLetter] '{0}' got '{1}:{2}' from '{3}'",
-                            letter.Pid.ToShortString(),
+                            "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",
                             letter.Message.GetType().Name,
                             letter.Message,
+                            letter.Pid.ToShortString(),
                             letter.Sender?.ToShortString()
                         );
                     }

@@ -85,7 +85,7 @@ namespace Proto.Cluster.Partition
             //remove all identities we do no longer own.
             _partitionLookup.Clear();
 
-            _logger.LogWarning("Topology change --- {EventId} --- pausing interactions for {Timeout}",
+            _logger.LogInformation("Topology change --- {EventId} --- pausing interactions for {Timeout}",
                 _eventId, TopologyChangeTimeout
             );
 

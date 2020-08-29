@@ -8,7 +8,7 @@ namespace Proto.Cluster.Partition
 {
     public class PartitionIdentityLookup : IIdentityLookup
     {
-        private readonly ILogger _logger = Log.CreateLogger<PartitionIdentityLookup>();
+        private ILogger _logger;
         private Cluster _cluster = null!;
         private PartitionManager _partitionManager = null!;
 
@@ -51,14 +51,14 @@ namespace Proto.Cluster.Partition
 
                 return resp.Pid;
             }
-            catch (TimeoutException e)
+            catch (TimeoutException)
             {
-                _logger.LogWarning(e, "[Cluster] Remote PID request timeout {@Request}", req);
+                _logger.LogWarning("Remote PID request timeout {@Request}", req);
                 return null;
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "[Cluster] Error occured requesting remote PID {@Request}", req);
+                _logger.LogError(e, "Error occured requesting remote PID {@Request}", req);
                 return null;
             }
         }
@@ -67,6 +67,7 @@ namespace Proto.Cluster.Partition
         {
             _cluster = cluster;
             _partitionManager = new PartitionManager(cluster);
+            _logger = Log.CreateLogger(nameof(PartitionIdentityLookup)+"-" + _cluster.LoggerId);
             _partitionManager.Setup();
         }
 

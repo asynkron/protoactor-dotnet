@@ -34,40 +34,40 @@ namespace Proto.Cluster.Partition
             _system = _cluster.System;
             _partitionManager = partitionManager;
             _logger = Log.CreateLogger($"{nameof(PartitionPlacementActor)}-{cluster.LoggerId}");
-            _system.EventStream.Subscribe<DeadLetterEvent>(dl =>
-                {
-                    if (!dl.Pid.Id.StartsWith(PartitionManager.PartitionPlacementActorName))
-                    {
-                        return;
-                    }
-
-                    var kvp = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(dl.Pid));
-
-                    //TODO: wrong
-                    if (kvp.Equals(default))
-                    {
-                        return;
-                    }
-
-                    var id = kvp.Key;
-
-                    if (dl.Sender != null)
-                    {
-                        _system.Root.Send(dl.Sender, new VoidResponse());
-                        _logger.LogWarning(
-                            "Got Deadletter message {Message} for gain actor '{Identity}' from {Sender}, sending void response",
-                            dl.Message, id, dl.Sender
-                        );
-                    }
-                    else
-                    {
-                        _logger.LogWarning(
-                            "Got Deadletter message {Message} for gain actor '{Identity}', use `Request` for grain communication ",
-                            dl.Message, id
-                        );
-                    }
-                }
-            );
+            // _system.EventStream.Subscribe<DeadLetterEvent>(dl =>
+            //     {
+            //         if (!dl.Pid.Id.StartsWith(PartitionManager.PartitionPlacementActorName))
+            //         {
+            //             return;
+            //         }
+            //
+            //         var kvp = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(dl.Pid));
+            //
+            //         //TODO: wrong
+            //         if (kvp.Equals(default))
+            //         {
+            //             return;
+            //         }
+            //
+            //         var id = kvp.Key;
+            //
+            //         if (dl.Sender != null)
+            //         {
+            //             _system.Root.Send(dl.Sender, new VoidResponse());
+            //             _logger.LogWarning(
+            //                 "Got Deadletter message {Message} for gain actor '{Identity}' from {Sender}, sending void response",
+            //                 dl.Message, id, dl.Sender
+            //             );
+            //         }
+            //         else
+            //         {
+            //             _logger.LogWarning(
+            //                 "Got Deadletter message {Message} for gain actor '{Identity}', use `Request` for grain communication ",
+            //                 dl.Message, id
+            //             );
+            //         }
+            //     }
+            // );
         }
 
         public Task ReceiveAsync(IContext context) =>

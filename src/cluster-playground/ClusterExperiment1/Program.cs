@@ -112,9 +112,9 @@ namespace ClusterExperiment1
         {
             if (ctx.Message is Started)
             {
-                Console.Write("#");
                 //just to highlight when this happens
-             //   _log.LogError("I started " + ctx.Self);
+                Console.Write("#");
+                //_log.LogInformation("I started " + ctx.Self);
             }
 
             if (ctx.Message is HelloRequest)
@@ -125,7 +125,7 @@ namespace ClusterExperiment1
             if (ctx.Message is Stopped)
             {
                 //just to highlight when this happens
-            //    _log.LogError("IM STOPPING!! " + ctx.Self);
+            //    _log.LogWarning("I stopped" + ctx.Self);
             }
 
             return Actor.Done;
