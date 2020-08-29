@@ -120,12 +120,14 @@ namespace Proto.Cluster
             return IdentityLookup!.GetAsync(identity, kind, ct);
         }
 
-        public async Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct)
+        //TODO: this retries with a timeout CT. we need a new CT per retry
+        public async Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct2)
         {
             for (var i = 0; i < 20; i++)
             {
+                var ct = new CancellationTokenSource(5000).Token;
                 var delay = i * 10;
-                var pid = await GetAsync(identity, kind, ct);
+                var pid = await GetAsync(identity, kind,ct);
                 if (pid == null)
                 {
                     _logger.LogDebug("Got null pid for {Identity}", identity);

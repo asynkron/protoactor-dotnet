@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
@@ -14,7 +15,13 @@ namespace ClusterExperiment1
     {
         private static async Task RunFollower()
         {
-            Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
+            Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole(o =>
+            {
+                o.IncludeScopes = true;
+                o.UseUtcTimestamp = true;
+
+            }).SetMinimumLevel(LogLevel.Information)));
+            
             var cluster = SpawnMember(0);
 
             Console.ReadLine();
@@ -22,7 +29,12 @@ namespace ClusterExperiment1
         
         private static async Task RunLeader()
         {
-            Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
+            Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole(o =>
+            {
+                o.IncludeScopes = true;
+                o.UseUtcTimestamp = true;
+
+            }).SetMinimumLevel(LogLevel.Information)));
             var logger = Log.CreateLogger(nameof(Program));
             
             Console.WriteLine("Press enter to start");

@@ -58,7 +58,7 @@ namespace Proto.Remote
         {
             if (ShouldStop(rs))
             {
-                Logger.LogWarning(
+                Logger.LogError(
                     "[EndpointSupervisor] Stopping connection to address {Address} after retries expired because of {Reason}",
                     _address, reason.GetType().Name
                 );
