@@ -222,7 +222,7 @@ namespace Proto.Cluster
             _members.Remove(memberThatLeft.Id);
 
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
-            _logger.LogWarning("Published event {@EndpointTerminated}", endpointTerminated);
+            _logger.LogInformation("Published event {@EndpointTerminated}", endpointTerminated);
             _cluster.System.EventStream.Publish(endpointTerminated);
 
             // if (IsLeader)
