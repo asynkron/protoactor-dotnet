@@ -47,94 +47,85 @@ namespace Proto.Remote
             _channelCredentials = channelCredentials;
         }
 
-        public Task ReceiveAsync(IContext context)
+        public Task ReceiveAsync(IContext context) =>
+            context.Message switch
+            {
+                Started _                    => StartedAsync(),
+                Stopped _                    => StoppedAsync(),
+                Restarting _                 => RestartingAsync(),
+                EndpointTerminatedEvent _    => EndpointTerminatedEvent(context),
+                IEnumerable<RemoteDeliver> m => RemoteDeliver(m, context),
+                _                            => Actor.Done
+            };
+
+        private Task RemoteDeliver(IEnumerable<RemoteDeliver> m, IContext context)
         {
-            switch (context.Message)
+            var envelopes = new List<MessageEnvelope>();
+            var typeNames = new Dictionary<string, int>();
+            var targetNames = new Dictionary<string, int>();
+            var typeNameList = new List<string>();
+            var targetNameList = new List<string>();
+
+            foreach (var rd in m)
             {
-                case Started _:
-                    Logger.LogDebug("[EndpointWriter] Starting at {Address}", _address);
-                    return StartedAsync();
-                case Stopped _:
-                    return StoppedAsync().ContinueWith(_ =>
-                        Logger.LogDebug("[EndpointWriter] Stopped at {Address}", _address)
-                    );
-                case Restarting _:
-                    return RestartingAsync();
-                case EndpointTerminatedEvent _:
-                    if (context.Self != null) //TODO: how can Self ever be null?
-                    {
-                        context.Stop(context.Self);
-                    }
+                var targetName = rd.Target.Id;
+                var serializerId = rd.SerializerId == -1 ? _serializerId : rd.SerializerId;
 
-                    return Actor.Done;
-                case IEnumerable<RemoteDeliver> m:
-                    return Deliver(m);
-                default:
-                    return Actor.Done;
-            }
-
-            Task Deliver(IEnumerable<RemoteDeliver> m)
-            {
-                var envelopes = new List<MessageEnvelope>();
-                var typeNames = new Dictionary<string, int>();
-                var targetNames = new Dictionary<string, int>();
-                var typeNameList = new List<string>();
-                var targetNameList = new List<string>();
-
-                foreach (var rd in m)
+                if (!targetNames.TryGetValue(targetName, out var targetId))
                 {
-                    var targetName = rd.Target.Id;
-                    var serializerId = rd.SerializerId == -1 ? _serializerId : rd.SerializerId;
-
-                    if (!targetNames.TryGetValue(targetName, out var targetId))
-                    {
-                        targetId = targetNames[targetName] = targetNames.Count;
-                        targetNameList.Add(targetName);
-                    }
-
-                    var typeName = _serialization.GetTypeName(rd.Message, serializerId);
-
-                    if (!typeNames.TryGetValue(typeName, out var typeId))
-                    {
-                        typeId = typeNames[typeName] = typeNames.Count;
-                        typeNameList.Add(typeName);
-                    }
-
-                    MessageHeader? header = null;
-
-                    if (rd.Header != null && rd.Header.Count > 0)
-                    {
-                        header = new MessageHeader();
-                        header.HeaderData.Add(rd.Header.ToDictionary());
-                    }
-
-                    var bytes = _serialization.Serialize(rd.Message, serializerId);
-
-                    var envelope = new MessageEnvelope
-                    {
-                        MessageData = bytes,
-                        Sender = rd.Sender,
-                        Target = targetId,
-                        TypeId = typeId,
-                        SerializerId = serializerId,
-                        MessageHeader = header
-                    };
-
-                    envelopes.Add(envelope);
+                    targetId = targetNames[targetName] = targetNames.Count;
+                    targetNameList.Add(targetName);
                 }
 
-                var batch = new MessageBatch();
-                batch.TargetNames.AddRange(targetNameList);
-                batch.TypeNames.AddRange(typeNameList);
-                batch.Envelopes.AddRange(envelopes);
+                var typeName = _serialization.GetTypeName(rd.Message, serializerId);
 
-                Logger.LogDebug(
-                    "[EndpointWriter] Sending {Count} envelopes for {Address} while channel status is {State}",
-                    envelopes.Count, _address, _channel?.State
-                );
+                if (!typeNames.TryGetValue(typeName, out var typeId))
+                {
+                    typeId = typeNames[typeName] = typeNames.Count;
+                    typeNameList.Add(typeName);
+                }
 
-                return SendEnvelopesAsync(batch, context);
+                MessageHeader? header = null;
+
+                if (rd.Header != null && rd.Header.Count > 0)
+                {
+                    header = new MessageHeader();
+                    header.HeaderData.Add(rd.Header.ToDictionary());
+                }
+
+                var bytes = _serialization.Serialize(rd.Message, serializerId);
+
+                var envelope = new MessageEnvelope
+                {
+                    MessageData = bytes,
+                    Sender = rd.Sender,
+                    Target = targetId,
+                    TypeId = typeId,
+                    SerializerId = serializerId,
+                    MessageHeader = header
+                };
+
+                envelopes.Add(envelope);
             }
+
+            var batch = new MessageBatch();
+            batch.TargetNames.AddRange(targetNameList);
+            batch.TypeNames.AddRange(typeNameList);
+            batch.Envelopes.AddRange(envelopes);
+
+            Logger.LogDebug("[EndpointWriter] Sending {Count} envelopes for {Address} while channel status is {State}", envelopes.Count, _address, _channel?.State);
+
+            return SendEnvelopesAsync(batch, context);
+        }
+
+        private static Task EndpointTerminatedEvent(IContext context)
+        {
+            if (context.Self != null) //TODO: how can Self ever be null?
+            {
+                context.Stop(context.Self);
+            }
+
+            return Actor.Done;
         }
 
         private async Task SendEnvelopesAsync(MessageBatch batch, IContext context)
@@ -168,7 +159,11 @@ namespace Proto.Remote
         private Task RestartingAsync() => ShutDownChannel();
 
         //shutdown channel before stopping
-        private Task StoppedAsync() => ShutDownChannel();
+        private async Task StoppedAsync()
+        {
+            await ShutDownChannel();
+            Logger.LogDebug("[EndpointWriter] Stopped at {Address}", _address);
+        }
 
         private Task ShutDownChannel()
         {
@@ -196,7 +191,7 @@ namespace Proto.Remote
 
             Logger.LogDebug("[EndpointWriter] Connected client for address {Address}", _address);
 
-            var _ = Task.Run(
+            _ = Task.Run(
                 async () =>
                 {
                     try
