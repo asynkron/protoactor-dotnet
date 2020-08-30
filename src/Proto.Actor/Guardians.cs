@@ -21,9 +21,9 @@ namespace Proto
             System = system;
         }
 
-        public ActorSystem System { get; }
+        private ActorSystem System { get; }
 
-        internal PID GetGuardianPID(ISupervisorStrategy strategy)
+        internal PID GetGuardianPid(ISupervisorStrategy strategy)
         {
             GuardianProcess ValueFactory(ISupervisorStrategy s) => new GuardianProcess(System, s);
 

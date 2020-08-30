@@ -53,7 +53,7 @@ namespace Proto
         public PID SpawnNamed(Props props, string name)
         {
             var parent = props.GuardianStrategy != null
-                ? System.Guardians.GetGuardianPID(props.GuardianStrategy)
+                ? System.Guardians.GetGuardianPid(props.GuardianStrategy)
                 : null;
             return props.Spawn(System, name, parent);
         }
