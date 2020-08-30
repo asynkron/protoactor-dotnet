@@ -11,6 +11,8 @@ using System.Threading;
 
 namespace Proto
 {
+    //TODO: should really the address and NoHost live here?
+    //maybe the System should have an address instead, the process registry seems like the wrong place
     public class ProcessRegistry
     {
         private const string NoHost = "nonhost";
