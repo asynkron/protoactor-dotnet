@@ -78,11 +78,5 @@ namespace Proto
         }
 
         public (string Host, int Port) GetAddress() => (_host, _port);
-
-        internal void Shutdown()
-        {
-            _host = NoHost;
-            _hostResolvers.Clear();
-        }
     }
 }
