@@ -142,7 +142,7 @@ namespace Proto.Cluster.Consul
 
         private void StartMonitorMemberStatusChangesLoop()
         {
-            Task.Run(async () =>
+            _ = Task.Run(async () =>
                 {
                     var waitIndex = 0ul;
                     while (!_shutdown)
@@ -196,7 +196,7 @@ namespace Proto.Cluster.Consul
 
         private void StartUpdateTtlLoop()
         {
-            Task.Run(async () =>
+            _ = Task.Run(async () =>
                 {
                     while (!_shutdown)
                     {
@@ -211,7 +211,7 @@ namespace Proto.Cluster.Consul
 
         private void StartLeaderElectionLoop()
         {
-            Task.Run(async () =>
+            _ = Task.Run(async () =>
                 {
                     try
                     {
