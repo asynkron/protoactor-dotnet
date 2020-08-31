@@ -7,31 +7,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\experimental\Proto.Cluster.MongoIdentityLookup\Proto.Cluster.MongoIdentityLookup.csproj" />
-      <ProjectReference Include="..\..\Proto.Cluster\Proto.Cluster.csproj" />
-      <ProjectReference Include="..\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
+        <ProjectReference Include="..\..\experimental\Proto.Cluster.MongoIdentityLookup\Proto.Cluster.MongoIdentityLookup.csproj"/>
+        <ProjectReference Include="..\..\Proto.Cluster\Proto.Cluster.csproj"/>
+        <ProjectReference Include="..\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Grpc.Tools" Version="2.31.0">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
-      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0-preview.7.20364.11" />
-      <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+        <PackageReference Include="Grpc.Tools" Version="2.23.0" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0-preview.7.20364.11"/>
+        <PackageReference Include="Newtonsoft.Json" Version="12.0.3"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="messages.proto" />
-      <Protobuf Include="messages.proto">
-        <GrpcServices>Both</GrpcServices>
-        <Access>Public</Access>
-        <ProtoCompile>True</ProtoCompile>
-        <ProtoRoot></ProtoRoot>
-        <CompileOutputs>True</CompileOutputs>
-        <OutputDir>obj\Release\netcoreapp3.1\</OutputDir>
-        <Generator>MSBuild:Compile</Generator>
-      </Protobuf>
+        <Protobuf Include="messages.proto" GrpcServices="Server"/>
     </ItemGroup>
 
 </Project>
