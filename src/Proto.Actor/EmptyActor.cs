@@ -2,7 +2,8 @@
 
 namespace Proto
 {
-    class EmptyActor : IActor
+    //this is used when creating actors from a Func
+    internal class EmptyActor : IActor
     {
         private readonly Receive _receive;
 

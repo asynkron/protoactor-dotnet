@@ -6,6 +6,7 @@
 
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Proto.Cluster.Data;
 
 namespace Proto.Cluster
 {
@@ -13,8 +14,10 @@ namespace Proto.Cluster
     public interface IClusterProvider
     {
         Task StartAsync(Cluster cluster, string clusterName, string host, int port, string[] kinds,
-            IMemberStatusValue? statusValue, IMemberStatusValueSerializer serializer, MemberList memberList);
+            MemberList memberList);
 
-        Task ShutdownAsync(Cluster cluster);
+        Task ShutdownAsync(bool graceful);
+
+        Task UpdateClusterState(ClusterState state);
     }
 }

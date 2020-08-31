@@ -6,7 +6,7 @@
 
 namespace Proto.Router.Routers
 {
-    class BroadcastRouterState : RouterState
+    internal class BroadcastRouterState : RouterState
     {
         private readonly ISenderContext _senderContext;
 

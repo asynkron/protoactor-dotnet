@@ -8,13 +8,14 @@ using System;
 
 namespace Proto.Router.Routers
 {
-    class ConsistentHashPoolRouterConfig : PoolRouterConfig
+    internal class ConsistentHashPoolRouterConfig : PoolRouterConfig
     {
         private readonly Func<string, uint> _hash;
         private readonly int _replicaCount;
         private readonly ISenderContext _senderContext;
 
-        public ConsistentHashPoolRouterConfig(ISenderContext senderContext, int poolSize, Props routeeProps, Func<string, uint> hash, int replicaCount)
+        public ConsistentHashPoolRouterConfig(ISenderContext senderContext, int poolSize, Props routeeProps,
+            Func<string, uint> hash, int replicaCount)
             : base(poolSize, routeeProps)
         {
             _senderContext = senderContext;
@@ -22,10 +23,12 @@ namespace Proto.Router.Routers
             {
                 throw new ArgumentException("ReplicaCount must be greater than 0");
             }
+
             _hash = hash;
             _replicaCount = replicaCount;
         }
 
-        public override RouterState CreateRouterState() => new ConsistentHashRouterState(_senderContext, _hash, _replicaCount);
+        public override RouterState CreateRouterState() =>
+            new ConsistentHashRouterState(_senderContext, _hash, _replicaCount);
     }
 }

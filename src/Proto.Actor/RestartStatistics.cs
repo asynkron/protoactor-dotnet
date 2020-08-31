@@ -14,11 +14,11 @@ namespace Proto
     {
         private readonly List<DateTime> _failureTimes = new List<DateTime>();
 
-        public RestartStatistics(int failureCount, DateTime? lastFailuretime)
+        public RestartStatistics(int failureCount, DateTime? lastFailureTime)
         {
             for (var i = 0; i < failureCount; i++)
             {
-                _failureTimes.Add(lastFailuretime ?? DateTime.Now);
+                _failureTimes.Add(lastFailureTime ?? DateTime.Now);
             }
         }
 
@@ -28,6 +28,7 @@ namespace Proto
 
         public void Reset() => _failureTimes.Clear();
 
-        public int NumberOfFailures(TimeSpan? within) => within.HasValue ? _failureTimes.Count(a => DateTime.Now - a < within) : _failureTimes.Count;
+        public int NumberOfFailures(TimeSpan? within) =>
+            within.HasValue ? _failureTimes.Count(a => DateTime.Now - a < within) : _failureTimes.Count;
     }
 }

@@ -20,21 +20,32 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Grpc.Health.V1;
+using Grpc.HealthCheck;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
+    [PublicAPI]
     public class Remote
     {
-        private static readonly ILogger Logger = Log.CreateLogger(typeof(Remote).FullName);
+        private static readonly ILogger Logger = Log.CreateLogger<Remote>();
 
-        private Server _server = null!;
-        private EndpointReader _endpointReader = null!;
-        private EndpointManager _endpointManager = null!;
-        
         private readonly Dictionary<string, Props> _kinds = new Dictionary<string, Props>();
         private readonly ActorSystem _system;
-        
+        private EndpointManager _endpointManager = null!;
+        private EndpointReader _endpointReader = null!;
+        private HealthServiceImpl _healthCheck = null!;
+
+        private Server _server = null!;
+
+        public Remote(ActorSystem system, Serialization serialization)
+        {
+            _system = system;
+            Serialization = serialization;
+        }
+
         public RemoteConfig? RemoteConfig { get; private set; }
         public PID? ActivatorPid { get; private set; }
 
@@ -53,13 +64,8 @@ namespace Proto.Remote
             {
                 throw new ArgumentException($"No Props found for kind '{kind}'");
             }
-            return props;
-        }
 
-        public Remote(ActorSystem system, Serialization serialization)
-        {
-            _system = system;
-            Serialization = serialization;
+            return props;
         }
 
         public void Start(string hostname, int port) => Start(hostname, port, new RemoteConfig());
@@ -69,24 +75,33 @@ namespace Proto.Remote
             RemoteConfig = config;
             _endpointManager = new EndpointManager(this, _system);
             _endpointReader = new EndpointReader(_system, _endpointManager, Serialization);
-            _system.ProcessRegistry.RegisterHostResolver(pid => new RemoteProcess(this, _system, _endpointManager, pid));
+            _healthCheck = new HealthServiceImpl();
+            _system.ProcessRegistry.RegisterHostResolver(pid => new RemoteProcess(this, _system, _endpointManager, pid)
+            );
 
             _server = new Server
             {
-                Services = { Remoting.BindService(_endpointReader) },
-                Ports = { new ServerPort(hostname, port, config.ServerCredentials) }
+                Services =
+                {
+                    Remoting.BindService(_endpointReader),
+                    Health.BindService(_healthCheck)
+                },
+                Ports = {new ServerPort(hostname, port, config.ServerCredentials)}
             };
             _server.Start();
 
             var boundPort = _server.Ports.Single().BoundPort;
-            _system.ProcessRegistry.SetAddress(config.AdvertisedHostname ?? hostname, config.AdvertisedPort ?? boundPort);
+            _system.ProcessRegistry.SetAddress(config.AdvertisedHostname ?? hostname, config.AdvertisedPort ?? boundPort
+            );
             _endpointManager.Start();
             SpawnActivator();
 
-            Logger.LogDebug("Starting Proto.Actor server on {Host}:{Port} ({Address})", hostname, boundPort, _system.ProcessRegistry.Address);
+            Logger.LogDebug("Starting Proto.Actor server on {Host}:{Port} ({Address})", hostname, boundPort,
+                _system.ProcessRegistry.Address
+            );
         }
 
-        public async Task Shutdown(bool graceful = true)
+        public async Task ShutdownAsync(bool graceful = true)
         {
             try
             {
@@ -95,7 +110,7 @@ namespace Proto.Remote
                     _endpointManager.Stop();
                     _endpointReader.Suspend(true);
                     StopActivator();
-                    await _server.ShutdownAsync();
+                    await _server.KillAsync(); //TODO: was ShutdownAsync but that never returns?
                 }
                 else
                 {
@@ -119,13 +134,14 @@ namespace Proto.Remote
         }
 
         /// <summary>
-        /// Span a remote actor with auto-generated name
+        ///     Span a remote actor with auto-generated name
         /// </summary>
         /// <param name="address">Remote node address</param>
         /// <param name="kind">Actor kind, must be known on the remote node</param>
         /// <param name="timeout">Timeout for the confirmation to be received from the remote node</param>
         /// <returns></returns>
-        public Task<ActorPidResponse> SpawnAsync(string address, string kind, TimeSpan timeout) => SpawnNamedAsync(address, "", kind, timeout);
+        public Task<ActorPidResponse> SpawnAsync(string address, string kind, TimeSpan timeout) =>
+            SpawnNamedAsync(address, "", kind, timeout);
 
         public async Task<ActorPidResponse> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout)
         {
@@ -151,10 +167,11 @@ namespace Proto.Remote
             var env = new RemoteDeliver(header!, message, pid, sender!, serializerId);
             _endpointManager.RemoteDeliver(env);
         }
-        
+
         private void SpawnActivator()
         {
-            var props = Props.FromProducer(() => new Activator(this, _system)).WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+            var props = Props.FromProducer(() => new Activator(this, _system))
+                .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
             ActivatorPid = _system.Root.SpawnNamed(props, "activator");
         }
 

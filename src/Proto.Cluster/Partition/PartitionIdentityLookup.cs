@@ -3,81 +3,78 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.IdentityLookup;
-using Proto.Remote;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.Partition
 {
     public class PartitionIdentityLookup : IIdentityLookup
     {
-        private Cluster _cluster;
-        private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityLookup>();
-        private PartitionManager PartitionManager { get;  set; }
+        private Cluster _cluster = null!;
+        private ILogger _logger;
+        private PartitionManager _partitionManager = null!;
 
-        public async Task<(PID?,ResponseStatusCode)> GetAsync(string identity,string kind, CancellationToken ct)
+        public async Task<PID?> GetAsync(string identity, string kind, CancellationToken ct)
         {
-            //Get Pid
-            var address = _cluster.MemberList.GetPartition(identity, kind);
+            //Get address to node owning this ID
+            var address = _partitionManager.Selector.GetIdentityOwner(identity);
+            _logger.LogDebug("Identity belongs to {address}", address);
 
             if (string.IsNullOrEmpty(address))
             {
-                return (null, ResponseStatusCode.Unavailable);
+                return null;
             }
 
-            
-            var remotePid = PartitionManager.PartitionForKind(address, kind);
+            var remotePid = _partitionManager.RemotePartitionIdentityActor(address);
 
-            var req = new ActorPidRequest
+            var req = new ActivationRequest
             {
                 Kind = kind,
-                Name = identity
+                Identity = identity
             };
 
-            Logger.LogDebug("[Cluster] Requesting remote PID from {Partition}:{Remote} {@Request}", address, remotePid, req);
+            _logger.LogDebug("Requesting remote PID from {Partition}:{Remote} {@Request}", address, remotePid, req);
 
             try
             {
                 var resp = ct == CancellationToken.None
-                    ? await _cluster.System.Root.RequestAsync<ActorPidResponse>(remotePid, req, _cluster.Config!.TimeoutTimespan)
-                    : await _cluster.System.Root.RequestAsync<ActorPidResponse>(remotePid, req, ct);
-                var status = (ResponseStatusCode) resp.StatusCode;
+                    ? await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req,
+                        _cluster.Config!.TimeoutTimespan
+                    )
+                    : await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
 
-                if (status == ResponseStatusCode.OK)
+                if (resp.Pid != null && _cluster!.Config!.UsePidCache)
                 {
-                    if (_cluster.Config.UsePidCache)
+                    if (_cluster.PidCache.TryAddCache(identity, resp.Pid))
                     {
-                        if (_cluster.PidCache.TryAddCache(identity, resp.Pid))
-                        {
-                            _cluster.PidCacheUpdater.Watch(resp.Pid);
-                        }
+                        _cluster.PidCacheUpdater.Watch(resp.Pid);
                     }
-
-                    return (resp.Pid, status);
                 }
 
-                return (resp.Pid, status);
+                return resp.Pid;
             }
-            catch (TimeoutException e)
+            //TODO: decide if we throw or return null
+            catch (TimeoutException)
             {
-                Logger.LogWarning(e, "[Cluster] Remote PID request timeout {@Request}", req);
-                return (null, ResponseStatusCode.Timeout);
+                _logger.LogDebug("Remote PID request timeout {@Request}", req);
+                return null;
             }
             catch (Exception e)
             {
-                Logger.LogError(e, "[Cluster] Error occured requesting remote PID {@Request}", req);
-                return (null, ResponseStatusCode.Error);
+                _logger.LogError(e, "Error occured requesting remote PID {@Request}", req);
+                return null;
             }
         }
 
         public void Setup(Cluster cluster, string[] kinds)
         {
             _cluster = cluster;
-            PartitionManager = new PartitionManager(cluster);
-            PartitionManager.Setup(kinds);
+            _partitionManager = new PartitionManager(cluster);
+            _logger = Log.CreateLogger(nameof(PartitionIdentityLookup) + "-" + _cluster.LoggerId);
+            _partitionManager.Setup();
         }
 
-        public void Stop()
+        public void Shutdown()
         {
-            PartitionManager.Stop();
+            _partitionManager.Shutdown();
         }
     }
 }

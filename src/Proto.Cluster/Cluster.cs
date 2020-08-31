@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.IdentityLookup;
+using Proto.Cluster.Partition;
 using Proto.Remote;
 
 namespace Proto.Cluster
@@ -17,52 +18,53 @@ namespace Proto.Cluster
     [PublicAPI]
     public class Cluster
     {
-        private static readonly ILogger Logger = Log.CreateLogger(typeof(Cluster).FullName);
-
-        internal ClusterConfig? Config { get; private set; }
-        
-        public ActorSystem System { get; }
-
-        public Remote.Remote Remote { get; }
+        private static ILogger _logger = null!;
 
         public Cluster(ActorSystem system, Serialization serialization)
         {
             System = system;
             Remote = new Remote.Remote(system, serialization);
-
             PidCache = new PidCache();
-            MemberList = new MemberList(this);
-            PidCacheUpdater = new PidCacheUpdater(this,PidCache);
+            PidCacheUpdater = new PidCacheUpdater(this, PidCache);
         }
 
+        public Guid Id { get; } = Guid.NewGuid();
 
-        internal MemberList MemberList { get; }
+        internal ClusterConfig Config { get; private set; } = null!;
+
+        public ActorSystem System { get; }
+
+        public Remote.Remote Remote { get; }
+
+
+        internal MemberList MemberList { get; private set; }
         internal PidCache PidCache { get; }
         internal PidCacheUpdater PidCacheUpdater { get; }
-        
+
         private IIdentityLookup? IdentityLookup { get; set; }
 
-        public Task Start(string clusterName, string address, int port, IClusterProvider cp)
-            => Start(new ClusterConfig(clusterName, address, port, cp));
+        internal IClusterProvider Provider { get; set; }
 
-        public async Task Start(ClusterConfig config)
+        public string LoggerId => System.ProcessRegistry.Address;
+
+        public Task StartAsync(string clusterName, string address, int port, IClusterProvider cp)
+            => StartAsync(new ClusterConfig(clusterName, address, port, cp));
+
+        public async Task StartAsync(ClusterConfig config)
         {
             Config = config;
 
+
             //default to partition identity lookup
             IdentityLookup = config.IdentityLookup ?? new PartitionIdentityLookup();
-
-           
-            
             Remote.Start(Config.Address, Config.Port, Config.RemoteConfig);
-
             Remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-
-            Logger.LogInformation("[Cluster] Starting...");
+            _logger = Log.CreateLogger($"Cluster-{LoggerId}");
+            _logger.LogInformation("Starting");
+            MemberList = new MemberList(this);
 
             var kinds = Remote.GetKnownKinds();
             IdentityLookup.Setup(this, kinds);
-            
 
 
             if (config.UsePidCache)
@@ -72,48 +74,81 @@ namespace Proto.Cluster
 
             var (host, port) = System.ProcessRegistry.GetAddress();
 
-            await Config.ClusterProvider.StartAsync(
+            Provider = Config.ClusterProvider;
+
+            await Provider.StartAsync(
                 this,
                 Config.Name,
                 host,
                 port,
                 kinds,
-                Config.InitialMemberStatusValue,
-                Config.MemberStatusValueSerializer,
                 MemberList
             );
 
-            Logger.LogInformation("[Cluster] Started");
+            _logger.LogInformation("Started");
         }
 
-        public async Task Shutdown(bool graceful = true)
+        public async Task ShutdownAsync(bool graceful = true)
         {
-            Logger.LogInformation("[Cluster] Stopping...");
+            _logger.LogInformation("Stopping");
             if (graceful)
             {
-                await Config!.ClusterProvider.ShutdownAsync(this);
+                if (Config.UsePidCache)
+                {
+                    PidCacheUpdater.Shutdown();
+                }
 
-                PidCacheUpdater.Stop();
-                IdentityLookup.Stop();
+                IdentityLookup!.Shutdown();
             }
 
-            await Remote.Shutdown(graceful);
+            await Config!.ClusterProvider.ShutdownAsync(graceful);
+            await Remote.ShutdownAsync(graceful);
 
-            Logger.LogInformation("[Cluster] Stopped");
+            _logger.LogInformation("Stopped");
         }
 
-        public Task<(PID?, ResponseStatusCode)> GetAsync(string identity, string kind) => GetAsync(identity, kind, CancellationToken.None);
+        public Task<PID?> GetAsync(string identity, string kind) =>
+            GetAsync(identity, kind, CancellationToken.None);
 
-        public Task<(PID?, ResponseStatusCode)> GetAsync(string identity, string kind, CancellationToken ct)
+        public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct)
         {
             if (Config.UsePidCache)
             {
                 //Check Cache
-                if (PidCache.TryGetCache(identity, out var pid)) 
-                    return Task.FromResult((pid, ResponseStatusCode.OK));
+                if (PidCache.TryGetCache(identity, out var pid))
+                {
+                    return Task.FromResult<PID?>(pid);
+                }
             }
 
             return IdentityLookup!.GetAsync(identity, kind, ct);
+        }
+
+        public async Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct)
+        {
+            var i = 0;
+            while (!ct.IsCancellationRequested)
+            {
+                var delay = i * 20;
+                i++;
+                var pid = await GetAsync(identity, kind, ct);
+                if (pid == null)
+                {
+                    await Task.Delay(delay, CancellationToken.None);
+                    continue;
+                }
+
+                var res = await System.Root.RequestAsync<T>(pid, message, ct);
+                if (res == null)
+                {
+                    await Task.Delay(delay, CancellationToken.None);
+                    continue;
+                }
+
+                return res;
+            }
+
+            return default!;
         }
     }
 }

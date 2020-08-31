@@ -68,7 +68,8 @@ namespace Proto
 
         public Props WithDispatcher(IDispatcher dispatcher) => Copy(props => props.Dispatcher = dispatcher);
 
-        public Props WithMailbox(MailboxProducer mailboxProducer) => Copy(props => props.MailboxProducer = mailboxProducer);
+        public Props WithMailbox(MailboxProducer mailboxProducer) =>
+            Copy(props => props.MailboxProducer = mailboxProducer);
 
         public Props WithContextDecorator(params Func<IContext, IContext>[] contextDecorator)
             => Copy(
@@ -84,7 +85,8 @@ namespace Proto
                 }
             );
 
-        public Props WithGuardianSupervisorStrategy(ISupervisorStrategy guardianStrategy) => Copy(props => props.GuardianStrategy = guardianStrategy);
+        public Props WithGuardianSupervisorStrategy(ISupervisorStrategy guardianStrategy) =>
+            Copy(props => props.GuardianStrategy = guardianStrategy);
 
         public Props WithChildSupervisorStrategy(ISupervisorStrategy supervisorStrategy)
             => Copy(props => props.SupervisorStrategy = supervisorStrategy);

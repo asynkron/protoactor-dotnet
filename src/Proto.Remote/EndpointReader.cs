@@ -16,11 +16,11 @@ namespace Proto.Remote
     public class EndpointReader : Remoting.RemotingBase
     {
         private static readonly ILogger Logger = Log.CreateLogger<EndpointReader>();
-
-        private bool _suspended;
-        private readonly ActorSystem _system;
         private readonly EndpointManager _endpointManager;
         private readonly Serialization _serialization;
+        private readonly ActorSystem _system;
+
+        private bool _suspended;
 
         public EndpointReader(ActorSystem system, EndpointManager endpointManager, Serialization serialization)
         {
@@ -38,7 +38,9 @@ namespace Proto.Remote
                 throw new RpcException(Status.DefaultCancelled, "Suspended");
             }
 
-            Logger.LogDebug("[EndpointReader] Accepted connection request from {Remote} to {Local}", context.Peer, context.Host);
+            Logger.LogDebug("[EndpointReader] Accepted connection request from {Remote} to {Local}", context.Peer,
+                context.Host
+            );
 
             return Task.FromResult(
                 new ConnectResponse
@@ -58,10 +60,14 @@ namespace Proto.Remote
             return requestStream.ForEachAsync(
                 batch =>
                 {
-                    Logger.LogDebug("[EndpointReader] Received a batch of {Count} messages from {Remote}", batch.TargetNames.Count, context.Peer);
+                    Logger.LogDebug("[EndpointReader] Received a batch of {Count} messages from {Remote}",
+                        batch.TargetNames.Count, context.Peer
+                    );
 
                     if (_suspended)
+                    {
                         return Actor.Done;
+                    }
 
                     //only grow pid lookup if needed
                     if (batch.TargetNames.Count > targets.Length)
@@ -85,39 +91,54 @@ namespace Proto.Remote
                         switch (message)
                         {
                             case Terminated msg:
-                                {
-                                    Logger.LogDebug("[EndpointReader] Forwarding remote endpoint termination request for {Who}", msg.Who);
-
-                                    var rt = new RemoteTerminate(target, msg.Who);
-                                    _endpointManager.RemoteTerminate(rt);
-
-                                    break;
-                                }
+                                Terminated(msg, target);
+                                break;
                             case SystemMessage sys:
-                                Logger.LogDebug("[EndpointReader] Forwarding remote system message {@Message}", sys);
-
-                                target.SendSystemMessage(_system, sys);
+                                SystemMessage(sys, target);
                                 break;
                             default:
-                                {
-                                    Proto.MessageHeader? header = null;
-
-                                    if (envelope.MessageHeader != null)
-                                    {
-                                        header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
-                                    }
-
-                                    Logger.LogDebug("[EndpointReader] Forwarding remote user message {@Message}", message);
-                                    var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
-                                    _system.Root.Send(target, localEnvelope);
-                                    break;
-                                }
+                                ReceiveMessages(envelope, message, target);
+                                break;
                         }
                     }
 
                     return Actor.Done;
                 }
             );
+        }
+
+        private void ReceiveMessages(MessageEnvelope envelope, object message, PID target)
+        {
+            Proto.MessageHeader? header = null;
+
+            if (envelope.MessageHeader != null)
+            {
+                header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
+            }
+
+            Logger.LogDebug("[EndpointReader] Forwarding remote user message {@Message}", message);
+            var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
+            _system.Root.Send(target, localEnvelope);
+        }
+
+        private void SystemMessage(SystemMessage sys, PID target)
+        {
+            Logger.LogDebug(
+                "[EndpointReader] Forwarding remote system message {@MessageType}:{@Message}",
+                sys.GetType().Name, sys
+            );
+
+            target.SendSystemMessage(_system, sys);
+        }
+
+        private void Terminated(Terminated msg, PID target)
+        {
+            Logger.LogDebug(
+                "[EndpointReader] Forwarding remote endpoint termination request for {Who}", msg.Who
+            );
+
+            var rt = new RemoteTerminate(target, msg.Who);
+            _endpointManager.RemoteTerminate(rt);
         }
 
         public void Suspend(bool suspended)

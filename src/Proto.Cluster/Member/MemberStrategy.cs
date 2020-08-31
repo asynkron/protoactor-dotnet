@@ -6,57 +6,58 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Proto.Cluster.Partition;
 
 namespace Proto.Cluster
 {
     public interface IMemberStrategy
     {
-        List<MemberStatus> GetAllMembers();
-        void AddMember(MemberStatus member);
-        void UpdateMember(MemberStatus member);
-        void RemoveMember(MemberStatus member);
-        string GetPartition(string key);
+        List<Member> GetAllMembers();
+        void AddMember(Member member);
+
+        void RemoveMember(Member member);
         string GetActivator();
     }
 
-    class SimpleMemberStrategy : IMemberStrategy
+    internal class SimpleMemberStrategy : IMemberStrategy
     {
-        private readonly List<MemberStatus> _members;
+        private readonly List<Member> _members;
         private readonly Rendezvous _rdv;
         private readonly RoundRobinMemberSelector _rr;
 
         public SimpleMemberStrategy()
         {
-            _members = new List<MemberStatus>();
+            _members = new List<Member>();
             _rdv = new Rendezvous();
             _rr = new RoundRobinMemberSelector(this);
         }
 
-        public List<MemberStatus> GetAllMembers() => _members;
+        public int Count => _members.Count;
 
-        public void AddMember(MemberStatus member)
+        public List<Member> GetAllMembers() => _members;
+
+        //TODO: account for Member.MemberId
+        public void AddMember(Member member)
         {
             // Avoid adding the same member twice
-            if (_members.Any(x => x.Address == member.Address)) return;
-            
+            if (_members.Any(x => x.Address == member.Address))
+            {
+                return;
+            }
+
             _members.Add(member);
-            _rdv.UpdateMembers(_members);
-        }
-        
-        public void UpdateMember(MemberStatus member)
-        {
-            _members.RemoveAll(x => x.Address == member.Address);
-            _members.Add(member);
-        }
-        
-        public void RemoveMember(MemberStatus member)
-        {
-            _members.RemoveAll(x => x.Address == member.Address);
             _rdv.UpdateMembers(_members);
         }
 
-        public string GetPartition(string key) => _rdv.GetOwnerMemberByIdentity(key);
+        //TODO: account for Member.MemberId
+        public void RemoveMember(Member member)
+        {
+            _members.RemoveAll(x => x.Address == member.Address);
+            _rdv.UpdateMembers(_members);
+        }
 
         public string GetActivator() => _rr.GetMember();
+
+        public string GetPartition(string key) => _rdv.GetOwnerMemberByIdentity(key);
     }
 }

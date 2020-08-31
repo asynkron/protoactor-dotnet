@@ -4,71 +4,70 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Generic;
+using System.Linq;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.Partition
 {
-    //This class keeps track of all partitions. 
-    //it spawns one partition actor per known kind
-    //then  each partition actor PID is stored in a lookup
+    //helper to interact with partition actors on this and other members
     internal class PartitionManager
     {
-        private readonly Dictionary<string, PID> _kindMap = new Dictionary<string, PID>();
-
-        private Subscription<object>? _memberStatusSub;
+        internal const string PartitionIdentityActorName = "partition-identity";
+        internal const string PartitionPlacementActorName = "partition-activator";
         private readonly Cluster _cluster;
+        private readonly IRootContext _context;
+        private readonly ActorSystem _system;
+        private PID _partitionActivator = null!;
+        private PID _partitionActor = null!;
+
 
         internal PartitionManager(Cluster cluster)
         {
             _cluster = cluster;
+            _system = cluster.System;
+            _context = _system.Root;
         }
 
-        public void Setup(string[] kinds)
-        {
-            foreach (var kind in kinds)
-            {
-                var pid = SpawnPartitionActor(kind);
-                _kindMap[kind] = pid;
-            }
+        internal PartitionMemberSelector Selector { get; } = new PartitionMemberSelector();
 
-            //TODO: should we have some other form of notification here?
-            _memberStatusSub = _cluster.System.EventStream.Subscribe<MemberStatusEvent>(
-                msg =>
+        public void Setup()
+        {
+            var partitionActorProps = Props
+                .FromProducer(() => new PartitionIdentityActor(_cluster, this))
+                .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+            _partitionActor = _context.SpawnNamed(partitionActorProps, PartitionIdentityActorName);
+
+            var partitionActivatorProps =
+                Props.FromProducer(() => new PartitionPlacementActor(_cluster, this));
+            _partitionActivator = _context.SpawnNamed(partitionActivatorProps, PartitionPlacementActorName);
+
+            //synchronous subscribe to keep accurate
+
+            var eventId = 0ul;
+            //make sure selector is updated first
+            _system.EventStream.Subscribe<ClusterTopology>(e =>
                 {
-                    foreach (var kind in msg.Kinds)
+                    if (e.EventId > eventId)
                     {
-                        if (_kindMap.TryGetValue(kind, out var kindPid))
-                        {
-                            _cluster.System.Root.Send(kindPid, msg);
-                        }
+                        eventId = e.EventId;
+                        _cluster.MemberList.BroadcastEvent(e);
+
+                        Selector.Update(e.Members.ToArray());
+                        _context.Send(_partitionActor, e);
+                        _context.Send(_partitionActivator, e);
                     }
                 }
             );
         }
 
-        private PID SpawnPartitionActor(string kind)
+
+        public void Shutdown()
         {
-            var props = Props
-                .FromProducer(() => new PartitionActor(_cluster, kind, this))
-                .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-            var pid = _cluster.System.Root.SpawnNamed(props, "partition-" + kind);
-            return pid;
+            _context.Stop(_partitionActor);
+            _context.Stop(_partitionActivator);
         }
 
-        public void Stop()
-        {
-            foreach (var kind in _kindMap.Values)
-            {
-                _cluster.System.Root.Stop(kind);
-            }
+        public PID RemotePartitionIdentityActor(string address) => new PID(address, PartitionIdentityActorName);
 
-            _kindMap.Clear();
-            _cluster.System.EventStream.Unsubscribe(_memberStatusSub);
-        }
-
-        public PID PartitionForKind(string address, string kind)
-        {
-            return _kindMap[kind];
-        }
+        public PID RemotePartitionPlacementActor(string address) => new PID(address, PartitionPlacementActorName);
     }
 }

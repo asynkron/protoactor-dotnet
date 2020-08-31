@@ -13,19 +13,25 @@ namespace Proto
     public class MessageHeader : IReadOnlyDictionary<string, string>
     {
         public static readonly MessageHeader Empty = new MessageHeader();
-        
+
         private readonly ImmutableDictionary<string, string> _inner;
 
-        public MessageHeader() => _inner = ImmutableDictionary<string, string>.Empty;
+        public MessageHeader()
+        {
+            _inner = ImmutableDictionary<string, string>.Empty;
+        }
 
-        public MessageHeader(IDictionary<string, string> headers) => _inner = headers.ToImmutableDictionary();
+        public MessageHeader(IDictionary<string, string> headers)
+        {
+            _inner = headers.ToImmutableDictionary();
+        }
 
         public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => _inner.GetEnumerator();
-        
+
         IEnumerator IEnumerable.GetEnumerator() => _inner.GetEnumerator();
-        
+
         public int Count => _inner.Count;
-        
+
         public bool ContainsKey(string key) => _inner.ContainsKey(key);
 
         public bool TryGetValue(string key, out string value) => _inner.TryGetValue(key, out value);

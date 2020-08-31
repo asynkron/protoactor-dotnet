@@ -1,5 +1,6 @@
-namespace Proto.Cluster.Testing {
-    static class Messages
+namespace Proto.Cluster.Testing
+{
+    internal static class Messages
     {
         public class RegisterMember
         {
@@ -7,24 +8,23 @@ namespace Proto.Cluster.Testing {
             public string Address { get; set; }
             public int Port { get; set; }
             public string[] Kinds { get; set; }
-            public IMemberStatusValue StatusValue { get; set; }
-            public IMemberStatusValueSerializer StatusValueSerializer { get; set; }
         }
 
-        public class DeregisterMember { }
+        public class DeregisterMember
+        {
+        }
 
-        public class UpdateTtl { }
+        public class UpdateTtl
+        {
+        }
 
         public class CheckStatus
         {
             public ulong Index { get; set; }
         }
 
-        public class UpdateStatusValue
+        public class ReregisterMember
         {
-            public IMemberStatusValue StatusValue { get; set; }
         }
-
-        public class ReregisterMember { }
     }
 }

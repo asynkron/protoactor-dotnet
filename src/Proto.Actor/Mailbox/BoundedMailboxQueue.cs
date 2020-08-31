@@ -10,7 +10,10 @@ namespace Proto.Mailbox
     {
         private readonly MPMCQueue _messages;
 
-        public BoundedMailboxQueue(int size) => _messages = new MPMCQueue(size);
+        public BoundedMailboxQueue(int size)
+        {
+            _messages = new MPMCQueue(size);
+        }
 
         public void Push(object message) => _messages.Enqueue(message);
 

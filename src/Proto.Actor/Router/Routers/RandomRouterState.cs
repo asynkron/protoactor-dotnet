@@ -7,11 +7,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
 
 namespace Proto.Router.Routers
 {
-    class RandomRouterState : RouterState
+    internal class RandomRouterState : RouterState
     {
         private readonly Random _random;
         private readonly ISenderContext _senderContext;
@@ -27,7 +26,9 @@ namespace Proto.Router.Routers
         public override HashSet<PID> GetRoutees()
         {
             if (_routees == null)
+            {
                 throw new InvalidOperationException("Routees not set");
+            }
 
             return _routees;
         }
@@ -41,7 +42,9 @@ namespace Proto.Router.Routers
         public override void RouteMessage(object message)
         {
             if (_values == null)
+            {
                 throw new InvalidOperationException("Routees not set");
+            }
 
             var i = _random.Next(_values.Length);
             var pid = _values[i];

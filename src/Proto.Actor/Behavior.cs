@@ -13,9 +13,14 @@ namespace Proto
     {
         private readonly Stack<Receive> _behaviors = new Stack<Receive>();
 
-        public Behavior() { }
+        public Behavior()
+        {
+        }
 
-        public Behavior(Receive receive) => Become(receive);
+        public Behavior(Receive receive)
+        {
+            Become(receive);
+        }
 
         public void Become(Receive receive)
         {

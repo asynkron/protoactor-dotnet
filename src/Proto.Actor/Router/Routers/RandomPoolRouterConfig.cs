@@ -3,12 +3,13 @@
 //       Copyright (C) 2015-2020 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Router.Routers
 {
-    class RandomPoolRouterConfig : PoolRouterConfig
+    internal class RandomPoolRouterConfig : PoolRouterConfig
     {
-        private readonly ISenderContext _senderContext;
         private readonly int? _seed;
+        private readonly ISenderContext _senderContext;
 
         public RandomPoolRouterConfig(ISenderContext senderContext, int poolSize, Props routeeProps, int? seed)
             : base(poolSize, routeeProps)

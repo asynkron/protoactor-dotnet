@@ -1,4 +1,7 @@
-namespace System.Security.Cryptography
+using System;
+using System.Security.Cryptography;
+
+namespace Proto.Cluster
 {
     public abstract class FNV1A32 : HashAlgorithm
     {

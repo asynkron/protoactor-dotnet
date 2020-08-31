@@ -4,16 +4,16 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using Proto.Mailbox;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Mailbox;
 
 namespace Proto.Remote
 {
-    static class MailboxStatus
+    internal static class MailboxStatus
     {
         public const int Idle = 0;
         public const int Busy = 1;
@@ -24,9 +24,9 @@ namespace Proto.Remote
         private static readonly ILogger Logger = Log.CreateLogger<EndpointWriterMailbox>();
 
         private readonly int _batchSize;
+        private readonly ActorSystem _system;
         private readonly IMailboxQueue _systemMessages = new UnboundedMailboxQueue();
         private readonly IMailboxQueue _userMessages = new UnboundedMailboxQueue();
-        private readonly ActorSystem _system;
         private IDispatcher? _dispatcher;
         private IMessageInvoker? _invoker;
 
@@ -61,7 +61,9 @@ namespace Proto.Remote
             _dispatcher = dispatcher;
         }
 
-        public void Start() { }
+        public void Start()
+        {
+        }
 
         private async Task RunAsync()
         {
@@ -83,9 +85,9 @@ namespace Proto.Remote
 
                     _suspended = sys switch
                     {
-                        SuspendMailbox _ => true,
+                        SuspendMailbox _         => true,
                         EndpointConnectedEvent _ => false,
-                        _ => _suspended
+                        _                        => _suspended
                     };
 
                     m = sys;
@@ -115,13 +117,14 @@ namespace Proto.Remote
                     {
                         Logger.LogDebug("[EndpointWriterMailbox] Processing User Message {@Message}", msg);
 
-                        if (msg is EndpointTerminatedEvent) //The mailbox was crashing when it received this particular message 
+                        if (msg is EndpointTerminatedEvent
+                        ) //The mailbox was crashing when it received this particular message 
                         {
                             await _invoker!.InvokeUserMessageAsync(msg);
                             continue;
                         }
 
-                        batch.Add((RemoteDeliver)msg);
+                        batch.Add((RemoteDeliver) msg);
 
                         if (batch.Count >= _batchSize)
                         {
@@ -139,7 +142,8 @@ namespace Proto.Remote
             }
             catch (Exception x)
             {
-                Logger.LogWarning(x, "[EndpointWriterMailbox] Exception in RunAsync");
+                //This is already logged in the supervisor
+                //Logger.LogWarning("[EndpointWriterMailbox] Exception in RunAsync because of {Reason}", x.GetType().Name);
                 _suspended = true;
                 _invoker!.EscalateFailure(x, m);
             }

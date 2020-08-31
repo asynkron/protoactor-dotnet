@@ -8,7 +8,10 @@ namespace Proto.Router.Messages
 {
     public class RouterBroadcastMessage : RouterManagementMessage
     {
-        public RouterBroadcastMessage(object message) => Message = message;
+        public RouterBroadcastMessage(object message)
+        {
+            Message = message;
+        }
 
         public object Message { get; }
     }

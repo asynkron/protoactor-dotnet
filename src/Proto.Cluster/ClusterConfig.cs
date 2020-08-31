@@ -14,6 +14,18 @@ namespace Proto.Cluster
     [PublicAPI]
     public class ClusterConfig
     {
+        public ClusterConfig(string name, string address, int port, IClusterProvider cp)
+        {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Address = address ?? throw new ArgumentNullException(nameof(address));
+            Port = port;
+            ClusterProvider = cp ?? throw new ArgumentNullException(nameof(cp));
+
+            RemoteConfig = new RemoteConfig();
+            TimeoutTimespan = TimeSpan.FromSeconds(5);
+            MemberStrategyBuilder = kind => new SimpleMemberStrategy();
+        }
+
         public string Name { get; }
         public string Address { get; }
         public int Port { get; }
@@ -21,26 +33,12 @@ namespace Proto.Cluster
 
         public RemoteConfig RemoteConfig { get; private set; }
         public TimeSpan TimeoutTimespan { get; private set; }
-        public IMemberStatusValue? InitialMemberStatusValue { get; private set; }
-        public IMemberStatusValueSerializer MemberStatusValueSerializer { get; private set; }
+
         public Func<string, IMemberStrategy> MemberStrategyBuilder { get; private set; }
 
         public bool UsePidCache { get; private set; } = true;
 
-        public IIdentityLookup IdentityLookup { get; private set; } 
-
-        public ClusterConfig(string name, string address, int port, IClusterProvider cp)
-        {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            Address = address ?? throw new ArgumentNullException(nameof(address));
-            Port = port;
-            ClusterProvider = cp ?? throw new ArgumentNullException(nameof(cp));
-            
-            RemoteConfig = new RemoteConfig();
-            TimeoutTimespan = TimeSpan.FromSeconds(5);
-            MemberStatusValueSerializer = new NullMemberStatusValueSerializer();
-            MemberStrategyBuilder = kind => new SimpleMemberStrategy();
-        }
+        public IIdentityLookup? IdentityLookup { get; private set; }
 
         public ClusterConfig WithRemoteConfig(RemoteConfig remoteConfig)
         {
@@ -51,18 +49,6 @@ namespace Proto.Cluster
         public ClusterConfig WithTimeoutSeconds(int timeoutSeconds)
         {
             TimeoutTimespan = TimeSpan.FromSeconds(timeoutSeconds);
-            return this;
-        }
-
-        public ClusterConfig WithInitialMemberStatusValue(IMemberStatusValue statusValue)
-        {
-            InitialMemberStatusValue = statusValue;
-            return this;
-        }
-
-        public ClusterConfig WithMemberStatusValueSerializer(IMemberStatusValueSerializer serializer)
-        {
-            MemberStatusValueSerializer = serializer;
             return this;
         }
 
@@ -77,7 +63,7 @@ namespace Proto.Cluster
             UsePidCache = usePidCache;
             return this;
         }
-        
+
         public ClusterConfig WithIdentityLookup(IIdentityLookup identityLookup)
         {
             IdentityLookup = identityLookup;

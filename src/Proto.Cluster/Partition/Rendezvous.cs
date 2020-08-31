@@ -10,39 +10,31 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.Partition
 {
     /// <summary>
-    /// A dotnet port of rendezvous.go
+    ///     A dotnet port of rendezvous.go
     /// </summary>
     public class Rendezvous
     {
-        private static readonly HashAlgorithm HashAlgorithm = FNV1A32.Create();
-
-        struct MemberData
-        {
-            public MemberData(MemberStatus memberStatus)
-            {
-                Status = memberStatus;
-                Hash = Encoding.UTF8.GetBytes(memberStatus.Address);
-            }
-
-            public MemberStatus Status { get; }
-            public byte[] Hash { get; }
-        }
-
         private MemberData[] _members = Array.Empty<MemberData>();
 
         public string GetOwnerMemberByIdentity(string identity)
         {
-            if (_members == null || _members.Length == 0) return "";
+            if (_members == null || _members.Length == 0)
+            {
+                return "";
+            }
 
-            if (_members.Length == 1) return _members[0].Status.Address;
+            if (_members.Length == 1)
+            {
+                return _members[0].Info.Address;
+            }
 
             var keyBytes = Encoding.UTF8.GetBytes(identity);
 
             uint maxScore = 0;
-            MemberStatus? maxNode = null;
+            Member? maxNode = null;
 
             foreach (var member in _members)
             {
@@ -52,7 +44,7 @@ namespace Proto.Cluster
                 if (score > maxScore)
                 {
                     maxScore = score;
-                    maxNode = member.Status;
+                    maxNode = member.Info;
                 }
             }
 
@@ -60,16 +52,21 @@ namespace Proto.Cluster
         }
 
         // ReSharper disable once ParameterTypeCanBeEnumerable.Global
-        public void UpdateMembers(List<MemberStatus> members)
-            => _members = members
-                .Where(x => x.Alive)
+        public void UpdateMembers(IEnumerable<Member> members)
+        {
+            _members = members
+                .OrderBy(m => m.Address)
                 .Select(x => new MemberData(x))
                 .ToArray();
+        }
 
         private static uint RdvHash(byte[] node, byte[] key)
         {
+            //TODO: this is silly expensive, fix it..
+            //the FNV1A32 mutates interanlly, so we cant use instance var with this....
+            using HashAlgorithm hashAlgorithm = FNV1A32.Create();
             var hashBytes = MergeBytes(key, node);
-            var digest = HashAlgorithm.ComputeHash(hashBytes);
+            var digest = hashAlgorithm.ComputeHash(hashBytes);
             var hash = BitConverter.ToUInt32(digest, 0);
             return hash;
         }
@@ -80,6 +77,18 @@ namespace Proto.Cluster
             Array.Copy(front, combined, front.Length);
             Array.Copy(back, 0, combined, front.Length, back.Length);
             return combined;
+        }
+
+        private readonly struct MemberData
+        {
+            public MemberData(Member member)
+            {
+                Info = member;
+                Hash = Encoding.UTF8.GetBytes(member.Address);
+            }
+
+            public Member Info { get; }
+            public byte[] Hash { get; }
         }
     }
 }

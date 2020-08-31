@@ -6,9 +6,13 @@
 
 namespace Proto.Router.Routers
 {
-    class RoundRobinGroupRouterConfig : GroupRouterConfig
+    internal class RoundRobinGroupRouterConfig : GroupRouterConfig
     {
-        public RoundRobinGroupRouterConfig(ISenderContext senderContext, params PID[] routees) : base(senderContext, routees) { }
+        public RoundRobinGroupRouterConfig(ISenderContext senderContext, params PID[] routees) : base(senderContext,
+            routees
+        )
+        {
+        }
 
         public override RouterState CreateRouterState() => new RoundRobinRouterState(SenderContext);
     }

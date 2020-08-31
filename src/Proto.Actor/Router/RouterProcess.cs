@@ -4,9 +4,9 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using Proto.Mailbox;
 using Proto.Router.Messages;
 using Proto.Router.Routers;
-using Proto.Mailbox;
 
 namespace Proto.Router
 {

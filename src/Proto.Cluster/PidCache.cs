@@ -12,16 +12,21 @@ namespace Proto.Cluster
 {
     internal class PidCache
     {
-        private readonly ConcurrentDictionary<string, PID> _cacheIdentityToPid = new ConcurrentDictionary<string, PID>();
-        private readonly ConcurrentDictionary<string, string> _cachePidToIdentity = new ConcurrentDictionary<string, string>();
+        private readonly ConcurrentDictionary<string, PID>
+            _cacheIdentityToPid = new ConcurrentDictionary<string, PID>();
 
+        private readonly ConcurrentDictionary<string, string> _cachePidToIdentity =
+            new ConcurrentDictionary<string, string>();
 
 
         internal bool TryGetCache(string identity, out PID pid) => _cacheIdentityToPid.TryGetValue(identity, out pid);
 
         internal bool TryAddCache(string identity, PID pid)
         {
-            if (!_cacheIdentityToPid.TryAdd(identity, pid)) return false;
+            if (!_cacheIdentityToPid.TryAdd(identity, pid))
+            {
+                return false;
+            }
 
             var key = pid.ToShortString();
             _cachePidToIdentity.TryAdd(key, identity);
@@ -54,18 +59,24 @@ namespace Proto.Cluster
         }
     }
 
-    class WatchPidRequest
+    internal class WatchPidRequest
     {
-        internal PID Pid { get; }
+        public WatchPidRequest(PID pid)
+        {
+            Pid = pid;
+        }
 
-        public WatchPidRequest(PID pid) => Pid = pid;
+        internal PID Pid { get; }
     }
 
-    class PidCacheWatcher : IActor
+    internal class PidCacheWatcher : IActor
     {
         private readonly ILogger _logger = Log.CreateLogger<PidCacheWatcher>();
-        
-        public PidCacheWatcher(PidCache pidCache) => PidCache = pidCache;
+
+        public PidCacheWatcher(PidCache pidCache)
+        {
+            PidCache = pidCache;
+        }
 
         private PidCache PidCache { get; }
 

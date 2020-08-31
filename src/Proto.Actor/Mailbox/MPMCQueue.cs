@@ -35,21 +35,25 @@ namespace Proto.Mailbox
     [StructLayout(LayoutKind.Explicit, Size = 192, CharSet = CharSet.Ansi)]
     public class MPMCQueue
     {
-        [FieldOffset(0)]
-        private readonly Cell[] _buffer;
-        [FieldOffset(8)]
-        private readonly int _bufferMask;
-        [FieldOffset(64)]
-        private int _enqueuePos;
-        [FieldOffset(128)]
-        private int _dequeuePos;
+        [FieldOffset(0)] private readonly Cell[] _buffer;
 
-        public int Count => _enqueuePos - _dequeuePos;
+        [FieldOffset(8)] private readonly int _bufferMask;
+
+        [FieldOffset(128)] private int _dequeuePos;
+
+        [FieldOffset(64)] private int _enqueuePos;
 
         public MPMCQueue(int bufferSize)
         {
-            if (bufferSize < 2) throw new ArgumentException($"{nameof(bufferSize)} should be greater than 2");
-            if ((bufferSize & (bufferSize - 1)) != 0) throw new ArgumentException($"{nameof(bufferSize)} should be a power of 2");
+            if (bufferSize < 2)
+            {
+                throw new ArgumentException($"{nameof(bufferSize)} should be greater than 2");
+            }
+
+            if ((bufferSize & (bufferSize - 1)) != 0)
+            {
+                throw new ArgumentException($"{nameof(bufferSize)} should be a power of 2");
+            }
 
             _bufferMask = bufferSize - 1;
             _buffer = new Cell[bufferSize];
@@ -62,6 +66,8 @@ namespace Proto.Mailbox
             _enqueuePos = 0;
             _dequeuePos = 0;
         }
+
+        public int Count => _enqueuePos - _dequeuePos;
 
         private bool TryEnqueue(object item)
         {
@@ -90,8 +96,12 @@ namespace Proto.Mailbox
             while (true)
             {
                 if (TryEnqueue(item))
+                {
                     break;
-                Task.Delay(1).Wait(); // Could be Thread.Sleep(1) or Thread.SpinWait() if the assembly is not portable lib.
+                }
+
+                Task.Delay(1)
+                    .Wait(); // Could be Thread.Sleep(1) or Thread.SpinWait() if the assembly is not portable lib.
             }
         }
 
@@ -123,10 +133,8 @@ namespace Proto.Mailbox
         [StructLayout(LayoutKind.Explicit, Size = 16, CharSet = CharSet.Ansi)]
         private struct Cell
         {
-            [FieldOffset(0)]
-            public int Sequence;
-            [FieldOffset(8)]
-            public object? Element;
+            [FieldOffset(0)] public int Sequence;
+            [FieldOffset(8)] public object? Element;
 
             public Cell(int sequence, object? element)
             {

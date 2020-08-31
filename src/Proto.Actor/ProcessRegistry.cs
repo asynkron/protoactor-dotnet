@@ -11,17 +11,22 @@ using System.Threading;
 
 namespace Proto
 {
+    //TODO: should really the address and NoHost live here?
+    //maybe the System should have an address instead, the process registry seems like the wrong place
     public class ProcessRegistry
     {
         private const string NoHost = "nonhost";
         private readonly IList<Func<PID, Process>> _hostResolvers = new List<Func<PID, Process>>();
-        private readonly HashedConcurrentDictionary _localActorRefs = new HashedConcurrentDictionary();
+        private readonly HashedConcurrentDictionary _localProcesses = new HashedConcurrentDictionary();
         private string _host = NoHost;
         private int _port;
 
         private int _sequenceId;
 
-        public ProcessRegistry(ActorSystem system) => System = system;
+        public ProcessRegistry(ActorSystem system)
+        {
+            System = system;
+        }
 
         public ActorSystem System { get; }
 
@@ -31,23 +36,23 @@ namespace Proto
 
         public Process Get(PID pid)
         {
-            if (pid.Address != NoHost && pid.Address != Address)
+            if (pid.Address == NoHost || pid.Address == Address)
             {
-                var reff = _hostResolvers.Select(x => x(pid)).FirstOrDefault();
-
-                if (reff == null)
-                {
-                    throw new NotSupportedException("Unknown host");
-                }
-
-                return reff;
+                return _localProcesses.TryGetValue(pid.Id, out var process) ? process : System.DeadLetter;
             }
 
-            return _localActorRefs.TryGetValue(pid.Id, out var process) ? process : System.DeadLetter;
+            var reff = _hostResolvers.Select(x => x(pid)).FirstOrDefault();
+
+            if (reff == null)
+            {
+                throw new NotSupportedException("Unknown host");
+            }
+
+            return reff;
         }
 
         public Process GetLocal(string id)
-            => _localActorRefs.TryGetValue(id, out var process)
+            => _localProcesses.TryGetValue(id, out var process)
                 ? process
                 : System.DeadLetter;
 
@@ -55,11 +60,11 @@ namespace Proto
         {
             var pid = new PID(Address, id, process);
 
-            var ok = _localActorRefs.TryAdd(pid.Id, process);
+            var ok = _localProcesses.TryAdd(pid.Id, process);
             return ok ? (pid, true) : (new PID(Address, id), false);
         }
 
-        public void Remove(PID pid) => _localActorRefs.Remove(pid.Id);
+        public void Remove(PID pid) => _localProcesses.Remove(pid.Id);
 
         public string NextId()
         {

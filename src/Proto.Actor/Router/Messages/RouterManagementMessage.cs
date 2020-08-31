@@ -6,5 +6,7 @@
 
 namespace Proto.Router.Messages
 {
-    public abstract class RouterManagementMessage { }
+    public abstract class RouterManagementMessage
+    {
+    }
 }

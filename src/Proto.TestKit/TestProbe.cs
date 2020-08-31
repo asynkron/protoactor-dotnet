@@ -11,25 +11,10 @@ namespace Proto.TestKit
     /// <inheritdoc cref="ITestProbe" />
     public class TestProbe : IActor, ITestProbe
     {
-        private class RequestReference { }
+        private readonly BlockingCollection<MessageAndSender>
+            _messageQueue = new BlockingCollection<MessageAndSender>();
 
-        /// <inheritdoc />
-        public PID? Sender { get; private set; }
-
-        /// <inheritdoc />
-        public IContext Context
-        {
-            get
-            {
-                if (_context == null) throw new InvalidOperationException("Probe context is null");
-
-                return _context;
-            }
-            private set => _context = value;
-        }
         private IContext? _context;
-
-        private readonly BlockingCollection<MessageAndSender> _messageQueue = new BlockingCollection<MessageAndSender>();
 
         /// <inheritdoc />
         public Task ReceiveAsync(IContext context)
@@ -40,7 +25,11 @@ namespace Proto.TestKit
                     Context = context;
                     break;
                 case RequestReference _:
-                    if (context.Sender != null) context.Respond(this);
+                    if (context.Sender != null)
+                    {
+                        context.Respond(this);
+                    }
+
                     break;
                 case Terminated _:
                     _messageQueue.Add(new MessageAndSender(context));
@@ -55,11 +44,32 @@ namespace Proto.TestKit
         }
 
         /// <inheritdoc />
+        public PID? Sender { get; private set; }
+
+        /// <inheritdoc />
+        public IContext Context
+        {
+            get
+            {
+                if (_context == null)
+                {
+                    throw new InvalidOperationException("Probe context is null");
+                }
+
+                return _context;
+            }
+            private set => _context = value;
+        }
+
+        /// <inheritdoc />
         public void ExpectNoMessage(TimeSpan? timeAllowed = null)
         {
             var time = timeAllowed ?? TimeSpan.FromSeconds(1);
             if (_messageQueue.TryTake(out var o, time))
-                throw new TestKitException($"Waited {time.Seconds} seconds and received a message of type {o.GetType()}");
+            {
+                throw new TestKitException($"Waited {time.Seconds} seconds and received a message of type {o.GetType()}"
+                );
+            }
         }
 
         /// <inheritdoc />
@@ -67,7 +77,9 @@ namespace Proto.TestKit
         {
             var time = timeAllowed ?? TimeSpan.FromSeconds(1);
             if (!_messageQueue.TryTake(out var output, time))
+            {
                 throw new TestKitException($"Waited {time.Seconds} seconds but failed to receive a message");
+            }
 
             Sender = output?.Sender;
             return output?.Message;
@@ -78,7 +90,10 @@ namespace Proto.TestKit
         {
             var output = GetNextMessage(timeAllowed);
 
-            if (!(output is T)) throw new TestKitException($"Message expected type {typeof(T)}, actual type {output?.GetType()}");
+            if (!(output is T))
+            {
+                throw new TestKitException($"Message expected type {typeof(T)}, actual type {output?.GetType()}");
+            }
 
             return (T) output;
         }
@@ -87,7 +102,10 @@ namespace Proto.TestKit
         public T GetNextMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null)
         {
             var output = GetNextMessage<T>(timeAllowed);
-            if (!when(output)) throw new TestKitException("Condition not met");
+            if (!when(output))
+            {
+                throw new TestKitException("Condition not met");
+            }
 
             return output;
         }
@@ -182,7 +200,10 @@ namespace Proto.TestKit
         /// <inheritdoc />
         public void Respond(object message)
         {
-            if (Sender == null) return;
+            if (Sender == null)
+            {
+                return;
+            }
 
             Send(Sender, message);
         }
@@ -195,7 +216,8 @@ namespace Proto.TestKit
             => Context.RequestAsync<T>(target, message, cancellationToken);
 
         /// <inheritdoc />
-        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeAllowed) => Context.RequestAsync<T>(target, message, timeAllowed);
+        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeAllowed) =>
+            Context.RequestAsync<T>(target, message, timeAllowed);
 
         public static implicit operator PID?(TestProbe tp) => tp.Context.Self;
 
@@ -209,6 +231,10 @@ namespace Proto.TestKit
             {
                 return null;
             }
+        }
+
+        private class RequestReference
+        {
         }
     }
 }

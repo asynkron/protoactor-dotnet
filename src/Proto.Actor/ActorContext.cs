@@ -14,51 +14,11 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
 using static Proto.Actor;
+
 // ReSharper disable RedundantAssignment
 
 namespace Proto
 {
-    enum ContextState : byte
-    {
-        Alive,
-        Restarting,
-        Stopping,
-        Stopped
-    }
-
-    //Angels cry over this code, but it serves a purpose, lazily init of less frequently used features
-    public class ActorContextExtras
-    {
-        public ActorContextExtras(IContext context) => Context = context;
-
-        public ImmutableHashSet<PID> Children { get; private set; } = ImmutableHashSet<PID>.Empty;
-        public Timer? ReceiveTimeoutTimer { get; private set; }
-        public RestartStatistics RestartStatistics { get; } = new RestartStatistics(0, null);
-        public Stack<object> Stash { get; } = new Stack<object>();
-        public ImmutableHashSet<PID> Watchers { get; private set; } = ImmutableHashSet<PID>.Empty;
-        public IContext Context { get; }
-
-        public void InitReceiveTimeoutTimer(Timer timer) => ReceiveTimeoutTimer = timer;
-
-        public void ResetReceiveTimeoutTimer(TimeSpan timeout) => ReceiveTimeoutTimer?.Change(timeout, timeout);
-
-        public void StopReceiveTimeoutTimer() => ReceiveTimeoutTimer?.Change(-1, -1);
-
-        public void KillReceiveTimeoutTimer()
-        {
-            ReceiveTimeoutTimer?.Dispose();
-            ReceiveTimeoutTimer = null;
-        }
-
-        public void AddChild(PID pid) => Children = Children.Add(pid);
-
-        public void RemoveChild(PID msgWho) => Children = Children.Remove(msgWho);
-
-        public void Watch(PID watcher) => Watchers = Watchers.Add(watcher);
-
-        public void Unwatch(PID watcher) => Watchers = Watchers.Remove(watcher);
-    }
-
     public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         private static readonly ImmutableHashSet<PID> EmptyChildren = ImmutableHashSet<PID>.Empty;
@@ -67,8 +27,6 @@ namespace Proto
         private ActorContextExtras? _extras;
         private object? _messageOrEnvelope;
         private ContextState _state;
-
-        public ActorSystem System { get; }
 
         public ActorContext(ActorSystem system, Props props, PID? parent, PID self)
         {
@@ -83,6 +41,8 @@ namespace Proto
         }
 
         private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
+
+        public ActorSystem System { get; }
         IReadOnlyCollection<PID> IContext.Children => Children;
 
         public IActor? Actor { get; private set; }
@@ -100,12 +60,17 @@ namespace Proto
         public void Stash()
         {
             if (_messageOrEnvelope != null)
+            {
                 EnsureExtras().Stash.Push(_messageOrEnvelope);
+            }
         }
 
         public void Respond(object message)
         {
-            if (Sender != null) Send(Sender, message);
+            if (Sender != null)
+            {
+                Send(Sender, message);
+            }
         }
 
         public PID Spawn(Props props)
@@ -218,7 +183,8 @@ namespace Proto
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => RequestAsync(target, message, new FutureProcess<T>(System, cancellationToken));
 
-        public Task<T> RequestAsync<T>(PID target, object message) => RequestAsync(target, message, new FutureProcess<T>(System));
+        public Task<T> RequestAsync<T>(PID target, object message) =>
+            RequestAsync(target, message, new FutureProcess<T>(System));
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
@@ -296,42 +262,38 @@ namespace Proto
         {
             try
             {
-                switch (msg)
+                return msg switch
                 {
-                    case Started s:
-                        return InvokeUserMessageAsync(s);
-                    case Stop _:
-                        return InitiateStopAsync();
-                    case Terminated t:
-                        return HandleTerminatedAsync(t);
-                    case Watch w:
-                        HandleWatch(w);
-                        return Done;
-                    case Unwatch uw:
-                        HandleUnwatch(uw);
-                        return Done;
-                    case Failure f:
-                        HandleFailure(f);
-                        return Done;
-                    case Restart _:
-                        return HandleRestartAsync();
-                    case SuspendMailbox _:
-                        return Done;
-                    case ResumeMailbox _:
-                        return Done;
-                    case Continuation cont:
-                        _messageOrEnvelope = cont.Message;
-                        return cont.Action();
-                    default:
-                        Logger.LogDebug("Unknown system message {Message}", msg);
-                        return Done;
-                }
+                    Started s         => InvokeUserMessageAsync(s),
+                    Stop _            => InitiateStopAsync(),
+                    Terminated t      => HandleTerminatedAsync(t),
+                    Watch w           => HandleWatch(w),
+                    Unwatch uw        => HandleUnwatch(uw),
+                    Failure f         => HandleFailure(f),
+                    Restart _         => HandleRestartAsync(),
+                    SuspendMailbox _  => Done,
+                    ResumeMailbox _   => Done,
+                    Continuation cont => HandleContinuation(cont),
+                    _                 => HandleUnknownSystemMessage(msg)
+                };
             }
             catch (Exception x)
             {
                 Logger.LogError(x, "Error handling SystemMessage {Message}", msg);
                 throw;
             }
+        }
+
+        private static Task HandleUnknownSystemMessage(object msg)
+        {
+            Logger.LogDebug("Unknown system message {Message}", msg);
+            return Done;
+        }
+
+        private Task HandleContinuation(Continuation cont)
+        {
+            _messageOrEnvelope = cont.Message;
+            return cont.Action();
         }
 
         public Task InvokeUserMessageAsync(object msg)
@@ -374,7 +336,8 @@ namespace Proto
 
         public IImmutableSet<PID> Children => _extras?.Children ?? EmptyChildren;
 
-        public void RestartChildren(Exception reason, params PID[] pids) => pids.SendSystemMessage(new Restart(reason), System);
+        public void RestartChildren(Exception reason, params PID[] pids) =>
+            pids.SendSystemMessage(new Restart(reason), System);
 
         public void StopChildren(params PID[] pids) => pids.SendSystemMessage(Proto.Stop.Instance, System);
 
@@ -392,16 +355,17 @@ namespace Proto
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Task DefaultReceive()
-        {
-            if (Message is PoisonPill)
+        private Task DefaultReceive() =>
+            Message switch
             {
-                Stop(Self);
-                return Done;
-            }
+                PoisonPill _ => HandlePoisonPill(),
+                _ => Actor!.ReceiveAsync(_props.ContextDecoratorChain != null ? EnsureExtras().Context : this)
+            };
 
-            //are we using decorators, if so, ensure it has been created
-            return Actor!.ReceiveAsync(_props.ContextDecoratorChain != null ? EnsureExtras().Context : this);
+        private Task HandlePoisonPill()
+        {
+            Stop(Self);
+            return Done;
         }
 
         private Task ProcessMessageAsync(object msg)
@@ -457,9 +421,13 @@ namespace Proto
             await StopAllChildren();
         }
 
-        private void HandleUnwatch(Unwatch uw) => _extras?.Unwatch(uw.Watcher);
+        private Task HandleUnwatch(Unwatch uw)
+        { 
+            _extras?.Unwatch(uw.Watcher);
+            return Done;
+        }
 
-        private void HandleWatch(Watch w)
+        private Task HandleWatch(Watch w)
         {
             if (_state >= ContextState.Stopping)
             {
@@ -469,9 +437,11 @@ namespace Proto
             {
                 EnsureExtras().Watch(w.Watcher);
             }
+
+            return Done;
         }
 
-        private void HandleFailure(Failure msg)
+        private Task HandleFailure(Failure msg)
         {
             switch (Actor)
             {
@@ -485,6 +455,8 @@ namespace Proto
                     );
                     break;
             }
+
+            return Done;
         }
 
         private async Task HandleTerminatedAsync(Terminated msg)
@@ -576,6 +548,7 @@ namespace Proto
                 var currentStash = new Stack<object>(_extras.Stash);
                 _extras.Stash.Clear();
 
+                //TODO: what happens if we hit a failure here?
                 while (currentStash.Any())
                 {
                     var msg = currentStash.Pop();

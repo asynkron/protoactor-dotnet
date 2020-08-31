@@ -4,49 +4,56 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Proto.Cluster.Data;
+using Proto.Cluster.Events;
+using Proto.Cluster.Utils;
 using Proto.Remote;
 
 namespace Proto.Cluster
 {
+    //This class is responsible for figuring out what members are currently active in the cluster
+    //it will receive a list of memberstatuses from the IClusterProvider
+    //from that, we calculate a delta, which members joined, or left.
+
     //TODO: check usage and threadsafety.
     public class MemberList
     {
-        private static readonly ILogger Logger = Log.CreateLogger<MemberList>();
+        //TODO: actually use this to prevent banned members from rejoining
+        private readonly ConcurrentSet<string> _bannedMembers = new ConcurrentSet<string>();
+        private readonly Cluster _cluster;
+        private readonly EventStream _eventStream;
+        private readonly ILogger _logger = null!;
+
+        private readonly Dictionary<string, Member> _members = new Dictionary<string, Member>();
+
+        private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind =
+            new Dictionary<string, IMemberStrategy>();
+
+        private readonly IRootContext _root;
+
 
         private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
-        private readonly Dictionary<string, MemberStatus> _members = new Dictionary<string, MemberStatus>();
-        private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind = new Dictionary<string, IMemberStrategy>();
-        private readonly Cluster _cluster;
-        
+        private readonly ActorSystem _system;
 
-        public MemberList(Cluster cluster) => _cluster = cluster;
+        private LeaderInfo? _leader;
 
-        //TODO: should this really live here, or be moved to PartitionManager?
-        internal string GetPartition(string name, string kind)
+        public MemberList(Cluster cluster)
         {
-            var locked = _rwLock.TryEnterReadLock(1000);
+            _cluster = cluster;
+            _system = _cluster.System;
+            _root = _system.Root;
+            _eventStream = _system.EventStream;
 
-            while (!locked)
-            {
-                Logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
-                locked = _rwLock.TryEnterReadLock(1000);
-            }
-
-            try
-            {
-                return _memberStrategyByKind.TryGetValue(kind, out var memberStrategy)
-                    ? memberStrategy.GetPartition(name)
-                    : "";
-            }
-            finally
-            {
-                _rwLock.ExitReadLock();
-            }
+            _logger = Log.CreateLogger($"MemberList-{_cluster.LoggerId}");
         }
+
+        public bool IsLeader => _cluster.Id.Equals(_leader?.MemberId);
 
         internal string GetActivator(string kind)
         {
@@ -54,7 +61,7 @@ namespace Proto.Cluster
 
             while (!locked)
             {
-                Logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
+                _logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
                 locked = _rwLock.TryEnterReadLock(1000);
             }
 
@@ -70,43 +77,120 @@ namespace Proto.Cluster
             }
         }
 
-        public void UpdateClusterTopology(IReadOnlyCollection<MemberStatus> statuses)
+        //if the new leader is different from the current leader
+        //notify via the event stream
+        //TODO: cluster state update really. not only leader
+        public void UpdateLeader(LeaderInfo leader)
+        {
+            //TODO: could likely be done better
+            if (leader?.BannedMembers != null)
+            {
+                foreach (var b in leader.BannedMembers)
+                {
+                    _bannedMembers.Add(b);
+                }
+            }
+
+            if (leader?.MemberId == _leader?.MemberId)
+            {
+                //leader is the same as before, ignore
+                //this can happen eg. if you run blocking queries with consul
+                //if nothing changes within the blocking time, you will still get a result,
+                //we will still get this notification.
+                //we use the memberlist to diff the data against current state
+                return;
+            }
+
+            var oldLeader = _leader;
+
+            _leader = leader;
+
+            _logger.LogInformation("Leader updated {Leader}", leader?.MemberId);
+            _eventStream.Publish(new LeaderElectedEvent(leader, oldLeader));
+
+            if (IsLeader)
+            {
+                _logger.LogInformation("I am leader!");
+            }
+            else
+            {
+                _logger.LogInformation("{Address}:{Id} is leader!", leader?.Address, leader?.MemberId);
+            }
+        }
+
+        public void UpdateClusterTopology(IReadOnlyCollection<Member> statuses, ulong eventId)
         {
             var locked = _rwLock.TryEnterWriteLock(1000);
 
             while (!locked)
             {
-                Logger.LogDebug("MemberList did not acquire writer lock within 1 seconds, retry");
+                _logger.LogDebug("MemberList did not acquire writer lock within 1 seconds, retry");
                 locked = _rwLock.TryEnterWriteLock(1000);
             }
 
             try
             {
-                //get all new members address sets
-                var newMembersAddress = new HashSet<string>();
+                var topology = new ClusterTopology {EventId = eventId};
 
-                foreach (var status in statuses)
+                //TLDR:
+                //this method basically filters out any member status in the banned list
+                //then makes a delta between new and old members
+                //notifying the cluster accordingly which members left or joined
+
+                //these are all members that are currently active
+                var nonBannedStatuses =
+                    statuses
+                        .Where(s => !_bannedMembers.Contains(s.Id))
+                        .ToArray();
+
+                //these are the member IDs hashset of currently active members
+                var newMemberIds =
+                    nonBannedStatuses
+                        .Select(s => s.Id)
+                        .ToImmutableHashSet();
+
+                //these are all members that existed before, but are not in the current nonBannedMemberStatuses
+                var membersThatLeft =
+                    _members
+                        .Where(m => !newMemberIds.Contains(m.Key))
+                        .Select(m => m.Value)
+                        .ToArray();
+
+                //notify that these members left
+                foreach (var memberThatLeft in membersThatLeft)
                 {
-                    newMembersAddress.Add(status.Address);
+                    MemberLeave(memberThatLeft);
+                    topology.Left.Add(new Member
+                        {
+                            Host = memberThatLeft.Host,
+                            Port = memberThatLeft.Port,
+                            Id = memberThatLeft.Id
+                        }
+                    );
                 }
 
-                //remove old ones whose address not exist in new address sets
-                //_members.ToList() duplicates _members, allow _members to be modified in Notify
-                foreach (var (address, old) in _members.ToList())
+                //these are all members that are new and did not exist before
+                var membersThatJoined =
+                    nonBannedStatuses
+                        .Where(m => !_members.ContainsKey(m.Id))
+                        .ToArray();
+
+                //notify that these members joined
+                foreach (var memberThatJoined in membersThatJoined)
                 {
-                    if (!newMembersAddress.Contains(address))
-                    {
-                        UpdateAndNotify(null, old);
-                    }
+                    MemberJoin(memberThatJoined);
+                    topology.Joined.Add(new Member
+                        {
+                            Host = memberThatJoined.Host,
+                            Port = memberThatJoined.Port,
+                            Id = memberThatJoined.Id
+                        }
+                    );
                 }
 
-                //find all the entries that exist in the new set
-                foreach (var @new in statuses)
-                {
-                    _members.TryGetValue(@new.Address, out var old);
-                    _members[@new.Address] = @new;
-                    UpdateAndNotify(@new, old);
-                }
+                topology.Members.AddRange(_members.Values);
+
+                _eventStream.Publish(topology);
             }
             finally
             {
@@ -114,73 +198,71 @@ namespace Proto.Cluster
             }
         }
 
-        private void UpdateAndNotify(MemberStatus? @new, MemberStatus? old)
+        private void MemberLeave(Member memberThatLeft)
+        {
+            //update MemberStrategy
+            foreach (var k in memberThatLeft.Kinds)
+            {
+                if (!_memberStrategyByKind.TryGetValue(k, out var ms))
+                {
+                    continue;
+                }
+
+                ms.RemoveMember(memberThatLeft);
+
+                if (ms.GetAllMembers().Count == 0)
+                {
+                    _memberStrategyByKind.Remove(k);
+                }
+            }
+
+            _bannedMembers.Add(memberThatLeft.Id);
+
+            _cluster.PidCache.RemoveByMemberAddress(memberThatLeft.Address);
+            _members.Remove(memberThatLeft.Id);
+
+            var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
+            _logger.LogInformation("Published event {@EndpointTerminated}", endpointTerminated);
+            _cluster.System.EventStream.Publish(endpointTerminated);
+        }
+
+        private void MemberJoin(Member newMember)
         {
             //TODO: looks fishy, no locks, are we sure this is safe? it is using private state _vars
 
-            // Make sure that only Alive members are considered valid.
-            // This makes sure that the Members lists only contain alive nodes.
-            var oldMember = old == null || old.Alive == false ? null : old;
-            var newMember = @new == null || @new.Alive == false ? null : @new;
+            _members.Add(newMember.Id, newMember);
 
-            if (newMember == null)
+            foreach (var kind in newMember.Kinds)
             {
-                if (oldMember == null)
+                if (!_memberStrategyByKind.ContainsKey(kind))
                 {
-                    return; //ignore
+                    _memberStrategyByKind[kind] = _cluster.Config!.MemberStrategyBuilder(kind);
                 }
 
-                //update MemberStrategy
-                foreach (var k in oldMember.Kinds)
-                {
-                    if (!_memberStrategyByKind.TryGetValue(k, out var ms)) continue;
-
-                    ms.RemoveMember(oldMember);
-
-                    if (ms.GetAllMembers().Count == 0) _memberStrategyByKind.Remove(k);
-                }
-
-                //notify left
-                _cluster.PidCache.RemoveByMemberAddress($"{oldMember.Host}:{oldMember.Port}");
-                _members.Remove(oldMember.Address);
-
-                var endpointTerminated = new EndpointTerminatedEvent {Address = oldMember.Address};
-                _cluster.System.EventStream.Publish(endpointTerminated);
-
-                return;
+                //TODO: this doesnt work, just use the same strategy for all kinds...
+                _memberStrategyByKind[kind].AddMember(newMember);
             }
 
-            if (oldMember == null)
+            _cluster.PidCache.RemoveByMemberAddress($"{newMember.Host}:{newMember.Port}");
+        }
+
+        /// <summary>
+        ///     broadcast a message to all members eventstream
+        /// </summary>
+        /// <param name="message"></param>
+        public void BroadcastEvent(object message)
+        {
+            foreach (var m in _members.ToArray())
             {
-                foreach (var k in newMember.Kinds)
+                var pid = new PID(m.Value.Address, "eventstream");
+                try
                 {
-                    if (!_memberStrategyByKind.ContainsKey(k)) _memberStrategyByKind[k] = _cluster.Config!.MemberStrategyBuilder(k);
-                    _memberStrategyByKind[k].AddMember(newMember);
+                    _system.Root.Send(pid, message);
                 }
-
-                //notify joined
-                _cluster.PidCache.RemoveByMemberAddress($"{newMember.Host}:{newMember.Port}");
-
-                return;
-            }
-
-            //update MemberStrategy
-            if (newMember.Alive != oldMember.Alive || newMember.MemberId != oldMember.MemberId ||
-                newMember.StatusValue != null && !newMember.StatusValue.IsSame(oldMember.StatusValue))
-            {
-                foreach (var k in newMember.Kinds)
+                catch (Exception)
                 {
-                    if (_memberStrategyByKind.TryGetValue(k, out var ms))
-                    {
-                        ms.UpdateMember(newMember);
-                    }
+                    _logger.LogError("Failed to broadcast {Message} to {Pid}", message, pid);
                 }
-            }
-
-            //notify changes
-            if (newMember.MemberId != oldMember.MemberId)
-            {
-                _cluster.PidCache.RemoveByMemberAddress($"{newMember.Host}:{newMember.Port}");
             }
         }
     }
