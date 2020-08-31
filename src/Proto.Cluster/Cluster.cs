@@ -93,7 +93,11 @@ namespace Proto.Cluster
             _logger.LogInformation("Stopping");
             if (graceful)
             {
-                PidCacheUpdater!.Shutdown();
+                if (Config.UsePidCache)
+                {
+                    PidCacheUpdater.Shutdown();
+                }
+
                 IdentityLookup!.Shutdown();
             }
 
