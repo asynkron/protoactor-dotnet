@@ -20,7 +20,7 @@ namespace Worker
             switch (ctx.Message)
             {
                 case Started _:
-                    logger.LogInformation($"Started {ctx.Self}");
+                    logger.LogDebug($"Started {ctx.Self}");
                     ctx.SetReceiveTimeout(TimeSpan.FromSeconds(5));
                     break;
                 case HelloRequest _:
@@ -30,7 +30,7 @@ namespace Worker
                     ctx.Stop(ctx.Self!);
                     break;
                 case Stopped _:
-                    logger.LogInformation($"Stopped {ctx.Self}");
+                    logger.LogDebug($"Stopped {ctx.Self}");
                     break;
                 default:
                     break;

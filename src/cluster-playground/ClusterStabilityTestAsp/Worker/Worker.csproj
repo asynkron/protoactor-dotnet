@@ -13,7 +13,6 @@
     <ProjectReference Include="..\Messages\Messages.csproj" />
     <ProjectReference Include="..\..\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
     <ProjectReference Include="..\..\..\Proto.Remote.AspNet\Proto.Remote.AspNet.csproj" />
-    <ProjectReference Include="..\..\..\Proto.Actor.Extensions\Proto.Actor.Extensions.csproj" />
     <ProjectReference Include="..\..\..\Proto.Cluster.Extensions\Proto.Cluster.Extensions.csproj" />
   </ItemGroup>
 

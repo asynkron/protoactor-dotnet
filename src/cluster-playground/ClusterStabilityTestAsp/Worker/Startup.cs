@@ -39,8 +39,10 @@ namespace Worker
             services.AddGrpc();
             services.AddRemote((remote, sp) =>
                 {
-                    remote.RemoteConfig.AdvertisedHostname = Environment.MachineName;
-                    remote.RemoteConfig.AdvertisedPort = 80;
+                    if (!HostingEnvironment.IsDevelopment())
+                        remote.RemoteConfig.AdvertisedHostname = Environment.MachineName;
+                    if (!HostingEnvironment.IsDevelopment())
+                        remote.RemoteConfig.AdvertisedPort = 80;
                     remote.Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
                     remote.RemoteKindRegistry.RegisterKnownKind("HelloActor", Props.FromProducer(() => ActivatorUtilities.GetServiceOrCreateInstance<HelloActor>(sp)));
                 }
@@ -49,7 +51,10 @@ namespace Worker
             {
                 DeregisterCritical = TimeSpan.FromSeconds(2)
             };
-            ConsulProvider clusterProvider = new ConsulProvider(options, c => { c.Address = new Uri("http://consul:8500"); });
+            ConsulProvider clusterProvider = new ConsulProvider(options, c =>
+            {
+                c.Address = new Uri($"http://{Configuration.GetValue("ConsulHostname", "localhost")}:8500");
+            });
             services.AddClustering(
                 "StabilityTestAsp",
                 clusterProvider, cluster =>

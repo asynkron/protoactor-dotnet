@@ -38,8 +38,10 @@ namespace Client
             services.AddGrpc();
             services.AddRemote(remote =>
                 {
-                    remote.RemoteConfig.AdvertisedHostname = Environment.MachineName;
-                    remote.RemoteConfig.AdvertisedPort = 80;
+                    if (!HostingEnvironment.IsDevelopment())
+                        remote.RemoteConfig.AdvertisedHostname = Environment.MachineName;
+                    if (!HostingEnvironment.IsDevelopment())
+                        remote.RemoteConfig.AdvertisedPort = 80;
                     remote.Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
                 }
             );
@@ -47,7 +49,10 @@ namespace Client
             {
                 DeregisterCritical = TimeSpan.FromSeconds(2)
             };
-            ConsulProvider clusterProvider = new ConsulProvider(options, c => { c.Address = new Uri("http://consul:8500"); });
+            ConsulProvider clusterProvider = new ConsulProvider(options, c =>
+            {
+                c.Address = new Uri($"http://{Configuration.GetValue("ConsulHostname", "localhost")}:8500");
+            });
             services.AddClustering(
                 "StabilityTestAsp",
                 clusterProvider,

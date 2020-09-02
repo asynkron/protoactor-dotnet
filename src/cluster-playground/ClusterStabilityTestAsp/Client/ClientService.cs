@@ -43,7 +43,7 @@ namespace Client
 
                     try
                     {
-                        await Task.Delay(2000);
+                        await Task.Delay(3000);
                         _logger.LogCritical("Starting to send !");
 
                         var policy = Policy.Handle<Exception>().WaitAndRetryForeverAsync(i => TimeSpan.FromMilliseconds(1000), (e, t) =>
@@ -56,7 +56,7 @@ namespace Client
                         {
                             tasks.Add(policy.ExecuteAsync(() =>
                                 // _grains.HelloGrain("name" + (i % 2000)).SayHello(new HelloRequest())
-                                _actorSystem.RequestAsync<HelloResponse>("name" + (i % 20000), "HelloActor", new HelloRequest(), new CancellationTokenSource(2000).Token)
+                                _actorSystem.RequestAsync<HelloResponse>("name" + (i % 20000), "HelloActor", new HelloRequest(), new CancellationTokenSource(5000).Token)
                             ));
                             if (tasks.Count % 1000 == 0)
                             {
