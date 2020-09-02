@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
 
@@ -16,16 +17,22 @@ namespace Proto.Remote
         private static readonly ILogger Logger = Log.CreateLogger<EndpointManager>();
 
         private readonly ConnectionRegistry _connections = new ConnectionRegistry();
-        private readonly Remote _remote;
+        private readonly RemoteConfig _remoteConfig;
+        private readonly Serialization _serialization;
         private readonly ActorSystem _system;
+        private readonly IChannelProvider _channelProvider;
         private Subscription<object>? _endpointConnEvnSub;
         private PID? _endpointSupervisor;
         private Subscription<object>? _endpointTermEvnSub;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        public CancellationToken CancellationToken => _cancellationTokenSource.Token;
 
-        public EndpointManager(Remote remote, ActorSystem system)
+        public EndpointManager(RemoteConfig remoteConfig, Serialization serialization, ActorSystem system, IChannelProvider channelProvider)
         {
-            _remote = remote;
+            _remoteConfig = remoteConfig;
+            _serialization = serialization;
             _system = system;
+            _channelProvider = channelProvider;
         }
 
         public void Start()
@@ -33,7 +40,7 @@ namespace Proto.Remote
             Logger.LogDebug("[EndpointManager] Started");
 
             var props = Props
-                .FromProducer(() => new EndpointSupervisor(_remote, _system))
+                .FromProducer(() => new EndpointSupervisor(this, _remoteConfig, _system, _serialization, _channelProvider))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
                 .WithDispatcher(Dispatchers.SynchronousDispatcher);
 
@@ -44,6 +51,9 @@ namespace Proto.Remote
 
         public void Stop()
         {
+            if (CancellationToken.IsCancellationRequested) return;
+            _cancellationTokenSource.Cancel();
+
             _system.EventStream.Unsubscribe(_endpointTermEvnSub);
             _system.EventStream.Unsubscribe(_endpointConnEvnSub);
 
@@ -93,6 +103,9 @@ namespace Proto.Remote
 
         public void RemoteDeliver(RemoteDeliver msg)
         {
+            if (string.IsNullOrWhiteSpace(msg.Target.Address))
+                throw new ArgumentOutOfRangeException("Target");
+
             var endpoint = EnsureConnected(msg.Target.Address);
 
             Logger.LogDebug(
@@ -120,6 +133,14 @@ namespace Proto.Remote
                     )
             );
             return conn.Value;
+        }
+
+        public void SendMessage(PID pid, object msg, int serializerId)
+        {
+            var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
+
+            var env = new RemoteDeliver(header!, message, pid, sender!, serializerId);
+            RemoteDeliver(env);
         }
 
         private class ConnectionRegistry : ConcurrentDictionary<string, Lazy<Endpoint>>

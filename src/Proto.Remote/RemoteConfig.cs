@@ -12,25 +12,11 @@ namespace Proto.Remote
 {
     public class RemoteConfig
     {
-        /// <summary>
-        ///     Gets or sets the ChannelOptions for the gRPC channel.
-        /// </summary>
-        public IEnumerable<ChannelOption> ChannelOptions { get; set; } = null!;
-
+        
         /// <summary>
         ///     Gets or sets the CallOptions for the gRPC channel.
         /// </summary>
         public CallOptions CallOptions { get; set; }
-
-        /// <summary>
-        ///     Gets or sets the ChannelCredentials for the gRPC channel. The default is Insecure.
-        /// </summary>
-        public ChannelCredentials ChannelCredentials { get; set; } = ChannelCredentials.Insecure;
-
-        /// <summary>
-        ///     Gets or sets the ServerCredentials for the gRPC server. The default is Insecure.
-        /// </summary>
-        public ServerCredentials ServerCredentials { get; set; } = ServerCredentials.Insecure;
 
         /// <summary>
         ///     Gets or sets the advertised hostname for the remote system.

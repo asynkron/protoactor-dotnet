@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <OutputType>Exe</OutputType>
+        <LangVersion>8</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\experimental\Proto.Cluster.MongoIdentityLookup\Proto.Cluster.MongoIdentityLookup.csproj"/>
+        <ProjectReference Include="..\..\Proto.Cluster\Proto.Cluster.csproj"/>
+        <ProjectReference Include="..\..\Proto.Remote.ASpNet\Proto.Remote.AspNet.csproj"/>
+        <ProjectReference Include="..\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Grpc.Tools" Version="2.31.0" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.7"/>
+        <PackageReference Include="Newtonsoft.Json" Version="12.0.3"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Protobuf Include="messages.proto" GrpcServices="Server"/>
+    </ItemGroup>
+
+</Project>

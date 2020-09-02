@@ -19,11 +19,26 @@ using Proto.Remote;
 
 namespace {{CsNamespace}}
 {
-    public class Grains
+    public static class GrainsExtensions
+    {
+        public static Grains AddGrains(this Cluster cluster)
+        {
+            var grains = new Grains(cluster);
+            return grains;
+        }
+        public static Grains GetGrains(this ActorSystem actorSystem)
+            => actorSystem.Plugins.GetPlugin<Grains>();
+    }
+
+    public class Grains : IProtoPlugin
     {
         public Cluster Cluster { get; }
 
-        public Grains(Cluster cluster) => Cluster = cluster;
+        public Grains(Cluster cluster)
+        {
+            Cluster = cluster;
+            Cluster.System.Plugins.AddPlugin(this);
+        }
 
 		{{#each Services}}	
         internal Func<string, I{{Name}}> Get{{Name}} { get; private set; }
@@ -31,7 +46,7 @@ namespace {{CsNamespace}}
         public void {{Name}}Factory(Func<string, I{{Name}}> factory) 
         {
             Get{{Name}} = factory;
-            Cluster.Remote.RegisterKnownKind(""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor(this)));
+            Cluster.Remote.RemoteKindRegistry.RegisterKnownKind(""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor(this)));
         } 
 
         public void {{Name}}Factory(Func<I{{Name}}> factory) => {{Name}}Factory(id => factory());
@@ -75,11 +90,11 @@ namespace {{CsNamespace}}
             async Task<{{OutputName}}> Inner() 
             {
                 //resolve the grain
-                var (pid, statusCode) = await _cluster.GetAsync(_id, ""{{../Name}}"", ct);
+                var pid = await _cluster.GetAsync(_id, ""{{../Name}}"", ct);
 
-                if (statusCode != ResponseStatusCode.OK)
+                if (pid == null)
                 {
-                    throw new Exception($""Get PID failed with StatusCode: {statusCode}"");  
+                    throw new Exception($""Get PID failed"");  
                 }
 
                 //request the RPC method to be invoked

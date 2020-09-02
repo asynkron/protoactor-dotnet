@@ -17,36 +17,34 @@ namespace Proto.Cluster.Testing
         public string[] Kinds { get; set; }
         public string StatusValue { get; set; } //what goes here?
     }
-
+    public delegate void StatusUpdateDelegate(ulong waitIndex);
     public sealed class InMemAgent
     {
-        private readonly ConcurrentDictionary<Guid, AgentServiceStatus> _services =
-            new ConcurrentDictionary<Guid, AgentServiceStatus>();
+        public event StatusUpdateDelegate StatusUpdate;
+        private ulong waitIndex = 0ul;
+        private void OnStatusUpdate() => StatusUpdate?.Invoke(waitIndex++);
 
-        public event EventHandler StatusUpdate;
 
-        private void OnStatusUpdate(EventArgs e) => StatusUpdate?.Invoke(this, e);
-
+        private readonly ConcurrentDictionary<Guid, AgentServiceStatus> _services = new ConcurrentDictionary<Guid, AgentServiceStatus>();
         public AgentServiceStatus[] GetServicesHealth() => _services.Values.ToArray();
 
         public void RegisterService(AgentServiceRegistration registration)
         {
             _services.TryAdd(registration.ID, new AgentServiceStatus
-                {
-                    ID = registration.ID,
-                    TTL = DateTimeOffset.Now,
-                    Kinds = registration.Kinds,
-                    Host = registration.Address,
-                    Port = registration.Port
-                }
-            );
-            OnStatusUpdate(EventArgs.Empty);
+            {
+                ID = registration.ID,
+                TTL = DateTimeOffset.Now,
+                Kinds = registration.Kinds,
+                Host = registration.Address,
+                Port = registration.Port,
+            });
+            OnStatusUpdate();
         }
 
         public void DeregisterService(Guid id)
         {
             _services.TryRemove(id, out _);
-            OnStatusUpdate(EventArgs.Empty);
+            OnStatusUpdate();
         }
 
         public void RefreshServiceTTL(Guid id)

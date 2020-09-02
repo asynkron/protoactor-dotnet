@@ -7,6 +7,7 @@
 using System;
 using System.Threading.Tasks;
 using Messages;
+using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Remote;
 using ProtosReflection = Messages.ProtosReflection;
@@ -22,7 +23,7 @@ namespace Node2
             switch (context.Message)
             {
                 case StartRemote sr:
-                    Console.WriteLine("Starting");
+                    // Console.WriteLine("Starting");
                     _sender = sr.Sender;
                     context.Respond(new Start());
                     return Actor.Done;
@@ -37,16 +38,22 @@ namespace Node2
 
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
+            Log.SetLoggerFactory(LoggerFactory.Create(b => b.AddConsole()
+                                                            .AddFilter("Proto.EventStream", LogLevel.Critical)
+                                                            .AddFilter("Microsoft", LogLevel.Error)
+                                                            .AddFilter("Grpc.AspNetCore", LogLevel.Error)
+                                                            .SetMinimumLevel(LogLevel.Information)));
             var system = new ActorSystem();
-            var context = new RootContext(system);
-            var serialization = new Serialization();
-            serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-            var Remote = new Remote(system, serialization);
-            Remote.Start("127.0.0.1", 12000);
-            context.SpawnNamed(Props.FromProducer(() => new EchoActor()), "remote");
+            var Remote = new SelfHostedRemote(system, 12000, remote =>
+            {
+                remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+            });
+            Remote.Start();
+            system.Root.SpawnNamed(Props.FromProducer(() => new EchoActor()), "remote");
             Console.ReadLine();
+            await Remote.ShutdownAsync();
         }
     }
 }

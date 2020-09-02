@@ -17,13 +17,13 @@ namespace Proto.Remote
         private readonly string _address; //for logging
 
         private readonly Behavior _behavior;
-        private readonly Remote _remote;
+        private readonly EndpointManager _endpointManager;
         private readonly ActorSystem _system;
         private readonly Dictionary<string, HashSet<PID>> _watched = new Dictionary<string, HashSet<PID>>();
 
-        public EndpointWatcher(Remote remote, ActorSystem system, string address)
+        public EndpointWatcher(EndpointManager endpointManager, ActorSystem system, string address)
         {
-            _remote = remote;
+            _endpointManager = endpointManager;
             _system = system;
             _address = address;
             _behavior = new Behavior(ConnectedAsync);
@@ -73,7 +73,7 @@ namespace Proto.Remote
             }
 
             var w = new Watch(msg.Watcher);
-            _remote.SendMessage(msg.Watchee, w, -1);
+            _endpointManager.SendMessage(msg.Watchee, w, -1);
             return Actor.Done;
         }
 
@@ -90,7 +90,7 @@ namespace Proto.Remote
             }
 
             var w = new Unwatch(msg.Watcher);
-            _remote.SendMessage(msg.Watchee, w, -1);
+            _endpointManager.SendMessage(msg.Watchee, w, -1);
             return Actor.Done;
         }
 

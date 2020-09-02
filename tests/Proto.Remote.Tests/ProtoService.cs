@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -9,8 +10,8 @@ namespace Proto.Remote.Tests
         private readonly ILogger<ProtoService> _logger;
         private readonly int _port;
         private readonly string _host;
-        private Remote _remote;
-        
+        private IRemote _remote;
+
         public ProtoService(int port, string host)
         {
             ILogger<ProtoService> log = NullLogger<ProtoService>.Instance;
@@ -25,12 +26,20 @@ namespace Proto.Remote.Tests
 
             var actorSystem = new ActorSystem();
             var serialization = new Serialization();
-            serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
-            _remote = new Remote(actorSystem, serialization);
-            _remote.Start(_host, _port);
+            _remote = new SelfHostedRemote(actorSystem, _port, remote =>
+            {
+                remote.Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
+                remote.RemoteConfig.EndpointWriterOptions = new EndpointWriterOptions
+                {
+                    MaxRetries = 2,
+                    RetryBackOffms = 10,
+                    RetryTimeSpan = TimeSpan.FromSeconds(120)
+                };
+            });
+            _remote.Start();
 
             var props = Props.FromProducer(() => new EchoActor(_host, _port));
-            _remote.RegisterKnownKind("EchoActor", props);
+            _remote.RemoteKindRegistry.RegisterKnownKind("EchoActor", props);
             actorSystem.Root.SpawnNamed(props, "EchoActorInstance");
 
             _logger.LogInformation("ProtoService started");

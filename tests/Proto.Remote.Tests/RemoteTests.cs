@@ -17,7 +17,7 @@ namespace Proto.Remote.Tests
     public class RemoteTests
     {
         private readonly ActorSystem System;
-        private readonly Remote Remote;
+        private readonly IRemote Remote;
 
         public RemoteTests(ITestOutputHelper testOutputHelper)
         {

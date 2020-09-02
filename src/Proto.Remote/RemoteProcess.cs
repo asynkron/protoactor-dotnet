@@ -10,11 +10,9 @@ namespace Proto.Remote
     {
         private readonly EndpointManager _endpointManager;
         private readonly PID _pid;
-        private readonly Remote _remote;
 
-        public RemoteProcess(Remote remote, ActorSystem system, EndpointManager endpointManager, PID pid) : base(system)
+        public RemoteProcess(ActorSystem system, EndpointManager endpointManager, PID pid) : base(system)
         {
-            _remote = remote;
             _endpointManager = endpointManager;
             _pid = pid;
         }
@@ -41,7 +39,7 @@ namespace Proto.Remote
 
         private void SendMessage(object msg)
         {
-            _remote.SendMessage(_pid, msg, -1);
+            _endpointManager.SendMessage(_pid, msg, -1);
         }
 
         private void Unwatch(Unwatch uw)

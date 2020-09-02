@@ -5,8 +5,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj" />
     <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Remote.AspNet\Proto.Remote.AspNet.csproj" />
+    <ProjectReference Include="..\Proto.Remote.Tests.Messages\Proto.Remote.Tests.Messages.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Divergic.Logging.Xunit" Version="3.1.0" />
+    <PackageReference Include="Divergic.Logging.Xunit" Version="3.5.0" />
   </ItemGroup>
 </Project>

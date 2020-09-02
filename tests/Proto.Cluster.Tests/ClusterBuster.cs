@@ -7,24 +7,24 @@ namespace Proto.Cluster.Tests
 {
     public static class ClusterBuster
     {
-        public static Remote.Remote SpawnNode(int port)
+        public static IRemote SpawnNode(int port)
         {
             var system = new ActorSystem();
             var serialization = new Serialization();
-            var remote = new Remote.Remote(system, serialization);
-            var config = new RemoteConfig
+            var remote = new SelfHostedRemote(system, port, remote =>
             {
-                EndpointWriterOptions = new EndpointWriterOptions
+                remote.RemoteConfig.EndpointWriterOptions = new EndpointWriterOptions
                 {
                     MaxRetries = 2,
                     RetryBackOffms = 10,
                     RetryTimeSpan = TimeSpan.FromSeconds(120)
-                }
-            };
-            remote.Start(GetLocalIp(), port, config);
+                };
+            });
+
+            remote.Start();
             return remote;
         }
-        
+
         private static string GetLocalIp()
         {
             using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0);

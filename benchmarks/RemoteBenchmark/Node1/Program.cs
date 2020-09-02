@@ -7,45 +7,75 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Messages;
+using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Remote;
 using ProtosReflection = Messages.ProtosReflection;
 
 class Program
 {
-    static void Main(string[] args)
+    static readonly PID remoteActor = new PID("127.0.0.1:12000", "remote");
+
+    static async Task Main(string[] args)
     {
+        Log.SetLoggerFactory(LoggerFactory.Create(b => b.AddConsole()
+                                                            .AddFilter("Proto.EventStream", LogLevel.Critical)
+                                                            .AddFilter("Microsoft", LogLevel.Error)
+                                                            .AddFilter("Grpc.AspNetCore", LogLevel.Error)
+                                                            .SetMinimumLevel(LogLevel.Information)));
         var system = new ActorSystem();
-        var context = new RootContext(system);
-        var serialization = new Serialization();
-        serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-        var Remote = new Remote(system, serialization);
-        Remote.Start("127.0.0.1", 12001);
+        var Remote = system.AddRemote(12001, remote =>
+        {
+            remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+        });
+        Remote.Start();
 
         var messageCount = 1000000;
-        var wg = new AutoResetEvent(false);
-        var props = Props.FromProducer(() => new LocalActor(0, messageCount, wg));
-
-        var pid = context.Spawn(props);
-        var remote = new PID("127.0.0.1:12000", "remote");
-        context.RequestAsync<Start>(remote, new StartRemote { Sender = pid }).Wait();
-
-        var start = DateTime.Now;
-        Console.WriteLine("Starting to send");
-        var msg = new Ping();
-        for (var i = 0; i < messageCount; i++)
+        _ = Task.Run(async () =>
         {
-            context.Send(remote, msg);
-        }
-        wg.WaitOne();
-        var elapsed = DateTime.Now - start;
-        Console.WriteLine("Elapsed {0}", elapsed);
+            while (true)
+            {
+                PID pid = null;
+                try
+                {
+                    var wg = new AutoResetEvent(false);
+                    var props = Props.FromProducer(() => new LocalActor(0, messageCount, wg));
+                    pid = system.Root.Spawn(props);
 
-        var t = messageCount * 2.0 / elapsed.TotalMilliseconds * 1000;
-        Console.WriteLine("Throughput {0} msg / sec", t);
+                    await system.Root.RequestAsync<Start>(remoteActor, new StartRemote { Sender = pid }).ConfigureAwait(false);
+
+                    var start = DateTime.Now;
+                    Console.WriteLine("Starting to send");
+                    var msg = new Ping();
+                    for (var i = 0; i < messageCount; i++)
+                    {
+                        system.Root.Send(remoteActor, msg);
+                    }
+                    wg.WaitOne();
+                    var elapsed = DateTime.Now - start;
+                    Console.Clear();
+                    Console.WriteLine("Elapsed {0}", elapsed);
+
+                    var t = messageCount * 2.0 / elapsed.TotalMilliseconds * 1000;
+                    Console.WriteLine("Throughput {0} msg / sec", t);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+                finally
+                {
+                    await Task.Delay(2000);
+                    if (pid != null)
+                        system.Root.Stop(pid);
+                }
+            }
+        });
 
         Console.ReadLine();
+        await Remote.ShutdownAsync();
     }
 
     public class LocalActor : IActor

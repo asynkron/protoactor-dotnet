@@ -4,7 +4,9 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
@@ -20,8 +22,6 @@ namespace Proto.Remote
         private readonly Serialization _serialization;
         private readonly ActorSystem _system;
 
-        private bool _suspended;
-
         public EndpointReader(ActorSystem system, EndpointManager endpointManager, Serialization serialization)
         {
             _system = system;
@@ -31,7 +31,7 @@ namespace Proto.Remote
 
         public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
         {
-            if (_suspended)
+            if (_endpointManager.CancellationToken.IsCancellationRequested)
             {
                 Logger.LogWarning("[EndpointReader] Attempt to connect to the suspended reader has been rejected");
 
@@ -50,61 +50,72 @@ namespace Proto.Remote
             );
         }
 
-        public override Task Receive(
+        public override async Task Receive(
             IAsyncStreamReader<MessageBatch> requestStream,
             IServerStreamWriter<Unit> responseStream, ServerCallContext context
         )
         {
+            using var cancellationTokenRegistration = _endpointManager.CancellationToken.Register(() =>
+            {
+                Logger.LogDebug("EndpointReader suspended");
+                try
+                {
+                    responseStream.WriteAsync(new Unit());
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e, "EndpointReader suspended");
+                }
+            }, true
+            );
+
             var targets = new PID[100];
 
-            return requestStream.ForEachAsync(
-                batch =>
-                {
-                    Logger.LogDebug("[EndpointReader] Received a batch of {Count} messages from {Remote}",
+            while (await requestStream.MoveNext())
+            {
+                var batch = requestStream.Current;
+                Logger.LogDebug("[EndpointReader] Received a batch of {Count} messages from {Remote}",
                         batch.TargetNames.Count, context.Peer
                     );
 
-                    if (_suspended)
-                    {
-                        return Actor.Done;
-                    }
-
-                    //only grow pid lookup if needed
-                    if (batch.TargetNames.Count > targets.Length)
-                    {
-                        targets = new PID[batch.TargetNames.Count];
-                    }
-
-                    for (var i = 0; i < batch.TargetNames.Count; i++)
-                    {
-                        targets[i] = new PID(_system.ProcessRegistry.Address, batch.TargetNames[i]);
-                    }
-
-                    var typeNames = batch.TypeNames.ToArray();
-
-                    foreach (var envelope in batch.Envelopes)
-                    {
-                        var target = targets[envelope.Target];
-                        var typeName = typeNames[envelope.TypeId];
-                        var message = _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
-
-                        switch (message)
-                        {
-                            case Terminated msg:
-                                Terminated(msg, target);
-                                break;
-                            case SystemMessage sys:
-                                SystemMessage(sys, target);
-                                break;
-                            default:
-                                ReceiveMessages(envelope, message, target);
-                                break;
-                        }
-                    }
-
-                    return Actor.Done;
+                if (_endpointManager.CancellationToken.IsCancellationRequested)
+                {
+                    break;
                 }
-            );
+
+                //only grow pid lookup if needed
+                if (batch.TargetNames.Count > targets.Length)
+                {
+                    targets = new PID[batch.TargetNames.Count];
+                }
+
+                for (var i = 0; i < batch.TargetNames.Count; i++)
+                {
+                    targets[i] = new PID(_system.ProcessRegistry.Address, batch.TargetNames[i]);
+                }
+
+                var typeNames = batch.TypeNames.ToArray();
+
+                foreach (var envelope in batch.Envelopes)
+                {
+                    var target = targets[envelope.Target];
+                    var typeName = typeNames[envelope.TypeId];
+                    var message = _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
+
+                    switch (message)
+                    {
+                        case Terminated msg:
+                            Terminated(msg, target);
+                            break;
+                        case SystemMessage sys:
+                            SystemMessage(sys, target);
+                            break;
+                        default:
+                            ReceiveMessages(envelope, message, target);
+                            break;
+                    }
+                }
+            }
         }
 
         private void ReceiveMessages(MessageEnvelope envelope, object message, PID target)
@@ -139,12 +150,6 @@ namespace Proto.Remote
 
             var rt = new RemoteTerminate(target, msg.Who);
             _endpointManager.RemoteTerminate(rt);
-        }
-
-        public void Suspend(bool suspended)
-        {
-            Logger.LogDebug("[EndpointReader] Suspended");
-            _suspended = suspended;
         }
     }
 }

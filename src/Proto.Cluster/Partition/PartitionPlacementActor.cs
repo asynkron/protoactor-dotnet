@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Remote;
 
 namespace Proto.Cluster.Partition
 {
@@ -26,7 +27,7 @@ namespace Proto.Cluster.Partition
         private readonly PartitionManager _partitionManager;
         private readonly Rendezvous _rdv = new Rendezvous();
 
-        private readonly Remote.Remote _remote;
+        private readonly IRemote _remote;
         private readonly ActorSystem _system;
         
         //cluster wide eventId.
@@ -85,6 +86,7 @@ namespace Proto.Cluster.Partition
             var ownerPid = _partitionManager.RemotePartitionIdentityActor(ownerAddress);
 
             context.Send(ownerPid, activationTerminated);
+            _myActors.Remove(identity);
             return Actor.Done;
         }
 
@@ -145,7 +147,7 @@ namespace Proto.Cluster.Partition
 
         private Task ActivationRequest(IContext context, ActivationRequest msg)
         {
-            var props = _remote.GetKnownKind(msg.Kind);
+            var props = _remote.RemoteKindRegistry.GetKnownKind(msg.Kind);
             var identity = msg.Identity;
 
             try

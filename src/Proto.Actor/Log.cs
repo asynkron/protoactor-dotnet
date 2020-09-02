@@ -11,6 +11,7 @@ namespace Proto
     public static class Log
     {
         private static ILoggerFactory _loggerFactory = new NullLoggerFactory();
+        public static ILoggerFactory LoggerFactory { get { return _loggerFactory; } }
 
         public static void SetLoggerFactory(ILoggerFactory loggerFactory)
         {

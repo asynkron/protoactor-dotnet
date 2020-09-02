@@ -34,7 +34,8 @@ message ActorPidResponse {
   int32 status_code = 2;
 }
 
-message Unit {}
+message Unit {
+}
 
 message ConnectRequest {}
 

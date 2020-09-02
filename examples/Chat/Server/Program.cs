@@ -11,11 +11,13 @@ namespace Server
         static void Main()
         {
             var system = new ActorSystem();
-            var serialization = new Serialization();
             var context = new RootContext(system);
-            serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
-            var remote = new Remote(system, serialization);
-            remote.Start("127.0.0.1", 8000);
+
+            var remote = new SelfHostedRemote(system, 8000, remote =>
+            {
+                remote.Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
+            });
+            remote.Start();
 
             var clients = new HashSet<PID>();
 
@@ -27,7 +29,7 @@ namespace Server
                         case Connect connect:
                             Console.WriteLine($"Client {connect.Sender} connected");
                             clients.Add(connect.Sender);
-                            ctx.Send(connect.Sender, new Connected {Message = "Welcome!"});
+                            ctx.Send(connect.Sender, new Connected { Message = "Welcome!" });
                             break;
                         case SayRequest sayRequest:
                             foreach (var client in clients)

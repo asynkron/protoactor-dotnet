@@ -1,0 +1,34 @@
+version: "3.7"
+
+services:
+  worker:
+    build: ./Worker
+    restart: always
+    depends_on:
+      - consul
+      - seq
+  client:
+    build: ./Client
+    restart: always
+    depends_on:
+      - consul
+      - worker
+  seq:
+    logging:
+      driver: none
+    image: datalust/seq:latest
+    ports:
+      - "5341:80"
+    environment: 
+      - ACCEPT_EULA=Y
+  consul:
+    logging:
+      driver: none
+    image: bitnami/consul:latest
+    ports:
+      - '8300:8300'
+      - '8301:8301'
+      - '8301:8301/udp'
+      - '8500:8500'
+      - '8600:8600'
+      - '8600:8600/udp'

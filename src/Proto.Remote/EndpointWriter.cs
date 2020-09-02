@@ -17,13 +17,11 @@ namespace Proto.Remote
     {
         private static readonly ILogger Logger = Log.CreateLogger<EndpointWriter>();
         private readonly string _address;
-        private readonly CallOptions _callOptions;
-        private readonly ChannelCredentials _channelCredentials;
-        private readonly IEnumerable<ChannelOption> _channelOptions;
+        private readonly IChannelProvider _channelProvider;
         private readonly Serialization _serialization;
         private readonly ActorSystem _system;
-
-        private Channel? _channel;
+        private readonly RemoteConfig _remoteConfig;
+        private ChannelBase? _channel;
         private Remoting.RemotingClient? _client;
 
         private int _serializerId;
@@ -33,18 +31,16 @@ namespace Proto.Remote
         public EndpointWriter(
             ActorSystem system,
             Serialization serialization,
+            RemoteConfig remoteConfig,
             string address,
-            IEnumerable<ChannelOption> channelOptions,
-            CallOptions callOptions,
-            ChannelCredentials channelCredentials
+            IChannelProvider channelProvider
         )
         {
             _system = system;
             _serialization = serialization;
+            _remoteConfig = remoteConfig;
             _address = address;
-            _channelOptions = channelOptions;
-            _callOptions = callOptions;
-            _channelCredentials = channelCredentials;
+            _channelProvider = channelProvider;
         }
 
         public Task ReceiveAsync(IContext context) =>
@@ -113,7 +109,7 @@ namespace Proto.Remote
             batch.TypeNames.AddRange(typeNameList);
             batch.Envelopes.AddRange(envelopes);
 
-            Logger.LogDebug("[EndpointWriter] Sending {Count} envelopes for {Address} while channel status is {State}", envelopes.Count, _address, _channel?.State);
+            Logger.LogDebug("[EndpointWriter] Sending {Count} envelopes for {Address}", envelopes.Count, _address);
 
             return SendEnvelopesAsync(batch, context);
         }
@@ -165,28 +161,36 @@ namespace Proto.Remote
             Logger.LogDebug("[EndpointWriter] Stopped at {Address}", _address);
         }
 
-        private Task ShutDownChannel()
+        private async Task ShutDownChannel()
         {
-            if (_channel != null && _channel.State != ChannelState.Shutdown)
+            if (_stream != null)
+                await _stream.RequestStream.CompleteAsync();
+            if (_channel != null)
             {
-                return _channel.ShutdownAsync();
+                await _channel.ShutdownAsync();
             }
-
-            return Actor.Done;
         }
 
         private async Task StartedAsync()
         {
             Logger.LogDebug("[EndpointWriter] Connecting to address {Address}", _address);
+            try
+            {
+                _channel = _channelProvider.GetChannel(_address);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e, $"Error connecting to {_address}.");
+                throw e;
+            }
 
-            _channel = new Channel(_address, _channelCredentials, _channelOptions);
             _client = new Remoting.RemotingClient(_channel);
 
             Logger.LogDebug("[EndpointWriter] Created channel and client for address {Address}", _address);
 
             var res = await _client.ConnectAsync(new ConnectRequest());
             _serializerId = res.DefaultSerializerId;
-            _stream = _client.Receive(_callOptions);
+            _stream = _client.Receive(_remoteConfig.CallOptions);
             _streamWriter = _stream.RequestStream;
 
             Logger.LogDebug("[EndpointWriter] Connected client for address {Address}", _address);
@@ -196,7 +200,15 @@ namespace Proto.Remote
                 {
                     try
                     {
-                        await _stream.ResponseStream.ForEachAsync(i => Actor.Done);
+                        while (await _stream.ResponseStream.MoveNext())
+                        {
+                            Logger.LogInformation("Lost connection to address {Address}", _address);
+                            var terminated = new EndpointTerminatedEvent
+                            {
+                                Address = _address
+                            };
+                            _system.EventStream.Publish(terminated);
+                        };
                     }
                     catch (Exception x)
                     {
