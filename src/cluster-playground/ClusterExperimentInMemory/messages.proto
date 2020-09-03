@@ -1,6 +1,6 @@
 syntax = "proto3";
 package actor;
-option csharp_namespace = "ClusterExperiment1.Messages";
+option csharp_namespace = "ClusterExperimentInMemory.Messages";
 
 message HelloRequest {
     

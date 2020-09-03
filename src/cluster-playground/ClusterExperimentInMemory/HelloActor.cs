@@ -1,9 +1,9 @@
 using System;
 using System.Threading.Tasks;
-using ClusterExperiment1.Messages;
+using ClusterExperimentInMemory.Messages;
 using Proto;
 
-namespace ClusterExperiment1
+namespace ClusterExperimentInMemory
 {
     public class HelloActor : IActor
     {

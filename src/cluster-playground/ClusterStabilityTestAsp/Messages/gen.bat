@@ -1,1 +1,0 @@
-dotnet ..\..\..\protobuf\ProtoGrainGenerator\bin\Release\netcoreapp3.1\win10-x64\publish\protograin.dll Protos.proto Protos_protoactor

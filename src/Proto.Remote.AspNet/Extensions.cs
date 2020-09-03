@@ -5,31 +5,26 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Threading.Tasks;
 using Grpc.HealthCheck;
-using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
     public static class Extensions
     {
-        public static IRemote AddRemote(this ActorSystem actorSystem, int port = 0,
-            Action<RemoteConfiguration>? configure = null)
+        public static IRemote AddRemote(this ActorSystem actorSystem, int port,
+            Action<RemoteConfiguration> configure)
         {
             var remote = new SelfHostedRemote(actorSystem, IPAddress.Any, port, configure);
             return remote;
         }
-        public static IRemote AddRemote(this ActorSystem actorSystem, IPAddress ipAddress, int port = 0,
-            Action<RemoteConfiguration>? configure = null)
+        public static IRemote AddRemote(this ActorSystem actorSystem, IPAddress ipAddress, int port,
+            Action<RemoteConfiguration> configure)
         {
             var remote = new SelfHostedRemote(actorSystem, ipAddress, port, configure);
             return remote;
@@ -44,6 +39,8 @@ namespace Proto.Remote
                 var remoteKindRegistry = sp.GetRequiredService<RemoteKindRegistry>();
                 var remoteConfiguration = new RemoteConfiguration(serialization, remoteKindRegistry, remoteConfig);
                 configure.Invoke(remoteConfiguration, sp);
+                if (!remoteConfiguration.RemoteConfig.UseHttps)
+                    AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
                 return remoteConfiguration;
             }
             );
@@ -61,6 +58,8 @@ namespace Proto.Remote
                      var remoteKindRegistry = sp.GetRequiredService<RemoteKindRegistry>();
                      var remoteConfiguration = new RemoteConfiguration(serialization, remoteKindRegistry, remoteConfig);
                      configure.Invoke(remoteConfiguration);
+                     if (!remoteConfiguration.RemoteConfig.UseHttps)
+                         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
                      return remoteConfiguration;
                  }
              );
@@ -89,7 +88,7 @@ namespace Proto.Remote
             services.AddSingleton<IChannelProvider, ChannelProvider>();
         }
 
-        private static GrpcServiceEndpointConventionBuilder MapProtoRemoteService(IEndpointRouteBuilder endpoints)
+        public static GrpcServiceEndpointConventionBuilder AddProtoRemoteEndpoint(IEndpointRouteBuilder endpoints)
         {
             endpoints.MapGrpcService<HealthServiceImpl>();
             return endpoints.MapGrpcService<Remoting.RemotingBase>();
@@ -99,7 +98,14 @@ namespace Proto.Remote
         {
             var hostedRemote = applicationBuilder.ApplicationServices.GetRequiredService<HostedRemote>();
             hostedRemote.ServerAddressesFeature = applicationBuilder.ServerFeatures.Get<IServerAddressesFeature>();
-            applicationBuilder.UseEndpoints(c => MapProtoRemoteService(c));
+            applicationBuilder.UseEndpoints(c => AddProtoRemoteEndpoint(c));
+        }
+
+        public static void UseProtoRemote(this IApplicationBuilder applicationBuilder, Action<GrpcServiceEndpointConventionBuilder> configure)
+        {
+            var hostedRemote = applicationBuilder.ApplicationServices.GetRequiredService<HostedRemote>();
+            hostedRemote.ServerAddressesFeature = applicationBuilder.ServerFeatures.Get<IServerAddressesFeature>();
+            applicationBuilder.UseEndpoints(c => configure(AddProtoRemoteEndpoint(c)));
         }
     }
 }

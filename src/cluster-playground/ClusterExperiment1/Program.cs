@@ -122,32 +122,6 @@ namespace ClusterExperiment1
             _ = member.StartAsync();
             return member;
         }
-
-        static SslServerCredentials GetCerts()
-        {
-            var certsFolder = Environment.CurrentDirectory;
-            var cacert = File.ReadAllText(Path.Combine(certsFolder, "ca.crt"));
-            var cert = File.ReadAllText(Path.Combine(certsFolder, "server.crt"));
-            var key = File.ReadAllText(Path.Combine(certsFolder, "server.key"));
-
-            var certificateCollection = new List<KeyCertificatePair>
-            {
-                new KeyCertificatePair(cert, key)
-            };
-            var servCred = new SslServerCredentials(certificateCollection, cacert, SslClientCertificateRequestType.RequestAndRequireButDontVerify);
-            return servCred;
-        }
-        static SslCredentials GetSslCredentials()
-        {
-            var CERT_PATH = Environment.CurrentDirectory;
-            var cacert = File.ReadAllText(Path.Combine(CERT_PATH, "ca.crt"));
-            var cert = File.ReadAllText(Path.Combine(CERT_PATH, "client.crt"));
-            var key = File.ReadAllText(Path.Combine(CERT_PATH, "client.key"));
-
-            var keyPair = new KeyCertificatePair(cert, key);
-            var Creds = new SslCredentials(cacert, keyPair);
-            return Creds;
-        }
     }
 
     public class HelloActor : IActor

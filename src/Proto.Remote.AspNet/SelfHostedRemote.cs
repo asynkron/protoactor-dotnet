@@ -33,14 +33,14 @@ namespace Proto.Remote
         public bool IsStarted { get; private set; }
         public Serialization Serialization { get; }
         public RemoteKindRegistry RemoteKindRegistry { get; }
-        public SelfHostedRemote(ActorSystem system, Action<RemoteConfiguration>? configure = null) : this(system, IPAddress.Any, 0, configure)
+        public SelfHostedRemote(ActorSystem system, Action<RemoteConfiguration> configure) : this(system, IPAddress.Any, 0, configure)
         {
         }
-        public SelfHostedRemote(ActorSystem system, int port, Action<RemoteConfiguration>? configure = null) : this(system, IPAddress.Any, port, configure)
+        public SelfHostedRemote(ActorSystem system, int port, Action<RemoteConfiguration> configure) : this(system, IPAddress.Any, port, configure)
         {
         }
-        public SelfHostedRemote(ActorSystem system, IPAddress ipAddress, int port = 0,
-            Action<RemoteConfiguration>? configure = null)
+        public SelfHostedRemote(ActorSystem system, IPAddress ipAddress, int port,
+            Action<RemoteConfiguration> configure)
         {
             system.Plugins.AddPlugin<IRemote>(this);
             _remoteConfig = new AspRemoteConfig();

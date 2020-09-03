@@ -98,7 +98,6 @@ namespace Proto.Cluster
             }
 
             await Config!.ClusterProvider.ShutdownAsync(graceful);
-            await Task.Delay(500);
             await Remote.ShutdownAsync(graceful);
 
             _logger.LogInformation("Stopped");

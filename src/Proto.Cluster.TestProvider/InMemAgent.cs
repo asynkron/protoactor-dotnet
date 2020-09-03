@@ -20,12 +20,12 @@ namespace Proto.Cluster.Testing
     public delegate void StatusUpdateDelegate(ulong waitIndex);
     public sealed class InMemAgent
     {
+        private readonly ConcurrentDictionary<Guid, AgentServiceStatus> _services =
+            new ConcurrentDictionary<Guid, AgentServiceStatus>();
         public event StatusUpdateDelegate StatusUpdate;
         private ulong waitIndex = 0ul;
         private void OnStatusUpdate() => StatusUpdate?.Invoke(waitIndex++);
 
-
-        private readonly ConcurrentDictionary<Guid, AgentServiceStatus> _services = new ConcurrentDictionary<Guid, AgentServiceStatus>();
         public AgentServiceStatus[] GetServicesHealth() => _services.Values.ToArray();
 
         public void RegisterService(AgentServiceRegistration registration)

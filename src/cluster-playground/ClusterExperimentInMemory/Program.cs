@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using ClusterExperiment1.Messages;
+using ClusterExperimentInMemory.Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
@@ -10,7 +10,7 @@ using Proto.Cluster.Testing;
 using Proto.Remote;
 using System.Collections.Concurrent;
 
-namespace ClusterExperiment1
+namespace ClusterExperimentInMemory
 {
     public class Program
     {
