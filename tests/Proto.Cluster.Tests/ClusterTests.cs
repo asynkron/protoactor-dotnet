@@ -74,7 +74,7 @@ namespace Proto.Cluster.Tests
             var services = agent.GetServicesHealth();
             var first = services.First();
 
-            await Task.Delay(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromSeconds(6));
 
             Assert.False(first.Alive);
         }
