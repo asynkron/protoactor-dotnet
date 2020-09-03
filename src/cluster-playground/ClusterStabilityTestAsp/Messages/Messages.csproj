@@ -12,6 +12,6 @@
     <ProjectReference Include="..\..\..\Proto.Cluster\Proto.Cluster.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Protobuf Include="Protos.proto" GrpcServices="Server" ProtoRoot=".; ..\..\..\src" />
+    <Protobuf Include="Protos.proto" GrpcServices="Server" />
   </ItemGroup>
 </Project>
