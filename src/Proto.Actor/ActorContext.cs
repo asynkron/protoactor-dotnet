@@ -69,7 +69,12 @@ namespace Proto
         {
             if (Sender != null)
             {
+                Logger.LogDebug("{Self} Responding to {Sender} with message {Message}",Self, Sender,message);
                 Send(Sender, message);
+            }
+            else
+            {
+                Logger.LogWarning("{Self} Tried to respond but sender is null, with message {Message}",Self, message);
             }
         }
 

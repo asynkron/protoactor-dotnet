@@ -197,6 +197,12 @@ namespace Proto.Cluster.Partition
 
         private Task GetOrSpawn(ActivationRequest msg, IContext context)
         {
+            var sender = context.Sender;
+            if (sender == null)
+            {
+                _logger.LogCritical("NO SENDER IN GET OR SPAWN!!");
+            }
+
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
             if (ownerAddress != _myAddress)
             {
@@ -210,6 +216,10 @@ namespace Proto.Cluster.Partition
             //Check if exist in current partition dictionary
             if (_partitionLookup.TryGetValue(msg.Identity, out var info))
             {
+                if (context.Sender == null)
+                {
+                    _logger.LogCritical("No sender 4");
+                }
                 context.Respond(new ActivationResponse {Pid = info.pid});
                 return Actor.Done;
             }
@@ -240,8 +250,9 @@ namespace Proto.Cluster.Partition
                 _spawns.Add(msg.Identity, res);
             }
 
+
             //Await SpawningProcess
-            context.ReenterAfter(
+            context.ReenterAfter( //TODO: reenter bug for sender?
                 res,
                 rst =>
                 {
@@ -254,14 +265,23 @@ namespace Proto.Cluster.Partition
                     //This is necessary to avoid race condition during partition map transfer.
                     if (_partitionLookup.TryGetValue(msg.Identity, out info))
                     {
-                        context.Respond(new ActivationResponse {Pid = info.pid});
+                        if (sender == null)
+                        {
+                            _logger.LogCritical("No sender 1");
+                        }
+                        context.Send(sender,new ActivationResponse {Pid = info.pid});
                         return Actor.Done;
                     }
 
                     //Check if process is faulted
                     if (rst.IsFaulted)
                     {
-                        context.Respond(response);
+                        if (sender == null)
+                        {
+                            _logger.LogCritical("No sender 2");
+                        }
+                        
+                        context.Send(sender,response);
                         return Actor.Done;
                     }
                     // TODO It's null sometines...
@@ -272,7 +292,11 @@ namespace Proto.Cluster.Partition
                     }
 
                     _partitionLookup[msg.Identity] = (response.Pid, msg.Kind);
-                    context.Respond(response);
+                    if (sender == null)
+                    {
+                        _logger.LogCritical("No sender 3");
+                    }
+                    context.Send(sender, response);
                     _spawns.Remove(msg.Identity);
                     return Actor.Done;
                 }
@@ -293,7 +317,7 @@ namespace Proto.Cluster.Partition
             _ = Task.Run(async () =>
                 {
                     await Task.Delay(100);
-                    _cluster.System.Root.Send(self, msg);
+                    _cluster.System.Root.Request(self, msg, context.Sender);
                 }
             );
 
