@@ -44,7 +44,7 @@ namespace Node2
     {
         static async Task Main(string[] args)
         {
-            // Log.SetLoggerFactory(LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Information)));
+            Log.SetLoggerFactory(LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Information)));
             var system = new ActorSystem();
             var Remote = new SelfHostedRemote(system, "127.0.0.1", 12000, remote =>
             {
