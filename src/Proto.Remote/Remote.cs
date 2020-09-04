@@ -23,7 +23,7 @@ namespace Proto.Remote
     public class Remote
     {
         private PID? _activatorPid;
-        public bool IsStarted { get; private set; }
+        public bool Started { get; private set; }
         private readonly ActorSystem _system;
         private readonly EndpointManager _endpointManager;
         private readonly RemoteKindRegistry _remoteKindRegistry;
@@ -36,17 +36,17 @@ namespace Proto.Remote
             system.ProcessRegistry.RegisterHostResolver(pid => new RemoteProcess(system, _endpointManager, pid));
         }
 
-        public virtual void Start()
+        public void Start()
         {
-            if (IsStarted) return;
-            IsStarted = true;
+            if (Started) return;
+            Started = true;
             SpawnActivator();
         }
 
-        public virtual Task ShutdownAsync(bool graceful = true)
+        public Task ShutdownAsync(bool graceful = true)
         {
-            if (!IsStarted) return Task.CompletedTask;
-            else IsStarted = false;
+            if (!Started) return Task.CompletedTask;
+            else Started = false;
             if (graceful)
             {
                 _endpointManager.Stop();
