@@ -7,6 +7,7 @@
 using System;
 using System.Threading.Tasks;
 using Messages;
+using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Remote;
 using ProtosReflection = Messages.ProtosReflection;
@@ -39,8 +40,9 @@ namespace Node2
     {
         static async Task Main(string[] args)
         {
+            Log.SetLoggerFactory(LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Information)));
             var system = new ActorSystem();
-            var Remote = new SelfHostedRemote(system, "localhost", 12000, remote =>
+            var Remote = new SelfHostedRemote(system, "127.0.0.1", 12000, remote =>
             {
                 remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
             });

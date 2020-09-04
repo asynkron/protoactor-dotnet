@@ -51,7 +51,7 @@ namespace Client
             };
             ConsulProvider clusterProvider = new ConsulProvider(options, c =>
             {
-                c.Address = new Uri($"http://{Configuration.GetValue("ConsulHostname", "localhost")}:8500");
+                c.Address = new Uri($"http://{Configuration.GetValue("ConsulHostname", "127.0.0.1")}:8500");
             });
             services.AddClustering(
                 "StabilityTestAsp",

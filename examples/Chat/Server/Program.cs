@@ -13,7 +13,7 @@ namespace Server
             var system = new ActorSystem();
             var context = new RootContext(system);
 
-            var remote = new SelfHostedRemote(system, 8000, remote =>
+            var remote = new SelfHostedRemote(system, "127.0.0.1", 8000, remote =>
             {
                 remote.Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
             });

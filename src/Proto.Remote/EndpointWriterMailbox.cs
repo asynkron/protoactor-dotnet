@@ -85,24 +85,48 @@ namespace Proto.Remote
 
                     _suspended = sys switch
                     {
-                        SuspendMailbox _         => true,
+                        SuspendMailbox _ => true,
                         EndpointConnectedEvent _ => false,
-                        _                        => _suspended
+                        _ => _suspended
                     };
 
                     m = sys;
-                    await _invoker!.InvokeSystemMessageAsync(sys);
+
+                    switch (m)
+                    {
+                        case EndpointConnectedEvent _:
+                            await _invoker!.InvokeUserMessageAsync(sys);
+                            break;
+                        case EndpointErrorEvent e:
+                            if (!_suspended)
+                                await _invoker!.InvokeUserMessageAsync(sys);
+                            break;
+                        default:
+                            await _invoker!.InvokeSystemMessageAsync(sys);
+                            break;
+                    }
 
                     if (sys is Stop)
                     {
-                        //Dump messages from user messages queue to deadletter 
+                        //Dump messages from user messages queue to deadletter and inform watchers about termination
                         object? usrMsg;
 
                         while ((usrMsg = _userMessages.Pop()) != null)
                         {
-                            if (usrMsg is RemoteDeliver rd)
+                            switch (usrMsg)
                             {
-                                _system.EventStream.Publish(new DeadLetterEvent(rd.Target, rd.Message, rd.Sender));
+                                case RemoteWatch msg:
+                                    msg.Watcher.SendSystemMessage(_system, new Terminated
+                                    {
+                                        AddressTerminated = true,
+                                        Who = msg.Watchee
+                                    });
+                                    break;
+                                case RemoteDeliver rd:
+                                    _system.EventStream.Publish(new DeadLetterEvent(rd.Target, rd.Message, rd.Sender));
+                                    break;
+                                default:
+                                    break;
                             }
                         }
                     }
@@ -117,14 +141,16 @@ namespace Proto.Remote
                     {
                         Logger.LogDebug("[EndpointWriterMailbox] Processing User Message {@Message}", msg);
 
-                        if (msg is EndpointTerminatedEvent
-                        ) //The mailbox was crashing when it received this particular message 
+                        switch (msg)
                         {
-                            await _invoker!.InvokeUserMessageAsync(msg);
-                            continue;
+                            case RemoteWatch _:
+                            case RemoteUnwatch _:
+                            case RemoteTerminate _:
+                                await _invoker!.InvokeUserMessageAsync(msg);
+                                continue;
                         }
 
-                        batch.Add((RemoteDeliver) msg);
+                        batch.Add((RemoteDeliver)msg);
 
                         if (batch.Count >= _batchSize)
                         {
@@ -143,7 +169,7 @@ namespace Proto.Remote
             catch (Exception x)
             {
                 //This is already logged in the supervisor
-                //Logger.LogWarning("[EndpointWriterMailbox] Exception in RunAsync because of {Reason}", x.GetType().Name);
+                // Logger.LogWarning(x, "[EndpointWriterMailbox] Exception in RunAsync because of {Reason}", x.GetType().Name);
                 _suspended = true;
                 _invoker!.EscalateFailure(x, m);
             }

@@ -8,6 +8,7 @@ namespace Worker
 {
     public class HelloActor : IActor
     {
+        static Random rnd = new Random();
         private readonly ILogger<HelloActor> logger;
 
         public HelloActor(ILogger<HelloActor> logger)
@@ -21,7 +22,7 @@ namespace Worker
             {
                 case Started _:
                     logger.LogDebug($"Started {ctx.Self}");
-                    ctx.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+                    ctx.SetReceiveTimeout(TimeSpan.FromSeconds(rnd.Next(10, 1000)));
                     break;
                 case HelloRequest _:
                     ctx.Respond(new HelloResponse());

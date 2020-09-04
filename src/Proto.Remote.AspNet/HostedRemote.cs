@@ -34,20 +34,20 @@ namespace Proto.Remote
             Serialization = serialization;
             RemoteKindRegistry = remoteKindRegistry;
         }
-        public bool IsStarted { get; private set; }
+        public bool Started { get; private set; }
         public void Start()
         {
-            if (IsStarted) return;
-            IsStarted = true;
+            if (Started) return;
+            Started = true;
             var uri = ServerAddressesFeature!.Addresses.Select(address => new Uri(address)).First();
-            var address = "localhost";
+            var address = "127.0.0.1";
             var boundPort = uri.Port;
-            _system.ProcessRegistry.SetAddress(_remoteConfig.AdvertisedHostname ?? address,
+            _system.SetAddress(_remoteConfig.AdvertisedHostname ?? address,
                     _remoteConfig.AdvertisedPort ?? boundPort
                 );
             _remote.Start();
             _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", address, boundPort,
-                _system.ProcessRegistry.Address
+                _system.Address
             );
 
         }
@@ -56,22 +56,22 @@ namespace Proto.Remote
         {
             try
             {
-                if (!IsStarted) return;
-                else IsStarted = false;
+                if (!Started) return;
+                else Started = false;
                 if (graceful)
                 {
                     await _remote.ShutdownAsync(graceful);
                 }
                 _logger.LogDebug(
                     "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
-                    _system.ProcessRegistry.Address, graceful
+                    _system.Address, graceful
                 );
             }
             catch (Exception ex)
             {
                 _logger.LogError(
                     ex, "Proto.Actor server stopped on {Address} with error: {Message}",
-                    _system.ProcessRegistry.Address, ex.Message
+                    _system.Address, ex.Message
                 );
                 throw;
             }

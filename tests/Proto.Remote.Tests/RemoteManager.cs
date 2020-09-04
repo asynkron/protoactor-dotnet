@@ -6,11 +6,10 @@ namespace Proto.Remote.Tests
 {
     public class RemoteManager
     {
-        public const string RemoteAddress = "localhost:12000";
-        static RemoteManager()
+        public static ActorSystem GetLocalSystem()
         {
-            system = new ActorSystem();
-            remote = new SelfHostedRemote(system, 12001, remote =>
+            var system = new ActorSystem();
+            var remote = new SelfHostedRemote(system, "127.0.0.1", 0, remote =>
             {
                 remote.Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
                 remote.RemoteConfig.EndpointWriterOptions = new EndpointWriterOptions
@@ -20,25 +19,28 @@ namespace Proto.Remote.Tests
                     RetryTimeSpan = TimeSpan.FromSeconds(120)
                 };
             });
-        }
-
-        private static readonly IRemote remote;
-        private static readonly ActorSystem system;
-
-        private static bool remoteStarted;
-
-        public static (IRemote, ActorSystem) EnsureRemote()
-        {
-            if (remoteStarted) return (remote, system);
-
-            var service = new ProtoService(12000, "localhost");
-            service.StartAsync().Wait();
-
             remote.Start();
-
-            remoteStarted = true;
-
-            return (remote, system);
+            return system;
+        }
+        public static ActorSystem GetDistantSystem()
+        {
+            var props = Props.FromProducer(() => new EchoActor());
+            var actorSystem = new ActorSystem();
+            var serialization = new Serialization();
+            var remote = new SelfHostedRemote(actorSystem, "127.0.0.1", 0, remote =>
+            {
+                remote.Serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
+                remote.RemoteConfig.EndpointWriterOptions = new EndpointWriterOptions
+                {
+                    MaxRetries = 2,
+                    RetryBackOffms = 10,
+                    RetryTimeSpan = TimeSpan.FromSeconds(120)
+                };
+                remote.RemoteKindRegistry.RegisterKnownKind("EchoActor", props);
+            });
+            remote.Start();
+            actorSystem.Root.SpawnNamed(props, "EchoActorInstance");
+            return actorSystem;
         }
     }
 }

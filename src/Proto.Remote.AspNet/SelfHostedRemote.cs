@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -30,16 +31,11 @@ namespace Proto.Remote
         private readonly AspRemoteConfig _remoteConfig;
         private readonly EndpointReader _endpointReader;
         private readonly IPAddress _ipAddress;
-        public bool IsStarted { get; private set; }
+        private readonly string _hostname;
+        public bool Started { get; private set; }
         public Serialization Serialization { get; }
         public RemoteKindRegistry RemoteKindRegistry { get; }
-        public SelfHostedRemote(ActorSystem system, Action<RemoteConfiguration> configure) : this(system, IPAddress.Any, 0, configure)
-        {
-        }
-        public SelfHostedRemote(ActorSystem system, int port, Action<RemoteConfiguration> configure) : this(system, IPAddress.Any, port, configure)
-        {
-        }
-        public SelfHostedRemote(ActorSystem system, IPAddress ipAddress, int port,
+        public SelfHostedRemote(ActorSystem system, string hostname, int port,
             Action<RemoteConfiguration> configure)
         {
             system.Plugins.AddPlugin<IRemote>(this);
@@ -49,11 +45,13 @@ namespace Proto.Remote
             var remoteConfiguration = new RemoteConfiguration(Serialization, RemoteKindRegistry, _remoteConfig);
             configure?.Invoke(remoteConfiguration);
             var channelProvider = new ChannelProvider(_remoteConfig);
-            var endpointManager = new EndpointManager(_remoteConfig, Serialization, system, channelProvider);
+            var endpointManager = new EndpointManager(system, _remoteConfig, Serialization, channelProvider);
             _endpointReader = new EndpointReader(system, endpointManager, Serialization);
             _remote = new Remote(system, RemoteKindRegistry, endpointManager);
             _system = system;
-            _ipAddress = ipAddress;
+            if (!IPAddress.TryParse(hostname, out _ipAddress))
+                _ipAddress = IPAddress.Any;
+            _hostname = hostname;
             _port = port;
 
             // Allows tu use Grpc.Net over http
@@ -67,8 +65,8 @@ namespace Proto.Remote
 
         public void Start()
         {
-            if (IsStarted) return;
-            IsStarted = true;
+            if (Started) return;
+            Started = true;
             IServerAddressesFeature? serverAddressesFeature = null;
             _host = new WebHostBuilder()
                 .UseKestrel()
@@ -86,6 +84,7 @@ namespace Proto.Remote
                 )
                 .ConfigureServices((serviceCollection) =>
                     {
+                        serviceCollection.AddSingleton<ILoggerFactory>(Log.LoggerFactory);
                         serviceCollection.AddGrpc();
                         serviceCollection.AddSingleton<Remoting.RemotingBase>(_endpointReader);
                         serviceCollection.AddSingleton<IRemote>(this);
@@ -104,21 +103,20 @@ namespace Proto.Remote
                 )
                 .Start();
             var uri = serverAddressesFeature!.Addresses.Select(address => new Uri(address)).First();
-            var address = "localhost";
             var boundPort = uri.Port;
-            _system.ProcessRegistry.SetAddress(_remoteConfig.AdvertisedHostname ?? address,
+            _system.SetAddress(_remoteConfig.AdvertisedHostname ?? _hostname,
                     _remoteConfig.AdvertisedPort ?? boundPort
                 );
             _remote.Start();
-            _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", address, boundPort,
-                _system.ProcessRegistry.Address
+            _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", _hostname, boundPort,
+                _system.Address
             );
         }
 
         public async Task ShutdownAsync(bool graceful = true)
         {
-            if (!IsStarted) return;
-            else IsStarted = false;
+            if (!Started) return;
+            else Started = false;
             try
             {
                 using (_host)
@@ -129,7 +127,7 @@ namespace Proto.Remote
                     }
                     _logger.LogDebug(
                         "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
-                        _system.ProcessRegistry.Address, graceful
+                        _system.Address, graceful
                     );
                 }
             }
@@ -137,7 +135,7 @@ namespace Proto.Remote
             {
                 _logger.LogError(
                     ex, "Proto.Actor server stopped on {Address} with error: {Message}",
-                    _system.ProcessRegistry.Address, ex.Message
+                    _system.Address, ex.Message
                 );
                 throw;
             }

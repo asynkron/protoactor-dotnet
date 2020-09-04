@@ -54,7 +54,7 @@ namespace ClusterExperiment1
 
             var system = new ActorSystem();
             var consulProvider = new ConsulProvider(new ConsulProviderOptions());
-            var remote = system.AddRemote("localhost", 8090, remote =>
+            var remote = system.AddRemote("127.0.0.1", 8090, remote =>
             {
                 remote.Serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
             });
@@ -113,7 +113,7 @@ namespace ClusterExperiment1
             var helloProps = Props.FromProducer(() => new HelloActor());
             var system = new ActorSystem();
             var consulProvider = new ConsulProvider(new ConsulProviderOptions());
-            var remote = new SelfHostedRemote(system, "localhost", port, remote =>
+            var remote = new SelfHostedRemote(system, "127.0.0.1", port, remote =>
             {
                 remote.Serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
                 remote.RemoteKindRegistry.RegisterKnownKind("hello", helloProps);

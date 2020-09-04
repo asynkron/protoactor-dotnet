@@ -46,7 +46,7 @@ namespace Proto.Cluster.Partition
             _logger = Log.CreateLogger($"{nameof(PartitionIdentityActor)}-{cluster.LoggerId}");
             _cluster = cluster;
             _partitionManager = partitionManager;
-            _myAddress = cluster.System.ProcessRegistry.Address;
+            _myAddress = cluster.System.Address;
         }
 
         public Task ReceiveAsync(IContext context) =>
@@ -141,7 +141,7 @@ namespace Proto.Cluster.Partition
             }
             catch (Exception x)
             {
-                _logger.LogError("Failed to get identities");
+                _logger.LogError(x, "Failed to get identities");
             }
 
 
@@ -264,7 +264,12 @@ namespace Proto.Cluster.Partition
                         context.Respond(response);
                         return Actor.Done;
                     }
-
+                    // TODO It's null sometines...
+                    if(response == null)
+                    {
+                        _logger.LogError("Response is null for {identity}", msg.Identity);
+                        return Actor.Done;
+                    }
 
                     _partitionLookup[msg.Identity] = (response.Pid, msg.Kind);
                     context.Respond(response);

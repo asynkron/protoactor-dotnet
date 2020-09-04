@@ -133,7 +133,7 @@ namespace ClusterExperimentInMemory
         {
             var system = new ActorSystem();
             var clusterProvider = new TestProvider(new TestProviderOptions(), agent);
-            var remote = system.AddRemote(port, remote =>
+            var remote = system.AddRemote("127.0.0.1", port, remote =>
             {
                 remote.Serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
                 if (isWorker)

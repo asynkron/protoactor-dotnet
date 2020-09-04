@@ -64,14 +64,13 @@ namespace Proto.Remote
                 }
                 catch (Exception e)
                 {
-                    Logger.LogError(e, "EndpointReader suspended");
+                    Logger.LogError(e, "[EndpointReader] suspended");
                 }
-            }, true
-            );
+            });
 
             var targets = new PID[100];
 
-            while (await requestStream.MoveNext())
+            while (await requestStream.MoveNext().ConfigureAwait(false))
             {
                 var batch = requestStream.Current;
                 Logger.LogDebug("[EndpointReader] Received a batch of {Count} messages from {Remote}",
@@ -91,7 +90,7 @@ namespace Proto.Remote
 
                 for (var i = 0; i < batch.TargetNames.Count; i++)
                 {
-                    targets[i] = new PID(_system.ProcessRegistry.Address, batch.TargetNames[i]);
+                    targets[i] = new PID(_system.Address, batch.TargetNames[i]);
                 }
 
                 var typeNames = batch.TypeNames.ToArray();

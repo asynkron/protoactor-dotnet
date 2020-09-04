@@ -18,7 +18,7 @@ namespace Proto.Cluster.Partition
         private readonly ActorSystem _system;
         private PID _partitionActivator = null!;
         private PID _partitionActor = null!;
-
+        private Subscription<object> _clusterTopologySub;
 
         internal PartitionManager(Cluster cluster)
         {
@@ -44,7 +44,7 @@ namespace Proto.Cluster.Partition
 
             var eventId = 0ul;
             //make sure selector is updated first
-            _system.EventStream.Subscribe<ClusterTopology>(e =>
+            _clusterTopologySub = _system.EventStream.Subscribe<ClusterTopology>(e =>
                 {
                     if (e.EventId > eventId)
                     {
@@ -62,6 +62,7 @@ namespace Proto.Cluster.Partition
 
         public void Shutdown()
         {
+            _clusterTopologySub.Unsubscribe();
             _context.Stop(_partitionActor);
             _context.Stop(_partitionActivator);
         }

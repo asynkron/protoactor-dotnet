@@ -40,7 +40,6 @@ namespace Proto.Remote
         {
             if (IsStarted) return;
             IsStarted = true;
-            _endpointManager.Start();
             SpawnActivator();
         }
 

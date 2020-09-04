@@ -10,7 +10,7 @@ namespace Client
         static void Main()
         {
             var system = new ActorSystem();
-            var remote = new SelfHostedRemote(system, remote =>
+            var remote = new SelfHostedRemote(system, "127.0.0.1", 0, remote =>
             {
                 remote.Serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
             });

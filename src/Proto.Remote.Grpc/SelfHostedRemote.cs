@@ -22,11 +22,11 @@ namespace Proto.Remote
         private readonly ActorSystem _system;
         private readonly string _hostname;
         private readonly GrpcRemoteConfig _remoteConfig;
-        public bool IsStarted { get; private set; }
+        public bool Started { get; private set; }
         public Serialization Serialization { get; }
         public RemoteKindRegistry RemoteKindRegistry { get; }
 
-        public SelfHostedRemote(ActorSystem system, string hostname = "localhost", int port = 0,
+        public SelfHostedRemote(ActorSystem system, string hostname = "127.0.0.1", int port = 0,
             Action<RemoteConfiguration>? configure = null)
         {
             system.Plugins.AddPlugin<IRemote>(this);
@@ -36,7 +36,7 @@ namespace Proto.Remote
             var remoteConfiguration = new RemoteConfiguration(Serialization, RemoteKindRegistry, _remoteConfig);
             configure?.Invoke(remoteConfiguration);
             var channelProvider = new ChannelProvider(_remoteConfig);
-            var endpointManager = new EndpointManager(_remoteConfig, Serialization, system, channelProvider);
+            var endpointManager = new EndpointManager(system, _remoteConfig, Serialization, channelProvider);
             var endpointReader = new EndpointReader(system, endpointManager, Serialization);
             var healthCheck = new HealthServiceImpl();
             _server = new Server
@@ -46,7 +46,7 @@ namespace Proto.Remote
                     Remoting.BindService(endpointReader),
                     Health.BindService(healthCheck)
                 },
-                Ports = { new ServerPort(hostname, port, _remoteConfig.ServerCredentials) }
+                Ports = { new ServerPort(hostname, port, _remoteConfig.ServerCredentials) },
             };
             _remote = new Remote(system, RemoteKindRegistry, endpointManager);
             _system = system;
@@ -55,28 +55,29 @@ namespace Proto.Remote
 
         public void Start()
         {
-            if (IsStarted) return;
+            if (Started) return;
+            Started = true;
             _server.Start();
             var boundPort = _server.Ports.Single().BoundPort;
-            _system.ProcessRegistry.SetAddress(_remoteConfig.AdvertisedHostname ?? _hostname,
+            _system.SetAddress(_remoteConfig.AdvertisedHostname ?? _hostname,
                 _remoteConfig.AdvertisedPort ?? boundPort
             );
             _remote.Start();
             _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", _hostname, boundPort,
-                _system.ProcessRegistry.Address
+                _system.Address
             );
         }
 
         public async Task ShutdownAsync(bool graceful = true)
         {
-            if (!IsStarted) return;
-            else IsStarted = false;
+            if (!Started) return;
+            else Started = false;
             try
             {
                 await _remote.ShutdownAsync(graceful);
                 if (graceful)
                 {
-                    await _server.KillAsync(); //TODO: was ShutdownAsync but that never returns?
+                    await _server.ShutdownAsync(); //TODO: was ShutdownAsync but that never returns?
                 }
                 else
                 {
@@ -85,7 +86,7 @@ namespace Proto.Remote
 
                 _logger.LogDebug(
                     "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
-                    _system.ProcessRegistry.Address, graceful
+                    _system.Address, graceful
                 );
             }
             catch (Exception ex)
@@ -94,7 +95,7 @@ namespace Proto.Remote
 
                 _logger.LogError(
                     ex, "Proto.Actor server stopped on {Address} with error: {Message}",
-                    _system.ProcessRegistry.Address, ex.Message
+                    _system.Address, ex.Message
                 );
             }
         }

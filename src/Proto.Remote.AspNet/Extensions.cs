@@ -17,16 +17,14 @@ namespace Proto.Remote
 {
     public static class Extensions
     {
-        public static IRemote AddRemote(this ActorSystem actorSystem, int port,
+        public static IRemote AddRemote(this ActorSystem actorSystem, Action<RemoteConfiguration> configure)
+            => AddRemote(actorSystem, 0, configure);
+        public static IRemote AddRemote(this ActorSystem actorSystem, int port, Action<RemoteConfiguration> configure)
+            => AddRemote(actorSystem, "127.0.0.1", port, configure);
+        public static IRemote AddRemote(this ActorSystem actorSystem, string hostname, int port,
             Action<RemoteConfiguration> configure)
         {
-            var remote = new SelfHostedRemote(actorSystem, IPAddress.Any, port, configure);
-            return remote;
-        }
-        public static IRemote AddRemote(this ActorSystem actorSystem, IPAddress ipAddress, int port,
-            Action<RemoteConfiguration> configure)
-        {
-            var remote = new SelfHostedRemote(actorSystem, ipAddress, port, configure);
+            var remote = new SelfHostedRemote(actorSystem, hostname, port, configure);
             return remote;
         }
         public static IServiceCollection AddRemote(this IServiceCollection services,

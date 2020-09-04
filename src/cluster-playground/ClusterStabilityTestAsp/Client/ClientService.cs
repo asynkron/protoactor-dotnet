@@ -48,7 +48,7 @@ namespace Client
 
                         var policy = Policy.Handle<Exception>().WaitAndRetryForeverAsync(i => TimeSpan.FromMilliseconds(1000), (e, t) =>
                         {
-                            _logger.LogError(e, e.Message);
+                            _logger.LogInformation(e, e.Message);
                         });
                         var n = 1_000_000;
                         var tasks = new List<Task>();
@@ -66,7 +66,6 @@ namespace Client
                         }
                         Task.WaitAll(tasks.ToArray());
                         _logger.LogCritical("Done!");
-                        await Task.Delay(20_000);
                         _appLifetime.StopApplication();
                     }
                     catch (System.Exception e)

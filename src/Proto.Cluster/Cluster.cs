@@ -56,7 +56,7 @@ namespace Proto.Cluster
 
         internal IClusterProvider Provider { get; set; }
 
-        public string LoggerId => System.ProcessRegistry.Address;
+        public string LoggerId => System.Address;
 
         public async Task StartAsync()
         {
@@ -65,7 +65,7 @@ namespace Proto.Cluster
             _logger.LogInformation("Starting");
             MemberList = new MemberList(this);
 
-            var (host, port) = System.ProcessRegistry.GetAddress();
+            var (host, port) = System.GetAddress();
             var kinds = Remote.RemoteKindRegistry.GetKnownKinds();
             IdentityLookup.Setup(this, kinds);
             if (Config.UsePidCache)

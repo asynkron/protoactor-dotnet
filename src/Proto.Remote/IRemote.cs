@@ -11,7 +11,7 @@ namespace Proto.Remote
 {
     public interface IRemote : IProtoPlugin
     {
-        bool IsStarted { get; }
+        bool Started { get; }
         Task<ActorPidResponse> SpawnAsync(string address, string kind, TimeSpan timeout);
         Task<ActorPidResponse> SpawnNamedAsync(string address, string name, string kind, TimeSpan timeout);
         void SendMessage(PID pid, object msg, int serializerId);

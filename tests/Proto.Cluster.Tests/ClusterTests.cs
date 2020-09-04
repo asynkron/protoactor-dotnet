@@ -31,7 +31,7 @@ namespace Proto.Cluster.Tests
             agent.RegisterService(new AgentServiceRegistration
             {
                 ID = Guid.NewGuid(),
-                Address = "LocalHost",
+                Address = "127.0.0.1",
                 Kinds = new[] { "SomeKind" },
                 Port = 8080
             });
@@ -49,7 +49,7 @@ namespace Proto.Cluster.Tests
             agent.RegisterService(new AgentServiceRegistration
             {
                 ID = Guid.NewGuid(),
-                Address = "LocalHost",
+                Address = "127.0.0.1",
                 Kinds = new[] { "SomeKind" },
                 Port = 8080
             });
@@ -66,7 +66,7 @@ namespace Proto.Cluster.Tests
             agent.RegisterService(new AgentServiceRegistration
             {
                 ID = Guid.NewGuid(),
-                Address = "LocalHost",
+                Address = "127.0.0.1",
                 Kinds = new[] { "SomeKind" },
                 Port = 8080
             });
@@ -87,7 +87,7 @@ namespace Proto.Cluster.Tests
             agent.RegisterService(new AgentServiceRegistration
             {
                 ID = id,
-                Address = "LocalHost",
+                Address = "127.0.0.1",
                 Kinds = new[] { "SomeKind" },
                 Port = 8080
             });
@@ -207,7 +207,7 @@ namespace Proto.Cluster.Tests
             var config = new ClusterConfig("cluster1", provider)
                .WithPidCache(false);
             var system = new ActorSystem();
-            var remote = new SelfHostedRemote(system, remote =>
+            var remote = new SelfHostedRemote(system, "127.0.0.1", port, remote =>
             {
                 foreach (var (kind, prop) in kinds)
                 {
