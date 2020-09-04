@@ -15,6 +15,7 @@ namespace Proto
             DeadLetter = new DeadLetterProcess(this);
             Guardians = new Guardians(this);
             EventStream = new EventStream();
+            Plugins = new Plugins();
             var eventStreamProcess = new EventStreamProcess(this);
             ProcessRegistry.TryAdd("eventstream", eventStreamProcess);
         }
@@ -28,5 +29,7 @@ namespace Proto
         public DeadLetterProcess DeadLetter { get; }
 
         public EventStream EventStream { get; }
+
+        public Plugins Plugins { get; }
     }
 }
