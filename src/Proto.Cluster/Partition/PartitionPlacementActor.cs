@@ -147,7 +147,7 @@ namespace Proto.Cluster.Partition
         {
             var props = _remote.GetKnownKind(msg.Kind);
             var identity = msg.Identity;
-
+            var kind = msg.Kind;
             try
             {
                 if (_myActors.TryGetValue(identity, out var existing))
@@ -169,7 +169,12 @@ namespace Proto.Cluster.Partition
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
                     var pid = context.SpawnPrefix(props, identity);
-                    _myActors[identity] = (pid, msg.Kind, _eventId);
+                    
+                    //give the grain knowledge of its grain name and kind
+                    var grainInit = new GrainInit(identity,kind);
+                    
+                    context.Send(pid,grainInit);
+                    _myActors[identity] = (pid, kind, _eventId);
 
                     var response = new ActivationResponse
                     {
