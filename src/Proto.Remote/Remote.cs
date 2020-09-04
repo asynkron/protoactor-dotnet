@@ -91,13 +91,13 @@ namespace Proto.Remote
             _server.Start();
 
             var boundPort = _server.Ports.Single().BoundPort;
-            _system.ProcessRegistry.SetAddress(config.AdvertisedHostname ?? hostname, config.AdvertisedPort ?? boundPort
+            _system.SetAddress(config.AdvertisedHostname ?? hostname, config.AdvertisedPort ?? boundPort
             );
             _endpointManager.Start();
             SpawnActivator();
 
             Logger.LogDebug("Starting Proto.Actor server on {Host}:{Port} ({Address})", hostname, boundPort,
-                _system.ProcessRegistry.Address
+                _system.Address
             );
         }
 
@@ -119,7 +119,7 @@ namespace Proto.Remote
 
                 Logger.LogDebug(
                     "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
-                    _system.ProcessRegistry.Address, graceful
+                    _system.Address, graceful
                 );
             }
             catch (Exception ex)
@@ -128,7 +128,7 @@ namespace Proto.Remote
 
                 Logger.LogError(
                     ex, "Proto.Actor server stopped on {Address} with error: {Message}",
-                    _system.ProcessRegistry.Address, ex.Message
+                    _system.Address, ex.Message
                 );
             }
         }

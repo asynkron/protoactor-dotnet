@@ -6,7 +6,9 @@ namespace Proto
     public class ActorSystem
     {
         public static readonly ActorSystem Default = new ActorSystem();
-
+        internal const string NoHost = "nonhost";
+        private string _host = NoHost;
+        private int _port;
 
         public ActorSystem()
         {
@@ -19,6 +21,8 @@ namespace Proto
             ProcessRegistry.TryAdd("eventstream", eventStreamProcess);
         }
 
+        public string Address { get; private set; } = NoHost;
+
         public ProcessRegistry ProcessRegistry { get; }
 
         public RootContext Root { get; }
@@ -28,5 +32,15 @@ namespace Proto
         public DeadLetterProcess DeadLetter { get; }
 
         public EventStream EventStream { get; }
+
+        public void SetAddress(string host, int port)
+        {
+            _host = host;
+            _port = port;
+            Address = $"{host}:{port}";
+        }
+
+        public (string Host, int Port) GetAddress() => (_host, _port);
+
     }
 }

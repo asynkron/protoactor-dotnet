@@ -46,7 +46,7 @@ namespace Proto.Cluster.Partition
             _logger = Log.CreateLogger($"{nameof(PartitionIdentityActor)}-{cluster.LoggerId}");
             _cluster = cluster;
             _partitionManager = partitionManager;
-            _myAddress = cluster.System.ProcessRegistry.Address;
+            _myAddress = cluster.System.Address;
         }
 
         public Task ReceiveAsync(IContext context) =>
