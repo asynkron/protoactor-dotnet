@@ -55,7 +55,7 @@ namespace Proto.Remote
                 RemoteUnwatch msg               => RemoteUnwatch(msg),
                 RemoteWatch msg                 => RemoteWatch(msg),
                 Restarting _                    => EndpointTerminated(context).ContinueWith(t => ShutDownChannel()),
-                Stopped _                       => ShutDownChannel(),
+                Stopped _                       => EndpointTerminated(context).ContinueWith(t => ShutDownChannel()),
                 IEnumerable<RemoteDeliver> m    => RemoteDeliver(m, context),
                 _                               => Ignore
             };

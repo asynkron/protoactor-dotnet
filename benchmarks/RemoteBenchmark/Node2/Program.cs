@@ -25,10 +25,14 @@ namespace Node2
                 case StartRemote sr:
                     Console.WriteLine("Starting");
                     _sender = sr.Sender;
+                    context.Watch(_sender);
                     context.Respond(new Start());
                     return Actor.Done;
                 case Ping _:
                     context.Send(_sender, new Pong());
+                    return Actor.Done;
+                case Terminated terminated:
+                    Console.WriteLine($"{terminated.Who} terminated");
                     return Actor.Done;
                 default:
                     return Actor.Done;
@@ -40,7 +44,7 @@ namespace Node2
     {
         static async Task Main(string[] args)
         {
-            Log.SetLoggerFactory(LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Information)));
+            // Log.SetLoggerFactory(LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Information)));
             var system = new ActorSystem();
             var Remote = new SelfHostedRemote(system, "127.0.0.1", 12000, remote =>
             {
