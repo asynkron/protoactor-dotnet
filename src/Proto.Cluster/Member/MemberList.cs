@@ -217,8 +217,7 @@ namespace Proto.Cluster
             }
 
             _bannedMembers.Add(memberThatLeft.Id);
-
-            _cluster.PidCache.RemoveByMemberAddress(memberThatLeft.Address);
+            
             _members.Remove(memberThatLeft.Id);
 
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
@@ -242,8 +241,6 @@ namespace Proto.Cluster
                 //TODO: this doesnt work, just use the same strategy for all kinds...
                 _memberStrategyByKind[kind].AddMember(newMember);
             }
-
-            _cluster.PidCache.RemoveByMemberAddress($"{newMember.Host}:{newMember.Port}");
         }
 
         /// <summary>

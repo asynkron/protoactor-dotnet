@@ -24,8 +24,6 @@ namespace Proto.Cluster
         {
             System = system;
             Remote = new Remote.Remote(system, serialization);
-            PidCache = new PidCache();
-            PidCacheUpdater = new PidCacheUpdater(this, PidCache);
         }
 
         public Guid Id { get; } = Guid.NewGuid();
@@ -38,8 +36,6 @@ namespace Proto.Cluster
 
 
         internal MemberList MemberList { get; private set; }
-        internal PidCache PidCache { get; }
-        internal PidCacheUpdater PidCacheUpdater { get; }
 
         private IIdentityLookup? IdentityLookup { get; set; }
 
@@ -66,12 +62,6 @@ namespace Proto.Cluster
             var kinds = Remote.GetKnownKinds();
             IdentityLookup.Setup(this, kinds);
 
-
-            if (config.UsePidCache)
-            {
-                PidCacheUpdater.Setup();
-            }
-
             var (host, port) = System.ProcessRegistry.GetAddress();
 
             Provider = Config.ClusterProvider;
@@ -93,11 +83,6 @@ namespace Proto.Cluster
             _logger.LogInformation("Stopping");
             if (graceful)
             {
-                if (Config.UsePidCache)
-                {
-                    PidCacheUpdater.Shutdown();
-                }
-
                 IdentityLookup!.Shutdown();
             }
 
@@ -114,11 +99,7 @@ namespace Proto.Cluster
         {
             if (Config.UsePidCache)
             {
-                //Check Cache
-                if (PidCache.TryGetCache(identity, out var pid))
-                {
-                    return Task.FromResult<PID?>(pid);
-                }
+
             }
 
             return IdentityLookup!.GetAsync(identity, kind, ct);

@@ -41,14 +41,6 @@ namespace Proto.Cluster.Partition
                     )
                     : await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
 
-                if (resp.Pid != null && _cluster!.Config!.UsePidCache)
-                {
-                    if (_cluster.PidCache.TryAddCache(identity, resp.Pid))
-                    {
-                        _cluster.PidCacheUpdater.Watch(resp.Pid);
-                    }
-                }
-
                 return resp.Pid;
             }
             //TODO: decide if we throw or return null
