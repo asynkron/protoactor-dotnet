@@ -17,7 +17,7 @@ namespace Proto.Tests
             var (pid, ok) = reg.TryAdd(id, p);
 
             Assert.True(ok);
-            Assert.Equal(reg.Address, pid.Address);
+            Assert.Equal(System.Address, pid.Address);
         }
 
         [Fact]

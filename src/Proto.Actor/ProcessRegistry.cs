@@ -15,12 +15,9 @@ namespace Proto
     //maybe the System should have an address instead, the process registry seems like the wrong place
     public class ProcessRegistry
     {
-        private const string NoHost = "nonhost";
+        
         private readonly IList<Func<PID, Process>> _hostResolvers = new List<Func<PID, Process>>();
         private readonly HashedConcurrentDictionary _localProcesses = new HashedConcurrentDictionary();
-        private string _host = NoHost;
-        private int _port;
-
         private int _sequenceId;
 
         public ProcessRegistry(ActorSystem system)
@@ -30,13 +27,11 @@ namespace Proto
 
         public ActorSystem System { get; }
 
-        public string Address { get; private set; } = NoHost;
-
         public void RegisterHostResolver(Func<PID, Process> resolver) => _hostResolvers.Add(resolver);
 
         public Process Get(PID pid)
         {
-            if (pid.Address == NoHost || pid.Address == Address)
+            if (pid.Address == ActorSystem.NoHost || pid.Address == System.Address)
             {
                 return _localProcesses.TryGetValue(pid.Id, out var process) ? process : System.DeadLetter;
             }
@@ -58,10 +53,10 @@ namespace Proto
 
         public (PID pid, bool ok) TryAdd(string id, Process process)
         {
-            var pid = new PID(Address, id, process);
+            var pid = new PID(System.Address, id, process);
 
             var ok = _localProcesses.TryAdd(pid.Id, process);
-            return ok ? (pid, true) : (new PID(Address, id), false);
+            return ok ? (pid, true) : (new PID(System.Address, id), false);
         }
 
         public void Remove(PID pid) => _localProcesses.Remove(pid.Id);
@@ -72,13 +67,5 @@ namespace Proto
             return "$" + counter;
         }
 
-        public void SetAddress(string host, int port)
-        {
-            _host = host;
-            _port = port;
-            Address = $"{host}:{port}";
-        }
-
-        public (string Host, int Port) GetAddress() => (_host, _port);
     }
 }

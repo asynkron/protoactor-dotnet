@@ -41,7 +41,7 @@ namespace Proto.Cluster
 
         internal IClusterProvider Provider { get; set; }
 
-        public string LoggerId => System.ProcessRegistry.Address;
+        public string LoggerId => System.Address;
 
         public Task StartAsync(string clusterName, string address, int port, IClusterProvider cp)
             => StartAsync(new ClusterConfig(clusterName, address, port, cp));
@@ -62,7 +62,9 @@ namespace Proto.Cluster
             var kinds = Remote.GetKnownKinds();
             IdentityLookup.Setup(this, kinds);
 
-            var (host, port) = System.ProcessRegistry.GetAddress();
+
+            var (host, port) = System.GetAddress();
+
 
             Provider = Config.ClusterProvider;
 
