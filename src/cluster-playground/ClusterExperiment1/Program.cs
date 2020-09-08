@@ -42,12 +42,12 @@ namespace ClusterExperiment1
             );
             var logger = Log.CreateLogger(nameof(Program));
 
-            var system1 = new ActorSystem();
-            var consul1 = new ConsulProvider(new ConsulProviderOptions());
-            var serialization1 = new Serialization();
-            serialization1.RegisterFileDescriptor(MessagesReflection.Descriptor);
-            var c1 = new Cluster(system1, serialization1);
-            await c1.StartClientAsync(new ClusterConfig("mycluster", "127.0.0.1", 8090, consul1).WithPidCache(false));
+            var system = new ActorSystem();
+            var consul = new ConsulProvider(new ConsulProviderOptions());
+            var serialization = new Serialization();
+            serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
+            var cluster = new Cluster(system, serialization);
+            await cluster.StartClientAsync(new ClusterConfig("mycluster", "127.0.0.1", 8090, consul).WithPidCache(false));
 
 
             _ = Task.Run(async () =>
@@ -58,7 +58,7 @@ namespace ClusterExperiment1
                         try
                         {
                             var id = "myactor" + rnd.Next(0, 1000);
-                            var res = await c1.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+                            var res = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                                 new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token
                             );
 
