@@ -42,20 +42,12 @@ namespace ClusterExperiment1
             );
             var logger = Log.CreateLogger(nameof(Program));
 
-            Console.WriteLine("Press enter to start");
-            Console.WriteLine();
-            Console.WriteLine("Red = spawned grains");
-            Console.WriteLine("Yellow = cluster topology events");
-            Console.WriteLine("Each '.' is a request/response call to one of the grains");
-            Console.WriteLine("Enter spawns a new node in the cluster");
-            Console.ReadLine();
-
             var system1 = new ActorSystem();
             var consul1 = new ConsulProvider(new ConsulProviderOptions());
             var serialization1 = new Serialization();
             serialization1.RegisterFileDescriptor(MessagesReflection.Descriptor);
             var c1 = new Cluster(system1, serialization1);
-            await c1.StartAsync(new ClusterConfig("mycluster", "127.0.0.1", 8090, consul1).WithPidCache(false));
+            await c1.StartClientAsync(new ClusterConfig("mycluster", "127.0.0.1", 8090, consul1).WithPidCache(false));
 
 
             _ = Task.Run(async () =>

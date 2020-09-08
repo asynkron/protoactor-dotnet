@@ -43,13 +43,52 @@ namespace Proto.Cluster
 
         public string LoggerId => System.Address;
 
-        public Task StartAsync(string clusterName, string address, int port, IClusterProvider cp)
+        public Task StartMemberAsync(string clusterName, string address, int port, IClusterProvider cp)
             => StartAsync(new ClusterConfig(clusterName, address, port, cp));
 
         public async Task StartAsync(ClusterConfig config)
         {
-            Config = config;
+            BeginStart(config);
+            
+            var (host, port) = System.GetAddress();
 
+            Provider = Config.ClusterProvider;
+
+            var kinds = Remote.GetKnownKinds();
+            await Provider.StartMemberAsync(
+                this,
+                Config.Name,
+                host,
+                port,
+                kinds,
+                MemberList
+            );
+
+            _logger.LogInformation("Started as cluster member");
+        }
+        
+        public async Task StartClientAsync(ClusterConfig config)
+        {
+            BeginStart(config);
+
+            var (host, port) = System.GetAddress();
+
+            Provider = Config.ClusterProvider;
+
+            await Provider.StartClientAsync(
+                this,
+                Config.Name,
+                host,
+                port,
+                MemberList
+            );
+
+            _logger.LogInformation("Started as cluster client");
+        }
+
+        private void BeginStart(ClusterConfig config)
+        {
+            Config = config;
 
             //default to partition identity lookup
             IdentityLookup = config.IdentityLookup ?? new PartitionIdentityLookup();
@@ -61,23 +100,6 @@ namespace Proto.Cluster
 
             var kinds = Remote.GetKnownKinds();
             IdentityLookup.Setup(this, kinds);
-
-
-            var (host, port) = System.GetAddress();
-
-
-            Provider = Config.ClusterProvider;
-
-            await Provider.StartAsync(
-                this,
-                Config.Name,
-                host,
-                port,
-                kinds,
-                MemberList
-            );
-
-            _logger.LogInformation("Started");
         }
 
         public async Task ShutdownAsync(bool graceful = true)

@@ -13,7 +13,10 @@ namespace Proto.Cluster
     [PublicAPI]
     public interface IClusterProvider
     {
-        Task StartAsync(Cluster cluster, string clusterName, string host, int port, string[] kinds,
+        Task StartMemberAsync(Cluster cluster, string clusterName, string host, int port, string[] kinds,
+            MemberList memberList);
+        
+        Task StartClientAsync(Cluster cluster, string clusterName, string host, int port,
             MemberList memberList);
 
         Task ShutdownAsync(bool graceful);

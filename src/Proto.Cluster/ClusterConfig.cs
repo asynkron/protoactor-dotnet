@@ -38,6 +38,8 @@ namespace Proto.Cluster
 
         public bool UsePidCache { get; private set; } = true;
 
+        public bool ClusterClient { get; set; }
+
         public IIdentityLookup? IdentityLookup { get; private set; }
 
         public ClusterConfig WithRemoteConfig(RemoteConfig remoteConfig)
