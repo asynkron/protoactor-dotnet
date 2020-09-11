@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -44,11 +45,11 @@ namespace Proto.Cluster
         public string LoggerId => System.Address;
 
         public Task StartMemberAsync(string clusterName, string address, int port, IClusterProvider cp)
-            => StartAsync(new ClusterConfig(clusterName, address, port, cp));
+            => StartMemberAsync(new ClusterConfig(clusterName, address, port, cp));
 
-        public async Task StartAsync(ClusterConfig config)
+        public async Task StartMemberAsync(ClusterConfig config)
         {
-            BeginStart(config);
+            BeginStart(config,false);
             
             var (host, port) = System.GetAddress();
 
@@ -69,7 +70,7 @@ namespace Proto.Cluster
         
         public async Task StartClientAsync(ClusterConfig config)
         {
-            BeginStart(config);
+            BeginStart(config,true);
 
             var (host, port) = System.GetAddress();
 
@@ -86,7 +87,7 @@ namespace Proto.Cluster
             _logger.LogInformation("Started as cluster client");
         }
 
-        private void BeginStart(ClusterConfig config)
+        private void BeginStart(ClusterConfig config, bool client)
         {
             Config = config;
 
@@ -99,7 +100,7 @@ namespace Proto.Cluster
             MemberList = new MemberList(this);
 
             var kinds = Remote.GetKnownKinds();
-            IdentityLookup.Setup(this, kinds);
+            IdentityLookup.Setup(this, kinds, client);
         }
 
         public async Task ShutdownAsync(bool graceful = true)
@@ -119,29 +120,47 @@ namespace Proto.Cluster
         public Task<PID?> GetAsync(string identity, string kind) =>
             GetAsync(identity, kind, CancellationToken.None);
 
-        public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct)
-        {
-            if (Config.UsePidCache)
-            {
+        public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct) => IdentityLookup!.GetAsync(identity, kind, ct);
 
-            }
-
-            return IdentityLookup!.GetAsync(identity, kind, ct);
-        }
-
+        private ConcurrentDictionary<string,PID> _pidCache = new ConcurrentDictionary<string, PID>();
         public async Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct)
         {
+            var key = kind + "." + identity;
+
+            try
+            {
+                if (_pidCache.TryGetValue(key, out var cachedPid))
+                {
+                    var res = await System.Root.RequestAsync<T>(cachedPid, message, ct);
+                    if (res != null)
+                    {
+                        return res;
+                    }
+                }
+            }
+            catch
+            {
+                //YOLO
+            }
+            finally
+            {
+                _pidCache[key] = null;
+            }
+
             var i = 0;
             while (!ct.IsCancellationRequested)
             {
                 var delay = i * 20;
                 i++;
                 var pid = await GetAsync(identity, kind, ct);
+               
                 if (pid == null)
                 {
                     await Task.Delay(delay, CancellationToken.None);
                     continue;
                 }
+                //update cache
+                _pidCache[key] = pid;
 
                 var res = await System.Root.RequestAsync<T>(pid, message, ct);
                 if (res == null)

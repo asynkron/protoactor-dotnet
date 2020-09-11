@@ -95,6 +95,7 @@ namespace Proto.Remote
 
                     if (sys is Stop)
                     {
+                        Logger.LogWarning("Endpoint writer is stopping...");
                         //Dump messages from user messages queue to deadletter 
                         object? usrMsg;
 
@@ -142,6 +143,7 @@ namespace Proto.Remote
             }
             catch (Exception x)
             {
+                Logger.LogError(x,"Endpoint writer failed");
                 //This is already logged in the supervisor
                 //Logger.LogWarning("[EndpointWriterMailbox] Exception in RunAsync because of {Reason}", x.GetType().Name);
                 _suspended = true;

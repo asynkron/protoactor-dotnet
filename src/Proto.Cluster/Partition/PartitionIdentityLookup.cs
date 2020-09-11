@@ -56,10 +56,10 @@ namespace Proto.Cluster.Partition
             }
         }
 
-        public void Setup(Cluster cluster, string[] kinds)
+        public void Setup(Cluster cluster, string[] kinds, bool isClient)
         {
             _cluster = cluster;
-            _partitionManager = new PartitionManager(cluster);
+            _partitionManager = new PartitionManager(cluster, isClient);
             _logger = Log.CreateLogger(nameof(PartitionIdentityLookup) + "-" + _cluster.LoggerId);
             _partitionManager.Setup();
         }

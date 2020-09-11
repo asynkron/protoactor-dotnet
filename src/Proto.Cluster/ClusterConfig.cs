@@ -36,8 +36,6 @@ namespace Proto.Cluster
 
         public Func<string, IMemberStrategy> MemberStrategyBuilder { get; private set; }
 
-        public bool UsePidCache { get; private set; } = true;
-
         public bool ClusterClient { get; set; }
 
         public IIdentityLookup? IdentityLookup { get; private set; }
@@ -57,12 +55,6 @@ namespace Proto.Cluster
         public ClusterConfig WithMemberStrategyBuilder(Func<string, IMemberStrategy> builder)
         {
             MemberStrategyBuilder = builder;
-            return this;
-        }
-
-        public ClusterConfig WithPidCache(bool usePidCache)
-        {
-            UsePidCache = usePidCache;
             return this;
         }
 

@@ -292,7 +292,17 @@ namespace Proto.Cluster.Partition
                         _logger.LogCritical("No sender 3");
                     }
                     context.Send(sender, response);
-                    _spawns.Remove(msg.Identity);
+
+                    try
+                    {
+                        _spawns.Remove(msg.Identity);
+                    }
+                    catch(Exception x)
+                    {
+                        //debugging hack
+                        Console.WriteLine(x);
+                    }
+
                     return Actor.Done;
                 }
             );

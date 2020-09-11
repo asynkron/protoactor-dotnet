@@ -47,8 +47,7 @@ namespace ClusterExperiment1
             var serialization = new Serialization();
             serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
             var cluster = new Cluster(system, serialization);
-            await cluster.StartClientAsync(new ClusterConfig("mycluster", "127.0.0.1", 8090, consul).WithPidCache(false));
-
+            await cluster.StartClientAsync(new ClusterConfig("mycluster", "127.0.0.1", 8090, consul));
 
             _ = Task.Run(async () =>
                 {
@@ -98,15 +97,15 @@ namespace ClusterExperiment1
 
         private static Cluster SpawnMember(int port)
         {
-            var system2 = new ActorSystem();
-            var consul2 = new ConsulProvider(new ConsulProviderOptions());
-            var serialization2 = new Serialization();
-            serialization2.RegisterFileDescriptor(MessagesReflection.Descriptor);
-            var cluster2 = new Cluster(system2, serialization2);
+            var system = new ActorSystem();
+            var consul = new ConsulProvider(new ConsulProviderOptions());
+            var serialization = new Serialization();
+            serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
+            var cluster = new Cluster(system, serialization);
             var helloProps = Props.FromProducer(() => new HelloActor());
-            cluster2.Remote.RegisterKnownKind("hello", helloProps);
-            cluster2.StartAsync(new ClusterConfig("mycluster", "127.0.0.1", port, consul2).WithPidCache(false));
-            return cluster2;
+            cluster.Remote.RegisterKnownKind("hello", helloProps);
+            cluster.StartMemberAsync(new ClusterConfig("mycluster", "127.0.0.1", port, consul));
+            return cluster;
         }
     }
 

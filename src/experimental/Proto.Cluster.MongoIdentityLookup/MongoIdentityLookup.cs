@@ -34,7 +34,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             return Task.FromResult(pid);
         }
 
-        public void Setup(Cluster cluster, string[] kinds)
+        public void Setup(Cluster cluster, string[] kinds, bool isClient)
         {
             _cluster = cluster;
             _kinds = kinds;
