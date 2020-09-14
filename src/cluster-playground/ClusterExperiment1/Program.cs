@@ -3,9 +3,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
 using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
+using Proto.Cluster.MongoIdentityLookup;
 using Proto.Remote;
 
 namespace ClusterExperiment1
@@ -47,8 +49,14 @@ namespace ClusterExperiment1
             var serialization = new Serialization();
             serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
             var cluster = new Cluster(system, serialization);
-            await cluster.StartClientAsync(new ClusterConfig("mycluster", "127.0.0.1", 8090, consul));
+            
+            var db = GetMongo();
+            var identity = new MongoIdentityLookup("mycluster",db);
+            
+            await cluster.StartClientAsync(new ClusterConfig("mycluster", "127.0.0.1", 8090, consul).WithIdentityLookup(identity));
 
+            await Task.Delay(1000);
+            
             _ = Task.Run(async () =>
                 {
                     var rnd = new Random();
@@ -101,13 +109,30 @@ namespace ClusterExperiment1
             var consul = new ConsulProvider(new ConsulProviderOptions());
             var serialization = new Serialization();
             serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
+            var db = GetMongo();
+            var identity = new MongoIdentityLookup("mycluster",db);
             var cluster = new Cluster(system, serialization);
             var helloProps = Props.FromProducer(() => new HelloActor());
             cluster.Remote.RegisterKnownKind("hello", helloProps);
-            cluster.StartMemberAsync(new ClusterConfig("mycluster", "127.0.0.1", port, consul));
+            cluster.StartMemberAsync(new ClusterConfig("mycluster", "127.0.0.1", port, consul).WithIdentityLookup(identity));
             return cluster;
+            
+           
+        }
+        
+        static IMongoDatabase GetMongo()
+        {
+            var connectionString =
+                "mongodb://127.0.0.1:27017/ProtoMongo";
+            var url = MongoUrl.Create(connectionString);
+            var settings = MongoClientSettings.FromUrl(url);
+            var client = new MongoClient(settings);
+            var database = client.GetDatabase("ProtoMongo");
+            return database;
         }
     }
+    
+    
 
     public class HelloActor : IActor
     {

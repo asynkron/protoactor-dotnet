@@ -57,7 +57,7 @@ namespace Proto.Cluster.Kubernetes
         /// </summary>
         /// <param name="pod">Kubernetes Pod object</param>
         /// <returns></returns>
-        internal static (bool IsCandidate, bool IsAlive, MemberInfo Status) GetMemberStatus(this V1Pod pod)
+        internal static (bool IsCandidate, bool IsAlive, Member Status) GetMemberStatus(this V1Pod pod)
         {
             var isCandidate = pod.Status.Phase == "Running" && pod.Status.PodIP != null;
 
@@ -67,7 +67,7 @@ namespace Proto.Cluster.Kubernetes
             var alive = pod.Status.ContainerStatuses.All(x => x.Ready);
 
             return (isCandidate, alive,
-                new MemberInfo
+                new Member
                 {
                     Id = pod.Uid(),
                     Host = host,

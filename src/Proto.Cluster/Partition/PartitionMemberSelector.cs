@@ -7,13 +7,13 @@ namespace Proto.Cluster.Partition
     internal class PartitionMemberSelector
     {
         private readonly object _lock = new object();
-        private readonly List<MemberInfo> _members = new List<MemberInfo>();
+        private readonly List<Member> _members = new List<Member>();
         private readonly Rendezvous _rdv = new Rendezvous();
 
         public int Count => _members.Count;
 
 
-        public void Update(MemberInfo[] members)
+        public void Update(Member[] members)
         {
             lock (_lock)
             {

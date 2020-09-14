@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Proto.Cluster.IdentityLookup;
 using Proto.Cluster.Partition;
@@ -51,6 +52,25 @@ namespace Proto.Cluster.MongoIdentityLookup
                          )
                          : await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
 
+                     var entry = new PidLookupEntity
+                     {
+                         Address = activator,
+                         Id = ObjectId.Empty,
+                         Identity = identity,
+                         Key = key,
+                         Kind = kind,
+                         MemberId = _cluster.Id.ToString()
+                     };
+                     
+                     await _pids.ReplaceOneAsync(
+                         s => s.Key == key,
+                         entry, new ReplaceOptions
+                         {
+                             IsUpsert = true
+                         }, cancellationToken: CancellationToken.None
+                     );
+                     
+                     
                      return resp.Pid;
                  }
                  //TODO: decide if we throw or return null

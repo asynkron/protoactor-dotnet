@@ -190,9 +190,9 @@ namespace Proto.Cluster.Consul
                 }
             );
 
-            MemberInfo ToMember(ServiceEntry v)
+            Member ToMember(ServiceEntry v)
             {
-                var member = new MemberInfo
+                var member = new Member
                 {
                     Id = v.Service.Meta["id"],
                     Host = v.Service.Address,

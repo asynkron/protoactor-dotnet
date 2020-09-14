@@ -5,7 +5,7 @@ namespace Proto.Cluster
 {
     public static class MemberExtensions
     {
-        public static string ToLogString(this IEnumerable<MemberInfo> self)
+        public static string ToLogString(this IEnumerable<Member> self)
         {
             var members = "[" + string.Join(", ", self.Select(m => m.Address)) + "]";
             return members;
