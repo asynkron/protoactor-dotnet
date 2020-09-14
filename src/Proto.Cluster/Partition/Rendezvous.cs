@@ -34,7 +34,7 @@ namespace Proto.Cluster.Partition
             var keyBytes = Encoding.UTF8.GetBytes(identity);
 
             uint maxScore = 0;
-            Member? maxNode = null;
+            MemberInfo? maxNode = null;
 
             foreach (var member in _members)
             {
@@ -52,7 +52,7 @@ namespace Proto.Cluster.Partition
         }
 
         // ReSharper disable once ParameterTypeCanBeEnumerable.Global
-        public void UpdateMembers(IEnumerable<Member> members)
+        public void UpdateMembers(IEnumerable<MemberInfo> members)
         {
             _members = members
                 .OrderBy(m => m.Address)
@@ -81,13 +81,13 @@ namespace Proto.Cluster.Partition
 
         private readonly struct MemberData
         {
-            public MemberData(Member member)
+            public MemberData(MemberInfo memberInfo)
             {
-                Info = member;
-                Hash = Encoding.UTF8.GetBytes(member.Address);
+                Info = memberInfo;
+                Hash = Encoding.UTF8.GetBytes(memberInfo.Address);
             }
 
-            public Member Info { get; }
+            public MemberInfo Info { get; }
             public byte[] Hash { get; }
         }
     }

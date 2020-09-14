@@ -34,7 +34,7 @@ namespace Proto.Cluster
         //The partition lookup broadcasts and use broadcasted information
         //meaning the partition infra might be ahead of this list.
         //come up with a good solution to keep all this in sync
-        private readonly Dictionary<string, Member> _members = new Dictionary<string, Member>();
+        private readonly Dictionary<string, MemberInfo> _members = new Dictionary<string, MemberInfo>();
 
         private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind =
             new Dictionary<string, IMemberStrategy>();
@@ -123,7 +123,7 @@ namespace Proto.Cluster
             }
         }
 
-        public void UpdateClusterTopology(IReadOnlyCollection<Member> statuses, ulong eventId)
+        public void UpdateClusterTopology(IReadOnlyCollection<MemberInfo> statuses, ulong eventId)
         {
             var locked = _rwLock.TryEnterWriteLock(1000);
 
@@ -165,7 +165,7 @@ namespace Proto.Cluster
                 foreach (var memberThatLeft in membersThatLeft)
                 {
                     MemberLeave(memberThatLeft);
-                    topology.Left.Add(new Member
+                    topology.Left.Add(new MemberInfo
                         {
                             Host = memberThatLeft.Host,
                             Port = memberThatLeft.Port,
@@ -184,7 +184,7 @@ namespace Proto.Cluster
                 foreach (var memberThatJoined in membersThatJoined)
                 {
                     MemberJoin(memberThatJoined);
-                    topology.Joined.Add(new Member
+                    topology.Joined.Add(new MemberInfo
                         {
                             Host = memberThatJoined.Host,
                             Port = memberThatJoined.Port,
@@ -203,17 +203,17 @@ namespace Proto.Cluster
             }
         }
 
-        private void MemberLeave(Member memberThatLeft)
+        private void MemberLeave(MemberInfo memberInfoThatLeft)
         {
             //update MemberStrategy
-            foreach (var k in memberThatLeft.Kinds)
+            foreach (var k in memberInfoThatLeft.Kinds)
             {
                 if (!_memberStrategyByKind.TryGetValue(k, out var ms))
                 {
                     continue;
                 }
 
-                ms.RemoveMember(memberThatLeft);
+                ms.RemoveMember(memberInfoThatLeft);
 
                 if (ms.GetAllMembers().Count == 0)
                 {
@@ -221,22 +221,22 @@ namespace Proto.Cluster
                 }
             }
 
-            _bannedMembers.Add(memberThatLeft.Id);
+            _bannedMembers.Add(memberInfoThatLeft.Id);
             
-            _members.Remove(memberThatLeft.Id);
+            _members.Remove(memberInfoThatLeft.Id);
 
-            var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
+            var endpointTerminated = new EndpointTerminatedEvent {Address = memberInfoThatLeft.Address};
             _logger.LogInformation("Published event {@EndpointTerminated}", endpointTerminated);
             _cluster.System.EventStream.Publish(endpointTerminated);
         }
 
-        private void MemberJoin(Member newMember)
+        private void MemberJoin(MemberInfo newMemberInfo)
         {
             //TODO: looks fishy, no locks, are we sure this is safe? it is using private state _vars
 
-            _members.Add(newMember.Id, newMember);
+            _members.Add(newMemberInfo.Id, newMemberInfo);
 
-            foreach (var kind in newMember.Kinds)
+            foreach (var kind in newMemberInfo.Kinds)
             {
                 if (!_memberStrategyByKind.ContainsKey(kind))
                 {
@@ -244,7 +244,7 @@ namespace Proto.Cluster
                 }
 
                 //TODO: this doesnt work, just use the same strategy for all kinds...
-                _memberStrategyByKind[kind].AddMember(newMember);
+                _memberStrategyByKind[kind].AddMember(newMemberInfo);
             }
         }
 

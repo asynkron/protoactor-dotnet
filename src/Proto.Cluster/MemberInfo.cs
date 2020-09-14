@@ -9,7 +9,7 @@ using JetBrains.Annotations;
 namespace Proto.Cluster
 {
     [PublicAPI]
-    public partial class Member
+    public partial class MemberInfo
     {
         public string Address => Host + ":" + Port;
 

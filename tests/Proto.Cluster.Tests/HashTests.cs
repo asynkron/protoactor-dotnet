@@ -11,57 +11,57 @@ namespace Proto.Cluster.Tests
             var rsv = new Rendezvous();
             var members = new[]
             {
-                new Member
+                new MemberInfo
                 {
                     Port = 8090,
                     Host = "127.0.0.1"
                 },
-                new Member
+                new MemberInfo
                 {
                     Port = 8091,
                     Host = "127.0.0.1"
                 },
-                new Member
+                new MemberInfo
                 {
                     Port = 8092,
                     Host = "127.0.0.1"
                 },
-                new Member
+                new MemberInfo
                 {
                     Port = 8093,
                     Host = "127.0.0.1"
                 },
-                new Member
+                new MemberInfo
                 {
                     Port = 8094,
                     Host = "127.0.0.1"
                 },
-                new Member
+                new MemberInfo
                 {
                     Port = 8095,
                     Host = "127.0.0.1"
                 },
-                new Member
+                new MemberInfo
                 {
                     Port = 8096,
                     Host = "127.0.0.1"
                 },
-                new Member
+                new MemberInfo
                 {
                     Port = 8097,
                     Host = "127.0.0.1"
                 },
-                new Member
+                new MemberInfo
                 {
                     Port = 8098,
                     Host = "127.0.0.1"
                 },
-                new Member
+                new MemberInfo
                 {
                     Port = 8099,
                     Host = "127.0.0.1"
                 },
-                new Member
+                new MemberInfo
                 {
                     Port = 8100,
                     Host = "127.0.0.1"
@@ -86,33 +86,33 @@ namespace Proto.Cluster.Tests
             var rsv = new Rendezvous();
             var members = new[]
             {
-                new Member
+                new MemberInfo
                 {
                     Port = 8094,
                     Host = "127.0.0.1"
                 },
-                new Member
+                new MemberInfo
                 {
                     Port = 8090,
                     Host = "127.0.0.1"
                 },
-                new Member
+                new MemberInfo
                 {
                     Port = 8091,
                     Host = "127.0.0.1"
                 },
-                new Member
+                new MemberInfo
                 {
                     Port = 8093,
                     Host = "127.0.0.1"
                 },
                 
-                new Member
+                new MemberInfo
                 {
                     Port = 8092,
                     Host = "127.0.0.1"
                 },
-                new Member
+                new MemberInfo
                 {
                     Port = 8095,
                     Host = "127.0.0.1"
