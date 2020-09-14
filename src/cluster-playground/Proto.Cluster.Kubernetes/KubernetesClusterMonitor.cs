@@ -18,12 +18,22 @@ using static Proto.Cluster.Kubernetes.ProtoLabels;
 
 namespace Proto.Cluster.Kubernetes
 {
-    class KubernetesClusterMonitor : IActor
+    internal class KubernetesClusterMonitor : IActor
     {
-        static readonly ILogger Logger = Log.CreateLogger<KubernetesClusterMonitor>();
+        private static readonly ILogger Logger = Log.CreateLogger<KubernetesClusterMonitor>();
 
-        readonly ActorSystem _system;
-        readonly IKubernetes _kubernetes;
+        private readonly Dictionary<string, V1Pod> _clusterPods = new Dictionary<string, V1Pod>();
+        private readonly IKubernetes _kubernetes;
+
+        private readonly ActorSystem _system;
+        private string _address;
+
+        private string _clusterName;
+        private string _podName;
+        private bool _stopping;
+        private Watcher<V1Pod> _watcher;
+        private Task<HttpOperationResponse<V1PodList>> _watcherTask;
+        private bool _watching;
 
         public KubernetesClusterMonitor(ActorSystem system, IKubernetes kubernetes)
         {
@@ -31,20 +41,19 @@ namespace Proto.Cluster.Kubernetes
             _kubernetes = kubernetes;
         }
 
-        public async Task ReceiveAsync(IContext context)
+        public Task ReceiveAsync(IContext context)
         {
-            var task = context.Message switch
-            {
-                RegisterMember cmd       => Register(cmd),
-                StartWatchingCluster cmd => StartWatchingCluster(cmd.ClusterName, context),
-                DeregisterMember _       => StopWatchingCluster(),
-                Stopping _               => StopWatchingCluster(),
-                _                        => Task.CompletedTask
-            };
-            await task.ConfigureAwait(false);
+            return context.Message switch
+                   {
+                       RegisterMember cmd       => Register(cmd),
+                       StartWatchingCluster cmd => StartWatchingCluster(cmd.ClusterName, context),
+                       DeregisterMember _       => StopWatchingCluster(),
+                       Stopping _               => StopWatchingCluster(),
+                       _                        => Task.CompletedTask
+                   };
         }
 
-        Task Register(RegisterMember cmd)
+        private Task Register(RegisterMember cmd)
         {
             _clusterName = cmd.ClusterName;
             _address = cmd.Address;
@@ -52,12 +61,13 @@ namespace Proto.Cluster.Kubernetes
             return Actor.Done;
         }
 
-        Task StopWatchingCluster()
+        private Task StopWatchingCluster()
         {
             // ReSharper disable once InvertIf
             if (_watching)
             {
-                Logger.LogInformation("[Cluster] Stopping monitoring for {PodName} with ip {PodIp}", _podName, _address);
+                Logger.LogInformation("[Cluster] Stopping monitoring for {PodName} with ip {PodIp}", _podName, _address
+                );
 
                 _stopping = true;
                 _watcher.Dispose();
@@ -67,7 +77,7 @@ namespace Proto.Cluster.Kubernetes
             return Actor.Done;
         }
 
-        Task StartWatchingCluster(string clusterName, ISenderContext context)
+        private Task StartWatchingCluster(string clusterName, ISenderContext context)
         {
             var selector = $"{LabelCluster}={clusterName}";
             Logger.LogInformation("[Cluster] Starting to watch pods with {Selector}", selector);
@@ -111,31 +121,30 @@ namespace Proto.Cluster.Kubernetes
             return Actor.Done;
         }
 
-        void Watch(WatchEventType eventType, V1Pod eventPod)
+        private void Watch(WatchEventType eventType, V1Pod eventPod)
         {
             var podLabels = eventPod.Metadata.Labels;
 
             if (!podLabels.TryGetValue(LabelCluster, out var podClusterName))
             {
-                Logger.LogInformation("[Cluster] The pod {PodName} is not a Proto.Cluster node", eventPod.Metadata.Name);
+                Logger.LogInformation("[Cluster] The pod {PodName} is not a Proto.Cluster node", eventPod.Metadata.Name
+                );
                 return;
             }
 
             if (_clusterName != podClusterName)
             {
-                Logger.LogInformation("[Cluster] The pod {PodName} is from another cluster {Cluster}", eventPod.Metadata.Name, _clusterName);
+                Logger.LogInformation("[Cluster] The pod {PodName} is from another cluster {Cluster}",
+                    eventPod.Metadata.Name, _clusterName
+                );
                 return;
             }
 
             // Update the list of known pods
             if (eventType == WatchEventType.Deleted)
-            {
                 _clusterPods.Remove(eventPod.Uid());
-            }
             else
-            {
                 _clusterPods[eventPod.Uid()] = eventPod;
-            }
 
             var memberStatuses = _clusterPods.Values
                 .Select(x => x.GetMemberStatus())
@@ -146,15 +155,5 @@ namespace Proto.Cluster.Kubernetes
 
             _system.EventStream.Publish(new ClusterTopologyEvent(memberStatuses));
         }
-
-        readonly Dictionary<string, V1Pod> _clusterPods = new Dictionary<string, V1Pod>();
-
-        string _clusterName;
-        string _address;
-        string _podName;
-        bool _watching;
-        Watcher<V1Pod> _watcher;
-        Task<HttpOperationResponse<V1PodList>> _watcherTask;
-        bool _stopping;
     }
 }

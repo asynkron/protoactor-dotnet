@@ -14,6 +14,7 @@ using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Rest;
 using Proto.Cluster.Data;
+using Proto.Mailbox;
 using static Proto.Cluster.Kubernetes.Messages;
 using static Proto.Cluster.Kubernetes.ProtoLabels;
 
@@ -22,18 +23,48 @@ namespace Proto.Cluster.Kubernetes
     [PublicAPI]
     public class KubernetesProvider : IClusterProvider
     {
-        static readonly ILogger Logger = Log.CreateLogger<KubernetesProvider>();
+        private static readonly ILogger Logger = Log.CreateLogger<KubernetesProvider>();
 
-        readonly IKubernetes _kubernetes;
+        private readonly IKubernetes _kubernetes;
+        private string _address;
+        private Cluster _cluster;
+
+        private PID _clusterMonitor;
+        private string _clusterName;
+        private string[] _kinds;
+        private string _podName;
+        private int _port;
 
         public KubernetesProvider(IKubernetes kubernetes)
         {
             if (KubernetesExtensions.GetKubeNamespace() == null)
-            {
                 throw new InvalidOperationException("The application doesn't seem to be running in Kubernetes");
-            }
 
             _kubernetes = kubernetes;
+        }
+
+        public Task StartMemberAsync(Cluster cluster, string clusterName, string host, int port, string[] kinds,
+            MemberList memberList)
+        {
+            _cluster = cluster;
+            throw new NotImplementedException();
+        }
+
+        public Task StartClientAsync(Cluster cluster, string clusterName, string host, int port, MemberList memberList)
+        {
+            _cluster = cluster;
+            throw new NotImplementedException();
+        }
+
+        public async Task ShutdownAsync(bool graceful)
+        {
+            await DeregisterMemberAsync(_cluster);
+            _cluster.System.Root.Stop(_clusterMonitor);
+        }
+
+        public Task UpdateClusterState(ClusterState state)
+        {
+            return Task.CompletedTask;
         }
 
         public async Task RegisterMemberAsync(
@@ -46,13 +77,13 @@ namespace Proto.Cluster.Kubernetes
             var props = Props
                 .FromProducer(() => new KubernetesClusterMonitor(cluster.System, _kubernetes))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
-                .WithDispatcher(Mailbox.Dispatchers.SynchronousDispatcher);
-            _clusterMonitor        = cluster.System.Root.SpawnNamed(props, "ClusterMonitor");
-            _clusterName           = clusterName;
-            _address               = address;
-            _port                  = port;
-            _kinds                 = kinds;
-            _podName               = KubernetesExtensions.GetPodName();
+                .WithDispatcher(Dispatchers.SynchronousDispatcher);
+            _clusterMonitor = cluster.System.Root.SpawnNamed(props, "ClusterMonitor");
+            _clusterName = clusterName;
+            _address = address;
+            _port = port;
+            _kinds = kinds;
+            _podName = KubernetesExtensions.GetPodName();
 
             Logger.LogInformation("Registering service {PodName} on {PodIp}", _podName, _address);
 
@@ -62,25 +93,17 @@ namespace Proto.Cluster.Kubernetes
 
             var matchingPort = pod.FindPort(_port);
 
-            if (matchingPort == null)
-            {
-                Logger.LogWarning("Registration port doesn't match any of the container ports");
-            }
+            if (matchingPort == null) Logger.LogWarning("Registration port doesn't match any of the container ports");
 
             var protoKinds = new List<string>();
-
-            if (pod.Metadata.Labels.TryGetValue(LabelKinds, out var protoKindsString))
-            {
-                protoKinds.AddRange(protoKindsString.Split(','));
-            }
 
             protoKinds.AddRange(_kinds);
 
             var labels = new Dictionary<string, string>(pod.Metadata.Labels)
             {
-                [LabelCluster]     = _clusterName,
-                [LabelKinds]       = string.Join(",", protoKinds.Distinct()),
-                [LabelPort]        = _port.ToString(),
+                [LabelCluster] = _clusterName,
+                [LabelKinds] = string.Join(",", protoKinds.Distinct()),
+                [LabelPort] = _port.ToString()
             };
 
             try
@@ -97,10 +120,10 @@ namespace Proto.Cluster.Kubernetes
                 _clusterMonitor,
                 new RegisterMember
                 {
-                    ClusterName           = clusterName,
-                    Address               = address,
-                    Port                  = port,
-                    Kinds                 = kinds,
+                    ClusterName = clusterName,
+                    Address = address,
+                    Port = port,
+                    Kinds = kinds
                 }
             );
         }
@@ -119,43 +142,10 @@ namespace Proto.Cluster.Kubernetes
             cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
         }
 
-        public async Task Shutdown(Cluster cluster)
+
+        public void MonitorMemberStatusChanges(Cluster cluster)
         {
-            await DeregisterMemberAsync(cluster);
-            cluster.System.Root.Stop(_clusterMonitor);
-        }
-
-        public void MonitorMemberStatusChanges(Cluster cluster) => cluster.System.Root.Send(_clusterMonitor, new StartWatchingCluster(_clusterName));
-
-        PID                          _clusterMonitor;
-        string                       _clusterName;
-        string                       _address;
-        int                          _port;
-        string[]                     _kinds;
-        string                       _podName;
-
-        
-        
-        
-        public Task StartMemberAsync(Cluster cluster, string clusterName, string host, int port, string[] kinds,
-            MemberList memberList)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task StartClientAsync(Cluster cluster, string clusterName, string host, int port, MemberList memberList)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task ShutdownAsync(bool graceful)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task UpdateClusterState(ClusterState state)
-        {
-            throw new NotImplementedException();
+            cluster.System.Root.Send(_clusterMonitor, new StartWatchingCluster(_clusterName));
         }
     }
 }
