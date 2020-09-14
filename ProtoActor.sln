@@ -109,6 +109,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.Consul", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClusterExperiment1", "src\cluster-playground\ClusterExperiment1\ClusterExperiment1.csproj", "{F2A292E8-6529-4E62-BC13-FACFB9DD5C1C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.Kubernetes", "src\cluster-playground\Proto.Cluster.Kubernetes\Proto.Cluster.Kubernetes.csproj", "{4D148727-12DA-4B0A-B428-5A5DC9104D61}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -553,6 +555,18 @@ Global
 		{F2A292E8-6529-4E62-BC13-FACFB9DD5C1C}.Release|x64.Build.0 = Release|Any CPU
 		{F2A292E8-6529-4E62-BC13-FACFB9DD5C1C}.Release|x86.ActiveCfg = Release|Any CPU
 		{F2A292E8-6529-4E62-BC13-FACFB9DD5C1C}.Release|x86.Build.0 = Release|Any CPU
+		{4D148727-12DA-4B0A-B428-5A5DC9104D61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D148727-12DA-4B0A-B428-5A5DC9104D61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D148727-12DA-4B0A-B428-5A5DC9104D61}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4D148727-12DA-4B0A-B428-5A5DC9104D61}.Debug|x64.Build.0 = Debug|Any CPU
+		{4D148727-12DA-4B0A-B428-5A5DC9104D61}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4D148727-12DA-4B0A-B428-5A5DC9104D61}.Debug|x86.Build.0 = Debug|Any CPU
+		{4D148727-12DA-4B0A-B428-5A5DC9104D61}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D148727-12DA-4B0A-B428-5A5DC9104D61}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D148727-12DA-4B0A-B428-5A5DC9104D61}.Release|x64.ActiveCfg = Release|Any CPU
+		{4D148727-12DA-4B0A-B428-5A5DC9104D61}.Release|x64.Build.0 = Release|Any CPU
+		{4D148727-12DA-4B0A-B428-5A5DC9104D61}.Release|x86.ActiveCfg = Release|Any CPU
+		{4D148727-12DA-4B0A-B428-5A5DC9104D61}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -606,6 +620,7 @@ Global
 		{1FB9FC0E-B271-4FCA-A3EA-8299BAB91CEB} = {771514F1-12AE-4A26-89CB-2646D3EF7034}
 		{B6FDCD32-E114-4395-9560-B1BEEB7E0728} = {771514F1-12AE-4A26-89CB-2646D3EF7034}
 		{F2A292E8-6529-4E62-BC13-FACFB9DD5C1C} = {771514F1-12AE-4A26-89CB-2646D3EF7034}
+		{4D148727-12DA-4B0A-B428-5A5DC9104D61} = {771514F1-12AE-4A26-89CB-2646D3EF7034}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD0D1E44-8118-4682-8793-6B20ABFA824C}
