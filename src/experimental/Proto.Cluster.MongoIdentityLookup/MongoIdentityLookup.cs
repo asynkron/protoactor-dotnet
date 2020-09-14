@@ -34,60 +34,60 @@ namespace Proto.Cluster.MongoIdentityLookup
         {
             var key = $"{_clusterName}-{kind}-{identity}";
             var pidLookup = _pids.AsQueryable().FirstOrDefault(x => x.Key == key);
-            if (pidLookup == null)
+            if (pidLookup != null)
             {
-                 var activator = _memberList.GetActivator(kind);
-                 var remotePid = RemotePlacementActor(activator);
-                 var req = new ActivationRequest
-                 {
-                     Kind = kind,
-                     Identity = identity
-                 };
-
-                 try
-                 {
-                     var resp = ct == CancellationToken.None
-                         ? await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req,
-                             _cluster.Config!.TimeoutTimespan
-                         )
-                         : await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
-
-                     var entry = new PidLookupEntity
-                     {
-                         Address = activator,
-                         Id = ObjectId.Empty,
-                         Identity = identity,
-                         Key = key,
-                         Kind = kind,
-                         MemberId = _cluster.Id.ToString()
-                     };
-                     
-                     await _pids.ReplaceOneAsync(
-                         s => s.Key == key,
-                         entry, new ReplaceOptions
-                         {
-                             IsUpsert = true
-                         }, cancellationToken: CancellationToken.None
-                     );
-                     
-                     
-                     return resp.Pid;
-                 }
-                 //TODO: decide if we throw or return null
-                 catch (TimeoutException)
-                 {
-                     _logger.LogDebug("Remote PID request timeout {@Request}", req);
-                     return null;
-                 }
-                 catch (Exception e)
-                 {
-                     _logger.LogError(e, "Error occured requesting remote PID {@Request}", req);
-                     return null;
-                 }
+                var pid = new PID(pidLookup.Address, pidLookup.UniqueIdentity);
+                return pid;
             }
 
-            var pid = new PID(pidLookup.Address, pidLookup.Identity);
-            return pid;
+            var activator = _memberList.GetActivator(kind);
+            var remotePid = RemotePlacementActor(activator);
+            var req = new ActivationRequest
+            {
+                Kind = kind,
+                Identity = identity
+            };
+
+            try
+            {
+                var resp = ct == CancellationToken.None
+                    ? await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req,
+                        _cluster.Config!.TimeoutTimespan
+                    )
+                    : await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
+
+                var entry = new PidLookupEntity
+                {
+                    Address = activator,
+                    Id = ObjectId.Empty,
+                    Identity = identity,
+                    UniqueIdentity = resp.Pid.Id,
+                    Key = key,
+                    Kind = kind,
+                    MemberId = _cluster.Id.ToString()
+                };
+
+                await _pids.ReplaceOneAsync(
+                    s => s.Key == key,
+                    entry, new ReplaceOptions
+                    {
+                        IsUpsert = true
+                    }, cancellationToken: CancellationToken.None
+                );
+                
+                return resp.Pid;
+            }
+            //TODO: decide if we throw or return null
+            catch (TimeoutException)
+            {
+                _logger.LogDebug("Remote PID request timeout {@Request}", req);
+                return null;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error occured requesting remote PID {@Request}", req);
+                return null;
+            }
         }
 
         private Task RemoveMemberAsync(string memberId) => _pids.DeleteManyAsync(p => p.MemberId == memberId);

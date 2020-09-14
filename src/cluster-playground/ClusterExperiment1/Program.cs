@@ -52,10 +52,9 @@ namespace ClusterExperiment1
             
             var db = GetMongo();
             var identity = new MongoIdentityLookup("mycluster",db);
-            
             await cluster.StartClientAsync(new ClusterConfig("mycluster", "127.0.0.1", 8090, consul).WithIdentityLookup(identity));
 
-            await Task.Delay(1000);
+            await Task.Delay(5000);
             
             _ = Task.Run(async () =>
                 {
@@ -66,7 +65,7 @@ namespace ClusterExperiment1
                         {
                             var id = "myactor" + rnd.Next(0, 1000);
                             var res = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token
+                                new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
                             );
 
                             if (res == null)
