@@ -174,7 +174,7 @@ namespace Proto.Cluster.Consul
 
                         waitIndex = statuses.LastIndex;
 
-                        var memberStatuses =
+                        var currentMembers =
                             statuses
                                 .Response
                                 .Where(v => IsAlive(v.Checks)) //only include members that are alive
@@ -183,8 +183,8 @@ namespace Proto.Cluster.Consul
 
                         //why is this not updated via the ClusterTopologyEvents?
                         //because following events is messy
-                        _memberList.UpdateClusterTopology(memberStatuses, waitIndex);
-                        var res = new ClusterTopologyEvent(memberStatuses);
+                        _memberList.UpdateClusterTopology(currentMembers, waitIndex);
+                        var res = new ClusterTopologyEvent(currentMembers);
                         _cluster.System.EventStream.Publish(res);
                     }
                 }

@@ -30,6 +30,10 @@ namespace Proto.Cluster
         private readonly EventStream _eventStream;
         private readonly ILogger _logger = null!;
 
+        //TODO: the members here are only from the cluster provider
+        //The partition lookup broadcasts and use broadcasted information
+        //meaning the partition infra might be ahead of this list.
+        //come up with a good solution to keep all this in sync
         private readonly Dictionary<string, Member> _members = new Dictionary<string, Member>();
 
         private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind =
@@ -57,6 +61,7 @@ namespace Proto.Cluster
 
         public string GetActivator(string kind)
         {
+            //TODO: clean this lock logic up
             var locked = _rwLock.TryEnterReadLock(1000);
 
             while (!locked)

@@ -6,11 +6,11 @@ namespace Proto.Cluster.Events
 {
     public class ClusterTopologyEvent
     {
-        public ClusterTopologyEvent(IEnumerable<Member> statuses)
+        public ClusterTopologyEvent(IEnumerable<Member> members)
         {
-            Statuses = statuses?.ToArray() ?? throw new ArgumentNullException(nameof(statuses));
+            Members = members?.ToArray() ?? throw new ArgumentNullException(nameof(members));
         }
 
-        public IReadOnlyCollection<Member> Statuses { get; }
+        public IReadOnlyCollection<Member> Members { get; }
     }
 }
