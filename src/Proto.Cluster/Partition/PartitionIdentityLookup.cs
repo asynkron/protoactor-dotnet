@@ -56,17 +56,19 @@ namespace Proto.Cluster.Partition
             }
         }
 
-        public void Setup(Cluster cluster, string[] kinds, bool isClient)
+        public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
         {
             _cluster = cluster;
             _partitionManager = new PartitionManager(cluster, isClient);
             _logger = Log.CreateLogger(nameof(PartitionIdentityLookup) + "-" + _cluster.LoggerId);
             _partitionManager.Setup();
+            return Task.CompletedTask;
         }
 
-        public void Shutdown()
-        {
+        public Task ShutdownAsync()
+        { 
             _partitionManager.Shutdown();
+            return Task.CompletedTask;
         }
     }
 }

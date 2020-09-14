@@ -55,7 +55,7 @@ namespace Proto.Cluster
 
         public bool IsLeader => _cluster.Id.Equals(_leader?.MemberId);
 
-        internal string GetActivator(string kind)
+        public string GetActivator(string kind)
         {
             var locked = _rwLock.TryEnterReadLock(1000);
 

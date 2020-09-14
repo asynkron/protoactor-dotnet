@@ -29,14 +29,14 @@ namespace Proto.Cluster
 
         public Guid Id { get; } = Guid.NewGuid();
 
-        internal ClusterConfig Config { get; private set; } = null!;
+        public ClusterConfig Config { get; private set; } = null!;
 
         public ActorSystem System { get; }
 
         public Remote.Remote Remote { get; }
 
 
-        internal MemberList MemberList { get; private set; }
+        public MemberList MemberList { get; private set; }
 
         private IIdentityLookup? IdentityLookup { get; set; }
 
@@ -100,7 +100,7 @@ namespace Proto.Cluster
             MemberList = new MemberList(this);
 
             var kinds = Remote.GetKnownKinds();
-            IdentityLookup.Setup(this, kinds, client);
+            IdentityLookup.SetupAsync(this, kinds, client);
         }
 
         public async Task ShutdownAsync(bool graceful = true)
@@ -108,7 +108,7 @@ namespace Proto.Cluster
             _logger.LogInformation("Stopping");
             if (graceful)
             {
-                IdentityLookup!.Shutdown();
+                IdentityLookup!.ShutdownAsync();
             }
 
             await Config!.ClusterProvider.ShutdownAsync(graceful);

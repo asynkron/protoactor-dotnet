@@ -12,7 +12,7 @@ namespace Proto.Cluster.IdentityLookup
     public interface IIdentityLookup
     {
         Task<PID?> GetAsync(string identity, string kind, CancellationToken ct);
-        void Setup(Cluster cluster, string[] kinds, bool isClient);
-        void Shutdown();
+        Task SetupAsync(Cluster cluster, string[] kinds, bool isClient);
+        Task ShutdownAsync();
     }
 }
