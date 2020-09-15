@@ -8,13 +8,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\experimental\Proto.Cluster.MongoIdentityLookup\Proto.Cluster.MongoIdentityLookup.csproj" />
-        <ProjectReference Include="..\..\Proto.Cluster\Proto.Cluster.csproj" />
-        <ProjectReference Include="..\..\src\experimental\Proto.Cluster.MongoIdentityLookup\Proto.Cluster.MongoIdentityLookup.csproj" />
         <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
         <ProjectReference Include="..\..\src\Proto.Cluster.Kubernetes\Proto.Cluster.Kubernetes.csproj" />
-        <ProjectReference Include="..\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
-        <ProjectReference Include="..\Proto.Cluster.Kubernetes\Proto.Cluster.Kubernetes.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.MongoIdentityLookup\Proto.Cluster.MongoIdentityLookup.csproj" />
     </ItemGroup>
 
     <ItemGroup>

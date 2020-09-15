@@ -10,9 +10,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Proto.Actor\Proto.Actor.csproj" />
-      <ProjectReference Include="..\..\Proto.Cluster\Proto.Cluster.csproj" />
-      <ProjectReference Include="..\..\Proto.Remote\Proto.Remote.csproj" />
       <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj" />
     </ItemGroup>
 
