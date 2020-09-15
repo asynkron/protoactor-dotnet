@@ -2,11 +2,13 @@
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
+using k8s;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
+using Proto.Cluster.Kubernetes;
 using Proto.Cluster.MongoIdentityLookup;
 using Proto.Remote;
 
@@ -123,14 +125,16 @@ namespace ClusterExperiment1
             return cluster;
         }
         
-        private static ClusterConfig GetClusterConfig(ConsulProvider clusterProvider, MongoIdentityLookup identity)
+        private static ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, MongoIdentityLookup identity)
         {
             return new ClusterConfig("mycluster", "127.0.0.1", 0, clusterProvider).WithIdentityLookup(identity);
         }
         
-        private static ConsulProvider ClusterProvider()
+        private static IClusterProvider ClusterProvider()
         {
-            return new ConsulProvider(new ConsulProviderOptions());
+            var k = new Kubernetes(KubernetesClientConfiguration.BuildDefaultConfig());
+            return new KubernetesProvider(k);
+          //  return new ConsulProvider(new ConsulProviderOptions());
         }
 
         private static MongoIdentityLookup GetIdentityLookup()
