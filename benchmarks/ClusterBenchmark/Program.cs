@@ -23,6 +23,7 @@ namespace ClusterExperiment1
             var cluster = SpawnMember();
 
             Console.ReadLine();
+            await cluster.ShutdownAsync();
         }
 
         private static async Task RunLeader()
@@ -31,7 +32,7 @@ namespace ClusterExperiment1
 
             var cluster = await SpawnClient();
 
-            await Task.Delay(5000);
+            await Task.Delay(1000);
             
             _ = Task.Run(async () =>
                 {
