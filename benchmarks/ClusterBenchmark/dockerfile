@@ -1,16 +1,21 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
-WORKDIR myapp
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS base
+WORKDIR /app
 
-# copy csproj file and restore
-COPY ./*.csproj ./
+
+WORKDIR /src
+COPY ../*.sln ./
+COPY ../src/**.csproj ./src
 RUN dotnet restore
 
-# Copy everything else and build
-COPY . .
-RUN dotnet publish -c Release -o out
+COPY ../. .
+WORKDIR /src/ProjectMain
+RUN dotnet build -c $Configuration -o /app
 
-# Build runtime image
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1
-WORKDIR /myapp
-COPY --from=build /myapp/out .
-ENTRYPOINT ["dotnet", "ClusterExperiment1.dll"]
+FROM builder AS publish
+ARG Configuration=Release
+RUN dotnet publish -c $Configuration -o /app
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app .
+ENTRYPOINT ["dotnet", "Project.Main.dll"]
