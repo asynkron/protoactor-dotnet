@@ -20,21 +20,15 @@ namespace Proto.Cluster.Partition
         //pid -> the actor that we have created here
         //kind -> the actor kind
         //eventId -> the cluster wide eventId when this actor was created
-        private readonly Dictionary<string, (PID pid, string kind, ulong eventId)> _myActors =
-            new Dictionary<string, (PID pid, string kind, ulong eventId)>();
+        private readonly Dictionary<string, (PID pid, string kind)> _myActors =
+            new Dictionary<string, (PID pid, string kind)>();
 
         private readonly Remote.Remote _remote;
-        private readonly ActorSystem _system;
-        
-        //cluster wide eventId.
-        //this is useful for knowing if we are in sync with, ahead of or behind other nodes requests
-        private ulong _eventId; 
 
         public MongoPlacementActor(Cluster cluster)
         {
             _cluster = cluster;
             _remote = _cluster.Remote;
-            _system = _cluster.System;
             _logger = Log.CreateLogger($"{nameof(MongoPlacementActor)}-{cluster.LoggerId}");
         }
 
@@ -102,7 +96,7 @@ namespace Proto.Cluster.Partition
                     var grainInit = new GrainInit(identity,kind);
                     
                     context.Send(pid,grainInit);
-                    _myActors[identity] = (pid, kind, _eventId);
+                    _myActors[identity] = (pid, kind);
 
                     var response = new ActivationResponse
                     {
