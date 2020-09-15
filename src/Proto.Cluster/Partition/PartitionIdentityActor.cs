@@ -197,11 +197,13 @@ namespace Proto.Cluster.Partition
 
         private Task GetOrSpawn(ActivationRequest msg, IContext context)
         {
-            var sender = context.Sender;
-            if (sender == null)
+            
+            if (context.Sender == null)
             {
                 _logger.LogCritical("NO SENDER IN GET OR SPAWN!!");
             }
+            
+            PID sender = context.Sender!;
 
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
             if (ownerAddress != _myAddress)
@@ -265,10 +267,6 @@ namespace Proto.Cluster.Partition
                     //This is necessary to avoid race condition during partition map transfer.
                     if (_partitionLookup.TryGetValue(msg.Identity, out info))
                     {
-                        if (sender == null)
-                        {
-                            _logger.LogCritical("No sender 1");
-                        }
                         context.Send(sender,new ActivationResponse {Pid = info.pid});
                         return Actor.Done;
                     }
@@ -276,21 +274,13 @@ namespace Proto.Cluster.Partition
                     //Check if process is faulted
                     if (rst.IsFaulted)
                     {
-                        if (sender == null)
-                        {
-                            _logger.LogCritical("No sender 2");
-                        }
-                        
                         context.Send(sender,response);
                         return Actor.Done;
                     }
 
 
                     _partitionLookup[msg.Identity] = (response.Pid, msg.Kind);
-                    if (sender == null)
-                    {
-                        _logger.LogCritical("No sender 3");
-                    }
+
                     context.Send(sender, response);
 
                     try
@@ -341,7 +331,7 @@ namespace Proto.Cluster.Partition
             }
             catch
             {
-                return null;
+                return null!;
             }
         }
 
