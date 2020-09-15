@@ -13,13 +13,14 @@ namespace Proto.Cluster.MongoIdentityLookup
     {
         private const string MongoPlacementActorName = "placement-activator";
         private readonly string _clusterName;
+        private readonly IMongoCollection<PidLookupEntity> _pids;
         private Cluster _cluster;
         private IMongoDatabase _db;
-        private readonly IMongoCollection<PidLookupEntity> _pids;
-        private MemberList _memberList;
-        private ActorSystem _system;
-        private PID _placementActor;
+        private bool _isClient;
         private ILogger _logger;
+        private MemberList _memberList;
+        private PID _placementActor;
+        private ActorSystem _system;
 
         public MongoIdentityLookup(string clusterName, IMongoDatabase db)
         {
@@ -36,10 +37,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             {
                 var pid = new PID(pidLookup.Address, pidLookup.UniqueIdentity);
                 var memberExists = _memberList.ContainsMemberId(pidLookup.MemberId);
-                if (memberExists)
-                {
-                    return pid;
-                }
+                if (memberExists) return pid;
                 //if not, spawn a new actor and replace entry
             }
 
@@ -75,9 +73,9 @@ namespace Proto.Cluster.MongoIdentityLookup
                     entry, new ReplaceOptions
                     {
                         IsUpsert = true
-                    }, cancellationToken: CancellationToken.None
+                    }, CancellationToken.None
                 );
-                
+
                 return resp.Pid;
             }
             //TODO: decide if we throw or return null
@@ -93,27 +91,25 @@ namespace Proto.Cluster.MongoIdentityLookup
             }
         }
 
-        private Task RemoveMemberAsync(string memberId) => _pids.DeleteManyAsync(p => p.MemberId == memberId);
-
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
         {
             _cluster = cluster;
             _system = cluster.System;
             _memberList = cluster.MemberList;
             _logger = Log.CreateLogger("MongoIdentityLookup-" + cluster.LoggerId);
+            _isClient = isClient;
 
             //hook up events
             cluster.System.EventStream.Subscribe<ClusterTopology>(e =>
                 {
                     //delete all members that have left from the lookup
                     foreach (var left in e.Left)
-                    {
                         //YOLO. event stream is not async
                         _ = RemoveMemberAsync(left.Id);
-                    }
                 }
             );
 
+            if (isClient) return Task.CompletedTask;
             var props = Props.FromProducer(() => new MongoPlacementActor(_cluster));
             _placementActor = _system.Root.SpawnNamed(props, MongoPlacementActorName);
 
@@ -122,10 +118,19 @@ namespace Proto.Cluster.MongoIdentityLookup
 
         public async Task ShutdownAsync()
         {
-            await _cluster.System.Root.PoisonAsync(_placementActor);
+            if (!_isClient) await _cluster.System.Root.PoisonAsync(_placementActor);
+
             await RemoveMemberAsync(_cluster.Id.ToString());
         }
 
-        private PID RemotePlacementActor(string address) => new PID(address, MongoPlacementActorName);
+        private Task RemoveMemberAsync(string memberId)
+        {
+            return _pids.DeleteManyAsync(p => p.MemberId == memberId);
+        }
+
+        private PID RemotePlacementActor(string address)
+        {
+            return new PID(address, MongoPlacementActorName);
+        }
     }
 }

@@ -32,15 +32,17 @@ namespace Proto.Cluster.MongoIdentityLookup
             _logger = Log.CreateLogger($"{nameof(MongoPlacementActor)}-{cluster.LoggerId}");
         }
 
-        public Task ReceiveAsync(IContext context) =>
-            context.Message switch
-            {
-                Started _             => Started(context),
-                ReceiveTimeout _      => ReceiveTimeout(context),
-                Terminated msg        => Terminated(context, msg),
-                ActivationRequest msg => ActivationRequest(context, msg),
-                _                     => Actor.Done
-            };
+        public Task ReceiveAsync(IContext context)
+        {
+            return context.Message switch
+                   {
+                       Started _             => Started(context),
+                       ReceiveTimeout _      => ReceiveTimeout(context),
+                       Terminated msg        => Terminated(context, msg),
+                       ActivationRequest msg => ActivationRequest(context, msg),
+                       _                     => Actor.Done
+                   };
+        }
 
         private Task Started(IContext context)
         {
@@ -60,7 +62,7 @@ namespace Proto.Cluster.MongoIdentityLookup
         {
             //TODO: if this turns out to be perf intensive, lets look at optimizations for reverse lookups
             var (identity, _) = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(msg.Who));
-            
+
             _myActors.Remove(identity);
             return Actor.Done;
         }
@@ -86,16 +88,16 @@ namespace Proto.Cluster.MongoIdentityLookup
                 else
                 {
                     //this actor did not exist, lets spawn a new activation
-                    
+
                     //spawn and remember this actor
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
                     var pid = context.SpawnPrefix(props, identity);
-                    
+
                     //give the grain knowledge of its grain name and kind
-                    var grainInit = new GrainInit(identity,kind);
-                    
-                    context.Send(pid,grainInit);
+                    var grainInit = new GrainInit(identity, kind);
+
+                    context.Send(pid, grainInit);
                     _myActors[identity] = (pid, kind);
 
                     var response = new ActivationResponse
