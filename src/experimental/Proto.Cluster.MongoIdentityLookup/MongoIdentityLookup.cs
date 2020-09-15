@@ -16,7 +16,6 @@ namespace Proto.Cluster.MongoIdentityLookup
         private readonly string _clusterName;
         private Cluster _cluster;
         private IMongoDatabase _db;
-        private string[] _kinds;
         private readonly IMongoCollection<PidLookupEntity> _pids;
         private MemberList _memberList;
         private ActorSystem _system;
@@ -37,7 +36,12 @@ namespace Proto.Cluster.MongoIdentityLookup
             if (pidLookup != null)
             {
                 var pid = new PID(pidLookup.Address, pidLookup.UniqueIdentity);
-                return pid;
+                var memberExists = _memberList.ContainsMemberId(pidLookup.MemberId);
+                if (memberExists)
+                {
+                    return pid;
+                }
+                //if not, spawn a new actor and replace entry
             }
 
             var activator = _memberList.GetActivator(kind);
@@ -96,7 +100,6 @@ namespace Proto.Cluster.MongoIdentityLookup
         {
             _cluster = cluster;
             _system = cluster.System;
-            _kinds = kinds;
             _memberList = cluster.MemberList;
             _logger = Log.CreateLogger("MongoIdentityLookup-" + cluster.LoggerId);
 

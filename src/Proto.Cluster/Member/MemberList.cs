@@ -267,5 +267,7 @@ namespace Proto.Cluster
                 }
             }
         }
+
+        public bool ContainsMemberId(string memberId) => _members.ContainsKey(memberId);
     }
 }
