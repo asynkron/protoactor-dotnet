@@ -16,43 +16,18 @@ namespace ClusterExperiment1
     {
         private static async Task RunFollower()
         {
-            Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole(o =>
-                        {
-                            o.IncludeScopes = false;
-                            o.UseUtcTimestamp = false;
-                            o.TimestampFormat = "hh:mm:ss:fff - ";
-                        }
-                    ).SetMinimumLevel(LogLevel.Information)
-                )
-            );
+            var logger = SetupLogger();
 
-            var cluster = SpawnMember(0);
+            var cluster = SpawnMember();
 
             Console.ReadLine();
         }
 
         private static async Task RunLeader()
         {
-            Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole(o =>
-                        {
-                            o.IncludeScopes = false;
-                            o.UseUtcTimestamp = false;
-                            o.TimestampFormat = "hh:mm:ss:fff - ";
-                        }
-                    ).SetMinimumLevel(LogLevel.Information)
-                )
-            );
-            var logger = Log.CreateLogger(nameof(Program));
+            var logger = SetupLogger();
 
-            var system = new ActorSystem();
-            var consul = new ConsulProvider(new ConsulProviderOptions());
-            var serialization = new Serialization();
-            serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
-            var cluster = new Cluster(system, serialization);
-            
-            var db = GetMongo();
-            var identity = new MongoIdentityLookup("mycluster",db);
-            await cluster.StartClientAsync(new ClusterConfig("mycluster", "127.0.0.1", 8090, consul).WithIdentityLookup(identity));
+            var cluster = await SpawnClient();
 
             await Task.Delay(5000);
             
@@ -89,6 +64,22 @@ namespace ClusterExperiment1
             Console.ReadLine();
         }
 
+        private static ILogger SetupLogger()
+        {
+            Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole(o =>
+                        {
+                            o.IncludeScopes = false;
+                            o.UseUtcTimestamp = false;
+                            o.TimestampFormat = "hh:mm:ss:fff - ";
+                        }
+                    ).SetMinimumLevel(LogLevel.Information)
+                )
+            );
+            var logger = Log.CreateLogger(nameof(Program));
+            return logger;
+        }
+
+
         public static async Task Main(string[] args)
         {
             if (args.Length == 0)
@@ -101,24 +92,54 @@ namespace ClusterExperiment1
             }
         }
 
-
-        private static Cluster SpawnMember(int port)
+        private static async Task<Cluster> SpawnClient()
         {
             var system = new ActorSystem();
-            var consul = new ConsulProvider(new ConsulProviderOptions());
+            var clusterProvider = ClusterProvider();
             var serialization = new Serialization();
             serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
-            var db = GetMongo();
-            var identity = new MongoIdentityLookup("mycluster",db);
+            var identity = GetIdentityLookup();
             var cluster = new Cluster(system, serialization);
+            
+            var config = GetClusterConfig(clusterProvider, identity);
+            await cluster.StartClientAsync(config);
+            return cluster;
+        }
+
+        private static Cluster SpawnMember()
+        {
+            var system = new ActorSystem();
+            var clusterProvider = ClusterProvider();
+            var serialization = new Serialization();
+            serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
+            var identity = GetIdentityLookup();
+            var cluster = new Cluster(system, serialization);
+            
             var helloProps = Props.FromProducer(() => new HelloActor());
             cluster.Remote.RegisterKnownKind("hello", helloProps);
-            cluster.StartMemberAsync(new ClusterConfig("mycluster", "127.0.0.1", port, consul).WithIdentityLookup(identity));
-            return cluster;
             
-           
+            var config = GetClusterConfig(clusterProvider, identity);
+            cluster.StartMemberAsync(config);
+            return cluster;
         }
         
+        private static ClusterConfig GetClusterConfig(ConsulProvider clusterProvider, MongoIdentityLookup identity)
+        {
+            return new ClusterConfig("mycluster", "127.0.0.1", 0, clusterProvider).WithIdentityLookup(identity);
+        }
+        
+        private static ConsulProvider ClusterProvider()
+        {
+            return new ConsulProvider(new ConsulProviderOptions());
+        }
+
+        private static MongoIdentityLookup GetIdentityLookup()
+        {
+            var db = GetMongo();
+            var identity = new MongoIdentityLookup("mycluster", db);
+            return identity;
+        }
+
         static IMongoDatabase GetMongo()
         {
             var connectionString =
