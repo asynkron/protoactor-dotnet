@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Proto.Cluster.IdentityLookup;
-using Proto.Cluster.Partition;
 
 namespace Proto.Cluster.MongoIdentityLookup
 {

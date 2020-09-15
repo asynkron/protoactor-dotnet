@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Proto.Cluster.Partition
+namespace Proto.Cluster.MongoIdentityLookup
 {
     internal class MongoPlacementActor : IActor
     {
