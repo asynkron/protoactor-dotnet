@@ -133,8 +133,9 @@ namespace ClusterExperiment1
         
         private static IClusterProvider ClusterProvider()
         {
-            var k = new Kubernetes(KubernetesClientConfiguration.BuildDefaultConfig());
-            return new KubernetesProvider(k);
+            var kubernetesConfig = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            var kubernetes = new Kubernetes(kubernetesConfig);
+            return new KubernetesProvider(kubernetes);
           //  return new ConsulProvider(new ConsulProviderOptions());
         }
 
