@@ -141,7 +141,7 @@ namespace Proto.Cluster.Partition
             }
             catch (Exception x)
             {
-                _logger.LogError("Failed to get identities");
+                _logger.LogError(x,"Failed to get identities");
             }
 
 

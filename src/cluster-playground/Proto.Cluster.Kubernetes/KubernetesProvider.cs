@@ -34,6 +34,7 @@ namespace Proto.Cluster.Kubernetes
         private string[] _kinds;
         private string _podName;
         private int _port;
+        private MemberList _memberList;
 
         public KubernetesProvider(IKubernetes kubernetes)
         {
@@ -43,23 +44,28 @@ namespace Proto.Cluster.Kubernetes
             _kubernetes = kubernetes;
         }
 
-        public Task StartMemberAsync(Cluster cluster, string clusterName, string host, int port, string[] kinds,
+        public async Task StartMemberAsync(Cluster cluster, string clusterName, string host, int port, string[] kinds,
             MemberList memberList)
         {
             _cluster = cluster;
-            throw new NotImplementedException();
+            _memberList = memberList;
+
+            await RegisterMemberAsync(cluster, clusterName, host, port, kinds);
+            MonitorMemberStatusChanges(_cluster);
         }
 
         public Task StartClientAsync(Cluster cluster, string clusterName, string host, int port, MemberList memberList)
         {
             _cluster = cluster;
-            throw new NotImplementedException();
+            _memberList = memberList;
+            MonitorMemberStatusChanges(_cluster);
+            return Task.CompletedTask;
         }
 
         public async Task ShutdownAsync(bool graceful)
         {
             await DeregisterMemberAsync(_cluster);
-            _cluster.System.Root.Stop(_clusterMonitor);
+            await _cluster.System.Root.StopAsync(_clusterMonitor);
         }
 
         public Task UpdateClusterState(ClusterState state)

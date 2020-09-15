@@ -36,11 +36,11 @@ namespace Proto.Cluster
         public Remote.Remote Remote { get; }
 
 
-        public MemberList MemberList { get; private set; }
+        public MemberList MemberList { get; private set; } = null!;
 
-        private IIdentityLookup? IdentityLookup { get; set; }
+        private IIdentityLookup IdentityLookup { get; set; } = null!;
 
-        internal IClusterProvider Provider { get; set; }
+        internal IClusterProvider Provider { get; set; } = null!;
 
         public string LoggerId => System.Address;
 
@@ -108,7 +108,7 @@ namespace Proto.Cluster
             _logger.LogInformation("Stopping");
             if (graceful)
             {
-                IdentityLookup!.ShutdownAsync();
+                await IdentityLookup!.ShutdownAsync();
             }
 
             await Config!.ClusterProvider.ShutdownAsync(graceful);
@@ -144,7 +144,7 @@ namespace Proto.Cluster
             }
             finally
             {
-                _pidCache[key] = null;
+                _pidCache.TryRemove(key,out _);
             }
 
             var i = 0;

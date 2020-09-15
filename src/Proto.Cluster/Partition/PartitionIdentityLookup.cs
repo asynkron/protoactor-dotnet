@@ -9,7 +9,7 @@ namespace Proto.Cluster.Partition
     public class PartitionIdentityLookup : IIdentityLookup
     {
         private Cluster _cluster = null!;
-        private ILogger _logger;
+        private ILogger _logger = null!;
         private PartitionManager _partitionManager = null!;
 
         public async Task<PID?> GetAsync(string identity, string kind, CancellationToken ct)
