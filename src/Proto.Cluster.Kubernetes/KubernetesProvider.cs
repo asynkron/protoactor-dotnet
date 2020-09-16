@@ -116,8 +116,6 @@ namespace Proto.Cluster.Kubernetes
                 Logger.LogError(e, "Unable to update pod labels, registration failed");
                 throw;
             }
-
-           
         }
 
         private void StartClusterMonitor()

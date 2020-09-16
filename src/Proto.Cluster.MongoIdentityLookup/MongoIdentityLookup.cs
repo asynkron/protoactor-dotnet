@@ -27,6 +27,8 @@ namespace Proto.Cluster.MongoIdentityLookup
             _clusterName = clusterName;
             _db = db;
             _pids = db.GetCollection<PidLookupEntity>("pids");
+            //just try to ping DB
+            _ = _pids.AsQueryable().FirstOrDefault(x => true);
         }
 
         public async Task<PID> GetAsync(string identity, string kind, CancellationToken ct)
