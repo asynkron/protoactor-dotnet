@@ -122,7 +122,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             );
 
             if (isClient) return Task.CompletedTask;
-            var props = Props.FromProducer(() => new MongoPlacementActor(_cluster));
+            var props = Props.FromProducer(() => new MongoPlacementActor(_cluster,this));
             _placementActor = _system.Root.SpawnNamed(props, MongoPlacementActorName);
 
             return Task.CompletedTask;
@@ -143,6 +143,11 @@ namespace Proto.Cluster.MongoIdentityLookup
         private PID RemotePlacementActor(string address)
         {
             return new PID(address, MongoPlacementActorName);
+        }
+
+        public Task RemoveUniqueIdentityAsync(string uniqueIdentity)
+        {
+            return _pids.DeleteManyAsync(p => p.UniqueIdentity == uniqueIdentity);
         }
     }
 }
