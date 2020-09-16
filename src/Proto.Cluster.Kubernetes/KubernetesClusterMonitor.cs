@@ -33,7 +33,8 @@ namespace Proto.Cluster.Kubernetes
         private Watcher<V1Pod> _watcher;
         private Task<HttpOperationResponse<V1PodList>> _watcherTask;
         private bool _watching;
-        private Cluster _cluster;
+        private readonly Cluster _cluster;
+        private string _memberId;
 
         public KubernetesClusterMonitor(Cluster cluster, IKubernetes kubernetes)
         {
@@ -58,6 +59,7 @@ namespace Proto.Cluster.Kubernetes
             _clusterName = cmd.ClusterName;
             _address = cmd.Address;
             _podName = KubernetesExtensions.GetPodName();
+            _memberId = cmd.MemberId;
             return Actor.Done;
         }
 

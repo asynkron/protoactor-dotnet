@@ -40,16 +40,21 @@ namespace Proto.Cluster.MongoIdentityLookup
                 var pid = new PID(pidLookup.Address, pidLookup.UniqueIdentity);
                 var memberExists = _memberList.ContainsMemberId(pidLookup.MemberId);
                 if (memberExists) return pid;
+                
+                _logger.LogInformation("Found placement lookup for {Identity} {Kind}, but Member {MemberId} is not part of cluster",identity,kind,pidLookup.MemberId);
                 //if not, spawn a new actor and replace entry
             }
 
-            var activatorAddress = _memberList.GetActivator(kind);
-            if (string.IsNullOrWhiteSpace(activatorAddress))
+            var activator = _memberList.GetActivator(kind);
+            if (activator == null)
             {
                 return null;
             }
             
-            var remotePid = RemotePlacementActor(activatorAddress);
+            
+            _logger.LogInformation("Storing placement lookup for {Identity} {Kind}",identity,kind);
+            
+            var remotePid = RemotePlacementActor(activator.Address);
             var req = new ActivationRequest
             {
                 Kind = kind,
@@ -66,13 +71,13 @@ namespace Proto.Cluster.MongoIdentityLookup
 
                 var entry = new PidLookupEntity
                 {
-                    Address = activatorAddress,
+                    Address = activator.Address,
                     Id = ObjectId.Empty,
                     Identity = identity,
                     UniqueIdentity = resp.Pid.Id,
                     Key = key,
                     Kind = kind,
-                    MemberId = _cluster.Id.ToString()
+                    MemberId = activator.Id
                 };
 
                 await _pids.ReplaceOneAsync(

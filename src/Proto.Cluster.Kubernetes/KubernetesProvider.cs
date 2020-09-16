@@ -104,7 +104,8 @@ namespace Proto.Cluster.Kubernetes
             {
                 [LabelCluster] = _clusterName,
                 [LabelKinds] = string.Join(",", protoKinds.Distinct()),
-                [LabelPort] = _port.ToString()
+                [LabelPort] = _port.ToString(),
+                [LabelMemberId] = _cluster.Id.ToString()
             };
 
             try
@@ -134,7 +135,8 @@ namespace Proto.Cluster.Kubernetes
                     ClusterName = _clusterName,
                     Address = _address,
                     Port = _port,
-                    Kinds = _kinds
+                    Kinds = _kinds,
+                    MemberId = _cluster.Id.ToString()
                 }
             );
         }

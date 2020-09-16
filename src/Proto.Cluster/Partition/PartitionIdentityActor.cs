@@ -232,7 +232,7 @@ namespace Proto.Cluster.Partition
             }
 
             //Get activator
-            var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind);
+            var activatorAddress = _cluster.MemberList.GetActivatorAddress(msg.Kind);
 
             if (string.IsNullOrEmpty(activatorAddress))
             {

@@ -10,6 +10,7 @@ namespace Proto.Cluster.Kubernetes
             public string Address { get; set; }
             public int Port { get; set; }
             public string[] Kinds { get; set; }
+            public string MemberId { get; set; }
         }
 
         public class DeregisterMember
@@ -26,9 +27,6 @@ namespace Proto.Cluster.Kubernetes
             public string ClusterName { get; }
         }
 
-        public class ReregisterMember
-        {
-        }
 
         // public class EnsureWatcher
         // {

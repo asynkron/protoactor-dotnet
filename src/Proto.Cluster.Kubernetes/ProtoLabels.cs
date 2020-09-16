@@ -7,5 +7,6 @@ namespace Proto.Cluster.Kubernetes
         public const string LabelKinds = LabelPrefix + "kinds";
         public const string LabelCluster = LabelPrefix + "cluster";
         public const string LabelStatusValue = LabelPrefix + "status-value";
+        public const string LabelMemberId = LabelPrefix + "member-id";
     }
 }

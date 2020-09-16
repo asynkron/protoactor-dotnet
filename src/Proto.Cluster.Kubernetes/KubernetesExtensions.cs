@@ -27,14 +27,6 @@ namespace Proto.Cluster.Kubernetes
             return pod.Spec.Containers[0].Ports.FirstOrDefault(x => x.ContainerPort == port);
         }
 
-        internal static Task<V1Pod> AddPodLabels(this IKubernetes kubernetes, string podName, string podNamespace,
-            IDictionary<string, string> labels)
-        {
-            var patch = new JsonPatchDocument<V1Pod>();
-            patch.Add(x => x.Metadata.Labels, labels);
-            return kubernetes.PatchNamespacedPodAsync(new V1Patch(patch), podName, podNamespace);
-        }
-
         /// <summary>
         ///     Replace pod labels
         /// </summary>
@@ -64,12 +56,13 @@ namespace Proto.Cluster.Kubernetes
             var kinds = pod.Metadata.Labels[LabelKinds].Split(',');
             var host = pod.Status.PodIP ?? "";
             var port = Convert.ToInt32(pod.Metadata.Labels[LabelPort]);
+            var mid = pod.Metadata.Labels[LabelMemberId];
             var alive = pod.Status.ContainerStatuses.All(x => x.Ready);
 
             return (isCandidate, alive,
                 new Member
                 {
-                    Id = pod.Uid(),
+                    Id = mid,
                     Host = host,
                     Port = port,
                     Kinds = {kinds}

@@ -12,7 +12,7 @@ namespace Proto.Cluster
             _memberStrategy = memberStrategy;
         }
 
-        public string GetMember()
+        public string GetMemberAddress()
         {
             var members = _memberStrategy.GetAllMembers();
             var l = members.Count;
@@ -24,6 +24,22 @@ namespace Proto.Cluster
                 {
                     var nv = Interlocked.Increment(ref _val);
                     return members[nv % l].Address;
+                }
+            }
+        }
+        
+        public Member GetMember()
+        {
+            var members = _memberStrategy.GetAllMembers();
+            var l = members.Count;
+            switch (l)
+            {
+                case 0: return null;
+                case 1: return members[0];
+                default:
+                {
+                    var nv = Interlocked.Increment(ref _val);
+                    return members[nv % l];
                 }
             }
         }
