@@ -23,8 +23,8 @@ namespace ClusterExperiment1
 
             var cluster = SpawnMember();
 
-            Console.ReadLine();
-            await cluster.ShutdownAsync();
+            Thread.Sleep(Timeout.Infinite);
+            
         }
 
         private static async Task RunLeader()
@@ -65,7 +65,7 @@ namespace ClusterExperiment1
             );
 
 
-            Console.ReadLine();
+            Thread.Sleep(Timeout.Infinite);
         }
 
         private static ILogger SetupLogger()
@@ -76,7 +76,7 @@ namespace ClusterExperiment1
                             o.UseUtcTimestamp = false;
                             o.TimestampFormat = "hh:mm:ss:fff - ";
                         }
-                    ).SetMinimumLevel(LogLevel.Information)
+                    ).SetMinimumLevel(LogLevel.Debug)
                 )
             );
             var logger = Log.CreateLogger(nameof(Program));
@@ -86,7 +86,7 @@ namespace ClusterExperiment1
 
         public static async Task Main(string[] args)
         {
-            if (args.Length == 0)
+            if (args.Length == 0 )
             {
                 await RunLeader();
             }
@@ -129,7 +129,10 @@ namespace ClusterExperiment1
         
         private static ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, MongoIdentityLookup identity)
         {
-            return new ClusterConfig("mycluster", "127.0.0.1", 0, clusterProvider).WithIdentityLookup(identity);
+            var port = Environment.GetEnvironmentVariable("PROTOPORT") ?? "0";
+            var p = int.Parse(port);
+            var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
+            return new ClusterConfig("mycluster", host, p, clusterProvider).WithIdentityLookup(identity);
         }
         
         private static IClusterProvider ClusterProvider()

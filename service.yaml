@@ -14,7 +14,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: clusterbenchmark-v1
+  name: clusterreader
 spec:
   replicas: 3
   selector:
@@ -28,7 +28,29 @@ spec:
     spec:
       containers:
       - name: protodemo
-        image: docker.io/rogeralsing/clusterbenchmark:v1
-        imagePullPolicy: Always
+        image: rogeralsing/clusterreader
+        imagePullPolicy: Never
         ports:
         - containerPort: 8080          
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clustersender
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: protodemo
+  template:
+    metadata:
+      labels:
+        app: protodemo
+        version: v1
+    spec:
+      containers:
+      - name: protodemo
+        image: rogeralsing/clustersender
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080   

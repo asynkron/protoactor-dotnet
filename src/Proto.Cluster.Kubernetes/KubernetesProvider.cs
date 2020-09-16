@@ -35,6 +35,7 @@ namespace Proto.Cluster.Kubernetes
         private string _podName;
         private int _port;
         private MemberList _memberList;
+        private string _host;
 
         public KubernetesProvider(IKubernetes kubernetes)
         {
@@ -49,16 +50,26 @@ namespace Proto.Cluster.Kubernetes
         {
             _cluster = cluster;
             _memberList = memberList;
-
-            await RegisterMemberAsync(cluster, clusterName, host, port, kinds);
-            MonitorMemberStatusChanges(_cluster);
+            _clusterName = clusterName;
+            _host = host;
+            _port = port;
+            _kinds = kinds;
+            _address = host + ":" + port;
+            StartClusterMonitor();
+            await RegisterMemberAsync();
+            MonitorMemberStatusChanges();
         }
 
         public Task StartClientAsync(Cluster cluster, string clusterName, string host, int port, MemberList memberList)
         {
             _cluster = cluster;
             _memberList = memberList;
-            MonitorMemberStatusChanges(_cluster);
+            _clusterName = clusterName;
+            _host = host;
+            _port = port;
+            _kinds = Array.Empty<string>();
+            StartClusterMonitor();
+            MonitorMemberStatusChanges();
             return Task.CompletedTask;
         }
 
@@ -73,24 +84,8 @@ namespace Proto.Cluster.Kubernetes
             return Task.CompletedTask;
         }
 
-        public async Task RegisterMemberAsync(
-            Cluster cluster,
-            string clusterName, string address, int port, string[] kinds
-        )
+        public async Task RegisterMemberAsync()
         {
-            if (string.IsNullOrEmpty(clusterName)) throw new ArgumentNullException(nameof(clusterName));
-
-            var props = Props
-                .FromProducer(() => new KubernetesClusterMonitor(cluster.System, _kubernetes))
-                .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
-                .WithDispatcher(Dispatchers.SynchronousDispatcher);
-            _clusterMonitor = cluster.System.Root.SpawnNamed(props, "ClusterMonitor");
-            _clusterName = clusterName;
-            _address = address;
-            _port = port;
-            _kinds = kinds;
-            _podName = KubernetesExtensions.GetPodName();
-
             Logger.LogInformation("Registering service {PodName} on {PodIp}", _podName, _address);
 
             var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace());
@@ -122,16 +117,26 @@ namespace Proto.Cluster.Kubernetes
                 throw;
             }
 
-            cluster.System.Root.Send(
+            _cluster.System.Root.Send(
                 _clusterMonitor,
                 new RegisterMember
                 {
-                    ClusterName = clusterName,
-                    Address = address,
-                    Port = port,
-                    Kinds = kinds
+                    ClusterName = _clusterName,
+                    Address = _address,
+                    Port = _port,
+                    Kinds = _kinds
                 }
             );
+        }
+
+        private void StartClusterMonitor()
+        {
+            var props = Props
+                .FromProducer(() => new KubernetesClusterMonitor(_cluster.System, _kubernetes))
+                .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
+                .WithDispatcher(Dispatchers.SynchronousDispatcher);
+            _clusterMonitor = _cluster.System.Root.SpawnNamed(props, "ClusterMonitor");
+            _podName = KubernetesExtensions.GetPodName();
         }
 
         public async Task DeregisterMemberAsync(Cluster cluster)
@@ -149,9 +154,9 @@ namespace Proto.Cluster.Kubernetes
         }
 
 
-        public void MonitorMemberStatusChanges(Cluster cluster)
+        public void MonitorMemberStatusChanges()
         {
-            cluster.System.Root.Send(_clusterMonitor, new StartWatchingCluster(_clusterName));
+            _cluster.System.Root.Send(_clusterMonitor, new StartWatchingCluster(_clusterName));
         }
     }
 }
