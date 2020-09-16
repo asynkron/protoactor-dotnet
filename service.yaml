@@ -36,7 +36,9 @@ spec:
           - name: PROTOPORT
             value: "8080"
           - name: PROTOHOST
-            value: "0.0.0.0"     
+            value: "0.0.0.0"
+          - name: "MONGO"
+            value: "mongodb://mongo"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -64,3 +66,5 @@ spec:
             value: "8080"
           - name: PROTOHOST
             value: "0.0.0.0"
+          - name: "MONGO"
+            value: "mongodb://mongo"
