@@ -72,9 +72,15 @@ namespace Proto.Cluster
 
             try
             {
-                return _memberStrategyByKind.TryGetValue(kind, out var memberStrategy)
-                    ? memberStrategy.GetActivator()
-                    : "";
+                if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
+                {
+                    return memberStrategy.GetActivator();
+                }
+                else
+                {
+                    _logger.LogDebug("MemberList did not find any activator for kind '{Kind}'",kind);
+                    return "";
+                }
             }
             finally
             {

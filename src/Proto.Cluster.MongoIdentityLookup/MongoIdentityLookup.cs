@@ -43,8 +43,13 @@ namespace Proto.Cluster.MongoIdentityLookup
                 //if not, spawn a new actor and replace entry
             }
 
-            var activator = _memberList.GetActivator(kind);
-            var remotePid = RemotePlacementActor(activator);
+            var activatorAddress = _memberList.GetActivator(kind);
+            if (string.IsNullOrWhiteSpace(activatorAddress))
+            {
+                return null;
+            }
+            
+            var remotePid = RemotePlacementActor(activatorAddress);
             var req = new ActivationRequest
             {
                 Kind = kind,
@@ -61,7 +66,7 @@ namespace Proto.Cluster.MongoIdentityLookup
 
                 var entry = new PidLookupEntity
                 {
-                    Address = activator,
+                    Address = activatorAddress,
                     Id = ObjectId.Empty,
                     Identity = identity,
                     UniqueIdentity = resp.Pid.Id,
