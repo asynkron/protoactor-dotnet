@@ -120,9 +120,14 @@ namespace Proto.Remote
 
         private static PID SpawnWriter(string address, ISpawnerContext context, ActorSystem system, Remote remote)
         {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                throw new ArgumentNullException(nameof(address));
+            }
+            
             if (remote.RemoteConfig == null)
             {
-                throw new ArgumentException("RemoteConfig may not be null", nameof(remote));
+                throw new ArgumentNullException(nameof(remote));
             }
 
             var writerProps =

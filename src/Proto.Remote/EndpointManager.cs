@@ -104,6 +104,11 @@ namespace Proto.Remote
 
         private Endpoint EnsureConnected(string address)
         {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                throw new ArgumentNullException(nameof(address));
+            }
+            
             var conn = _connections.GetOrAdd(
                 address, v =>
                     new Lazy<Endpoint>(

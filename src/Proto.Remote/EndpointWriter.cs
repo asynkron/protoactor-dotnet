@@ -39,6 +39,11 @@ namespace Proto.Remote
             ChannelCredentials channelCredentials
         )
         {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                throw new ArgumentNullException(nameof(address));
+            }
+            
             _system = system;
             _serialization = serialization;
             _address = address;
