@@ -28,7 +28,7 @@ namespace Proto.Cluster
         private readonly ConcurrentSet<string> _bannedMembers = new ConcurrentSet<string>();
         private readonly Cluster _cluster;
         private readonly EventStream _eventStream;
-        private readonly ILogger _logger = null!;
+        private readonly ILogger _logger;
 
         //TODO: the members here are only from the cluster provider
         //The partition lookup broadcasts and use broadcasted information
@@ -141,6 +141,7 @@ namespace Proto.Cluster
 
             try
             {
+                _logger.LogDebug("Updating Cluster Topology");
                 var topology = new ClusterTopology {EventId = eventId};
 
                 //TLDR:
@@ -200,6 +201,8 @@ namespace Proto.Cluster
                 }
 
                 topology.Members.AddRange(_members.Values);
+                
+                _logger.LogDebug("Published ClusterTopology event {ClusterTopology}",topology);
 
                 _eventStream.Publish(topology);
             }

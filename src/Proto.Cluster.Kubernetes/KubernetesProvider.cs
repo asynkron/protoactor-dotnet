@@ -121,7 +121,7 @@ namespace Proto.Cluster.Kubernetes
         private void StartClusterMonitor()
         {
             var props = Props
-                .FromProducer(() => new KubernetesClusterMonitor(_cluster.System, _kubernetes))
+                .FromProducer(() => new KubernetesClusterMonitor(_cluster, _kubernetes))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
                 .WithDispatcher(Dispatchers.SynchronousDispatcher);
             _clusterMonitor = _cluster.System.Root.SpawnNamed(props, "ClusterMonitor");
