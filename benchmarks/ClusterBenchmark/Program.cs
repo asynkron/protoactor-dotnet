@@ -76,7 +76,7 @@ namespace ClusterExperiment1
                             o.UseUtcTimestamp = false;
                             o.TimestampFormat = "hh:mm:ss:fff - ";
                         }
-                    ).SetMinimumLevel(LogLevel.Debug)
+                    ).SetMinimumLevel(LogLevel.Information)
                 )
             );
             var logger = Log.CreateLogger(nameof(Program));
@@ -132,7 +132,13 @@ namespace ClusterExperiment1
             var port = Environment.GetEnvironmentVariable("PROTOPORT") ?? "0";
             var p = int.Parse(port);
             var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
-            return new ClusterConfig("mycluster", host, p, clusterProvider).WithIdentityLookup(identity);
+            var remote = new RemoteConfig();
+
+            var advertiseHostname = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
+            remote.AdvertisedHostname = advertiseHostname!;
+            //remote.AdvertisedPort = 8080;
+
+            return new ClusterConfig("mycluster", host, p, clusterProvider).WithIdentityLookup(identity).WithRemoteConfig(remote);
         }
         
         private static IClusterProvider ClusterProvider()

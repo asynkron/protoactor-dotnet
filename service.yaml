@@ -39,6 +39,10 @@ spec:
             value: "0.0.0.0"
           - name: "MONGO"
             value: "mongodb://mongo"
+          - name: "PROTOHOSTPUBLIC"
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP            
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -68,3 +72,7 @@ spec:
             value: "0.0.0.0"
           - name: "MONGO"
             value: "mongodb://mongo"
+          - name: "PROTOHOSTPUBLIC"
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
