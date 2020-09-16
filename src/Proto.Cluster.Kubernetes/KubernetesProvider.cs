@@ -117,16 +117,7 @@ namespace Proto.Cluster.Kubernetes
                 throw;
             }
 
-            _cluster.System.Root.Send(
-                _clusterMonitor,
-                new RegisterMember
-                {
-                    ClusterName = _clusterName,
-                    Address = _address,
-                    Port = _port,
-                    Kinds = _kinds
-                }
-            );
+           
         }
 
         private void StartClusterMonitor()
@@ -137,6 +128,17 @@ namespace Proto.Cluster.Kubernetes
                 .WithDispatcher(Dispatchers.SynchronousDispatcher);
             _clusterMonitor = _cluster.System.Root.SpawnNamed(props, "ClusterMonitor");
             _podName = KubernetesExtensions.GetPodName();
+            
+            _cluster.System.Root.Send(
+                _clusterMonitor,
+                new RegisterMember
+                {
+                    ClusterName = _clusterName,
+                    Address = _address,
+                    Port = _port,
+                    Kinds = _kinds
+                }
+            );
         }
 
         public async Task DeregisterMemberAsync(Cluster cluster)
