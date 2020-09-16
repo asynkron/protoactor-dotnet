@@ -25,6 +25,12 @@ namespace Proto.Cluster
         {
             System = system;
             Remote = new Remote.Remote(system, serialization);
+            system.EventStream.Subscribe<ClusterTopology>(e =>
+                {
+                    //don't make it harder than it has to be....
+                    _pidCache.Clear();
+                }
+            );
         }
 
         public Guid Id { get; } = Guid.NewGuid();
