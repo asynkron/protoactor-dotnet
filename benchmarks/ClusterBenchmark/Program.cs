@@ -134,18 +134,18 @@ namespace ClusterExperiment1
         
         private static IClusterProvider ClusterProvider()
         {
-            // var namespaceFile = Path.Combine(
-            //     $"{Path.DirectorySeparatorChar}var",
-            //     "run",
-            //     "secrets",
-            //     "kubernetes.io",
-            //     "serviceaccount",
-            //     "namespace"
-            // );
-            // Console.WriteLine(namespaceFile);
-            // var cachedNamespace = File.ReadAllText(namespaceFile);
+            var namespaceFile = Path.Combine(
+                $"{Path.DirectorySeparatorChar}var",
+                "run",
+                "secrets",
+                "kubernetes.io",
+                "serviceaccount",
+                "namespace"
+            );
+            Console.WriteLine(namespaceFile);
+            var cachedNamespace = File.ReadAllText(namespaceFile);
             
-            var kubernetesConfig = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            var kubernetesConfig = KubernetesClientConfiguration.BuildConfigFromConfigFile(cachedNamespace);
             var kubernetes = new Kubernetes(kubernetesConfig);
             return new KubernetesProvider(kubernetes);
           //  return new ConsulProvider(new ConsulProviderOptions());

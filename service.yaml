@@ -29,6 +29,6 @@ spec:
       containers:
       - name: protodemo
         image: docker.io/rogeralsing/clusterbenchmark
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080          
