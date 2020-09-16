@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: protodemo
-        image: rogeralsing/clusterbenchmark
+        image: docker.io/rogeralsing/clusterbenchmark:v1
         imagePullPolicy: Always
         ports:
         - containerPort: 8080          
