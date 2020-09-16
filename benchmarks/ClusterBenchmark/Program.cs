@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
@@ -133,6 +134,17 @@ namespace ClusterExperiment1
         
         private static IClusterProvider ClusterProvider()
         {
+            // var namespaceFile = Path.Combine(
+            //     $"{Path.DirectorySeparatorChar}var",
+            //     "run",
+            //     "secrets",
+            //     "kubernetes.io",
+            //     "serviceaccount",
+            //     "namespace"
+            // );
+            // Console.WriteLine(namespaceFile);
+            // var cachedNamespace = File.ReadAllText(namespaceFile);
+            
             var kubernetesConfig = KubernetesClientConfiguration.BuildConfigFromConfigFile();
             var kubernetes = new Kubernetes(kubernetesConfig);
             return new KubernetesProvider(kubernetes);
@@ -148,8 +160,7 @@ namespace ClusterExperiment1
 
         static IMongoDatabase GetMongo()
         {
-            var connectionString =
-                "mongodb://127.0.0.1:27017/ProtoMongo";
+            var connectionString = Environment.GetEnvironmentVariable("MONGO") ?? "mongodb://127.0.0.1:27017/ProtoMongo";
             var url = MongoUrl.Create(connectionString);
             var settings = MongoClientSettings.FromUrl(url);
             var client = new MongoClient(settings);
