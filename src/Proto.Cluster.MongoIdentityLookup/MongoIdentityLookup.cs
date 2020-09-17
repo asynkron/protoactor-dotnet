@@ -32,25 +32,35 @@ namespace Proto.Cluster.MongoIdentityLookup
         public async Task<PID> GetAsync(string identity, string kind, CancellationToken ct)
         {
             var key = $"{_clusterName}-{kind}-{identity}";
-            var pidLookup = await _pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct);
-            if (pidLookup != null)
+            var existingPid = await TryGetExistingActivationAsync(identity, kind, ct, key);
+            //we got an existing activation, use this
+            if (existingPid != null)
             {
-                var pid = new PID(pidLookup.Address, pidLookup.UniqueIdentity);
-                var memberExists = _memberList.ContainsMemberId(pidLookup.MemberId);
-                if (memberExists) return pid;
-                
-                _logger.LogInformation("Found placement lookup for {Identity} {Kind}, but Member {MemberId} is not part of cluster",identity,kind,pidLookup.MemberId);
-                //if not, spawn a new actor and replace entry
+                return existingPid;
             }
 
+            //are there any members that can spawn this kind?
+            //if not, just bail out
             var activator = _memberList.GetActivator(kind);
             if (activator == null)
             {
                 return null;
             }
             
-            //TODO: acquire global lock here.
+            //try to acquire global lock for this key
+            var locked = await TryAcquireLockAsync(identity, kind, key);
+            if (locked)
+            {
+                //we have the lock, spawn and return
+                return await SpawnActivationAsync(identity, kind, ct, activator, key);
+            }
 
+            //we didn't get the lock, spin read for x times before giving up
+            return await SpinReadAsync(identity, kind, ct, key);
+        }
+
+        private async Task<bool> TryAcquireLockAsync(string identity, string kind, string key)
+        {
             var requestId = Guid.NewGuid();
             var lockEntity = new PidLookupEntity
             {
@@ -60,14 +70,20 @@ namespace Proto.Cluster.MongoIdentityLookup
                 Kind = kind,
                 LockedBy = requestId
             };
-            //write to mongo, use filter for if lockedby is null
-            //if no suck document was found, go into spinwait
-            //if updated, we now own the lock
-            
-            //TODO: create the impl :)
-            
-            _logger.LogInformation("Storing placement lookup for {Identity} {Kind}",identity,kind);
-            
+            var l = await _pids.ReplaceOneAsync(x => x.Key == key && x.LockedBy == null, lockEntity, new ReplaceOptions
+                {
+                    IsUpsert = true
+                }
+            );
+            return l.ModifiedCount == 1;
+        }
+
+        private async Task<PID> SpawnActivationAsync(string identity, string kind, CancellationToken ct, Member activator,
+            string key)
+        {
+            //we own the lock
+            _logger.LogInformation("Storing placement lookup for {Identity} {Kind}", identity, kind);
+
             var remotePid = RemotePlacementActor(activator.Address);
             var req = new ActivationRequest
             {
@@ -91,7 +107,8 @@ namespace Proto.Cluster.MongoIdentityLookup
                     UniqueIdentity = resp.Pid.Id,
                     Key = key,
                     Kind = kind,
-                    MemberId = activator.Id
+                    MemberId = activator.Id,
+                    LockedBy = null
                 };
 
                 await _pids.ReplaceOneAsync(
@@ -115,6 +132,43 @@ namespace Proto.Cluster.MongoIdentityLookup
                 _logger.LogError(e, "Error occured requesting remote PID {@Request}", req);
                 return null;
             }
+        }
+
+        private async Task<PID> SpinReadAsync(string identity, string kind, CancellationToken ct, string key)
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                var e = await TryGetExistingActivationAsync(identity, kind, ct, key);
+                if (e != null)
+                {
+                    return e;
+                }
+
+                //just wait and try again
+                await Task.Delay(100);
+            }
+
+            //failed to get pid, bail out
+            return null;
+        }
+
+        private async Task<PID> TryGetExistingActivationAsync(string identity, string kind, CancellationToken ct, string key)
+        {
+            var pidLookup = await _pids.Find(x => x.Key == key && x.LockedBy == null).Limit(1).SingleOrDefaultAsync(ct);
+            if (pidLookup != null)
+            {
+                var pid = new PID(pidLookup.Address, pidLookup.UniqueIdentity);
+                var memberExists = _memberList.ContainsMemberId(pidLookup.MemberId);
+                if (memberExists) return pid;
+
+                _logger.LogInformation(
+                    "Found placement lookup for {Identity} {Kind}, but Member {MemberId} is not part of cluster", identity,
+                    kind, pidLookup.MemberId
+                );
+                //if not, spawn a new actor and replace entry
+            }
+
+            return null;
         }
 
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
