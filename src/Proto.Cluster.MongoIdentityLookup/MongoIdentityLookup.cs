@@ -32,7 +32,7 @@ namespace Proto.Cluster.MongoIdentityLookup
         public async Task<PID> GetAsync(string identity, string kind, CancellationToken ct)
         {
             var key = $"{_clusterName}-{kind}-{identity}";
-            var existingPid = await TryGetExistingActivationAsync(identity, kind, ct, key);
+            var existingPid = await TryGetExistingActivationAsync(key, identity, kind, ct);
             //we got an existing activation, use this
             if (existingPid != null)
             {
@@ -48,18 +48,18 @@ namespace Proto.Cluster.MongoIdentityLookup
             }
             
             //try to acquire global lock for this key
-            var locked = await TryAcquireLockAsync(identity, kind, key);
+            var locked = await TryAcquireLockAsync(key, identity, kind);
             if (locked)
             {
                 //we have the lock, spawn and return
-                return await SpawnActivationAsync(identity, kind, ct, activator, key);
+                return await SpawnActivationAsync(key, identity, kind, activator, ct);
             }
 
             //we didn't get the lock, spin read for x times before giving up
-            return await SpinReadAsync(identity, kind, ct, key);
+            return await SpinReadAsync(key, identity, kind, ct);
         }
 
-        private async Task<bool> TryAcquireLockAsync(string identity, string kind, string key)
+        private async Task<bool> TryAcquireLockAsync(string key, string identity, string kind)
         {
             var requestId = Guid.NewGuid();
             var lockEntity = new PidLookupEntity
@@ -83,8 +83,8 @@ namespace Proto.Cluster.MongoIdentityLookup
             return l.ModifiedCount == 1;
         }
 
-        private async Task<PID> SpawnActivationAsync(string identity, string kind, CancellationToken ct, Member activator,
-            string key)
+        private async Task<PID> SpawnActivationAsync(string key, string identity, string kind, Member activator,
+            CancellationToken ct)
         {
             //we own the lock
             _logger.LogInformation("Storing placement lookup for {Identity} {Kind}", identity, kind);
@@ -138,11 +138,11 @@ namespace Proto.Cluster.MongoIdentityLookup
             }
         }
 
-        private async Task<PID> SpinReadAsync(string identity, string kind, CancellationToken ct, string key)
+        private async Task<PID> SpinReadAsync(string key, string identity, string kind, CancellationToken ct)
         {
             for (int i = 0; i < 10; i++)
             {
-                var e = await TryGetExistingActivationAsync(identity, kind, ct, key);
+                var e = await TryGetExistingActivationAsync(key, identity, kind, ct);
                 if (e != null)
                 {
                     return e;
@@ -156,7 +156,8 @@ namespace Proto.Cluster.MongoIdentityLookup
             return null;
         }
 
-        private async Task<PID> TryGetExistingActivationAsync(string identity, string kind, CancellationToken ct, string key)
+        private async Task<PID> TryGetExistingActivationAsync(string key, string identity, string kind,
+            CancellationToken ct)
         {
             var pidLookup = await _pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct);
             if (pidLookup == null) return null;
