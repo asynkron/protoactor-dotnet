@@ -27,14 +27,12 @@ namespace Proto.Cluster.MongoIdentityLookup
             _clusterName = clusterName;
             _db = db;
             _pids = db.GetCollection<PidLookupEntity>("pids");
-            //just try to ping DB
-            _ = _pids.AsQueryable().FirstOrDefault(x => true);
         }
 
         public async Task<PID> GetAsync(string identity, string kind, CancellationToken ct)
         {
             var key = $"{_clusterName}-{kind}-{identity}";
-            var pidLookup = _pids.AsQueryable().FirstOrDefault(x => x.Key == key);
+            var pidLookup = await _pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct);
             if (pidLookup != null)
             {
                 var pid = new PID(pidLookup.Address, pidLookup.UniqueIdentity);
@@ -51,6 +49,22 @@ namespace Proto.Cluster.MongoIdentityLookup
                 return null;
             }
             
+            //TODO: acquire global lock here.
+
+            var requestId = Guid.NewGuid();
+            var lockEntity = new PidLookupEntity
+            {
+                Address = null,
+                Identity = identity,
+                Key = key,
+                Kind = kind,
+                LockedBy = requestId
+            };
+            //write to mongo, use filter for if lockedby is null
+            //if no suck document was found, go into spinwait
+            //if updated, we now own the lock
+            
+            //TODO: create the impl :)
             
             _logger.LogInformation("Storing placement lookup for {Identity} {Kind}",identity,kind);
             
