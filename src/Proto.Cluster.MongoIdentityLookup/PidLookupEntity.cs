@@ -6,8 +6,8 @@ namespace Proto.Cluster.MongoIdentityLookup
 {
     public class PidLookupEntity
     {
-        [BsonIgnoreIfDefault] [BsonId] public ObjectId Id { get; set; }
 
+        [BsonId]
         public string Key { get; set; }
         public string Identity { get; set; }
         public string UniqueIdentity { get; set; }

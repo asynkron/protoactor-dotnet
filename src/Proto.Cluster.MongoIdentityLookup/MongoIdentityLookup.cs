@@ -86,7 +86,6 @@ namespace Proto.Cluster.MongoIdentityLookup
                 var entry = new PidLookupEntity
                 {
                     Address = activator.Address,
-                    Id = ObjectId.Empty,
                     Identity = identity,
                     UniqueIdentity = resp.Pid.Id,
                     Key = key,
