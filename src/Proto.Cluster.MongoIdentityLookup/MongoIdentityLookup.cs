@@ -68,13 +68,18 @@ namespace Proto.Cluster.MongoIdentityLookup
                 Identity = identity,
                 Key = key,
                 Kind = kind,
-                LockedBy = requestId
+                LockedBy = requestId.ToString()
             };
             var l = await _pids.ReplaceOneAsync(x => x.Key == key && x.LockedBy == null, lockEntity, new ReplaceOptions
                 {
                     IsUpsert = true
                 }
             );
+
+            //inserted
+            if (l.UpsertedId.IsString)
+                return true;
+            
             return l.ModifiedCount == 1;
         }
 
@@ -153,21 +158,28 @@ namespace Proto.Cluster.MongoIdentityLookup
 
         private async Task<PID> TryGetExistingActivationAsync(string identity, string kind, CancellationToken ct, string key)
         {
-            var pidLookup = await _pids.Find(x => x.Key == key && x.LockedBy == null).Limit(1).SingleOrDefaultAsync(ct);
-            if (pidLookup != null)
+            var pidLookup = await _pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct);
+            if (pidLookup == null) return null;
+            var memberExists = _memberList.ContainsMemberId(pidLookup.MemberId);
+            if (!memberExists)
             {
-                var pid = new PID(pidLookup.Address, pidLookup.UniqueIdentity);
-                var memberExists = _memberList.ContainsMemberId(pidLookup.MemberId);
-                if (memberExists) return pid;
-
-                _logger.LogInformation(
+                _logger.LogWarning(
                     "Found placement lookup for {Identity} {Kind}, but Member {MemberId} is not part of cluster", identity,
                     kind, pidLookup.MemberId
                 );
-                //if not, spawn a new actor and replace entry
+                //remove this one, it's outdated
+                await RemoveUniqueIdentityAsync(pidLookup.UniqueIdentity);
+                return null;
+            }
+            
+            var isLocked = pidLookup.LockedBy != null;
+            if (isLocked)
+            {
+                return null;
             }
 
-            return null;
+            var pid = new PID(pidLookup.Address, pidLookup.UniqueIdentity);
+            return pid;
         }
 
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
