@@ -2,13 +2,12 @@ FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS base
 WORKDIR /app
 
 WORKDIR /sourcecode
-COPY ./ProtoActor.Docker.sln ./
 COPY ./src ./src/
-copy ./benchmarks ./benchmarks/
+COPY ./benchmarks ./benchmarks/
 RUN ls -la /sourcecode/*
-RUN dotnet restore ProtoActor.Docker.sln
 
 WORKDIR /sourcecode/benchmarks/ClusterBenchmark
+RUN dotnet restore
 RUN dotnet build -c Release -o /app
 
 FROM base AS publish
