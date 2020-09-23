@@ -11,4 +11,9 @@ namespace Proto.Cluster.MongoIdentityLookup
         public CancellationToken CancellationToken { get; set; }
         public string HashBy() => Key;
     }
+
+    public class PidResult
+    {
+        public PID Pid { get; set; }
+    }
 }

@@ -29,11 +29,6 @@ namespace Proto.Cluster.MongoIdentityLookup
             _db = db;
             //TODO: make collection name configurable
             Pids = db.GetCollection<PidLookupEntity>("pids");
-
-            var workerProps = Props.FromProducer(() => new MongoIdentityWorker(this));
-            //TODO: should pool size be configurable?
-            var routerProps = _system.Root.NewConsistentHashPool(workerProps, 1000);
-            _router = _system.Root.Spawn(routerProps);
         }
 
         public async Task<PID> GetAsync(string identity, string kind, CancellationToken ct)
@@ -48,8 +43,8 @@ namespace Proto.Cluster.MongoIdentityLookup
                 CancellationToken = ct
             };
 
-            var pid = await _system.Root.RequestAsync<PID>(_router, msg, ct);
-            return pid;
+            var res = await _system.Root.RequestAsync<PidResult>(_router, msg, ct);
+            return res.Pid;
         }
 
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
@@ -59,6 +54,11 @@ namespace Proto.Cluster.MongoIdentityLookup
             MemberList = cluster.MemberList;
             _logger = Log.CreateLogger("MongoIdentityLookup-" + cluster.LoggerId);
             _isClient = isClient;
+            
+            var workerProps = Props.FromProducer(() => new MongoIdentityWorker(this));
+            //TODO: should pool size be configurable?
+            var routerProps = _system.Root.NewConsistentHashPool(workerProps, 1000);
+            _router = _system.Root.Spawn(routerProps);
 
             //hook up events
             cluster.System.EventStream.Subscribe<ClusterTopology>(e =>

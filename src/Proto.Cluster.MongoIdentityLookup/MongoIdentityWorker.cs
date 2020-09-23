@@ -23,14 +23,16 @@ namespace Proto.Cluster.MongoIdentityLookup
             _lookup = lookup;
         }
         
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
             if (context.Message is GetPid msg)
             {
-                return GetPid(msg);
+                var pid = await GetPid(msg);
+                context.Respond(new PidResult
+                {
+                    Pid = pid
+                });
             }
-            
-            return Task.CompletedTask;
         }
 
         private async Task<PID> GetPid(GetPid msg)
