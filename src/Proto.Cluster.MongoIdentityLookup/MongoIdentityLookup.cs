@@ -1,11 +1,11 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Proto.Cluster.IdentityLookup;
+using Proto.Router;
 
 namespace Proto.Cluster.MongoIdentityLookup
 {
@@ -13,114 +13,50 @@ namespace Proto.Cluster.MongoIdentityLookup
     {
         private const string MongoPlacementActorName = "placement-activator";
         private readonly string _clusterName;
-        private readonly IMongoCollection<PidLookupEntity> _pids;
-        private Cluster _cluster;
+        internal readonly IMongoCollection<PidLookupEntity> Pids;
+        internal Cluster Cluster;
         private IMongoDatabase _db;
         private bool _isClient;
         private ILogger _logger;
-        private MemberList _memberList;
+        internal MemberList MemberList;
         private PID _placementActor;
         private ActorSystem _system;
+        private PID _router;
 
         public MongoIdentityLookup(string clusterName, IMongoDatabase db)
         {
             _clusterName = clusterName;
             _db = db;
-            _pids = db.GetCollection<PidLookupEntity>("pids");
+            //TODO: make collection name configurable
+            Pids = db.GetCollection<PidLookupEntity>("pids");
+
+            var workerProps = Props.FromProducer(() => new MongoIdentityWorker(this));
+            //TODO: should pool size be configurable?
+            var routerProps = _system.Root.NewConsistentHashPool(workerProps, 1000);
+            _router = _system.Root.Spawn(routerProps);
         }
 
         public async Task<PID> GetAsync(string identity, string kind, CancellationToken ct)
         {
             var key = $"{_clusterName}-{kind}-{identity}";
-            var pidLookup = await _pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct);
-            if (pidLookup != null)
-            {
-                var pid = new PID(pidLookup.Address, pidLookup.UniqueIdentity);
-                var memberExists = _memberList.ContainsMemberId(pidLookup.MemberId);
-                if (memberExists) return pid;
-                
-                _logger.LogInformation("Found placement lookup for {Identity} {Kind}, but Member {MemberId} is not part of cluster",identity,kind,pidLookup.MemberId);
-                //if not, spawn a new actor and replace entry
-            }
 
-            var activator = _memberList.GetActivator(kind);
-            if (activator == null)
+            var msg = new GetPid
             {
-                return null;
-            }
-            
-            //TODO: acquire global lock here.
-
-            var requestId = Guid.NewGuid();
-            var lockEntity = new PidLookupEntity
-            {
-                Address = null,
-                Identity = identity,
                 Key = key,
+                Identity = identity,
                 Kind = kind,
-                LockedBy = requestId
-            };
-            //write to mongo, use filter for if lockedby is null
-            //if no suck document was found, go into spinwait
-            //if updated, we now own the lock
-            
-            //TODO: create the impl :)
-            
-            _logger.LogInformation("Storing placement lookup for {Identity} {Kind}",identity,kind);
-            
-            var remotePid = RemotePlacementActor(activator.Address);
-            var req = new ActivationRequest
-            {
-                Kind = kind,
-                Identity = identity
+                CancellationToken = ct
             };
 
-            try
-            {
-                var resp = ct == CancellationToken.None
-                    ? await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req,
-                        _cluster.Config!.TimeoutTimespan
-                    )
-                    : await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
-
-                var entry = new PidLookupEntity
-                {
-                    Address = activator.Address,
-                    Identity = identity,
-                    UniqueIdentity = resp.Pid.Id,
-                    Key = key,
-                    Kind = kind,
-                    MemberId = activator.Id
-                };
-
-                await _pids.ReplaceOneAsync(
-                    s => s.Key == key,
-                    entry, new ReplaceOptions
-                    {
-                        IsUpsert = true
-                    }, CancellationToken.None
-                );
-
-                return resp.Pid;
-            }
-            //TODO: decide if we throw or return null
-            catch (TimeoutException)
-            {
-                _logger.LogDebug("Remote PID request timeout {@Request}", req);
-                return null;
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Error occured requesting remote PID {@Request}", req);
-                return null;
-            }
+            var pid = await _system.Root.RequestAsync<PID>(_router, msg, ct);
+            return pid;
         }
 
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
         {
-            _cluster = cluster;
+            Cluster = cluster;
             _system = cluster.System;
-            _memberList = cluster.MemberList;
+            MemberList = cluster.MemberList;
             _logger = Log.CreateLogger("MongoIdentityLookup-" + cluster.LoggerId);
             _isClient = isClient;
 
@@ -135,7 +71,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             );
 
             if (isClient) return Task.CompletedTask;
-            var props = Props.FromProducer(() => new MongoPlacementActor(_cluster,this));
+            var props = Props.FromProducer(() => new MongoPlacementActor(Cluster,this));
             _placementActor = _system.Root.SpawnNamed(props, MongoPlacementActorName);
 
             return Task.CompletedTask;
@@ -143,24 +79,24 @@ namespace Proto.Cluster.MongoIdentityLookup
 
         public async Task ShutdownAsync()
         {
-            if (!_isClient) await _cluster.System.Root.PoisonAsync(_placementActor);
+            if (!_isClient) await Cluster.System.Root.PoisonAsync(_placementActor);
 
-            await RemoveMemberAsync(_cluster.Id.ToString());
+            await RemoveMemberAsync(Cluster.Id.ToString());
         }
 
         private Task RemoveMemberAsync(string memberId)
         {
-            return _pids.DeleteManyAsync(p => p.MemberId == memberId);
+            return Pids.DeleteManyAsync(p => p.MemberId == memberId);
         }
 
-        private PID RemotePlacementActor(string address)
+        internal PID RemotePlacementActor(string address)
         {
             return new PID(address, MongoPlacementActorName);
         }
 
         public Task RemoveUniqueIdentityAsync(string uniqueIdentity)
         {
-            return _pids.DeleteManyAsync(p => p.UniqueIdentity == uniqueIdentity);
+            return Pids.DeleteManyAsync(p => p.UniqueIdentity == uniqueIdentity);
         }
     }
 }
