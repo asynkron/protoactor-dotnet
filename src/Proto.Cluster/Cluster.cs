@@ -148,9 +148,6 @@ namespace Proto.Cluster
             catch
             {
                 //YOLO
-            }
-            finally
-            {
                 _pidCache.TryRemove(key,out _);
             }
 
