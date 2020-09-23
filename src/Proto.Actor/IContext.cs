@@ -14,7 +14,7 @@ namespace Proto
     public interface IContext : ISenderContext, IReceiverContext, ISpawnerContext, IStopperContext
     {
         /// <summary>
-        ///     Gets the CancellationToken. Pass this token in long running task to stop them when the actor is about to stop
+        ///     Gets the CancellationToken. Pass this token in long running tasks to stop them when the actor is about to stop
         /// </summary>
         CancellationToken CancellationToken { get; }
         /// <summary>
