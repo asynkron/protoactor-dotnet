@@ -22,9 +22,7 @@ jobs:
 
       - name: Run tests
         run: |
-          docker-compose -f tests/docker-compose.yml up -d
           dotnet test -c Release
-          docker-compose -f tests/docker-compose.yml down
         
   nuget:
     runs-on: windows-latest
