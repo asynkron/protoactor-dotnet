@@ -14,6 +14,7 @@ namespace Proto.Mailbox
     {
         Task InvokeSystemMessageAsync(object msg);
         Task InvokeUserMessageAsync(object msg);
+        CancellationTokenSource CancellationTokenSource { get; }
         void EscalateFailure(Exception reason, object? message);
     }
 
@@ -88,6 +89,9 @@ namespace Proto.Mailbox
     internal class NoopInvoker : IMessageInvoker
     {
         internal static readonly IMessageInvoker Instance = new NoopInvoker();
+
+        public CancellationTokenSource CancellationTokenSource => throw new NotImplementedException();
+
         public Task InvokeSystemMessageAsync(object msg) => throw new NotImplementedException();
 
         public Task InvokeUserMessageAsync(object msg) => throw new NotImplementedException();

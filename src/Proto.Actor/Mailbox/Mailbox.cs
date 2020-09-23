@@ -75,6 +75,8 @@ namespace Proto.Mailbox
         public void PostSystemMessage(object msg)
         {
             _systemMessages.Push(msg);
+            if(msg is Stop)
+                _invoker.CancellationTokenSource.Cancel();
             Interlocked.Increment(ref _systemMessageCount);
             foreach (var t in _stats)
             {

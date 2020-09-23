@@ -41,6 +41,7 @@ namespace Proto
         public virtual ActorSystem System => _context.System;
         public virtual TimeSpan ReceiveTimeout => _context.ReceiveTimeout;
         public virtual IReadOnlyCollection<PID> Children => _context.Children;
+        public CancellationToken CancellationToken => _context.CancellationToken;
 
         public virtual void Respond(object message) => _context.Respond(message);
 

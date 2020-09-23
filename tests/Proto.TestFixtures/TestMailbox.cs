@@ -23,6 +23,8 @@ namespace Proto.TestFixtures
 
         public void PostSystemMessage(object msg)
         {
+            if (msg is Stop)
+                _invoker.CancellationTokenSource.Cancel();
             SystemMessages.Add(msg);
             _invoker?.InvokeSystemMessageAsync(msg).Wait();
         }
