@@ -1,8 +1,7 @@
-﻿using System.Linq;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using MongoDB.Bson;
 using MongoDB.Driver;
 using Proto.Cluster.IdentityLookup;
 using Proto.Router;
@@ -57,7 +56,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             
             var workerProps = Props.FromProducer(() => new MongoIdentityWorker(this));
             //TODO: should pool size be configurable?
-            var routerProps = _system.Root.NewConsistentHashPool(workerProps, 1000);
+            var routerProps = _system.Root.NewConsistentHashPool(workerProps, 50);
             _router = _system.Root.Spawn(routerProps);
 
             //hook up events
