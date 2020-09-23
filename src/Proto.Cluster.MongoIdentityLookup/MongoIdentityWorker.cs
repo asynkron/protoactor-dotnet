@@ -49,7 +49,7 @@ namespace Proto.Cluster.MongoIdentityLookup
                 var memberExists = _memberList.ContainsMemberId(pidLookup.MemberId);
                 if (memberExists) return pid;
                 
-                _logger.LogInformation("Found placement lookup for {Identity} {Kind}, but Member {MemberId} is not part of cluster",identity,kind,pidLookup.MemberId);
+                _logger.LogDebug("Found placement lookup for {Identity} {Kind}, but Member {MemberId} is not part of cluster",identity,kind,pidLookup.MemberId);
                 //if not, spawn a new actor and replace entry
             }
 
@@ -76,7 +76,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             
             //TODO: create the impl :)
             
-            _logger.LogInformation("Storing placement lookup for {Identity} {Kind}",identity,kind);
+            _logger.LogDebug("Storing placement lookup for {Identity} {Kind}",identity,kind);
             
             var remotePid = _lookup.RemotePlacementActor(activator.Address);
             var req = new ActivationRequest
