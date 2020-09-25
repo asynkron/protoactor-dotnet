@@ -1,9 +1,8 @@
-using System;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
 namespace Proto.Cluster.MongoIdentityLookup
 {
+    using System;
+    using MongoDB.Bson.Serialization.Attributes;
+
     public class PidLookupEntity
     {
 
@@ -15,5 +14,6 @@ namespace Proto.Cluster.MongoIdentityLookup
         public string Address { get; set; }
         public string MemberId { get; set; }
         public Guid? LockedBy { get; set; }
+        public int Revision { get; set; }
     }
 }
