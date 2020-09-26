@@ -9,7 +9,6 @@ namespace Proto.Cluster.MongoIdentityLookup
         public string Identity { get; set; }
         public string Kind { get; set; }
         public CancellationToken CancellationToken { get; set; }
-        
         public string HashBy() => Key;
     }
 

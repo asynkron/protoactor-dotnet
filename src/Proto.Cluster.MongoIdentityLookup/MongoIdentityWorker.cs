@@ -14,6 +14,7 @@ namespace Proto.Cluster.MongoIdentityLookup
         private readonly MemberList _memberList;
         private readonly IMongoCollection<PidLookupEntity> _pids;
 
+
         public MongoIdentityWorker(MongoIdentityLookup lookup)
         {
             _cluster = lookup.Cluster;
@@ -116,6 +117,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             //we own the lock
             _logger.LogDebug("Storing placement lookup for {Identity} {Kind}", identity, kind);
 
+
             var remotePid = _lookup.RemotePlacementActor(activator.Address);
             var req = new ActivationRequest
             {
@@ -140,11 +142,11 @@ namespace Proto.Cluster.MongoIdentityLookup
                         .Set(l => l.Revision, 2)
                         .Unset(l => l.LockedBy)
                     , new UpdateOptions(), CancellationToken.None
+
                 );
 
                 return resp.Pid;
             }
-
             //TODO: decide if we throw or return null
             catch (TimeoutException)
             {
