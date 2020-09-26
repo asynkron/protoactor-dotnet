@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace Proto.Cluster.Partition
@@ -21,14 +20,12 @@ namespace Proto.Cluster.Partition
 
         public string GetOwnerMemberByIdentity(string identity)
         {
-            if (_members == null || _members.Length == 0)
+            switch (_members.Length)
             {
-                return "";
-            }
-
-            if (_members.Length == 1)
-            {
-                return _members[0].Info.Address;
+                case 0:
+                    return "";
+                case 1:
+                    return _members[0].Info.Address;
             }
 
             var keyBytes = Encoding.UTF8.GetBytes(identity);
