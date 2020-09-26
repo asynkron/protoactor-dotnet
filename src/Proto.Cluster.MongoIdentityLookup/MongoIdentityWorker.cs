@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -23,8 +22,6 @@ namespace Proto.Cluster.MongoIdentityLookup
             _memberList = lookup.MemberList;
             _lookup = lookup;
         }
-        
-        private static readonly ConcurrentDictionary<string,PID> requests = new ConcurrentDictionary<string, PID>();
 
         public async Task ReceiveAsync(IContext context)
         {
@@ -32,35 +29,22 @@ namespace Proto.Cluster.MongoIdentityLookup
             {
                 if (context.Message is GetPid msg)
                 {
-                    var current = requests.GetOrAdd(msg.Key, context.Self);
-                    if (!current.Equals(context.Self))
+                    if (_cluster.PidCache.TryGet(msg.Kind, msg.Identity, out var existing))
                     {
-                        _logger.LogCritical("Request already in progress by {Other}, {Self}",current.ToShortString(),context.Self.ToShortString());
-                    }
-
-                    try
-                    {
-                        if (_cluster.PidCache.TryGet(msg.Kind, msg.Identity, out var existing))
-                        {
-                            context.Respond(new PidResult
-                                {
-                                    Pid = existing
-                                }
-                            );
-                            return;
-                        }
-
-                        var pid = await GetWithGlobalLock(msg.Key, msg.Identity, msg.Kind, CancellationToken.None);
                         context.Respond(new PidResult
                             {
-                                Pid = pid
+                                Pid = existing
                             }
                         );
+                        return;
                     }
-                    finally
-                    {
-                        requests.TryRemove(msg.Key, out var _);
-                    }
+
+                    var pid = await GetWithGlobalLock(msg.Key, msg.Identity, msg.Kind, CancellationToken.None);
+                    context.Respond(new PidResult
+                        {
+                            Pid = pid
+                        }
+                    );
                 }
             }
             catch (Exception x)
@@ -84,10 +68,10 @@ namespace Proto.Cluster.MongoIdentityLookup
             //try to acquire global lock for this key
             var requestId = Guid.NewGuid();
             var weOwnTheLock = await TryAcquireLockAsync(key, identity, kind, requestId);
-            
+
             //we didn't get the lock, spin read for x times before giving up
             if (!weOwnTheLock) return await SpinWaitOnLockAsync(key, identity, kind, ct);
-            
+
             //we have the lock, spawn and return
             Console.Write("&");
             var pid = await SpawnActivationAsync(key, identity, kind, activator, requestId, ct);
@@ -113,8 +97,8 @@ namespace Proto.Cluster.MongoIdentityLookup
             }
             catch (MongoWriteException)
             {
-                _logger.LogCritical("Should not be able to get here {Key}",key);
-                
+                _logger.LogCritical("Should not be able to get here {Key}", key);
+
                 var l = await _pids.ReplaceOneAsync(x => x.Key == key && x.LockedBy == null && x.Revision == 0,
                     lockEntity,
                     new ReplaceOptions
@@ -160,7 +144,6 @@ namespace Proto.Cluster.MongoIdentityLookup
                         .Set(l => l.Revision, 2)
                         .Unset(l => l.LockedBy)
                     , new UpdateOptions(), CancellationToken.None
-
                 );
 
                 return resp.Pid;
@@ -227,7 +210,7 @@ namespace Proto.Cluster.MongoIdentityLookup
                 await _lookup.RemoveUniqueIdentityAsync(pidLookup.UniqueIdentity);
                 return null;
             }
-            
+
             var isLocked = pidLookup.LockedBy != null;
             if (isLocked) return null;
 
@@ -243,10 +226,7 @@ namespace Proto.Cluster.MongoIdentityLookup
         private async Task DeleteLock(string key, Guid requestId, CancellationToken ct)
         {
             var res = await _pids.DeleteOneAsync(x => x.Key == key && x.LockedBy == requestId, ct);
-            if (res.DeletedCount == 0)
-            {
-                _logger.LogError("Deleted lock {Key} failed",key);
-            }
+            if (res.DeletedCount == 0) _logger.LogError("Deleted lock {Key} failed", key);
         }
     }
 }

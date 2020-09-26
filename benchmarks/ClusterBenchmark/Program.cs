@@ -38,10 +38,10 @@ namespace ClusterExperiment1
                 {
                     var rnd = new Random();
                     while (true)
-                    {
-                        await Task.Run(async () =>
+                    { 
+                        Task.Run(async () =>
                             {
-                                var id = "myactor" + rnd.Next(0, 100);
+                                var id = "myactor" + rnd.Next(0, 1000);
                                 try
                                 {
                                    
@@ -176,6 +176,8 @@ namespace ClusterExperiment1
             var connectionString = Environment.GetEnvironmentVariable("MONGO") ?? "mongodb://127.0.0.1:27017/ProtoMongo";
             var url = MongoUrl.Create(connectionString);
             var settings = MongoClientSettings.FromUrl(url);
+            settings.WriteConcern = WriteConcern.Acknowledged;
+            settings.ReadConcern = ReadConcern.Majority;
             var client = new MongoClient(settings);
             var database = client.GetDatabase("ProtoMongo");
             return database;
