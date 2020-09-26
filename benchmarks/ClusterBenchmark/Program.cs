@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
@@ -40,32 +39,38 @@ namespace ClusterExperiment1
                     var rnd = new Random();
                     while (true)
                     {
-                        try
-                        {
-                            var id = "myactor" + rnd.Next(0, 1000);
-                            var res = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
-                            );
+                        await Task.Run(async () =>
+                            {
+                                var id = "myactor" + rnd.Next(0, 100);
+                                try
+                                {
+                                   
+                                    var res = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+                                        new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
+                                    );
 
-                            if (res == null)
-                            {
-                                logger.LogError("Null response");
+                                    if (res == null)
+                                    {
+                                        logger.LogError("Null response");
+                                    }
+                                    else
+                                    {
+                                        Console.Write(".");
+                                    }
+                                }
+                                catch (Exception x)
+                                {
+                                    logger.LogError(x,"Request timeout for {Id}", id);
+                                }
                             }
-                            else
-                            {
-                                Console.Write(".");
-                            }
-                        }
-                        catch (Exception)
-                        {
-                            logger.LogError("Request timeout");
-                        }
+                        );
                     }
                 }
             );
 
+            Console.ReadLine();
 
-            Thread.Sleep(Timeout.Infinite);
+            //   Thread.Sleep(Timeout.Infinite);
         }
 
         private static ILogger SetupLogger()
@@ -146,19 +151,6 @@ namespace ClusterExperiment1
             try
             {
                 Console.WriteLine("Running with InClusterConfig");
-                // var namespaceFile = Path.Combine(
-                //     $"{Path.DirectorySeparatorChar}var",
-                //     "run",
-                //     "secrets",
-                //     "kubernetes.io",
-                //     "serviceaccount",
-                //     "namespace"
-                // );
-                // Console.WriteLine(namespaceFile);
-                //
-                // KubernetesClientConfiguration.InClusterConfig();
-                //
-                // var cachedNamespace = File.ReadAllText(namespaceFile);
 
                 var kubernetesConfig =
                     KubernetesClientConfiguration
