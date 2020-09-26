@@ -14,10 +14,11 @@ namespace Proto.Router
 {
     public static class MD5Hasher
     {
-        private static readonly HashAlgorithm HashAlgorithm = MD5.Create();
+   //     private static readonly HashAlgorithm HashAlgorithm = MD5.Create();
 
         public static uint Hash(string hashKey)
         {
+            var HashAlgorithm = MD5.Create();
             var digest = HashAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(hashKey));
             var hash = BitConverter.ToUInt32(digest, 0);
             return hash;

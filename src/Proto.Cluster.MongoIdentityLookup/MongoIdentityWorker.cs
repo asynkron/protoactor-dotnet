@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -22,6 +23,8 @@ namespace Proto.Cluster.MongoIdentityLookup
             _memberList = lookup.MemberList;
             _lookup = lookup;
         }
+        
+        private static readonly ConcurrentDictionary<string,PID> requests = new ConcurrentDictionary<string, PID>();
 
         public async Task ReceiveAsync(IContext context)
         {
@@ -29,23 +32,35 @@ namespace Proto.Cluster.MongoIdentityLookup
             {
                 if (context.Message is GetPid msg)
                 {
-                    if (_cluster.PidCache.TryGet(msg.Kind,msg.Identity,out var existing))
+                    var current = requests.GetOrAdd(msg.Key, context.Self);
+                    if (!current.Equals(context.Self))
                     {
+                        _logger.LogCritical("Request already in progress by {Other}, {Self}",current.ToShortString(),context.Self.ToShortString());
+                    }
+
+                    try
+                    {
+                        if (_cluster.PidCache.TryGet(msg.Kind, msg.Identity, out var existing))
+                        {
+                            context.Respond(new PidResult
+                                {
+                                    Pid = existing
+                                }
+                            );
+                            return;
+                        }
+
+                        var pid = await GetWithGlobalLock(msg.Key, msg.Identity, msg.Kind, CancellationToken.None);
                         context.Respond(new PidResult
                             {
-                                Pid = existing
+                                Pid = pid
                             }
                         );
-                        return;
                     }
-                    
-                    Console.Write("%");
-                    var pid = await GetWithGlobalLock(msg.Key, msg.Identity, msg.Kind, msg.CancellationToken);
-                    context.Respond(new PidResult
-                        {
-                            Pid = pid
-                        }
-                    );
+                    finally
+                    {
+                        requests.TryRemove(msg.Key, out var _);
+                    }
                 }
             }
             catch (Exception x)
@@ -74,6 +89,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             if (!weOwnTheLock) return await SpinWaitOnLockAsync(key, identity, kind, ct);
             
             //we have the lock, spawn and return
+            Console.Write("&");
             var pid = await SpawnActivationAsync(key, identity, kind, activator, requestId, ct);
             return pid;
         }
@@ -97,6 +113,8 @@ namespace Proto.Cluster.MongoIdentityLookup
             }
             catch (MongoWriteException)
             {
+                _logger.LogCritical("Should not be able to get here {Key}",key);
+                
                 var l = await _pids.ReplaceOneAsync(x => x.Key == key && x.LockedBy == null && x.Revision == 0,
                     lockEntity,
                     new ReplaceOptions
