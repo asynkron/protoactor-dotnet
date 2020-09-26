@@ -13,7 +13,7 @@ namespace Proto.Cluster.MongoIdentityLookup
         private readonly MongoIdentityLookup _lookup;
         private readonly MemberList _memberList;
         private readonly IMongoCollection<PidLookupEntity> _pids;
-
+ 
 
         public MongoIdentityWorker(MongoIdentityLookup lookup)
         {
@@ -66,18 +66,17 @@ namespace Proto.Cluster.MongoIdentityLookup
             if (activator == null) return null;
 
             //try to acquire global lock for this key
-            var requestId = Guid.NewGuid();
+            var requestId = Guid.NewGuid().ToString();
             var weOwnTheLock = await TryAcquireLockAsync(key, identity, kind, requestId);
 
-            //we didn't get the lock, spin read for x times before giving up
-            if (!weOwnTheLock) return await SpinWaitOnLockAsync(key, identity, kind, ct);
-
             //we have the lock, spawn and return
-            var pid = await SpawnActivationAsync(key, identity, kind, activator, requestId, ct);
-            return pid;
+            if (weOwnTheLock) return await SpawnActivationAsync(key, identity, kind, activator, requestId, ct);
+            
+            //we didn't get the lock, spin read for x times before giving up
+            return await SpinWaitOnLockAsync(key, identity, kind, ct);
         }
 
-        private async Task<bool> TryAcquireLockAsync(string key, string identity, string kind, Guid requestId)
+        private async Task<bool> TryAcquireLockAsync(string key, string identity, string kind, string requestId)
         {
             var lockEntity = new PidLookupEntity
             {
@@ -87,15 +86,17 @@ namespace Proto.Cluster.MongoIdentityLookup
                 Kind = kind,
                 LockedBy = requestId,
                 Revision = 1,
-                MemberId = _cluster.Id.ToString()
+                MemberId = null
             };
             try
             {
+                //we 100% sure own the lock here
                 await _pids.InsertOneAsync(lockEntity, new InsertOneOptions());
                 return true;
             }
             catch (MongoWriteException)
             {
+                
                 var l = await _pids.ReplaceOneAsync(x => x.Key == key && x.LockedBy == null && x.Revision == 0,
                     lockEntity,
                     new ReplaceOptions
@@ -103,19 +104,17 @@ namespace Proto.Cluster.MongoIdentityLookup
                         IsUpsert = false
                     }
                 );
-
-                //if we matched a document, we are now the owner of the lock
-                //if we did not match, someone else is
-                return l.MatchedCount == 1;
+                
+                //if l.MatchCount == 1, then one document was updated by us, and we should own the lock, no?
+                return l.IsAcknowledged && l.ModifiedCount == 1;
             }
         }
 
         private async Task<PID> SpawnActivationAsync(string key, string identity, string kind, Member activator,
-            Guid requestId, CancellationToken ct)
+            string requestId, CancellationToken ct)
         {
             //we own the lock
             _logger.LogDebug("Storing placement lookup for {Identity} {Kind}", identity, kind);
-
 
             var remotePid = _lookup.RemotePlacementActor(activator.Address);
             var req = new ActivationRequest
@@ -146,6 +145,7 @@ namespace Proto.Cluster.MongoIdentityLookup
                 //nothing was updated
                 if (res.MatchedCount != 1)
                 {
+                    //meaning, we spawned an actor but its placement is not stored anywhere
                     _logger.LogCritical("No entry was updated {Key}",key);
                 }
 
@@ -192,7 +192,7 @@ namespace Proto.Cluster.MongoIdentityLookup
 
             //Stale lock. just delete it and let cluster retry
             _logger.LogDebug($"Stale lock: {pidLookupEntity.Key}");
-            await DeleteLock(key, lockId!.Value, CancellationToken.None);
+            await DeleteLock(key, lockId, CancellationToken.None);
             return null;
         }
 
@@ -206,6 +206,9 @@ namespace Proto.Cluster.MongoIdentityLookup
 
         private async Task<PID> ValidateAndMapToPid(string identity, string kind, PidLookupEntity pidLookup)
         {
+            var isLocked = pidLookup.LockedBy != null;
+            if (isLocked) return null;
+            
             var memberExists = pidLookup.MemberId == null || _memberList.ContainsMemberId(pidLookup.MemberId);
             if (!memberExists)
             {
@@ -219,9 +222,6 @@ namespace Proto.Cluster.MongoIdentityLookup
                 return null;
             }
 
-            var isLocked = pidLookup.LockedBy != null;
-            if (isLocked) return null;
-
             var pid = new PID(pidLookup.Address, pidLookup.UniqueIdentity);
             return pid;
         }
@@ -231,7 +231,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             return await _pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct);
         }
 
-        private async Task DeleteLock(string key, Guid requestId, CancellationToken ct)
+        private async Task DeleteLock(string key, string requestId, CancellationToken ct)
         {
             var res = await _pids.DeleteOneAsync(x => x.Key == key && x.LockedBy == requestId, ct);
             if (res.DeletedCount == 0) _logger.LogError("Deleted lock {Key} failed", key);
