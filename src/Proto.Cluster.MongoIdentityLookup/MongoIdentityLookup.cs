@@ -39,7 +39,7 @@ namespace Proto.Cluster.MongoIdentityLookup
                 Key = key,
                 Identity = identity,
                 Kind = kind,
-                CancellationToken = ct
+                CancellationToken = ct,
             };
 
             var res = await _system.Root.RequestAsync<PidResult>(_router, msg, ct);
@@ -56,7 +56,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             
             var workerProps = Props.FromProducer(() => new MongoIdentityWorker(this));
             //TODO: should pool size be configurable?
-            var routerProps = _system.Root.NewConsistentHashPool(workerProps, 50);
+            var routerProps = _system.Root.NewConsistentHashPool(workerProps, 1);
             _router = _system.Root.Spawn(routerProps);
 
             //hook up events
