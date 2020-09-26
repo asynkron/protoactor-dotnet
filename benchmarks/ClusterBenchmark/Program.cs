@@ -32,7 +32,7 @@ namespace ClusterExperiment1
 
             var cluster = await SpawnClient();
 
-            await Task.Delay(1000);
+            await Task.Delay(5000);
             
             _ = Task.Run(async () =>
                 {
