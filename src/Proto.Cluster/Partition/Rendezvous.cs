@@ -41,11 +41,9 @@ namespace Proto.Cluster.Partition
                 var hashBytes = member.Hash;
                 var score = RdvHash(hashBytes, keyBytes);
 
-                if (score > maxScore)
-                {
-                    maxScore = score;
-                    maxNode = member.Info;
-                }
+                if (score <= maxScore) continue;
+                maxScore = score;
+                maxNode = member.Info;
             }
 
             return maxNode?.Address ?? "";
@@ -62,13 +60,8 @@ namespace Proto.Cluster.Partition
 
         private static uint RdvHash(byte[] node, byte[] key)
         {
-            //TODO: this is silly expensive, fix it..
-            //the FNV1A32 mutates interanlly, so we cant use instance var with this....
-            using HashAlgorithm hashAlgorithm = FNV1A32.Create();
             var hashBytes = MergeBytes(key, node);
-            var digest = hashAlgorithm.ComputeHash(hashBytes);
-            var hash = BitConverter.ToUInt32(digest, 0);
-            return hash;
+            return MurmurHash2.Hash(hashBytes);
         }
 
         private static byte[] MergeBytes(byte[] front, byte[] back)

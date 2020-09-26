@@ -7,22 +7,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Proto.Router
 {
-    public static class MD5Hasher
-    {
-        public static uint Hash(string hashKey)
-        {
-            var hashAlgorithm = MD5.Create();
-            var digest = hashAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(hashKey));
-            var hash = BitConverter.ToUInt32(digest, 0);
-            return hash;
-        }
-    }
-
     public class HashRing
     {
         private readonly Func<string, uint> _hash;
