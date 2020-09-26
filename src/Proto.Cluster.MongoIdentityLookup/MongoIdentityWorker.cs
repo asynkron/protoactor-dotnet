@@ -73,7 +73,6 @@ namespace Proto.Cluster.MongoIdentityLookup
             if (!weOwnTheLock) return await SpinWaitOnLockAsync(key, identity, kind, ct);
 
             //we have the lock, spawn and return
-            Console.Write("&");
             var pid = await SpawnActivationAsync(key, identity, kind, activator, requestId, ct);
             return pid;
         }
