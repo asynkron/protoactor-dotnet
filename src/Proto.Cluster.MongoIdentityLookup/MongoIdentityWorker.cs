@@ -106,7 +106,7 @@ namespace Proto.Cluster.MongoIdentityLookup
 
                 //if we matched a document, we are now the owner of the lock
                 //if we did not match, someone else is
-                return l.ModifiedCount == 1;
+                return l.MatchedCount == 1;
             }
         }
 
@@ -132,7 +132,7 @@ namespace Proto.Cluster.MongoIdentityLookup
                     )
                     : await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
 
-                await _pids.UpdateOneAsync(
+                var res = await _pids.UpdateOneAsync(
                     s => s.Key == key && s.LockedBy == requestId && s.Revision == 1,
                     Builders<PidLookupEntity>.Update
                         .Set(l => l.Address, activator.Address)
@@ -142,6 +142,12 @@ namespace Proto.Cluster.MongoIdentityLookup
                         .Unset(l => l.LockedBy)
                     , new UpdateOptions(), CancellationToken.None
                 );
+
+                //nothing was updated
+                if (res.MatchedCount != 1)
+                {
+                    _logger.LogCritical("No entry was updated {Key}",key);
+                }
 
                 return resp.Pid;
             }
@@ -167,7 +173,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             var lockId = pidLookupEntity?.LockedBy;
             if (lockId != null)
             {
-                //There is an active lock on the pid, spinwait
+                //There is an active lock on the pid, spin wait
                 var i = 0;
                 do
                 {
@@ -175,11 +181,16 @@ namespace Proto.Cluster.MongoIdentityLookup
                 } while ((pidLookupEntity = await LookupKey(key, ct))?.LockedBy == lockId && ++i < 10);
             }
 
+            //the lookup entity was lost, stale lock maybe?
             if (pidLookupEntity == null) return null;
+            
+            //lookup was unlocked, return this pid
             if (pidLookupEntity.LockedBy == null) return await ValidateAndMapToPid(identity, kind, pidLookupEntity);
+            
+            //Still locked but not by the same request that originally locked it, so not stale
             if (pidLookupEntity.LockedBy != lockId) return null;
 
-            //Stale lock. 
+            //Stale lock. just delete it and let cluster retry
             _logger.LogDebug($"Stale lock: {pidLookupEntity.Key}");
             await DeleteLock(key, lockId!.Value, CancellationToken.None);
             return null;
