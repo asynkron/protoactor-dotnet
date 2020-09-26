@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace Proto.Cluster.Partition
@@ -21,14 +20,12 @@ namespace Proto.Cluster.Partition
 
         public string GetOwnerMemberByIdentity(string identity)
         {
-            if (_members == null || _members.Length == 0)
+            switch (_members.Length)
             {
-                return "";
-            }
-
-            if (_members.Length == 1)
-            {
-                return _members[0].Info.Address;
+                case 0:
+                    return "";
+                case 1:
+                    return _members[0].Info.Address;
             }
 
             var keyBytes = Encoding.UTF8.GetBytes(identity);
@@ -41,11 +38,9 @@ namespace Proto.Cluster.Partition
                 var hashBytes = member.Hash;
                 var score = RdvHash(hashBytes, keyBytes);
 
-                if (score > maxScore)
-                {
-                    maxScore = score;
-                    maxNode = member.Info;
-                }
+                if (score <= maxScore) continue;
+                maxScore = score;
+                maxNode = member.Info;
             }
 
             return maxNode?.Address ?? "";
@@ -62,13 +57,8 @@ namespace Proto.Cluster.Partition
 
         private static uint RdvHash(byte[] node, byte[] key)
         {
-            //TODO: this is silly expensive, fix it..
-            //the FNV1A32 mutates interanlly, so we cant use instance var with this....
-            using HashAlgorithm hashAlgorithm = FNV1A32.Create();
             var hashBytes = MergeBytes(key, node);
-            var digest = hashAlgorithm.ComputeHash(hashBytes);
-            var hash = BitConverter.ToUInt32(digest, 0);
-            return hash;
+            return MurmurHash2.Hash(hashBytes);
         }
 
         private static byte[] MergeBytes(byte[] front, byte[] back)

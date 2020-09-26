@@ -1,13 +1,12 @@
+using MongoDB.Bson.Serialization.Attributes;
+
 namespace Proto.Cluster.MongoIdentityLookup
 {
     using System;
-    using MongoDB.Bson.Serialization.Attributes;
 
     public class PidLookupEntity
     {
-
-        [BsonId]
-        public string Key { get; set; }
+        [BsonId] public string Key { get; set; }
         public string Identity { get; set; }
         public string UniqueIdentity { get; set; }
         public string Kind { get; set; }

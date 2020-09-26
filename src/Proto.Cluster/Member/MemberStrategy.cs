@@ -34,8 +34,6 @@ namespace Proto.Cluster
             _rr = new RoundRobinMemberSelector(this);
         }
 
-        public int Count => _members.Count;
-
         public List<Member> GetAllMembers() => _members;
 
         //TODO: account for Member.MemberId
