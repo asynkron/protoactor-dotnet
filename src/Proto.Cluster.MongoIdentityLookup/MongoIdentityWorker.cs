@@ -97,8 +97,6 @@ namespace Proto.Cluster.MongoIdentityLookup
             }
             catch (MongoWriteException)
             {
-                _logger.LogCritical("Should not be able to get here {Key}", key);
-
                 var l = await _pids.ReplaceOneAsync(x => x.Key == key && x.LockedBy == null && x.Revision == 0,
                     lockEntity,
                     new ReplaceOptions
