@@ -26,24 +26,24 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
 
         [Theory]
         [InlineData(1, 100, 10, true)]
+        [InlineData(3, 100, 10, true)]
         [InlineData(1, 100, 10, false)]
-        [InlineData(2, 10, 10, true)]
-        [InlineData(2, 10, 10, false)]
+        // [InlineData(3, 100, 10, false)]
         public async Task MongoIdentityClusterTest(int clusterNodes, int sendingActors, int messagesSentPerCall,
             bool useMongoIdentity)
         {
             const string aggregatorId = "agg1";
             var clusterMembers = await SpawnMembers(clusterNodes, useMongoIdentity);
 
-            var maxWait = new CancellationTokenSource(5000);
+            var maxWait = new CancellationTokenSource(10000);
 
             _testOutputHelper.WriteLine("Sending");
-            var sendersToldToSend = clusterMembers.SelectMany(
+            var sendRequestsSent = clusterMembers.SelectMany(
                 cluster =>
                 {
                     return Enumerable.Range(0, sendingActors)
                         .Select(id => cluster
-                            .RequestAsync<bool>(id.ToString(), "sender", new SendToRequest
+                            .RequestAsync<Ack>(id.ToString(), "sender", new SendToRequest
                                 {
                                     Count = messagesSentPerCall,
                                     Id = aggregatorId
@@ -53,29 +53,25 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
                 }
             ).ToList();
 
-            try
-            {
-                await Task.WhenAll(sendersToldToSend);
-                _testOutputHelper.WriteLine("All responded");
-            }
-            catch (TimeoutException)
-            {
-                _testOutputHelper.WriteLine("Timed out");
-            }
+            await Task.WhenAll(sendRequestsSent);
+            _testOutputHelper.WriteLine("All responded");
+
 
             var result = await clusterMembers.First().RequestAsync<AggregatorResult>(aggregatorId, "aggregator",
                 new AskAggregator(),
                 new CancellationTokenSource(5000).Token
             );
+
             result.Should().NotBeNull("We expect a response from the aggregator actor");
-            result.DifferentKeys.Should().Be(sendersToldToSend.Count);
-            result.OutOfOrder.Should().Be(0);
-            result.TotalMessages.Should().Be(sendersToldToSend.Count * messagesSentPerCall);
+            result.SequenceKeyCount.Should().Be(sendRequestsSent.Count);
+            result.SenderKeyCount.Should().Be(sendingActors, "We expect a single instantiation per sender id");
+            result.OutOfOrderCount.Should().Be(0);
+            result.TotalMessages.Should().Be(sendRequestsSent.Count * messagesSentPerCall);
         }
 
         private async Task<IList<Cluster>> SpawnMembers(int memberCount, bool useMongoIdentity)
         {
-            var clusterName = "testcluster." + Guid.NewGuid().ToString("N");
+            var clusterName = "test-cluster." + Guid.NewGuid().ToString("N");
             var clusterTasks = Enumerable.Range(0, memberCount).Select(_ => SpawnMember(clusterName, useMongoIdentity))
                 .ToList();
             await Task.WhenAll(clusterTasks);
@@ -91,20 +87,8 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
 
             var cluster = new Cluster(system, serialization);
 
-            var senderProps = Props.FromProducer(() =>
-                {
-                    _testOutputHelper.WriteLine("Constructing sender");
-                    return new SenderActor(cluster, _testOutputHelper);
-                }
-            );
-
-            var aggProps = Props.FromProducer(() =>
-                {
-                    _testOutputHelper.WriteLine("Constructing aggregator");
-
-                    return new VerifyOrderActor();
-                }
-            );
+            var senderProps = Props.FromProducer(() => new SenderActor(cluster, _testOutputHelper));
+            var aggProps = Props.FromProducer(() => new VerifyOrderActor());
 
             cluster.Remote.RegisterKnownKind("sender", senderProps);
             cluster.Remote.RegisterKnownKind("aggregator", aggProps);
@@ -155,8 +139,8 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             private readonly Cluster _cluster;
             private readonly ITestOutputHelper _testOutputHelper;
 
-            private string _id;
-            private int _seq = 0;
+            private string _instanceId;
+            private int _seq;
 
             public SenderActor(Cluster cluster, ITestOutputHelper testOutputHelper)
             {
@@ -166,11 +150,10 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
 
             public async Task ReceiveAsync(IContext context)
             {
-                _testOutputHelper.WriteLine("Receiving " + context.Message);
                 switch (context.Message)
                 {
                     case GrainInit init:
-                        _id = init.Kind + ":" + init.Identity;
+                        _instanceId = $"{init.Kind}:{init.Identity}.{Guid.NewGuid():N}";
                         break;
                     case SendToRequest sendTo:
 
@@ -179,10 +162,11 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
                         {
                             try
                             {
-                                await _cluster.RequestAsync<bool>(sendTo.Id, "aggregator", new SequentialIdRequest
+                                await _cluster.RequestAsync<Ack>(sendTo.Id, "aggregator", new SequentialIdRequest
                                     {
-                                        Key = key,
-                                        SequenceId = _seq++
+                                        SequenceKey = key,
+                                        SequenceId = _seq++,
+                                        Sender = _instanceId
                                     }, CancellationToken.None
                                 );
                             }
@@ -192,14 +176,56 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
                             }
                         }
 
-                        context.Respond(true);
+                        context.Respond(new Ack());
                         break;
                 }
             }
         }
-    }
 
-    internal class useMongoIdentity
-    {
+        private class VerifyOrderActor : IActor
+        {
+            private int _outOfOrderErrors;
+            private int _seqRequests;
+
+            private readonly Dictionary<string, int> _lastReceivedSeq = new Dictionary<string, int>();
+            private readonly HashSet<string> _senders = new HashSet<string>();
+
+            public Task ReceiveAsync(IContext context)
+            {
+                switch (context.Message)
+                {
+                    case SequentialIdRequest request:
+                        HandleOrderedRequest(request, context);
+                        break;
+                    case AskAggregator _:
+                        context.Respond(new AggregatorResult
+                            {
+                                SequenceKeyCount = _lastReceivedSeq.Count,
+                                TotalMessages = _seqRequests,
+                                OutOfOrderCount = _outOfOrderErrors,
+                                SenderKeyCount = _senders.Count
+                            }
+                        );
+                        break;
+                }
+
+                return Actor.Done;
+            }
+
+            private void HandleOrderedRequest(SequentialIdRequest request, IContext context)
+            {
+                _seqRequests++;
+                _senders.Add(request.Sender);
+                var outOfOrder = _lastReceivedSeq.TryGetValue(request.SequenceKey, out var last) &&
+                                 last + 1 != request.SequenceId;
+                _lastReceivedSeq[request.SequenceKey] = request.SequenceId;
+                if (outOfOrder)
+                {
+                    _outOfOrderErrors++;
+                }
+
+                context.Respond(new Ack());
+            }
+        }
     }
 }
