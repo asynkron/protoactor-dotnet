@@ -1,0 +1,21 @@
+﻿syntax = "proto3";
+package actor;
+option csharp_namespace = "ClusterTest.Messages";
+
+message SendToRequest{
+  string id = 1;
+  int32 count = 2;
+}
+
+message SequentialIdRequest{
+  string key = 1;
+  int32 sequence_id = 2;
+}
+
+message AskAggregator{}
+
+message AggregatorResult{
+  int32 total_messages = 1;
+  int32 out_of_order = 2;
+  int32 different_keys = 3;
+}
