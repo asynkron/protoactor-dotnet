@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
+using Divergic.Logging.Xunit;
 using FluentAssertions;
 using MongoDB.Driver;
 using Proto.Cluster.Consul;
@@ -21,29 +22,32 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
 
         public MongoClusterTest(ITestOutputHelper testOutputHelper)
         {
+            var factory = LogFactory.Create(testOutputHelper);
             _testOutputHelper = testOutputHelper;
+            Log.SetLoggerFactory(factory);
         }
 
         [Theory]
         [InlineData(1, 100, 10, true)]
         [InlineData(3, 100, 10, true)]
-        [InlineData(1, 100, 10, false)]
+        // [InlineData(2, 1, 1, false)]
         // [InlineData(3, 100, 10, false)]
         public async Task MongoIdentityClusterTest(int clusterNodes, int sendingActors, int messagesSentPerCall,
             bool useMongoIdentity)
         {
-            const string aggregatorId = "agg1";
+            const string aggregatorId = "agg-1";
             var clusterMembers = await SpawnMembers(clusterNodes, useMongoIdentity);
 
-            var maxWait = new CancellationTokenSource(10000);
+            await Task.Delay(1000);
+            
+            var maxWait = new CancellationTokenSource(5000);
 
-            _testOutputHelper.WriteLine("Sending");
             var sendRequestsSent = clusterMembers.SelectMany(
                 cluster =>
                 {
                     return Enumerable.Range(0, sendingActors)
                         .Select(id => cluster
-                            .RequestAsync<Ack>(id.ToString(), "sender", new SendToRequest
+                            .RequestAsync<Ack>($"snd-{id}", "sender", new SendToRequest
                                 {
                                     Count = messagesSentPerCall,
                                     Id = aggregatorId
@@ -54,18 +58,16 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             ).ToList();
 
             await Task.WhenAll(sendRequestsSent);
-            _testOutputHelper.WriteLine("All responded");
-
-
+            
             var result = await clusterMembers.First().RequestAsync<AggregatorResult>(aggregatorId, "aggregator",
                 new AskAggregator(),
                 new CancellationTokenSource(5000).Token
             );
 
             result.Should().NotBeNull("We expect a response from the aggregator actor");
-            result.SequenceKeyCount.Should().Be(sendRequestsSent.Count);
+            result.SequenceKeyCount.Should().Be(sendRequestsSent.Count, "We expect a unique id per send request");
             result.SenderKeyCount.Should().Be(sendingActors, "We expect a single instantiation per sender id");
-            result.OutOfOrderCount.Should().Be(0);
+            result.OutOfOrderCount.Should().Be(0, "Messages from one actor to another should be received in order");
             result.TotalMessages.Should().Be(sendRequestsSent.Count * messagesSentPerCall);
         }
 
