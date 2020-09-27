@@ -132,7 +132,7 @@ namespace Proto.Cluster
 
         public PidCache PidCache { get; } = new PidCache();
 
-        public async Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct)
+        public async Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) 
         {
             var key = kind + "." + identity;
             _logger.LogDebug("Requesting {Identity}-{Kind} Message {Message}", identity, kind, message);
