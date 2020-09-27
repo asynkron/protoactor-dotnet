@@ -31,6 +31,8 @@ namespace Proto.TestFixtures
 
         public int Throughput { get; } = 10;
 
+        public CancellationTokenSource CancellationTokenSource { get; } = new CancellationTokenSource();
+        
         public void Schedule(Func<Task> runner)
         {
             var waitingTaskExists = _taskCompletionQueue.TryDequeue(out TaskCompletionSource<int> onScheduleCompleted);

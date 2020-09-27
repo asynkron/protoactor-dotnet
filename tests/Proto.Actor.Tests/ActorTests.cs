@@ -86,6 +86,41 @@ namespace Proto.Tests
             Assert.IsType<Stopped>(msgs[3]);
         }
 
+        [Fact]
+        public async Task StopActorWithLongRunningTask()
+        {
+            var messages = new Queue<object>();
+
+            var pid = Context.Spawn(
+                Props.FromFunc(async ctx =>
+                    {
+                        if (ctx.Message is string)
+                            try
+                            {
+                                await Task.Delay(5000, ctx.CancellationToken);
+                            }
+                            catch (System.Exception e)
+                            {
+                                messages.Enqueue(e);
+                            }
+                        messages.Enqueue(ctx.Message);
+                    })
+                );
+
+            Context.Send(pid, "hello");
+            // Wait a little while the actor starts to process the message
+            await Task.Delay(10);
+            await Context.StopAsync(pid);
+
+            Assert.Equal(5, messages.Count);
+            var msgs = messages.ToArray();
+            Assert.IsType<Started>(msgs[0]);
+            Assert.IsType<TaskCanceledException>(msgs[1]);
+            Assert.IsType<string>(msgs[2]);
+            Assert.IsType<Stopping>(msgs[3]);
+            Assert.IsType<Stopped>(msgs[4]);
+        }
+
         public static PID SpawnForwarderFromFunc(Receive forwarder) => Context.Spawn(Props.FromFunc(forwarder));
 
         [Fact]

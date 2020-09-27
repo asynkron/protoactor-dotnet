@@ -43,6 +43,8 @@ namespace Proto
         private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
 
         public ActorSystem System { get; }
+        public CancellationTokenSource? CancellationTokenSource => _extras?.CancellationTokenSource;
+        public CancellationToken CancellationToken => EnsureExtras().CancellationTokenSource.Token;
         IReadOnlyCollection<PID> IContext.Children => Children;
 
         public IActor? Actor { get; private set; }
@@ -427,7 +429,7 @@ namespace Proto
         }
 
         private Task HandleUnwatch(Unwatch uw)
-        { 
+        {
             _extras?.Unwatch(uw.Watcher);
             return Done;
         }
