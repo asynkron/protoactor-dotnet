@@ -69,11 +69,15 @@ namespace Proto.Cluster.MongoIdentityLookup
             var requestId = Guid.NewGuid().ToString();
             var weOwnTheLock = await TryAcquireLockAsync(key, identity, kind, requestId);
 
-            //we have the lock, spawn and return
-            if (weOwnTheLock) return await SpawnActivationAsync(key, identity, kind, activator, requestId, ct);
             
             //we didn't get the lock, spin read for x times before giving up
-            return await SpinWaitOnLockAsync(key, identity, kind, ct);
+            if (!weOwnTheLock) return await SpinWaitOnLockAsync(key, identity, kind, ct);
+            
+            //we have the lock, spawn and return
+            var pid = await SpawnActivationAsync(key, identity, kind, activator, requestId, ct);
+            //update cache
+            _cluster.PidCache.TryAdd(kind, identity, pid);
+            return pid;
         }
 
         private async Task<bool> TryAcquireLockAsync(string key, string identity, string kind, string requestId)
