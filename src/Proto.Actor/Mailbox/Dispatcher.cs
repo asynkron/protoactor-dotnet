@@ -14,7 +14,7 @@ namespace Proto.Mailbox
     {
         Task InvokeSystemMessageAsync(object msg);
         Task InvokeUserMessageAsync(object msg);
-        CancellationTokenSource CancellationTokenSource { get; }
+        CancellationTokenSource? CancellationTokenSource { get; }
         void EscalateFailure(Exception reason, object? message);
     }
 

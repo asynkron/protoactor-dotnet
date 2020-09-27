@@ -24,6 +24,8 @@ namespace Proto
         public Stack<object> Stash { get; } = new Stack<object>();
         public ImmutableHashSet<PID> Watchers { get; private set; } = ImmutableHashSet<PID>.Empty;
         public IContext Context { get; }
+        public CancellationTokenSource CancellationTokenSource { get; } = new CancellationTokenSource();
+        public CancellationToken CancellationToken => CancellationTokenSource.Token;
 
         public void InitReceiveTimeoutTimer(Timer timer) => ReceiveTimeoutTimer = timer;
 

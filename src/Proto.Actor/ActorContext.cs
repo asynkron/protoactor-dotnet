@@ -43,8 +43,8 @@ namespace Proto
         private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
 
         public ActorSystem System { get; }
-        public CancellationTokenSource CancellationTokenSource { get; } = new CancellationTokenSource();
-        public CancellationToken CancellationToken => CancellationTokenSource.Token;
+        public CancellationTokenSource? CancellationTokenSource => _extras?.CancellationTokenSource;
+        public CancellationToken CancellationToken => EnsureExtras().CancellationTokenSource.Token;
         IReadOnlyCollection<PID> IContext.Children => Children;
 
         public IActor? Actor { get; private set; }
