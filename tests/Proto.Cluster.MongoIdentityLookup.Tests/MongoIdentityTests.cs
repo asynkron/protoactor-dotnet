@@ -7,6 +7,8 @@ using ClusterTest.Messages;
 using FluentAssertions;
 using MongoDB.Driver;
 using Proto.Cluster.Consul;
+using Proto.Cluster.IdentityLookup;
+using Proto.Cluster.Partition;
 using Proto.Remote;
 using Xunit;
 using Xunit.Abstractions;
@@ -23,12 +25,15 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
         }
 
         [Theory]
-        [InlineData(1, 100, 100)]
-        [InlineData(2, 10, 10)]
-        public async Task MongoIdentityClusterTest(int clusterNodes, int sendingActors, int messagesSentPerCall)
+        [InlineData(1, 100, 10, true)]
+        [InlineData(1, 100, 10, false)]
+        [InlineData(2, 10, 10, true)]
+        [InlineData(2, 10, 10, false)]
+        public async Task MongoIdentityClusterTest(int clusterNodes, int sendingActors, int messagesSentPerCall,
+            bool useMongoIdentity)
         {
             const string aggregatorId = "agg1";
-            var clusterMembers = await SpawnMembers(clusterNodes);
+            var clusterMembers = await SpawnMembers(clusterNodes, useMongoIdentity);
 
             var maxWait = new CancellationTokenSource(5000);
 
@@ -58,29 +63,32 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
                 _testOutputHelper.WriteLine("Timed out");
             }
 
-            var result = await clusterMembers.First().RequestAsync<AggregatorResult>(aggregatorId, "aggregator", new AskAggregator(),
-                new CancellationTokenSource(1000).Token
+            var result = await clusterMembers.First().RequestAsync<AggregatorResult>(aggregatorId, "aggregator",
+                new AskAggregator(),
+                new CancellationTokenSource(5000).Token
             );
-
+            result.Should().NotBeNull("We expect a response from the aggregator actor");
             result.DifferentKeys.Should().Be(sendersToldToSend.Count);
             result.OutOfOrder.Should().Be(0);
             result.TotalMessages.Should().Be(sendersToldToSend.Count * messagesSentPerCall);
         }
 
-        private async Task<IList<Cluster>> SpawnMembers(int memberCount)
+        private async Task<IList<Cluster>> SpawnMembers(int memberCount, bool useMongoIdentity)
         {
-            var clusterTasks = Enumerable.Range(0, memberCount).Select(_ => SpawnMember()).ToList();
+            var clusterName = "testcluster." + Guid.NewGuid().ToString("N");
+            var clusterTasks = Enumerable.Range(0, memberCount).Select(_ => SpawnMember(clusterName, useMongoIdentity))
+                .ToList();
             await Task.WhenAll(clusterTasks);
             return clusterTasks.Select(task => task.Result).ToList();
         }
 
-        private async Task<Cluster> SpawnMember()
+        private async Task<Cluster> SpawnMember(string clusterName, bool useMongoIdentity)
         {
             var system = new ActorSystem();
             var clusterProvider = new ConsulProvider(new ConsulProviderOptions());
             var serialization = new Serialization();
             serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
-            var identity = GetIdentityLookup();
+
             var cluster = new Cluster(system, serialization);
 
             var senderProps = Props.FromProducer(() =>
@@ -100,14 +108,15 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
 
             cluster.Remote.RegisterKnownKind("sender", senderProps);
             cluster.Remote.RegisterKnownKind("aggregator", aggProps);
-
-            var config = GetClusterConfig(clusterProvider, identity);
+            var identityLookup = useMongoIdentity ? GetIdentityLookup(clusterName) : new PartitionIdentityLookup();
+            var config = GetClusterConfig(clusterProvider, clusterName, identityLookup);
             await cluster.StartMemberAsync(config);
             return cluster;
         }
 
 
-        private static ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, MongoIdentityLookup identity)
+        private static ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, string clusterName,
+            IIdentityLookup identityLookup)
         {
             var port = Environment.GetEnvironmentVariable("PROTOPORT") ?? "0";
             var p = int.Parse(port);
@@ -117,14 +126,16 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             var advertiseHostname = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC") ?? host;
             remote.AdvertisedHostname = advertiseHostname!;
 
-            return new ClusterConfig("test-cluster", host, p, clusterProvider).WithIdentityLookup(identity)
+
+            return new ClusterConfig(clusterName, host, p, clusterProvider)
+                .WithIdentityLookup(identityLookup)
                 .WithRemoteConfig(remote);
         }
 
-        private static MongoIdentityLookup GetIdentityLookup()
+        private static IIdentityLookup GetIdentityLookup(string clusterName)
         {
             var db = GetMongo();
-            var identity = new MongoIdentityLookup("mycluster", db);
+            var identity = new MongoIdentityLookup(clusterName, db);
             return identity;
         }
 
@@ -186,5 +197,9 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
                 }
             }
         }
+    }
+
+    internal class useMongoIdentity
+    {
     }
 }
