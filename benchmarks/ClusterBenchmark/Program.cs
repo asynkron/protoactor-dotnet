@@ -33,42 +33,40 @@ namespace ClusterExperiment1
             var cluster = await SpawnClient();
 
             await Task.Delay(5000);
-            
-            _ = Task.Run(async () =>
-                {
-                    var rnd = new Random();
-                    while (true)
-                    { 
-                        Task.Run(async () =>
-                            {
-                                var id = "myactor" + rnd.Next(0, 1000);
-                                try
-                                {
-                                   
-                                    var res = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                        new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
-                                    );
 
-                                    if (res == null)
-                                    {
-                                        logger.LogError("Null response");
-                                    }
-                                    else
-                                    {
-                                        Console.Write(".");
-                                    }
-                                }
-                                catch (Exception x)
-                                {
-                                    logger.LogError(x,"Request timeout for {Id}", id);
-                                }
-                            }
+            _ = Task.Run(async () =>
+            {
+                var rnd = new Random();
+                while (true)
+                {
+
+                    var id = "myactor" + rnd.Next(0, 1000);
+                    try
+                    {
+
+                        var res = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+                            new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
                         );
+
+                        if (res == null)
+                        {
+                            logger.LogError("Null response");
+                        }
+                        else
+                        {
+                            Console.Write(".");
+                        }
+                    }
+                    catch (Exception x)
+                    {
+                        logger.LogError(x, "Request timeout for {Id}", id);
                     }
                 }
+
+            }
             );
 
-            Console.ReadLine();
+        Console.ReadLine();
 
             //   Thread.Sleep(Timeout.Infinite);
         }

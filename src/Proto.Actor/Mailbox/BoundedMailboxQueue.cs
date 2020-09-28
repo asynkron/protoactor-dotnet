@@ -4,24 +4,36 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading;
+using System.Threading.Channels;
+
 namespace Proto.Mailbox
 {
-    internal class BoundedMailboxQueue : IMailboxQueue
+    public class BoundedMailboxQueue : IMailboxQueue
     {
-        private readonly MPMCQueue _messages;
+        private readonly Channel<object> _messages;
+        private volatile bool _hasMessages;
 
         public BoundedMailboxQueue(int size)
         {
-            _messages = new MPMCQueue(size);
+            _messages = Channel.CreateBounded<object>(size);
         }
 
-        public void Push(object message) => _messages.Enqueue(message);
+        public void Push(object message)
+        {
+            while (!_messages.Writer.TryWrite(message))
+            {
+                Thread.Sleep(50);
+            }
+            _hasMessages = true;
+        }
 
         public object? Pop()
-            => _messages.TryDequeue(out var message)
-                ? message
-                : null;
+        {
+            _hasMessages = _messages.Reader.TryRead(out var message);
+            return message;
+        }
 
-        public bool HasMessages => _messages.Count > 0;
+        public bool HasMessages => _hasMessages;
     }
 }
