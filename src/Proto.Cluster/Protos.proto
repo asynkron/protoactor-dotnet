@@ -34,6 +34,7 @@ message ActivationTerminated {
 message ActivationRequest {
     string identity = 1;
     string kind = 2;
+    string request_id = 3;
 }
 
 message ActivationResponse {

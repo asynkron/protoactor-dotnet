@@ -14,7 +14,6 @@ namespace Proto.Cluster.MongoIdentityLookup
         private readonly string _clusterName;
         internal readonly IMongoCollection<PidLookupEntity> Pids;
         internal Cluster Cluster;
-        private IMongoDatabase _db;
         private bool _isClient;
         private ILogger _logger;
         internal MemberList MemberList;
@@ -22,12 +21,10 @@ namespace Proto.Cluster.MongoIdentityLookup
         private ActorSystem _system;
         private PID _router;
 
-        public MongoIdentityLookup(string clusterName, IMongoDatabase db)
+        public MongoIdentityLookup(string clusterName, IMongoCollection<PidLookupEntity> pidCollection)
         {
             _clusterName = clusterName;
-            _db = db;
-            //TODO: make collection name configurable
-            Pids = db.GetCollection<PidLookupEntity>("pids");
+            Pids = pidCollection;
         }
 
         public async Task<PID> GetAsync(string identity, string kind, CancellationToken ct)
@@ -72,7 +69,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             );
 
             if (isClient) return Task.CompletedTask;
-            var props = Props.FromProducer(() => new MongoPlacementActor(Cluster,this));
+            var props = Props.FromProducer(() => new MongoPlacementActor(Cluster, _clusterName, Pids,this));
             _placementActor = _system.Root.SpawnNamed(props, MongoPlacementActorName);
 
             return Task.CompletedTask;

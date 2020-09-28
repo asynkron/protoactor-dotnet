@@ -34,7 +34,7 @@ namespace ClusterExperiment1
 
             await Task.Delay(5000);
             
-            _ = Task.Run(async () =>
+            await Task.Run(async () =>
                 {
                     var rnd = new Random();
                     while (true)
@@ -167,7 +167,7 @@ namespace ClusterExperiment1
         private static MongoIdentityLookup GetIdentityLookup()
         {
             var db = GetMongo();
-            var identity = new MongoIdentityLookup("mycluster", db);
+            var identity = new MongoIdentityLookup("mycluster", db.GetCollection<PidLookupEntity>("pids"));
             return identity;
         }
 

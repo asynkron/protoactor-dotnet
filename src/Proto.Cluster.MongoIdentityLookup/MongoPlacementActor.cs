@@ -7,8 +7,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 
 namespace Proto.Cluster.MongoIdentityLookup
 {
@@ -25,13 +27,18 @@ namespace Proto.Cluster.MongoIdentityLookup
 
         private readonly Remote.Remote _remote;
         private readonly MongoIdentityLookup _mongoIdentityLookup;
+        private readonly string _clusterName;
+        private readonly IMongoCollection<PidLookupEntity> _pids;
 
-        public MongoPlacementActor(Cluster cluster, MongoIdentityLookup mongoIdentityLookup)
+        public MongoPlacementActor(Cluster cluster, string clusterName,
+            IMongoCollection<PidLookupEntity> pids, MongoIdentityLookup mongoIdentityLookup)
         {
             _cluster = cluster;
             _remote = _cluster.Remote;
             _mongoIdentityLookup = mongoIdentityLookup;
             _logger = Log.CreateLogger($"{nameof(MongoPlacementActor)}-{cluster.LoggerId}");
+            _clusterName = clusterName;
+            _pids = pids;
         }
 
         public Task ReceiveAsync(IContext context)
@@ -68,7 +75,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             await _mongoIdentityLookup.RemoveUniqueIdentityAsync(msg.Who.Id);
         }
 
-        private Task ActivationRequest(IContext context, ActivationRequest msg)
+        private async Task ActivationRequest(IContext context, ActivationRequest msg)
         {
             var props = _remote.GetKnownKind(msg.Kind);
             var identity = msg.Identity;
@@ -101,6 +108,28 @@ namespace Proto.Cluster.MongoIdentityLookup
                     context.Send(pid, grainInit);
                     _myActors[identity] = (pid, kind);
 
+                    var requestId = msg.RequestId;
+                    var key = $"{_clusterName}-{kind}-{identity}";
+                    var memberId = _cluster.Id.ToString();
+                    
+                    var res = await _pids.UpdateOneAsync(
+                        s => s.Key == key && s.LockedBy == requestId && s.Revision == 1,
+                        Builders<PidLookupEntity>.Update
+                            .Set(l => l.Address, _cluster.System.Address)
+                            .Set(l => l.MemberId, memberId)
+                            .Set(l => l.UniqueIdentity, pid.Id)
+                            .Set(l => l.Revision, 2)
+                            .Unset(l => l.LockedBy)
+                        , new UpdateOptions(), CancellationToken.None
+                    );
+
+                    //nothing was updated
+                    if (res.MatchedCount != 1)
+                    {
+                        //meaning, we spawned an actor but its placement is not stored anywhere
+                        _logger.LogCritical("No entry was updated {Key}",key);
+                    }
+
                     var response = new ActivationResponse
                     {
                         Pid = pid
@@ -116,8 +145,6 @@ namespace Proto.Cluster.MongoIdentityLookup
                 };
                 context.Respond(response);
             }
-
-            return Actor.Done;
         }
     }
 }

@@ -141,7 +141,7 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
         private static IIdentityLookup GetIdentityLookup(string clusterName)
         {
             var db = GetMongo();
-            var identity = new MongoIdentityLookup(clusterName, db);
+            var identity = new MongoIdentityLookup(clusterName, db.GetCollection<PidLookupEntity>("pids"));
             return identity;
         }
 

@@ -13,8 +13,7 @@ namespace Proto.Cluster.MongoIdentityLookup
         private readonly MongoIdentityLookup _lookup;
         private readonly MemberList _memberList;
         private readonly IMongoCollection<PidLookupEntity> _pids;
- 
-
+        
         public MongoIdentityWorker(MongoIdentityLookup lookup)
         {
             _cluster = lookup.Cluster;
@@ -68,16 +67,11 @@ namespace Proto.Cluster.MongoIdentityLookup
             //try to acquire global lock for this key
             var requestId = Guid.NewGuid().ToString();
             var weOwnTheLock = await TryAcquireLockAsync(key, identity, kind, requestId);
-
+            //we have the lock, spawn and return
+            if (weOwnTheLock) return await SpawnActivationAsync(key, identity, kind, activator, requestId, ct);
             
             //we didn't get the lock, spin read for x times before giving up
-            if (!weOwnTheLock) return await SpinWaitOnLockAsync(key, identity, kind, ct);
-            
-            //we have the lock, spawn and return
-            var pid = await SpawnActivationAsync(key, identity, kind, activator, requestId, ct);
-            //update cache
-            _cluster.PidCache.TryAdd(kind, identity, pid);
-            return pid;
+            return await SpinWaitOnLockAsync(key, identity, kind, ct);
         }
 
         private async Task<bool> TryAcquireLockAsync(string key, string identity, string kind, string requestId)
@@ -124,35 +118,18 @@ namespace Proto.Cluster.MongoIdentityLookup
             var req = new ActivationRequest
             {
                 Kind = kind,
-                Identity = identity
+                Identity = identity,
+                RequestId = requestId,
             };
 
             try
             {
-                var resp = ct == CancellationToken.None
-                    ? await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req,
-                        _cluster.Config!.TimeoutTimespan
-                    )
-                    : await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
+                var reqCt = ct.Equals(CancellationToken.None)?new CancellationTokenSource(_cluster.Config!.TimeoutTimespan).Token:ct;
+                
+                var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, reqCt);
 
-                var res = await _pids.UpdateOneAsync(
-                    s => s.Key == key && s.LockedBy == requestId && s.Revision == 1,
-                    Builders<PidLookupEntity>.Update
-                        .Set(l => l.Address, activator.Address)
-                        .Set(l => l.MemberId, activator.Id)
-                        .Set(l => l.UniqueIdentity, resp.Pid.Id)
-                        .Set(l => l.Revision, 2)
-                        .Unset(l => l.LockedBy)
-                    , new UpdateOptions(), CancellationToken.None
-                );
-
-                //nothing was updated
-                if (res.MatchedCount != 1)
-                {
-                    //meaning, we spawned an actor but its placement is not stored anywhere
-                    _logger.LogCritical("No entry was updated {Key}",key);
-                }
-
+                //update cache
+                _cluster.PidCache.TryAdd(kind, identity, resp.Pid);
                 return resp.Pid;
             }
             //TODO: decide if we throw or return null
