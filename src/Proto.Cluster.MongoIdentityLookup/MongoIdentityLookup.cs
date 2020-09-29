@@ -85,7 +85,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             await RemoveMemberAsync(Cluster.Id.ToString());
         }
 
-        private Task RemoveMemberAsync(string memberId)
+        internal Task RemoveMemberAsync(string memberId)
         {
             return Pids.DeleteManyAsync(p => p.MemberId == memberId);
         }

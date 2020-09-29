@@ -217,12 +217,14 @@ namespace Proto.Cluster.MongoIdentityLookup
             if (!memberExists)
             {
                 _logger.LogWarning(
-                    "Found placement lookup for {Identity} {Kind}, but Member {MemberId} is not part of cluster",
+                    "Found placement lookup for {Identity} {Kind}, but Member {MemberId} is not part of cluster, dropping stale entries",
                     identity,
                     kind, pidLookup.MemberId
                 );
+                
                 //remove this one, it's outdated
-                await _lookup.RemoveUniqueIdentityAsync(pidLookup.UniqueIdentity);
+        //        await _lookup.RemoveUniqueIdentityAsync(pidLookup.UniqueIdentity);
+                await _lookup.RemoveMemberAsync(pidLookup.MemberId);
                 return null;
             }
 
