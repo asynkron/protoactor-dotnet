@@ -27,6 +27,9 @@ namespace Proto.Cluster
         public bool TryRemove(string kind, string identity, PID pid)
             => _cacheCollection.Remove(new KeyValuePair<(string kind, string identity), PID>((kind, identity), pid));
 
+        public bool TryRemove(string kind, string identity)
+            => _cacheDict.TryRemove((kind, identity), out _);
+
         public bool RemoveByVal(string kind, string identity, PID pid)
         {
             var key = (kind, identity);

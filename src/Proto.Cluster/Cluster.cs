@@ -158,13 +158,12 @@ namespace Proto.Cluster
                             return res;
                         }
 
-                        PidCache.TryRemove(kind, identity, cachedPid);
+                        PidCache.TryRemove(kind, identity);
                     }
                 }
                 catch
                 {
-                    //YOLO
-                    PidCache.TryRemove(kind, identity, cachedPid);
+                    PidCache.TryRemove(kind, identity);
                 }
 
 
@@ -193,7 +192,7 @@ namespace Proto.Cluster
                 var res2 = await System.Root.RequestAsync<T>(pid, message, ct);
                 if (res2 != null) return res2;
                 
-                PidCache.TryRemove(kind, identity, cachedPid);
+                PidCache.TryRemove(kind, identity);
                 await Task.Delay(delay, CancellationToken.None);
             }
 
