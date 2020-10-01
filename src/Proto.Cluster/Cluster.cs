@@ -20,6 +20,10 @@ namespace Proto.Cluster
     {
         private static ILogger _logger = null!;
 
+        private ClusterHeartBeat _clusterHeartBeat;
+
+        private IRequestAsyncStrategy _requestAsyncStrategy = null!;
+
         public Cluster(ActorSystem system, Serialization serialization)
         {
             System = system;
@@ -27,10 +31,7 @@ namespace Proto.Cluster
             _clusterHeartBeat = new ClusterHeartBeat(this);
             system.EventStream.Subscribe<ClusterTopology>(e =>
                 {
-                    foreach (var member in e.Left)
-                    {
-                        PidCache.RemoveByMember(member);
-                    }
+                    foreach (var member in e.Left) PidCache.RemoveByMember(member);
                 }
             );
         }
@@ -50,12 +51,14 @@ namespace Proto.Cluster
 
         internal IClusterProvider Provider { get; set; } = null!;
 
-        private ClusterHeartBeat _clusterHeartBeat;
-
         public string LoggerId => System.Address;
 
+        public PidCache PidCache { get; } = new PidCache();
+
         public Task StartMemberAsync(string clusterName, string address, int port, IClusterProvider cp)
-            => StartMemberAsync(new ClusterConfig(clusterName, address, port, cp));
+        {
+            return StartMemberAsync(new ClusterConfig(clusterName, address, port, cp));
+        }
 
         public async Task StartMemberAsync(ClusterConfig config)
         {
@@ -108,6 +111,7 @@ namespace Proto.Cluster
             _logger = Log.CreateLogger($"Cluster-{LoggerId}");
             _logger.LogInformation("Starting");
             MemberList = new MemberList(this);
+            _requestAsyncStrategy = new RequestAsyncStrategy(IdentityLookup, PidCache, System.Root, _logger);
 
             var kinds = Remote.GetKnownKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
@@ -118,10 +122,7 @@ namespace Proto.Cluster
         {
             await _clusterHeartBeat.ShutdownAsync();
             _logger.LogInformation("Stopping");
-            if (graceful)
-            {
-                await IdentityLookup!.ShutdownAsync();
-            }
+            if (graceful) await IdentityLookup!.ShutdownAsync();
 
             await Config!.ClusterProvider.ShutdownAsync(graceful);
             await Remote.ShutdownAsync(graceful);
@@ -129,74 +130,19 @@ namespace Proto.Cluster
             _logger.LogInformation("Stopped");
         }
 
-        public Task<PID?> GetAsync(string identity, string kind) =>
-            GetAsync(identity, kind, CancellationToken.None);
-
-        public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct) =>
-            IdentityLookup!.GetAsync(identity, kind, ct);
-
-        public PidCache PidCache { get; } = new PidCache();
-
-        public async Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct)
+        public Task<PID?> GetAsync(string identity, string kind)
         {
-            _logger.LogDebug("Requesting {Identity}-{Kind} Message {Message}", identity, kind, message);
-            var i = 0;
-            while (!ct.IsCancellationRequested)
-            {
-                var hadPid = PidCache.TryGet(kind, identity, out var cachedPid);
-                try
-                {
-                    if (hadPid)
-                    {
-                        _logger.LogDebug("Requesting {Identity}-{Kind} Message {Message} - Got PID from cache",
-                            identity,
-                            kind, message, cachedPid
-                        );
-                        var res = await System.Root.RequestAsync<T>(cachedPid, message, ct);
-                        if (res != null)
-                        {
-                            return res;
-                        }
+            return GetAsync(identity, kind, CancellationToken.None);
+        }
 
-                        PidCache.TryRemove(kind, identity);
-                    }
-                }
-                catch
-                {
-                    PidCache.TryRemove(kind, identity);
-                }
+        public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct)
+        {
+            return IdentityLookup!.GetAsync(identity, kind, ct);
+        }
 
-
-
-                var delay = i * 20;
-                i++;
-                var pid = await GetAsync(identity, kind, ct);
-
-
-                if (pid == null)
-                {
-                    _logger.LogDebug(
-                        "Requesting {Identity}-{Kind} Message {Message} - Did not get any PID from IdentityLookup",
-                        identity, kind, message
-                    );
-                    await Task.Delay(delay, CancellationToken.None);
-                    continue;
-                }
-
-                _logger.LogDebug("Requesting {Identity}-{Kind} Message {Message} - Got PID {PID} from IdentityLookup",
-                    identity, kind, message, pid
-                );
-                //update cache
-                PidCache.TryAdd(kind, identity, pid); //TODO: Responsibility of identity lookup?
-
-                var res2 = await System.Root.RequestAsync<T>(pid, message, ct);
-                if (res2 != null) return res2;
-                
-                PidCache.TryRemove(kind, identity);
-                await Task.Delay(delay, CancellationToken.None);
-            }
-
-            return default!;
+        public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct)
+        {
+            return _requestAsyncStrategy.RequestAsync<T>(identity, kind, message, ct);
         }
     }
 }
