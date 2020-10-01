@@ -232,9 +232,10 @@ namespace Proto.Cluster.Partition
             }
 
             //Get activator
-            var activatorAddress = _cluster.MemberList.GetActivatorAddress(msg.Kind);
+            var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind)?.Address;
 
-            if (string.IsNullOrEmpty(activatorAddress))
+            //just make the code analyzer understand the address is not null after this block
+            if (activatorAddress == null || string.IsNullOrEmpty(activatorAddress))
             {
                 //No activator currently available, return unavailable
                 _logger.LogWarning("No members currently available for kind {Kind}", msg.Kind);

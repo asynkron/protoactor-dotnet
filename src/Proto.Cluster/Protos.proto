@@ -54,8 +54,6 @@ message GrainErrorResponse {
     string err = 1;
 }
 
-
-
 message Member {
     string host=1;
     int32 port=2;
@@ -69,4 +67,10 @@ message ClusterTopology {
     repeated Member joined=3;
     repeated Member left=4;
     repeated Member banned=5;
+}
+
+message HeartBeatRequest {
+}
+
+message HeartBeatResponse {
 }

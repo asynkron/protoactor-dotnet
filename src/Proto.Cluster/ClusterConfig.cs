@@ -23,6 +23,7 @@ namespace Proto.Cluster
 
             RemoteConfig = new RemoteConfig();
             TimeoutTimespan = TimeSpan.FromSeconds(5);
+            HeartBeatInterval = TimeSpan.FromSeconds(30);
             MemberStrategyBuilder = kind => new SimpleMemberStrategy();
         }
 
@@ -39,6 +40,7 @@ namespace Proto.Cluster
         public bool ClusterClient { get; set; }
 
         public IIdentityLookup? IdentityLookup { get; private set; }
+        public TimeSpan HeartBeatInterval { get; set; } 
 
         public ClusterConfig WithRemoteConfig(RemoteConfig remoteConfig)
         {

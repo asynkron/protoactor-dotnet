@@ -37,7 +37,7 @@ namespace Proto.Remote
         ///     If the remote system is behind e.g. a NAT or reverse proxy, this needs to be set to
         ///     the external hostname in order for other systems to be able to connect to it.
         /// </summary>
-        public string AdvertisedHostname { get; set; } = null!;
+        public string? AdvertisedHostname { get; set; }
 
         /// <summary>
         ///     Gets or sets the advertised port for the remote system.

@@ -59,35 +59,6 @@ namespace Proto.Cluster
 
         public bool IsLeader => _cluster.Id.Equals(_leader?.MemberId);
 
-        public string GetActivatorAddress(string kind)
-        {
-            //TODO: clean this lock logic up
-            var locked = _rwLock.TryEnterReadLock(1000);
-
-            while (!locked)
-            {
-                _logger.LogDebug("MemberList did not acquire reader lock within 1 seconds, retry");
-                locked = _rwLock.TryEnterReadLock(1000);
-            }
-
-            try
-            {
-                if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
-                {
-                    return memberStrategy.GetActivatorAddress();
-                }
-                else
-                {
-                    _logger.LogDebug("MemberList did not find any activator for kind '{Kind}'",kind);
-                    return "";
-                }
-            }
-            finally
-            {
-                _rwLock.ExitReadLock();
-            }
-        }
-        
         public Member? GetActivator(string kind)
         {
             //TODO: clean this lock logic up
@@ -309,5 +280,7 @@ namespace Proto.Cluster
         public bool ContainsMemberId(string memberId) => _members.ContainsKey(memberId);
 
         public bool TryGetMember(string memberId, out Member value) => _members.TryGetValue(memberId, out value);
+
+        public Member[] GetAllMembers() => _members.Values.ToArray();
     }
 }

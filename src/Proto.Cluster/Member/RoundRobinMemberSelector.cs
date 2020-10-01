@@ -28,7 +28,7 @@ namespace Proto.Cluster
             }
         }
         
-        public Member GetMember()
+        public Member? GetMember()
         {
             var members = _memberStrategy.GetAllMembers();
             var l = members.Count;

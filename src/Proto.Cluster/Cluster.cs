@@ -24,6 +24,7 @@ namespace Proto.Cluster
         {
             System = system;
             Remote = new Remote.Remote(system, serialization);
+            _clusterHeartBeat = new ClusterHeartBeat(this);
             system.EventStream.Subscribe<ClusterTopology>(e =>
                 {
                     foreach (var member in e.Left)
@@ -49,6 +50,8 @@ namespace Proto.Cluster
 
         internal IClusterProvider Provider { get; set; } = null!;
 
+        private ClusterHeartBeat _clusterHeartBeat;
+
         public string LoggerId => System.Address;
 
         public Task StartMemberAsync(string clusterName, string address, int port, IClusterProvider cp)
@@ -56,7 +59,7 @@ namespace Proto.Cluster
 
         public async Task StartMemberAsync(ClusterConfig config)
         {
-            BeginStart(config, false);
+            await BeginStartAsync(config, false);
 
             var (host, port) = System.GetAddress();
 
@@ -77,7 +80,7 @@ namespace Proto.Cluster
 
         public async Task StartClientAsync(ClusterConfig config)
         {
-            BeginStart(config, true);
+            await BeginStartAsync(config, true);
 
             var (host, port) = System.GetAddress();
 
@@ -94,7 +97,7 @@ namespace Proto.Cluster
             _logger.LogInformation("Started as cluster client");
         }
 
-        private void BeginStart(ClusterConfig config, bool client)
+        private async Task BeginStartAsync(ClusterConfig config, bool client)
         {
             Config = config;
 
@@ -107,11 +110,13 @@ namespace Proto.Cluster
             MemberList = new MemberList(this);
 
             var kinds = Remote.GetKnownKinds();
-            IdentityLookup.SetupAsync(this, kinds, client);
+            await IdentityLookup.SetupAsync(this, kinds, client);
+            await _clusterHeartBeat.StartAsync();
         }
 
         public async Task ShutdownAsync(bool graceful = true)
         {
+            await _clusterHeartBeat.ShutdownAsync();
             _logger.LogInformation("Stopping");
             if (graceful)
             {
@@ -134,7 +139,6 @@ namespace Proto.Cluster
 
         public async Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct)
         {
-            var key = kind + "." + identity;
             _logger.LogDebug("Requesting {Identity}-{Kind} Message {Message}", identity, kind, message);
             var i = 0;
             while (!ct.IsCancellationRequested)
