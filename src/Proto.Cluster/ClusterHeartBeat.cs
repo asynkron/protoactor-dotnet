@@ -53,11 +53,11 @@ namespace Proto.Cluster
                 {
                     await Task.Delay(_cluster.Config.HeartBeatInterval);
                     var members = _cluster.MemberList.GetAllMembers();
-                    
+
                     foreach (var member in members)
                     {
                         var pid = new PID(member.Address,ClusterHeartBeatName);
-
+                        
                         try
                         {
                             await _context.RequestAsync<HeartBeatResponse>(pid, new HeartBeatRequest(),

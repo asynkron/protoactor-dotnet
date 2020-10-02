@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -16,20 +17,54 @@ namespace Proto
     public class EventStream : EventStream<object>
     {
         private readonly ILogger _logger = Log.CreateLogger<EventStream>();
+        public TimeSpan ThrottleInterval { get; set; }
+        public int ThrottleCount { get; set; }
 
         internal EventStream()
         {
-            Subscribe(
-                msg =>
+            long lastTick = 0;
+            long messages = 0;
+            bool throttled = false;
+            Subscribe<DeadLetterEvent>(
+                dl =>
                 {
-                    if (msg is DeadLetterEvent letter)
+                    if (ThrottleInterval != TimeSpan.Zero)
+                    {
+                        if (DateTimeOffset.Now.Ticks > lastTick + ThrottleInterval.Ticks)
+                        {
+                            if (throttled)
+                            {
+                                _logger.LogInformation(
+                                    "[DeadLetter] Resuming DeadLetter event logging..."
+                                );
+                            }
+                            throttled = false;
+                            
+                        }
+                        else if (!throttled)
+                        {
+                            var res = Interlocked.Increment(ref messages);
+                            if (res >= ThrottleCount)
+                            {
+                                throttled = true;
+                                Interlocked.Exchange(ref messages, 0l);
+                                _logger.LogInformation(
+                                    "[DeadLetter] Throttling DeadLetter event logging..."
+                                );
+                            }
+                        }
+
+                        lastTick = DateTimeOffset.Now.Ticks;
+                    }
+
+                    if (!throttled)
                     {
                         _logger.LogInformation(
                             "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",
-                            letter.Message.GetType().Name,
-                            letter.Message,
-                            letter.Pid.ToShortString(),
-                            letter.Sender?.ToShortString()
+                            dl.Message.GetType().Name,
+                            dl.Message,
+                            dl.Pid.ToShortString(),
+                            dl.Sender?.ToShortString()
                         );
                     }
                 }
