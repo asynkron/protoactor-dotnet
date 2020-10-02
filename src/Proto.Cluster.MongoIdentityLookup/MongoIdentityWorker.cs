@@ -75,8 +75,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             
             //we have the lock, spawn and return
             var pid = await SpawnActivationAsync(key, identity, kind, activator, requestId, ct);
-            //update cache
-            _cluster.PidCache.TryAdd(kind, identity, pid);
+
             return pid;
         }
 
@@ -153,6 +152,8 @@ namespace Proto.Cluster.MongoIdentityLookup
                     _logger.LogCritical("No entry was updated {Key}",key);
                 }
 
+                //update cache
+                _cluster.PidCache.TryAdd(kind, identity, resp.Pid);
                 return resp.Pid;
             }
             //TODO: decide if we throw or return null
