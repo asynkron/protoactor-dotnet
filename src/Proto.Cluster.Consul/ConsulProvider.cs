@@ -88,9 +88,7 @@ namespace Proto.Cluster.Consul
             MemberList memberList)
         {
             SetState(cluster, clusterName, host, port, kinds, memberList);
-            
             await RegisterMemberAsync();
-
             StartUpdateTtlLoop();
             StartMonitorMemberStatusChangesLoop();
             StartLeaderElectionLoop();

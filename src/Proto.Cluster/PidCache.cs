@@ -16,19 +16,80 @@ namespace Proto.Cluster
             _cacheCollection = _cacheDict;
         }
 
-        public bool TryGet(string kind, string identity, out PID pid) =>
-            _cacheDict.TryGetValue((kind, identity), out pid);
+        public bool TryGet(string kind, string identity, out PID pid)
+        {
+            if (string.IsNullOrEmpty(kind))
+            {
+                throw new ArgumentNullException(nameof(kind));
+            }
+            
+            if (string.IsNullOrEmpty(identity))
+            {
+                throw new ArgumentNullException(nameof(identity));
+            }
+            
+            return _cacheDict.TryGetValue((kind, identity), out pid);
+        }
 
-        public bool TryAdd(string kind, string identity, PID pid) => _cacheDict.TryAdd((kind, identity), pid);
+        public bool TryAdd(string kind, string identity, PID pid)
+        {
+            if (string.IsNullOrEmpty(kind))
+            {
+                throw new ArgumentNullException(nameof(kind));
+            }
+            
+            if (string.IsNullOrEmpty(identity))
+            {
+                throw new ArgumentNullException(nameof(identity));
+            }
+            
+            if (pid == null)
+            {
+                throw new ArgumentNullException(nameof(pid));
+            }
+            
+            return _cacheDict.TryAdd((kind, identity), pid);
+        }
 
-        public bool TryUpdate(string kind, string identity, PID newPid, PID existing)
-            => _cacheDict.TryUpdate((kind, identity), newPid, existing);
-
-        public bool TryRemove(string kind, string identity, PID pid)
-            => _cacheCollection.Remove(new KeyValuePair<(string kind, string identity), PID>((kind, identity), pid));
+        public bool TryUpdate(string kind, string identity, PID newPid, PID existingPid)
+        {
+            if (string.IsNullOrEmpty(kind))
+            {
+                throw new ArgumentNullException(nameof(kind));
+            }
+            
+            if (string.IsNullOrEmpty(identity))
+            {
+                throw new ArgumentNullException(nameof(identity));
+            }
+            
+            if (newPid == null)
+            {
+                throw new ArgumentNullException(nameof(newPid));
+            }
+            
+            if (existingPid == null)
+            {
+                throw new ArgumentNullException(nameof(existingPid));
+            }
+            
+            return _cacheDict.TryUpdate((kind, identity), newPid, existingPid);
+        }
 
         public bool TryRemove(string kind, string identity)
-            => _cacheDict.TryRemove((kind, identity), out _);
+        {
+            if (string.IsNullOrEmpty(kind))
+            {
+                throw new ArgumentNullException(nameof(kind));
+            }
+            
+            if (string.IsNullOrEmpty(identity))
+            {
+                throw new ArgumentNullException(nameof(identity));
+            }
+            
+            return _cacheDict.TryRemove((kind, identity), out _);
+        }
 
         public bool RemoveByVal(string kind, string identity, PID pid)
         {

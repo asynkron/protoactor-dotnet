@@ -63,11 +63,9 @@ namespace Proto.Cluster
         public async Task StartMemberAsync(ClusterConfig config)
         {
             await BeginStartAsync(config, false);
-
             var (host, port) = System.GetAddress();
 
             Provider = Config.ClusterProvider;
-
             var kinds = Remote.GetKnownKinds();
             await Provider.StartMemberAsync(
                 this,

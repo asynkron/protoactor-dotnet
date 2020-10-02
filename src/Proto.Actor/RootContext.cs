@@ -148,6 +148,11 @@ namespace Proto
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
         {
+            if (target == null)
+            {
+                throw new ArgumentNullException(nameof(target));
+            }
+            
             var messageEnvelope = new MessageEnvelope(message, future.Pid);
             SendUserMessage(target, messageEnvelope);
 
@@ -156,6 +161,11 @@ namespace Proto
 
         private void SendUserMessage(PID target, object message)
         {
+            if (target == null)
+            {
+                throw new ArgumentNullException(nameof(target));
+            }
+            
             if (SenderMiddleware != null)
             {
                 //slow path
