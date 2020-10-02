@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
 
@@ -143,9 +144,15 @@ namespace Proto.Remote
             }
             catch (Exception x)
             {
-                Logger.LogError(x,"Endpoint writer failed");
-                //This is already logged in the supervisor
-                //Logger.LogWarning("[EndpointWriterMailbox] Exception in RunAsync because of {Reason}", x.GetType().Name);
+                if (x is RpcException rpc && rpc.Status.StatusCode == StatusCode.Unavailable)
+                {
+                    Logger.LogError( "Endpoint writer failed, status unavailable");
+                }
+                else
+                {
+                    Logger.LogError(x, "Endpoint writer failed");
+                }
+
                 _suspended = true;
                 _invoker!.EscalateFailure(x, m);
             }
