@@ -15,7 +15,7 @@ namespace GrainGenerator
 {
     public class GrainGen : CommonCodeGenerator
     {
-        public override string Name { get; }
+        public override string Name { get; } = "Proto.Grain";
 
         protected override string DefaultFileExtension => ".cs";
 
@@ -69,6 +69,16 @@ namespace GrainGenerator
         }
 
         #region UnusedMethods
+        protected override void WriteNamespaceHeader(GeneratorContext ctx, string @namespace)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void WriteNamespaceFooter(GeneratorContext ctx, string @namespace)
+        {
+            throw new NotImplementedException();
+        }
+        
         protected override void WriteField(GeneratorContext ctx, FieldDescriptorProto obj, ref object state, OneOfStub[] oneOfs)
         {
             throw new NotImplementedException();

@@ -74,16 +74,8 @@ namespace {{CsNamespace}}
 
             async Task<{{OutputName}}> Inner() 
             {
-                //resolve the grain
-                var (pid, statusCode) = await _cluster.GetAsync(_id, ""{{../Name}}"", ct);
-
-                if (statusCode != ResponseStatusCode.OK)
-                {
-                    throw new Exception($""Get PID failed with StatusCode: {statusCode}"");  
-                }
-
                 //request the RPC method to be invoked
-                var res = await _cluster.System.Root.RequestAsync<object>(pid, gr, ct);
+                var res = await _cluster.RequestAsync<object>(_id, ""{{../Name}}"", gr, ct);
 
                 return res switch
                 {
@@ -121,6 +113,11 @@ namespace {{CsNamespace}}
         private readonly Grains _grains;
 
         public {{Name}}Actor(Grains grains) => _grains = grains;
+        private string _identity;
+        private string _kind;
+
+        protected string Identity => _identity;
+        protected string Kind => _kind;
 
         public async Task ReceiveAsync(IContext context)
         {
@@ -130,6 +127,12 @@ namespace {{CsNamespace}}
                 {
                     _inner = _grains.Get{{Name}}(context.Self!.Id);
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
+                    break;
+                }
+                case GrainInit msg: 
+                {
+                    _identity = msg.Identity;
+                    _kind = msg.Kind;
                     break;
                 }
                 case ReceiveTimeout _:
