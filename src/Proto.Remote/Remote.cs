@@ -31,8 +31,7 @@ namespace Proto.Remote
     public class Remote
     {
         private static readonly ILogger Logger = Log.CreateLogger<Remote>();
-
-        private readonly Dictionary<string, Props> _kinds = new Dictionary<string, Props>();
+        
         private readonly ActorSystem _system;
         private EndpointManager _endpointManager = null!;
         private EndpointReader _endpointReader = null!;
@@ -40,27 +39,24 @@ namespace Proto.Remote
 
         private Server _server = null!;
 
-        public Remote(ActorSystem system, Serialization serialization)
+        public Remote(ActorSystem system)
         {
             _system = system;
-            Serialization = serialization;
         }
 
-        public RemoteConfig? RemoteConfig { get; private set; }
+        public RemoteConfig RemoteConfig { get; private set; } = null!;
         public PID? ActivatorPid { get; private set; }
 
-        public Serialization Serialization { get; }
+        public string[] GetKnownKinds() => RemoteConfig.KnownKinds.Keys.ToArray();
 
-        public string[] GetKnownKinds() => _kinds.Keys.ToArray();
-
-        public void RegisterKnownKind(string kind, Props props) => _kinds.Add(kind, props);
+        public void RegisterKnownKind(string kind, Props props) => RemoteConfig.KnownKinds.Add(kind, props);
 
         // Modified class in context of repo fork : https://github.com/Optis-World/protoactor-dotnet
-        public void UnregisterKnownKind(string kind) => _kinds.Remove(kind);
+        public void UnregisterKnownKind(string kind) => RemoteConfig.KnownKinds.Remove(kind);
 
         public Props GetKnownKind(string kind)
         {
-            if (!_kinds.TryGetValue(kind, out var props))
+            if (!RemoteConfig.KnownKinds.TryGetValue(kind, out var props))
             {
                 throw new ArgumentException($"No Props found for kind '{kind}'");
             }
@@ -68,13 +64,13 @@ namespace Proto.Remote
             return props;
         }
 
-        public void Start(string hostname, int port) => Start(hostname, port, new RemoteConfig());
+        public void Start(string hostname, int port) => Start(new RemoteConfig(hostname, port));
 
-        public void Start(string hostname, int port, RemoteConfig config)
+        public void Start(RemoteConfig config)
         {
             RemoteConfig = config;
             _endpointManager = new EndpointManager(this, _system);
-            _endpointReader = new EndpointReader(_system, _endpointManager, Serialization);
+            _endpointReader = new EndpointReader(_system, _endpointManager, config.Serialization);
             _healthCheck = new HealthServiceImpl();
             _system.ProcessRegistry.RegisterHostResolver(pid => new RemoteProcess(this, _system, _endpointManager, pid)
             );
@@ -86,17 +82,17 @@ namespace Proto.Remote
                     Remoting.BindService(_endpointReader),
                     Health.BindService(_healthCheck)
                 },
-                Ports = {new ServerPort(hostname, port, config.ServerCredentials)}
+                Ports = {new ServerPort(config.Hostname, config.Port, config.ServerCredentials)}
             };
             _server.Start();
 
             var boundPort = _server.Ports.Single().BoundPort;
-            _system.SetAddress(config.AdvertisedHostname ?? hostname, config.AdvertisedPort ?? boundPort
+            _system.SetAddress(config.AdvertisedHostname ?? config.Hostname, config.AdvertisedPort ?? boundPort
             );
             _endpointManager.Start();
             SpawnActivator();
 
-            Logger.LogDebug("Starting Proto.Actor server on {Host}:{Port} ({Address})", hostname, boundPort,
+            Logger.LogDebug("Starting Proto.Actor server on {Host}:{Port} ({Address})", config.Hostname, boundPort,
                 _system.Address
             );
         }

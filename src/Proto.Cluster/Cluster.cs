@@ -24,10 +24,10 @@ namespace Proto.Cluster
 
         private IRequestAsyncStrategy _requestAsyncStrategy = null!;
 
-        public Cluster(ActorSystem system, Serialization serialization)
+        public Cluster(ActorSystem system)
         {
             System = system;
-            Remote = new Remote.Remote(system, serialization);
+            Remote = new Remote.Remote(system);
             _clusterHeartBeat = new ClusterHeartBeat(this);
             system.EventStream.Subscribe<ClusterTopology>(e =>
                 {
@@ -43,8 +43,7 @@ namespace Proto.Cluster
         public ActorSystem System { get; }
 
         public Remote.Remote Remote { get; }
-
-
+        
         public MemberList MemberList { get; private set; } = null!;
 
         private IIdentityLookup IdentityLookup { get; set; } = null!;
@@ -78,6 +77,11 @@ namespace Proto.Cluster
 
             _logger.LogInformation("Started as cluster member");
         }
+        
+        public Task StartClientAsync(string clusterName, string address, int port, IClusterProvider cp)
+        {
+            return StartClientAsync(new ClusterConfig(clusterName, address, port, cp));
+        }
 
         public async Task StartClientAsync(ClusterConfig config)
         {
@@ -101,11 +105,11 @@ namespace Proto.Cluster
         private async Task BeginStartAsync(ClusterConfig config, bool client)
         {
             Config = config;
+            Config.RemoteConfig.WithProtoMessages(ProtosReflection.Descriptor);
 
             //default to partition identity lookup
             IdentityLookup = config.IdentityLookup ?? new PartitionIdentityLookup();
-            Remote.Start(Config.Address, Config.Port, Config.RemoteConfig);
-            Remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
+            Remote.Start(Config.RemoteConfig);
             _logger = Log.CreateLogger($"Cluster-{LoggerId}");
             _logger.LogInformation("Starting");
             MemberList = new MemberList(this);

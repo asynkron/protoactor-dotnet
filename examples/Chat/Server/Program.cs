@@ -11,11 +11,10 @@ namespace Server
         static void Main()
         {
             var system = new ActorSystem();
-            var serialization = new Serialization();
             var context = new RootContext(system);
-            serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
-            var remote = new Remote(system, serialization);
-            remote.Start("127.0.0.1", 8000);
+            var remote = new Remote(system);
+            var config = new RemoteConfig("127.0.0.1",8000).WithProtoMessages(ChatReflection.Descriptor);
+            remote.Start(config);
 
             var clients = new HashSet<PID>();
 

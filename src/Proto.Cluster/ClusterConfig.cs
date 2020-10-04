@@ -14,22 +14,20 @@ namespace Proto.Cluster
     [PublicAPI]
     public class ClusterConfig
     {
-        public ClusterConfig(string name, string address, int port, IClusterProvider cp)
+        public ClusterConfig(string name, string host, int port, IClusterProvider cp)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            Address = address ?? throw new ArgumentNullException(nameof(address));
-            Port = port;
+            host = host ?? throw new ArgumentNullException(nameof(host));
             ClusterProvider = cp ?? throw new ArgumentNullException(nameof(cp));
 
-            RemoteConfig = new RemoteConfig();
+            RemoteConfig = new RemoteConfig(host,port);
             TimeoutTimespan = TimeSpan.FromSeconds(5);
             HeartBeatInterval = TimeSpan.FromSeconds(30);
             MemberStrategyBuilder = kind => new SimpleMemberStrategy();
         }
 
         public string Name { get; }
-        public string Address { get; }
-        public int Port { get; }
+
         public IClusterProvider ClusterProvider { get; }
 
         public RemoteConfig RemoteConfig { get; private set; }
@@ -40,13 +38,7 @@ namespace Proto.Cluster
         public bool ClusterClient { get; set; }
 
         public IIdentityLookup? IdentityLookup { get; private set; }
-        public TimeSpan HeartBeatInterval { get; set; } 
-
-        public ClusterConfig WithRemoteConfig(RemoteConfig remoteConfig)
-        {
-            RemoteConfig = remoteConfig;
-            return this;
-        }
+        public TimeSpan HeartBeatInterval { get; set; }
 
         public ClusterConfig WithTimeoutSeconds(int timeoutSeconds)
         {
@@ -63,6 +55,18 @@ namespace Proto.Cluster
         public ClusterConfig WithIdentityLookup(IIdentityLookup identityLookup)
         {
             IdentityLookup = identityLookup;
+            return this;
+        }
+        
+        public ClusterConfig WithRemoteConfig(RemoteConfig remoteConfig)
+        {
+            RemoteConfig = remoteConfig;
+            return this;
+        }
+
+        public ClusterConfig WithRemoteConfig(Action<RemoteConfig> remoteConfigurator)
+        {
+            remoteConfigurator(RemoteConfig);
             return this;
         }
     }

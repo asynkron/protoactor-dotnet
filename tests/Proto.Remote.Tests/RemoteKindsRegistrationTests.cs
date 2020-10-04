@@ -10,7 +10,7 @@ namespace Proto.Remote.Tests
         {
             var props = new Props();
             var kind = Guid.NewGuid().ToString();
-            var remote = new Remote(new ActorSystem(), new Serialization());
+            var remote = new Remote(new ActorSystem());
             remote.RegisterKnownKind(kind, props);
             Assert.Equal(props, remote.GetKnownKind(kind));
         }
@@ -21,7 +21,7 @@ namespace Proto.Remote.Tests
             var props = new Props();
             var kind1 = Guid.NewGuid().ToString();
             var kind2 = Guid.NewGuid().ToString();
-            var remote = new Remote(new ActorSystem(), new Serialization());
+            var remote = new Remote(new ActorSystem());
             remote.RegisterKnownKind(kind1, props);
             remote.RegisterKnownKind(kind2, props);
             var kinds = remote.GetKnownKinds();
@@ -32,7 +32,7 @@ namespace Proto.Remote.Tests
         [Fact]
         public void UnknownKindThrowsException()
         {
-            var remote = new Remote(new ActorSystem(), new Serialization());
+            var remote = new Remote(new ActorSystem());
             Assert.Throws<ArgumentException>(() => { remote.GetKnownKind("not registered"); });
         }
     }

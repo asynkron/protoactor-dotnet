@@ -103,10 +103,9 @@ namespace ClusterExperiment1
         {
             var system = new ActorSystem();
             var clusterProvider = ClusterProvider();
-            var serialization = new Serialization();
-            serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
+            
             var identity = GetIdentityLookup();
-            var cluster = new Cluster(system, serialization);
+            var cluster = new Cluster(system);
             
             var config = GetClusterConfig(clusterProvider, identity);
             await cluster.StartClientAsync(config);
@@ -117,15 +116,14 @@ namespace ClusterExperiment1
         {
             var system = new ActorSystem();
             var clusterProvider = ClusterProvider();
-            var serialization = new Serialization();
-            serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
             var identity = GetIdentityLookup();
-            var cluster = new Cluster(system, serialization);
+            var cluster = new Cluster(system);
             
             var helloProps = Props.FromProducer(() => new HelloActor());
-            cluster.Remote.RegisterKnownKind("hello", helloProps);
-            
+
             var config = GetClusterConfig(clusterProvider, identity);
+            config.RemoteConfig.WithKnownKinds(("hello", helloProps));
+            
             cluster.StartMemberAsync(config);
             return cluster;
         }
@@ -135,13 +133,15 @@ namespace ClusterExperiment1
             var port = Environment.GetEnvironmentVariable("PROTOPORT") ?? "0";
             var p = int.Parse(port);
             var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
-            var remote = new RemoteConfig();
 
-            var advertiseHostname = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
-            remote.AdvertisedHostname = advertiseHostname!;
-            //remote.AdvertisedPort = 8080;
+            var clusterConfig = new ClusterConfig("mycluster", host, p, clusterProvider)
+                .WithIdentityLookup(identity)
+                .WithRemoteConfig(
+                    new RemoteConfig(host,p)
+                    .WithAdvertisedHostname(Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC"))
+                    .WithProtoMessages(MessagesReflection.Descriptor));
 
-            return new ClusterConfig("mycluster", host, p, clusterProvider).WithIdentityLookup(identity).WithRemoteConfig(remote);
+            return clusterConfig;
         }
         
         private static IClusterProvider ClusterProvider()

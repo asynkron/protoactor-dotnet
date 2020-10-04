@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using Xunit;
 using System.Threading.Tasks;
 using Divergic.Logging.Xunit;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Proto.Remote.Tests.Messages;
 using Xunit.Abstractions;
 // ReSharper disable MethodHasAsyncOverload

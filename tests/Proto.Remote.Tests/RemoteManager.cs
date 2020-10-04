@@ -10,9 +10,7 @@ namespace Proto.Remote.Tests
         static RemoteManager()
         {
             system = new ActorSystem();
-            var serialization = new Serialization();
-            serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
-            remote = new Remote(system, serialization);
+            remote = new Remote(system);
         }
 
         private static readonly Remote remote;
@@ -24,20 +22,17 @@ namespace Proto.Remote.Tests
         {
             if (remoteStarted) return (remote, system);
 
-            var config = new RemoteConfig
-            {
-                EndpointWriterOptions = new EndpointWriterOptions
-                {
-                    MaxRetries = 2,
-                    RetryBackOff = TimeSpan.FromMilliseconds(10),
-                    RetryTimeSpan = TimeSpan.FromSeconds(120)
-                }
-            };
+            var config = 
+                new RemoteConfig(GetLocalIp(), 12001)
+                .WithEndpointWriterMaxRetries(2)
+                .WithEndpointWriterRetryBackOff( TimeSpan.FromMilliseconds(10))
+                .WithEndpointWriterRetryTimeSpan(TimeSpan.FromSeconds(120))
+                .WithProtoMessages(Messages.ProtosReflection.Descriptor);
             
             var service = new ProtoService(12000,"localhost");
             service.StartAsync().Wait();
             
-            remote.Start(GetLocalIp(), 12001, config);
+            remote.Start(config);
             
             remoteStarted = true;
 

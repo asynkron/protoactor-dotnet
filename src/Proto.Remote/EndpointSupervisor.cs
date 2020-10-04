@@ -129,10 +129,10 @@ namespace Proto.Remote
             {
                 throw new ArgumentNullException(nameof(remote));
             }
-
+            
             var writerProps =
                 Props.FromProducer(
-                        () => new EndpointWriter(system, remote.Serialization,
+                        () => new EndpointWriter(system, remote.RemoteConfig.Serialization,
                             address, remote.RemoteConfig.ChannelOptions, 
                             remote.RemoteConfig.CallOptions,
                             remote.RemoteConfig.ChannelCredentials

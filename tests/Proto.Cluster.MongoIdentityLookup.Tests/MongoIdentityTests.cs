@@ -84,10 +84,9 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
         {
             var system = new ActorSystem();
             var clusterProvider = new ConsulProvider(new ConsulProviderOptions());
-            var serialization = new Serialization();
-            serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
 
-            var cluster = new Cluster(system, serialization);
+
+            var cluster = new Cluster(system);
 
             var senderProps = Props.FromProducer(() => new SenderActor(cluster, _testOutputHelper));
             var aggProps = Props.FromProducer(() => new VerifyOrderActor());
@@ -107,12 +106,11 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             var port = Environment.GetEnvironmentVariable("PROTOPORT") ?? "0";
             var p = int.Parse(port);
             var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
-            var remote = new RemoteConfig();
+            var remote = new RemoteConfig(host, p).WithProtoMessages(MessagesReflection.Descriptor);
 
             var advertiseHostname = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC") ?? host;
             remote.AdvertisedHostname = advertiseHostname!;
-
-
+            
             return new ClusterConfig(clusterName, host, p, clusterProvider)
                 .WithIdentityLookup(identityLookup)
                 .WithRemoteConfig(remote);

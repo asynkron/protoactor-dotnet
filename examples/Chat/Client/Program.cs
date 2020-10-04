@@ -10,10 +10,9 @@ namespace Client
         static void Main()
         {
             var system = new ActorSystem();
-            var serialization = new Serialization();
-            serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
-            var remote = new Remote(system, serialization);
-            remote.Start("127.0.0.1", 0);
+            var remote = new Remote(system);
+            var config = new RemoteConfig("127.0.0.1",0).WithProtoMessages(ChatReflection.Descriptor);
+            remote.Start(config);
             var server = new PID("127.0.0.1:8000", "chatserver");
             var context = new RootContext(system);
 

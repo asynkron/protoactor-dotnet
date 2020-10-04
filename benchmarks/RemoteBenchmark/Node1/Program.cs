@@ -18,10 +18,9 @@ class Program
     {
         var system = new ActorSystem();
         var context = new RootContext(system);
-        var serialization = new Serialization();
-        serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-        var Remote = new Remote(system, serialization);
-        Remote.Start("127.0.0.1", 12001);
+
+        var Remote = new Remote(system);
+        Remote.Start( new RemoteConfig("127.0.0.1", 12001).WithProtoMessages(ProtosReflection.Descriptor));
 
         var messageCount = 1000000;
         var wg = new AutoResetEvent(false);
