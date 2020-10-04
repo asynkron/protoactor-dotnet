@@ -11,7 +11,6 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.IdentityLookup;
 using Proto.Cluster.Partition;
-using Proto.Remote;
 
 namespace Proto.Cluster
 {

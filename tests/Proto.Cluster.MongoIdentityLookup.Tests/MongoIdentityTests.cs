@@ -83,7 +83,7 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
         private async Task<Cluster> SpawnMember(string clusterName, bool useMongoIdentity)
         {
             var system = new ActorSystem();
-            var clusterProvider = new ConsulProvider(new ConsulProviderOptions());
+            var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
             var cluster = new Cluster(system);
 
             var senderProps = Props.FromProducer(() => new SenderActor(cluster, _testOutputHelper));

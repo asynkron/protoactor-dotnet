@@ -2,7 +2,7 @@ using System;
 
 namespace Proto.Cluster.Consul
 {
-    public class ConsulProviderOptions
+    public class ConsulProviderConfig
     {
         /// <summary>
         ///     Default value is 3 seconds

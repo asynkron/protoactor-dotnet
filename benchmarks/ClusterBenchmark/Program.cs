@@ -159,7 +159,7 @@ namespace ClusterExperiment1
             }
             catch
             {
-                return new ConsulProvider(new ConsulProviderOptions());
+                return new ConsulProvider(new ConsulProviderConfig());
             }
         }
 
