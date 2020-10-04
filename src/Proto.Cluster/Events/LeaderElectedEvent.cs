@@ -6,13 +6,13 @@ namespace Proto.Cluster.Events
     [PublicAPI]
     public class LeaderElectedEvent
     {
-        public LeaderElectedEvent(LeaderInfo newLeader, LeaderInfo oldLeader)
+        public LeaderElectedEvent(LeaderInfo? newLeader, LeaderInfo? oldLeader)
         {
             NewLeader = newLeader;
             OldLeader = oldLeader;
         }
 
-        public LeaderInfo NewLeader { get; }
-        public LeaderInfo OldLeader { get; }
+        public LeaderInfo? NewLeader { get; }
+        public LeaderInfo? OldLeader { get; }
     }
 }

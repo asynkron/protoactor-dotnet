@@ -16,14 +16,14 @@ namespace ClusterExperiment1
 {
     public static class Program
     {
-        private static async Task RunFollower()
+        private static Task RunFollower()
         {
-            var logger = SetupLogger();
+            SetupLogger();
 
-            var cluster = SpawnMember();
+            SpawnMember();
 
             Thread.Sleep(Timeout.Infinite);
-            
+            return Task.CompletedTask;            
         }
 
         private static async Task RunLeader()

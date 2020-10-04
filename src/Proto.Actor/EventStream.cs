@@ -47,7 +47,7 @@ namespace Proto
                             if (res >= ThrottleCount)
                             {
                                 throttled = true;
-                                Interlocked.Exchange(ref messages, 0l);
+                                Interlocked.Exchange(ref messages, 0L);
                                 _logger.LogInformation(
                                     "[DeadLetter] Throttling DeadLetter event logging..."
                                 );

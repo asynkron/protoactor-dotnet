@@ -8,16 +8,22 @@ namespace Proto
 {
     public class DeadLetterEvent
     {
-        public DeadLetterEvent(PID pid, object message, PID? sender)
+        public DeadLetterEvent(PID pid, object message, PID? sender) : this(pid, message, sender, MessageHeader.Empty)
+        {
+        }
+        
+        public DeadLetterEvent(PID pid, object message, PID? sender, MessageHeader? header)
         {
             Pid = pid;
             Message = message;
             Sender = sender;
+            Header = header ?? MessageHeader.Empty;
         }
 
         public PID Pid { get; }
         public object Message { get; }
         public PID? Sender { get; }
+        public MessageHeader Header { get;  }
     }
 
     public class DeadLetterProcess : Process
@@ -28,11 +34,11 @@ namespace Proto
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
-            var (msg, sender, _) = MessageEnvelope.Unwrap(message);
-            System.EventStream.Publish(new DeadLetterEvent(pid, msg, sender));
+            var (msg, sender, header) = MessageEnvelope.Unwrap(message);
+            System.EventStream.Publish(new DeadLetterEvent(pid, msg, sender,header));
         }
 
         protected internal override void SendSystemMessage(PID pid, object message)
-            => System.EventStream.Publish(new DeadLetterEvent(pid, message, null));
+            => System.EventStream.Publish(new DeadLetterEvent(pid, message, null, null));
     }
 }

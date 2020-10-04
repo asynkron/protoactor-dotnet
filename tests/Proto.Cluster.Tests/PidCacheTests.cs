@@ -1,9 +1,8 @@
-using System;
+#nullable enable
 using System.Threading;
 using System.Threading.Tasks;
 using Divergic.Logging.Xunit;
 using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
 using Proto.Cluster.IdentityLookup;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,7 +20,7 @@ namespace Proto.Cluster.Tests
 
         public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct)
         {
-            return Task.FromResult(_pid);
+            return Task.FromResult(_pid)!;
         }
 
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
