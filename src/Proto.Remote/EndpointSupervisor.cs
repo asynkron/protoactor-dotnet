@@ -27,16 +27,16 @@ namespace Proto.Remote
 
         public EndpointSupervisor(Remote remote, ActorSystem system)
         {
-            if (remote.RemoteConfig == null)
+            if (remote.Config == null)
             {
                 throw new ArgumentException("RemoteConfig may not be null", nameof(remote));
             }
 
             _system = system;
             _remote = remote;
-            _maxNrOfRetries = remote.RemoteConfig.EndpointWriterOptions.MaxRetries;
-            _withinTimeSpan = remote.RemoteConfig.EndpointWriterOptions.RetryTimeSpan;
-            _backoff = remote.RemoteConfig.EndpointWriterOptions.RetryBackOff;
+            _maxNrOfRetries = remote.Config.EndpointWriterOptions.MaxRetries;
+            _withinTimeSpan = remote.Config.EndpointWriterOptions.RetryTimeSpan;
+            _backoff = remote.Config.EndpointWriterOptions.RetryBackOff;
         }
 
         public Task ReceiveAsync(IContext context)
@@ -125,22 +125,22 @@ namespace Proto.Remote
                 throw new ArgumentNullException(nameof(address));
             }
             
-            if (remote.RemoteConfig == null)
+            if (remote.Config == null)
             {
                 throw new ArgumentNullException(nameof(remote));
             }
             
             var writerProps =
                 Props.FromProducer(
-                        () => new EndpointWriter(system, remote.RemoteConfig.Serialization,
-                            address, remote.RemoteConfig.ChannelOptions, 
-                            remote.RemoteConfig.CallOptions,
-                            remote.RemoteConfig.ChannelCredentials
+                        () => new EndpointWriter(system, remote.Config.Serialization,
+                            address, remote.Config.ChannelOptions, 
+                            remote.Config.CallOptions,
+                            remote.Config.ChannelCredentials
                         )
                     )
                     .WithMailbox(() =>
                         new EndpointWriterMailbox(system,
-                            remote.RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize
+                            remote.Config.EndpointWriterOptions.EndpointWriterBatchSize
                         )
                     );
             var writer = context.Spawn(writerProps);

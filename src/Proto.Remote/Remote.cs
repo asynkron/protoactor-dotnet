@@ -44,19 +44,19 @@ namespace Proto.Remote
             _system = system;
         }
 
-        public RemoteConfig RemoteConfig { get; private set; } = null!;
+        public RemoteConfig Config { get; private set; } = null!;
         public PID? ActivatorPid { get; private set; }
 
-        public string[] GetKnownKinds() => RemoteConfig.KnownKinds.Keys.ToArray();
+        public string[] GetKnownKinds() => Config.KnownKinds.Keys.ToArray();
 
-        public void RegisterKnownKind(string kind, Props props) => RemoteConfig.KnownKinds.Add(kind, props);
+        public void RegisterKnownKind(string kind, Props props) => Config.KnownKinds.Add(kind, props);
 
         // Modified class in context of repo fork : https://github.com/Optis-World/protoactor-dotnet
-        public void UnregisterKnownKind(string kind) => RemoteConfig.KnownKinds.Remove(kind);
+        public void UnregisterKnownKind(string kind) => Config.KnownKinds.Remove(kind);
 
         public Props GetKnownKind(string kind)
         {
-            if (!RemoteConfig.KnownKinds.TryGetValue(kind, out var props))
+            if (!Config.KnownKinds.TryGetValue(kind, out var props))
             {
                 throw new ArgumentException($"No Props found for kind '{kind}'");
             }
@@ -68,7 +68,7 @@ namespace Proto.Remote
 
         public void Start(RemoteConfig config)
         {
-            RemoteConfig = config;
+            Config = config;
             _endpointManager = new EndpointManager(this, _system);
             _endpointReader = new EndpointReader(_system, _endpointManager, config.Serialization);
             _healthCheck = new HealthServiceImpl();
