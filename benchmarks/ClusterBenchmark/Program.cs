@@ -134,12 +134,13 @@ namespace ClusterExperiment1
             var p = int.Parse(port);
             var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
 
+            var remoteConfig = new RemoteConfig(host, p)
+                .WithAdvertisedHostname(Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC"))
+                .WithProtoMessages(MessagesReflection.Descriptor);
+                
             var clusterConfig = new ClusterConfig("mycluster", host, p, clusterProvider)
                 .WithIdentityLookup(identity)
-                .WithRemoteConfig(
-                    new RemoteConfig(host,p)
-                    .WithAdvertisedHostname(Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC"))
-                    .WithProtoMessages(MessagesReflection.Descriptor));
+                .WithRemoteConfig(remoteConfig);
 
             return clusterConfig;
         }

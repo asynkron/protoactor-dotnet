@@ -20,7 +20,7 @@ class Program
         var context = new RootContext(system);
 
         var Remote = new Remote(system);
-        Remote.Start( new RemoteConfig("127.0.0.1", 12001).WithProtoMessages(ProtosReflection.Descriptor));
+        Remote.StartAsync( new RemoteConfig("127.0.0.1", 12001).WithProtoMessages(ProtosReflection.Descriptor));
 
         var messageCount = 1000000;
         var wg = new AutoResetEvent(false);

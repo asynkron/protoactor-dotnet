@@ -32,7 +32,7 @@ namespace Proto.Remote.Tests
             var service = new ProtoService(12000,"localhost");
             service.StartAsync().Wait();
             
-            remote.Start(config);
+            remote.StartAsync(config);
             
             remoteStarted = true;
 

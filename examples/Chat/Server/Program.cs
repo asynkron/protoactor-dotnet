@@ -12,9 +12,12 @@ namespace Server
         {
             var system = new ActorSystem();
             var context = new RootContext(system);
+            
+            var config = new RemoteConfig("127.0.0.1",8000)
+                .WithProtoMessages(ChatReflection.Descriptor);
+            
             var remote = new Remote(system);
-            var config = new RemoteConfig("127.0.0.1",8000).WithProtoMessages(ChatReflection.Descriptor);
-            remote.Start(config);
+            remote.StartAsync(config);
 
             var clients = new HashSet<PID>();
 

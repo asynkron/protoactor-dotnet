@@ -24,12 +24,14 @@ namespace Proto.Remote.Tests
             _logger.LogInformation("ProtoService starting on {Host}:{Port}...", _host, _port);
 
             var actorSystem = new ActorSystem();
-
-            _remote = new Remote(actorSystem);
-            _remote.Start(new RemoteConfig(_host, _port).WithProtoMessages(Messages.ProtosReflection.Descriptor));
-
             var props = Props.FromProducer(() => new EchoActor(_host, _port));
-            _remote.RegisterKnownKind("EchoActor", props);
+            
+            _remote = new Remote(actorSystem);
+            _remote.StartAsync(new RemoteConfig(_host, _port)
+                .WithProtoMessages(Messages.ProtosReflection.Descriptor)
+                .WithKnownKinds(("EchoActor", props))
+            );
+            
             actorSystem.Root.SpawnNamed(props, "EchoActorInstance");
 
             _logger.LogInformation("ProtoService started");

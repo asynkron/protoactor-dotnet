@@ -37,9 +37,9 @@ namespace Proto.Remote
 
         public string[] GetKnownKinds() => Config.KnownKinds.Keys.ToArray();
 
-        public void RegisterKnownKind(string kind, Props props) => Config.KnownKinds.Add(kind, props);
-        
-        public void UnregisterKnownKind(string kind) => Config.KnownKinds.Remove(kind);
+        // public void RegisterKnownKind(string kind, Props props) => Config.KnownKinds.Add(kind, props);
+        //
+        // public void UnregisterKnownKind(string kind) => Config.KnownKinds.Remove(kind);
         public Props GetKnownKind(string kind)
         {
             if (!Config.KnownKinds.TryGetValue(kind, out var props))
@@ -49,10 +49,12 @@ namespace Proto.Remote
 
             return props;
         }
+        
+        public Task StartAsync(string hostname, int port, RemoteConfig config) => StartAsync(config.WithHost(hostname).WithPort(port));
 
-        public void Start(string hostname, int port) => Start(new RemoteConfig(hostname, port));
+        public Task StartAsync(string hostname, int port) => StartAsync(new RemoteConfig(hostname, port));
 
-        public void Start(RemoteConfig config)
+        public Task StartAsync(RemoteConfig config)
         {
             Config = config;
             _endpointManager = new EndpointManager(this, _system);
@@ -68,19 +70,21 @@ namespace Proto.Remote
                     Remoting.BindService(_endpointReader),
                     Health.BindService(_healthCheck)
                 },
-                Ports = {new ServerPort(config.Hostname, config.Port, config.ServerCredentials)}
+                Ports = {new ServerPort(config.Host, config.Port, config.ServerCredentials)}
             };
             _server.Start();
 
             var boundPort = _server.Ports.Single().BoundPort;
-            _system.SetAddress(config.AdvertisedHostname ?? config.Hostname, config.AdvertisedPort ?? boundPort
+            _system.SetAddress(config.AdvertisedHostname ?? config.Host, config.AdvertisedPort ?? boundPort
             );
             _endpointManager.Start();
             SpawnActivator();
 
-            Logger.LogDebug("Starting Proto.Actor server on {Host}:{Port} ({Address})", config.Hostname, boundPort,
+            Logger.LogDebug("Starting Proto.Actor server on {Host}:{Port} ({Address})", config.Host, boundPort,
                 _system.Address
             );
+
+            return Task.CompletedTask;
         }
 
         public async Task ShutdownAsync(bool graceful = true)
