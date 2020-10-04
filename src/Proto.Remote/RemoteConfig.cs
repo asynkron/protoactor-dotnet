@@ -67,6 +67,63 @@ namespace Proto.Remote
         /// <summary>
         ///     each retry backs off by an exponential ratio of this amount
         /// </summary>
-        public int RetryBackOffms { get; set; } = 100;
+        public TimeSpan RetryBackOff { get; set; } = TimeSpan.FromMilliseconds(100);
+    }
+
+    public static class FluentRemoteConfig
+    {
+        public static RemoteConfig WithChannelOptions(this RemoteConfig self,IEnumerable<ChannelOption> options)
+        {
+            self.ChannelOptions = options;
+            return self;
+        }
+        
+        public static RemoteConfig WithCallOptions(this RemoteConfig self,CallOptions options)
+        {
+            self.CallOptions = options;
+            return self;
+        }
+        
+        public static RemoteConfig WithChannelCredentials(this RemoteConfig self,ChannelCredentials channelCredentials)
+        {
+            self.ChannelCredentials = channelCredentials;
+            return self;
+        }
+        
+        public static RemoteConfig WithServerCredentials(this RemoteConfig self,ServerCredentials serverCredentials)
+        {
+            self.ServerCredentials = serverCredentials;
+            return self;
+        }
+        
+        public static RemoteConfig WithAdvertisedHostname(this RemoteConfig self,string advertisedHostname)
+        {
+            self.AdvertisedHostname = advertisedHostname;
+            return self;
+        }
+        
+        public static RemoteConfig WithAdvertisedPort(this RemoteConfig self,int advertisedPort)
+        {
+            self.AdvertisedPort = advertisedPort;
+            return self;
+        }
+        
+        public static RemoteConfig WithEndpointWriterBatchSize(this RemoteConfig self,int endpointWriterBatchSize)
+        {
+            self.EndpointWriterOptions.EndpointWriterBatchSize = endpointWriterBatchSize;
+            return self;
+        }
+        
+        public static RemoteConfig WithEndpointWriterMaxRetries(this RemoteConfig self,int endpointWriterMaxRetries)
+        {
+            self.EndpointWriterOptions.MaxRetries = endpointWriterMaxRetries;
+            return self;
+        }
+        
+        public static RemoteConfig WithEndpointWriterRetryTimeSpan(this RemoteConfig self,TimeSpan endpointWriterRetryTimeSpan)
+        {
+            self.EndpointWriterOptions.RetryTimeSpan = endpointWriterRetryTimeSpan;
+            return self;
+        }
     }
 }

@@ -6,13 +6,13 @@ namespace Proto
     public class ExponentialBackoffStrategy : ISupervisorStrategy
     {
         private readonly TimeSpan _backoffWindow;
-        private readonly long _initialBackoffNs;
+        private readonly TimeSpan _initialBackoff;
         private readonly Random _random = new Random();
 
         public ExponentialBackoffStrategy(TimeSpan backoffWindow, TimeSpan initialBackoff)
         {
             _backoffWindow = backoffWindow;
-            _initialBackoffNs = TimeConvert.ToNanoseconds(initialBackoff.TotalMilliseconds);
+            _initialBackoff = initialBackoff;
         }
 
         public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
@@ -25,9 +25,9 @@ namespace Proto
 
             rs.Fail();
 
-            var backoff = rs.FailureCount * _initialBackoffNs;
+            var backoff = rs.FailureCount * (int)_initialBackoff.TotalMilliseconds;
             var noise = _random.Next(500);
-            var duration = TimeSpan.FromMilliseconds(TimeConvert.ToMilliseconds(backoff + noise));
+            var duration = TimeSpan.FromMilliseconds(backoff + noise);
             Task.Delay(duration).ContinueWith(t => supervisor.RestartChildren(reason, child));
         }
     }

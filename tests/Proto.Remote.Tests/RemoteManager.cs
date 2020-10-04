@@ -4,7 +4,7 @@ using System.Net.Sockets;
 
 namespace Proto.Remote.Tests
 {
-    public class RemoteManager
+    public static class RemoteManager
     {
         public const string RemoteAddress = "localhost:12000";
         static RemoteManager()
@@ -29,7 +29,7 @@ namespace Proto.Remote.Tests
                 EndpointWriterOptions = new EndpointWriterOptions
                 {
                     MaxRetries = 2,
-                    RetryBackOffms = 10,
+                    RetryBackOff = TimeSpan.FromMilliseconds(10),
                     RetryTimeSpan = TimeSpan.FromSeconds(120)
                 }
             };

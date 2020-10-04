@@ -14,7 +14,7 @@ namespace Proto.Remote
     public class EndpointSupervisor : IActor, ISupervisorStrategy
     {
         private static readonly ILogger Logger = Log.CreateLogger<EndpointSupervisor>();
-        private readonly long _backoff;
+        private readonly TimeSpan _backoff;
 
         private readonly int _maxNrOfRetries;
         private readonly Random _random = new Random();
@@ -36,7 +36,7 @@ namespace Proto.Remote
             _remote = remote;
             _maxNrOfRetries = remote.RemoteConfig.EndpointWriterOptions.MaxRetries;
             _withinTimeSpan = remote.RemoteConfig.EndpointWriterOptions.RetryTimeSpan;
-            _backoff = TimeConvert.ToNanoseconds(remote.RemoteConfig.EndpointWriterOptions.RetryBackOffms);
+            _backoff = remote.RemoteConfig.EndpointWriterOptions.RetryBackOff;
         }
 
         public Task ReceiveAsync(IContext context)
@@ -75,9 +75,9 @@ namespace Proto.Remote
             }
             else
             {
-                var backoff = rs.FailureCount * _backoff;
+                var backoff = rs.FailureCount * (int)_backoff.TotalMilliseconds;
                 var noise = _random.Next(500);
-                var duration = TimeSpan.FromMilliseconds(TimeConvert.ToMilliseconds(backoff + noise));
+                var duration = TimeSpan.FromMilliseconds(backoff + noise);
 
                 _ = Task.Run(async () =>
                     {

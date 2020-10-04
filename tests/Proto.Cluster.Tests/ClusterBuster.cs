@@ -17,7 +17,7 @@ namespace Proto.Cluster.Tests
                 EndpointWriterOptions = new EndpointWriterOptions
                 {
                     MaxRetries = 2,
-                    RetryBackOffms = 10,
+                    RetryBackOff = TimeSpan.FromMilliseconds(10),
                     RetryTimeSpan = TimeSpan.FromSeconds(120)
                 }
             };
