@@ -7,36 +7,30 @@ namespace Proto.Remote.Tests
     public class RemoteKindsRegistrationTests
     {
         [Fact]
-        public async Task CanRegisterKind()
+        public void CanRegisterKind()
         {
             var props = new Props();
             var kind = Guid.NewGuid().ToString();
-            var remote = new Remote(new ActorSystem());
-            remote.StartAsync(new RemoteConfig()
-                .WithAnyHost()
-                .WithAnyFreePort()
+            var remote = new Remote(new ActorSystem(), 
+                new RemoteConfig()
                 .WithKnownKinds((kind, props))
             );
-            await remote.ShutdownAsync();
 
             Assert.Equal(props, remote.GetKnownKind(kind));
         }
 
         [Fact]
-        public async Task CanRegisterMultipleKinds()
+        public void CanRegisterMultipleKinds()
         {
             var props = new Props();
             var kind1 = Guid.NewGuid().ToString();
             var kind2 = Guid.NewGuid().ToString();
-            var remote = new Remote(new ActorSystem());
-            remote.StartAsync(new RemoteConfig()
-                .WithAnyHost()
-                .WithAnyFreePort()
+            var remote = new Remote(new ActorSystem(),
+                new RemoteConfig()
                 .WithKnownKinds(
                     (kind1, props),
                     (kind2, props))
             );
-            await remote.ShutdownAsync();
 
             var kinds = remote.GetKnownKinds();
             Assert.Contains(kind1, kinds);
@@ -44,12 +38,10 @@ namespace Proto.Remote.Tests
         }
 
         [Fact]
-        public async Task UnknownKindThrowsException()
+        public void UnknownKindThrowsException()
         {
-            var remote = new Remote(new ActorSystem());
-            remote.StartAsync(new RemoteConfig().WithAnyHost().WithAnyFreePort());
-            await remote.ShutdownAsync();
-            
+            var remote = new Remote(new ActorSystem(),new RemoteConfig());
+
             Assert.Throws<ArgumentException>(() => { remote.GetKnownKind("not registered"); });
         }
     }

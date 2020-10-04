@@ -27,12 +27,17 @@ namespace Proto.Remote
 
         private Server _server = null!;
 
-        public Remote(ActorSystem system)
+        public Remote(ActorSystem system,string host, int port, RemoteConfig config) : this(system,config.WithHost(host).WithPort(port))
+        {
+        }
+        
+        public Remote(ActorSystem system,RemoteConfig config)
         {
             _system = system;
+            Config = config;
         }
 
-        public RemoteConfig Config { get; private set; } = null!;
+        public RemoteConfig Config { get; private set; }
         public PID? ActivatorPid { get; private set; }
 
         public string[] GetKnownKinds() => Config.KnownKinds.Keys.ToArray();
@@ -49,14 +54,10 @@ namespace Proto.Remote
 
             return props;
         }
-        
-        public Task StartAsync(string hostname, int port, RemoteConfig config) => StartAsync(config.WithHost(hostname).WithPort(port));
 
-        public Task StartAsync(string hostname, int port) => StartAsync(new RemoteConfig(hostname, port));
-
-        public Task StartAsync(RemoteConfig config)
+        public Task StartAsync()
         {
-            Config = config;
+            var config = Config;
             _endpointManager = new EndpointManager(this, _system);
             _endpointReader = new EndpointReader(_system, _endpointManager, config.Serialization);
             _healthCheck = new HealthServiceImpl();

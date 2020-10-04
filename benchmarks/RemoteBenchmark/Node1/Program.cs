@@ -14,13 +14,14 @@ using ProtosReflection = Messages.ProtosReflection;
 
 class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
         var system = new ActorSystem();
         var context = new RootContext(system);
 
-        var Remote = new Remote(system);
-        Remote.StartAsync( new RemoteConfig("127.0.0.1", 12001).WithProtoMessages(ProtosReflection.Descriptor));
+        var Remote = new Remote(system,
+            new RemoteConfig("127.0.0.1", 12001).WithProtoMessages(ProtosReflection.Descriptor));
+        await Remote.StartAsync();
 
         var messageCount = 1000000;
         var wg = new AutoResetEvent(false);

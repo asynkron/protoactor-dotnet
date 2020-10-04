@@ -27,7 +27,6 @@ namespace Proto.Cluster
         public Cluster(ActorSystem system)
         {
             System = system;
-            Remote = new Remote.Remote(system);
             _clusterHeartBeat = new ClusterHeartBeat(this);
             system.EventStream.Subscribe<ClusterTopology>(e =>
                 {
@@ -42,7 +41,7 @@ namespace Proto.Cluster
 
         public ActorSystem System { get; }
 
-        public Remote.Remote Remote { get; }
+        public Remote.Remote Remote { get; private set; } = null!;
         
         public MemberList MemberList { get; private set; } = null!;
 
@@ -109,7 +108,8 @@ namespace Proto.Cluster
 
             //default to partition identity lookup
             IdentityLookup = config.IdentityLookup ?? new PartitionIdentityLookup();
-            Remote.StartAsync(Config.RemoteConfig);
+            Remote = new Remote.Remote(System,Config.RemoteConfig);
+            await Remote.StartAsync();
             _logger = Log.CreateLogger($"Cluster-{LoggerId}");
             _logger.LogInformation("Starting");
             MemberList = new MemberList(this);

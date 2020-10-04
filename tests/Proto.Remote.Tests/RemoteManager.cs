@@ -7,19 +7,13 @@ namespace Proto.Remote.Tests
     public static class RemoteManager
     {
         public const string RemoteAddress = "localhost:12000";
-        static RemoteManager()
-        {
-            system = new ActorSystem();
-            remote = new Remote(system);
-        }
-
-        private static readonly Remote remote;
-        private static readonly ActorSystem system;
-
+        private static Remote remote;
+        private static ActorSystem system;
         private static bool remoteStarted;
 
         public static (Remote, ActorSystem) EnsureRemote()
         {
+            system = new ActorSystem();
             if (remoteStarted) return (remote, system);
 
             var config = 
@@ -32,7 +26,8 @@ namespace Proto.Remote.Tests
             var service = new ProtoService(12000,"localhost");
             service.StartAsync().Wait();
             
-            remote.StartAsync(config);
+            remote = new Remote(system, config);
+            remote.StartAsync();
             
             remoteStarted = true;
 
