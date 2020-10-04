@@ -86,16 +86,14 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
             var identityLookup = useMongoIdentity ? GetIdentityLookup(clusterName) : new PartitionIdentityLookup();
             var config = GetClusterConfig(clusterProvider, clusterName, identityLookup);
-
-            Cluster cluster = null;
+            
+            var cluster = new Cluster(system, config);
             
             var senderProps = Props.FromProducer(() => new SenderActor(cluster, _testOutputHelper));
             var aggProps = Props.FromProducer(() => new VerifyOrderActor());
             config.RemoteConfig.WithKnownKinds(
                 ("sender", senderProps), 
                 ("aggregator", aggProps));
-            
-            cluster = new Cluster(system, config);
             
             await cluster.StartMemberAsync();
             return cluster;
