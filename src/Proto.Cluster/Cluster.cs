@@ -23,9 +23,11 @@ namespace Proto.Cluster
 
         private IRequestAsyncStrategy _requestAsyncStrategy = null!;
 
-        public Cluster(ActorSystem system)
+        public Cluster(ActorSystem system, ClusterConfig config)
         {
             System = system;
+            Config = config;
+            
             _clusterHeartBeat = new ClusterHeartBeat(this);
             system.EventStream.Subscribe<ClusterTopology>(e =>
                 {
@@ -52,14 +54,9 @@ namespace Proto.Cluster
 
         public PidCache PidCache { get; } = new PidCache();
 
-        public Task StartMemberAsync(string clusterName, string address, int port, IClusterProvider cp)
+        public async Task StartMemberAsync()
         {
-            return StartMemberAsync(new ClusterConfig(clusterName, address, port, cp));
-        }
-
-        public async Task StartMemberAsync(ClusterConfig config)
-        {
-            await BeginStartAsync(config, false);
+            await BeginStartAsync(Config, false);
             var (host, port) = System.GetAddress();
 
             Provider = Config.ClusterProvider;
@@ -75,15 +72,10 @@ namespace Proto.Cluster
 
             _logger.LogInformation("Started as cluster member");
         }
-        
-        public Task StartClientAsync(string clusterName, string address, int port, IClusterProvider cp)
-        {
-            return StartClientAsync(new ClusterConfig(clusterName, address, port, cp));
-        }
 
-        public async Task StartClientAsync(ClusterConfig config)
+        public async Task StartClientAsync()
         {
-            await BeginStartAsync(config, true);
+            await BeginStartAsync(Config, true);
 
             var (host, port) = System.GetAddress();
 

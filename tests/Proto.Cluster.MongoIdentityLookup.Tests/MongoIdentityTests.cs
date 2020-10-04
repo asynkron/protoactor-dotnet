@@ -84,19 +84,20 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
         {
             var system = new ActorSystem();
             var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
-            var cluster = new Cluster(system);
-
-            var senderProps = Props.FromProducer(() => new SenderActor(cluster, _testOutputHelper));
-            var aggProps = Props.FromProducer(() => new VerifyOrderActor());
-            
             var identityLookup = useMongoIdentity ? GetIdentityLookup(clusterName) : new PartitionIdentityLookup();
             var config = GetClusterConfig(clusterProvider, clusterName, identityLookup);
+
+            Cluster cluster = null;
             
+            var senderProps = Props.FromProducer(() => new SenderActor(cluster, _testOutputHelper));
+            var aggProps = Props.FromProducer(() => new VerifyOrderActor());
             config.RemoteConfig.WithKnownKinds(
                 ("sender", senderProps), 
                 ("aggregator", aggProps));
             
-            await cluster.StartMemberAsync(config);
+            cluster = new Cluster(system, config);
+            
+            await cluster.StartMemberAsync();
             return cluster;
         }
 

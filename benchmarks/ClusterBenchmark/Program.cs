@@ -103,12 +103,10 @@ namespace ClusterExperiment1
         {
             var system = new ActorSystem();
             var clusterProvider = ClusterProvider();
-            
             var identity = GetIdentityLookup();
-            var cluster = new Cluster(system);
-            
             var config = GetClusterConfig(clusterProvider, identity);
-            await cluster.StartClientAsync(config);
+            var cluster = new Cluster(system, config);
+            await cluster.StartClientAsync();
             return cluster;
         }
 
@@ -117,14 +115,14 @@ namespace ClusterExperiment1
             var system = new ActorSystem();
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
-            var cluster = new Cluster(system);
+            var config = GetClusterConfig(clusterProvider, identity);
             
             var helloProps = Props.FromProducer(() => new HelloActor());
-
-            var config = GetClusterConfig(clusterProvider, identity);
             config.RemoteConfig.WithKnownKinds(("hello", helloProps));
             
-            cluster.StartMemberAsync(config);
+            var cluster = new Cluster(system, config);
+            
+            cluster.StartMemberAsync();
             return cluster;
         }
         
