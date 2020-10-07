@@ -17,17 +17,15 @@ namespace Proto.Cluster
     [PublicAPI]
     public class Cluster
     {
-        private static ILogger _logger = null!;
-
         private ClusterHeartBeat _clusterHeartBeat;
-
-        private IRequestAsyncStrategy _requestAsyncStrategy = null!;
 
         public Cluster(ActorSystem system, ClusterConfig config)
         {
+            Id = Guid.NewGuid();
+            PidCache = new PidCache();
             System = system;
             Config = config;
-            
+
             _clusterHeartBeat = new ClusterHeartBeat(this);
             system.EventStream.Subscribe<ClusterTopology>(e =>
                 {
@@ -36,23 +34,26 @@ namespace Proto.Cluster
             );
         }
 
-        public Guid Id { get; } = Guid.NewGuid();
+        public ILogger Logger { get; private set; } = null!;
+        public IRequestAsyncStrategy AsyncStrategy { get; private set; } = null!;
 
-        public ClusterConfig Config { get; private set; } = null!;
+        public Guid Id { get; }
+
+        public ClusterConfig Config { get; private set; }
 
         public ActorSystem System { get; }
 
         public Remote.Remote Remote { get; private set; } = null!;
-        
+
         public MemberList MemberList { get; private set; } = null!;
 
-        private IIdentityLookup IdentityLookup { get; set; } = null!;
+        internal IIdentityLookup IdentityLookup { get; set; } = null!;
 
         internal IClusterProvider Provider { get; set; } = null!;
 
         public string LoggerId => System.Address;
 
-        public PidCache PidCache { get; } = new PidCache();
+        public PidCache PidCache { get; } 
 
         public async Task StartMemberAsync()
         {
@@ -70,7 +71,7 @@ namespace Proto.Cluster
                 MemberList
             );
 
-            _logger.LogInformation("Started as cluster member");
+            Logger.LogInformation("Started as cluster member");
         }
 
         public async Task StartClientAsync()
@@ -89,7 +90,7 @@ namespace Proto.Cluster
                 MemberList
             );
 
-            _logger.LogInformation("Started as cluster client");
+            Logger.LogInformation("Started as cluster client");
         }
 
         private async Task BeginStartAsync(ClusterConfig config, bool client)
@@ -99,12 +100,12 @@ namespace Proto.Cluster
 
             //default to partition identity lookup
             IdentityLookup = config.IdentityLookup ?? new PartitionIdentityLookup();
-            Remote = new Remote.Remote(System,Config.RemoteConfig);
+            Remote = new Remote.Remote(System, Config.RemoteConfig);
             await Remote.StartAsync();
-            _logger = Log.CreateLogger($"Cluster-{LoggerId}");
-            _logger.LogInformation("Starting");
+            Logger = Log.CreateLogger($"Cluster-{LoggerId}");
+            Logger.LogInformation("Starting");
             MemberList = new MemberList(this);
-            _requestAsyncStrategy = new RequestAsyncStrategy(IdentityLookup, PidCache, System.Root, _logger);
+            AsyncStrategy = new RequestAsyncStrategy(IdentityLookup, PidCache, System.Root, Logger);
 
             var kinds = Remote.GetKnownKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
@@ -114,13 +115,13 @@ namespace Proto.Cluster
         public async Task ShutdownAsync(bool graceful = true)
         {
             await _clusterHeartBeat.ShutdownAsync();
-            _logger.LogInformation("Stopping");
+            Logger.LogInformation("Stopping");
             if (graceful) await IdentityLookup!.ShutdownAsync();
 
             await Config!.ClusterProvider.ShutdownAsync(graceful);
             await Remote.ShutdownAsync(graceful);
 
-            _logger.LogInformation("Stopped");
+            Logger.LogInformation("Stopped");
         }
 
         public Task<PID?> GetAsync(string identity, string kind)
@@ -135,7 +136,7 @@ namespace Proto.Cluster
 
         public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct)
         {
-            return _requestAsyncStrategy.RequestAsync<T>(identity, kind, message, ct);
+            return AsyncStrategy.RequestAsync<T>(identity, kind, message, ct);
         }
     }
 }

@@ -91,9 +91,10 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             
             var senderProps = Props.FromProducer(() => new SenderActor(cluster, _testOutputHelper));
             var aggProps = Props.FromProducer(() => new VerifyOrderActor());
-            config.RemoteConfig.WithKnownKinds(
-                ("sender", senderProps), 
-                ("aggregator", aggProps));
+            config.RemoteConfig
+                .WithKnownKind("sender", senderProps)
+                .WithKnownKind("aggregator", aggProps);
+
             
             await cluster.StartMemberAsync();
             return cluster;

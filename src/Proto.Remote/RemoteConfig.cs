@@ -167,6 +167,12 @@ namespace Proto.Remote
 
             return this;
         }
+        
+        public RemoteConfig WithKnownKind(string kind, Props prop)
+        {
+            KnownKinds.Add(kind, prop);
+            return this;
+        }
 
         public RemoteConfig WithKnownKinds(params (string kind, Props prop)[] knownKinds)
         {
