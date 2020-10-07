@@ -25,6 +25,7 @@ namespace Proto.Cluster
             PidCache = new PidCache();
             System = system;
             Config = config;
+            Config.RemoteConfig.WithProtoMessages(ProtosReflection.Descriptor);
 
             _clusterHeartBeat = new ClusterHeartBeat(this);
             system.EventStream.Subscribe<ClusterTopology>(e =>
@@ -39,7 +40,7 @@ namespace Proto.Cluster
 
         public Guid Id { get; }
 
-        public ClusterConfig Config { get; private set; }
+        public ClusterConfig Config { get; }
 
         public ActorSystem System { get; }
 
@@ -57,7 +58,7 @@ namespace Proto.Cluster
 
         public async Task StartMemberAsync()
         {
-            await BeginStartAsync(Config, false);
+            await BeginStartAsync(false);
             var (host, port) = System.GetAddress();
 
             Provider = Config.ClusterProvider;
@@ -76,7 +77,7 @@ namespace Proto.Cluster
 
         public async Task StartClientAsync()
         {
-            await BeginStartAsync(Config, true);
+            await BeginStartAsync(true);
 
             var (host, port) = System.GetAddress();
 
@@ -93,13 +94,10 @@ namespace Proto.Cluster
             Logger.LogInformation("Started as cluster client");
         }
 
-        private async Task BeginStartAsync(ClusterConfig config, bool client)
+        private async Task BeginStartAsync( bool client)
         {
-            Config = config;
-            Config.RemoteConfig.WithProtoMessages(ProtosReflection.Descriptor);
-
             //default to partition identity lookup
-            IdentityLookup = config.IdentityLookup ?? new PartitionIdentityLookup();
+            IdentityLookup = Config.IdentityLookup ?? new PartitionIdentityLookup();
             Remote = new Remote.Remote(System, Config.RemoteConfig);
             await Remote.StartAsync();
             Logger = Log.CreateLogger($"Cluster-{LoggerId}");
@@ -124,19 +122,10 @@ namespace Proto.Cluster
             Logger.LogInformation("Stopped");
         }
 
-        public Task<PID?> GetAsync(string identity, string kind)
-        {
-            return GetAsync(identity, kind, CancellationToken.None);
-        }
+        public Task<PID?> GetAsync(string identity, string kind) => GetAsync(identity, kind, CancellationToken.None);
 
-        public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct)
-        {
-            return IdentityLookup!.GetAsync(identity, kind, ct);
-        }
+        public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct) => IdentityLookup!.GetAsync(identity, kind, ct);
 
-        public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct)
-        {
-            return AsyncStrategy.RequestAsync<T>(identity, kind, message, ct);
-        }
+        public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) => AsyncStrategy.RequestAsync<T>(identity, kind, message, ct);
     }
 }
