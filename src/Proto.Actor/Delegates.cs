@@ -2,6 +2,7 @@
 
 namespace Proto
 {
+    
     public delegate Task Receive(IContext context);
     
     public delegate Task Receiver(IReceiverContext context, MessageEnvelope envelope);
