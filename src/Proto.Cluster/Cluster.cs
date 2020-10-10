@@ -36,7 +36,7 @@ namespace Proto.Cluster
         }
 
         public ILogger Logger { get; private set; } = null!;
-        public IRequestAsyncStrategy AsyncStrategy { get; private set; } = null!;
+        public IClusterContext AsyncStrategy { get; private set; } = null!;
 
         public Guid Id { get; }
 
@@ -103,7 +103,7 @@ namespace Proto.Cluster
             Logger = Log.CreateLogger($"Cluster-{LoggerId}");
             Logger.LogInformation("Starting");
             MemberList = new MemberList(this);
-            AsyncStrategy = new RequestAsyncStrategy(IdentityLookup, PidCache, System.Root, Logger);
+            AsyncStrategy = new DefaultClusterContext(IdentityLookup, PidCache, System.Root, Logger);
 
             var kinds = Remote.GetKnownKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);

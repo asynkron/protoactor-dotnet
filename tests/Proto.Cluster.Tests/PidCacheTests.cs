@@ -69,7 +69,7 @@ namespace Proto.Cluster.Tests
             
             var logger = Log.CreateLogger("dummylog");
             pidCache.TryAdd("kind", "identity", pid);
-            var requestAsyncStrategy = new RequestAsyncStrategy(dummyIdentityLookup,pidCache,system.Root,logger);
+            var requestAsyncStrategy = new DefaultClusterContext(dummyIdentityLookup,pidCache,system.Root,logger);
 
             var res = await requestAsyncStrategy.RequestAsync<string>("identity", "kind", "msg", new CancellationTokenSource(60000).Token
             );
