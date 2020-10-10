@@ -28,7 +28,7 @@ namespace Proto.Remote.Tests
             
             _remote = new Remote(actorSystem,new RemoteConfig(_host, _port)
                 .WithProtoMessages(Messages.ProtosReflection.Descriptor)
-                .WithKnownKinds(("EchoActor", props)));
+                .WithRemoteKinds(("EchoActor", props)));
             
             _remote.StartAsync();
             

@@ -70,7 +70,7 @@ namespace Proto.Cluster.MongoIdentityLookup
 
         private Task ActivationRequest(IContext context, ActivationRequest msg)
         {
-            var props = _remote.GetKnownKind(msg.Kind);
+            var props = _cluster.GetClusterKind(msg.Kind);
             var identity = msg.Identity;
             var kind = msg.Kind;
             try

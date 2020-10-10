@@ -8,6 +8,7 @@ using MongoDB.Driver;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
+using Proto.Cluster.IdentityLookup;
 using Proto.Cluster.Kubernetes;
 using Proto.Cluster.MongoIdentityLookup;
 using Proto.Remote;
@@ -115,18 +116,17 @@ namespace ClusterExperiment1
             var system = new ActorSystem();
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
-            var config = GetClusterConfig(clusterProvider, identity);
-            
             var helloProps = Props.FromProducer(() => new HelloActor());
-            config.RemoteConfig.WithKnownKinds(("hello", helloProps));
-            
+            var config = GetClusterConfig(clusterProvider, identity)
+                .WithClusterKind("hello", helloProps);
+
             var cluster = new Cluster(system, config);
             
             cluster.StartMemberAsync();
             return cluster;
         }
         
-        private static ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, MongoIdentityLookup identity)
+        private static ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, IIdentityLookup identity)
         {
             var port = Environment.GetEnvironmentVariable("PROTOPORT") ?? "0";
             var p = int.Parse(port);

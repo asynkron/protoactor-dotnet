@@ -36,7 +36,7 @@ namespace Proto.Remote
         /// <summary>
         ///     Known actor kinds that can be spawned remotely
         /// </summary>
-        public Dictionary<string, Props> KnownKinds { get; set; } = new Dictionary<string, Props>();
+        public Dictionary<string, Props> RemoteKinds { get; } = new Dictionary<string, Props>();
 
         /// <summary>
         ///     Gets or sets the ChannelOptions for the gRPC channel.
@@ -168,15 +168,15 @@ namespace Proto.Remote
             return this;
         }
         
-        public RemoteConfig WithKnownKind(string kind, Props prop)
+        public RemoteConfig WithRemoteKind(string kind, Props prop)
         {
-            KnownKinds.Add(kind, prop);
+            RemoteKinds.Add(kind, prop);
             return this;
         }
 
-        public RemoteConfig WithKnownKinds(params (string kind, Props prop)[] knownKinds)
+        public RemoteConfig WithRemoteKinds(params (string kind, Props prop)[] knownKinds)
         {
-            foreach (var (kind, prop) in knownKinds) KnownKinds.Add(kind, prop);
+            foreach (var (kind, prop) in knownKinds) RemoteKinds.Add(kind, prop);
 
             return this;
         }

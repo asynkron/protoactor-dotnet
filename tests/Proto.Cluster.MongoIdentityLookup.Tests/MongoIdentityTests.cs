@@ -85,16 +85,16 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             var system = new ActorSystem();
             var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
             var identityLookup = useMongoIdentity ? GetIdentityLookup(clusterName) : new PartitionIdentityLookup();
-            var config = GetClusterConfig(clusterProvider, clusterName, identityLookup);
             
-            var cluster = new Cluster(system, config);
-            
-            var senderProps = Props.FromProducer(() => new SenderActor(cluster, _testOutputHelper));
+            var senderProps = Props.FromProducer(() => new SenderActor(_testOutputHelper));
             var aggProps = Props.FromProducer(() => new VerifyOrderActor());
-            config.RemoteConfig
-                .WithKnownKind("sender", senderProps)
-                .WithKnownKind("aggregator", aggProps);
 
+            var config = GetClusterConfig(clusterProvider, clusterName, identityLookup)
+                .WithClusterKind("sender", senderProps)
+                .WithClusterKind("aggregator", aggProps);
+           
+
+            var cluster = new Cluster(system, config);
             
             await cluster.StartMemberAsync();
             return cluster;
@@ -137,15 +137,14 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
 
         private class SenderActor : IActor
         {
-            private readonly Cluster _cluster;
+            private Cluster _cluster;
             private readonly ITestOutputHelper _testOutputHelper;
 
             private string _instanceId;
             private int _seq;
 
-            public SenderActor(Cluster cluster, ITestOutputHelper testOutputHelper)
+            public SenderActor(ITestOutputHelper testOutputHelper)
             {
-                _cluster = cluster;
                 _testOutputHelper = testOutputHelper;
             }
 
@@ -155,11 +154,12 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
                 {
                     case GrainInit init:
                         _instanceId = $"{init.Kind}:{init.Identity}.{Guid.NewGuid():N}";
+                        _cluster = init.Cluster;
                         break;
                     case SendToRequest sendTo:
 
                         var key = Guid.NewGuid().ToString("N");
-                        for (int i = 0; i < sendTo.Count; i++)
+                        for (var i = 0; i < sendTo.Count; i++)
                         {
                             try
                             {

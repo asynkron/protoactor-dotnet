@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -54,7 +55,9 @@ namespace Proto.Cluster
 
         public string LoggerId => System.Address;
 
-        public PidCache PidCache { get; } 
+        public PidCache PidCache { get; }
+
+        public string[] GetClusterKinds() => Config.ClusterKinds.Keys.ToArray();
 
         public async Task StartMemberAsync()
         {
@@ -62,7 +65,7 @@ namespace Proto.Cluster
             var (host, port) = System.GetAddress();
 
             Provider = Config.ClusterProvider;
-            var kinds = Remote.GetKnownKinds();
+            var kinds = GetClusterKinds();
             await Provider.StartMemberAsync(
                 this,
                 Config.Name,
@@ -105,7 +108,7 @@ namespace Proto.Cluster
             MemberList = new MemberList(this);
             AsyncStrategy = new DefaultClusterContext(IdentityLookup, PidCache, System.Root, Logger);
 
-            var kinds = Remote.GetKnownKinds();
+            var kinds = GetClusterKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
             await _clusterHeartBeat.StartAsync();
         }
@@ -127,5 +130,15 @@ namespace Proto.Cluster
         public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct) => IdentityLookup!.GetAsync(identity, kind, ct);
 
         public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) => AsyncStrategy.RequestAsync<T>(identity, kind, message, ct);
+
+        public Props GetClusterKind(string kind)
+        {
+            if (!Config.ClusterKinds.TryGetValue(kind, out var props))
+            {
+                throw new ArgumentException($"No Props found for kind '{kind}'");
+            }
+
+            return props;
+        }
     }
 }

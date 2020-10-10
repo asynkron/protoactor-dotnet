@@ -40,14 +40,14 @@ namespace Proto.Remote
         public RemoteConfig Config { get; private set; }
         public PID? ActivatorPid { get; private set; }
 
-        public string[] GetKnownKinds() => Config.KnownKinds.Keys.ToArray();
+        public string[] GetRemoteKinds() => Config.RemoteKinds.Keys.ToArray();
 
         // public void RegisterKnownKind(string kind, Props props) => Config.KnownKinds.Add(kind, props);
         //
         // public void UnregisterKnownKind(string kind) => Config.KnownKinds.Remove(kind);
-        public Props GetKnownKind(string kind)
+        public Props GetRemoteKind(string kind)
         {
-            if (!Config.KnownKinds.TryGetValue(kind, out var props))
+            if (!Config.RemoteKinds.TryGetValue(kind, out var props))
             {
                 throw new ArgumentException($"No Props found for kind '{kind}'");
             }
