@@ -1,3 +1,4 @@
+using System;
 using JetBrains.Annotations;
 
 namespace Proto
@@ -10,19 +11,26 @@ namespace Proto
         private string _host = NoHost;
         private int _port;
 
-        public ActorSystem()
+        public ActorSystem() : this(new ActorSystemConfig())
         {
+        }
+        
+        public ActorSystem(ActorSystemConfig config)
+        {
+            Config = config ?? throw new ArgumentNullException(nameof(config));
             ProcessRegistry = new ProcessRegistry(this);
             Root = new RootContext(this);
             DeadLetter = new DeadLetterProcess(this);
             Guardians = new Guardians(this);
-            EventStream = new EventStream();
+            EventStream = new EventStream(config.DeadLetterThrottleInterval, config.DeadLetterThrottleCount);
             var eventStreamProcess = new EventStreamProcess(this);
             ProcessRegistry.TryAdd("eventstream", eventStreamProcess);
         }
 
         public string Address { get; private set; } = NoHost;
 
+        public ActorSystemConfig Config { get; }
+        
         public ProcessRegistry ProcessRegistry { get; }
 
         public RootContext Root { get; }

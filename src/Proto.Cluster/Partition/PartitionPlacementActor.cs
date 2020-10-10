@@ -51,13 +51,13 @@ namespace Proto.Cluster.Partition
                 ClusterTopology msg         => ClusterTopology(msg),
                 IdentityHandoverRequest msg => IdentityHandoverRequest(context, msg),
                 ActivationRequest msg       => ActivationRequest(context, msg),
-                _                           => Actor.Done
+                _                           => Task.CompletedTask
             };
 
         private Task Started(IContext context)
         {
             context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task ReceiveTimeout(IContext context)
@@ -65,7 +65,7 @@ namespace Proto.Cluster.Partition
             context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
             var count = _myActors.Count;
             _logger.LogInformation("Statistics: Actor Count {ActorCount}", count);
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task Terminated(IContext context, Terminated msg)
@@ -86,7 +86,7 @@ namespace Proto.Cluster.Partition
 
             context.Send(ownerPid, activationTerminated);
             _myActors.Remove(identity);
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task ClusterTopology(ClusterTopology msg)
@@ -94,13 +94,13 @@ namespace Proto.Cluster.Partition
             //ignore outdated events
             if (msg.EventId <= _eventId)
             {
-                return Actor.Done;
+                return Task.CompletedTask;
             }
 
             _eventId = msg.EventId;
             _rdv.UpdateMembers(msg.Members);
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         //this is pure, we do not change any state or actually move anything
@@ -141,12 +141,12 @@ namespace Proto.Cluster.Partition
             context.Respond(response);
 
             _logger.LogDebug("Transferred {Count} actor ownership to other members", count);
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task ActivationRequest(IContext context, ActivationRequest msg)
         {
-            var props = _remote.GetKnownKind(msg.Kind);
+            var props = _cluster.GetClusterKind(msg.Kind);
             var identity = msg.Identity;
             var kind = msg.Kind;
             try
@@ -169,12 +169,9 @@ namespace Proto.Cluster.Partition
                     //spawn and remember this actor
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
-                    var pid = context.SpawnPrefix(props, identity);
-                    
-                    //give the grain knowledge of its grain name and kind
-                    var grainInit = new GrainInit(identity,kind);
-                    
-                    context.Send(pid,grainInit);
+                    var clusterProps = props.WithClusterInit(_cluster, identity, kind);
+                    var pid = context.SpawnPrefix(clusterProps, identity);
+
                     _myActors[identity] = (pid, kind, _eventId);
 
                     var response = new ActivationResponse
@@ -193,7 +190,7 @@ namespace Proto.Cluster.Partition
                 context.Respond(response);
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 }

@@ -35,7 +35,7 @@ namespace Proto.Tests
                         context.Forward(Child);
                         break;
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             }
         }
 
@@ -49,7 +49,7 @@ namespace Proto.Tests
                     case string _:
                         throw Exception;
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             }
         }
 
@@ -63,7 +63,7 @@ namespace Proto.Tests
                     case Started _:
                         throw new Exception("in started");
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             }
         }
 

@@ -6,19 +6,19 @@ using Proto.Cluster.IdentityLookup;
 
 namespace Proto.Cluster
 {
-    public interface IRequestAsyncStrategy
+    public interface IClusterContext
     {
         Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct);
     }
 
-    public class RequestAsyncStrategy : IRequestAsyncStrategy
+    public class DefaultClusterContext : IClusterContext
     {
         private readonly IIdentityLookup _identityLookup;
         private readonly PidCache _pidCache;
         private readonly ISenderContext _context;
         private readonly ILogger _logger;
 
-        public RequestAsyncStrategy(IIdentityLookup identityLookup, PidCache pidCache, ISenderContext context, ILogger logger)
+        public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ISenderContext context, ILogger logger)
         {
             _identityLookup = identityLookup;
             _pidCache = pidCache;

@@ -52,11 +52,11 @@ namespace Proto.Tests
                     {
                         ctx2.Respond(42);
                         behavior.UnbecomeStacked();
-                        return Actor.Done;
+                        return Task.CompletedTask;
                     });
                     ctx.Respond(ctx.Message);
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             });
             PID pid = SpawnActorFromFunc(behavior.ReceiveAsync);
 
@@ -92,7 +92,7 @@ namespace Proto.Tests
                     break;
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task On(IContext context)
@@ -108,7 +108,7 @@ namespace Proto.Tests
                     break;
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         public Task ReceiveAsync(IContext context)
@@ -119,13 +119,13 @@ namespace Proto.Tests
                 case HitWithHammer _:
                     context.Respond("Smashed!");
                     _smashed = true;
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 case PressSwitch _ when _smashed:
                     context.Respond("Broken");
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 case Touch _ when _smashed:
                     context.Respond("OW!");
-                    return Actor.Done;
+                    return Task.CompletedTask;
             }
             // if not handled, use behavior specific
             return _behavior.ReceiveAsync(context);

@@ -31,7 +31,7 @@ namespace Proto.Router
             {
                 _config.OnStarted(context, _routerState);
                 _wg.Set();
-                return Actor.Done;
+                return Task.CompletedTask;
             }
 
             if (context.Message is RouterAddRoutee addRoutee)
@@ -39,13 +39,13 @@ namespace Proto.Router
                 var r = _routerState.GetRoutees();
                 if (r.Contains(addRoutee.PID))
                 {
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 }
 
                 context.Watch(addRoutee.PID);
                 r.Add(addRoutee.PID);
                 _routerState.SetRoutees(r);
-                return Actor.Done;
+                return Task.CompletedTask;
             }
 
             if (context.Message is RouterRemoveRoutee removeRoutee)
@@ -53,13 +53,13 @@ namespace Proto.Router
                 var r = _routerState.GetRoutees();
                 if (!r.Contains(removeRoutee.PID))
                 {
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 }
 
                 context.Unwatch(removeRoutee.PID);
                 r.Remove(removeRoutee.PID);
                 _routerState.SetRoutees(r);
-                return Actor.Done;
+                return Task.CompletedTask;
             }
 
             if (context.Message is RouterBroadcastMessage broadcastMessage)
@@ -70,7 +70,7 @@ namespace Proto.Router
                     context.Request(routee, broadcastMessage.Message, sender);
                 }
 
-                return Actor.Done;
+                return Task.CompletedTask;
             }
 
             if (context.Message is RouterGetRoutees)
@@ -79,7 +79,7 @@ namespace Proto.Router
                 context.Respond(new Routees(r));
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 }

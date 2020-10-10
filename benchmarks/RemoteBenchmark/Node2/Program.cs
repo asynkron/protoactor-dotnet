@@ -25,12 +25,12 @@ namespace Node2
                     Console.WriteLine("Starting");
                     _sender = sr.Sender;
                     context.Respond(new Start());
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 case Ping _:
                     context.Send(_sender, new Pong());
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 default:
-                    return Actor.Done;
+                    return Task.CompletedTask;
             }
         }
     }
@@ -41,10 +41,8 @@ namespace Node2
         {
             var system = new ActorSystem();
             var context = new RootContext(system);
-            var serialization = new Serialization();
-            serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-            var Remote = new Remote(system, serialization);
-            Remote.Start("127.0.0.1", 12000);
+            var Remote = new Remote(system, new RemoteConfig("127.0.0.1", 12000).WithProtoMessages(ProtosReflection.Descriptor));
+            Remote.StartAsync();
             context.SpawnNamed(Props.FromProducer(() => new EchoActor()), "remote");
             Console.ReadLine();
         }

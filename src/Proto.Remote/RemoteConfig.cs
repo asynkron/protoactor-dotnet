@@ -6,12 +6,38 @@
 
 using System;
 using System.Collections.Generic;
+using Google.Protobuf.Reflection;
 using Grpc.Core;
 
 namespace Proto.Remote
 {
     public class RemoteConfig
     {
+        public RemoteConfig(string host, int port)
+        {
+            Host = host;
+            Port = port;
+        }
+
+        public RemoteConfig()
+        {
+        }
+
+        /// <summary>
+        ///     The host to listen to
+        /// </summary>
+        public string Host { get; set; } = "0.0.0.0";
+
+        /// <summary>
+        ///     The port to listen to, 0 means any free port
+        /// </summary>
+        public int Port { get; set; }
+
+        /// <summary>
+        ///     Known actor kinds that can be spawned remotely
+        /// </summary>
+        public Dictionary<string, Props> RemoteKinds { get; private set; } = new Dictionary<string, Props>();
+
         /// <summary>
         ///     Gets or sets the ChannelOptions for the gRPC channel.
         /// </summary>
@@ -47,26 +73,112 @@ namespace Proto.Remote
         public int? AdvertisedPort { get; set; }
 
         public EndpointWriterOptions EndpointWriterOptions { get; set; } = new EndpointWriterOptions();
-    }
 
-    public class EndpointWriterOptions
-    {
-        /// <summary>
-        ///     Gets or sets the batch size for the endpoint writer. The default value is 1000.
-        ///     The endpoint writer will send up to this number of messages in a batch.
-        /// </summary>
-        public int EndpointWriterBatchSize { get; set; } = 1000;
+        public Serialization Serialization { get; set; } = new Serialization();
 
-        /// <summary>
-        ///     the number of times to retry the connection within the RetryTimeSpan
-        /// </summary>
-        public int MaxRetries { get; set; } = 8;
 
-        public TimeSpan RetryTimeSpan { get; set; } = TimeSpan.FromMinutes(3);
+        public RemoteConfig WithChannelOptions(IEnumerable<ChannelOption> options)
+        {
+            ChannelOptions = options;
+            return this;
+        }
 
-        /// <summary>
-        ///     each retry backs off by an exponential ratio of this amount
-        /// </summary>
-        public int RetryBackOffms { get; set; } = 100;
+        public RemoteConfig WithCallOptions(CallOptions options)
+        {
+            CallOptions = options;
+            return this;
+        }
+
+        public RemoteConfig WithChannelCredentials(ChannelCredentials channelCredentials)
+        {
+            ChannelCredentials = channelCredentials;
+            return this;
+        }
+
+        public RemoteConfig WithServerCredentials(ServerCredentials serverCredentials)
+        {
+            ServerCredentials = serverCredentials;
+            return this;
+        }
+
+        public RemoteConfig WithAdvertisedHostname(string? advertisedHostname)
+        {
+            AdvertisedHostname = advertisedHostname;
+            return this;
+        }
+
+        public RemoteConfig WithAdvertisedPort(int? advertisedPort)
+        {
+            AdvertisedPort = advertisedPort;
+            return this;
+        }
+
+        public RemoteConfig WithEndpointWriterBatchSize(int endpointWriterBatchSize)
+        {
+            EndpointWriterOptions.EndpointWriterBatchSize = endpointWriterBatchSize;
+            return this;
+        }
+
+        public RemoteConfig WithEndpointWriterMaxRetries(int endpointWriterMaxRetries)
+        {
+            EndpointWriterOptions.MaxRetries = endpointWriterMaxRetries;
+            return this;
+        }
+
+        public RemoteConfig WithEndpointWriterRetryTimeSpan(TimeSpan endpointWriterRetryTimeSpan)
+        {
+            EndpointWriterOptions.RetryTimeSpan = endpointWriterRetryTimeSpan;
+            return this;
+        }
+
+        public RemoteConfig WithEndpointWriterRetryBackOff(TimeSpan endpointWriterRetryBackoff)
+        {
+            EndpointWriterOptions.RetryBackOff = endpointWriterRetryBackoff;
+            return this;
+        }
+        
+        public RemoteConfig WithAnyHost()
+        {
+            Host = "0.0.0.0";
+            return this;
+        }
+        
+        public RemoteConfig WithHost(string host)
+        {
+            Host = host;
+            return this;
+        }
+        
+        public RemoteConfig WithPort(int port)
+        {
+            Port = port;
+            return this;
+        }
+        
+        public RemoteConfig WithAnyFreePort()
+        {
+            Port = 0;
+            return this;
+        }
+
+        public RemoteConfig WithProtoMessages(params FileDescriptor[] fileDescriptors)
+        {
+            foreach (var fd in fileDescriptors) Serialization.RegisterFileDescriptor(fd);
+
+            return this;
+        }
+        
+        public RemoteConfig WithRemoteKind(string kind, Props prop)
+        {
+            RemoteKinds.Add(kind, prop);
+            return this;
+        }
+
+        public RemoteConfig WithRemoteKinds(params (string kind, Props prop)[] knownKinds)
+        {
+            foreach (var (kind, prop) in knownKinds) RemoteKinds.Add(kind, prop);
+
+            return this;
+        }
     }
 }

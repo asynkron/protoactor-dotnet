@@ -13,7 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Proto;
 using Proto.Mailbox;
-using static Proto.Actor;
+
 
 public class Program
 {
@@ -103,7 +103,7 @@ public class EchoActor : IActor
                 context.Send(msg.PingActor, msg);
                 break;
         }
-        return Done;
+        return Task.CompletedTask;
     }
 }
 
@@ -142,7 +142,7 @@ public class PingActor : IActor
                 }
                 break;
         }
-        return Done;
+        return Task.CompletedTask;
     }
 
     private void SendBatch(IContext context)

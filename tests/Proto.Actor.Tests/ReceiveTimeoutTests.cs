@@ -28,7 +28,7 @@ namespace Proto.Tests
                         receiveTimeoutWaiter.SetResult(0);
                         break;
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             });
             Context.Spawn(props);
 
@@ -54,7 +54,7 @@ namespace Proto.Tests
                         timeoutReceived = true;
                         break;
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             });
             Context.Spawn(props);
 
@@ -83,7 +83,7 @@ namespace Proto.Tests
                         autoExpiringWaiter.SetResult(0); // should never happen
                         break;
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             });
             Context.Spawn(props);
 
@@ -115,7 +115,7 @@ namespace Proto.Tests
                         receiveTimeoutWaiter.SetResult(0);
                         break;
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             });
             Context.Spawn(props);
 

@@ -69,8 +69,8 @@ message ClusterTopology {
     repeated Member banned=5;
 }
 
-message HeartBeatRequest {
+message HeartbeatRequest {
 }
 
-message HeartBeatResponse {
+message HeartbeatResponse {
 }

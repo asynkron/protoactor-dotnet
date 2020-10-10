@@ -40,7 +40,7 @@ namespace Proto.Tests
                     context.Forward(Child1);
                 }
 
-                return Actor.Done;
+                return Task.CompletedTask;
             }
         }
 
@@ -53,7 +53,7 @@ namespace Proto.Tests
                     case string _:
                         throw Exception;
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             }
         }
 

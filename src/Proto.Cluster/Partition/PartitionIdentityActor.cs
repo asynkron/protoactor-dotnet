@@ -60,21 +60,21 @@ namespace Proto.Cluster.Partition
                 _                        => Unhandled()
             };
 
-        private static Task Unhandled() => Actor.Done;
+        private static Task Unhandled() => Task.CompletedTask;
 
         private Task Start()
         {
             _lastEventTimestamp = DateTime.Now;
             _logger.LogDebug("Started");
             //       context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task ReceiveTimeout(IContext context)
         {
             context.SetReceiveTimeout(IdleTimeout);
             _logger.LogInformation("I am idle");
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private async Task ClusterTopology(ClusterTopology msg, IContext context)
@@ -170,13 +170,13 @@ namespace Proto.Cluster.Partition
                 _logger.LogWarning("Tried to terminate activation on wrong node, forwarding");
                 context.Forward(ownerPid);
 
-                return Actor.Done;
+                return Task.CompletedTask;
             }
 
             //TODO: handle correct incarnation/version
             _logger.LogDebug("Terminated {Pid}", msg.Pid);
             _partitionLookup.Remove(msg.Identity);
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private void TakeOwnership(Activation msg)
@@ -212,7 +212,7 @@ namespace Proto.Cluster.Partition
                 _logger.LogWarning("Tried to spawn on wrong node, forwarding");
                 context.Forward(ownerPid);
 
-                return Actor.Done;
+                return Task.CompletedTask;
             }
 
             //Check if exist in current partition dictionary
@@ -223,12 +223,12 @@ namespace Proto.Cluster.Partition
                     _logger.LogCritical("No sender 4");
                 }
                 context.Respond(new ActivationResponse {Pid = info.pid});
-                return Actor.Done;
+                return Task.CompletedTask;
             }
 
             if (SendLater(msg, context))
             {
-                return Actor.Done;
+                return Task.CompletedTask;
             }
 
             //Get activator
@@ -240,7 +240,7 @@ namespace Proto.Cluster.Partition
                 //No activator currently available, return unavailable
                 _logger.LogWarning("No members currently available for kind {Kind}", msg.Kind);
                 context.Respond(new ActivationResponse {Pid = null});
-                return Actor.Done;
+                return Task.CompletedTask;
             }
 
             //What is this?
@@ -269,14 +269,14 @@ namespace Proto.Cluster.Partition
                     if (_partitionLookup.TryGetValue(msg.Identity, out info))
                     {
                         context.Send(sender,new ActivationResponse {Pid = info.pid});
-                        return Actor.Done;
+                        return Task.CompletedTask;
                     }
 
                     //Check if process is faulted
                     if (rst.IsFaulted)
                     {
                         context.Send(sender,response);
-                        return Actor.Done;
+                        return Task.CompletedTask;
                     }
 
 
@@ -294,11 +294,11 @@ namespace Proto.Cluster.Partition
                         Console.WriteLine(x);
                     }
 
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 }
             );
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private bool SendLater(object msg, IContext context)

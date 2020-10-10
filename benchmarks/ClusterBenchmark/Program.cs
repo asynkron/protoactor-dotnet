@@ -8,6 +8,7 @@ using MongoDB.Driver;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
+using Proto.Cluster.IdentityLookup;
 using Proto.Cluster.Kubernetes;
 using Proto.Cluster.MongoIdentityLookup;
 using Proto.Remote;
@@ -103,13 +104,10 @@ namespace ClusterExperiment1
         {
             var system = new ActorSystem();
             var clusterProvider = ClusterProvider();
-            var serialization = new Serialization();
-            serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
             var identity = GetIdentityLookup();
-            var cluster = new Cluster(system, serialization);
-            
             var config = GetClusterConfig(clusterProvider, identity);
-            await cluster.StartClientAsync(config);
+            var cluster = new Cluster(system, config);
+            await cluster.StartClientAsync();
             return cluster;
         }
 
@@ -117,31 +115,32 @@ namespace ClusterExperiment1
         {
             var system = new ActorSystem();
             var clusterProvider = ClusterProvider();
-            var serialization = new Serialization();
-            serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
             var identity = GetIdentityLookup();
-            var cluster = new Cluster(system, serialization);
-            
             var helloProps = Props.FromProducer(() => new HelloActor());
-            cluster.Remote.RegisterKnownKind("hello", helloProps);
+            var config = GetClusterConfig(clusterProvider, identity)
+                .WithClusterKind("hello", helloProps);
+
+            var cluster = new Cluster(system, config);
             
-            var config = GetClusterConfig(clusterProvider, identity);
-            cluster.StartMemberAsync(config);
+            cluster.StartMemberAsync();
             return cluster;
         }
         
-        private static ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, MongoIdentityLookup identity)
+        private static ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, IIdentityLookup identity)
         {
             var port = Environment.GetEnvironmentVariable("PROTOPORT") ?? "0";
             var p = int.Parse(port);
             var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
-            var remote = new RemoteConfig();
 
-            var advertiseHostname = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
-            remote.AdvertisedHostname = advertiseHostname!;
-            //remote.AdvertisedPort = 8080;
+            var remoteConfig = new RemoteConfig(host, p)
+                .WithAdvertisedHostname(Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC"))
+                .WithProtoMessages(MessagesReflection.Descriptor);
+                
+            var clusterConfig = new ClusterConfig("mycluster", host, p, clusterProvider)
+                .WithIdentityLookup(identity)
+                .WithRemoteConfig(remoteConfig);
 
-            return new ClusterConfig("mycluster", host, p, clusterProvider).WithIdentityLookup(identity).WithRemoteConfig(remote);
+            return clusterConfig;
         }
         
         private static IClusterProvider ClusterProvider()
@@ -158,7 +157,7 @@ namespace ClusterExperiment1
             }
             catch
             {
-                return new ConsulProvider(new ConsulProviderOptions());
+                return new ConsulProvider(new ConsulProviderConfig());
             }
         }
 
@@ -208,7 +207,7 @@ namespace ClusterExperiment1
                 //    _log.LogWarning("I stopped" + ctx.Self);
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 }

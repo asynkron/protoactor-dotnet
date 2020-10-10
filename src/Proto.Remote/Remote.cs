@@ -3,20 +3,8 @@
 //       Copyright (C) 2015-2020 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
-// Modified file in context of repo fork : https://github.com/Optis-World/protoactor-dotnet
-// Copyright 2019 ANSYS, Inc.
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -31,8 +19,7 @@ namespace Proto.Remote
     public class Remote
     {
         private static readonly ILogger Logger = Log.CreateLogger<Remote>();
-
-        private readonly Dictionary<string, Props> _kinds = new Dictionary<string, Props>();
+        
         private readonly ActorSystem _system;
         private EndpointManager _endpointManager = null!;
         private EndpointReader _endpointReader = null!;
@@ -40,27 +27,27 @@ namespace Proto.Remote
 
         private Server _server = null!;
 
-        public Remote(ActorSystem system, Serialization serialization)
+        public Remote(ActorSystem system,string host, int port, RemoteConfig config) : this(system,config.WithHost(host).WithPort(port))
+        {
+        }
+        
+        public Remote(ActorSystem system,RemoteConfig config)
         {
             _system = system;
-            Serialization = serialization;
+            Config = config;
         }
 
-        public RemoteConfig? RemoteConfig { get; private set; }
+        public RemoteConfig Config { get; private set; }
         public PID? ActivatorPid { get; private set; }
 
-        public Serialization Serialization { get; }
+        public string[] GetRemoteKinds() => Config.RemoteKinds.Keys.ToArray();
 
-        public string[] GetKnownKinds() => _kinds.Keys.ToArray();
-
-        public void RegisterKnownKind(string kind, Props props) => _kinds.Add(kind, props);
-
-        // Modified class in context of repo fork : https://github.com/Optis-World/protoactor-dotnet
-        public void UnregisterKnownKind(string kind) => _kinds.Remove(kind);
-
-        public Props GetKnownKind(string kind)
+        // public void RegisterKnownKind(string kind, Props props) => Config.KnownKinds.Add(kind, props);
+        //
+        // public void UnregisterKnownKind(string kind) => Config.KnownKinds.Remove(kind);
+        public Props GetRemoteKind(string kind)
         {
-            if (!_kinds.TryGetValue(kind, out var props))
+            if (!Config.RemoteKinds.TryGetValue(kind, out var props))
             {
                 throw new ArgumentException($"No Props found for kind '{kind}'");
             }
@@ -68,13 +55,11 @@ namespace Proto.Remote
             return props;
         }
 
-        public void Start(string hostname, int port) => Start(hostname, port, new RemoteConfig());
-
-        public void Start(string hostname, int port, RemoteConfig config)
+        public Task StartAsync()
         {
-            RemoteConfig = config;
+            var config = Config;
             _endpointManager = new EndpointManager(this, _system);
-            _endpointReader = new EndpointReader(_system, _endpointManager, Serialization);
+            _endpointReader = new EndpointReader(_system, _endpointManager, config.Serialization);
             _healthCheck = new HealthServiceImpl();
             _system.ProcessRegistry.RegisterHostResolver(pid => new RemoteProcess(this, _system, _endpointManager, pid)
             );
@@ -86,19 +71,21 @@ namespace Proto.Remote
                     Remoting.BindService(_endpointReader),
                     Health.BindService(_healthCheck)
                 },
-                Ports = {new ServerPort(hostname, port, config.ServerCredentials)}
+                Ports = {new ServerPort(config.Host, config.Port, config.ServerCredentials)}
             };
             _server.Start();
 
             var boundPort = _server.Ports.Single().BoundPort;
-            _system.SetAddress(config.AdvertisedHostname ?? hostname, config.AdvertisedPort ?? boundPort
+            _system.SetAddress(config.AdvertisedHostname ?? config.Host, config.AdvertisedPort ?? boundPort
             );
             _endpointManager.Start();
             SpawnActivator();
 
-            Logger.LogDebug("Starting Proto.Actor server on {Host}:{Port} ({Address})", hostname, boundPort,
+            Logger.LogDebug("Starting Proto.Actor server on {Host}:{Port} ({Address})", config.Host, boundPort,
                 _system.Address
             );
+
+            return Task.CompletedTask;
         }
 
         public async Task ShutdownAsync(bool graceful = true)

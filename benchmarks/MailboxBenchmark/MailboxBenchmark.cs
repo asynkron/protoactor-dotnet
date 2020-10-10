@@ -32,7 +32,7 @@ public class MailboxBenchmark
                         c.Respond("done");
                         break;
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             })
             .WithMailbox(mailbox);
         var pid = context.Spawn(props);

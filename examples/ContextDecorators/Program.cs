@@ -47,7 +47,7 @@ namespace ContextDecorators
                         ctx.Respond("Yo!");
                     }
 
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 })
                 .WithContextDecorator(c => new LoggingDecorator(c, "logger1"))
                 .WithContextDecorator(c => new LoggingDecorator(c, "logger2"))

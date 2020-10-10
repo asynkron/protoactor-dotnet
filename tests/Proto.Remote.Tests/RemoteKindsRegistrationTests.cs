@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Proto.Remote.Tests
@@ -10,9 +11,12 @@ namespace Proto.Remote.Tests
         {
             var props = new Props();
             var kind = Guid.NewGuid().ToString();
-            var remote = new Remote(new ActorSystem(), new Serialization());
-            remote.RegisterKnownKind(kind, props);
-            Assert.Equal(props, remote.GetKnownKind(kind));
+            var remote = new Remote(new ActorSystem(), 
+                new RemoteConfig()
+                .WithRemoteKinds((kind, props))
+            );
+
+            Assert.Equal(props, remote.GetRemoteKind(kind));
         }
 
         [Fact]
@@ -21,10 +25,14 @@ namespace Proto.Remote.Tests
             var props = new Props();
             var kind1 = Guid.NewGuid().ToString();
             var kind2 = Guid.NewGuid().ToString();
-            var remote = new Remote(new ActorSystem(), new Serialization());
-            remote.RegisterKnownKind(kind1, props);
-            remote.RegisterKnownKind(kind2, props);
-            var kinds = remote.GetKnownKinds();
+            var remote = new Remote(new ActorSystem(),
+                new RemoteConfig()
+                .WithRemoteKinds(
+                    (kind1, props),
+                    (kind2, props))
+            );
+
+            var kinds = remote.GetRemoteKinds();
             Assert.Contains(kind1, kinds);
             Assert.Contains(kind2, kinds);
         }
@@ -32,8 +40,9 @@ namespace Proto.Remote.Tests
         [Fact]
         public void UnknownKindThrowsException()
         {
-            var remote = new Remote(new ActorSystem(), new Serialization());
-            Assert.Throws<ArgumentException>(() => { remote.GetKnownKind("not registered"); });
+            var remote = new Remote(new ActorSystem(),new RemoteConfig());
+
+            Assert.Throws<ArgumentException>(() => { remote.GetRemoteKind("not registered"); });
         }
     }
 }

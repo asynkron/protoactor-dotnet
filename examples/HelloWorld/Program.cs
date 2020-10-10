@@ -40,7 +40,7 @@ class Program
             {
                 Console.WriteLine($"Hello {r.Who}");
             }
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 }

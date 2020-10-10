@@ -58,7 +58,7 @@ class Program
                         Console.WriteLine("   3 Exit Actor");
                     }
 
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 })
             .WithReceiverMiddleware(next => async (context, envelope) =>
             {

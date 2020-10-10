@@ -42,14 +42,14 @@ namespace Proto.Cluster.MongoIdentityLookup
                        ReceiveTimeout _      => ReceiveTimeout(context),
                        Terminated msg        => Terminated(context, msg),
                        ActivationRequest msg => ActivationRequest(context, msg),
-                       _                     => Actor.Done
+                       _                     => Task.CompletedTask
                    };
         }
 
         private Task Started(IContext context)
         {
             context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task ReceiveTimeout(IContext context)
@@ -57,7 +57,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
             var count = _myActors.Count;
             _logger.LogInformation("Statistics: Actor Count {ActorCount}", count);
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private async Task Terminated(IContext context, Terminated msg)
@@ -70,7 +70,7 @@ namespace Proto.Cluster.MongoIdentityLookup
 
         private Task ActivationRequest(IContext context, ActivationRequest msg)
         {
-            var props = _remote.GetKnownKind(msg.Kind);
+            var props = _cluster.GetClusterKind(msg.Kind);
             var identity = msg.Identity;
             var kind = msg.Kind;
             try
@@ -93,12 +93,10 @@ namespace Proto.Cluster.MongoIdentityLookup
                     //spawn and remember this actor
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
-                    var pid = context.SpawnPrefix(props, identity);
 
-                    //give the grain knowledge of its grain name and kind
-                    var grainInit = new GrainInit(identity, kind);
+                    var clusterProps = props.WithClusterInit(_cluster, identity, kind);
+                    var pid = context.SpawnPrefix(clusterProps , identity);
 
-                    context.Send(pid, grainInit);
                     _myActors[identity] = (pid, kind);
 
                     var response = new ActivationResponse
@@ -117,7 +115,7 @@ namespace Proto.Cluster.MongoIdentityLookup
                 context.Respond(response);
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 }

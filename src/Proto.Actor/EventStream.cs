@@ -17,20 +17,20 @@ namespace Proto
     public class EventStream : EventStream<object>
     {
         private readonly ILogger _logger = Log.CreateLogger<EventStream>();
-        public TimeSpan ThrottleInterval { get; set; }
-        public int ThrottleCount { get; set; }
 
-        internal EventStream()
+        internal EventStream() : this(TimeSpan.Zero, 0){}
+        
+        internal EventStream(TimeSpan throttleInterval,int throttleCount)
         {
-            long lastTick = 0;
-            long messages = 0;
-            bool throttled = false;
+            var lastTick = 0L;
+            var messages = 0L;
+            var throttled = false;
             Subscribe<DeadLetterEvent>(
                 dl =>
                 {
-                    if (ThrottleInterval != TimeSpan.Zero)
+                    if (throttleInterval != TimeSpan.Zero)
                     {
-                        if (DateTimeOffset.Now.Ticks > lastTick + ThrottleInterval.Ticks)
+                        if (DateTimeOffset.Now.Ticks > lastTick + throttleInterval.Ticks)
                         {
                             if (throttled)
                             {
@@ -44,7 +44,7 @@ namespace Proto
                         else if (!throttled)
                         {
                             var res = Interlocked.Increment(ref messages);
-                            if (res >= ThrottleCount)
+                            if (res >= throttleCount)
                             {
                                 throttled = true;
                                 Interlocked.Exchange(ref messages, 0L);
@@ -102,7 +102,7 @@ namespace Proto
                 x =>
                 {
                     action(x);
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 }
             );
             _subscriptions.TryAdd(sub.Id, sub);
@@ -140,7 +140,7 @@ namespace Proto
                         action(typed);
                     }
 
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 }
             );
 
@@ -164,7 +164,7 @@ namespace Proto
                         }
                     }
 
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 }
             );
 
@@ -183,7 +183,7 @@ namespace Proto
             var sub = new Subscription<T>(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
-                msg => msg is TMsg typed ? action(typed) : Actor.Done
+                msg => msg is TMsg typed ? action(typed) : Task.CompletedTask
             );
 
             _subscriptions.TryAdd(sub.Id, sub);
@@ -210,7 +210,7 @@ namespace Proto
                             _logger.LogWarning(0, ex, "Exception has occurred when publishing a message.");
                         }
 
-                        return Actor.Done;
+                        return Task.CompletedTask;
                     }
                 );
             }

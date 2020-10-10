@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using chat.messages;
 using Proto;
 using Proto.Remote;
@@ -10,10 +11,11 @@ namespace Client
         static void Main()
         {
             var system = new ActorSystem();
-            var serialization = new Serialization();
-            serialization.RegisterFileDescriptor(ChatReflection.Descriptor);
-            var remote = new Remote(system, serialization);
-            remote.Start("127.0.0.1", 0);
+            var remote = new Remote(system,new RemoteConfig("127.0.0.1",0)
+                .WithProtoMessages(ChatReflection.Descriptor));
+            
+            remote.StartAsync();
+            
             var server = new PID("127.0.0.1:8000", "chatserver");
             var context = new RootContext(system);
 
@@ -33,7 +35,7 @@ namespace Client
                             break;
                     }
 
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 }
             );
 

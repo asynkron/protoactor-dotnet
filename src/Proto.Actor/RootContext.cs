@@ -143,7 +143,7 @@ namespace Proto
         private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
         {
             target.SendUserMessage(context.System, message);
-            return Proto.Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)

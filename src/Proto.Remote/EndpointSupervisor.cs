@@ -14,7 +14,7 @@ namespace Proto.Remote
     public class EndpointSupervisor : IActor, ISupervisorStrategy
     {
         private static readonly ILogger Logger = Log.CreateLogger<EndpointSupervisor>();
-        private readonly long _backoff;
+        private readonly TimeSpan _backoff;
 
         private readonly int _maxNrOfRetries;
         private readonly Random _random = new Random();
@@ -27,16 +27,16 @@ namespace Proto.Remote
 
         public EndpointSupervisor(Remote remote, ActorSystem system)
         {
-            if (remote.RemoteConfig == null)
+            if (remote.Config == null)
             {
                 throw new ArgumentException("RemoteConfig may not be null", nameof(remote));
             }
 
             _system = system;
             _remote = remote;
-            _maxNrOfRetries = remote.RemoteConfig.EndpointWriterOptions.MaxRetries;
-            _withinTimeSpan = remote.RemoteConfig.EndpointWriterOptions.RetryTimeSpan;
-            _backoff = TimeConvert.ToNanoseconds(remote.RemoteConfig.EndpointWriterOptions.RetryBackOffms);
+            _maxNrOfRetries = remote.Config.EndpointWriterOptions.MaxRetries;
+            _withinTimeSpan = remote.Config.EndpointWriterOptions.RetryTimeSpan;
+            _backoff = remote.Config.EndpointWriterOptions.RetryBackOff;
         }
 
         public Task ReceiveAsync(IContext context)
@@ -50,7 +50,7 @@ namespace Proto.Remote
                 context.Respond(new Endpoint(writer, watcher));
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         public void HandleFailure(
@@ -75,9 +75,9 @@ namespace Proto.Remote
             }
             else
             {
-                var backoff = rs.FailureCount * _backoff;
+                var backoff = rs.FailureCount * (int)_backoff.TotalMilliseconds;
                 var noise = _random.Next(500);
-                var duration = TimeSpan.FromMilliseconds(TimeConvert.ToMilliseconds(backoff + noise));
+                var duration = TimeSpan.FromMilliseconds(backoff + noise);
 
                 _ = Task.Run(async () =>
                     {
@@ -125,22 +125,22 @@ namespace Proto.Remote
                 throw new ArgumentNullException(nameof(address));
             }
             
-            if (remote.RemoteConfig == null)
+            if (remote.Config == null)
             {
                 throw new ArgumentNullException(nameof(remote));
             }
-
+            
             var writerProps =
                 Props.FromProducer(
-                        () => new EndpointWriter(system, remote.Serialization,
-                            address, remote.RemoteConfig.ChannelOptions, 
-                            remote.RemoteConfig.CallOptions,
-                            remote.RemoteConfig.ChannelCredentials
+                        () => new EndpointWriter(system, remote.Config.Serialization,
+                            address, remote.Config.ChannelOptions, 
+                            remote.Config.CallOptions,
+                            remote.Config.ChannelCredentials
                         )
                     )
                     .WithMailbox(() =>
                         new EndpointWriterMailbox(system,
-                            remote.RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize
+                            remote.Config.EndpointWriterOptions.EndpointWriterBatchSize
                         )
                     );
             var writer = context.Spawn(writerProps);

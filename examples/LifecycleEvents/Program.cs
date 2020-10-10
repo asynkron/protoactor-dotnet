@@ -13,7 +13,7 @@ namespace LifecycleEvents
 {
     static class Program
     {
-        private static void Main()
+        private static async Task Main()
         {
             var system = new ActorSystem();
 
@@ -33,15 +33,10 @@ namespace LifecycleEvents
                     Who = "Alex"
                 }
             );
-
-            //why wait?
-            //Stop is a system message and is not processed through the user message mailbox
-            //thus, it will be handled _before_ any user message
-            //we only do this to show the correct order of events in the console
-            Thread.Sleep(TimeSpan.FromSeconds(1));
-            system.Root.StopAsync(actor).Wait();
-
-            Console.ReadLine();
+            
+            //StopAsync. Stop instantly kills actor
+            //Poison lets it process any waiting messages first
+            await system.Root.PoisonAsync(actor);
         }
 
         internal class ChildActor : IActor
@@ -67,7 +62,7 @@ namespace LifecycleEvents
                         break;
                 }
 
-                return Actor.Done;
+                return Task.CompletedTask;
             }
         }
 

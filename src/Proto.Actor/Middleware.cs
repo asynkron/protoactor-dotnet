@@ -9,7 +9,7 @@ namespace Proto
         internal static Task Sender(ISenderContext context, PID target, MessageEnvelope envelope)
         {
             target.SendUserMessage(context.System, envelope);
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 }

@@ -66,7 +66,7 @@ namespace Proto.Remote
 
                     if (_suspended)
                     {
-                        return Actor.Done;
+                        return Task.CompletedTask;
                     }
 
                     //only grow pid lookup if needed
@@ -102,7 +102,7 @@ namespace Proto.Remote
                         }
                     }
 
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 }
             );
         }

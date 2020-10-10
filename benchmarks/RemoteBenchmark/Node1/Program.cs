@@ -14,14 +14,14 @@ using ProtosReflection = Messages.ProtosReflection;
 
 class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
         var system = new ActorSystem();
         var context = new RootContext(system);
-        var serialization = new Serialization();
-        serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-        var Remote = new Remote(system, serialization);
-        Remote.Start("127.0.0.1", 12001);
+
+        var Remote = new Remote(system,
+            new RemoteConfig("127.0.0.1", 12001).WithProtoMessages(ProtosReflection.Descriptor));
+        await Remote.StartAsync();
 
         var messageCount = 1000000;
         var wg = new AutoResetEvent(false);
@@ -78,7 +78,7 @@ class Program
                     }
                     break;
             }
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 }

@@ -34,7 +34,7 @@ namespace RouterExample
             {
                 Console.WriteLine($"Actor {context.Self.Id} got message '{msg.Text}'.");
             }
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 

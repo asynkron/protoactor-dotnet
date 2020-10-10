@@ -13,7 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
-using static Proto.Actor;
+
 
 // ReSharper disable RedundantAssignment
 
@@ -209,7 +209,7 @@ namespace Proto
                 () =>
                 {
                     action();
-                    return Done;
+                    return Task.CompletedTask;
                 }, msg
             );
 
@@ -278,8 +278,8 @@ namespace Proto
                     Unwatch uw        => HandleUnwatch(uw),
                     Failure f         => HandleFailure(f),
                     Restart _         => HandleRestartAsync(),
-                    SuspendMailbox _  => Done,
-                    ResumeMailbox _   => Done,
+                    SuspendMailbox _  => Task.CompletedTask,
+                    ResumeMailbox _   => Task.CompletedTask,
                     Continuation cont => HandleContinuation(cont),
                     _                 => HandleUnknownSystemMessage(msg)
                 };
@@ -294,7 +294,7 @@ namespace Proto
         private static Task HandleUnknownSystemMessage(object msg)
         {
             Logger.LogDebug("Unknown system message {Message}", msg);
-            return Done;
+            return Task.CompletedTask;
         }
 
         private Task HandleContinuation(Continuation cont)
@@ -309,7 +309,7 @@ namespace Proto
             {
                 //already stopped, send message to deadletter process
                 System.DeadLetter.SendUserMessage(Self, msg);
-                return Done;
+                return Task.CompletedTask;
             }
 
             var influenceTimeout = true;
@@ -372,7 +372,7 @@ namespace Proto
         private Task HandlePoisonPill()
         {
             Stop(Self);
-            return Done;
+            return Task.CompletedTask;
         }
 
         private Task ProcessMessageAsync(object msg)
@@ -431,7 +431,7 @@ namespace Proto
         private Task HandleUnwatch(Unwatch uw)
         {
             _extras?.Unwatch(uw.Watcher);
-            return Done;
+            return Task.CompletedTask;
         }
 
         private Task HandleWatch(Watch w)
@@ -445,7 +445,7 @@ namespace Proto
                 EnsureExtras().Watch(w.Watcher);
             }
 
-            return Done;
+            return Task.CompletedTask;
         }
 
         private Task HandleFailure(Failure msg)
@@ -463,7 +463,7 @@ namespace Proto
                     break;
             }
 
-            return Done;
+            return Task.CompletedTask;
         }
 
         private async Task HandleTerminatedAsync(Terminated msg)
@@ -511,7 +511,7 @@ namespace Proto
         {
             if (_extras?.Children.Count > 0)
             {
-                return Done;
+                return Task.CompletedTask;
             }
 
             CancelReceiveTimeout();
@@ -520,7 +520,7 @@ namespace Proto
             {
                 ContextState.Restarting => RestartAsync(),
                 ContextState.Stopping   => FinalizeStopAsync(),
-                _                       => Done
+                _                       => Task.CompletedTask
             };
         }
 

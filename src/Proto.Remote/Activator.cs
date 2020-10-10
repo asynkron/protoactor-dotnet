@@ -24,7 +24,7 @@ namespace Proto.Remote
             switch (context.Message)
             {
                 case ActorPidRequest msg:
-                    var props = _remote.GetKnownKind(msg.Kind);
+                    var props = _remote.GetRemoteKind(msg.Kind);
                     var name = msg.Name;
                     if (string.IsNullOrEmpty(name))
                     {
@@ -60,7 +60,7 @@ namespace Proto.Remote
                     break;
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 }

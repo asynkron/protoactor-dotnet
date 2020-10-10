@@ -5,29 +5,29 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.IdentityLookup;
 using Proto.Cluster.Partition;
-using Proto.Remote;
 
 namespace Proto.Cluster
 {
     [PublicAPI]
     public class Cluster
     {
-        private static ILogger _logger = null!;
-
         private ClusterHeartBeat _clusterHeartBeat;
 
-        private IRequestAsyncStrategy _requestAsyncStrategy = null!;
-
-        public Cluster(ActorSystem system, Serialization serialization)
+        public Cluster(ActorSystem system, ClusterConfig config)
         {
+            Id = Guid.NewGuid();
+            PidCache = new PidCache();
             System = system;
-            Remote = new Remote.Remote(system, serialization);
+            Config = config;
+            Config.RemoteConfig.WithProtoMessages(ProtosReflection.Descriptor);
+
             _clusterHeartBeat = new ClusterHeartBeat(this);
             system.EventStream.Subscribe<ClusterTopology>(e =>
                 {
@@ -36,37 +36,36 @@ namespace Proto.Cluster
             );
         }
 
-        public Guid Id { get; } = Guid.NewGuid();
+        public ILogger Logger { get; private set; } = null!;
+        public IClusterContext AsyncStrategy { get; private set; } = null!;
 
-        public ClusterConfig Config { get; private set; } = null!;
+        public Guid Id { get; }
+
+        public ClusterConfig Config { get; }
 
         public ActorSystem System { get; }
 
-        public Remote.Remote Remote { get; }
-
+        public Remote.Remote Remote { get; private set; } = null!;
 
         public MemberList MemberList { get; private set; } = null!;
 
-        private IIdentityLookup IdentityLookup { get; set; } = null!;
+        internal IIdentityLookup IdentityLookup { get; set; } = null!;
 
         internal IClusterProvider Provider { get; set; } = null!;
 
         public string LoggerId => System.Address;
 
-        public PidCache PidCache { get; } = new PidCache();
+        public PidCache PidCache { get; }
 
-        public Task StartMemberAsync(string clusterName, string address, int port, IClusterProvider cp)
-        {
-            return StartMemberAsync(new ClusterConfig(clusterName, address, port, cp));
-        }
+        public string[] GetClusterKinds() => Config.ClusterKinds.Keys.ToArray();
 
-        public async Task StartMemberAsync(ClusterConfig config)
+        public async Task StartMemberAsync()
         {
-            await BeginStartAsync(config, false);
+            await BeginStartAsync(false);
             var (host, port) = System.GetAddress();
 
             Provider = Config.ClusterProvider;
-            var kinds = Remote.GetKnownKinds();
+            var kinds = GetClusterKinds();
             await Provider.StartMemberAsync(
                 this,
                 Config.Name,
@@ -76,12 +75,12 @@ namespace Proto.Cluster
                 MemberList
             );
 
-            _logger.LogInformation("Started as cluster member");
+            Logger.LogInformation("Started as cluster member");
         }
 
-        public async Task StartClientAsync(ClusterConfig config)
+        public async Task StartClientAsync()
         {
-            await BeginStartAsync(config, true);
+            await BeginStartAsync(true);
 
             var (host, port) = System.GetAddress();
 
@@ -95,23 +94,21 @@ namespace Proto.Cluster
                 MemberList
             );
 
-            _logger.LogInformation("Started as cluster client");
+            Logger.LogInformation("Started as cluster client");
         }
 
-        private async Task BeginStartAsync(ClusterConfig config, bool client)
+        private async Task BeginStartAsync( bool client)
         {
-            Config = config;
-
             //default to partition identity lookup
-            IdentityLookup = config.IdentityLookup ?? new PartitionIdentityLookup();
-            Remote.Start(Config.Address, Config.Port, Config.RemoteConfig);
-            Remote.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
-            _logger = Log.CreateLogger($"Cluster-{LoggerId}");
-            _logger.LogInformation("Starting");
+            IdentityLookup = Config.IdentityLookup ?? new PartitionIdentityLookup();
+            Remote = new Remote.Remote(System, Config.RemoteConfig);
+            await Remote.StartAsync();
+            Logger = Log.CreateLogger($"Cluster-{LoggerId}");
+            Logger.LogInformation("Starting");
             MemberList = new MemberList(this);
-            _requestAsyncStrategy = new RequestAsyncStrategy(IdentityLookup, PidCache, System.Root, _logger);
+            AsyncStrategy = new DefaultClusterContext(IdentityLookup, PidCache, System.Root, Logger);
 
-            var kinds = Remote.GetKnownKinds();
+            var kinds = GetClusterKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
             await _clusterHeartBeat.StartAsync();
         }
@@ -119,28 +116,29 @@ namespace Proto.Cluster
         public async Task ShutdownAsync(bool graceful = true)
         {
             await _clusterHeartBeat.ShutdownAsync();
-            _logger.LogInformation("Stopping");
+            Logger.LogInformation("Stopping");
             if (graceful) await IdentityLookup!.ShutdownAsync();
 
             await Config!.ClusterProvider.ShutdownAsync(graceful);
             await Remote.ShutdownAsync(graceful);
 
-            _logger.LogInformation("Stopped");
+            Logger.LogInformation("Stopped");
         }
 
-        public Task<PID?> GetAsync(string identity, string kind)
-        {
-            return GetAsync(identity, kind, CancellationToken.None);
-        }
+        public Task<PID?> GetAsync(string identity, string kind) => GetAsync(identity, kind, CancellationToken.None);
 
-        public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct)
-        {
-            return IdentityLookup!.GetAsync(identity, kind, ct);
-        }
+        public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct) => IdentityLookup!.GetAsync(identity, kind, ct);
 
-        public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct)
+        public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) => AsyncStrategy.RequestAsync<T>(identity, kind, message, ct);
+
+        public Props GetClusterKind(string kind)
         {
-            return _requestAsyncStrategy.RequestAsync<T>(identity, kind, message, ct);
+            if (!Config.ClusterKinds.TryGetValue(kind, out var props))
+            {
+                throw new ArgumentException($"No Props found for kind '{kind}'");
+            }
+
+            return props;
         }
     }
 }

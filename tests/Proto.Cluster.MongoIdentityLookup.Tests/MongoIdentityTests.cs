@@ -83,20 +83,20 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
         private async Task<Cluster> SpawnMember(string clusterName, bool useMongoIdentity)
         {
             var system = new ActorSystem();
-            var clusterProvider = new ConsulProvider(new ConsulProviderOptions());
-            var serialization = new Serialization();
-            serialization.RegisterFileDescriptor(MessagesReflection.Descriptor);
-
-            var cluster = new Cluster(system, serialization);
-
-            var senderProps = Props.FromProducer(() => new SenderActor(cluster, _testOutputHelper));
+            var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
+            var identityLookup = useMongoIdentity ? GetIdentityLookup(clusterName) : new PartitionIdentityLookup();
+            
+            var senderProps = Props.FromProducer(() => new SenderActor(_testOutputHelper));
             var aggProps = Props.FromProducer(() => new VerifyOrderActor());
 
-            cluster.Remote.RegisterKnownKind("sender", senderProps);
-            cluster.Remote.RegisterKnownKind("aggregator", aggProps);
-            var identityLookup = useMongoIdentity ? GetIdentityLookup(clusterName) : new PartitionIdentityLookup();
-            var config = GetClusterConfig(clusterProvider, clusterName, identityLookup);
-            await cluster.StartMemberAsync(config);
+            var config = GetClusterConfig(clusterProvider, clusterName, identityLookup)
+                .WithClusterKind("sender", senderProps)
+                .WithClusterKind("aggregator", aggProps);
+           
+
+            var cluster = new Cluster(system, config);
+            
+            await cluster.StartMemberAsync();
             return cluster;
         }
 
@@ -107,15 +107,14 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             var port = Environment.GetEnvironmentVariable("PROTOPORT") ?? "0";
             var p = int.Parse(port);
             var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
-            var remote = new RemoteConfig();
-
-            var advertiseHostname = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC") ?? host;
-            remote.AdvertisedHostname = advertiseHostname!;
-
-
+            
+            var remoteConfig = new RemoteConfig(host, p)
+                .WithProtoMessages(MessagesReflection.Descriptor)
+                .WithAdvertisedHostname(Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC") ?? host!);
+            
             return new ClusterConfig(clusterName, host, p, clusterProvider)
                 .WithIdentityLookup(identityLookup)
-                .WithRemoteConfig(remote);
+                .WithRemoteConfig(remoteConfig);
         }
 
         private static IIdentityLookup GetIdentityLookup(string clusterName)
@@ -138,15 +137,14 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
 
         private class SenderActor : IActor
         {
-            private readonly Cluster _cluster;
+            private Cluster _cluster;
             private readonly ITestOutputHelper _testOutputHelper;
 
             private string _instanceId;
             private int _seq;
 
-            public SenderActor(Cluster cluster, ITestOutputHelper testOutputHelper)
+            public SenderActor(ITestOutputHelper testOutputHelper)
             {
-                _cluster = cluster;
                 _testOutputHelper = testOutputHelper;
             }
 
@@ -154,13 +152,14 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             {
                 switch (context.Message)
                 {
-                    case GrainInit init:
+                    case ClusterInit init:
                         _instanceId = $"{init.Kind}:{init.Identity}.{Guid.NewGuid():N}";
+                        _cluster = init.Cluster;
                         break;
                     case SendToRequest sendTo:
 
                         var key = Guid.NewGuid().ToString("N");
-                        for (int i = 0; i < sendTo.Count; i++)
+                        for (var i = 0; i < sendTo.Count; i++)
                         {
                             try
                             {
@@ -211,7 +210,7 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
                         break;
                 }
 
-                return Actor.Done;
+                return Task.CompletedTask;
             }
 
             private void HandleOrderedRequest(SequentialIdRequest request, IContext context)

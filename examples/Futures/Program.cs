@@ -5,11 +5,12 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Proto;
 
 class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
         var context = new RootContext(new ActorSystem());
         var props = Props.FromFunc(ctx =>
@@ -18,11 +19,11 @@ class Program
             {
                 ctx.Respond("hey");
             }
-            return Actor.Done;
+            return Task.CompletedTask;
         });
         var pid = context.Spawn(props);
 
-        var reply = context.RequestAsync<object>(pid, "hello").Result;
+        var reply = await context.RequestAsync<object>(pid, "hello");
         Console.WriteLine(reply);
         Console.ReadLine();
     }

@@ -37,7 +37,7 @@ namespace Proto.Remote.Tests
                     break;
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 }
