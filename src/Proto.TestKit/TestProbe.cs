@@ -34,13 +34,13 @@ namespace Proto.TestKit
                 case Terminated _:
                     _messageQueue.Add(new MessageAndSender(context));
                     break;
-                case SystemMessage _: return Actor.Done;
+                case SystemMessage _: return Task.CompletedTask;
                 default:
                     _messageQueue.Add(new MessageAndSender(context));
                     break;
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />

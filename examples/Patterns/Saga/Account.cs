@@ -46,12 +46,12 @@ namespace Saga
                     break;
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
 
             Task Reply(PID replyTo)
             {
                 context.Send(replyTo, _processedMessages[replyTo]);
-                return Actor.Done;
+                return Task.CompletedTask;
             }
         }
 
@@ -94,12 +94,12 @@ namespace Saga
                 return Failure();
 
             context.Send(replyTo, new OK());
-            return Actor.Done;
+            return Task.CompletedTask;
 
             Task Failure()
             {
                 context.Send(replyTo, new InternalServerError());
-                return Actor.Done;
+                return Task.CompletedTask;
             }
         }
 

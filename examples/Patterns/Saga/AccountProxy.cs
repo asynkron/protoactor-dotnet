@@ -41,7 +41,7 @@ namespace Saga
                     throw new Exception();
             }
             
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 }

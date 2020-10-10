@@ -60,7 +60,7 @@ namespace Proto.Remote
                 Restarting _                 => RestartingAsync(),
                 EndpointTerminatedEvent _    => EndpointTerminatedEvent(context),
                 IEnumerable<RemoteDeliver> m => RemoteDeliver(m, context),
-                _                            => Actor.Done
+                _                            => Task.CompletedTask
             };
 
         private Task RemoteDeliver(IEnumerable<RemoteDeliver> m, IContext context)
@@ -130,7 +130,7 @@ namespace Proto.Remote
                 context.Stop(context.Self);
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private async Task SendEnvelopesAsync(MessageBatch batch, IContext context)
@@ -177,7 +177,7 @@ namespace Proto.Remote
                 return _channel.ShutdownAsync();
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private async Task StartedAsync()
@@ -201,7 +201,7 @@ namespace Proto.Remote
                 {
                     try
                     {
-                        await _stream.ResponseStream.ForEachAsync(i => Actor.Done);
+                        await _stream.ResponseStream.ForEachAsync(i => Task.CompletedTask);
                     }
                     catch (Exception x)
                     {

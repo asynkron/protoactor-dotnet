@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Proto;
 
 namespace EscalateSupervision
@@ -15,7 +16,7 @@ namespace EscalateSupervision
                     case Started _:
                         throw new Exception("child failure");
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             });
 
             var rootProps = Props.FromFunc(context =>
@@ -30,7 +31,7 @@ namespace EscalateSupervision
                         Console.WriteLine($"Terminated {terminated.Who}");
                         break;
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             })
             .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 0, null));
 

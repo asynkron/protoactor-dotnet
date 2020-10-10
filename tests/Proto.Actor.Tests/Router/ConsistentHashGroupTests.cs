@@ -200,7 +200,7 @@ namespace Proto.Router.Tests
                         break;
                 }
 
-                return Actor.Done;
+                return Task.CompletedTask;
             }
         }
     }

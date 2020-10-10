@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using chat.messages;
 using Proto;
 using Proto.Remote;
@@ -57,7 +58,7 @@ namespace Server
                             break;
                     }
 
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 }
             );
 

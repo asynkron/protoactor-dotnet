@@ -210,7 +210,7 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
                         break;
                 }
 
-                return Actor.Done;
+                return Task.CompletedTask;
             }
 
             private void HandleOrderedRequest(SequentialIdRequest request, IContext context)

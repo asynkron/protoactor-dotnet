@@ -81,7 +81,7 @@ namespace Saga
                         });
                     break;
             }
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private void CheckForCompletion(PID pid)

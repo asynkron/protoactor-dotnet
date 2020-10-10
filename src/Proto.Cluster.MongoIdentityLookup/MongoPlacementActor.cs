@@ -42,14 +42,14 @@ namespace Proto.Cluster.MongoIdentityLookup
                        ReceiveTimeout _      => ReceiveTimeout(context),
                        Terminated msg        => Terminated(context, msg),
                        ActivationRequest msg => ActivationRequest(context, msg),
-                       _                     => Actor.Done
+                       _                     => Task.CompletedTask
                    };
         }
 
         private Task Started(IContext context)
         {
             context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task ReceiveTimeout(IContext context)
@@ -57,7 +57,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
             var count = _myActors.Count;
             _logger.LogInformation("Statistics: Actor Count {ActorCount}", count);
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private async Task Terminated(IContext context, Terminated msg)
@@ -115,7 +115,7 @@ namespace Proto.Cluster.MongoIdentityLookup
                 context.Respond(response);
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 }

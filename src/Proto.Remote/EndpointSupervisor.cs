@@ -50,7 +50,7 @@ namespace Proto.Remote
                 context.Respond(new Endpoint(writer, watcher));
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         public void HandleFailure(

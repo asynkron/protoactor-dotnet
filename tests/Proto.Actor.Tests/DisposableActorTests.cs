@@ -27,7 +27,7 @@ namespace Proto.Tests
                     _childPid = context.Spawn(_childProps);
                 if (context.Message is string)
                     context.Send(_childPid, context.Message);
-                return Actor.Done;
+                return Task.CompletedTask;
             }
         }
 
@@ -47,7 +47,7 @@ namespace Proto.Tests
                     case string _:
                         throw new Exception();
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             }
 
             public void Dispose()
@@ -83,7 +83,7 @@ namespace Proto.Tests
                         break;
                 }
 
-                return Actor.Done;
+                return Task.CompletedTask;
             }
         }
 

@@ -6,6 +6,7 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Proto;
 
 class Program
@@ -33,7 +34,7 @@ class Program
                     Console.WriteLine($"{DateTime.Now} Received message: {s}");
                     break;
             }
-            return Actor.Done;
+            return Task.CompletedTask;
         });
         var pid = rootContext.Spawn(props);
         for (var i = 0; i < 6; i++)

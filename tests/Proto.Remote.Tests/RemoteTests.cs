@@ -69,7 +69,7 @@ namespace Proto.Remote.Tests
                             ctx.Stop(ctx.Self!);
                         }
 
-                        return Actor.Done;
+                        return Task.CompletedTask;
                     }
                 )
             );
@@ -378,7 +378,7 @@ namespace Proto.Remote.Tests
                     break;
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private void HandleCountOfMessagesReceived(IContext context)

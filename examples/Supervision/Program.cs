@@ -78,7 +78,7 @@ class Program
                     break;
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 
@@ -111,7 +111,7 @@ class Program
                     break;
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 

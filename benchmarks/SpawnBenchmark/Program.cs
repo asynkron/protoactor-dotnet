@@ -42,7 +42,7 @@ namespace SpawnBenchmark
                 {
                     context.Respond(r.Num);
                     context.Stop(context.Self);
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 }
                 _replies = r.Div;
                 _replyTo = context.Sender;
@@ -57,7 +57,7 @@ namespace SpawnBenchmark
                     });
                 }
 
-                return Actor.Done;
+                return Task.CompletedTask;
             }
             if (msg is Int64 res)
             {
@@ -67,9 +67,9 @@ namespace SpawnBenchmark
                 {
                     context.Send(_replyTo, _sum);
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             }
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 

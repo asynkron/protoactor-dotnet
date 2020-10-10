@@ -24,7 +24,7 @@ namespace Proto.Tests
                         context.Stop(context.Self);
                         break;
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             });
 
             Context.Spawn(Props.FromFunc(context =>
@@ -38,7 +38,7 @@ namespace Proto.Tests
                         Interlocked.Increment(ref counter);
                         break;
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             }));
 
             await Task.Delay(1000);
@@ -82,7 +82,7 @@ namespace Proto.Tests
                         _terminateReceived = true;
                         break;
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             }
         }
     }

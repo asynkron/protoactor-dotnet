@@ -55,9 +55,9 @@ namespace Proto.Tests
                         //only inspect "decorator" message
                         case string str when str == "decorator":
                             logs.Add("actor");
-                            return Actor.Done;
+                            return Task.CompletedTask;
                         default:
-                            return Actor.Done;
+                            return Task.CompletedTask;
                     }
                 })
                 .WithMailbox(() => testMailbox)
@@ -91,9 +91,9 @@ namespace Proto.Tests
                         //only inspect "decorator" message
                         case string str when str == "decorator":
                             logs.Add("actor");
-                            return Actor.Done;
+                            return Task.CompletedTask;
                         default:
-                            return Actor.Done;
+                            return Task.CompletedTask;
                     }
                 })
                 .WithReceiverMiddleware(
@@ -132,7 +132,7 @@ namespace Proto.Tests
                 {
                     if (c.Message is string)
                         logs.Add("actor");
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 })
                 .WithReceiverMiddleware(
                     next => async (c, env) =>
@@ -167,7 +167,7 @@ namespace Proto.Tests
                 {
                     if (c.Message is string)
                         c.Send(pid1, "hey");
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 })
                 .WithSenderMiddleware(
                     next => (c, t, e) =>

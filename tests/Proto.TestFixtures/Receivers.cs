@@ -5,10 +5,12 @@
 // -----------------------------------------------------------------------
 
 
+using System.Threading.Tasks;
+
 namespace Proto.TestFixtures
 {
     public static class Receivers
     {
-        public static Receive EmptyReceive = c => Actor.Done;
+        public static Receive EmptyReceive = c => Task.CompletedTask;
     }
 }

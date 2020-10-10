@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using chat.messages;
 using Proto;
 using Proto.Remote;
@@ -34,7 +35,7 @@ namespace Client
                             break;
                     }
 
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 }
             );
 

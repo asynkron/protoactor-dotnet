@@ -29,7 +29,7 @@ namespace Proto.Remote
             _behavior = new Behavior(ConnectedAsync);
         }
 
-        private static Task Ignore => Actor.Done;
+        private static Task Ignore => Task.CompletedTask;
 
         public Task ReceiveAsync(IContext context) => _behavior.ReceiveAsync(context);
 
@@ -58,7 +58,7 @@ namespace Proto.Remote
         private Task Stopped()
         {
             Logger.LogDebug("[EndpointWatcher] Stopped at {Address}", _address);
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task RemoteWatch(RemoteWatch msg)
@@ -74,7 +74,7 @@ namespace Proto.Remote
 
             var w = new Watch(msg.Watcher);
             _remote.SendMessage(msg.Watchee, w, -1);
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task RemoteUnwatch(RemoteUnwatch msg)
@@ -91,7 +91,7 @@ namespace Proto.Remote
 
             var w = new Unwatch(msg.Watcher);
             _remote.SendMessage(msg.Watchee, w, -1);
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task EndpointTerminated(IContext context)
@@ -128,7 +128,7 @@ namespace Proto.Remote
                 context.Stop(context.Self);
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task RemoteTerminate(RemoteTerminate msg)
@@ -148,7 +148,7 @@ namespace Proto.Remote
 
             //send the address Terminated event to the Watcher
             msg.Watcher.SendSystemMessage(_system, t);
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task RemoteWatchWhenTerminated(RemoteWatch msg)
@@ -161,14 +161,14 @@ namespace Proto.Remote
                     Who = msg.Watchee
                 }
             );
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task EndpointConnectedEvent()
         {
             Logger.LogDebug("[EndpointWatcher] Handle restart address {Address}", _address);
             _behavior.Become(ConnectedAsync);
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 }

@@ -23,7 +23,7 @@ namespace Proto.Tests
                 {
                     ctx.Respond("hey");
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             });
 
             var reply = await Context.RequestAsync<object>(pid, "hello");
@@ -52,7 +52,7 @@ namespace Proto.Tests
                 {
                     ctx.Respond("hey");
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             });
 
             var reply = await Context.RequestAsync<object>(pid, "hello", TimeSpan.FromMilliseconds(100));
@@ -69,7 +69,7 @@ namespace Proto.Tests
                 Props.FromFunc(ctx =>
                     {
                         messages.Enqueue(ctx.Message);
-                        return Actor.Done;
+                        return Task.CompletedTask;
                     })
                     .WithMailbox(() => new TestMailbox())
                 );
@@ -132,7 +132,7 @@ namespace Proto.Tests
                 {
                     ctx.Respond("hey");
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             });
 
             PID forwarder = SpawnForwarderFromFunc(ctx =>
@@ -141,7 +141,7 @@ namespace Proto.Tests
                 {
                     ctx.Forward(pid);
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             });
 
             var reply = await Context.RequestAsync<object>(forwarder, "hello");

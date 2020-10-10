@@ -19,7 +19,7 @@ class Program
             {
                 ctx.Respond("hey");
             }
-            return Actor.Done;
+            return Task.CompletedTask;
         });
         var pid = context.Spawn(props);
 

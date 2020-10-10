@@ -28,7 +28,7 @@ namespace Proto.Tests
                 {
                     ctx.Respond("hey");
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             }));
 
             var reply = Context.RequestAsync<object>(pid, "hello").Result;
@@ -45,7 +45,7 @@ namespace Proto.Tests
                 {
                     ctx.Respond("hey");
                 }
-                return Actor.Done;
+                return Task.CompletedTask;
             }));
             var pid2 = Context.Spawn(Props.FromFunc(async ctx =>
              {
@@ -71,7 +71,7 @@ namespace Proto.Tests
                  {
                      ctx.Respond(null);
                  }
-                 return Actor.Done;
+                 return Task.CompletedTask;
              }));
 
             var reply = Context.RequestAsync<object>(pid, "hello", TimeSpan.FromSeconds(1)).Result;
@@ -92,7 +92,7 @@ namespace Proto.Tests
                        ctx.Respond(null);
                        output.WriteLine("Sent Response to " + msg);
                    }
-                   return Actor.Done;
+                   return Task.CompletedTask;
                }));
 
                 output.WriteLine("Starting");
@@ -118,7 +118,7 @@ namespace Proto.Tests
                        msg.Item1.SendUserMessage(System, null);
                        output.WriteLine("replier Sent Response to " + msg.Item2);
                    }
-                   return Actor.Done;
+                   return Task.CompletedTask;
                }));
                 var pid = Context.Spawn(Props.FromFunc(ctx =>
                {
@@ -128,7 +128,7 @@ namespace Proto.Tests
                        replier.SendUserMessage(System, Tuple.Create(ctx.Sender, msg));
                        output.WriteLine("pid Sent Response to " + msg);
                    }
-                   return Actor.Done;
+                   return Task.CompletedTask;
                }));
 
                 output.WriteLine("Starting");

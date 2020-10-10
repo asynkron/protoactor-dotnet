@@ -25,12 +25,12 @@ namespace Node2
                     Console.WriteLine("Starting");
                     _sender = sr.Sender;
                     context.Respond(new Start());
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 case Ping _:
                     context.Send(_sender, new Pong());
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 default:
-                    return Actor.Done;
+                    return Task.CompletedTask;
             }
         }
     }

@@ -62,7 +62,7 @@ namespace LifecycleEvents
                         break;
                 }
 
-                return Actor.Done;
+                return Task.CompletedTask;
             }
         }
 

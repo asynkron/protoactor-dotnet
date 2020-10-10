@@ -60,7 +60,7 @@ namespace Proto.Cluster.Kubernetes
             _address = cmd.Address;
             _podName = KubernetesExtensions.GetPodName();
             _memberId = cmd.MemberId;
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task StopWatchingCluster()
@@ -76,7 +76,7 @@ namespace Proto.Cluster.Kubernetes
                 _watcherTask.Dispose();
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private Task StartWatchingCluster(string clusterName, ISenderContext context)
@@ -120,7 +120,7 @@ namespace Proto.Cluster.Kubernetes
                 context.Send(context.Self!, new StartWatchingCluster(_clusterName));
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
 
         private void Watch(WatchEventType eventType, V1Pod eventPod)

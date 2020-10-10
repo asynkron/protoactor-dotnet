@@ -207,7 +207,7 @@ namespace ClusterExperiment1
                 //    _log.LogWarning("I stopped" + ctx.Self);
             }
 
-            return Actor.Done;
+            return Task.CompletedTask;
         }
     }
 }

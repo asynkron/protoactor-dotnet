@@ -102,7 +102,7 @@ namespace Proto
                 x =>
                 {
                     action(x);
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 }
             );
             _subscriptions.TryAdd(sub.Id, sub);
@@ -140,7 +140,7 @@ namespace Proto
                         action(typed);
                     }
 
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 }
             );
 
@@ -164,7 +164,7 @@ namespace Proto
                         }
                     }
 
-                    return Actor.Done;
+                    return Task.CompletedTask;
                 }
             );
 
@@ -183,7 +183,7 @@ namespace Proto
             var sub = new Subscription<T>(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
-                msg => msg is TMsg typed ? action(typed) : Actor.Done
+                msg => msg is TMsg typed ? action(typed) : Task.CompletedTask
             );
 
             _subscriptions.TryAdd(sub.Id, sub);
@@ -210,7 +210,7 @@ namespace Proto
                             _logger.LogWarning(0, ex, "Exception has occurred when publishing a message.");
                         }
 
-                        return Actor.Done;
+                        return Task.CompletedTask;
                     }
                 );
             }
