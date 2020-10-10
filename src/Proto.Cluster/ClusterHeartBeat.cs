@@ -9,9 +9,9 @@ namespace Proto.Cluster
     {
         public Task ReceiveAsync(IContext context)
         {
-            if (context.Message is HeartBeatRequest)
+            if (context.Message is HeartbeatRequest)
             {
-                context.Respond(new HeartBeatResponse());
+                context.Respond(new HeartbeatResponse());
             }
             
             return Task.CompletedTask;
@@ -60,7 +60,7 @@ namespace Proto.Cluster
                         
                         try
                         {
-                            await _context.RequestAsync<HeartBeatResponse>(pid, new HeartBeatRequest(),
+                            await _context.RequestAsync<HeartbeatResponse>(pid, new HeartbeatRequest(),
                                 TimeSpan.FromSeconds(5)
                             );
                             

@@ -152,7 +152,7 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             {
                 switch (context.Message)
                 {
-                    case GrainInit init:
+                    case ClusterInit init:
                         _instanceId = $"{init.Kind}:{init.Identity}.{Guid.NewGuid():N}";
                         _cluster = init.Cluster;
                         break;

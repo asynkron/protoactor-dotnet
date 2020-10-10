@@ -15,10 +15,10 @@ namespace Proto.Cluster
         }
 
         private static async Task HandleStart(Cluster cluster, string identity, string kind, Receiver baseReceive,
-            IReceiverContext ctx, MessageEnvelope env)
+            IReceiverContext ctx, MessageEnvelope startEnvelope)
         {
-            await baseReceive(ctx, env);
-            var grainInit = new GrainInit(identity, kind, cluster);
+            await baseReceive(ctx, startEnvelope);
+            var grainInit = new ClusterInit(identity, kind, cluster);
             var grainInitEnvelope = new MessageEnvelope(grainInit, null);
             await baseReceive(ctx, grainInitEnvelope);
         }

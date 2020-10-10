@@ -1,8 +1,8 @@
 namespace Proto.Cluster
 {
-    public class GrainInit
+    public class ClusterInit
     {
-        public GrainInit(string identity, string kind, Cluster cluster)
+        public ClusterInit(string identity, string kind, Cluster cluster)
         {
             Identity = identity;
             Kind = kind;
