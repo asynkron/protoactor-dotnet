@@ -11,6 +11,6 @@ namespace Proto.TestFixtures
 {
     public static class Receivers
     {
-        public static Receive EmptyReceive = c => Task.CompletedTask;
+        public static readonly Receive EmptyReceive = c => Task.CompletedTask;
     }
 }
