@@ -93,12 +93,10 @@ namespace Proto.Cluster.MongoIdentityLookup
                     //spawn and remember this actor
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
-                    var pid = context.SpawnPrefix(props, identity);
 
-                    //give the grain knowledge of its grain name and kind
-                    var grainInit = new GrainInit(identity, kind);
+                    var clusterProps = props.WithClusterInit(_cluster, identity, kind);
+                    var pid = context.SpawnPrefix(clusterProps , identity);
 
-                    context.Send(pid, grainInit);
                     _myActors[identity] = (pid, kind);
 
                     var response = new ActivationResponse

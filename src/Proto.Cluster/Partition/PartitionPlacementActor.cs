@@ -169,12 +169,9 @@ namespace Proto.Cluster.Partition
                     //spawn and remember this actor
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
-                    var pid = context.SpawnPrefix(props, identity);
-                    
-                    //give the grain knowledge of its grain name and kind
-                    var grainInit = new GrainInit(identity,kind);
-                    
-                    context.Send(pid,grainInit);
+                    var clusterProps = props.WithClusterInit(_cluster, identity, kind);
+                    var pid = context.SpawnPrefix(clusterProps, identity);
+
                     _myActors[identity] = (pid, kind, _eventId);
 
                     var response = new ActivationResponse
