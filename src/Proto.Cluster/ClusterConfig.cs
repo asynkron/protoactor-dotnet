@@ -38,12 +38,12 @@ namespace Proto.Cluster
 
         public Func<string, IMemberStrategy> MemberStrategyBuilder { get; private set; }
 
-        public IIdentityLookup? IdentityLookup { get; private set; }
+        public IIdentityLookup? IdentityLookup { get; }
         public TimeSpan HeartBeatInterval { get; set; }
 
-        public ClusterConfig WithTimeoutSeconds(int timeoutSeconds)
+        public ClusterConfig WithTimeout(TimeSpan timeSpan)
         {
-            TimeoutTimespan = TimeSpan.FromSeconds(timeoutSeconds);
+            TimeoutTimespan = timeSpan;
             return this;
         }
 
