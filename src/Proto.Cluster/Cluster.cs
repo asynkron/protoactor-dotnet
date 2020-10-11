@@ -68,7 +68,7 @@ namespace Proto.Cluster
             var kinds = GetClusterKinds();
             await Provider.StartMemberAsync(
                 this,
-                Config.Name,
+                Config.ClusterName,
                 host,
                 port,
                 kinds,
@@ -88,7 +88,7 @@ namespace Proto.Cluster
 
             await Provider.StartClientAsync(
                 this,
-                Config.Name,
+                Config.ClusterName,
                 host,
                 port,
                 MemberList

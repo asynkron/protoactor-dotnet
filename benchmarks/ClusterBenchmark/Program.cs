@@ -125,25 +125,22 @@ namespace ClusterExperiment1
             cluster.StartMemberAsync();
             return cluster;
         }
-        
+
         private static ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, IIdentityLookup identity)
         {
             var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? "0";
             var port = int.Parse(portStr);
             var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
 
-            var remoteConfig = RemoteConfig
-                .FromAddress(host, port)
-                .WithAdvertisedHostname(Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC"))
-                .WithProtoMessages(MessagesReflection.Descriptor);
-                
-            var clusterConfig = new ClusterConfig("mycluster", host, port, clusterProvider)
-                .WithIdentityLookup(identity)
-                .WithRemoteConfig(remoteConfig);
-
-            return clusterConfig;
+            return ClusterConfig
+                .FromRemoteConfig("mycluster", clusterProvider, identity, 
+                    RemoteConfig
+                    .FromAddress(host, port)
+                    .WithAdvertisedHostname(Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC"))
+                    .WithProtoMessages(MessagesReflection.Descriptor)
+                );
         }
-        
+
         private static IClusterProvider ClusterProvider()
         {
             try
