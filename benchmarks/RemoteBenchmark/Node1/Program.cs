@@ -20,7 +20,7 @@ class Program
         var context = new RootContext(system);
 
         var remote = new Remote(system,
-            RemoteConfig.FromLocalhost(12001).WithProtoMessages(ProtosReflection.Descriptor));
+            RemoteConfig.BindToLocalhost(12001).WithProtoMessages(ProtosReflection.Descriptor));
         await remote.StartAsync();
 
         var messageCount = 1000000;

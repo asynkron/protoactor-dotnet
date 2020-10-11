@@ -12,7 +12,7 @@ namespace Proto.Remote.Tests
             var props = new Props();
             var kind = Guid.NewGuid().ToString();
             var remote = new Remote(new ActorSystem(), 
-                new RemoteConfig()
+                 RemoteConfig.BindToLocalhost()
                 .WithRemoteKinds((kind, props))
             );
 
@@ -26,10 +26,12 @@ namespace Proto.Remote.Tests
             var kind1 = Guid.NewGuid().ToString();
             var kind2 = Guid.NewGuid().ToString();
             var remote = new Remote(new ActorSystem(),
-                new RemoteConfig()
-                .WithRemoteKinds(
-                    (kind1, props),
-                    (kind2, props))
+                RemoteConfig
+                    .BindToLocalhost()
+                    .WithRemoteKinds(
+                        (kind1, props),
+                        (kind2, props)
+                    )
             );
 
             var kinds = remote.GetRemoteKinds();
@@ -40,7 +42,7 @@ namespace Proto.Remote.Tests
         [Fact]
         public void UnknownKindThrowsException()
         {
-            var remote = new Remote(new ActorSystem(),new RemoteConfig());
+            var remote = new Remote(new ActorSystem(), RemoteConfig.BindToLocalhost());
 
             Assert.Throws<ArgumentException>(() => { remote.GetRemoteKind("not registered"); });
         }

@@ -11,7 +11,7 @@ namespace Client
         static void Main()
         {
             var system = new ActorSystem();
-            var remote = new Remote(system, RemoteConfig.FromLocalhost()
+            var remote = new Remote(system, RemoteConfig.BindToLocalhost()
                 .WithProtoMessages(ChatReflection.Descriptor));
             
             remote.StartAsync();

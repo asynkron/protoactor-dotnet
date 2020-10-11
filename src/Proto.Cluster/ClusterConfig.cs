@@ -15,19 +15,6 @@ namespace Proto.Cluster
     [PublicAPI]
     public class ClusterConfig
     {
-        public ClusterConfig(string clusterName, string host, int port, IClusterProvider clusterProvider)
-        {
-            ClusterName = clusterName ?? throw new ArgumentNullException(nameof(clusterName));
-            host = host ?? throw new ArgumentNullException(nameof(host));
-            ClusterProvider = clusterProvider ?? throw new ArgumentNullException(nameof(clusterProvider));
-
-            RemoteConfig = RemoteConfig.FromAddress(host, port);
-            TimeoutTimespan = TimeSpan.FromSeconds(5);
-            HeartBeatInterval = TimeSpan.FromSeconds(30);
-            MemberStrategyBuilder = kind => new SimpleMemberStrategy();
-            ClusterKinds = new Dictionary<string, Props>();
-        }
-
         public ClusterConfig(string clusterName, IClusterProvider clusterProvider, IIdentityLookup identityLookup,RemoteConfig remoteConfig)
         {
             ClusterName = clusterName ?? throw new ArgumentNullException(nameof(clusterName));
@@ -43,9 +30,9 @@ namespace Proto.Cluster
         
         public Dictionary<string, Props> ClusterKinds { get; } 
 
-        public IClusterProvider ClusterProvider { get; private set; }
+        public IClusterProvider ClusterProvider { get; }
 
-        public RemoteConfig RemoteConfig { get; private set; }
+        public RemoteConfig RemoteConfig { get; }
         
         public TimeSpan TimeoutTimespan { get; private set; }
 
@@ -65,31 +52,7 @@ namespace Proto.Cluster
             MemberStrategyBuilder = builder;
             return this;
         }
-        
-        public ClusterConfig WithClusterProvider(IClusterProvider clusterProvider)
-        {
-            ClusterProvider = clusterProvider;
-            return this;
-        }
 
-        public ClusterConfig WithIdentityLookup(IIdentityLookup identityLookup)
-        {
-            IdentityLookup = identityLookup;
-            return this;
-        }
-        
-        public ClusterConfig WithRemoteConfig(RemoteConfig remoteConfig)
-        {
-            RemoteConfig = remoteConfig;
-            return this;
-        }
-
-        public ClusterConfig WithRemoteConfig(Action<RemoteConfig> remoteConfigurator)
-        {
-            remoteConfigurator(RemoteConfig);
-            return this;
-        }
-        
         public ClusterConfig WithClusterKind(string kind, Props prop)
         {
             ClusterKinds.Add(kind, prop);
@@ -102,7 +65,7 @@ namespace Proto.Cluster
             return this;
         }
         
-        public static ClusterConfig FromRemoteConfig(string clusterName, IClusterProvider clusterProvider,
+        public static ClusterConfig From(string clusterName, IClusterProvider clusterProvider,
             IIdentityLookup identityLookup, RemoteConfig remoteConfig)
         {
             return new ClusterConfig(clusterName, clusterProvider, identityLookup, remoteConfig);

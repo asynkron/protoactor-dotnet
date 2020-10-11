@@ -13,8 +13,18 @@ namespace Proto.Remote
 {
     public class RemoteConfig
     {
-        public static RemoteConfig FromLocalhost(int port = 0) => new RemoteConfig("127.0.0.1", port);
-        public static RemoteConfig FromAddress(string host, int port = 0) => new RemoteConfig(host, port);
+        private const string AllInterfaces = "0.0.0.0";
+        private const string Localhost = "127.0.0.1";
+        
+        public static RemoteConfig BinToAllInterfaces(string advertisedHost, int port = 0) =>
+            new RemoteConfig(AllInterfaces, port).WithAdvertisedHost(advertisedHost);
+        
+        public static RemoteConfig BindToLocalhost(int port = 0) => new RemoteConfig(Localhost, port);
+        
+        public static RemoteConfig BindTo(string host, int port = 0) => new RemoteConfig(host, port);
+
+        public static RemoteConfig BindTo(string host, string advertisedHost, int port = 0) =>
+            new RemoteConfig(host, port).WithAdvertisedHost(advertisedHost);
 
         public RemoteConfig(string host, int port)
         {
@@ -22,19 +32,15 @@ namespace Proto.Remote
             Port = port;
         }
 
-        public RemoteConfig()
-        {
-        }
-
         /// <summary>
         ///     The host to listen to
         /// </summary>
-        public string Host { get; set; } = "0.0.0.0";
+        public string Host { get; }
 
         /// <summary>
         ///     The port to listen to, 0 means any free port
         /// </summary>
-        public int Port { get; set; }
+        public int Port { get; }
 
         /// <summary>
         ///     Known actor kinds that can be spawned remotely
@@ -104,7 +110,7 @@ namespace Proto.Remote
             return this;
         }
 
-        public RemoteConfig WithAdvertisedHostname(string? advertisedHostname)
+        public RemoteConfig WithAdvertisedHost(string? advertisedHostname)
         {
             AdvertisedHostname = advertisedHostname;
             return this;
@@ -137,30 +143,6 @@ namespace Proto.Remote
         public RemoteConfig WithEndpointWriterRetryBackOff(TimeSpan endpointWriterRetryBackoff)
         {
             EndpointWriterOptions.RetryBackOff = endpointWriterRetryBackoff;
-            return this;
-        }
-        
-        public RemoteConfig WithAnyHost()
-        {
-            Host = "0.0.0.0";
-            return this;
-        }
-        
-        public RemoteConfig WithHost(string host)
-        {
-            Host = host;
-            return this;
-        }
-        
-        public RemoteConfig WithPort(int port)
-        {
-            Port = port;
-            return this;
-        }
-        
-        public RemoteConfig WithAnyFreePort()
-        {
-            Port = 0;
             return this;
         }
 
