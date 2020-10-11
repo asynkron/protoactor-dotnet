@@ -37,4 +37,4 @@ A system might "bind" to IP 0.0.0.0, and at the same time advertise e.g. 192.168
 
 #### Member
 
-A meber of a Proto.Cluster, usually a process running on a separate container/pod/machine.
+A member of a Proto.Cluster, usually a process running on a separate container/pod/machine.

@@ -56,7 +56,7 @@ namespace Proto
             var pid = new PID(System.Address, id, process);
 
             var ok = _localProcesses.TryAdd(pid.Id, process);
-            return ok ? (pid, true) : (new PID(System.Address, id), false);
+            return ok ? (pid, true) : (PID.FromAddress(System.Address, id), false);
         }
 
         public void Remove(PID pid) => _localProcesses.Remove(pid.Id);

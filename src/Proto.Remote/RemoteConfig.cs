@@ -13,6 +13,9 @@ namespace Proto.Remote
 {
     public class RemoteConfig
     {
+        public static RemoteConfig FromLocalhost(int port = 0) => new RemoteConfig("127.0.0.1", port);
+        public static RemoteConfig FromAddress(string host, int port = 0) => new RemoteConfig(host, port);
+
         public RemoteConfig(string host, int port)
         {
             Host = host;
@@ -164,7 +167,6 @@ namespace Proto.Remote
         public RemoteConfig WithProtoMessages(params FileDescriptor[] fileDescriptors)
         {
             foreach (var fd in fileDescriptors) Serialization.RegisterFileDescriptor(fd);
-
             return this;
         }
         
@@ -177,7 +179,12 @@ namespace Proto.Remote
         public RemoteConfig WithRemoteKinds(params (string kind, Props prop)[] knownKinds)
         {
             foreach (var (kind, prop) in knownKinds) RemoteKinds.Add(kind, prop);
-
+            return this;
+        }
+        
+        public RemoteConfig WithSerializer(ISerializer serializer, bool makeDefault = false)
+        {
+            Serialization.RegisterSerializer(serializer,makeDefault);
             return this;
         }
     }

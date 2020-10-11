@@ -229,7 +229,7 @@ namespace Proto.Cluster.MongoIdentityLookup
                 return null;
             }
 
-            var pid = new PID(pidLookup.Address, pidLookup.UniqueIdentity);
+            var pid = PID.FromAddress(pidLookup.Address, pidLookup.UniqueIdentity);
             return pid;
         }
 

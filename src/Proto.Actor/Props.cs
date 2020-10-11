@@ -16,7 +16,7 @@ namespace Proto
     public sealed class Props
     {
         private Spawner? _spawner;
-        public Producer Producer { get; private set; } = () => null;
+        public Producer Producer { get; private set; } = () => null!;
         public MailboxProducer MailboxProducer { get; private set; } = ProduceDefaultMailbox;
         public ISupervisorStrategy? GuardianStrategy { get; private set; }
         public ISupervisorStrategy SupervisorStrategy { get; private set; } = Supervision.DefaultStrategy;
@@ -138,12 +138,12 @@ namespace Proto
 
         internal PID Spawn(ActorSystem system, string name, PID? parent) => Spawner(system, name, this, parent);
         public static Props FromProducer(Producer producer) => new Props().WithProducer(producer);
-        public static Props FromFunc(Receive receive) => FromProducer(() => new EmptyActor(receive));
+        public static Props FromFunc(Receive receive) => FromProducer(() => new FunctionActor(receive));
     }
 
     public delegate PID Spawner(ActorSystem system, string id, Props props, PID? parent);
 
-    public delegate IActor? Producer();
+    public delegate IActor Producer();
 
     public delegate IMailbox MailboxProducer();
 }

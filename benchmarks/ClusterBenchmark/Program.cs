@@ -128,15 +128,16 @@ namespace ClusterExperiment1
         
         private static ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, IIdentityLookup identity)
         {
-            var port = Environment.GetEnvironmentVariable("PROTOPORT") ?? "0";
-            var p = int.Parse(port);
+            var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? "0";
+            var port = int.Parse(portStr);
             var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
 
-            var remoteConfig = new RemoteConfig(host, p)
+            var remoteConfig = RemoteConfig
+                .FromAddress(host, port)
                 .WithAdvertisedHostname(Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC"))
                 .WithProtoMessages(MessagesReflection.Descriptor);
                 
-            var clusterConfig = new ClusterConfig("mycluster", host, p, clusterProvider)
+            var clusterConfig = new ClusterConfig("mycluster", host, port, clusterProvider)
                 .WithIdentityLookup(identity)
                 .WithRemoteConfig(remoteConfig);
 

@@ -108,7 +108,7 @@ namespace Proto.Cluster.Partition
 
             foreach (var member in members)
             {
-                var activatorPid = _partitionManager.RemotePartitionPlacementActor(member.Address);
+                var activatorPid = PartitionManager.RemotePartitionPlacementActor(member.Address);
                 var request =
                     context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg, HandoverTimeout);
                 requests.Add(request);
@@ -166,7 +166,7 @@ namespace Proto.Cluster.Partition
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
             if (ownerAddress != _myAddress)
             {
-                var ownerPid = _partitionManager.RemotePartitionIdentityActor(ownerAddress);
+                var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
                 _logger.LogWarning("Tried to terminate activation on wrong node, forwarding");
                 context.Forward(ownerPid);
 
@@ -208,7 +208,7 @@ namespace Proto.Cluster.Partition
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
             if (ownerAddress != _myAddress)
             {
-                var ownerPid = _partitionManager.RemotePartitionIdentityActor(ownerAddress);
+                var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
                 _logger.LogWarning("Tried to spawn on wrong node, forwarding");
                 context.Forward(ownerPid);
 
@@ -340,7 +340,7 @@ namespace Proto.Cluster.Partition
         private async Task<ActivationResponse> ActivateAsync(string address, string identity, string kind,
             TimeSpan timeout)
         {
-            var activator = _partitionManager.RemotePartitionPlacementActor(address);
+            var activator = PartitionManager.RemotePartitionPlacementActor(address);
 
             var eventId = _eventId;
             var res = await _cluster.System.Root.RequestAsync<ActivationResponse>(

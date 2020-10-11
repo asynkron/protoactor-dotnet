@@ -21,7 +21,7 @@ namespace Proto.Cluster
             host = host ?? throw new ArgumentNullException(nameof(host));
             ClusterProvider = cp ?? throw new ArgumentNullException(nameof(cp));
 
-            RemoteConfig = new RemoteConfig(host, port);
+            RemoteConfig = RemoteConfig.FromAddress(host, port);
             TimeoutTimespan = TimeSpan.FromSeconds(5);
             HeartBeatInterval = TimeSpan.FromSeconds(30);
             MemberStrategyBuilder = kind => new SimpleMemberStrategy();

@@ -144,7 +144,7 @@ namespace Proto.Remote
 
             return res;
 
-            static PID ActivatorForAddress(string address) => new PID(address, "activator");
+            static PID ActivatorForAddress(string address) => PID.FromAddress(address, "activator");
         }
 
         public void SendMessage(PID pid, object msg, int serializerId)

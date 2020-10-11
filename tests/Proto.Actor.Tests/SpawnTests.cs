@@ -18,7 +18,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_PropsWithSpawner_SpawnShouldReturnPidCreatedBySpawner()
         {
-            var spawnedPid = new PID("test", "test");
+            var spawnedPid = PID.FromAddress("test", "test");
             var props = Props.FromFunc(EmptyReceive)
                 .WithSpawner((s, id, p, parent) => spawnedPid);
 
