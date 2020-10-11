@@ -37,7 +37,7 @@ namespace Proto.Cluster
         }
 
         public ILogger Logger { get; private set; } = null!;
-        public IClusterContext AsyncStrategy { get; private set; } = null!;
+        public IClusterContext ClusterContext { get; private set; } = null!;
 
         public Guid Id { get; }
 
@@ -106,7 +106,7 @@ namespace Proto.Cluster
             Logger = Log.CreateLogger($"Cluster-{LoggerId}");
             Logger.LogInformation("Starting");
             MemberList = new MemberList(this);
-            AsyncStrategy = new DefaultClusterContext(IdentityLookup, PidCache, System.Root, Logger);
+            ClusterContext = new DefaultClusterContext(IdentityLookup, PidCache, System.Root, Logger);
 
             var kinds = GetClusterKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
@@ -129,7 +129,7 @@ namespace Proto.Cluster
 
         public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct) => IdentityLookup!.GetAsync(identity, kind, ct);
 
-        public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) => AsyncStrategy.RequestAsync<T>(identity, kind, message, ct);
+        public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) => ClusterContext.RequestAsync<T>(identity, kind, message, ct);
 
         public Props GetClusterKind(string kind)
         {
