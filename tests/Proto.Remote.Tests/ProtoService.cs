@@ -26,7 +26,8 @@ namespace Proto.Remote.Tests
             var actorSystem = new ActorSystem();
             var props = Props.FromProducer(() => new EchoActor(_host, _port));
             
-            _remote = new Remote(actorSystem,new RemoteConfig(_host, _port)
+            _remote = new Remote(actorSystem, RemoteConfig
+                .BindTo(_host, _port)
                 .WithProtoMessages(Messages.ProtosReflection.Descriptor)
                 .WithRemoteKinds(("EchoActor", props)));
             

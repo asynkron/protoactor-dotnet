@@ -26,7 +26,7 @@ namespace Proto.Remote
         public static RemoteConfig BindTo(string host, string advertisedHost, int port = 0) =>
             new RemoteConfig(host, port).WithAdvertisedHost(advertisedHost);
 
-        public RemoteConfig(string host, int port)
+        private RemoteConfig(string host, int port)
         {
             Host = host;
             Port = port;
