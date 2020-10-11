@@ -46,11 +46,10 @@ namespace Proto.Cluster
         public IClusterProvider ClusterProvider { get; private set; }
 
         public RemoteConfig RemoteConfig { get; private set; }
+        
         public TimeSpan TimeoutTimespan { get; private set; }
 
         public Func<string, IMemberStrategy> MemberStrategyBuilder { get; private set; }
-
-        public bool ClusterClient { get; set; }
 
         public IIdentityLookup? IdentityLookup { get; private set; }
         public TimeSpan HeartBeatInterval { get; set; }
