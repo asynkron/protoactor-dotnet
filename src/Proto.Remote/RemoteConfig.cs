@@ -8,9 +8,11 @@ using System;
 using System.Collections.Generic;
 using Google.Protobuf.Reflection;
 using Grpc.Core;
+using JetBrains.Annotations;
 
 namespace Proto.Remote
 {
+    [PublicAPI]
     public class RemoteConfig
     {
         public const string AllInterfaces = "0.0.0.0";
@@ -23,10 +25,7 @@ namespace Proto.Remote
         public static RemoteConfig BindToLocalhost(int port = 0) => new RemoteConfig(Localhost, port);
         
         public static RemoteConfig BindTo(string host, int port = 0) => new RemoteConfig(host, port);
-
-        public static RemoteConfig BindTo(string host, string? advertisedHost, int port = 0) =>
-            new RemoteConfig(host, port).WithAdvertisedHost(advertisedHost);
-
+        
         private RemoteConfig(string host, int port)
         {
             Host = host;
