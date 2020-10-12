@@ -49,7 +49,5 @@ namespace Proto
         }
 
         public (string Host, int Port) GetAddress() => (_host, _port);
-
-
     }
 }
