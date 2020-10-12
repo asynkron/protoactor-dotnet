@@ -48,16 +48,29 @@ namespace Proto.Tests
         {
             var activeCount = 0;
             var correct = true;
-            var props = Props.FromFunc(async ctx =>
+            var counter = 0;
+            var props = Props.FromFunc( ctx =>
                 {
-                    var res = Interlocked.Increment(ref activeCount);
-                    if (res != 1)
+                    if (ctx.Message is string msg && msg == "reenter")
                     {
-                        correct = false;
+                        //use ++ on purpose, any race condition would make the counter go out of sync
+                        counter++;
+
+                        var task = Task.Delay(0);
+                        ctx.ReenterAfter(task, () =>
+                            {
+                                var res = Interlocked.Increment(ref activeCount);
+                                if (res != 1)
+                                {
+                                    correct = false;
+                                }
+
+                                Interlocked.Decrement(ref activeCount);
+                            }
+                        );
                     }
 
-                    await Task.Yield();
-                    Interlocked.Decrement(ref activeCount);
+                    return Task.CompletedTask;
                 }
             );
 
@@ -66,11 +79,12 @@ namespace Proto.Tests
             //concurrency yolo, no way to force a failure, especially not if the implementation is correct, as expected
             for (var i = 0; i < 100000; i++)
             {
-                Context.Send(pid, "msg");    
+                Context.Send(pid, "reenter");    
             }
 
             await Context.PoisonAsync(pid);
             Assert.True(correct);
+            Assert.Equal(100000,counter);
 
         }
     }
