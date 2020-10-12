@@ -4,11 +4,13 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
+    [PublicAPI]
     public static class Log
     {
         private static ILoggerFactory _loggerFactory = new NullLoggerFactory();

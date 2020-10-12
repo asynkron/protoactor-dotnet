@@ -1,8 +1,11 @@
 using System;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
+
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
+    [PublicAPI]
     internal class EventExpectation<T>
     {
         private readonly Func<T, bool> _predicate;

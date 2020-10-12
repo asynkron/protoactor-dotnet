@@ -4,11 +4,13 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Proto.Logging
 {
+    [PublicAPI]
     public class NullLoggerFactory : ILoggerFactory
     {
         public ILogger CreateLogger(string name) => NullLogger.Instance;

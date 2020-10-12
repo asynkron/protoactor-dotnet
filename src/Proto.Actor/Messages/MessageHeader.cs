@@ -7,9 +7,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using JetBrains.Annotations;
 
+// ReSharper disable once CheckNamespace
 namespace Proto
 {
+    [PublicAPI]
     public class MessageHeader : IReadOnlyDictionary<string, string>
     {
         public static readonly MessageHeader Empty = new MessageHeader();

@@ -4,8 +4,13 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 // ReSharper disable once CheckNamespace
+
+using JetBrains.Annotations;
+
+// ReSharper disable once CheckNamespace
 namespace Proto
 {
+    [PublicAPI]
     public class DeadLetterEvent
     {
         public DeadLetterEvent(PID pid, object message, PID? sender) : this(pid, message, sender, MessageHeader.Empty)

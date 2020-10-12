@@ -14,6 +14,7 @@ using Proto.Mailbox;
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
+    [PublicAPI]
     public class EventStream : EventStream<object>
     {
         private readonly ILogger _logger = Log.CreateLogger<EventStream>();

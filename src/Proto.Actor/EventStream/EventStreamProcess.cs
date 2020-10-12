@@ -1,6 +1,11 @@
 // ReSharper disable once CheckNamespace
+
+using JetBrains.Annotations;
+
+// ReSharper disable once CheckNamespace
 namespace Proto
 {
+    [PublicAPI]
     public class EventStreamProcess : Process
     {
         public EventStreamProcess(ActorSystem system) : base(system)

@@ -15,8 +15,6 @@ using Microsoft.Extensions.Logging;
 using Proto.Future;
 using Proto.Mailbox;
 
-
-
 // ReSharper disable once CheckNamespace
 namespace Proto
 {

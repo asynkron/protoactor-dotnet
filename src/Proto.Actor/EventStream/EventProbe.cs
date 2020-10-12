@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
+    [PublicAPI]
     public static class EventStreamExtensions
     {
         public static EventProbe<T> GetProbe<T>(this EventStream<T> eventStream) => new EventProbe<T>(eventStream);
