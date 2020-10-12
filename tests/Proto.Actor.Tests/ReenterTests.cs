@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -40,6 +41,37 @@ namespace Proto.Tests
             
             var res = await Context.RequestAsync<string>(pid, "reenter",TimeSpan.FromSeconds(1));
             Assert.Equal("response",res);
+        }
+        
+        [Fact]
+        public async Task ReenterAfterHonorsActorConcurrency()
+        {
+            var activeCount = 0;
+            var correct = true;
+            var props = Props.FromFunc(async ctx =>
+                {
+                    var res = Interlocked.Increment(ref activeCount);
+                    if (res != 1)
+                    {
+                        correct = false;
+                    }
+
+                    await Task.Yield();
+                    Interlocked.Decrement(ref activeCount);
+                }
+            );
+
+            var pid = Context.Spawn(props);
+
+            //concurrency yolo, no way to force a failure, especially not if the implementation is correct, as expected
+            for (var i = 0; i < 100000; i++)
+            {
+                Context.Send(pid, "msg");    
+            }
+
+            await Context.PoisonAsync(pid);
+            Assert.True(correct);
+
         }
     }
 }
