@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 
 namespace Proto
 {

@@ -108,7 +108,7 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             var port = int.Parse(portStr);
             var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
 
-            return ClusterConfig.From(clusterName, clusterProvider, identityLookup, 
+            return ClusterConfig.Setup(clusterName, clusterProvider, identityLookup, 
                 RemoteConfig.BindTo(host, port)
                 .WithProtoMessages(MessagesReflection.Descriptor)
                 .WithAdvertisedHost(Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC") ?? host!));

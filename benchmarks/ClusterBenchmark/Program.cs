@@ -126,18 +126,18 @@ namespace ClusterExperiment1
             return cluster;
         }
 
-        private static ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, IIdentityLookup identity)
+        private static ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, IIdentityLookup identityLookup)
         {
-            var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? "0";
+            var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfig.AnyFreePort}";
             var port = int.Parse(portStr);
-            var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
+            var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? RemoteConfig.Localhost;
             var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
             return ClusterConfig
-                .From("mycluster", clusterProvider, identity, 
+                .Setup("mycluster", clusterProvider, identityLookup,
                     RemoteConfig
-                    .BindTo(host, port)
-                    .WithAdvertisedHost(advertisedHost)
-                    .WithProtoMessages(MessagesReflection.Descriptor)
+                        .BindTo(host, port)
+                        .WithAdvertisedHost(advertisedHost)
+                        .WithProtoMessages(MessagesReflection.Descriptor)
                 );
         }
 

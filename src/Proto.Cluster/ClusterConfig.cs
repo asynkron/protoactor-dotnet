@@ -65,7 +65,7 @@ namespace Proto.Cluster
             return this;
         }
         
-        public static ClusterConfig From(string clusterName, IClusterProvider clusterProvider,
+        public static ClusterConfig Setup(string clusterName, IClusterProvider clusterProvider,
             IIdentityLookup identityLookup, RemoteConfig remoteConfig)
         {
             return new ClusterConfig(clusterName, clusterProvider, identityLookup, remoteConfig);

@@ -18,7 +18,7 @@ namespace Proto
         /// <param name="system">Actor system</param>
         internal static void Stop(this IEnumerable<PID> self, ActorSystem system)
         {
-            if (self == null)
+            if (self == null!)
             {
                 return;
             }
@@ -40,10 +40,7 @@ namespace Proto
         public static void Deconstruct<TKey, TValue>(
             this KeyValuePair<TKey, TValue> self, out TKey key,
             out TValue value
-        )
-        {
-            key = self.Key;
-            value = self.Value;
-        }
+        ) =>
+            (key, value) = self;
     }
 }

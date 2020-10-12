@@ -13,8 +13,9 @@ namespace Proto.Remote
 {
     public class RemoteConfig
     {
-        private const string AllInterfaces = "0.0.0.0";
-        private const string Localhost = "127.0.0.1";
+        public const string AllInterfaces = "0.0.0.0";
+        public const string Localhost = "127.0.0.1";
+        public const int AnyFreePort = 0;
         
         public static RemoteConfig BinToAllInterfaces(string advertisedHost, int port = 0) =>
             new RemoteConfig(AllInterfaces, port).WithAdvertisedHost(advertisedHost);
@@ -23,7 +24,7 @@ namespace Proto.Remote
         
         public static RemoteConfig BindTo(string host, int port = 0) => new RemoteConfig(host, port);
 
-        public static RemoteConfig BindTo(string host, string advertisedHost, int port = 0) =>
+        public static RemoteConfig BindTo(string host, string? advertisedHost, int port = 0) =>
             new RemoteConfig(host, port).WithAdvertisedHost(advertisedHost);
 
         private RemoteConfig(string host, int port)
@@ -116,6 +117,11 @@ namespace Proto.Remote
             return this;
         }
 
+        /// <summary>
+        /// Advertised port can be different from the bound port, e.g. in container scenarios
+        /// </summary>
+        /// <param name="advertisedPort"></param>
+        /// <returns></returns>
         public RemoteConfig WithAdvertisedPort(int? advertisedPort)
         {
             AdvertisedPort = advertisedPort;

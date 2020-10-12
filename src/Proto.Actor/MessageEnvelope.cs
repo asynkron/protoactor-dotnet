@@ -10,7 +10,6 @@ using JetBrains.Annotations;
 
 namespace Proto
 {
-    //TODO: make immutable as the same envelope can be sent to multiple targets
     [PublicAPI]
     public class MessageEnvelope
     {
