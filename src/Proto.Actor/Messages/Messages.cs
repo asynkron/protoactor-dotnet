@@ -11,10 +11,6 @@ using Proto.Mailbox;
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
-    public abstract class AutoReceiveMessage
-    {
-    }
-
     public sealed partial class Terminated : SystemMessage
     {
     }
@@ -75,7 +71,7 @@ namespace Proto
         public static readonly Stop Instance = new Stop();
     }
 
-    public sealed class Stopping : AutoReceiveMessage
+    public sealed class Stopping : SystemMessage
     {
         public static readonly Stopping Instance = new Stopping();
 
@@ -93,7 +89,7 @@ namespace Proto
         }
     }
 
-    public sealed class Stopped : AutoReceiveMessage
+    public sealed class Stopped : SystemMessage
     {
         public static readonly Stopped Instance = new Stopped();
 

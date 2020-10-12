@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Threading;
+using Proto.Context;
 
 namespace Proto.Router.Routers
 {
@@ -31,7 +32,7 @@ namespace Proto.Router.Routers
                     throw new ProcessNameExistException(name, self);
                 }
 
-                var ctx = new ActorContext(system, p, parent, self);
+                var ctx = ActorContext.Setup(system, p, parent, self);
                 mailbox.RegisterHandlers(ctx, dispatcher);
                 mailbox.PostSystemMessage(Started.Instance);
                 mailbox.Start();

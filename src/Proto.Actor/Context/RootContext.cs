@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Proto.Future;
-// ReSharper disable once CheckNamespace
+
 namespace Proto
 {
     public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext

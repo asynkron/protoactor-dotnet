@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
+using Proto.Context;
 using Proto.Mailbox;
 
 namespace Proto
@@ -49,19 +50,19 @@ namespace Proto
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
             var process = new ActorProcess(system, mailbox);
-            var (pid, absent) = system.ProcessRegistry.TryAdd(name, process);
+            var (self, absent) = system.ProcessRegistry.TryAdd(name, process);
 
             if (!absent)
             {
-                throw new ProcessNameExistException(name, pid);
+                throw new ProcessNameExistException(name, self);
             }
 
-            var ctx = new ActorContext(system, props, parent, pid);
+            var ctx = ActorContext.Setup(system, props, parent, self);
             mailbox.RegisterHandlers(ctx, dispatcher);
             mailbox.PostSystemMessage(Started.Instance);
             mailbox.Start();
 
-            return pid;
+            return self;
         }
 
         public Props WithProducer(Producer producer) => Copy(props => props.Producer = producer);

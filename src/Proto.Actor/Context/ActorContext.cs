@@ -15,8 +15,7 @@ using Microsoft.Extensions.Logging;
 using Proto.Future;
 using Proto.Mailbox;
 
-// ReSharper disable once CheckNamespace
-namespace Proto
+namespace Proto.Context
 {
     public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
@@ -27,6 +26,8 @@ namespace Proto
         private object? _messageOrEnvelope;
         private ContextState _state;
 
+        public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self) => new ActorContext(system,props,parent,self);
+        
         public ActorContext(ActorSystem system, Props props, PID? parent, PID self)
         {
             System = system;
