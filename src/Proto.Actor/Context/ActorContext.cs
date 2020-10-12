@@ -198,7 +198,12 @@ namespace Proto.Context
             var msg = _messageOrEnvelope;
             var cont = new Continuation(() => action(target), msg);
 
-            target.ContinueWith(t => Self.SendSystemMessage(System, cont));
+            Task.Run(async () =>
+                {
+                    await target;
+                    Self.SendSystemMessage(System, cont);
+                }
+            ,CancellationToken.None);
         }
 
         public void ReenterAfter(Task target, Action action)
