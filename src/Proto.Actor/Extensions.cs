@@ -40,7 +40,10 @@ namespace Proto
         public static void Deconstruct<TKey, TValue>(
             this KeyValuePair<TKey, TValue> self, out TKey key,
             out TValue value
-        ) =>
-            (key, value) = self;
+        )
+        {
+            key = self.Key;
+            value = self.Value;
+        }
     }
 }
