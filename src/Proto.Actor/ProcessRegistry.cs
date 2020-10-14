@@ -67,5 +67,6 @@ namespace Proto
             return "$" + counter;
         }
 
+        public int ProcessCount => _localProcesses.Count;
     }
 }

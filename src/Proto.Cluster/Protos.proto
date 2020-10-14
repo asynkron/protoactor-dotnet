@@ -73,4 +73,5 @@ message HeartbeatRequest {
 }
 
 message HeartbeatResponse {
+    uint32 actor_count = 1;
 }

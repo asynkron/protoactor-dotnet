@@ -27,8 +27,10 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             Log.SetLoggerFactory(factory);
         }
 
-        [Theory (Skip = "Requires Consul and Mongo to be available on localhost")]
-        [InlineData(1, 100, 10, true)]
+        [Theory
+            // (Skip = "Requires Consul and Mongo to be available on localhost")
+        ]
+        // [InlineData(1, 100, 10, true)]
         [InlineData(3, 100, 10, true)]
         // [InlineData(2, 1, 1, false)]
         // [InlineData(3, 100, 10, false)]
@@ -38,7 +40,7 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             const string aggregatorId = "agg-1";
             var clusterMembers = await SpawnMembers(clusterNodes, useMongoIdentity);
 
-            await Task.Delay(1000);
+            await Task.Delay(5000);
             
             var maxWait = new CancellationTokenSource(5000);
 
@@ -56,19 +58,22 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
                         );
                 }
             ).ToList();
-
+            
             await Task.WhenAll(sendRequestsSent);
             
             var result = await clusterMembers.First().RequestAsync<AggregatorResult>(aggregatorId, "aggregator",
                 new AskAggregator(),
                 new CancellationTokenSource(5000).Token
             );
-
+            
             result.Should().NotBeNull("We expect a response from the aggregator actor");
             result.SequenceKeyCount.Should().Be(sendRequestsSent.Count, "We expect a unique id per send request");
             result.SenderKeyCount.Should().Be(sendingActors, "We expect a single instantiation per sender id");
             result.OutOfOrderCount.Should().Be(0, "Messages from one actor to another should be received in order");
             result.TotalMessages.Should().Be(sendRequestsSent.Count * messagesSentPerCall);
+
+            var hbr = await clusterMembers.First().System.Root.RequestAsync<HeartbeatResponse>(new PID(clusterMembers.First().System.Address, "ClusterHeartBeat"), new HeartbeatRequest(), CancellationToken.None);
+            _testOutputHelper.WriteLine(hbr.ToString());
         }
 
         private async Task<IList<Cluster>> SpawnMembers(int memberCount, bool useMongoIdentity)

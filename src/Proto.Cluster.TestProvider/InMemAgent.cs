@@ -36,7 +36,7 @@ namespace Proto.Cluster.Testing
                     ID = registration.ID,
                     TTL = DateTimeOffset.Now,
                     Kinds = registration.Kinds,
-                    Host = registration.Address,
+                    Host = registration.Host,
                     Port = registration.Port
                 }
             );

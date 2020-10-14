@@ -7,11 +7,21 @@ namespace Proto.Cluster
 {
     public class ClusterHeartBeatActor : IActor
     {
+        private readonly ActorSystem _system;
+
+        public ClusterHeartBeatActor(ActorSystem system)
+        {
+            _system = system;
+        }
+
         public Task ReceiveAsync(IContext context)
         {
             if (context.Message is HeartbeatRequest)
             {
-                context.Respond(new HeartbeatResponse());
+                context.Respond(new HeartbeatResponse
+                {
+                    ActorCount = (uint) _system.ProcessRegistry.ProcessCount
+                });
             }
             
             return Task.CompletedTask;
@@ -36,7 +46,7 @@ namespace Proto.Cluster
 
         public Task StartAsync()
         {
-            var props = Props.FromProducer(() => new ClusterHeartBeatActor());
+            var props = Props.FromProducer(() => new ClusterHeartBeatActor(_system));
             _pid = _context.SpawnNamed(props, ClusterHeartBeatName);
             _logger = Log.CreateLogger("ClusterHeartBeat-" + _cluster.LoggerId);
             _logger.LogInformation("Started Cluster Heartbeats");
