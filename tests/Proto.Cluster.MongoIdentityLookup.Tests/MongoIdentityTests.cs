@@ -71,9 +71,6 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             result.SenderKeyCount.Should().Be(sendingActors, "We expect a single instantiation per sender id");
             result.OutOfOrderCount.Should().Be(0, "Messages from one actor to another should be received in order");
             result.TotalMessages.Should().Be(sendRequestsSent.Count * messagesSentPerCall);
-
-            var hbr = await clusterMembers.First().System.Root.RequestAsync<HeartbeatResponse>(new PID(clusterMembers.First().System.Address, "ClusterHeartBeat"), new HeartbeatRequest(), CancellationToken.None);
-            _testOutputHelper.WriteLine(hbr.ToString());
         }
 
         private async Task<IList<Cluster>> SpawnMembers(int memberCount, bool useMongoIdentity)

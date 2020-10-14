@@ -24,6 +24,7 @@ namespace Proto.Cluster.Testing
         private readonly InMemAgent _agent;
         private MemberList _memberList;
 
+        private ulong _eventId;
 
         public TestProvider(TestProviderOptions options, InMemAgent agent)
         {
@@ -92,7 +93,7 @@ namespace Proto.Cluster.Testing
                     )
                     .ToList();
 
-            _memberList.UpdateClusterTopology(memberStatuses, 1);
+            _memberList.UpdateClusterTopology(memberStatuses, ++_eventId);
         }
 
         private void StartTtlTimer()
