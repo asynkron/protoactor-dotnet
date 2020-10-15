@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Divergic.Logging.Xunit;
 using FluentAssertions;
 using Proto.Cluster.IdentityLookup;
+using Proto.Remote.Tests.Messages;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -34,19 +35,6 @@ namespace Proto.Cluster.Tests
         }
     }
 
-    public class EchoActor : IActor
-    {
-        public Task ReceiveAsync(IContext context)
-        {
-            if (context.Message is string msg)
-            {
-                context.Respond(msg);
-            }
-            return Task.CompletedTask;
-        }
-    }
-    
-    
     public class PidCacheTests
     {
         public PidCacheTests(ITestOutputHelper testOutputHelper)
@@ -71,10 +59,10 @@ namespace Proto.Cluster.Tests
             pidCache.TryAdd("kind", "identity", pid);
             var requestAsyncStrategy = new DefaultClusterContext(dummyIdentityLookup,pidCache,system.Root,logger);
 
-            var res = await requestAsyncStrategy.RequestAsync<string>("identity", "kind", "msg", new CancellationTokenSource(60000).Token
+            var res = await requestAsyncStrategy.RequestAsync<Pong>("identity", "kind", new Ping{ Message = "msg"}, new CancellationTokenSource(60000).Token
             );
 
-            res.Should().Be("msg");
+            res.Message.Should().Be("msg");
             var foundInCache = pidCache.TryGet("kind","identity",out var pidInCache);
             foundInCache.Should().BeTrue();
             pidInCache.Should().BeEquivalentTo(pid2);
