@@ -104,17 +104,14 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
         private static ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, string clusterName,
             IIdentityLookup identityLookup)
         {
-            var port = Environment.GetEnvironmentVariable("PROTOPORT") ?? "0";
-            var p = int.Parse(port);
+            var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? "0";
+            var port = int.Parse(portStr);
             var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
-            
-            var remoteConfig = new RemoteConfig(host, p)
+
+            return ClusterConfig.Setup(clusterName, clusterProvider, identityLookup, 
+                RemoteConfig.BindTo(host, port)
                 .WithProtoMessages(MessagesReflection.Descriptor)
-                .WithAdvertisedHostname(Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC") ?? host!);
-            
-            return new ClusterConfig(clusterName, host, p, clusterProvider)
-                .WithIdentityLookup(identityLookup)
-                .WithRemoteConfig(remoteConfig);
+                .WithAdvertisedHost(Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC") ?? host!));
         }
 
         private static IIdentityLookup GetIdentityLookup(string clusterName)

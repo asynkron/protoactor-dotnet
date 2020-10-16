@@ -56,7 +56,7 @@ namespace Proto.Cluster
 
                     foreach (var member in members)
                     {
-                        var pid = new PID(member.Address,ClusterHeartBeatName);
+                        var pid = PID.FromAddress(member.Address,ClusterHeartBeatName);
                         
                         try
                         {

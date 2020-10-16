@@ -77,7 +77,7 @@ namespace Proto.Remote
 
                     for (var i = 0; i < batch.TargetNames.Count; i++)
                     {
-                        targets[i] = new PID(_system.Address, batch.TargetNames[i]);
+                        targets[i] = PID.FromAddress(_system.Address, batch.TargetNames[i]);
                     }
 
                     var typeNames = batch.TypeNames.ToArray();

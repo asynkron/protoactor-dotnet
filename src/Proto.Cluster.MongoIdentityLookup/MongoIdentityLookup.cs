@@ -92,7 +92,7 @@ namespace Proto.Cluster.MongoIdentityLookup
 
         internal PID RemotePlacementActor(string address)
         {
-            return new PID(address, MongoPlacementActorName);
+            return PID.FromAddress(address, MongoPlacementActorName);
         }
 
         public Task RemoveUniqueIdentityAsync(string uniqueIdentity)

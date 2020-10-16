@@ -19,24 +19,24 @@ class Program
         var system = new ActorSystem();
         var context = new RootContext(system);
 
-        var Remote = new Remote(system,
-            new RemoteConfig("127.0.0.1", 12001).WithProtoMessages(ProtosReflection.Descriptor));
-        await Remote.StartAsync();
+        var remote = new Remote(system,
+            RemoteConfig.BindToLocalhost(12001).WithProtoMessages(ProtosReflection.Descriptor));
+        await remote.StartAsync();
 
         var messageCount = 1000000;
         var wg = new AutoResetEvent(false);
         var props = Props.FromProducer(() => new LocalActor(0, messageCount, wg));
 
         var pid = context.Spawn(props);
-        var remote = new PID("127.0.0.1:12000", "remote");
-        context.RequestAsync<Start>(remote, new StartRemote { Sender = pid }).Wait();
+        var remotePid =  PID.FromAddress("127.0.0.1:12000", "remote");
+        context.RequestAsync<Start>(remotePid, new StartRemote { Sender = pid }).Wait();
 
         var start = DateTime.Now;
         Console.WriteLine("Starting to send");
         var msg = new Ping();
         for (var i = 0; i < messageCount; i++)
         {
-            context.Send(remote, msg);
+            context.Send(remotePid, msg);
         }
         wg.WaitOne();
         var elapsed = DateTime.Now - start;

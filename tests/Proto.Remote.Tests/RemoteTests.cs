@@ -56,7 +56,7 @@ namespace Proto.Remote.Tests
         public async Task CanSendJsonAndReceiveToExistingRemote()
         {
             var (remote, system) = await RemoteManager.EnsureRemote();
-            var remoteActor = new PID(RemoteManager.RemoteAddress, "EchoActorInstance");
+            var remoteActor = PID.FromAddress(RemoteManager.RemoteAddress, "EchoActorInstance");
             var tcs = new TaskCompletionSource<bool>();
 
             var localActor = system.Root.Spawn(
@@ -85,7 +85,7 @@ namespace Proto.Remote.Tests
         {
             var (_, system) = await RemoteManager.EnsureRemote();
 
-            var remoteActor = new PID(RemoteManager.RemoteAddress, "EchoActorInstance");
+            var remoteActor = PID.FromAddress(RemoteManager.RemoteAddress, "EchoActorInstance");
 
             var pong = await system.Root.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
                 TimeSpan.FromMilliseconds(5000)
@@ -101,7 +101,7 @@ namespace Proto.Remote.Tests
         public async Task WhenRemoteActorNotFound_RequestAsyncTimesOut()
         {
             var (_, system) = await RemoteManager.EnsureRemote();
-            var unknownRemoteActor = new PID(RemoteManager.RemoteAddress, "doesn't exist");
+            var unknownRemoteActor = PID.FromAddress(RemoteManager.RemoteAddress, "doesn't exist");
 
             await Assert.ThrowsAsync<TimeoutException>(
                 async () =>

@@ -92,8 +92,8 @@ namespace Proto.Cluster.Partition
             }
         }
 
-        public PID RemotePartitionIdentityActor(string address) => new PID(address, PartitionIdentityActorName);
+        public static PID RemotePartitionIdentityActor(string address) => PID.FromAddress(address, PartitionIdentityActorName);
 
-        public PID RemotePartitionPlacementActor(string address) => new PID(address, PartitionPlacementActorName);
+        public static PID RemotePartitionPlacementActor(string address) => PID.FromAddress(address, PartitionPlacementActorName);
     }
 }

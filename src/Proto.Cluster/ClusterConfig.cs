@@ -15,38 +15,35 @@ namespace Proto.Cluster
     [PublicAPI]
     public class ClusterConfig
     {
-        public ClusterConfig(string name, string host, int port, IClusterProvider cp)
+        private ClusterConfig(string clusterName, IClusterProvider clusterProvider, IIdentityLookup identityLookup,RemoteConfig remoteConfig)
         {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            host = host ?? throw new ArgumentNullException(nameof(host));
-            ClusterProvider = cp ?? throw new ArgumentNullException(nameof(cp));
-
-            RemoteConfig = new RemoteConfig(host, port);
+            ClusterName = clusterName ?? throw new ArgumentNullException(nameof(clusterName));
+            ClusterProvider = clusterProvider ?? throw new ArgumentNullException(nameof(clusterProvider));
+            RemoteConfig = remoteConfig ?? throw new ArgumentNullException(nameof(remoteConfig));
             TimeoutTimespan = TimeSpan.FromSeconds(5);
             HeartBeatInterval = TimeSpan.FromSeconds(30);
             MemberStrategyBuilder = kind => new SimpleMemberStrategy();
             ClusterKinds = new Dictionary<string, Props>();
         }
 
-        public string Name { get; }
+        public string ClusterName { get; }
         
         public Dictionary<string, Props> ClusterKinds { get; } 
 
         public IClusterProvider ClusterProvider { get; }
 
-        public RemoteConfig RemoteConfig { get; private set; }
+        public RemoteConfig RemoteConfig { get; }
+        
         public TimeSpan TimeoutTimespan { get; private set; }
 
         public Func<string, IMemberStrategy> MemberStrategyBuilder { get; private set; }
 
-        public bool ClusterClient { get; set; }
-
-        public IIdentityLookup? IdentityLookup { get; private set; }
+        public IIdentityLookup? IdentityLookup { get; }
         public TimeSpan HeartBeatInterval { get; set; }
 
-        public ClusterConfig WithTimeoutSeconds(int timeoutSeconds)
+        public ClusterConfig WithTimeout(TimeSpan timeSpan)
         {
-            TimeoutTimespan = TimeSpan.FromSeconds(timeoutSeconds);
+            TimeoutTimespan = timeSpan;
             return this;
         }
 
@@ -56,24 +53,6 @@ namespace Proto.Cluster
             return this;
         }
 
-        public ClusterConfig WithIdentityLookup(IIdentityLookup identityLookup)
-        {
-            IdentityLookup = identityLookup;
-            return this;
-        }
-        
-        public ClusterConfig WithRemoteConfig(RemoteConfig remoteConfig)
-        {
-            RemoteConfig = remoteConfig;
-            return this;
-        }
-
-        public ClusterConfig WithRemoteConfig(Action<RemoteConfig> remoteConfigurator)
-        {
-            remoteConfigurator(RemoteConfig);
-            return this;
-        }
-        
         public ClusterConfig WithClusterKind(string kind, Props prop)
         {
             ClusterKinds.Add(kind, prop);
@@ -84,6 +63,12 @@ namespace Proto.Cluster
         {
             foreach (var (kind, prop) in knownKinds) ClusterKinds.Add(kind, prop);
             return this;
+        }
+        
+        public static ClusterConfig Setup(string clusterName, IClusterProvider clusterProvider,
+            IIdentityLookup identityLookup, RemoteConfig remoteConfig)
+        {
+            return new ClusterConfig(clusterName, clusterProvider, identityLookup, remoteConfig);
         }
     }
 }

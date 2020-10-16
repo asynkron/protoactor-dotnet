@@ -17,7 +17,7 @@ namespace Proto
             return Hash(data, 0xc58f1a7a);
         }
 
-        public static uint Hash(byte[] data, uint seed)
+        private static uint Hash(byte[] data, uint seed)
         {
             var length = data.Length;
             if (length == 0)

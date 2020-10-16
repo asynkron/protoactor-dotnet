@@ -11,7 +11,9 @@ namespace Proto
     {
         private Process? _process;
 
-        public PID(string address, string id)
+        public static PID FromAddress(string address, string id) => new PID(address, id);
+
+        private PID(string address, string id)
         {
             Address = address;
             Id = id;
