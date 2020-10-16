@@ -1,5 +1,11 @@
 <Project>
   <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <Authors>Proto.Actor Team</Authors>
     <Company>Proto.Actor Team</Company>
     <Description>Ultra-fast distributed actors for .NET.</Description>
@@ -8,7 +14,6 @@
     <PackageIcon>logo.png</PackageIcon>
     <RepositoryUrl>https://github.com/AsynkronIT/protoactor-dotnet</RepositoryUrl>
     <PackageTags>actors actor model concurrency proto protoactor</PackageTags>
-    <LangVersion>8</LangVersion>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>

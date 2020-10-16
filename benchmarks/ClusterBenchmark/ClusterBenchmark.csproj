@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
         <OutputType>Exe</OutputType>
-        <LangVersion>8</LangVersion>
         <RootNamespace>ClusterExperiment1</RootNamespace>
     </PropertyGroup>
 

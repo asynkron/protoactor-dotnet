@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <Authors>Proto.Actor Team</Authors>
     <Company>Proto.Actor Team</Company>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFrameworks>net5.0</TargetFrameworks>
     <AssemblyName>protograin</AssemblyName>
     <PackageId>protograin</PackageId>
     <LangVersion>8</LangVersion>
@@ -33,4 +34,5 @@
   <ItemGroup>
     <None Include="$(MSBuildStartupDirectory)\logo.png" Pack="true" PackagePath="\" />
   </ItemGroup>
+
 </Project>

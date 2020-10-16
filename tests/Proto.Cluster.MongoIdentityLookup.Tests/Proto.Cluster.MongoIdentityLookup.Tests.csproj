@@ -1,8 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
-    </PropertyGroup>
-
     <ItemGroup>
         <PackageReference Include="Divergic.Logging.Xunit" Version="3.1.0" />
         <PackageReference Include="Grpc.Tools" Version="2.23.0" PrivateAssets="All" />

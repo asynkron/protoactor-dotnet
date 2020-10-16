@@ -1,15 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Divergic.Logging.Xunit" Version="3.1.0" />
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
     <ProjectReference Include="..\Proto.Remote.Tests.Messages\Proto.Remote.Tests.Messages.csproj" />
   </ItemGroup>
+
   <ItemGroup>
     <Compile Remove="ConnectionFailTests.cs" />
   </ItemGroup>
+
 </Project>
