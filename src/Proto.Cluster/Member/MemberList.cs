@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Data;
 using Proto.Cluster.Events;
@@ -22,6 +23,7 @@ namespace Proto.Cluster
     //from that, we calculate a delta, which members joined, or left.
 
     //TODO: check usage and threadsafety.
+    [PublicAPI]
     public class MemberList
     {
         //TODO: actually use this to prevent banned members from rejoining

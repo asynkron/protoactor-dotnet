@@ -18,12 +18,12 @@ namespace Proto
         private readonly ConcurrentQueue<T> _events = new ConcurrentQueue<T>();
         private readonly object _lock = new object();
         private readonly ILogger _logger = Log.CreateLogger<EventProbe<T>>();
-        private readonly Subscription<T> _subscription;
+        private readonly EventStreamSubscription<T> _eventStreamSubscription;
         private EventExpectation<T>? _currentExpectation;
 
         public EventProbe(EventStream<T> eventStream)
         {
-            _subscription = eventStream.Subscribe(e =>
+            _eventStreamSubscription = eventStream.Subscribe(e =>
                 {
                     lock (_lock)
                     {
@@ -70,7 +70,7 @@ namespace Proto
             lock (_lock)
             {
                 _currentExpectation = null;
-                _subscription.Unsubscribe();
+                _eventStreamSubscription.Unsubscribe();
             }
         }
 

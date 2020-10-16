@@ -82,8 +82,8 @@ namespace Proto
     {
         private readonly ILogger _logger = Log.CreateLogger<EventStream<T>>();
 
-        private readonly ConcurrentDictionary<Guid, Subscription<T>> _subscriptions =
-            new ConcurrentDictionary<Guid, Subscription<T>>();
+        private readonly ConcurrentDictionary<Guid, EventStreamSubscription<T>> _subscriptions =
+            new ConcurrentDictionary<Guid, EventStreamSubscription<T>>();
 
         internal EventStream()
         {
@@ -95,9 +95,9 @@ namespace Proto
         /// <param name="action">Synchronous message handler</param>
         /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
         /// <returns>A new subscription that can be used to unsubscribe</returns>
-        public Subscription<T> Subscribe(Action<T> action, IDispatcher? dispatcher = null)
+        public EventStreamSubscription<T> Subscribe(Action<T> action, IDispatcher? dispatcher = null)
         {
-            var sub = new Subscription<T>(
+            var sub = new EventStreamSubscription<T>(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
                 x =>
@@ -116,9 +116,9 @@ namespace Proto
         /// <param name="action">Asynchronous message handler</param>
         /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
         /// <returns>A new subscription that can be used to unsubscribe</returns>
-        public Subscription<T> Subscribe(Func<T, Task> action, IDispatcher? dispatcher = null)
+        public EventStreamSubscription<T> Subscribe(Func<T, Task> action, IDispatcher? dispatcher = null)
         {
-            var sub = new Subscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, action);
+            var sub = new EventStreamSubscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, action);
             _subscriptions.TryAdd(sub.Id, sub);
             return sub;
         }
@@ -129,9 +129,9 @@ namespace Proto
         /// <param name="action">Synchronous message handler</param>
         /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
         /// <returns>A new subscription that can be used to unsubscribe</returns>
-        public Subscription<T> Subscribe<TMsg>(Action<TMsg> action, IDispatcher? dispatcher = null) where TMsg : T
+        public EventStreamSubscription<T> Subscribe<TMsg>(Action<TMsg> action, IDispatcher? dispatcher = null) where TMsg : T
         {
-            var sub = new Subscription<T>(
+            var sub = new EventStreamSubscription<T>(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
                 msg =>
@@ -148,11 +148,45 @@ namespace Proto
             _subscriptions.TryAdd(sub.Id, sub);
             return sub;
         }
-
-
-        public Subscription<T> Subscribe<TMsg>(ISenderContext context, params PID[] pids) where TMsg : T
+        
+        
+        /// <summary>
+        ///     Subscribe to the specified message type, which is a derived type from <see cref="T" />
+        /// </summary>
+        /// <param name="predicate">Additional filter upon the typed message</param>
+        /// <param name="action">Synchronous message handler</param>
+        /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
+        /// <returns>A new subscription that can be used to unsubscribe</returns>
+        public EventStreamSubscription<T> Subscribe<TMsg>(Func<TMsg,bool> predicate, Action<TMsg> action, IDispatcher? dispatcher = null) where TMsg : T
         {
-            var sub = new Subscription<T>(
+            var sub = new EventStreamSubscription<T>(
+                this,
+                dispatcher ?? Dispatchers.SynchronousDispatcher,
+                msg =>
+                {
+                    if (msg is TMsg typed && predicate(typed))
+                    {
+                        action(typed);
+                    }
+
+                    return Task.CompletedTask;
+                }
+            );
+
+            _subscriptions.TryAdd(sub.Id, sub);
+            return sub;
+        }
+
+
+        /// <summary>
+        ///     Subscribe to the specified message type, which is a derived type from <see cref="T" />
+        /// </summary>
+        /// <param name="context">The sender context to send from</param>
+        /// <param name="pids">The target PIDs the message will be sent to</param>
+        /// <returns>A new subscription that can be used to unsubscribe</returns>
+        public EventStreamSubscription<T> Subscribe<TMsg>(ISenderContext context, params PID[] pids) where TMsg : T
+        {
+            var sub = new EventStreamSubscription<T>(
                 this,
                 Dispatchers.SynchronousDispatcher,
                 msg =>
@@ -179,9 +213,9 @@ namespace Proto
         /// <param name="action">Asynchronous message handler</param>
         /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
         /// <returns>A new subscription that can be used to unsubscribe</returns>
-        public Subscription<T> Subscribe<TMsg>(Func<TMsg, Task> action, IDispatcher? dispatcher = null) where TMsg : T
+        public EventStreamSubscription<T> Subscribe<TMsg>(Func<TMsg, Task> action, IDispatcher? dispatcher = null) where TMsg : T
         {
-            var sub = new Subscription<T>(
+            var sub = new EventStreamSubscription<T>(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
                 msg => msg is TMsg typed ? action(typed) : Task.CompletedTask
@@ -227,7 +261,7 @@ namespace Proto
         ///     Remove a subscription
         /// </summary>
         /// <param name="subscription"> A subscription to remove</param>
-        public void Unsubscribe(Subscription<T>? subscription)
+        public void Unsubscribe(EventStreamSubscription<T>? subscription)
         {
             if (subscription != null)
             {
@@ -236,11 +270,11 @@ namespace Proto
         }
     }
 
-    public class Subscription<T>
+    public class EventStreamSubscription<T>
     {
         private readonly EventStream<T> _eventStream;
 
-        public Subscription(EventStream<T> eventStream, IDispatcher dispatcher, Func<T, Task> action)
+        public EventStreamSubscription(EventStream<T> eventStream, IDispatcher dispatcher, Func<T, Task> action)
         {
             Id = Guid.NewGuid();
             _eventStream = eventStream;
