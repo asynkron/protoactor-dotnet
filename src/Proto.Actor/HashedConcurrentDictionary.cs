@@ -6,17 +6,19 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 
 namespace Proto
 {
     internal class HashedConcurrentDictionary
     {
+        
         private const int HashSize = 1024;
         private readonly Partition[] _partitions = new Partition[HashSize];
 
-        public int Count => _partitions.Select(partition => partition.Count).Sum();
-
+        private int _count;
+        public int Count => _count;
+//        public int Count => _partitions.Select(partition => partition.Count).Sum();
         
         internal HashedConcurrentDictionary()
         {
@@ -44,6 +46,7 @@ namespace Proto
                 }
 
                 p.Add(key, reff);
+                Interlocked.Increment(ref _count);
                 return true;
             }
         }
@@ -62,7 +65,10 @@ namespace Proto
             var p = GetPartition(key);
             lock (p)
             {
-                p.Remove(key);
+                if (p.Remove(key))
+                {
+                    Interlocked.Decrement(ref _count);
+                }
             }
         }
 

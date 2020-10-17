@@ -24,7 +24,7 @@ namespace Proto.Cluster
             RemoteConfig = new RemoteConfig(host, port);
             TimeoutTimespan = TimeSpan.FromSeconds(5);
             HeartBeatInterval = TimeSpan.FromSeconds(30);
-            MemberStrategyBuilder = kind => new SimpleMemberStrategy();
+            MemberStrategyBuilder = (cluster, kind) => new SimpleMemberStrategy();
             ClusterKinds = new Dictionary<string, Props>();
         }
 
@@ -37,7 +37,7 @@ namespace Proto.Cluster
         public RemoteConfig RemoteConfig { get; private set; }
         public TimeSpan TimeoutTimespan { get; private set; }
 
-        public Func<string, IMemberStrategy> MemberStrategyBuilder { get; private set; }
+        public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; private set; }
 
         public bool ClusterClient { get; set; }
 
@@ -51,6 +51,12 @@ namespace Proto.Cluster
         }
 
         public ClusterConfig WithMemberStrategyBuilder(Func<string, IMemberStrategy> builder)
+        {
+            MemberStrategyBuilder = (_, s) => builder(s);
+            return this;
+        }
+        
+        public ClusterConfig WithMemberStrategyBuilder(Func<Cluster, string, IMemberStrategy> builder)
         {
             MemberStrategyBuilder = builder;
             return this;
