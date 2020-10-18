@@ -20,7 +20,7 @@ namespace Proto.Cluster.Tests
         {
             var clusters = await SpawnMembers(2);
             await Task.Delay(1000);
-            CancellationTokenSource timeout = new CancellationTokenSource(10000);
+            var timeout = new CancellationTokenSource(10000);
 
             var firstNode = clusters[0];
 
@@ -31,7 +31,7 @@ namespace Proto.Cluster.Tests
 
             var secondNode = clusters[1];
             firstNode.System.ProcessRegistry.ProcessCount.Should().BeGreaterThan(1000);
-            secondNode.System.ProcessRegistry.ProcessCount.Should().BeLessThan(50);
+            secondNode.System.ProcessRegistry.ProcessCount.Should().BeLessThan(100);
         }
 
         protected override ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, string clusterName,

@@ -232,7 +232,7 @@ namespace Proto.Cluster.Partition
             }
 
             //Get activator
-            var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind)?.Address;
+            var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
 
             //just make the code analyzer understand the address is not null after this block
             if (activatorAddress == null || string.IsNullOrEmpty(activatorAddress))

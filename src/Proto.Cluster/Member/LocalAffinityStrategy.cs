@@ -51,14 +51,13 @@ namespace Proto.Cluster
             _rdv.UpdateMembers(_members);
         }
 
-        public Member? GetActivator()
+        public Member? GetActivator(string senderAddress)
         {
-            if (_registry.ProcessCount < _localAffinityActorLimit)
-            {
-                return _me ?? _rr.GetMember();
-            }
-
-            return _rr.GetMember();
+            var sender = _members.FirstOrDefault(member => member.Address == senderAddress);
+            
+            //TODO: Verify that the member is not overloaded already
+            
+            return sender ?? _rr.GetMember();
         }
     }
 }
