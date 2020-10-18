@@ -53,10 +53,13 @@ namespace Proto.Cluster
 
         public Member? GetActivator(string senderAddress)
         {
+            if (_me?.Address.Equals(senderAddress) == true && _registry.ProcessCount < _localAffinityActorLimit)
+            {
+               return _me;
+            }
+            
             var sender = _members.FirstOrDefault(member => member.Address == senderAddress);
-            
             //TODO: Verify that the member is not overloaded already
-            
             return sender ?? _rr.GetMember();
         }
     }
