@@ -6,9 +6,9 @@ namespace Proto.Cluster.Tests
 {
     public static class Extensions
     {
-        public static Task<Pong> Ping(this Cluster cluster, string id, string message)
+        public static Task<Pong> Ping(this Cluster cluster, string id, string message, CancellationToken token)
         {
-            return cluster.RequestAsync<Pong>(id, EchoActor.Kind, new Ping{ Message = message}, CancellationToken.None);
+            return cluster.RequestAsync<Pong>(id, EchoActor.Kind, new Ping{ Message = message}, token);
         } 
     }
 }

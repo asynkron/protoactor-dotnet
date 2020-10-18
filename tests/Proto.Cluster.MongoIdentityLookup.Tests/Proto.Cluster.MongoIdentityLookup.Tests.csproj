@@ -9,12 +9,9 @@
         <PackageReference Include="MongoDB.Driver" Version="2.10.4" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
         <ProjectReference Include="..\..\src\Proto.Cluster.MongoIdentityLookup\Proto.Cluster.MongoIdentityLookup.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj" />
         <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
-    </ItemGroup>
-    
-    <ItemGroup>
-        <Protobuf Include="messages.proto" GrpcServices="Server" />
+        <ProjectReference Include="..\Proto.Cluster.Tests\Proto.Cluster.Tests.csproj" />
     </ItemGroup>
 </Project>

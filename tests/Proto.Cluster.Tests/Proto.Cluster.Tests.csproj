@@ -9,5 +9,9 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Divergic.Logging.Xunit" Version="3.1.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.23.0" PrivateAssets="All" />
+  </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="*.proto" />
   </ItemGroup>
 </Project>

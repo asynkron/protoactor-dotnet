@@ -8,7 +8,7 @@ namespace Proto.Cluster.Tests
 {
     public abstract class ClusterFixture
     {
-        protected async Task<IList<Cluster>> SpawnClusters(int count, Action<ClusterConfig> configure = null)
+        protected async Task<IList<Cluster>> SpawnClusterNodes(int count, Action<ClusterConfig> configure = null)
         {
             var agent = new InMemAgent();
             var clusterTasks = Enumerable.Range(0, count).Select(_ => SpawnCluster(agent,configure))

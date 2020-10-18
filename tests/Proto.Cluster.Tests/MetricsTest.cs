@@ -28,16 +28,16 @@ namespace Proto.Cluster.Tests
         {
             var timeout = new CancellationTokenSource(5000);
 
-            var clusters = await SpawnClusters(clusterSize);
+            var clusters = await SpawnClusterNodes(clusterSize);
 
-            await PingAll("ping1");
+            await PingAll("ping1",timeout.Token);
             var count = await GetActorCountFromHeartbeat();
             count.Should().BePositive();
 
             const int virtualActorCount = 10;
             foreach (var id in Enumerable.Range(1, virtualActorCount))
             {
-                await PingAll(id.ToString());
+                await PingAll(id.ToString(), timeout.Token);
             }
 
             var afterPing = await GetActorCountFromHeartbeat();
@@ -56,11 +56,11 @@ namespace Proto.Cluster.Tests
                 return heartbeatResponses.Select(response => (int) response.ActorCount).Sum();
             }
 
-            async Task PingAll(string identity)
+            async Task PingAll(string identity, CancellationToken token)
             {
                 foreach (var cluster in clusters)
                 {
-                    await cluster.Ping(identity, "");
+                    await cluster.Ping(identity, "", token);
                 }
             }
         }
