@@ -17,14 +17,14 @@ namespace Proto.Cluster.Tests
 {
     public abstract class ClusterTests
     {
-        private readonly ITestOutputHelper _testOutputHelper;
+        protected readonly ITestOutputHelper TestOutputHelper;
         private readonly Lazy<InMemAgent> _inMemAgent = new Lazy<InMemAgent>(() => new InMemAgent());
         private InMemAgent InMemAgent => _inMemAgent.Value;
 
         protected ClusterTests(ITestOutputHelper testOutputHelper)
         {
             var factory = LogFactory.Create(testOutputHelper);
-            _testOutputHelper = testOutputHelper;
+            TestOutputHelper = testOutputHelper;
             Log.SetLoggerFactory(factory);
         }
 
@@ -79,7 +79,7 @@ namespace Proto.Cluster.Tests
             var system = new ActorSystem();
             var identityLookup = GetIdentityLookup(clusterName);
             
-            var senderProps = Props.FromProducer(() => new SenderActor(_testOutputHelper));
+            var senderProps = Props.FromProducer(() => new SenderActor(TestOutputHelper));
             var aggProps = Props.FromProducer(() => new VerifyOrderActor());
 
             var clusterProvider = GetClusterProvider();

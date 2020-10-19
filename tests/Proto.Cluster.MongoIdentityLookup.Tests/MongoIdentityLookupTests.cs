@@ -11,12 +11,12 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
     public class MongoIdentityLookupTests: ClusterTests
     {
         //Xunit class Skip anyone?
-        private const string SkipReason = "MongoDb needs to run locally";
+        private const string SkipReason = null;
         
         public MongoIdentityLookupTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         [Theory(Skip = SkipReason)]
-        [InlineData(1, 100, 1000)]
+        [InlineData(1, 100, 100)]
         public override Task OrderedDeliveryFromActors(int clusterNodes, int sendingActors, int messagesSentPerCall)
         {
             return base.OrderedDeliveryFromActors(clusterNodes, sendingActors, messagesSentPerCall);
