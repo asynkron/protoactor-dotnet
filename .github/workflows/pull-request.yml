@@ -15,5 +15,6 @@ jobs:
           dotnet-version: '5.0.100-rc.2.20479.15'
       - name: Run tests
         run: |
-          dotnet build -c Release
-          dotnet test -c Release
+          dotnet restore -c Release
+          dotnet build -c Release --no-restore
+          dotnet test -c Release --no-restore
