@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotnet" Version="0.12.0" />
+    <PackageReference Include="BenchmarkDotnet" Version="0.12.1" />
   </ItemGroup>
 
 </Project>

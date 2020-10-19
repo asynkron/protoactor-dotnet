@@ -4,7 +4,7 @@
     <Authors>Proto.Actor Team</Authors>
     <Company>Proto.Actor Team</Company>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net5.0</TargetFrameworks>
+    <TargetFramework>net5.0</TargetFramework>
     <AssemblyName>protograin</AssemblyName>
     <PackageId>protograin</PackageId>
     <LangVersion>8</LangVersion>
@@ -26,8 +26,8 @@
   
   <ItemGroup>
     <PackageReference Include="Handlebars.Net" Version="1.10.1" />
-    <PackageReference Include="protobuf-net" Version="3.0.29" />
-    <PackageReference Include="protobuf-net.Reflection" Version="3.0.29" />
+    <PackageReference Include="protobuf-net" Version="3.0.52" />
+    <PackageReference Include="protobuf-net.Reflection" Version="3.0.52" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20371.2" />
   </ItemGroup>
 
