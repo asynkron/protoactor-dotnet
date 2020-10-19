@@ -1,4 +1,6 @@
 using System;
+using JetBrains.Annotations;
+
 // -----------------------------------------------------------------------
 //   <copyright file="ActorContext.cs" company="Asynkron AB">
 //       Copyright (C) 2015-2020 Asynkron AB All rights reserved
@@ -8,11 +10,13 @@ using System;
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
+    [PublicAPI]
     public class ActorSystemConfig
     {
+        public static ActorSystemConfig Setup() => new ActorSystemConfig();
+        
         public TimeSpan DeadLetterThrottleInterval { get; set; }
         public int DeadLetterThrottleCount { get; set; }
-
 
         public ActorSystemConfig WithDeadLetterThrottleInterval(TimeSpan deadLetterThrottleInterval)
         {

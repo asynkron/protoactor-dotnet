@@ -19,7 +19,7 @@ namespace Proto.Remote
         public const string Localhost = "127.0.0.1";
         public const int AnyFreePort = 0;
         
-        public static RemoteConfig BinToAllInterfaces(string advertisedHost, int port = 0) =>
+        public static RemoteConfig BindToAllInterfaces(string advertisedHost, int port = 0) =>
             new RemoteConfig(AllInterfaces, port).WithAdvertisedHost(advertisedHost);
         
         public static RemoteConfig BindToLocalhost(int port = 0) => new RemoteConfig(Localhost, port);

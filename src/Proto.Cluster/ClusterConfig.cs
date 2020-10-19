@@ -24,6 +24,7 @@ namespace Proto.Cluster
             HeartBeatInterval = TimeSpan.FromSeconds(30);
             MemberStrategyBuilder = kind => new SimpleMemberStrategy();
             ClusterKinds = new Dictionary<string, Props>();
+            IdentityLookup = identityLookup;
         }
 
         public string ClusterName { get; }
