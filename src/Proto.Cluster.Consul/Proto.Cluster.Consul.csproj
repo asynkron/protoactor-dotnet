@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="Consul" Version="1.6.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0-rc.2.20475.5" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj" />
