@@ -24,7 +24,7 @@ namespace Proto.Cluster.Tests
         {
             var clusters = await SpawnMembers(2);
             await Task.Delay(1000);
-            var timeout = new CancellationTokenSource(30000);
+            var timeout = new CancellationTokenSource(30000).Token;
 
             var firstNode = clusters[0];
 
@@ -54,17 +54,27 @@ namespace Proto.Cluster.Tests
             
             async Task PingAll(Cluster cluster)
             {
-                await Task.WhenAll(
-                Enumerable.Range(0, 1000).Select(async i =>
+                foreach (var i in Enumerable.Range(0, 1000))
+                {
+                    Pong pong = null;
+                    while (pong == null)
                     {
-                        Pong pong = null;
-                        while (pong == null)
-                        {
-                            timeout.Token.ThrowIfCancellationRequested();
-                            pong = await cluster.Ping(i.ToString(), "hello", timeout.Token);
-                        }
+                        timeout.ThrowIfCancellationRequested();
+                        pong = await cluster.Ping(i.ToString(), "hello", timeout);
                     }
-                ));
+                }
+
+                // await Task.WhenAll(
+                // Enumerable.Range(0, 1000).Select(async i =>
+                //     {
+                //         Pong pong = null;
+                //         while (pong == null)
+                //         {
+                //             timeout.Token.ThrowIfCancellationRequested();
+                //             pong = await cluster.Ping(i.ToString(), "hello", timeout.Token);
+                //         }
+                //     }
+                // ));
             }
         }
 
@@ -75,12 +85,12 @@ namespace Proto.Cluster.Tests
                 .WithRemoteConfig(config => config.WithProtoMessages(Remote.Tests.Messages.ProtosReflection.Descriptor))
                 .WithMemberStrategyBuilder((cluster, kind) => new LocalAffinityStrategy(cluster, 1100));
         
-        protected override IIdentityLookup GetIdentityLookup(string clusterName)
-        {
-            var db = GetMongo();
-            var identity = new MongoIdentityLookup.MongoIdentityLookup(clusterName, db);
-            return identity;
-        }
+        // protected override IIdentityLookup GetIdentityLookup(string clusterName)
+        // {
+        //     var db = GetMongo();
+        //     var identity = new MongoIdentityLookup.MongoIdentityLookup(clusterName, db);
+        //     return identity;
+        // }
 
 
         IMongoDatabase GetMongo()

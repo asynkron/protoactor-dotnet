@@ -15,10 +15,11 @@ using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests
 {
-    public abstract class ClusterTests
+    public abstract class ClusterTests: IDisposable
     {
         protected readonly ITestOutputHelper TestOutputHelper;
         private readonly Lazy<InMemAgent> _inMemAgent = new Lazy<InMemAgent>(() => new InMemAgent());
+        private readonly List<Cluster> _clusters = new List<Cluster>();
         private InMemAgent InMemAgent => _inMemAgent.Value;
 
         protected ClusterTests(ITestOutputHelper testOutputHelper)
@@ -28,7 +29,6 @@ namespace Proto.Cluster.Tests
             Log.SetLoggerFactory(factory);
         }
 
-        
         [Theory]
         [InlineData(1, 100, 10)]
         [InlineData(3, 100, 10)]
@@ -39,7 +39,7 @@ namespace Proto.Cluster.Tests
 
             await Task.Delay(5000);
             
-            var maxWait = new CancellationTokenSource(5000);
+            var maxWait = new CancellationTokenSource(5000).Token;
             
             var sendToRequest = new SendToRequest
             {
@@ -48,7 +48,7 @@ namespace Proto.Cluster.Tests
             };
             var sendRequestsSent = clusterMembers.SelectMany(
                 cluster => Enumerable.Range(0, sendingActors)
-                    .Select(id => cluster.RequestAsync<Ack>($"snd-{id}", "sender", sendToRequest, maxWait.Token)))
+                    .Select(id => cluster.RequestAsync<Ack>($"snd-{id}", "sender", sendToRequest, maxWait)))
                 .ToList();
             
             await Task.WhenAll(sendRequestsSent);
@@ -91,6 +91,7 @@ namespace Proto.Cluster.Tests
             var cluster = new Cluster(system, config);
             
             await cluster.StartMemberAsync();
+            _clusters.Add(cluster);
             return cluster;
         }
 
@@ -207,6 +208,14 @@ namespace Proto.Cluster.Tests
                 }
 
                 context.Respond(new Ack());
+            }
+        }
+
+        public void Dispose()
+        {
+            foreach (var cluster in _clusters)
+            {
+                cluster.ShutdownAsync();
             }
         }
     }
