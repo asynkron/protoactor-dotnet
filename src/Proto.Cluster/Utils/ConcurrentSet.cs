@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Proto.Cluster.Utils
 {
-    internal class ConcurrentSet<T>
+    public class ConcurrentSet<T>
     {
         private readonly ConcurrentDictionary<T, byte> _inner = new ConcurrentDictionary<T, byte>();
 
@@ -12,6 +12,11 @@ namespace Proto.Cluster.Utils
         public void Add(T key)
         {
             _inner.TryAdd(key, 1);
+        }
+        
+        public bool TryAdd(T key)
+        {
+            return _inner.TryAdd(key, 1);
         }
 
         public void Remove(T key)
