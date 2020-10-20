@@ -310,10 +310,11 @@ namespace Proto.Cluster.Partition
             }
 
             var self = context.Self!;
+            var sender = context.Sender;
             _ = Task.Run(async () =>
                 {
                     await Task.Delay(100);
-                    _cluster.System.Root.Request(self, msg, context.Sender);
+                    _cluster.System.Root.Request(self, msg, sender);
                 }
             );
 
