@@ -230,6 +230,7 @@ namespace Proto.Cluster.MongoIdentityLookup
                         kind, pidLookup.MemberId
                     );
                 }
+                
 
                 //let all requests try to remove, but only log on the first occurrence
                 await _lookup.RemoveMemberAsync(pidLookup.MemberId);
