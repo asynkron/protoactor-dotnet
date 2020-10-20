@@ -16,10 +16,8 @@ namespace Proto.Cluster.Tests
         }
         
         [Theory]
-        [InlineData(1, 1, 5000)]
-        [InlineData(1, 2, 5000)]
-        // [InlineData(1, 1000, 5000)]
-        // [InlineData(3, 1000, 5000)]
+        [InlineData(1, 1000, 5000)]
+        [InlineData(3, 1000, 5000)]
 
         public async Task CanSpawnConcurrently(int clusterNodes, int count, int msTimeout)
         {
@@ -40,9 +38,9 @@ namespace Proto.Cluster.Tests
                         {
                             timeout.ThrowIfCancellationRequested();
                             pong = await cluster.Ping(id, id, timeout);
+                            TestOutputHelper.WriteLine($"{id} received response {pong?.Message}");
                         }
-                
-                        pong.Message.Should().Be(id);
+                        pong.Message.Should().Be($"{id}:{id}");
                     }
                 ));
             }
@@ -50,7 +48,7 @@ namespace Proto.Cluster.Tests
         
         [Theory]
         [InlineData(1, 1000, 5000)]
-        [InlineData(3, 1000, 5000)]
+        [InlineData(3, 1000, 8000)]
 
         public async Task CanSpawnSequentially(int clusterNodes, int count, int msTimeout)
         {
@@ -73,7 +71,7 @@ namespace Proto.Cluster.Tests
                         pong = await cluster.Ping(id, id, timeout);
                     }
                 
-                    pong.Message.Should().Be(id);
+                    pong.Message.Should().Be($"{id}:{id}");
                 }
             }
         }

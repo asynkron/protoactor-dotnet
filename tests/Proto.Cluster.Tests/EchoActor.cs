@@ -9,9 +9,9 @@ namespace Proto.Cluster.Tests
         public const string Kind = "echo";
 
         public static readonly Props Props = Props.FromProducer(() => new EchoActor());
-
-        
         private static readonly ILogger Logger = Log.CreateLogger<EchoActor>();
+
+        private string _identity;
 
         public Task ReceiveAsync(IContext context)
         {
@@ -20,9 +20,12 @@ namespace Proto.Cluster.Tests
                 case Started _:
                     Logger.LogDebug($"{context.Self}");
                     break;
+                case ClusterInit init:
+                    _identity = init.Identity;
+                    break;
                 case Ping ping:
                     Logger.LogDebug("Received Ping, replying Pong");
-                    context.Respond(new Pong { Message = ping.Message });
+                    context.Respond(new Pong {Message = $"{_identity}:{ping.Message}"});
                     break;
                 case Die _:
                     Logger.LogDebug("Received termination request, stopping");

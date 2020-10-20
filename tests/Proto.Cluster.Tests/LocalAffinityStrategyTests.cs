@@ -1,9 +1,7 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using MongoDB.Driver;
 using Proto.Cluster.IdentityLookup;
 using Proto.Remote.Tests.Messages;
 using Xunit;
@@ -23,8 +21,8 @@ namespace Proto.Cluster.Tests
         public async Task PrefersLocalPlacement()
         {
             var clusters = await SpawnMembers(2);
-            await Task.Delay(1000);
-            var timeout = new CancellationTokenSource(30000).Token;
+            await Task.Delay(3000);
+            var timeout = new CancellationTokenSource(10000).Token;
 
             var firstNode = clusters[0];
 
@@ -54,27 +52,17 @@ namespace Proto.Cluster.Tests
             
             async Task PingAll(Cluster cluster)
             {
-                foreach (var i in Enumerable.Range(0, 1000))
-                {
-                    Pong pong = null;
-                    while (pong == null)
+                await Task.WhenAll(
+                Enumerable.Range(0, 1000).Select(async i =>
                     {
-                        timeout.ThrowIfCancellationRequested();
-                        pong = await cluster.Ping(i.ToString(), "hello", timeout);
+                        Pong pong = null;
+                        while (pong == null)
+                        {
+                            timeout.ThrowIfCancellationRequested();
+                            pong = await cluster.Ping(i.ToString(), "hello", timeout);
+                        }
                     }
-                }
-
-                // await Task.WhenAll(
-                // Enumerable.Range(0, 1000).Select(async i =>
-                //     {
-                //         Pong pong = null;
-                //         while (pong == null)
-                //         {
-                //             timeout.Token.ThrowIfCancellationRequested();
-                //             pong = await cluster.Ping(i.ToString(), "hello", timeout.Token);
-                //         }
-                //     }
-                // ));
+                ));
             }
         }
 
@@ -84,24 +72,5 @@ namespace Proto.Cluster.Tests
                 .WithClusterKind(EchoActor.Kind, EchoActor.Props.WithPoisonOnRemoteTraffic(.5f))
                 .WithRemoteConfig(config => config.WithProtoMessages(Remote.Tests.Messages.ProtosReflection.Descriptor))
                 .WithMemberStrategyBuilder((cluster, kind) => new LocalAffinityStrategy(cluster, 1100));
-        
-        // protected override IIdentityLookup GetIdentityLookup(string clusterName)
-        // {
-        //     var db = GetMongo();
-        //     var identity = new MongoIdentityLookup.MongoIdentityLookup(clusterName, db);
-        //     return identity;
-        // }
-
-
-        IMongoDatabase GetMongo()
-        {
-            var connectionString =
-                Environment.GetEnvironmentVariable("MONGO") ?? "mongodb://127.0.0.1:27017/ProtoMongo";
-            var url = MongoUrl.Create(connectionString);
-            var settings = MongoClientSettings.FromUrl(url);
-            var client = new MongoClient(settings);
-            var database = client.GetDatabase("ProtoMongo");
-            return database;
-        }
     }
 }
