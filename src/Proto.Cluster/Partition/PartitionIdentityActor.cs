@@ -253,6 +253,9 @@ namespace Proto.Cluster.Partition
                 _spawns.Add(msg.Identity, res);
             }
 
+            //execution ends here. context.ReenterAfter is invoked once the task completes
+            //but still within the actors sequential execution
+            //but other messages could have been processed in between
 
             //Await SpawningProcess
             context.ReenterAfter( //TODO: reenter bug for sender?
