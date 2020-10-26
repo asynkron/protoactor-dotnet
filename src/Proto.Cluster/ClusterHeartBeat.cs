@@ -1,38 +1,33 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-
 namespace Proto.Cluster
 {
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
+
     public class ClusterHeartBeatActor : IActor
     {
-        private readonly ActorSystem _system;
-
-        public ClusterHeartBeatActor(ActorSystem system)
-        {
-            _system = system;
-        }
-
         public Task ReceiveAsync(IContext context)
         {
             if (context.Message is HeartbeatRequest)
             {
                 context.Respond(new HeartbeatResponse
-                {
-                    ActorCount = (uint) _system.ProcessRegistry.ProcessCount
-                });
+                    {
+                        ActorCount = (uint) context.System.ProcessRegistry.ProcessCount
+                    }
+                );
             }
-            
+
             return Task.CompletedTask;
         }
     }
+
     public class ClusterHeartBeat
     {
         private readonly Cluster _cluster;
         private ILogger _logger = null!;
         private PID _pid = null!;
-        private const string ClusterHeartBeatName = "ClusterHeartBeat"; 
+        private const string ClusterHeartBeatName = "ClusterHeartBeat";
         private readonly CancellationTokenSource _ct = new CancellationTokenSource();
         private readonly ActorSystem _system;
         private readonly RootContext _context;
@@ -46,7 +41,7 @@ namespace Proto.Cluster
 
         public Task StartAsync()
         {
-            var props = Props.FromProducer(() => new ClusterHeartBeatActor(_system));
+            var props = Props.FromProducer(() => new ClusterHeartBeatActor());
             _pid = _context.SpawnNamed(props, ClusterHeartBeatName);
             _logger = Log.CreateLogger("ClusterHeartBeat-" + _cluster.LoggerId);
             _logger.LogInformation("Started Cluster Heartbeats");
@@ -66,25 +61,30 @@ namespace Proto.Cluster
 
                     foreach (var member in members)
                     {
-                        var pid = new PID(member.Address,ClusterHeartBeatName);
-                        
+                        var pid = new PID(member.Address, ClusterHeartBeatName);
+
                         try
                         {
                             await _context.RequestAsync<HeartbeatResponse>(pid, new HeartbeatRequest(),
                                 TimeSpan.FromSeconds(5)
                             );
-                            
-                            _logger.LogInformation("Heartbeat request for member id {MemberId} Address {Address} succeeded",member.Id,member.Address);
+
+                            _logger.LogInformation(
+                                "Heartbeat request for member id {MemberId} Address {Address} succeeded", member.Id,
+                                member.Address
+                            );
                         }
                         catch (TimeoutException)
                         {
-                            _logger.LogWarning("Heartbeat request for member id {MemberId} Address {Address} timed out",member.Id,member.Address);
+                            _logger.LogWarning("Heartbeat request for member id {MemberId} Address {Address} timed out",
+                                member.Id, member.Address
+                            );
                         }
                     }
                 }
                 catch (Exception x)
                 {
-                    _logger.LogError(x,"Heartbeat loop failed");
+                    _logger.LogError(x, "Heartbeat loop failed");
                 }
             }
         }

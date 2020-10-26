@@ -71,7 +71,7 @@ namespace Proto.Cluster.Testing
             return Task.CompletedTask;
         }
 
-        private async Task NotifyStatuses()
+        private void NotifyStatuses()
         {
             var statuses = _agent.GetServicesHealth();
 
@@ -94,6 +94,7 @@ namespace Proto.Cluster.Testing
                     .ToList();
 
             _memberList.UpdateClusterTopology(memberStatuses, ++_eventId);
+            
         }
 
         private void StartTtlTimer()
