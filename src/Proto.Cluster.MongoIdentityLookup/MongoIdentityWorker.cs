@@ -1,13 +1,18 @@
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
+using Proto.Cluster.Utils;
 
 namespace Proto.Cluster.MongoIdentityLookup
 {
     public class MongoIdentityWorker : IActor
     {
+        private static readonly ConcurrentSet<string>  StaleMembers =
+            new ConcurrentSet<string>();
+        
         private readonly Cluster _cluster;
         private readonly ILogger _logger = Log.CreateLogger<MongoIdentityWorker>();
         private readonly MongoIdentityLookup _lookup;
@@ -217,19 +222,23 @@ namespace Proto.Cluster.MongoIdentityLookup
             var memberExists = pidLookup.MemberId == null || _memberList.ContainsMemberId(pidLookup.MemberId);
             if (!memberExists)
             {
-                _logger.LogWarning(
-                    "Found placement lookup for {Identity} {Kind}, but Member {MemberId} is not part of cluster, dropping stale entries",
-                    identity,
-                    kind, pidLookup.MemberId
-                );
+                if (StaleMembers.TryAdd(pidLookup.MemberId))
+                {
+                    _logger.LogWarning(
+                        "Found placement lookup for {Identity} {Kind}, but Member {MemberId} is not part of cluster, dropping stale entries",
+                        identity,
+                        kind, pidLookup.MemberId
+                    );
+                }
                 
-                //remove this one, it's outdated
-        //        await _lookup.RemoveUniqueIdentityAsync(pidLookup.UniqueIdentity);
+
+                //let all requests try to remove, but only log on the first occurrence
                 await _lookup.RemoveMemberAsync(pidLookup.MemberId);
                 return null;
+
             }
 
-            var pid = new PID(pidLookup.Address, pidLookup.UniqueIdentity);
+            var pid = PID.FromAddress(pidLookup.Address, pidLookup.UniqueIdentity);
             return pid;
         }
 

@@ -41,8 +41,9 @@ namespace Node2
         {
             var system = new ActorSystem();
             var context = new RootContext(system);
-            var Remote = new Remote(system, new RemoteConfig("127.0.0.1", 12000).WithProtoMessages(ProtosReflection.Descriptor));
-            Remote.StartAsync();
+            var remoteConfig =  RemoteConfig.BindToLocalhost(12000).WithProtoMessages(ProtosReflection.Descriptor);
+            var remote = new Remote(system, remoteConfig);
+            remote.StartAsync();
             context.SpawnNamed(Props.FromProducer(() => new EchoActor()), "remote");
             Console.ReadLine();
         }

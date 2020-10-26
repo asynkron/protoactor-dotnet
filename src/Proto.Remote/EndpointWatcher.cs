@@ -100,7 +100,7 @@ namespace Proto.Remote
 
             foreach (var (id, pidSet) in _watched)
             {
-                var watcherPid = new PID(_system.Address, id);
+                var watcherPid =  PID.FromAddress(_system.Address, id);
                 var watcherRef = _system.ProcessRegistry.Get(watcherPid);
 
                 if (watcherRef == _system.DeadLetter)

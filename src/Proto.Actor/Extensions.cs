@@ -18,7 +18,7 @@ namespace Proto
         /// <param name="system">Actor system</param>
         internal static void Stop(this IEnumerable<PID> self, ActorSystem system)
         {
-            if (self == null)
+            if (self == null!)
             {
                 return;
             }
@@ -38,6 +38,8 @@ namespace Proto
         }
 
         public static void Deconstruct<TKey, TValue>(
+            //DONT TOUCH THIS, it tries to deconstruct the deconstruct method...
+            // ReSharper disable once UseDeconstructionOnParameter
             this KeyValuePair<TKey, TValue> self, out TKey key,
             out TValue value
         )

@@ -61,24 +61,19 @@ namespace Proto.Cluster
 
                     foreach (var member in members)
                     {
-                        var pid = new PID(member.Address, ClusterHeartBeatName);
-
+                        var pid = PID.FromAddress(member.Address,ClusterHeartBeatName);
+                        
                         try
                         {
                             await _context.RequestAsync<HeartbeatResponse>(pid, new HeartbeatRequest(),
                                 TimeSpan.FromSeconds(5)
                             );
-
-                            _logger.LogInformation(
-                                "Heartbeat request for member id {MemberId} Address {Address} succeeded", member.Id,
-                                member.Address
-                            );
+                            
+                            _logger.LogInformation("Heartbeat request for member id {MemberId} Address {Address} succeeded",member.Id,member.Address);
                         }
                         catch (TimeoutException)
                         {
-                            _logger.LogWarning("Heartbeat request for member id {MemberId} Address {Address} timed out",
-                                member.Id, member.Address
-                            );
+                            _logger.LogWarning("Heartbeat request for member id {MemberId} Address {Address} timed out",member.Id,member.Address);
                         }
                     }
                 }

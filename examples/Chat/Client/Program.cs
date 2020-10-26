@@ -11,12 +11,12 @@ namespace Client
         static void Main()
         {
             var system = new ActorSystem();
-            var remote = new Remote(system,new RemoteConfig("127.0.0.1",0)
+            var remote = new Remote(system, RemoteConfig.BindToLocalhost()
                 .WithProtoMessages(ChatReflection.Descriptor));
             
             remote.StartAsync();
             
-            var server = new PID("127.0.0.1:8000", "chatserver");
+            var server = PID.FromAddress("127.0.0.1:8000", "chatserver");
             var context = new RootContext(system);
 
             var props = Props.FromFunc(

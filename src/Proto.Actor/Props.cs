@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
+using Proto.Context;
 using Proto.Mailbox;
 
 namespace Proto
@@ -16,7 +17,7 @@ namespace Proto
     public sealed class Props
     {
         private Spawner? _spawner;
-        public Producer Producer { get; private set; } = () => null;
+        public Producer Producer { get; private set; } = () => null!;
         public MailboxProducer MailboxProducer { get; private set; } = ProduceDefaultMailbox;
         public ISupervisorStrategy? GuardianStrategy { get; private set; }
         public ISupervisorStrategy SupervisorStrategy { get; private set; } = Supervision.DefaultStrategy;
@@ -49,19 +50,19 @@ namespace Proto
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
             var process = new ActorProcess(system, mailbox);
-            var (pid, absent) = system.ProcessRegistry.TryAdd(name, process);
+            var (self, absent) = system.ProcessRegistry.TryAdd(name, process);
 
             if (!absent)
             {
-                throw new ProcessNameExistException(name, pid);
+                throw new ProcessNameExistException(name, self);
             }
 
-            var ctx = new ActorContext(system, props, parent, pid);
+            var ctx = ActorContext.Setup(system, props, parent, self);
             mailbox.RegisterHandlers(ctx, dispatcher);
             mailbox.PostSystemMessage(Started.Instance);
             mailbox.Start();
 
-            return pid;
+            return self;
         }
 
         public Props WithProducer(Producer producer) => Copy(props => props.Producer = producer);
@@ -138,12 +139,12 @@ namespace Proto
 
         internal PID Spawn(ActorSystem system, string name, PID? parent) => Spawner(system, name, this, parent);
         public static Props FromProducer(Producer producer) => new Props().WithProducer(producer);
-        public static Props FromFunc(Receive receive) => FromProducer(() => new EmptyActor(receive));
+        public static Props FromFunc(Receive receive) => FromProducer(() => new FunctionActor(receive));
     }
 
     public delegate PID Spawner(ActorSystem system, string id, Props props, PID? parent);
 
-    public delegate IActor? Producer();
+    public delegate IActor Producer();
 
     public delegate IMailbox MailboxProducer();
 }

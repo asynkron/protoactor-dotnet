@@ -14,7 +14,7 @@ namespace Server
             var system = new ActorSystem();
             var context = new RootContext(system);
             
-            var remote = new Remote(system, new RemoteConfig("127.0.0.1",8000)
+            var remote = new Remote(system, RemoteConfig.BindToLocalhost(8000)
                 .WithProtoMessages(ChatReflection.Descriptor));
             remote.StartAsync();
 

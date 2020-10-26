@@ -21,7 +21,7 @@ namespace Proto.Cluster.Partition
             {
                 return null;
             }
-            var remotePid = _partitionManager.RemotePartitionIdentityActor(identityOwner);
+            var remotePid = PartitionManager.RemotePartitionIdentityActor(identityOwner);
 
             var req = new ActivationRequest
             {

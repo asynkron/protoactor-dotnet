@@ -11,7 +11,7 @@ using Proto;
 
 namespace LifecycleEvents
 {
-    static class Program
+    internal static class Program
     {
         private static async Task Main()
         {
@@ -39,7 +39,7 @@ namespace LifecycleEvents
             await system.Root.PoisonAsync(actor);
         }
 
-        internal class ChildActor : IActor
+        private class ChildActor : IActor
         {
             public Task ReceiveAsync(IContext context)
             {

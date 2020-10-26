@@ -82,7 +82,7 @@ namespace Proto.Cluster.Partition
             };
 
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(identity);
-            var ownerPid = _partitionManager.RemotePartitionIdentityActor(ownerAddress);
+            var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
 
             context.Send(ownerPid, activationTerminated);
             _myActors.Remove(identity);

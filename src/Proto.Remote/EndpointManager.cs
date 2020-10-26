@@ -18,9 +18,9 @@ namespace Proto.Remote
         private readonly ConnectionRegistry _connections = new ConnectionRegistry();
         private readonly Remote _remote;
         private readonly ActorSystem _system;
-        private Subscription<object>? _endpointConnEvnSub;
+        private EventStreamSubscription<object>? _endpointConnEvnSub;
         private PID? _endpointSupervisor;
-        private Subscription<object>? _endpointTermEvnSub;
+        private EventStreamSubscription<object>? _endpointTermEvnSub;
 
         public EndpointManager(Remote remote, ActorSystem system)
         {

@@ -107,7 +107,7 @@ namespace Proto.Mailbox
             if (!done)
                 // mailbox is halted, awaiting completion of a message task, upon which mailbox will be rescheduled
             {
-                return Task.FromResult(0);
+                return Task.CompletedTask;
             }
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
@@ -124,7 +124,7 @@ namespace Proto.Mailbox
                 }
             }
 
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
 
         private bool ProcessMessages()

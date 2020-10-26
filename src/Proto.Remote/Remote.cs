@@ -24,13 +24,8 @@ namespace Proto.Remote
         private EndpointManager _endpointManager = null!;
         private EndpointReader _endpointReader = null!;
         private HealthServiceImpl _healthCheck = null!;
-
         private Server _server = null!;
 
-        public Remote(ActorSystem system,string host, int port, RemoteConfig config) : this(system,config.WithHost(host).WithPort(port))
-        {
-        }
-        
         public Remote(ActorSystem system,RemoteConfig config)
         {
             _system = system;
@@ -144,7 +139,7 @@ namespace Proto.Remote
 
             return res;
 
-            static PID ActivatorForAddress(string address) => new PID(address, "activator");
+            static PID ActivatorForAddress(string address) => PID.FromAddress(address, "activator");
         }
 
         public void SendMessage(PID pid, object msg, int serializerId)
