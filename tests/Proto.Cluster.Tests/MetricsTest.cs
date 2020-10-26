@@ -44,7 +44,7 @@ namespace Proto.Cluster.Tests
             {
                 var heartbeatResponses = await Task.WhenAll(clusters.Select(c =>
                         c.System.Root.RequestAsync<HeartbeatResponse>(
-                            new PID(c.System.Address, "ClusterHeartBeat"), new HeartbeatRequest(), timeout.Token
+                            PID.FromAddress(c.System.Address, "ClusterHeartBeat"), new HeartbeatRequest(), timeout.Token
                         )
                     )
                 );
