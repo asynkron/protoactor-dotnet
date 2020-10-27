@@ -44,6 +44,7 @@ namespace Proto.Cluster.Kubernetes
             return kubernetes.PatchNamespacedPodAsync(new V1Patch(patch), podName, podNamespace);
         }
 
+        
         /// <summary>
         ///     Get the pod status. The pod must be running in order to be considered as a candidate.
         /// </summary>
