@@ -10,10 +10,10 @@ using System.Threading.Tasks;
 
 namespace Proto.Future
 {
-    internal class FutureProcess<T> : Process
+    internal class FutureProcess : Process
     {
         private readonly CancellationTokenSource? _cts;
-        private readonly TaskCompletionSource<T> _tcs;
+        private readonly TaskCompletionSource<object> _tcs;
 
         internal FutureProcess(ActorSystem system, TimeSpan timeout) : this(system, new CancellationTokenSource(timeout)
         )
@@ -31,7 +31,7 @@ namespace Proto.Future
 
         private FutureProcess(ActorSystem system, CancellationTokenSource? cts) : base(system)
         {
-            _tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
             _cts = cts;
 
             var name = System.ProcessRegistry.NextId();
@@ -63,32 +63,13 @@ namespace Proto.Future
         }
 
         public PID Pid { get; }
-        public Task<T> Task { get; }
+        public Task<object> Task { get; }
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
-            var msg = MessageEnvelope.UnwrapMessage(message);
-
             try
             {
-                switch (msg)
-                {
-                    //special void message, e.g. the party on the other end does no longer exist and cannot respond
-                    case VoidResponse _:
-                        _tcs.TrySetResult(default!);
-                        break;
-                    case T _:
-                    case null:
-                        _tcs.TrySetResult((T) msg!);
-                        break;
-                    default:
-                        _tcs.TrySetException(
-                            new InvalidOperationException(
-                                $"Unexpected message. Was type {msg.GetType()} but expected {typeof(T)}"
-                            )
-                        );
-                        break;
-                }
+                _tcs.TrySetResult(MessageEnvelope.UnwrapMessage(message)!);
             }
             finally
             {

@@ -8,6 +8,7 @@ using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests
 {
+    [Collection("ClusterTests")]
     public class MetricsTest: ClusterFixture
     {
         public MetricsTest(ITestOutputHelper testOutputHelper)

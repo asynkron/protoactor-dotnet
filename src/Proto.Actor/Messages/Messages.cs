@@ -14,7 +14,7 @@ namespace Proto
     public sealed partial class Terminated : SystemMessage
     {
     }
-
+    
     public sealed class Restarting
     {
         public static readonly Restarting Instance = new Restarting();
@@ -106,7 +106,7 @@ namespace Proto
         {
         }
     }
-
+    
     public interface INotInfluenceReceiveTimeout
     {
     }
@@ -121,5 +121,10 @@ namespace Proto
 
         public Func<Task> Action { get; }
         public object Message { get; }
+    }
+    
+    public sealed partial class DeadLetterResponse
+    {
+        public static readonly DeadLetterResponse Instance = new DeadLetterResponse();
     }
 }

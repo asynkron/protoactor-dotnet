@@ -15,6 +15,7 @@ using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests
 {
+    [Collection("ClusterTests")]
     public abstract class ClusterTests: IAsyncLifetime
     {
         protected readonly ITestOutputHelper TestOutputHelper;
@@ -215,7 +216,7 @@ namespace Proto.Cluster.Tests
 
         public Task DisposeAsync()
         {
-            return Task.WhenAll(_clusters.Select(c => c.ShutdownAsync(false)));
+            return Task.WhenAll(_clusters.Select(c => c.ShutdownAsync()));
         }
     }
 }

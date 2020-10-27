@@ -75,6 +75,8 @@ namespace Proto.Cluster
                 MemberList
             );
 
+            if (Config.EnableDeadLetterResponse) StartDeadLetterResponses();
+
             Logger.LogInformation("Started as cluster member");
         }
 
@@ -113,6 +115,24 @@ namespace Proto.Cluster
             await _clusterHeartBeat.StartAsync();
         }
 
+        private void StartDeadLetterResponses()
+        {
+            System.EventStream.Subscribe<DeadLetterEvent>(@event =>
+            {
+                if (@event.Sender == null) return;
+                if (System.Address == @event.Sender.Address)
+                {
+                    Logger?.LogInformation("Sending dead letter locally");
+                    System.Root.Send(@event.Sender, DeadLetterResponse.Instance);
+                }
+                else
+                {
+                    Logger?.LogInformation("Sending dead letter to remote");
+                    Remote.SendMessage(@event.Sender, DeadLetterResponse.Instance, -1);
+                }
+            });
+        }
+        
         public async Task ShutdownAsync(bool graceful = true)
         {
             await _clusterHeartBeat.ShutdownAsync();

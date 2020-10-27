@@ -10,8 +10,8 @@ message PID {
 //user messages
 message PoisonPill {}
 
-//special event to terminate/fail ongoing Future requests
-message VoidResponse {}
+//special event sent by the system on messages to dead PID's
+message DeadLetterResponse {}
 
 //system messages
 message Watch {

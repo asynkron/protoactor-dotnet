@@ -4,15 +4,15 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using JetBrains.Annotations;
-using Proto.Future;
-
 namespace Proto
 {
+    using System;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Future;
+    using JetBrains.Annotations;
+
     public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext
     {
     }
@@ -78,13 +78,13 @@ namespace Proto
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => RequestAsync(target, message, new FutureProcess<T>(System, timeout));
+            => RequestAsync<T>(target, message, new FutureProcess(System, timeout));
 
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => RequestAsync(target, message, new FutureProcess<T>(System, cancellationToken));
+            => RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
 
         public Task<T> RequestAsync<T>(PID target, object message) =>
-            RequestAsync(target, message, new FutureProcess<T>(System));
+            RequestAsync<T>(target, message, new FutureProcess(System));
 
         public void Stop(PID? pid)
         {
@@ -99,7 +99,7 @@ namespace Proto
 
         public Task StopAsync(PID pid)
         {
-            var future = new FutureProcess<object>(System);
+            var future = new FutureProcess(System);
 
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
@@ -111,7 +111,7 @@ namespace Proto
 
         public Task PoisonAsync(PID pid)
         {
-            var future = new FutureProcess<object>(System);
+            var future = new FutureProcess(System);
 
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Poison(pid);
@@ -147,17 +147,28 @@ namespace Proto
             return Task.CompletedTask;
         }
 
-        private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
+        private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)
         {
             if (target == null)
             {
                 throw new ArgumentNullException(nameof(target));
             }
-            
+
             var messageEnvelope = new MessageEnvelope(message, future.Pid);
             SendUserMessage(target, messageEnvelope);
-
-            return future.Task;
+            var result = await future.Task;
+            switch (result)
+            {
+                case DeadLetterResponse _:
+                    throw new DeadLetterException(target);
+                case null:
+                case T _:
+                    return (T) result!;
+                default:
+                    throw new InvalidOperationException(
+                        $"Unexpected message. Was type {result.GetType()} but expected {typeof(T)}"
+                    );
+            }
         }
 
         private void SendUserMessage(PID target, object message)
@@ -166,7 +177,7 @@ namespace Proto
             {
                 throw new ArgumentNullException(nameof(target));
             }
-            
+
             if (SenderMiddleware != null)
             {
                 //slow path

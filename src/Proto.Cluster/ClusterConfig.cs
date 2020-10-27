@@ -15,7 +15,8 @@ namespace Proto.Cluster
     [PublicAPI]
     public class ClusterConfig
     {
-        private ClusterConfig(string clusterName, IClusterProvider clusterProvider, IIdentityLookup identityLookup,RemoteConfig remoteConfig)
+        private ClusterConfig(string clusterName, IClusterProvider clusterProvider, IIdentityLookup identityLookup,
+            RemoteConfig remoteConfig)
         {
             ClusterName = clusterName ?? throw new ArgumentNullException(nameof(clusterName));
             ClusterProvider = clusterProvider ?? throw new ArgumentNullException(nameof(clusterProvider));
@@ -28,19 +29,21 @@ namespace Proto.Cluster
         }
 
         public string ClusterName { get; }
-        
-        public Dictionary<string, Props> ClusterKinds { get; } 
+
+        public Dictionary<string, Props> ClusterKinds { get; }
 
         public IClusterProvider ClusterProvider { get; }
 
         public RemoteConfig RemoteConfig { get; }
-        
+
         public TimeSpan TimeoutTimespan { get; private set; }
 
         public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; private set; }
 
         public IIdentityLookup? IdentityLookup { get; }
         public TimeSpan HeartBeatInterval { get; set; }
+
+        public bool EnableDeadLetterResponse { get; set; } = true;
 
         public ClusterConfig WithTimeout(TimeSpan timeSpan)
         {
@@ -53,7 +56,7 @@ namespace Proto.Cluster
             MemberStrategyBuilder = (_, s) => builder(s);
             return this;
         }
-        
+
         public ClusterConfig WithMemberStrategyBuilder(Func<Cluster, string, IMemberStrategy> builder)
         {
             MemberStrategyBuilder = builder;
@@ -71,7 +74,7 @@ namespace Proto.Cluster
             foreach (var (kind, prop) in knownKinds) ClusterKinds.Add(kind, prop);
             return this;
         }
-        
+
         public static ClusterConfig Setup(string clusterName, IClusterProvider clusterProvider,
             IIdentityLookup identityLookup, RemoteConfig remoteConfig)
         {
