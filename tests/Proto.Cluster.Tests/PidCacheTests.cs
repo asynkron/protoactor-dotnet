@@ -62,7 +62,7 @@ namespace Proto.Cluster.Tests
             var res = await requestAsyncStrategy.RequestAsync<Pong>("identity", "kind", new Ping{ Message = "msg"}, new CancellationTokenSource(60000).Token
             );
 
-            res.Message.Should().Be("msg");
+            res.Message.Should().Be(":msg");
             var foundInCache = pidCache.TryGet("kind","identity",out var pidInCache);
             foundInCache.Should().BeTrue();
             pidInCache.Should().BeEquivalentTo(pid2);

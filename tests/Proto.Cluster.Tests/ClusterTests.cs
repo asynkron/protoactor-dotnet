@@ -15,7 +15,7 @@ using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests
 {
-    public abstract class ClusterTests: IDisposable
+    public abstract class ClusterTests: IAsyncLifetime
     {
         protected readonly ITestOutputHelper TestOutputHelper;
         private readonly Lazy<InMemAgent> _inMemAgent = new Lazy<InMemAgent>(() => new InMemAgent());
@@ -208,12 +208,14 @@ namespace Proto.Cluster.Tests
             }
         }
 
-        public void Dispose()
+        public Task InitializeAsync()
         {
-            foreach (var cluster in _clusters)
-            {
-                cluster.ShutdownAsync();
-            }
+            return Task.CompletedTask;
+        }
+
+        public Task DisposeAsync()
+        {
+            return Task.WhenAll(_clusters.Select(c => c.ShutdownAsync(false)));
         }
     }
 }
