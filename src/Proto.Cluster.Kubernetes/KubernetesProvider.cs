@@ -89,12 +89,15 @@ namespace Proto.Cluster.Kubernetes
             Logger.LogInformation("Registering service {PodName} on {PodIp}", _podName, _address);
 
             var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace());
-
             if (pod == null) throw new ApplicationException($"Unable to get own pod information for {_podName}");
+            
+            Logger.LogInformation("Using Kubernetes namespace: " + pod.Namespace());
 
             var matchingPort = pod.FindPort(_port);
 
             if (matchingPort == null) Logger.LogWarning("Registration port doesn't match any of the container ports");
+            
+            Logger.LogInformation("Using Kubernetes port: " + _port);
 
             var protoKinds = new List<string>();
 
