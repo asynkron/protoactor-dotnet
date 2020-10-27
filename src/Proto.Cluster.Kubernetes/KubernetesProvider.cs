@@ -106,10 +106,14 @@ namespace Proto.Cluster.Kubernetes
             var labels = new Dictionary<string, string>(pod.Metadata.Labels)
             {
                 [LabelCluster] = _clusterName,
-                [LabelKinds] = string.Join(",", protoKinds.Distinct()),
                 [LabelPort] = _port.ToString(),
                 [LabelMemberId] = _cluster.Id.ToString()
             };
+
+            foreach (var kind in _kinds)
+            {
+                labels.Add($"{LabelKind}-{kind}","true");
+            }
 
             try
             {
@@ -151,7 +155,12 @@ namespace Proto.Cluster.Kubernetes
             var kubeNamespace = KubernetesExtensions.GetKubeNamespace();
 
             var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace);
-            pod.SetLabel(LabelKinds, null);
+            
+            foreach (var kind in _kinds)
+            {
+                pod.SetLabel($"{LabelKind}-{kind}", null);
+            }
+            
             pod.SetLabel(LabelCluster, null);
             await _kubernetes.ReplacePodLabels(_podName, kubeNamespace, pod.Labels());
 
