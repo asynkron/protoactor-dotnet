@@ -3,6 +3,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster
 {
+    using Mailbox;
+    using Proto.Utils;
+
     public static class LocalAffinityPropsExtensions
     {
         private static readonly ILogger Logger = Log.CreateLogger(nameof(LocalAffinityPropsExtensions));
@@ -15,11 +18,14 @@ namespace Proto.Cluster
         /// </summary>
         /// <param name="props"></param>
         /// <param name="relocationFactor">Chance the actor is poisoned on remote traffic, 0-1</param>
+        /// <param name="throttle">Throttling max relocations per timespan</param>
         /// <param name="hasLocalAffinity">Predicate on message envelope, to have local affinity only on partitioned messages</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
         public static Props WithPoisonOnRemoteTraffic(this Props props,
-            float relocationFactor = DefaultRelocationFactor, Predicate<MessageEnvelope>? hasLocalAffinity = null)
+            float relocationFactor = DefaultRelocationFactor,
+            ShouldThrottle? throttle = null,
+            Predicate<MessageEnvelope>? hasLocalAffinity = null)
         {
             if (relocationFactor <= 0)
             {
@@ -36,15 +42,18 @@ namespace Proto.Cluster
 
                     var task = receiver(context, envelope);
 
-                    if (sender.IsRemote(context)
+                    if (!(envelope.Message is PoisonPill && !(envelope.Message is SystemMessage))
+                        && sender.IsRemote(context)
                         && hasLocalAffinity(envelope)
-                        && shouldRelocate())
+                        && shouldRelocate()
+                        && throttle?.Invoke() != Throttle.Valve.Closed
+                        )
                     {
                         Logger.LogDebug("Poisoning {ActorPid}, because of {MessageType} from {Sender}", context.Self,
                             envelope.Message.GetType(), sender
                         );
                         // ReSharper disable once MethodHasAsyncOverload
-                        context.System.Root.Poison(context.Self!);
+                        context.System.Root.Send(context.Self!, PoisonPill.Instance);
                     }
 
                     return task;
@@ -61,7 +70,6 @@ namespace Proto.Cluster
 
             var random = new Random();
             return () => random.NextDouble() < relocationFactor;
-
         }
 
         private static bool IsRemote(this PID? sender, IInfoContext context)

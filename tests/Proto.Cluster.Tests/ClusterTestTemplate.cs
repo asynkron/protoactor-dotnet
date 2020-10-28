@@ -16,14 +16,14 @@ using Xunit.Abstractions;
 namespace Proto.Cluster.Tests
 {
     [Collection("ClusterTests")]
-    public abstract class ClusterTests: IAsyncLifetime
+    public abstract class ClusterTestTemplate: IAsyncLifetime
     {
         protected readonly ITestOutputHelper TestOutputHelper;
         private readonly Lazy<InMemAgent> _inMemAgent = new Lazy<InMemAgent>(() => new InMemAgent());
         private readonly List<Cluster> _clusters = new List<Cluster>();
         private InMemAgent InMemAgent => _inMemAgent.Value;
 
-        protected ClusterTests(ITestOutputHelper testOutputHelper)
+        protected ClusterTestTemplate(ITestOutputHelper testOutputHelper)
         {
             var factory = LogFactory.Create(testOutputHelper);
             TestOutputHelper = testOutputHelper;
@@ -38,7 +38,7 @@ namespace Proto.Cluster.Tests
             const string aggregatorId = "agg-1";
             var clusterMembers = await SpawnMembers(clusterNodes);
 
-            await Task.Delay(5000);
+            await Task.Delay(3000);
             
             var maxWait = new CancellationTokenSource(5000).Token;
             

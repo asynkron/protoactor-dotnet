@@ -4,7 +4,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Divergic.Logging.Xunit" Version="3.1.0" />
         <PackageReference Include="Grpc.Tools" Version="2.23.0" PrivateAssets="All" />
         <PackageReference Include="MongoDB.Driver" Version="2.10.4" />
     </ItemGroup>

@@ -4,6 +4,8 @@ using Proto.Remote.Tests.Messages;
 
 namespace Proto.Cluster.Tests
 {
+    using ClusterTest.Messages;
+
     public class EchoActor : IActor
     {
         public const string Kind = "echo";
@@ -27,8 +29,13 @@ namespace Proto.Cluster.Tests
                     Logger.LogDebug("Received Ping, replying Pong");
                     context.Respond(new Pong {Message = $"{_identity}:{ping.Message}"});
                     break;
+                case WhereAreYou _:
+                    Logger.LogDebug("Responding to location request");
+                    context.Respond(new HereIAm {Address = context.Self!.Address});
+                    break;
                 case Die _:
                     Logger.LogDebug("Received termination request, stopping");
+                    context.Respond(new Ack());
                     context.Stop(context.Self!);
                     break;
                 default:

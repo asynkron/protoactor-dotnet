@@ -251,7 +251,7 @@ namespace Proto.Cluster
             {
                 if (!_memberStrategyByKind.ContainsKey(kind))
                 {
-                    _memberStrategyByKind[kind] = _cluster.Config!.MemberStrategyBuilder(_cluster,kind);
+                    _memberStrategyByKind[kind] = _cluster.Config!.MemberStrategyBuilder(_cluster,kind) ?? new SimpleMemberStrategy();
                 }
 
                 //TODO: this doesnt work, just use the same strategy for all kinds...

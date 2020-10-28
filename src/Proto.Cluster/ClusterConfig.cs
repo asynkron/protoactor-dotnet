@@ -38,12 +38,10 @@ namespace Proto.Cluster
 
         public TimeSpan TimeoutTimespan { get; private set; }
 
-        public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; private set; }
+        public Func<Cluster, string, IMemberStrategy?> MemberStrategyBuilder { get; private set; }
 
         public IIdentityLookup? IdentityLookup { get; }
         public TimeSpan HeartBeatInterval { get; set; }
-
-        public bool EnableDeadLetterResponse { get; set; } = true;
 
         public ClusterConfig WithTimeout(TimeSpan timeSpan)
         {
@@ -51,13 +49,13 @@ namespace Proto.Cluster
             return this;
         }
 
-        public ClusterConfig WithMemberStrategyBuilder(Func<string, IMemberStrategy> builder)
+        public ClusterConfig WithMemberStrategyBuilder(Func<string, IMemberStrategy?> builder)
         {
             MemberStrategyBuilder = (_, s) => builder(s);
             return this;
         }
 
-        public ClusterConfig WithMemberStrategyBuilder(Func<Cluster, string, IMemberStrategy> builder)
+        public ClusterConfig WithMemberStrategyBuilder(Func<Cluster, string, IMemberStrategy?> builder)
         {
             MemberStrategyBuilder = builder;
             return this;

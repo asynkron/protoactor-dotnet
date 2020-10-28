@@ -8,10 +8,10 @@ using Xunit.Abstractions;
 
 namespace Proto.Cluster.MongoIdentityLookup.Tests
 {
-    public class MongoIdentityLookupTests: ClusterTests
+    public class MongoIdentityLookupTests: ClusterTestTemplate
     {
         //Xunit class Skip anyone?
-        private const string SkipReason = null;
+        private const string SkipReason = "Mongo needs to be available on localhost";
         
         public MongoIdentityLookupTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 

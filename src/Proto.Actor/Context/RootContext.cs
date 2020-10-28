@@ -107,7 +107,7 @@ namespace Proto
             return future.Task;
         }
 
-        public void Poison(PID pid) => pid.SendUserMessage(System, new PoisonPill());
+        public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
 
         public Task PoisonAsync(PID pid)
         {

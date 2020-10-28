@@ -44,6 +44,8 @@ namespace Proto
         {
             var (msg, sender, header) = MessageEnvelope.Unwrap(message);
             System.EventStream.Publish(new DeadLetterEvent(pid, msg, sender, header));
+            
+            if (sender != null && !(msg is PoisonPill)) System.Root.Send(sender, new DeadLetterResponse {Target = pid});
         }
 
         protected internal override void SendSystemMessage(PID pid, object message)

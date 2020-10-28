@@ -5,6 +5,7 @@ namespace Proto.Cluster
     using System.Threading.Tasks;
     using IdentityLookup;
     using Microsoft.Extensions.Logging;
+    using Proto.Utils;
 
     public interface IClusterContext
     {
@@ -17,6 +18,7 @@ namespace Proto.Cluster
         private readonly PidCache _pidCache;
         private readonly ISenderContext _context;
         private readonly ILogger _logger;
+        private readonly ShouldThrottle _requestLogThrottle = Throttle.Create(10, TimeSpan.FromSeconds(5));
 
         public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ISenderContext context,
             ILogger logger)
@@ -115,14 +117,19 @@ namespace Proto.Cluster
             }
             catch (DeadLetterException)
             {
-                //TODO: throttled info logs
-                _logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
+                if (_requestLogThrottle().IsOpen())
+                {
+                    _logger.LogInformation("TryRequestAsync failed, dead PID from {Source}", source);
+                }
                 _pidCache.RemoveByVal(kind, identity, cachedPid);
                 return (ResponseStatus.DeadLetter, default)!;
             }
             catch (TimeoutException)
             {
-                _logger.LogWarning("TryRequestAsync timed out, PID from {Source}", source);
+                if (_requestLogThrottle().IsOpen())
+                {
+                    _logger.LogWarning("TryRequestAsync timed out, PID from {Source}", source);
+                }
             }
             catch (Exception x)
             {

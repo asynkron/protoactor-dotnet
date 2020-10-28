@@ -5,7 +5,7 @@ using Xunit.Abstractions;
 
 namespace Proto.Cluster.Consul.Tests
 {
-    public class ConsulProviderTests: ClusterTests
+    public class ConsulProviderTests: ClusterTestTemplate
     {
         private const string SkipReason = "Consul needs to run locally";
         

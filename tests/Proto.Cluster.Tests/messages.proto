@@ -1,5 +1,5 @@
 ﻿syntax = "proto3";
-package actor;
+package clustertest;
 option csharp_namespace = "ClusterTest.Messages";
 
 message SendToRequest{
@@ -8,6 +8,14 @@ message SendToRequest{
 }
 
 message Ack {}
+
+
+message WhereAreYou {}
+
+message HereIAm {
+  string address = 1;
+}
+
 
 message SequentialIdRequest{
   string sequence_key = 1;

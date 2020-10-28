@@ -23,6 +23,11 @@ namespace Proto
         {
         }
     }
+    
+    public sealed partial class PoisonPill
+    {
+        public static readonly PoisonPill Instance = new PoisonPill();
+    }
 
     public class Failure : SystemMessage
     {
@@ -121,10 +126,5 @@ namespace Proto
 
         public Func<Task> Action { get; }
         public object Message { get; }
-    }
-    
-    public sealed partial class DeadLetterResponse
-    {
-        public static readonly DeadLetterResponse Instance = new DeadLetterResponse();
     }
 }

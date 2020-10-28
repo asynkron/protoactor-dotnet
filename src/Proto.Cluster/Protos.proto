@@ -9,7 +9,7 @@ import "Proto.Actor/Protos.proto";
 message IdentityHandoverRequest {
     uint64 event_id = 1;
     string address = 2;
-    repeated Member members=3;
+    repeated Member members = 3;
 }
 
 //response message to the above
@@ -55,18 +55,18 @@ message GrainErrorResponse {
 }
 
 message Member {
-    string host=1;
-    int32 port=2;
-    string id=3;
-    repeated string kinds=4;
+    string host = 1;
+    int32 port = 2;
+    string id = 3;
+    repeated string kinds = 4;
 }
 
 message ClusterTopology {
-    uint64 event_id=1;
-    repeated Member members=2;
-    repeated Member joined=3;
-    repeated Member left=4;
-    repeated Member banned=5;
+    uint64 event_id = 1;
+    repeated Member members = 2;
+    repeated Member joined = 3;
+    repeated Member left = 4;
+    repeated Member banned = 5;
 }
 
 message HeartbeatRequest {

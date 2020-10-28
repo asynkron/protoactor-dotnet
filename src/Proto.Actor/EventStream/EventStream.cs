@@ -4,69 +4,56 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Collections.Concurrent;
-using System.Threading;
-using System.Threading.Tasks;
-using JetBrains.Annotations;
-using Microsoft.Extensions.Logging;
-using Proto.Mailbox;
+
+
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Threading.Tasks;
+    using JetBrains.Annotations;
+    using Mailbox;
+    using Microsoft.Extensions.Logging;
+    using Utils;
+
     [PublicAPI]
     public class EventStream : EventStream<object>
     {
         private readonly ILogger _logger = Log.CreateLogger<EventStream>();
 
-        internal EventStream() : this(TimeSpan.Zero, 0){}
-        
-        internal EventStream(TimeSpan throttleInterval,int throttleCount)
+        internal EventStream() : this(TimeSpan.Zero, 0)
         {
-            var lastTick = 0L;
-            var messages = 0L;
-            var throttled = false;
+        }
+
+        internal EventStream(TimeSpan throttleInterval, int throttleCount)
+        {
+            var shouldThrottle = Throttle.Create(throttleCount, throttleInterval);
             Subscribe<DeadLetterEvent>(
                 dl =>
                 {
-                    if (throttleInterval != TimeSpan.Zero)
+                    switch (shouldThrottle())
                     {
-                        if (DateTimeOffset.Now.Ticks > lastTick + throttleInterval.Ticks)
-                        {
-                            if (throttled)
-                            {
-                                _logger.LogInformation(
-                                    "[DeadLetter] Resuming DeadLetter event logging..."
-                                );
-                            }
-                            throttled = false;
-                            
-                        }
-                        else if (!throttled)
-                        {
-                            var res = Interlocked.Increment(ref messages);
-                            if (res >= throttleCount)
-                            {
-                                throttled = true;
-                                Interlocked.Exchange(ref messages, 0L);
-                                _logger.LogInformation(
-                                    "[DeadLetter] Throttling DeadLetter event logging..."
-                                );
-                            }
-                        }
-
-                        lastTick = DateTimeOffset.Now.Ticks;
-                    }
-
-                    if (!throttled)
-                    {
-                        _logger.LogInformation(
-                            "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",
-                            dl.Message.GetType().Name,
-                            dl.Message,
-                            dl.Pid.ToShortString(),
-                            dl.Sender?.ToShortString()
-                        );
+                        case Throttle.Valve.Open:
+                            _logger.LogInformation(
+                                "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",
+                                dl.Message.GetType().Name,
+                                dl.Message,
+                                dl.Pid.ToShortString(),
+                                dl.Sender?.ToShortString()
+                            );
+                            break;
+                        case Throttle.Valve.Closing:
+                            _logger.LogInformation(
+                                "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'. Throttling next messages.",
+                                dl.Message.GetType().Name,
+                                dl.Message,
+                                dl.Pid.ToShortString(),
+                                dl.Sender?.ToShortString()
+                            );
+                            break;
+                        case Throttle.Valve.Closed:
+                            break;
                     }
                 }
             );
@@ -129,7 +116,8 @@ namespace Proto
         /// <param name="action">Synchronous message handler</param>
         /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
         /// <returns>A new subscription that can be used to unsubscribe</returns>
-        public EventStreamSubscription<T> Subscribe<TMsg>(Action<TMsg> action, IDispatcher? dispatcher = null) where TMsg : T
+        public EventStreamSubscription<T> Subscribe<TMsg>(Action<TMsg> action, IDispatcher? dispatcher = null)
+            where TMsg : T
         {
             var sub = new EventStreamSubscription<T>(
                 this,
@@ -148,8 +136,8 @@ namespace Proto
             _subscriptions.TryAdd(sub.Id, sub);
             return sub;
         }
-        
-        
+
+
         /// <summary>
         ///     Subscribe to the specified message type, which is a derived type from <see cref="T" />
         /// </summary>
@@ -157,7 +145,8 @@ namespace Proto
         /// <param name="action">Synchronous message handler</param>
         /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
         /// <returns>A new subscription that can be used to unsubscribe</returns>
-        public EventStreamSubscription<T> Subscribe<TMsg>(Func<TMsg,bool> predicate, Action<TMsg> action, IDispatcher? dispatcher = null) where TMsg : T
+        public EventStreamSubscription<T> Subscribe<TMsg>(Func<TMsg, bool> predicate, Action<TMsg> action,
+            IDispatcher? dispatcher = null) where TMsg : T
         {
             var sub = new EventStreamSubscription<T>(
                 this,
@@ -213,7 +202,8 @@ namespace Proto
         /// <param name="action">Asynchronous message handler</param>
         /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
         /// <returns>A new subscription that can be used to unsubscribe</returns>
-        public EventStreamSubscription<T> Subscribe<TMsg>(Func<TMsg, Task> action, IDispatcher? dispatcher = null) where TMsg : T
+        public EventStreamSubscription<T> Subscribe<TMsg>(Func<TMsg, Task> action, IDispatcher? dispatcher = null)
+            where TMsg : T
         {
             var sub = new EventStreamSubscription<T>(
                 this,

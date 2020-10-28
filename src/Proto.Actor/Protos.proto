@@ -3,28 +3,32 @@ package actor;
 option csharp_namespace = "Proto";
 
 message PID {
-  string Address = 1;
-  string Id = 2;
+    string Address = 1;
+    string Id = 2;
 }
 
 //user messages
-message PoisonPill {}
+message PoisonPill {
+}
 
 //special event sent by the system on messages to dead PID's
-message DeadLetterResponse {}
+message DeadLetterResponse {
+    PID Target = 1;
+}
 
 //system messages
 message Watch {
-  PID Watcher = 1;
+    PID Watcher = 1;
 }
 
 message Unwatch {
-  PID Watcher = 1;
+    PID Watcher = 1;
 }
 
 message Terminated {
-  PID who = 1;
-  bool AddressTerminated = 2;
+    PID who = 1;
+    bool AddressTerminated = 2;
 }
 
-message Stop {}
+message Stop {
+}
