@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using JetBrains.Annotations;
@@ -20,7 +19,7 @@ namespace Proto
         public static readonly Props Empty = new Props();
 
         public Producer Producer { get; init; } = () => null!;
-        public MailboxProducer MailboxProducer { get; init; } = ProduceDefaultMailbox;
+        public MailboxProducer MailboxProducer { get; init; } = () => UnboundedMailbox.Create();
         public ISupervisorStrategy? GuardianStrategy { get; init; }
         public ISupervisorStrategy SupervisorStrategy { get; init; } = Supervision.DefaultStrategy;
         public IDispatcher Dispatcher { get; init; } = Dispatchers.DefaultDispatcher;
@@ -41,8 +40,6 @@ namespace Proto
         public Spawner Spawner { get; init; } = DefaultSpawner;
 
         private static IContext DefaultContextDecorator(IContext context) => context;
-
-        private static IMailbox ProduceDefaultMailbox() => UnboundedMailbox.Create();
 
         public static PID DefaultSpawner(ActorSystem system, string name, Props props, PID? parent)
         {
