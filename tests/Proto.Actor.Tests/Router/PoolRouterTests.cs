@@ -18,7 +18,7 @@ namespace Proto.Router.Tests
                 .WithMailbox(() => new TestMailbox());
             var router = ActorSystem.Root.Spawn(props);
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-            Assert.Equal(3, routees.PIDs.Count);
+            Assert.Equal(3, routees.Pids.Count);
         }
 
         [Fact]
@@ -28,7 +28,7 @@ namespace Proto.Router.Tests
                 .WithMailbox(() => new TestMailbox());
             var router = ActorSystem.Root.Spawn(props);
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-            Assert.Equal(3, routees.PIDs.Count);
+            Assert.Equal(3, routees.Pids.Count);
         }
 
         [Fact]
@@ -38,7 +38,7 @@ namespace Proto.Router.Tests
                 .WithMailbox(() => new TestMailbox());
             var router = ActorSystem.Root.Spawn(props);
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-            Assert.Equal(3, routees.PIDs.Count);
+            Assert.Equal(3, routees.Pids.Count);
         }
 
         [Fact]
@@ -48,7 +48,7 @@ namespace Proto.Router.Tests
                 .WithMailbox(() => new TestMailbox());
             var router = ActorSystem.Root.Spawn(props);
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-            Assert.Equal(3, routees.PIDs.Count);
+            Assert.Equal(3, routees.Pids.Count);
         }
     }
 }

@@ -37,13 +37,13 @@ namespace Proto.Router
             if (context.Message is RouterAddRoutee addRoutee)
             {
                 var r = _routerState.GetRoutees();
-                if (r.Contains(addRoutee.PID))
+                if (r.Contains(addRoutee.Pid))
                 {
                     return Task.CompletedTask;
                 }
 
-                context.Watch(addRoutee.PID);
-                r.Add(addRoutee.PID);
+                context.Watch(addRoutee.Pid);
+                r.Add(addRoutee.Pid);
                 _routerState.SetRoutees(r);
                 return Task.CompletedTask;
             }
@@ -51,13 +51,13 @@ namespace Proto.Router
             if (context.Message is RouterRemoveRoutee removeRoutee)
             {
                 var r = _routerState.GetRoutees();
-                if (!r.Contains(removeRoutee.PID))
+                if (!r.Contains(removeRoutee.Pid))
                 {
                     return Task.CompletedTask;
                 }
 
-                context.Unwatch(removeRoutee.PID);
-                r.Remove(removeRoutee.PID);
+                context.Unwatch(removeRoutee.Pid);
+                r.Remove(removeRoutee.Pid);
                 _routerState.SetRoutees(r);
                 return Task.CompletedTask;
             }
