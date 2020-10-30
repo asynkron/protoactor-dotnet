@@ -1,12 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <IsTestProject>false</IsTestProject>
+    <LangVersion>9</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Remove="AutoFixture.Xunit2"/>
+    <PackageReference Remove="AutoFixture.Xunit2" />
     <PackageReference Remove="FluentAssertions" />
-    <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
+    <PackageReference Remove="Microsoft.NET.Test.Sdk" />
     <PackageReference Remove="xunit" />
     <PackageReference Remove="xunit.runner.visualstudio" />
   </ItemGroup>
