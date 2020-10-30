@@ -1,32 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using ClusterTest.Messages;
-using Divergic.Logging.Xunit;
-using Xunit;
-using Xunit.Abstractions;
-
-namespace Proto.Cluster.Tests
+﻿namespace Proto.Cluster.Tests
 {
+    using System;
+    using System.Collections.Generic;
     using System.Collections.Immutable;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
     using FluentAssertions;
+    using ClusterTest.Messages;
+    using Xunit;
+    using Xunit.Abstractions;
 
-    [Collection("ClusterTests")]
-    public abstract class ClusterTestTemplate : IClassFixture<ClusterTestTemplate.OrderedDeliveryFixture>
+    public abstract class OrderedDeliveryTests : IClassFixture<OrderedDeliveryTests.OrderedDeliveryFixture>
     {
-        protected readonly ITestOutputHelper TestOutputHelper;
         private readonly OrderedDeliveryFixture _clusterFixture;
 
         private ImmutableList<Cluster> Members => _clusterFixture.Members;
 
-        protected ClusterTestTemplate(ITestOutputHelper testOutputHelper, OrderedDeliveryFixture clusterFixture)
+        protected OrderedDeliveryTests(OrderedDeliveryFixture clusterFixture)
         {
-            var factory = LogFactory.Create(testOutputHelper);
-            TestOutputHelper = testOutputHelper;
             _clusterFixture = clusterFixture;
-            Log.SetLoggerFactory(factory);
         }
 
         [Theory]

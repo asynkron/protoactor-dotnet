@@ -4,7 +4,7 @@ using Proto.Remote.Tests.Messages;
 
 namespace Proto.Cluster.Tests
 {
-    using global::ClusterTest.Messages;
+    using ClusterTest.Messages;
 
     public class EchoActor : IActor
     {

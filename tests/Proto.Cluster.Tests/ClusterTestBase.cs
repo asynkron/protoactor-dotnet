@@ -4,10 +4,11 @@
     using System.Collections.Immutable;
     using System.Collections.Generic;
     using System.Linq;
+    using Xunit;
 
 
-
-    public abstract class ClusterTest
+    [Collection("ClusterTests")]
+    public abstract class ClusterTestBase
     {
         private readonly IClusterFixture _clusterFixture;
         private readonly string _runId;
@@ -15,7 +16,7 @@
         protected ImmutableList<Cluster> Members => _clusterFixture.Members;
 
 
-        protected ClusterTest(IClusterFixture clusterFixture)
+        protected ClusterTestBase(IClusterFixture clusterFixture)
         {
             _clusterFixture = clusterFixture;
             _runId = Guid.NewGuid().ToString("N").Substring(0, 6);

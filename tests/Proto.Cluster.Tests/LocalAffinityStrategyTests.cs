@@ -1,6 +1,5 @@
 ﻿namespace Proto.Cluster.Tests
 {
-    using System.Collections.Immutable;
     using System.Diagnostics;
     using System.Linq;
     using System.Threading;
@@ -10,7 +9,7 @@
     using Xunit;
     using Xunit.Abstractions;
 
-    public class LocalAffinityStrategyTests : ClusterTest,
+    public class LocalAffinityStrategyTests : ClusterTestBase,
         IClassFixture<LocalAffinityStrategyTests.LocalAffinityClusterFixture>
     {
         private ITestOutputHelper TestOutputHelper { get; }

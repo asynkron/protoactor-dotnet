@@ -5,7 +5,7 @@
     using System.Collections.Immutable;
     using System.Linq;
     using System.Threading.Tasks;
-    using global::ClusterTest.Messages;
+    using ClusterTest.Messages;
     using IdentityLookup;
     using Partition;
     using Remote;

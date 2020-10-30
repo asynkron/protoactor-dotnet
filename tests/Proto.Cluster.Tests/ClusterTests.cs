@@ -5,21 +5,74 @@
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using global::ClusterTest.Messages;
+    using ClusterTest.Messages;
     using FluentAssertions;
     using Remote.Tests.Messages;
     using Xunit;
     using Xunit.Abstractions;
 
-    public class RespawnTests :ClusterTest, IClassFixture<InMemoryClusterFixture>
+    public class ClusterTests :ClusterTestBase, IClassFixture<InMemoryClusterFixture>
     {
         private readonly ITestOutputHelper _testOutputHelper;
 
-        public RespawnTests(ITestOutputHelper testOutputHelper, InMemoryClusterFixture clusterFixture): base(clusterFixture)
+        public ClusterTests(ITestOutputHelper testOutputHelper, InMemoryClusterFixture clusterFixture): base(clusterFixture)
         {
             _testOutputHelper = testOutputHelper;
         }
 
+        [Theory]
+        [InlineData(1000, 5000)]
+        public async Task CanSpawnConcurrently(int count, int msTimeout)
+        {
+            var timeout = new CancellationTokenSource(msTimeout).Token;
+
+
+            await PingAllConcurrently(Members[0]);
+
+            async Task PingAllConcurrently(Cluster cluster)
+            {
+                await Task.WhenAll(
+                    GetActorIds(count).Select(async id =>
+                        {
+                            Pong pong = null;
+                            while (pong == null)
+                            {
+                                timeout.ThrowIfCancellationRequested();
+                                pong = await cluster.Ping(id, id, timeout);
+                                _testOutputHelper.WriteLine($"{id} received response {pong?.Message}");
+                            }
+
+                            pong.Message.Should().Be($"{id}:{id}");
+                        }
+                    )
+                );
+            }
+        }
+
+        [Theory]
+        [InlineData(1000, 5000)]
+        public async Task CanSpawnSequentially(int count, int msTimeout)
+        {
+            var timeout = new CancellationTokenSource(msTimeout).Token;
+
+            await PingAllSequentially(Members[0]);
+
+            async Task PingAllSequentially(Cluster cluster)
+            {
+                foreach (var id in GetActorIds(count))
+                {
+                    Pong pong = null;
+                    while (pong == null)
+                    {
+                        timeout.ThrowIfCancellationRequested();
+                        pong = await cluster.Ping(id, id, timeout);
+                    }
+
+                    pong.Message.Should().Be($"{id}:{id}");
+                }
+            }
+        }
+        
         [Fact]
         public async Task ReSpawnsClusterActorsFromDifferentNodesQuickly()
         {
@@ -92,8 +145,48 @@
             );
         }
 
+        [Fact]
+        public async Task CanCollectHeartbeatMetrics()
+        {
+            var timeout = new CancellationTokenSource(5000);
 
-        private async Task PingPong(Cluster cluster, string id, CancellationToken token = default)
+
+            await PingAll("ping1", timeout.Token);
+            var count = await GetActorCountFromHeartbeat();
+            count.Should().BePositive();
+
+            const int virtualActorCount = 10;
+            foreach (var id in Enumerable.Range(1, virtualActorCount))
+            {
+                await PingAll(id.ToString(), timeout.Token);
+            }
+
+            var afterPing = await GetActorCountFromHeartbeat();
+
+            afterPing.Should().Be(count + virtualActorCount, "We expect the echo actors to be added to the count");
+
+
+            async Task<int> GetActorCountFromHeartbeat()
+            {
+                var heartbeatResponses = await Task.WhenAll(Members.Select(c =>
+                        c.System.Root.RequestAsync<HeartbeatResponse>(
+                            PID.FromAddress(c.System.Address, "ClusterHeartBeat"), new HeartbeatRequest(), timeout.Token
+                        )
+                    )
+                );
+                return heartbeatResponses.Select(response => (int) response.ActorCount).Sum();
+            }
+
+            async Task PingAll(string identity, CancellationToken token)
+            {
+                foreach (var cluster in Members)
+                {
+                    await cluster.Ping(identity, "", token);
+                }
+            }
+        }
+
+        private static async Task PingPong(Cluster cluster, string id, CancellationToken token = default)
         {
             await Task.Yield();
             var response = await cluster.RequestAsync<Pong>(id, EchoActor.Kind, new Ping
