@@ -68,10 +68,10 @@ namespace Proto.Cluster.Consul
 
         public ConsulProvider(ConsulProviderConfig config, Action<ConsulClientConfiguration> clientConfiguration)
         {
-            _serviceTtl = config!.ServiceTtl!.Value;
-            _refreshTtl = config!.RefreshTtl!.Value;
-            _deregisterCritical = config!.DeregisterCritical!.Value;
-            _blockingWaitTime = config!.BlockingWaitTime!.Value;
+            _serviceTtl = config!.ServiceTtl;
+            _refreshTtl = config!.RefreshTtl;
+            _deregisterCritical = config!.DeregisterCritical;
+            _blockingWaitTime = config!.BlockingWaitTime;
             _client = new ConsulClient(clientConfiguration);
         }
 

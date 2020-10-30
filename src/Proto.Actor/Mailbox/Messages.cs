@@ -6,7 +6,7 @@
 
 namespace Proto.Mailbox
 {
-    public abstract class SystemMessage
+    public interface SystemMessage
     {
     }
 
