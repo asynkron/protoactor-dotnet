@@ -1,6 +1,5 @@
 ﻿namespace Proto.Cluster.Tests
 {
-    using System;
     using System.Diagnostics;
     using System.Linq;
     using System.Threading;
@@ -51,7 +50,6 @@
         [InlineData(1000, 1000)]
         public async Task CanSpawnVirtualActorsSequentially(int actorCount, int timeoutMs)
         {
-            await Task.Delay(TimeSpan.FromSeconds(3));
             var timeout = new CancellationTokenSource(timeoutMs).Token;
 
             var entryNode = Members.First();
@@ -66,17 +64,15 @@
         }
 
         [Theory]
-        [InlineData(1000, 1000)]
+        [InlineData(10000, 5000)]
         public async Task CanSpawnVirtualActorsConcurrently(int actorCount, int timeoutMs)
         {
-            await Task.Delay(TimeSpan.FromSeconds(3));
             var timeout = new CancellationTokenSource(timeoutMs).Token;
 
             var entryNode = Members.First();
 
             var timer = Stopwatch.StartNew();
-            await Task.WhenAll(GetActorIds(actorCount).Select(id => PingPong(entryNode, CreateIdentity(id.ToString()), timeout))
-            );
+            await Task.WhenAll(GetActorIds(actorCount).Select(id => PingPong(entryNode, id, timeout)));
             timer.Stop();
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
@@ -85,20 +81,11 @@
         [InlineData(1000, 1000)]
         public async Task CanSpawnVirtualActorsConcurrentlyOnAllNodes(int actorCount, int timeoutMs)
         {
-            await Task.Delay(TimeSpan.FromSeconds(3));
             var timeout = new CancellationTokenSource(timeoutMs).Token;
 
-
             var timer = Stopwatch.StartNew();
-            await Task.WhenAll(Members.Select(member => Task.Run(() =>
-                        {
-                            return Task.WhenAll(GetActorIds(actorCount).Select(id =>
-                                    PingPong(member, CreateIdentity(id.ToString()), timeout)
-                                )
-                            );
-                        }, timeout
-                    )
-            ));
+            await Task.WhenAll(Members.SelectMany(member =>
+                GetActorIds(actorCount).Select(id => PingPong(member, id, timeout))));
             timer.Stop();
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
@@ -118,9 +105,7 @@
             await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout))
             );
             await Task.WhenAll(ids.Select(id =>
-                    entryNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout)
-                )
-            );
+                    entryNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout)));
             await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout))
             );
             timer.Stop();
@@ -183,8 +168,10 @@
         }
     }
 
+    // ReSharper disable once UnusedType.Global
     public class InMemoryClusterTests: ClusterTests,  IClassFixture<InMemoryClusterFixture>
     {
+        // ReSharper disable once SuggestBaseTypeForParameter
         public InMemoryClusterTests(ITestOutputHelper testOutputHelper, InMemoryClusterFixture clusterFixture) : base(testOutputHelper, clusterFixture)
         {
         }

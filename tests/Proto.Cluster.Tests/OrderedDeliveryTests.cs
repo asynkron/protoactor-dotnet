@@ -1,36 +1,30 @@
-﻿namespace Proto.Cluster.Tests
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using ClusterTest.Messages;
+using FluentAssertions;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace Proto.Cluster.Tests
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Collections.Immutable;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using FluentAssertions;
-    using ClusterTest.Messages;
-    using Xunit;
-    using Xunit.Abstractions;
-
-    public abstract class OrderedDeliveryTests : IClassFixture<OrderedDeliveryTests.OrderedDeliveryFixture>
+    public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDeliveryTests.OrderedDeliveryFixture>
     {
-        private readonly OrderedDeliveryFixture _clusterFixture;
-
-        private ImmutableList<Cluster> Members => _clusterFixture.Members;
-
-        protected OrderedDeliveryTests(OrderedDeliveryFixture clusterFixture)
+        public OrderedDeliveryTests(ITestOutputHelper testOutputHelper, OrderedDeliveryFixture clusterFixture) : base(
+            clusterFixture
+        )
         {
-            _clusterFixture = clusterFixture;
         }
 
         [Theory]
-        [InlineData(100, 10)]
-        public virtual async Task OrderedDeliveryFromActors(int sendingActors, int messagesSentPerCall)
+        [InlineData(1000, 10, 8000)]
+        public async Task OrderedDeliveryFromActors(int sendingActors, int messagesSentPerCall, int timeoutMs)
         {
-            const string aggregatorId = "agg-1";
+            var aggregatorId = CreateIdentity("agg-1");
 
-            await Task.Delay(3000);
-
-            var maxWait = new CancellationTokenSource(5000).Token;
+            var timeout = new CancellationTokenSource(timeoutMs).Token;
 
             var sendToRequest = new SendToRequest
             {
@@ -38,14 +32,14 @@
                 Id = aggregatorId
             };
             var sendRequestsSent = Members.SelectMany(
-                    cluster => Enumerable.Range(0, sendingActors)
-                        .Select(id => cluster.RequestAsync<Ack>($"snd-{id}", "sender", sendToRequest, maxWait))
+                    cluster => GetActorIds(sendingActors)
+                        .Select(id => cluster.RequestAsync<Ack>(id, SenderActor.Kind, sendToRequest, timeout))
                 )
                 .ToList();
 
             await Task.WhenAll(sendRequestsSent);
 
-            var result = await Members.First().RequestAsync<AggregatorResult>(aggregatorId, "aggregator",
+            var result = await Members.First().RequestAsync<AggregatorResult>(aggregatorId, VerifyOrderActor.Kind,
                 new AskAggregator(),
                 new CancellationTokenSource(5000).Token
             );
@@ -62,8 +56,6 @@
             public const string Kind = "sender";
 
             private Cluster _cluster;
-            private readonly ITestOutputHelper _testOutputHelper;
-
             private string _instanceId;
             private int _seq;
 
@@ -81,21 +73,14 @@
                         var key = Guid.NewGuid().ToString("N");
                         for (var i = 0; i < sendTo.Count; i++)
                         {
-                            try
-                            {
-                                await _cluster.RequestAsync<Ack>(sendTo.Id, VerifyOrderActor.Kind,
-                                    new SequentialIdRequest
-                                    {
-                                        SequenceKey = key,
-                                        SequenceId = _seq++,
-                                        Sender = _instanceId
-                                    }, CancellationToken.None
-                                );
-                            }
-                            catch (Exception e)
-                            {
-                                _testOutputHelper.WriteLine("Failed to send to aggregator: {0}", e);
-                            }
+                            await _cluster.RequestAsync<Ack>(sendTo.Id, VerifyOrderActor.Kind,
+                                new SequentialIdRequest
+                                {
+                                    SequenceKey = key,
+                                    SequenceId = _seq++,
+                                    Sender = _instanceId
+                                }, CancellationToken.None
+                            );
                         }
 
                         context.Respond(new Ack());
@@ -106,7 +91,7 @@
 
         private class VerifyOrderActor : IActor
         {
-            public const string Kind = "verify-order";
+            public const string Kind = "aggregator";
 
             private int _outOfOrderErrors;
             private int _seqRequests;
@@ -152,6 +137,7 @@
             }
         }
 
+        // ReSharper disable once ClassNeverInstantiated.Global
         public class OrderedDeliveryFixture : BaseInMemoryClusterFixture
         {
             public OrderedDeliveryFixture() : base(3)

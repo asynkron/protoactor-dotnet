@@ -81,6 +81,7 @@
             }
         }
 
+        // ReSharper disable once ClassNeverInstantiated.Global
         public class LocalAffinityClusterFixture : BaseInMemoryClusterFixture
         {
             public LocalAffinityClusterFixture() : base(3,

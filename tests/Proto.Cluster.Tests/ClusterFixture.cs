@@ -16,13 +16,11 @@
     public interface IClusterFixture
     {
         ImmutableList<Cluster> Members { get; }
-        ImmutableList<Cluster> Clients { get; }
     }
-    
+
     public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture
     {
         public ImmutableList<Cluster> Members { get; private set; }
-        public ImmutableList<Cluster> Clients { get; private set; } = ImmutableList<Cluster>.Empty;
 
         private readonly int _clusterSize;
         private readonly Action<ClusterConfig> _configure;
@@ -34,13 +32,13 @@
         }
 
 
-        private async Task<IList<Cluster>> SpawnClusterNodes(int count, Action<ClusterConfig> configure = null)
+        private async Task<ImmutableList<Cluster>> SpawnClusterNodes(int count, Action<ClusterConfig> configure = null)
         {
             var clusterName = $"test-cluster-{count}";
-            var clusterTasks = Enumerable.Range(0, count).Select(_ => SpawnClusterMember(configure, clusterName))
-                .ToList();
-            await Task.WhenAll(clusterTasks);
-            return clusterTasks.Select(task => task.Result).ToList();
+            return (await Task.WhenAll(
+                Enumerable.Range(0, count)
+                    .Select(_ => SpawnClusterMember(configure, clusterName))
+            )).ToImmutableList();
         }
 
         protected virtual async Task<Cluster> SpawnClusterMember(Action<ClusterConfig> configure, string clusterName)
@@ -71,9 +69,7 @@
 
         public async Task InitializeAsync()
         {
-            var clusters = await SpawnClusterNodes(_clusterSize, _configure);
-            await Task.Delay(3000);
-            Members = clusters.ToImmutableList();
+            Members = await SpawnClusterNodes(_clusterSize, _configure);
         }
 
         public Task DisposeAsync()
@@ -87,16 +83,20 @@
         private readonly Lazy<InMemAgent> _inMemAgent = new Lazy<InMemAgent>(() => new InMemAgent());
         private InMemAgent InMemAgent => _inMemAgent.Value;
 
-        protected BaseInMemoryClusterFixture(int clusterSize, Action<ClusterConfig> configure = null) : base(clusterSize, configure)
+        protected BaseInMemoryClusterFixture(int clusterSize, Action<ClusterConfig> configure = null) : base(
+            clusterSize, configure
+        )
         {
         }
 
-        protected override IClusterProvider GetClusterProvider() => new TestProvider(new TestProviderOptions(), InMemAgent);
+        protected override IClusterProvider GetClusterProvider() =>
+            new TestProvider(new TestProviderOptions(), InMemAgent);
     }
 
-    public class InMemoryClusterFixture: BaseInMemoryClusterFixture
+    // ReSharper disable once ClassNeverInstantiated.Global
+    public class InMemoryClusterFixture : BaseInMemoryClusterFixture
     {
-        public InMemoryClusterFixture(): base(3)
+        public InMemoryClusterFixture() : base(3)
         {
         }
     }
