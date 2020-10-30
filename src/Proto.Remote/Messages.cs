@@ -20,43 +20,13 @@ namespace Proto.Remote
         public string Address { get; set; } = null!;
     }
 
-    public class RemoteTerminate
-    {
-        public RemoteTerminate(PID watcher, PID watchee)
-        {
-            Watcher = watcher;
-            Watchee = watchee;
-        }
+    public sealed record RemoteTerminate(PID Watcher, PID Watchee);
 
-        public PID Watcher { get; }
-        public PID Watchee { get; }
-    }
+    public sealed record RemoteWatch(PID Watcher, PID Watchee);
 
-    public class RemoteWatch
-    {
-        public RemoteWatch(PID watcher, PID watchee)
-        {
-            Watcher = watcher;
-            Watchee = watchee;
-        }
+    public sealed record RemoteUnwatch(PID Watcher, PID Watchee);
 
-        public PID Watcher { get; }
-        public PID Watchee { get; }
-    }
-
-    public class RemoteUnwatch
-    {
-        public RemoteUnwatch(PID watcher, PID watchee)
-        {
-            Watcher = watcher;
-            Watchee = watchee;
-        }
-
-        public PID Watcher { get; }
-        public PID Watchee { get; }
-    }
-
-    public record RemoteDeliver (Proto.MessageHeader Header, object Message, PID Target, PID Sender, int SerializerId);
+    public sealed record RemoteDeliver (Proto.MessageHeader Header, object Message, PID Target, PID Sender, int SerializerId);
 
     public class JsonMessage
     {
