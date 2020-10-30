@@ -11,7 +11,7 @@ using JetBrains.Annotations;
 namespace Proto
 {
     [PublicAPI]
-    public class MessageEnvelope
+    public record MessageEnvelope
     {
         public MessageEnvelope(object message, PID? sender, MessageHeader? header = null)
         {
@@ -20,29 +20,32 @@ namespace Proto
             Header = header ?? MessageHeader.Empty;
         }
 
-        public PID? Sender { get; }
-        public object Message { get; }
-        public MessageHeader Header { get; }
+        public PID? Sender { get; init; }
+        public object Message { get; init; }
+        public MessageHeader Header { get; init; }
 
         public static MessageEnvelope Wrap(object message) =>
             message is MessageEnvelope env ? env : new MessageEnvelope(message, null);
 
-        public MessageEnvelope WithSender(PID sender) => new MessageEnvelope(Message, sender, Header);
+        public MessageEnvelope WithSender(PID sender) =>
+            this with { Sender = sender};
 
-        public MessageEnvelope WithMessage(object message) => new MessageEnvelope(message, Sender, Header);
+        public MessageEnvelope WithMessage(object message) =>
+            this with {Message = message};
 
-        public MessageEnvelope WithHeader(MessageHeader header) => new MessageEnvelope(Message, Sender, header);
+        public MessageEnvelope WithHeader(MessageHeader header) =>
+            this with { Header = header};
 
         public MessageEnvelope WithHeader(string key, string value)
         {
             var header = Header.With(key, value);
-            return new MessageEnvelope(Message, Sender, header);
+            return this with {Header = header};
         }
 
         public MessageEnvelope WithHeaders(IEnumerable<KeyValuePair<string, string>> items)
         {
             var header = Header.With(items);
-            return new MessageEnvelope(Message, Sender, header);
+            return this with {Header = header};
         }
 
         public static (object message, PID? sender, MessageHeader headers) Unwrap(object message)
