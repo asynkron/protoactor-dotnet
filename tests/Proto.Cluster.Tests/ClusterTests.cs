@@ -11,11 +11,11 @@
     using Xunit;
     using Xunit.Abstractions;
 
-    public class ClusterTests :ClusterTestBase, IClassFixture<InMemoryClusterFixture>
+    public abstract class ClusterTests :ClusterTestBase
     {
         private readonly ITestOutputHelper _testOutputHelper;
 
-        public ClusterTests(ITestOutputHelper testOutputHelper, InMemoryClusterFixture clusterFixture): base(clusterFixture)
+        protected ClusterTests(ITestOutputHelper testOutputHelper, IClusterFixture clusterFixture): base(clusterFixture)
         {
             _testOutputHelper = testOutputHelper;
         }
@@ -96,7 +96,7 @@
             await PingPong(otherNode, id);
             timer.Stop();
 
-            timer.Elapsed.TotalMilliseconds.Should().BeLessThan(10,
+            timer.Elapsed.TotalMilliseconds.Should().BeLessThan(20,
                 "We should not wait for timeouts for recreation of the virtual actor"
             );
         }
@@ -196,6 +196,13 @@
             );
             response.Should().NotBeNull("We expect a response before timeout");
             response.Message.Should().Be($"{id}:{id}", "Echo should come from the correct virtual actor");
+        }
+    }
+
+    public class InMemoryClusterTests: ClusterTests,  IClassFixture<InMemoryClusterFixture>
+    {
+        public InMemoryClusterTests(ITestOutputHelper testOutputHelper, InMemoryClusterFixture clusterFixture) : base(testOutputHelper, clusterFixture)
+        {
         }
     }
 }

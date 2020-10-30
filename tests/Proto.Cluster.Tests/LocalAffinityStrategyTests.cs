@@ -9,8 +9,7 @@
     using Xunit;
     using Xunit.Abstractions;
 
-    public class LocalAffinityStrategyTests : ClusterTestBase,
-        IClassFixture<LocalAffinityStrategyTests.LocalAffinityClusterFixture>
+    public class LocalAffinityStrategyTests : ClusterTestBase, IClassFixture<LocalAffinityStrategyTests.LocalAffinityClusterFixture>
     {
         private ITestOutputHelper TestOutputHelper { get; }
 
