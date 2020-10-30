@@ -1,37 +1,37 @@
-﻿using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using FluentAssertions;
-using Proto.Cluster.IdentityLookup;
-using Proto.Remote.Tests.Messages;
-using Xunit;
-using Xunit.Abstractions;
-
-namespace Proto.Cluster.Tests
+﻿namespace Proto.Cluster.Tests
 {
-    public class PartitionIdentityLookupTests : ClusterTestTemplate
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using FluentAssertions;
+    using Remote.Tests.Messages;
+    using Xunit;
+    using Xunit.Abstractions;
+
+    public class PartitionIdentityLookupTests : ClusterTest, IClassFixture<InMemoryClusterFixture>
     {
-        public PartitionIdentityLookupTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        private ITestOutputHelper TestOutputHelper { get; }
+
+        public PartitionIdentityLookupTests(InMemoryClusterFixture clusterFixture, ITestOutputHelper testOutputHelper) :
+            base(clusterFixture)
         {
+            TestOutputHelper = testOutputHelper;
         }
 
         [Theory]
-        [InlineData(1, 1000, 5000)]
-        [InlineData(3, 1000, 5000)]
-        public async Task CanSpawnConcurrently(int clusterNodes, int count, int msTimeout)
+        [InlineData(1000, 5000)]
+        public async Task CanSpawnConcurrently(int count, int msTimeout)
         {
             var timeout = new CancellationTokenSource(msTimeout).Token;
 
-            var clusterMembers = await SpawnMembers(clusterNodes);
 
-            await PingAllConcurrently(clusterMembers[0]);
+            await PingAllConcurrently(Members[0]);
 
             async Task PingAllConcurrently(Cluster cluster)
             {
                 await Task.WhenAll(
-                    Enumerable.Range(1, count).Select(async i =>
+                    GetActorIds(count).Select(async id =>
                         {
-                            var id = i.ToString();
                             Pong pong = null;
                             while (pong == null)
                             {
@@ -48,22 +48,17 @@ namespace Proto.Cluster.Tests
         }
 
         [Theory]
-        [InlineData(1, 1000, 5000)]
-        [InlineData(3, 1000, 8000)]
-        public async Task CanSpawnSequentially(int clusterNodes, int count, int msTimeout)
+        [InlineData(1000, 5000)]
+        public async Task CanSpawnSequentially(int count, int msTimeout)
         {
             var timeout = new CancellationTokenSource(msTimeout).Token;
 
-            var clusterMembers = await SpawnMembers(clusterNodes);
-
-
-            await PingAllSequentially(clusterMembers[0]);
+            await PingAllSequentially(Members[0]);
 
             async Task PingAllSequentially(Cluster cluster)
             {
-                foreach (var i in Enumerable.Range(1, count))
+                foreach (var id in GetActorIds(count))
                 {
-                    var id = i.ToString();
                     Pong pong = null;
                     while (pong == null)
                     {
@@ -74,15 +69,6 @@ namespace Proto.Cluster.Tests
                     pong.Message.Should().Be($"{id}:{id}");
                 }
             }
-        }
-
-        protected override ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, string clusterName,
-            IIdentityLookup identityLookup)
-        {
-            var config = base.GetClusterConfig(clusterProvider, clusterName, identityLookup)
-                .WithClusterKind(EchoActor.Kind, EchoActor.Props);
-            config.RemoteConfig.WithProtoMessages(Remote.Tests.Messages.ProtosReflection.Descriptor);
-            return config;
         }
     }
 }

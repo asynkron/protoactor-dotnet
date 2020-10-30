@@ -5,60 +5,58 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using Divergic.Logging.Xunit;
-using FluentAssertions;
-using Proto.Cluster.IdentityLookup;
-using Proto.Cluster.Partition;
-using Proto.Cluster.Testing;
-using Proto.Remote;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests
 {
+    using System.Collections.Immutable;
+    using FluentAssertions;
+
     [Collection("ClusterTests")]
-    public abstract class ClusterTestTemplate: IAsyncLifetime
+    public abstract class ClusterTestTemplate : IClassFixture<ClusterTestTemplate.OrderedDeliveryFixture>
     {
         protected readonly ITestOutputHelper TestOutputHelper;
-        private readonly Lazy<InMemAgent> _inMemAgent = new Lazy<InMemAgent>(() => new InMemAgent());
-        private readonly List<Cluster> _clusters = new List<Cluster>();
-        private InMemAgent InMemAgent => _inMemAgent.Value;
+        private readonly OrderedDeliveryFixture _clusterFixture;
 
-        protected ClusterTestTemplate(ITestOutputHelper testOutputHelper)
+        private ImmutableList<Cluster> Members => _clusterFixture.Members;
+
+        protected ClusterTestTemplate(ITestOutputHelper testOutputHelper, OrderedDeliveryFixture clusterFixture)
         {
             var factory = LogFactory.Create(testOutputHelper);
             TestOutputHelper = testOutputHelper;
+            _clusterFixture = clusterFixture;
             Log.SetLoggerFactory(factory);
         }
 
         [Theory]
-        [InlineData(1, 100, 10)]
-        [InlineData(3, 100, 10)]
-        public virtual async Task OrderedDeliveryFromActors(int clusterNodes, int sendingActors, int messagesSentPerCall)
+        [InlineData(100, 10)]
+        public virtual async Task OrderedDeliveryFromActors(int sendingActors, int messagesSentPerCall)
         {
             const string aggregatorId = "agg-1";
-            var clusterMembers = await SpawnMembers(clusterNodes);
 
             await Task.Delay(3000);
-            
+
             var maxWait = new CancellationTokenSource(5000).Token;
-            
+
             var sendToRequest = new SendToRequest
             {
                 Count = messagesSentPerCall,
                 Id = aggregatorId
             };
-            var sendRequestsSent = clusterMembers.SelectMany(
-                cluster => Enumerable.Range(0, sendingActors)
-                    .Select(id => cluster.RequestAsync<Ack>($"snd-{id}", "sender", sendToRequest, maxWait)))
+            var sendRequestsSent = Members.SelectMany(
+                    cluster => Enumerable.Range(0, sendingActors)
+                        .Select(id => cluster.RequestAsync<Ack>($"snd-{id}", "sender", sendToRequest, maxWait))
+                )
                 .ToList();
-            
+
             await Task.WhenAll(sendRequestsSent);
-            
-            var result = await clusterMembers.First().RequestAsync<AggregatorResult>(aggregatorId, "aggregator",
+
+            var result = await Members.First().RequestAsync<AggregatorResult>(aggregatorId, "aggregator",
                 new AskAggregator(),
                 new CancellationTokenSource(5000).Token
             );
-            
+
             result.Should().NotBeNull("We expect a response from the aggregator actor");
             result.SequenceKeyCount.Should().Be(sendRequestsSent.Count, "We expect a unique id per send request");
             result.SenderKeyCount.Should().Be(sendingActors, "We expect a single instantiation per sender id");
@@ -66,67 +64,16 @@ namespace Proto.Cluster.Tests
             result.TotalMessages.Should().Be(sendRequestsSent.Count * messagesSentPerCall);
         }
 
-        protected async Task<IList<Cluster>> SpawnMembers(int memberCount)
-        {
-            var clusterName = "test-cluster." + Guid.NewGuid().ToString("N");
-            var clusterTasks = Enumerable.Range(0, memberCount).Select(_ => SpawnMember(clusterName))
-                .ToList();
-            await Task.WhenAll(clusterTasks);
-            return clusterTasks.Select(task => task.Result).ToList();
-        }
-
-        private async Task<Cluster> SpawnMember(string clusterName)
-        {
-            var system = new ActorSystem();
-            var identityLookup = GetIdentityLookup(clusterName);
-            
-            var senderProps = Props.FromProducer(() => new SenderActor(TestOutputHelper));
-            var aggProps = Props.FromProducer(() => new VerifyOrderActor());
-
-            var clusterProvider = GetClusterProvider();
-            var config = GetClusterConfig(clusterProvider, clusterName, identityLookup)
-                .WithClusterKind("sender", senderProps)
-                .WithClusterKind("aggregator", aggProps);
-           
-
-            var cluster = new Cluster(system, config);
-            
-            await cluster.StartMemberAsync();
-            _clusters.Add(cluster);
-            return cluster;
-        }
-
-        protected virtual IClusterProvider GetClusterProvider() => new TestProvider(new TestProviderOptions(), InMemAgent);
-
-        protected virtual IIdentityLookup GetIdentityLookup(string clusterName) => new PartitionIdentityLookup();
-
-
-        protected virtual ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, string clusterName,
-            IIdentityLookup identityLookup)
-        {
-            var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? "0";
-            var port = int.Parse(portStr);
-            var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
-
-            return ClusterConfig.Setup(clusterName, clusterProvider, identityLookup, 
-                RemoteConfig.BindTo(host, port)
-                .WithProtoMessages(MessagesReflection.Descriptor)
-                .WithAdvertisedHost(Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC") ?? host!));
-        }
-
-
         private class SenderActor : IActor
         {
+            public const string Kind = "sender";
+
             private Cluster _cluster;
             private readonly ITestOutputHelper _testOutputHelper;
 
             private string _instanceId;
             private int _seq;
 
-            public SenderActor(ITestOutputHelper testOutputHelper)
-            {
-                _testOutputHelper = testOutputHelper;
-            }
 
             public async Task ReceiveAsync(IContext context)
             {
@@ -143,7 +90,8 @@ namespace Proto.Cluster.Tests
                         {
                             try
                             {
-                                await _cluster.RequestAsync<Ack>(sendTo.Id, "aggregator", new SequentialIdRequest
+                                await _cluster.RequestAsync<Ack>(sendTo.Id, VerifyOrderActor.Kind,
+                                    new SequentialIdRequest
                                     {
                                         SequenceKey = key,
                                         SequenceId = _seq++,
@@ -165,6 +113,8 @@ namespace Proto.Cluster.Tests
 
         private class VerifyOrderActor : IActor
         {
+            public const string Kind = "verify-order";
+
             private int _outOfOrderErrors;
             private int _seqRequests;
 
@@ -209,14 +159,26 @@ namespace Proto.Cluster.Tests
             }
         }
 
-        public Task InitializeAsync()
+        public class OrderedDeliveryFixture : BaseInMemoryClusterFixture
         {
-            return Task.CompletedTask;
-        }
+            public OrderedDeliveryFixture() : base(3)
+            {
+            }
 
-        public Task DisposeAsync()
-        {
-            return Task.WhenAll(_clusters.Select(c => c.ShutdownAsync()));
+            protected override (string, Props)[] ClusterKinds
+            {
+                get
+                {
+                    var senderProps = Props.FromProducer(() => new SenderActor());
+                    var aggProps = Props.FromProducer(() => new VerifyOrderActor());
+                    return base.ClusterKinds.Concat(new[]
+                        {
+                            (SenderActor.Kind, senderProps),
+                            (VerifyOrderActor.Kind, aggProps)
+                        }
+                    ).ToArray();
+                }
+            }
         }
     }
 }

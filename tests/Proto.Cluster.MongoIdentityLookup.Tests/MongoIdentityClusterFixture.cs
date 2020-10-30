@@ -1,25 +1,14 @@
 ﻿using System;
-using System.Threading.Tasks;
 using MongoDB.Driver;
 using Proto.Cluster.IdentityLookup;
 using Proto.Cluster.Tests;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Proto.Cluster.MongoIdentityLookup.Tests
 {
-    public class MongoIdentityLookupTests: ClusterTestTemplate
+    public class MongoIdentityClusterFixture : BaseInMemoryClusterFixture
     {
-        //Xunit class Skip anyone?
-        private const string SkipReason = "Mongo needs to be available on localhost";
-        
-        public MongoIdentityLookupTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-
-        [Theory(Skip = SkipReason)]
-        [InlineData(1, 100, 100)]
-        public override Task OrderedDeliveryFromActors(int clusterNodes, int sendingActors, int messagesSentPerCall)
+        public MongoIdentityClusterFixture() : base(3)
         {
-            return base.OrderedDeliveryFromActors(clusterNodes, sendingActors, messagesSentPerCall);
         }
 
         protected override IIdentityLookup GetIdentityLookup(string clusterName)
@@ -28,7 +17,6 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             var identity = new MongoIdentityLookup(clusterName, db);
             return identity;
         }
-
 
         IMongoDatabase GetMongo()
         {

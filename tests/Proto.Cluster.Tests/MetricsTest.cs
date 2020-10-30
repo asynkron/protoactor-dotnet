@@ -1,32 +1,26 @@
-﻿using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Divergic.Logging.Xunit;
-using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
-
-namespace Proto.Cluster.Tests
+﻿namespace Proto.Cluster.Tests
 {
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using FluentAssertions;
+    using Xunit;
+
     [Collection("ClusterTests")]
-    public class MetricsTest: InMemDefaultClusterTests
+    public class MetricsTest : ClusterTest, IClassFixture<InMemoryClusterFixture>
     {
-        public MetricsTest(ITestOutputHelper testOutputHelper)
+        public MetricsTest(InMemoryClusterFixture clusterFixture) : base(clusterFixture)
         {
-            var factory = LogFactory.Create(testOutputHelper);
-            Log.SetLoggerFactory(factory);
         }
 
-        [Theory]
-        [InlineData(1)]
-        [InlineData(5)]
-        public async Task CanCollectHeartbeatMetrics(int clusterSize)
+
+        [Fact]
+        public async Task CanCollectHeartbeatMetrics()
         {
             var timeout = new CancellationTokenSource(5000);
 
-            var clusters = await SpawnClusterNodes(clusterSize);
 
-            await PingAll("ping1",timeout.Token);
+            await PingAll("ping1", timeout.Token);
             var count = await GetActorCountFromHeartbeat();
             count.Should().BePositive();
 
@@ -43,7 +37,7 @@ namespace Proto.Cluster.Tests
 
             async Task<int> GetActorCountFromHeartbeat()
             {
-                var heartbeatResponses = await Task.WhenAll(clusters.Select(c =>
+                var heartbeatResponses = await Task.WhenAll(Members.Select(c =>
                         c.System.Root.RequestAsync<HeartbeatResponse>(
                             PID.FromAddress(c.System.Address, "ClusterHeartBeat"), new HeartbeatRequest(), timeout.Token
                         )
@@ -54,13 +48,11 @@ namespace Proto.Cluster.Tests
 
             async Task PingAll(string identity, CancellationToken token)
             {
-                foreach (var cluster in clusters)
+                foreach (var cluster in Members)
                 {
                     await cluster.Ping(identity, "", token);
                 }
             }
         }
-
-        
     }
 }

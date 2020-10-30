@@ -1,37 +1,40 @@
-﻿using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using FluentAssertions;
-using Proto.Cluster.IdentityLookup;
-using Proto.Remote.Tests.Messages;
-using Xunit;
-using Xunit.Abstractions;
-
-namespace Proto.Cluster.Tests
+﻿namespace Proto.Cluster.Tests
 {
+    using System.Collections.Immutable;
     using System.Diagnostics;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using FluentAssertions;
+    using Remote.Tests.Messages;
+    using Xunit;
+    using Xunit.Abstractions;
 
-    public class LocalAffinityStrategyTests : ClusterTestTemplate
+    public class LocalAffinityStrategyTests : ClusterTest,
+        IClassFixture<LocalAffinityStrategyTests.LocalAffinityClusterFixture>
     {
-        public LocalAffinityStrategyTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        private ITestOutputHelper TestOutputHelper { get; }
+
+        public LocalAffinityStrategyTests(ITestOutputHelper testOutputHelper,
+            LocalAffinityClusterFixture clusterFixture) : base(clusterFixture)
         {
+            TestOutputHelper = testOutputHelper;
         }
 
 
         [Fact]
         public async Task PrefersLocalPlacement()
         {
-            var clusters = await SpawnMembers(2);
             await Task.Delay(3000);
             TestOutputHelper.WriteLine("Cluster ready");
             var timeout = new CancellationTokenSource(100000).Token;
 
-            var firstNode = clusters[0];
+            var firstNode = Members[0];
 
             await PingAll(firstNode);
             await PingAll(firstNode);
 
-            var secondNode = clusters[1];
+            var secondNode = Members[1];
             firstNode.System.ProcessRegistry.ProcessCount.Should().BeGreaterThan(1000,
                 "We expect the actors to be localized to the node receiving traffic."
             );
@@ -45,7 +48,7 @@ namespace Proto.Cluster.Tests
             await PingAll(secondNode);
             await PingAll(secondNode);
             secondNodeTimings.Stop();
-            
+
 
             TestOutputHelper.WriteLine("After traffic is shifted to second node:");
             TestOutputHelper.WriteLine(
@@ -60,7 +63,8 @@ namespace Proto.Cluster.Tests
                 "When traffic shifts to the second node, actors receiving remote traffic should start draining from the original node and be recreated"
             );
 
-            secondNodeTimings.ElapsedMilliseconds.Should().BeLessThan(3000, "We expect dead letter responses instead of timeouts");
+            secondNodeTimings.ElapsedMilliseconds.Should()
+                .BeLessThan(3000, "We expect dead letter responses instead of timeouts");
 
             async Task PingAll(Cluster cluster)
             {
@@ -79,14 +83,19 @@ namespace Proto.Cluster.Tests
             }
         }
 
-        protected override ClusterConfig GetClusterConfig(IClusterProvider clusterProvider, string clusterName,
-            IIdentityLookup identityLookup)
+        public class LocalAffinityClusterFixture : BaseInMemoryClusterFixture
         {
-            var config = base.GetClusterConfig(clusterProvider, clusterName, identityLookup)
-                .WithClusterKind(EchoActor.Kind, EchoActor.Props.WithPoisonOnRemoteTraffic(.5f))
-                .WithMemberStrategyBuilder((cluster, kind) => new LocalAffinityStrategy(cluster, 1100));
-            config.RemoteConfig.WithProtoMessages(Remote.Tests.Messages.ProtosReflection.Descriptor);
-            return config;
+            public LocalAffinityClusterFixture() : base(3,
+                config =>
+                {
+                    config.WithMemberStrategyBuilder((cluster, kind) => new LocalAffinityStrategy(cluster, 1100));
+                }
+            )
+            {
+            }
+
+            protected override (string, Props)[] ClusterKinds { get; } =
+                {(EchoActor.Kind, EchoActor.Props.WithPoisonOnRemoteTraffic(.5f))};
         }
     }
 }

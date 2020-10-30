@@ -39,8 +39,8 @@ namespace Proto.Cluster.Tests
     {
         public PidCacheTests(ITestOutputHelper testOutputHelper)
         {
-            var factory = LogFactory.Create(testOutputHelper);
-            Log.SetLoggerFactory(factory);
+            // var factory = LogFactory.Create(testOutputHelper);
+            // Log.SetLoggerFactory(factory);
         }
         
         [Fact]
