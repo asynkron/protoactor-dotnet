@@ -14,6 +14,6 @@ namespace Proto.Router.Routers
         {
         }
 
-        public override RouterState CreateRouterState() => new BroadcastRouterState(SenderContext);
+        protected override RouterState CreateRouterState() => new BroadcastRouterState(SenderContext);
     }
 }

@@ -4,15 +4,12 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Immutable;
 
 namespace Proto.Router.Routers
 {
     public abstract record GroupRouterConfig(ISenderContext SenderContext, PID[] Routees) : RouterConfig
     {
-
-
         public override void OnStarted(IContext context, RouterState router)
         {
             foreach (var pid in Routees)
@@ -20,7 +17,7 @@ namespace Proto.Router.Routers
                 context.Watch(pid);
             }
 
-            router.SetRoutees(Routees.ToHashSet());
+            router.SetRoutees(Routees);
         }
     }
 }

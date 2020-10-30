@@ -18,6 +18,6 @@ namespace Proto.Router.Routers
             _seed = seed;
         }
 
-        public override RouterState CreateRouterState() => new RandomRouterState(_senderContext, _seed);
+        protected override RouterState CreateRouterState() => new RandomRouterState(_senderContext, _seed);
     }
 }

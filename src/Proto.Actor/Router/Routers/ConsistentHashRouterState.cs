@@ -6,6 +6,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 
 namespace Proto.Router.Routers
 {
@@ -24,9 +26,9 @@ namespace Proto.Router.Routers
             _replicaCount = replicaCount;
         }
 
-        public override HashSet<PID> GetRoutees() => new HashSet<PID>(_routeeMap.Values);
+        public override HashSet<PID> GetRoutees() => _routeeMap.Values.ToHashSet();
 
-        public override void SetRoutees(HashSet<PID> routees)
+        public override void SetRoutees(PID[] routees)
         {
             _routeeMap.Clear();
             var nodes = new List<string>();

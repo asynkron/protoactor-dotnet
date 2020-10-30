@@ -44,7 +44,7 @@ namespace Proto.Router
 
                 context.Watch(addRoutee.Pid);
                 r.Add(addRoutee.Pid);
-                _routerState.SetRoutees(r);
+                _routerState.SetRoutees(r.ToArray());
                 return Task.CompletedTask;
             }
 
@@ -58,7 +58,7 @@ namespace Proto.Router
 
                 context.Unwatch(removeRoutee.Pid);
                 r.Remove(removeRoutee.Pid);
-                _routerState.SetRoutees(r);
+                _routerState.SetRoutees(r.ToArray());
                 return Task.CompletedTask;
             }
 

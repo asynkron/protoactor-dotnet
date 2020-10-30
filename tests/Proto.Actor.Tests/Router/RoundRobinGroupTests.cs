@@ -37,7 +37,7 @@ namespace Proto.Router.Tests
 
             ActorSystem.Root.Send(router, "4");
 
-            // Round robin kicks in and routee1 recevies next message
+            // Round robin kicks in and routee1 receives next message
             Assert.Equal("4", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
             Assert.Equal("2", await ActorSystem.Root.RequestAsync<string>(routee2, "received?", _timeout));
             Assert.Equal("3", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));

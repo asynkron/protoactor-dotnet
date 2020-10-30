@@ -16,6 +16,6 @@ namespace Proto.Router.Routers
             _senderContext = senderContext;
         }
 
-        public override RouterState CreateRouterState() => new RoundRobinRouterState(_senderContext);
+        protected override RouterState CreateRouterState() => new RoundRobinRouterState(_senderContext);
     }
 }

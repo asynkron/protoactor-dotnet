@@ -8,7 +8,7 @@ namespace Proto.Router.Routers
 {
     internal record RandomGroupRouterConfig : GroupRouterConfig
     {
-        private readonly int? _seed;
+        private readonly int _seed;
 
         public RandomGroupRouterConfig(ISenderContext senderContext, int seed, params PID[] routees) : base(
             senderContext, routees
@@ -22,6 +22,6 @@ namespace Proto.Router.Routers
         {
         }
 
-        public override RouterState CreateRouterState() => new RandomRouterState(SenderContext, _seed);
+        protected override RouterState CreateRouterState() => new RandomRouterState(SenderContext, _seed);
     }
 }

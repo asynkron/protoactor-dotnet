@@ -34,6 +34,7 @@ namespace Proto.Router.Tests
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(ActorSystem);
             var routee4 = ActorSystem.Root.Spawn(MyActorProps);
             ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
+            await Task.Delay(500);
             ActorSystem.Root.Send(router, "1");
             ActorSystem.Root.Send(router, "2");
             ActorSystem.Root.Send(router, "3");

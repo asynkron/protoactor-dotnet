@@ -26,7 +26,7 @@ namespace Proto.Router.Routers
             _replicaCount = replicaCount;
         }
 
-        public override RouterState CreateRouterState() =>
+        protected override RouterState CreateRouterState() =>
             new ConsistentHashRouterState(SenderContext, _hash, _replicaCount);
     }
 }

@@ -44,7 +44,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async void RandomPool_CreatesRoutees()
         {
-            var props = new ActorSystem().Root.NewRandomPool(MyActorProps, 3)
+            var props = new ActorSystem().Root.NewRandomPool(MyActorProps, 3,0)
                 .WithMailbox(() => new TestMailbox());
             var router = ActorSystem.Root.Spawn(props);
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
