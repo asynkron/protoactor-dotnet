@@ -6,7 +6,7 @@
 
 namespace Proto.Router.Routers
 {
-    internal class RandomPoolRouterConfig : PoolRouterConfig
+    internal record RandomPoolRouterConfig : PoolRouterConfig
     {
         private readonly int? _seed;
         private readonly ISenderContext _senderContext;

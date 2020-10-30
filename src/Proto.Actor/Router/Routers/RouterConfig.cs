@@ -9,7 +9,7 @@ using Proto.Context;
 
 namespace Proto.Router.Routers
 {
-    public abstract class RouterConfig
+    public abstract record RouterConfig
     {
         public abstract void OnStarted(IContext context, RouterState router);
         public abstract RouterState CreateRouterState();

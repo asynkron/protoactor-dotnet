@@ -6,7 +6,7 @@
 
 namespace Proto.Router.Routers
 {
-    internal class RoundRobinPoolRouterConfig : PoolRouterConfig
+    internal record RoundRobinPoolRouterConfig : PoolRouterConfig
     {
         private readonly ISenderContext _senderContext;
 

@@ -6,7 +6,7 @@
 
 namespace Proto.Router.Routers
 {
-    internal class RandomGroupRouterConfig : GroupRouterConfig
+    internal record RandomGroupRouterConfig : GroupRouterConfig
     {
         private readonly int? _seed;
 

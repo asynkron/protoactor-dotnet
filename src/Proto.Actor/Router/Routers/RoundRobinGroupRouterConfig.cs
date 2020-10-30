@@ -6,7 +6,7 @@
 
 namespace Proto.Router.Routers
 {
-    internal class RoundRobinGroupRouterConfig : GroupRouterConfig
+    internal record RoundRobinGroupRouterConfig : GroupRouterConfig
     {
         public RoundRobinGroupRouterConfig(ISenderContext senderContext, params PID[] routees) : base(senderContext,
             routees

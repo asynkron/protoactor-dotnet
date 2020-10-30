@@ -6,7 +6,7 @@
 
 namespace Proto.Router.Routers
 {
-    internal class BroadcastPoolRouterConfig : PoolRouterConfig
+    internal record BroadcastPoolRouterConfig : PoolRouterConfig
     {
         private readonly ISenderContext _senderContext;
 

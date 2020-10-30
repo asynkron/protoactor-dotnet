@@ -122,10 +122,4 @@ namespace Proto
         public static Props FromProducer(Producer producer) => new Props().WithProducer(producer);
         public static Props FromFunc(Receive receive) => FromProducer(() => new FunctionActor(receive));
     }
-
-    public delegate PID Spawner(ActorSystem system, string id, Props props, PID? parent);
-
-    public delegate IActor Producer();
-
-    public delegate IMailbox MailboxProducer();
 }
