@@ -20,63 +20,9 @@
             _testOutputHelper = testOutputHelper;
         }
 
-        [Theory]
-        [InlineData(1000, 5000)]
-        public async Task CanSpawnConcurrently(int count, int msTimeout)
-        {
-            var timeout = new CancellationTokenSource(msTimeout).Token;
-
-
-            await PingAllConcurrently(Members[0]);
-
-            async Task PingAllConcurrently(Cluster cluster)
-            {
-                await Task.WhenAll(
-                    GetActorIds(count).Select(async id =>
-                        {
-                            Pong pong = null;
-                            while (pong == null)
-                            {
-                                timeout.ThrowIfCancellationRequested();
-                                pong = await cluster.Ping(id, id, timeout);
-                                _testOutputHelper.WriteLine($"{id} received response {pong?.Message}");
-                            }
-
-                            pong.Message.Should().Be($"{id}:{id}");
-                        }
-                    )
-                );
-            }
-        }
-
-        [Theory]
-        [InlineData(1000, 5000)]
-        public async Task CanSpawnSequentially(int count, int msTimeout)
-        {
-            var timeout = new CancellationTokenSource(msTimeout).Token;
-
-            await PingAllSequentially(Members[0]);
-
-            async Task PingAllSequentially(Cluster cluster)
-            {
-                foreach (var id in GetActorIds(count))
-                {
-                    Pong pong = null;
-                    while (pong == null)
-                    {
-                        timeout.ThrowIfCancellationRequested();
-                        pong = await cluster.Ping(id, id, timeout);
-                    }
-
-                    pong.Message.Should().Be($"{id}:{id}");
-                }
-            }
-        }
-        
         [Fact]
         public async Task ReSpawnsClusterActorsFromDifferentNodesQuickly()
         {
-            await Task.Delay(TimeSpan.FromSeconds(3));
             var timeout = new CancellationTokenSource(5000).Token;
             var id = CreateIdentity("1");
             await PingPong(Members[0], id, timeout);
@@ -93,7 +39,7 @@
             var timer = Stopwatch.StartNew();
             // And force it to restart.
             // DeadLetterResponse should be sent to requestAsync, enabling a quick initialization of the new virtual actor
-            await PingPong(otherNode, id);
+            await PingPong(otherNode, id,timeout);
             timer.Stop();
 
             timer.Elapsed.TotalMilliseconds.Should().BeLessThan(20,
@@ -101,10 +47,9 @@
             );
         }
 
-
         [Theory]
-        [InlineData(1000, 30000)]
-        public async Task CanSpawnVirtualActors(int actorCount, int timeoutMs)
+        [InlineData(1000, 1000)]
+        public async Task CanSpawnVirtualActorsSequentially(int actorCount, int timeoutMs)
         {
             await Task.Delay(TimeSpan.FromSeconds(3));
             var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -112,17 +57,56 @@
             var entryNode = Members.First();
 
             var timer = Stopwatch.StartNew();
-            await Task.WhenAll(Enumerable.Range(1, actorCount).Select(id => PingPong(entryNode, CreateIdentity(id.ToString()), timeout))
-            );
+            foreach (var id in GetActorIds(actorCount))
+            {
+                await PingPong(entryNode, id, timeout);
+            }
             timer.Stop();
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
 
         [Theory]
-        [InlineData(1000, 30000)]
-        public async Task CanRespawnVirtualActors(int actorCount, int timeoutMs)
+        [InlineData(1000, 1000)]
+        public async Task CanSpawnVirtualActorsConcurrently(int actorCount, int timeoutMs)
         {
             await Task.Delay(TimeSpan.FromSeconds(3));
+            var timeout = new CancellationTokenSource(timeoutMs).Token;
+
+            var entryNode = Members.First();
+
+            var timer = Stopwatch.StartNew();
+            await Task.WhenAll(GetActorIds(actorCount).Select(id => PingPong(entryNode, CreateIdentity(id.ToString()), timeout))
+            );
+            timer.Stop();
+            _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
+        }
+        
+        [Theory]
+        [InlineData(1000, 1000)]
+        public async Task CanSpawnVirtualActorsConcurrentlyOnAllNodes(int actorCount, int timeoutMs)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(3));
+            var timeout = new CancellationTokenSource(timeoutMs).Token;
+
+
+            var timer = Stopwatch.StartNew();
+            await Task.WhenAll(Members.Select(member => Task.Run(() =>
+                        {
+                            return Task.WhenAll(GetActorIds(actorCount).Select(id =>
+                                    PingPong(member, CreateIdentity(id.ToString()), timeout)
+                                )
+                            );
+                        }, timeout
+                    )
+            ));
+            timer.Stop();
+            _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
+        }
+
+        [Theory]
+        [InlineData(1000, 3000)]
+        public async Task CanRespawnVirtualActors(int actorCount, int timeoutMs)
+        {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
 
             var entryNode = Members.First();
@@ -156,9 +140,9 @@
             count.Should().BePositive();
 
             const int virtualActorCount = 10;
-            foreach (var id in Enumerable.Range(1, virtualActorCount))
+            foreach (var id in GetActorIds(virtualActorCount))
             {
-                await PingAll(id.ToString(), timeout.Token);
+                await PingAll(id, timeout.Token);
             }
 
             var afterPing = await GetActorCountFromHeartbeat();
