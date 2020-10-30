@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using JetBrains.Annotations;
 using Proto.Context;
@@ -16,30 +17,28 @@ namespace Proto
     [PublicAPI]
     public sealed record Props
     {
-        private Spawner? _spawner;
+        public static readonly Props Empty = new Props();
+
         public Producer Producer { get; init; } = () => null!;
         public MailboxProducer MailboxProducer { get; init; } = ProduceDefaultMailbox;
         public ISupervisorStrategy? GuardianStrategy { get; init; }
         public ISupervisorStrategy SupervisorStrategy { get; init; } = Supervision.DefaultStrategy;
         public IDispatcher Dispatcher { get; init; } = Dispatchers.DefaultDispatcher;
 
-        public IList<Func<Receiver, Receiver>> ReceiverMiddleware { get; init; } =
-            new List<Func<Receiver, Receiver>>();
+        public ImmutableList<Func<Receiver, Receiver>> ReceiverMiddleware { get; init; } =
+            ImmutableList<Func<Receiver, Receiver>>.Empty;
 
-        public IList<Func<Sender, Sender>> SenderMiddleware { get; init; } = new List<Func<Sender, Sender>>();
+        public ImmutableList<Func<Sender, Sender>> SenderMiddleware { get; init; } =  
+            ImmutableList<Func<Sender, Sender>>.Empty;
         public Receiver? ReceiverMiddlewareChain { get; init; }
         public Sender? SenderMiddlewareChain { get; init; }
 
-        public IList<Func<IContext, IContext>> ContextDecorator { get; init; } =
-            new List<Func<IContext, IContext>>();
+        public ImmutableList<Func<IContext, IContext>> ContextDecorator { get; init; } =
+            ImmutableList<Func<IContext, IContext>>.Empty;
 
         public Func<IContext, IContext>? ContextDecoratorChain { get; init; }
 
-        public Spawner Spawner
-        {
-            get => _spawner ?? DefaultSpawner;
-            private set => _spawner = value;
-        }
+        public Spawner Spawner { get; init; } = DefaultSpawner;
 
         private static IContext DefaultContextDecorator(IContext context) => context;
 
@@ -76,7 +75,7 @@ namespace Proto
 
         public Props WithContextDecorator(params Func<IContext, IContext>[] contextDecorator)
         {
-            var x = ContextDecorator.Concat(contextDecorator).ToList();
+            var x = ContextDecorator.AddRange(contextDecorator);
             return this with {
                 ContextDecorator = x,
                 ContextDecoratorChain = x
@@ -97,7 +96,7 @@ namespace Proto
 
         public Props WithReceiverMiddleware(params Func<Receiver, Receiver>[] middleware)
         {
-            var x = ReceiverMiddleware.Concat(middleware).ToList();
+            var x = ReceiverMiddleware.AddRange(middleware);
             return this with {
                 ReceiverMiddleware = x,
                 ReceiverMiddlewareChain = x.AsEnumerable().Reverse()
@@ -107,7 +106,7 @@ namespace Proto
 
         public Props WithSenderMiddleware(params Func<Sender, Sender>[] middleware)
         {
-            var x = SenderMiddleware.Concat(middleware).ToList();
+            var x = SenderMiddleware.AddRange(middleware);
             return this with {
                 SenderMiddleware = x,
                 SenderMiddlewareChain = x.AsEnumerable().Reverse()
@@ -119,7 +118,7 @@ namespace Proto
             this with {Spawner = spawner};
 
         internal PID Spawn(ActorSystem system, string name, PID? parent) => Spawner(system, name, this, parent);
-        public static Props FromProducer(Producer producer) => new Props().WithProducer(producer);
+        public static Props FromProducer(Producer producer) => Empty.WithProducer(producer);
         public static Props FromFunc(Receive receive) => FromProducer(() => new FunctionActor(receive));
     }
 }
