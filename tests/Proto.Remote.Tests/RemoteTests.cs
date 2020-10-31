@@ -6,26 +6,28 @@ using Divergic.Logging.Xunit;
 using Microsoft.Extensions.Logging;
 using Proto.Remote.Tests.Messages;
 using Xunit;
-using Xunit.Abstractions;
 
 // ReSharper disable MethodHasAsyncOverload
 
 namespace Proto.Remote.Tests
 {
     [Trait("Category", "Remote")]
-    public class RemoteTests
+    public class RemoteTests: IClassFixture<RemoteFixture>
     {
-        public RemoteTests(ITestOutputHelper testOutputHelper)
+        private readonly RemoteFixture _fixture;
+
+        private ActorSystem System => _fixture.ActorSystem;
+        private Remote Remote => _fixture.Remote;
+
+        public RemoteTests(RemoteFixture fixture)
         {
-            var factory = LogFactory.Create(testOutputHelper);
-            Log.SetLoggerFactory(factory);
+            _fixture = fixture;
         }
 
         [Fact]
         [DisplayTestMethodName]
-        public async Task CanSerializeAndDeserializeJsonPid()
+        public void CanSerializeAndDeserializeJsonPid()
         {
-            await RemoteManager.EnsureRemote();
             var serialization = new Serialization();
             const string typeName = "actor.PID";
             var json = new JsonMessage(typeName, "{ \"Address\":\"123\", \"Id\":\"456\"}");
@@ -38,9 +40,8 @@ namespace Proto.Remote.Tests
 
         [Fact]
         [DisplayTestMethodName]
-        public async Task CanSerializeAndDeserializeJson()
+        public void CanSerializeAndDeserializeJson()
         {
-            await RemoteManager.EnsureRemote();
             var serialization = new Serialization();
             serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
             const string typeName = "remote_test_messages.Ping";
@@ -55,11 +56,11 @@ namespace Proto.Remote.Tests
         [DisplayTestMethodName]
         public async Task CanSendJsonAndReceiveToExistingRemote()
         {
-            var (remote, system) = await RemoteManager.EnsureRemote();
-            var remoteActor = PID.FromAddress(RemoteManager.RemoteAddress, "EchoActorInstance");
+            
+            var remoteActor = PID.FromAddress(RemoteFixture.RemoteAddress, "EchoActorInstance");
             var tcs = new TaskCompletionSource<bool>();
 
-            var localActor = system.Root.Spawn(
+            var localActor = System.Root.Spawn(
                 Props.FromFunc(
                     ctx =>
                     {
@@ -76,37 +77,37 @@ namespace Proto.Remote.Tests
 
             var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
             var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
-            remote.SendMessage(remoteActor, envelope, 1);
+            Remote.SendMessage(remoteActor, envelope, 1);
         }
 
         [Fact]
         [DisplayTestMethodName]
         public async Task CanSendAndReceiveToExistingRemote()
         {
-            var (_, system) = await RemoteManager.EnsureRemote();
+            
 
-            var remoteActor = PID.FromAddress(RemoteManager.RemoteAddress, "EchoActorInstance");
+            var remoteActor = PID.FromAddress(RemoteFixture.RemoteAddress, "EchoActorInstance");
 
-            var pong = await system.Root.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
+            var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
                 TimeSpan.FromMilliseconds(5000)
             );
 
-            Assert.Equal($"{RemoteManager.RemoteAddress} Hello", pong.Message);
+            Assert.Equal($"{RemoteFixture.RemoteAddress} Hello", pong.Message);
 
             // await service.StopAsync();
         }
 
         [Fact]
         [DisplayTestMethodName]
-        public async Task WhenRemoteActorNotFound_RequestAsyncTimesOut()
+        public async Task WhenRemoteActorNotFound_DeadLetterException()
         {
-            var (_, system) = await RemoteManager.EnsureRemote();
-            var unknownRemoteActor = PID.FromAddress(RemoteManager.RemoteAddress, "doesn't exist");
+            
+            var unknownRemoteActor = PID.FromAddress(RemoteFixture.RemoteAddress, "doesn't exist");
 
-            await Assert.ThrowsAsync<TimeoutException>(
+            await Assert.ThrowsAsync<DeadLetterException>(
                 async () =>
                 {
-                    await system.Root.RequestAsync<Pong>(unknownRemoteActor, new Ping {Message = "Hello"},
+                    await System.Root.RequestAsync<Pong>(unknownRemoteActor, new Ping {Message = "Hello"},
                         TimeSpan.FromMilliseconds(2000)
                     );
                 }
@@ -117,34 +118,34 @@ namespace Proto.Remote.Tests
         [DisplayTestMethodName]
         public async Task CanSpawnRemoteActor()
         {
-            var (remote, system) = await RemoteManager.EnsureRemote();
+            
             var remoteActorName = Guid.NewGuid().ToString();
 
-            var remoteActorResp = await remote.SpawnNamedAsync(
-                RemoteManager.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5)
+            var remoteActorResp = await Remote.SpawnNamedAsync(
+                RemoteFixture.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5)
             );
             var remoteActor = remoteActorResp.Pid;
-            var pong = await system.Root.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
+            var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
                 TimeSpan.FromMilliseconds(5000)
             );
-            Assert.Equal($"{RemoteManager.RemoteAddress} Hello", pong.Message);
+            Assert.Equal($"{RemoteFixture.RemoteAddress} Hello", pong.Message);
         }
 
         [Fact]
         [DisplayTestMethodName]
         public async Task CanWatchRemoteActor()
         {
-            var (_, system) = await RemoteManager.EnsureRemote();
-            var remoteActor = await SpawnRemoteActor(RemoteManager.RemoteAddress);
+            
+            var remoteActor = await SpawnRemoteActor(RemoteFixture.RemoteAddress);
             var localActor = await SpawnLocalActorAndWatch(remoteActor);
 
-            system.Root.Stop(remoteActor);
+            System.Root.Stop(remoteActor);
 
             Assert.True(
                 await PollUntilTrue(
                     () =>
-                        system.Root.RequestAsync<bool>(
-                            localActor, new TerminatedMessageReceived(RemoteManager.RemoteAddress, remoteActor.Id),
+                        System.Root.RequestAsync<bool>(
+                            localActor, new TerminatedMessageReceived(RemoteFixture.RemoteAddress, remoteActor.Id),
                             TimeSpan.FromSeconds(5)
                         )
                 ),
@@ -156,19 +157,19 @@ namespace Proto.Remote.Tests
         [DisplayTestMethodName]
         public async Task CanWatchMultipleRemoteActors()
         {
-            var (_, system) = await RemoteManager.EnsureRemote();
-            var remoteActor1 = await SpawnRemoteActor(RemoteManager.RemoteAddress);
-            var remoteActor2 = await SpawnRemoteActor(RemoteManager.RemoteAddress);
+            
+            var remoteActor1 = await SpawnRemoteActor(RemoteFixture.RemoteAddress);
+            var remoteActor2 = await SpawnRemoteActor(RemoteFixture.RemoteAddress);
             var localActor = await SpawnLocalActorAndWatch(remoteActor1, remoteActor2);
 
-            system.Root.Stop(remoteActor1);
-            system.Root.Stop(remoteActor2);
+            System.Root.Stop(remoteActor1);
+            System.Root.Stop(remoteActor2);
 
             Assert.True(
                 await PollUntilTrue(
                     () =>
-                        system.Root.RequestAsync<bool>(
-                            localActor, new TerminatedMessageReceived(RemoteManager.RemoteAddress, remoteActor1.Id),
+                        System.Root.RequestAsync<bool>(
+                            localActor, new TerminatedMessageReceived(RemoteFixture.RemoteAddress, remoteActor1.Id),
                             TimeSpan.FromSeconds(5)
                         )
                 ),
@@ -178,8 +179,8 @@ namespace Proto.Remote.Tests
             Assert.True(
                 await PollUntilTrue(
                     () =>
-                        system.Root.RequestAsync<bool>(
-                            localActor, new TerminatedMessageReceived(RemoteManager.RemoteAddress, remoteActor2.Id),
+                        System.Root.RequestAsync<bool>(
+                            localActor, new TerminatedMessageReceived(RemoteFixture.RemoteAddress, remoteActor2.Id),
                             TimeSpan.FromSeconds(5)
                         )
                 ),
@@ -191,18 +192,18 @@ namespace Proto.Remote.Tests
         [DisplayTestMethodName]
         public async Task MultipleLocalActorsCanWatchRemoteActor()
         {
-            var (_, system) = await RemoteManager.EnsureRemote();
-            var remoteActor = await SpawnRemoteActor(RemoteManager.RemoteAddress);
+            
+            var remoteActor = await SpawnRemoteActor(RemoteFixture.RemoteAddress);
 
             var localActor1 = await SpawnLocalActorAndWatch(remoteActor);
             var localActor2 = await SpawnLocalActorAndWatch(remoteActor);
-            system.Root.Stop(remoteActor);
+            System.Root.Stop(remoteActor);
 
             Assert.True(
                 await PollUntilTrue(
                     () =>
-                        system.Root.RequestAsync<bool>(
-                            localActor1, new TerminatedMessageReceived(RemoteManager.RemoteAddress, remoteActor.Id),
+                        System.Root.RequestAsync<bool>(
+                            localActor1, new TerminatedMessageReceived(RemoteFixture.RemoteAddress, remoteActor.Id),
                             TimeSpan.FromSeconds(5)
                         )
                 ),
@@ -212,8 +213,8 @@ namespace Proto.Remote.Tests
             Assert.True(
                 await PollUntilTrue(
                     () =>
-                        system.Root.RequestAsync<bool>(
-                            localActor2, new TerminatedMessageReceived(RemoteManager.RemoteAddress, remoteActor.Id),
+                        System.Root.RequestAsync<bool>(
+                            localActor2, new TerminatedMessageReceived(RemoteFixture.RemoteAddress, remoteActor.Id),
                             TimeSpan.FromSeconds(5)
                         )
                 ),
@@ -225,20 +226,20 @@ namespace Proto.Remote.Tests
         [DisplayTestMethodName]
         public async Task CanUnwatchRemoteActor()
         {
-            var (_, system) = await RemoteManager.EnsureRemote();
-            var remoteActor = await SpawnRemoteActor(RemoteManager.RemoteAddress);
+            
+            var remoteActor = await SpawnRemoteActor(RemoteFixture.RemoteAddress);
             var localActor1 = await SpawnLocalActorAndWatch(remoteActor);
             var localActor2 = await SpawnLocalActorAndWatch(remoteActor);
-            system.Root.Send(localActor2, new Unwatch(remoteActor));
+            System.Root.Send(localActor2, new Unwatch(remoteActor));
             await Task.Delay(TimeSpan.FromSeconds(3)); // wait for unwatch to propagate...
-            system.Root.Stop(remoteActor);
+            System.Root.Stop(remoteActor);
 
             // localActor1 is still watching so should get notified
             Assert.True(
                 await PollUntilTrue(
                     () =>
-                        system.Root.RequestAsync<bool>(
-                            localActor1, new TerminatedMessageReceived(RemoteManager.RemoteAddress, remoteActor.Id),
+                        System.Root.RequestAsync<bool>(
+                            localActor1, new TerminatedMessageReceived(RemoteFixture.RemoteAddress, remoteActor.Id),
                             TimeSpan.FromSeconds(5)
                         )
                 ),
@@ -247,8 +248,8 @@ namespace Proto.Remote.Tests
 
             // localActor2 is NOT watching so should not get notified
             Assert.False(
-                await system.Root.RequestAsync<bool>(
-                    localActor2, new TerminatedMessageReceived(RemoteManager.RemoteAddress, remoteActor.Id),
+                await System.Root.RequestAsync<bool>(
+                    localActor2, new TerminatedMessageReceived(RemoteFixture.RemoteAddress, remoteActor.Id),
                     TimeSpan.FromSeconds(5)
                 ),
                 "Unwatch did not succeed."
@@ -259,23 +260,23 @@ namespace Proto.Remote.Tests
         [DisplayTestMethodName]
         public async Task WhenRemoteTerminated_LocalWatcherReceivesNotification()
         {
-            var (_, system) = await RemoteManager.EnsureRemote();
-            var remoteActor = await SpawnRemoteActor(RemoteManager.RemoteAddress);
+            
+            var remoteActor = await SpawnRemoteActor(RemoteFixture.RemoteAddress);
             var localActor = await SpawnLocalActorAndWatch(remoteActor);
 
-            system.Root.Send(remoteActor, new Die());
+            System.Root.Send(remoteActor, new Die());
             Assert.True(
                 await PollUntilTrue(
                     () =>
-                        system.Root.RequestAsync<bool>(localActor,
-                            new TerminatedMessageReceived(RemoteManager.RemoteAddress, remoteActor.Id),
+                        System.Root.RequestAsync<bool>(localActor,
+                            new TerminatedMessageReceived(RemoteFixture.RemoteAddress, remoteActor.Id),
                             TimeSpan.FromSeconds(5)
                         )
                 ),
                 "Watching actor did not receive Termination message"
             );
             Assert.Equal(1,
-                await system.Root.RequestAsync<int>(localActor, new GetTerminatedMessagesCount(),
+                await System.Root.RequestAsync<int>(localActor, new GetTerminatedMessagesCount(),
                     TimeSpan.FromSeconds(5)
                 )
             );
@@ -283,18 +284,17 @@ namespace Proto.Remote.Tests
 
         private async Task<PID> SpawnRemoteActor(string address)
         {
-            var (remote, _) = await RemoteManager.EnsureRemote();
             var remoteActorName = Guid.NewGuid().ToString();
             var remoteActorResp =
-                await remote.SpawnNamedAsync(address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
+                await Remote.SpawnNamedAsync(address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
             return remoteActorResp.Pid;
         }
 
         private async Task<PID> SpawnLocalActorAndWatch(params PID[] remoteActors)
         {
-            var (_, system) = await RemoteManager.EnsureRemote();
+            
             var props = Props.FromProducer(() => new LocalActor(remoteActors));
-            var actor = system.Root.Spawn(props);
+            var actor = System.Root.Spawn(props);
 
             // The local actor watches the remote one - we wait here for the RemoteWatch 
             // message to propagate to the remote actor
