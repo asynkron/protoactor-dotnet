@@ -121,6 +121,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".meta", ".meta", "{222D5932
 ProjectSection(SolutionItems) = preProject
 	README.md = README.md
 	Terminology.md = Terminology.md
+	.gitignore = .gitignore
+	.github\workflows\pull-request.yml = .github\workflows\pull-request.yml
+	.github\workflows\build-master.yml = .github\workflows\build-master.yml
+	.github\PULL_REQUEST_TEMPLATE.md = .github\PULL_REQUEST_TEMPLATE.md
+	.github\ISSUE_TEMPLATE.md = .github\ISSUE_TEMPLATE.md
 EndProjectSection
 EndProject
 Global
