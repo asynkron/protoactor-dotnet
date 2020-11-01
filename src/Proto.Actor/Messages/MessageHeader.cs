@@ -13,52 +13,41 @@ using JetBrains.Annotations;
 namespace Proto
 {
     [PublicAPI]
-    public class MessageHeader : IReadOnlyDictionary<string, string>
+    public record MessageHeader : IReadOnlyDictionary<string, string>
     {
-        public static readonly MessageHeader Empty = new MessageHeader();
+        public static readonly MessageHeader Empty = new MessageHeader(ImmutableDictionary<string, string>.Empty);
 
-        private readonly ImmutableDictionary<string, string> _inner;
-
-        public MessageHeader()
-        {
-            _inner = ImmutableDictionary<string, string>.Empty;
-        }
-
+        private ImmutableDictionary<string, string> Inner { get; init; }
+        
         public MessageHeader(IDictionary<string, string> headers)
         {
-            _inner = headers.ToImmutableDictionary();
+            Inner = headers.ToImmutableDictionary();
         }
 
-        public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => _inner.GetEnumerator();
+        public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => Inner.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator() => _inner.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => Inner.GetEnumerator();
 
-        public int Count => _inner.Count;
+        public int Count => Inner.Count;
 
-        public bool ContainsKey(string key) => _inner.ContainsKey(key);
+        public bool ContainsKey(string key) => Inner.ContainsKey(key);
 
-        public bool TryGetValue(string key, out string value) => _inner.TryGetValue(key, out value);
+        public bool TryGetValue(string key, out string value) => Inner.TryGetValue(key, out value);
 
-        public string this[string key] => _inner[key];
+        public string this[string key] => Inner[key];
 
-        public IEnumerable<string> Keys => _inner.Keys;
-        public IEnumerable<string> Values => _inner.Values;
+        public IEnumerable<string> Keys => Inner.Keys;
+        public IEnumerable<string> Values => Inner.Values;
 
-        public IDictionary<string, string> ToDictionary() => _inner;
+        public IDictionary<string, string> ToDictionary() => Inner;
 
         public string? GetOrDefault(string key, string? @default = null) =>
             TryGetValue(key, out var value) ? value : @default;
 
-        public MessageHeader With(string key, string value)
-        {
-            var copy = _inner.SetItem(key, value);
-            return new MessageHeader(copy);
-        }
+        public MessageHeader With(string key, string value) => 
+            this with { Inner = Inner.SetItem(key, value)};
 
-        public MessageHeader With(IEnumerable<KeyValuePair<string, string>> items)
-        {
-            var copy = _inner.SetItems(items);
-            return new MessageHeader(copy);
-        }
+        public MessageHeader With(IEnumerable<KeyValuePair<string, string>> items) => 
+            this with { Inner = Inner.SetItems(items)};
     }
 }

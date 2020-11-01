@@ -4,41 +4,25 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Proto.Router.Routers
 {
     public abstract class RouterState
     {
-        private HashSet<PID>? _routees;
-        private List<PID>? _values;
+        protected HashSet<PID> Routees = new HashSet<PID>();
+        protected ImmutableList<PID> Values = ImmutableList<PID>.Empty;
 
-        public virtual HashSet<PID> GetRoutees()
+        public virtual HashSet<PID> GetRoutees() => Routees;
+
+        protected ImmutableList<PID> GetValues() => Values;
+
+        public virtual void SetRoutees(PID[] routees)
         {
-            if (_routees == null)
-            {
-                throw new InvalidOperationException("Routees not set");
-            }
-
-            return _routees;
-        }
-
-        protected List<PID> GetValues()
-        {
-            if (_values == null)
-            {
-                throw new InvalidOperationException("Routees not set");
-            }
-
-            return _values;
-        }
-
-        public virtual void SetRoutees(HashSet<PID> routees)
-        {
-            _routees = routees;
-            _values = routees.ToList();
+            Routees = routees.ToHashSet();
+            Values = routees.ToImmutableList();
         }
 
         public abstract void RouteMessage(object message);

@@ -11,23 +11,17 @@ using JetBrains.Annotations;
 namespace Proto
 {
     [PublicAPI]
-    public class ActorSystemConfig
+    public record ActorSystemConfig
     {
         public static ActorSystemConfig Setup() => new ActorSystemConfig();
         
-        public TimeSpan DeadLetterThrottleInterval { get; set; }
-        public int DeadLetterThrottleCount { get; set; }
+        public TimeSpan DeadLetterThrottleInterval { get; init; }
+        public int DeadLetterThrottleCount { get; init; }
 
-        public ActorSystemConfig WithDeadLetterThrottleInterval(TimeSpan deadLetterThrottleInterval)
-        {
-            DeadLetterThrottleInterval = deadLetterThrottleInterval;
-            return this;
-        }
-        
-        public ActorSystemConfig WithDeadLetterThrottleCount(int deadLetterThrottleCount)
-        {
-            DeadLetterThrottleCount = deadLetterThrottleCount;
-            return this;
-        }
+        public ActorSystemConfig WithDeadLetterThrottleInterval(TimeSpan deadLetterThrottleInterval) => 
+            this with { DeadLetterThrottleInterval = deadLetterThrottleInterval};
+
+        public ActorSystemConfig WithDeadLetterThrottleCount(int deadLetterThrottleCount) => 
+            this with {DeadLetterThrottleCount = deadLetterThrottleCount};
     }
 }

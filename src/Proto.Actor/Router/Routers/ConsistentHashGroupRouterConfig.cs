@@ -8,7 +8,7 @@ using System;
 
 namespace Proto.Router.Routers
 {
-    internal class ConsistentHashGroupRouterConfig : GroupRouterConfig
+    internal record ConsistentHashGroupRouterConfig : GroupRouterConfig
     {
         private readonly Func<string, uint> _hash;
         private readonly int _replicaCount;
@@ -26,7 +26,7 @@ namespace Proto.Router.Routers
             _replicaCount = replicaCount;
         }
 
-        public override RouterState CreateRouterState() =>
+        protected override RouterState CreateRouterState() =>
             new ConsistentHashRouterState(SenderContext, _hash, _replicaCount);
     }
 }

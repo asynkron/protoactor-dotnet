@@ -4,29 +4,20 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Proto.Router.Routers
 {
-    public abstract class GroupRouterConfig : RouterConfig
+    public abstract record GroupRouterConfig(ISenderContext SenderContext, PID[] Routees) : RouterConfig
     {
-        private readonly HashSet<PID> _routees;
-        protected readonly ISenderContext SenderContext;
-
-        protected GroupRouterConfig(ISenderContext senderContext, PID[] routees)
-        {
-            SenderContext = senderContext;
-            _routees = new HashSet<PID>(routees);
-        }
-
         public override void OnStarted(IContext context, RouterState router)
         {
-            foreach (var pid in _routees)
+            foreach (var pid in Routees)
             {
                 context.Watch(pid);
             }
 
-            router.SetRoutees(_routees);
+            router.SetRoutees(Routees);
         }
     }
 }

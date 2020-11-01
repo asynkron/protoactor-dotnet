@@ -6,7 +6,7 @@
 
 namespace Proto.Router.Routers
 {
-    internal class RandomPoolRouterConfig : PoolRouterConfig
+    internal record RandomPoolRouterConfig : PoolRouterConfig
     {
         private readonly int? _seed;
         private readonly ISenderContext _senderContext;
@@ -18,6 +18,6 @@ namespace Proto.Router.Routers
             _seed = seed;
         }
 
-        public override RouterState CreateRouterState() => new RandomRouterState(_senderContext, _seed);
+        protected override RouterState CreateRouterState() => new RandomRouterState(_senderContext, _seed);
     }
 }

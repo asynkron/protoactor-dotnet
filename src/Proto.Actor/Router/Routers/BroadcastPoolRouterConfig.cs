@@ -6,7 +6,7 @@
 
 namespace Proto.Router.Routers
 {
-    internal class BroadcastPoolRouterConfig : PoolRouterConfig
+    internal record BroadcastPoolRouterConfig : PoolRouterConfig
     {
         private readonly ISenderContext _senderContext;
 
@@ -16,6 +16,6 @@ namespace Proto.Router.Routers
             _senderContext = senderContext;
         }
 
-        public override RouterState CreateRouterState() => new BroadcastRouterState(_senderContext);
+        protected override RouterState CreateRouterState() => new BroadcastRouterState(_senderContext);
     }
 }
