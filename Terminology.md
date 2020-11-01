@@ -17,8 +17,11 @@ Grains are a synomym with Virtual Actors, in Project Orleans, Grains live inside
 #### Remote
 
 Proto.Remote, is the networking layer that makes process to process communication possible.
+It basically provides the actor system to resolve `PIDs` that point to another address than the local system does.
 
 #### Cluster
+
+Proto.Cluster, is a orechestration mechanism built ontop of Proto.Remote, it makes it possible to work with Virtual Actors. see above.
 
 #### Router
 
