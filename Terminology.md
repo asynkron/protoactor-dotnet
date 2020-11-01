@@ -25,9 +25,16 @@ Proto.Cluster, is a orechestration mechanism built ontop of Proto.Remote, it mak
 
 #### Router
 
+A Router, is an actor like object which helps distribute messages to different target actors.
+There are various different routing strategies implemented. e.g. Round Robin or Consistent Hash routing.
+
 #### Host
 
+The host part of an address. e.g. localhost, 127.0.0.1, someKubernetesService, 192.168.0.22 etc.
+
 #### Port
+
+The port part of an address.
 
 #### Address
 
@@ -40,11 +47,25 @@ A system might "bind" to IP 0.0.0.0, and at the same time advertise e.g. 192.168
 
 #### Advertised Port
 
+Advertised Port, is the port exposed to other members.
+You might bind to one internal port, but might expose a different port outwards. e.g. in Kubernetes or using some proxy layer between your Proto members.
+
 #### PID
+
+PID, Process ID, you can think of this as the phone number to an actor.
+You can call the actor from any locations, locally or from remote.
 
 #### Props
 
+Props, a play on words from the Akka framework.
+**Actors needs props to act.**
+
+The Props describe how an actor is created, it is basically the blueprint on how to assemble an actor.
+What producer to use, what mailbox to use, what supervision strategy to use etc.
+
 #### Actor Context
+
+Actor context is the internal state of an actor. the actor context exists for as long as the actor exists.
 
 #### Cluster Context
 
