@@ -11,7 +11,6 @@ message PID {
 message PoisonPill {
 }
 
-//special event sent by the system on messages to dead PID's
 message DeadLetterResponse {
     PID Target = 1;
 }

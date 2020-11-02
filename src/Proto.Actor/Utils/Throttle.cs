@@ -8,7 +8,12 @@
 
     public static class Throttle
     {
-        public static ShouldThrottle Create(int maxEventsInPeriod, TimeSpan period)
+        /// <param name="maxEventsInPeriod"></param>
+        /// <param name="period"></param>
+        /// <param name="throttledCallBack">This will be called with the number of events what was throttled after the period</param>
+        /// <returns></returns>
+        public static ShouldThrottle Create(int maxEventsInPeriod, TimeSpan period,
+            Action<int>? throttledCallBack = null)
         {
             if (period == TimeSpan.Zero || maxEventsInPeriod < 1 || maxEventsInPeriod == int.MaxValue)
             {
@@ -21,9 +26,9 @@
                 var tries = Interlocked.Increment(ref currentEvents);
                 if (tries == 1)
                 {
-                    StartTimer();
+                    StartTimer(throttledCallBack);
                 }
-                else if (tries == maxEventsInPeriod)
+                if (tries == maxEventsInPeriod)
                 {
                     return Valve.Closing;
                 }
@@ -31,15 +36,18 @@
                 return tries > maxEventsInPeriod ? Valve.Closed : Valve.Open;
             };
 
-            void StartTimer()
+            void StartTimer(Action<int>? callBack)
             {
-                Task.Run(async () =>
+                _ = Task.Run(async () =>
                     {
                         await Task.Delay(period);
-                        Interlocked.Exchange(ref currentEvents, 0);
+                        var timesCalled = Interlocked.Exchange(ref currentEvents, 0);
+                        if (timesCalled > maxEventsInPeriod)
+                        {
+                            callBack?.Invoke(timesCalled - maxEventsInPeriod);
+                        }
                     }
                 );
-
             }
         }
 

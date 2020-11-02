@@ -53,7 +53,7 @@ namespace Proto.Cluster
                             envelope.Message.GetType(), sender
                         );
                         // ReSharper disable once MethodHasAsyncOverload
-                        context.System.Root.Send(context.Self!, PoisonPill.Instance);
+                        context.System.Root.Poison(context.Self!);
                     }
 
                     return task;

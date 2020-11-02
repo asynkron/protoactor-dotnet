@@ -28,32 +28,19 @@ namespace Proto
 
         internal EventStream(TimeSpan throttleInterval, int throttleCount)
         {
-            var shouldThrottle = Throttle.Create(throttleCount, throttleInterval);
+            var shouldThrottle = Throttle.Create(throttleCount, throttleInterval,
+                droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs.", droppedLogs));
             Subscribe<DeadLetterEvent>(
                 dl =>
                 {
-                    switch (shouldThrottle())
+                    if (shouldThrottle().IsOpen())
                     {
-                        case Throttle.Valve.Open:
-                            _logger.LogInformation(
-                                "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",
-                                dl.Message.GetType().Name,
-                                dl.Message,
-                                dl.Pid.ToShortString(),
-                                dl.Sender?.ToShortString()
-                            );
-                            break;
-                        case Throttle.Valve.Closing:
-                            _logger.LogInformation(
-                                "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'. Throttling next messages.",
-                                dl.Message.GetType().Name,
-                                dl.Message,
-                                dl.Pid.ToShortString(),
-                                dl.Sender?.ToShortString()
-                            );
-                            break;
-                        case Throttle.Valve.Closed:
-                            break;
+                        _logger.LogInformation(
+                            "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",
+                            dl.Message.GetType().Name,
+                            dl.Message,
+                            dl.Pid.ToShortString(),
+                            dl.Sender?.ToShortString());
                     }
                 }
             );

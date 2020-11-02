@@ -18,7 +18,7 @@ namespace Proto.Cluster
         private readonly PidCache _pidCache;
         private readonly ISenderContext _context;
         private readonly ILogger _logger;
-        private readonly ShouldThrottle _requestLogThrottle = Throttle.Create(10, TimeSpan.FromSeconds(5));
+        private readonly ShouldThrottle _requestLogThrottle;
 
         public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ISenderContext context,
             ILogger logger)
@@ -27,6 +27,10 @@ namespace Proto.Cluster
             _pidCache = pidCache;
             _context = context;
             _logger = logger;
+            _requestLogThrottle = Throttle.Create(
+                10,
+                TimeSpan.FromSeconds(5),
+                i => _logger.LogInformation("Throttled {LogCount} TryRequestAsync logs.",i));
         }
 
         void TryClearPidCache(string kind, string identity)
