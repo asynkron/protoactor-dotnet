@@ -37,7 +37,7 @@ namespace Proto.Router.Tests
 
             ActorSystem.Root.Send(router, "4");
 
-            // Round robin kicks in and routee1 recevies next message
+            // Round robin kicks in and routee1 receives next message
             Assert.Equal("4", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
             Assert.Equal("2", await ActorSystem.Root.RequestAsync<string>(routee2, "received?", _timeout));
             Assert.Equal("3", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));
@@ -51,9 +51,9 @@ namespace Proto.Router.Tests
             ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
 
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-            Assert.DoesNotContain(routee1, routees.PIDs);
-            Assert.Contains(routee2, routees.PIDs);
-            Assert.Contains(routee3, routees.PIDs);
+            Assert.DoesNotContain(routee1, routees.Pids);
+            Assert.Contains(routee2, routees.Pids);
+            Assert.Contains(routee3, routees.Pids);
         }
 
         [Fact]
@@ -64,10 +64,10 @@ namespace Proto.Router.Tests
             ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
 
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-            Assert.Contains(routee1, routees.PIDs);
-            Assert.Contains(routee2, routees.PIDs);
-            Assert.Contains(routee3, routees.PIDs);
-            Assert.Contains(routee4, routees.PIDs);
+            Assert.Contains(routee1, routees.Pids);
+            Assert.Contains(routee2, routees.Pids);
+            Assert.Contains(routee3, routees.Pids);
+            Assert.Contains(routee4, routees.Pids);
         }
 
         [Fact]

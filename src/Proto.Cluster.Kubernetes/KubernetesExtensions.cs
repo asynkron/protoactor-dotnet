@@ -44,6 +44,7 @@ namespace Proto.Cluster.Kubernetes
             return kubernetes.PatchNamespacedPodAsync(new V1Patch(patch), podName, podNamespace);
         }
 
+        
         /// <summary>
         ///     Get the pod status. The pod must be running in order to be considered as a candidate.
         /// </summary>
@@ -53,7 +54,13 @@ namespace Proto.Cluster.Kubernetes
         {
             var isCandidate = pod.Status.Phase == "Running" && pod.Status.PodIP != null;
 
-            var kinds = pod.Metadata.Labels[LabelKinds].Split(',');
+            var kinds = pod
+                .Metadata
+                .Labels
+                .Where(l => l.Key.StartsWith(LabelKind) && l.Value=="true")
+                .Select(l => l.Key.Substring(LabelKind.Length+1))
+                .ToArray();
+            
             var host = pod.Status.PodIP ?? "";
             var port = Convert.ToInt32(pod.Metadata.Labels[LabelPort]);
             var mid = pod.Metadata.Labels[LabelMemberId];

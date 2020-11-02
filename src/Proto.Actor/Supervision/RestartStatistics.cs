@@ -12,23 +12,23 @@ namespace Proto
 {
     public class RestartStatistics
     {
-        private readonly List<DateTime> _failureTimes = new List<DateTime>();
+        private readonly List<DateTimeOffset> _failureTimes = new List<DateTimeOffset>();
 
-        public RestartStatistics(int failureCount, DateTime? lastFailureTime)
+        public RestartStatistics(int failureCount, DateTimeOffset? lastFailureTime)
         {
             for (var i = 0; i < failureCount; i++)
             {
-                _failureTimes.Add(lastFailureTime ?? DateTime.Now);
+                _failureTimes.Add(lastFailureTime ?? DateTimeOffset.UtcNow);
             }
         }
 
         public int FailureCount => _failureTimes.Count;
 
-        public void Fail() => _failureTimes.Add(DateTime.Now);
+        public void Fail() => _failureTimes.Add(DateTimeOffset.UtcNow);
 
         public void Reset() => _failureTimes.Clear();
 
         public int NumberOfFailures(TimeSpan? within) =>
-            within.HasValue ? _failureTimes.Count(a => DateTime.Now - a < within) : _failureTimes.Count;
+            within.HasValue ? _failureTimes.Count(a => DateTimeOffset.UtcNow - a < within) : _failureTimes.Count;
     }
 }

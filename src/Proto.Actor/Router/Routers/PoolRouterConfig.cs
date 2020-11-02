@@ -4,26 +4,17 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Proto.Router.Routers
 {
-    internal abstract class PoolRouterConfig : RouterConfig
+    internal abstract record PoolRouterConfig(int PoolSize, Props RouteeProps) : RouterConfig
     {
-        private readonly int _poolSize;
-        private readonly Props _routeeProps;
-
-        protected PoolRouterConfig(int poolSize, Props routeeProps)
-        {
-            _poolSize = poolSize;
-            _routeeProps = routeeProps;
-        }
-
-        public override void OnStarted(IContext context, RouterState router)
-        {
-            var routees = Enumerable.Range(0, _poolSize).Select(x => context.Spawn(_routeeProps));
-            router.SetRoutees(new HashSet<PID>(routees));
-        }
+        public override void OnStarted(IContext context, RouterState router) =>
+            router.SetRoutees(Enumerable
+                .Range(0, PoolSize)
+                .Select(_ => context.Spawn(RouteeProps))
+                .ToArray());
     }
 }

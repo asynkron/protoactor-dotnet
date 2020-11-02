@@ -18,7 +18,7 @@ namespace Proto
     }
 
     [PublicAPI]
-    public class RootContext : IRootContext
+    public record RootContext : IRootContext
     {
         public RootContext(ActorSystem system)
         {
@@ -36,9 +36,9 @@ namespace Proto
             Headers = messageHeader ?? MessageHeader.Empty;
         }
 
-        private Sender? SenderMiddleware { get; set; }
+        private Sender? SenderMiddleware { get; init; }
         public ActorSystem System { get; }
-        public MessageHeader Headers { get; private set; }
+        public MessageHeader Headers { get; init; }
 
         public PID? Parent => null;
         public PID? Self => null;
@@ -119,27 +119,15 @@ namespace Proto
             return future.Task;
         }
 
-        public RootContext WithHeaders(MessageHeader headers) => Copy(c => c.Headers = headers);
+        public RootContext WithHeaders(MessageHeader headers) =>
+            this with {Headers = headers};
 
-        public RootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware)
-            => Copy(
-                c =>
-                {
-                    SenderMiddleware = middleware.Reverse()
-                        .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner));
-                }
-            );
-
-        private RootContext Copy(Action<RootContext> mutator)
-        {
-            var copy = new RootContext(System)
-            {
-                SenderMiddleware = SenderMiddleware,
-                Headers = Headers
-            };
-            mutator(copy);
-            return copy;
-        }
+        public RootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware) =>
+            this with {
+                SenderMiddleware = middleware.Reverse()
+                    .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner))
+                };
+        
 
         private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
         {

@@ -67,9 +67,9 @@ namespace Proto.Router.Tests
             ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
 
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-            Assert.DoesNotContain(routee1, routees.PIDs);
-            Assert.Contains(routee2, routees.PIDs);
-            Assert.Contains(routee3, routees.PIDs);
+            Assert.DoesNotContain(routee1, routees.Pids);
+            Assert.Contains(routee2, routees.Pids);
+            Assert.Contains(routee3, routees.Pids);
         }
 
         [Fact]
@@ -80,10 +80,10 @@ namespace Proto.Router.Tests
             ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
 
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-            Assert.Contains(routee1, routees.PIDs);
-            Assert.Contains(routee2, routees.PIDs);
-            Assert.Contains(routee3, routees.PIDs);
-            Assert.Contains(routee4, routees.PIDs);
+            Assert.Contains(routee1, routees.Pids);
+            Assert.Contains(routee2, routees.Pids);
+            Assert.Contains(routee3, routees.Pids);
+            Assert.Contains(routee4, routees.Pids);
         }
 
         [Fact]
