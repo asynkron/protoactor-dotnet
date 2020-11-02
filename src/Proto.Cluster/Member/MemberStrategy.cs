@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Proto.Cluster.Partition;
 
@@ -12,7 +13,7 @@ namespace Proto.Cluster
 {
     public interface IMemberStrategy
     {
-        List<Member> GetAllMembers();
+        ImmutableList<Member> GetAllMembers();
         void AddMember(Member member);
 
         void RemoveMember(Member member);
@@ -22,37 +23,37 @@ namespace Proto.Cluster
 
     internal class SimpleMemberStrategy : IMemberStrategy
     {
-        private readonly List<Member> _members;
+        private ImmutableList<Member> Members { get; init; }
         private readonly Rendezvous _rdv;
         private readonly RoundRobinMemberSelector _rr;
 
         public SimpleMemberStrategy()
         {
-            _members = new List<Member>();
+            Members = ImmutableList<Member>.Empty;
             _rdv = new Rendezvous();
             _rr = new RoundRobinMemberSelector(this);
         }
 
-        public List<Member> GetAllMembers() => _members;
+        public ImmutableList<Member> GetAllMembers() => Members;
 
         //TODO: account for Member.MemberId
         public void AddMember(Member member)
         {
             // Avoid adding the same member twice
-            if (_members.Any(x => x.Address == member.Address))
+            if (Members.Any(x => x.Address == member.Address))
             {
                 return;
             }
 
-            _members.Add(member);
-            _rdv.UpdateMembers(_members);
+            Members.Add(member);
+            _rdv.UpdateMembers(Members);
         }
 
         //TODO: account for Member.MemberId
         public void RemoveMember(Member member)
         {
-            _members.RemoveAll(x => x.Address == member.Address);
-            _rdv.UpdateMembers(_members);
+            Members.RemoveAll(x => x.Address == member.Address);
+            _rdv.UpdateMembers(Members);
         }
 
         public string GetActivatorAddress() => _rr.GetMemberAddress();

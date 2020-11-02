@@ -87,46 +87,46 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.TestKit.Tests", "test
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtoActorBenchmarks", "benchmarks\ProtoActorBenchmarks\ProtoActorBenchmarks.csproj", "{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProtoActorBenchmarks", "benchmarks\ProtoActorBenchmarks\ProtoActorBenchmarks.csproj", "{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailboxBenchmark", "benchmarks\MailboxBenchmark\MailboxBenchmark.csproj", "{8849DD9F-CEB4-40D5-9DC0-EC6EDCA09E65}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailboxBenchmark", "benchmarks\MailboxBenchmark\MailboxBenchmark.csproj", "{8849DD9F-CEB4-40D5-9DC0-EC6EDCA09E65}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InprocessBenchmark", "benchmarks\InprocessBenchmark\InprocessBenchmark.csproj", "{BD994BD6-9E3D-4221-9287-E8A1468759C5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InprocessBenchmark", "benchmarks\InprocessBenchmark\InprocessBenchmark.csproj", "{BD994BD6-9E3D-4221-9287-E8A1468759C5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messages", "benchmarks\RemoteBenchmark\Messages\Messages.csproj", "{64F8819D-BB7A-4591-BBE6-56B053CAF00D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Messages", "benchmarks\RemoteBenchmark\Messages\Messages.csproj", "{64F8819D-BB7A-4591-BBE6-56B053CAF00D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node1", "benchmarks\RemoteBenchmark\Node1\Node1.csproj", "{E7C8D4AC-02DA-4724-8FAA-60A6A89D132B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Node1", "benchmarks\RemoteBenchmark\Node1\Node1.csproj", "{E7C8D4AC-02DA-4724-8FAA-60A6A89D132B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node2", "benchmarks\RemoteBenchmark\Node2\Node2.csproj", "{69128F90-EE16-4964-A67F-780675833183}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Node2", "benchmarks\RemoteBenchmark\Node2\Node2.csproj", "{69128F90-EE16-4964-A67F-780675833183}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpawnBenchmark", "benchmarks\SpawnBenchmark\SpawnBenchmark.csproj", "{5C578AE6-D511-4D87-8FC1-2B92CEC92543}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpawnBenchmark", "benchmarks\SpawnBenchmark\SpawnBenchmark.csproj", "{5C578AE6-D511-4D87-8FC1-2B92CEC92543}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.TestProvider", "src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj", "{D7B5C59D-865F-4E2E-8EC3-92AF15D1D4C8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Cluster.TestProvider", "src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj", "{D7B5C59D-865F-4E2E-8EC3-92AF15D1D4C8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.Kubernetes", "src\Proto.Cluster.Kubernetes\Proto.Cluster.Kubernetes.csproj", "{BBA624ED-6244-403E-B5FD-8FF27E568B1C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Cluster.Kubernetes", "src\Proto.Cluster.Kubernetes\Proto.Cluster.Kubernetes.csproj", "{BBA624ED-6244-403E-B5FD-8FF27E568B1C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.Consul", "src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj", "{D9E84C28-FC26-4547-9F16-5BA7147B1B82}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Cluster.Consul", "src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj", "{D9E84C28-FC26-4547-9F16-5BA7147B1B82}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClusterBenchmark", "benchmarks\ClusterBenchmark\ClusterBenchmark.csproj", "{C1B69015-FC27-483E-A65A-A342DC14B7F4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClusterBenchmark", "benchmarks\ClusterBenchmark\ClusterBenchmark.csproj", "{C1B69015-FC27-483E-A65A-A342DC14B7F4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.MongoIdentityLookup", "src\Proto.Cluster.MongoIdentityLookup\Proto.Cluster.MongoIdentityLookup.csproj", "{C087B9A2-6790-484B-9C19-C23DDB025CEA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Cluster.MongoIdentityLookup", "src\Proto.Cluster.MongoIdentityLookup\Proto.Cluster.MongoIdentityLookup.csproj", "{C087B9A2-6790-484B-9C19-C23DDB025CEA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.MongoIdentityLookup.Tests", "tests\Proto.Cluster.MongoIdentityLookup.Tests\Proto.Cluster.MongoIdentityLookup.Tests.csproj", "{03206305-8B1B-45E9-92DF-B17A9F6B73AE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Cluster.MongoIdentityLookup.Tests", "tests\Proto.Cluster.MongoIdentityLookup.Tests\Proto.Cluster.MongoIdentityLookup.Tests.csproj", "{03206305-8B1B-45E9-92DF-B17A9F6B73AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeadLetterThrottling", "examples\DeadLetterThrottling\DeadLetterThrottling.csproj", "{C912F331-E740-44F7-A573-B1432C5DCF98}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeadLetterThrottling", "examples\DeadLetterThrottling\DeadLetterThrottling.csproj", "{C912F331-E740-44F7-A573-B1432C5DCF98}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DeadLetterThrottling", "DeadLetterThrottling", "{219A39CD-BC09-4F55-9A2B-67F9960A02E4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".meta", ".meta", "{222D5932-627D-406B-9FA5-B60B38FD3019}"
-ProjectSection(SolutionItems) = preProject
-	README.md = README.md
-	Terminology.md = Terminology.md
-	.gitignore = .gitignore
-	.github\workflows\pull-request.yml = .github\workflows\pull-request.yml
-	.github\workflows\build-master.yml = .github\workflows\build-master.yml
-	.github\PULL_REQUEST_TEMPLATE.md = .github\PULL_REQUEST_TEMPLATE.md
-	.github\ISSUE_TEMPLATE.md = .github\ISSUE_TEMPLATE.md
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		.github\workflows\build-master.yml = .github\workflows\build-master.yml
+		.github\ISSUE_TEMPLATE.md = .github\ISSUE_TEMPLATE.md
+		.github\workflows\pull-request.yml = .github\workflows\pull-request.yml
+		.github\PULL_REQUEST_TEMPLATE.md = .github\PULL_REQUEST_TEMPLATE.md
+		README.md = README.md
+		Terminology.md = Terminology.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -451,7 +451,15 @@ Global
 		{705ECE07-2768-419D-BAB2-9DE6D5242153}.Release|x86.Build.0 = Release|Any CPU
 		{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF}.Debug|x64.Build.0 = Debug|Any CPU
+		{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF}.Debug|x86.Build.0 = Debug|Any CPU
+		{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF}.Release|x64.ActiveCfg = Release|Any CPU
+		{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF}.Release|x86.ActiveCfg = Release|Any CPU
+		{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF}.Release|x86.Build.0 = Release|Any CPU
 		{8849DD9F-CEB4-40D5-9DC0-EC6EDCA09E65}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8849DD9F-CEB4-40D5-9DC0-EC6EDCA09E65}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8849DD9F-CEB4-40D5-9DC0-EC6EDCA09E65}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -613,6 +621,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{92EB7B8A-7DCC-426A-9386-F58C167D82C3} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
 		{7D13CCDD-6B93-45B8-BA88-761744601726} = {771514F1-12AE-4A26-89CB-2646D3EF7034}
 		{DF1B4E58-8B85-49F0-A75B-5DC231D0FB8F} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
 		{AFF0BC22-B7E5-43C2-AB4F-5BBBF688C3F3} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
@@ -652,7 +661,6 @@ Global
 		{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
 		{8849DD9F-CEB4-40D5-9DC0-EC6EDCA09E65} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
 		{BD994BD6-9E3D-4221-9287-E8A1468759C5} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
-		{92EB7B8A-7DCC-426A-9386-F58C167D82C3} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
 		{64F8819D-BB7A-4591-BBE6-56B053CAF00D} = {92EB7B8A-7DCC-426A-9386-F58C167D82C3}
 		{E7C8D4AC-02DA-4724-8FAA-60A6A89D132B} = {92EB7B8A-7DCC-426A-9386-F58C167D82C3}
 		{69128F90-EE16-4964-A67F-780675833183} = {92EB7B8A-7DCC-426A-9386-F58C167D82C3}
@@ -663,8 +671,8 @@ Global
 		{C1B69015-FC27-483E-A65A-A342DC14B7F4} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
 		{C087B9A2-6790-484B-9C19-C23DDB025CEA} = {771514F1-12AE-4A26-89CB-2646D3EF7034}
 		{03206305-8B1B-45E9-92DF-B17A9F6B73AE} = {9AA2BCF0-19AB-4DD9-8D91-7D188E463806}
-		{219A39CD-BC09-4F55-9A2B-67F9960A02E4} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
 		{C912F331-E740-44F7-A573-B1432C5DCF98} = {219A39CD-BC09-4F55-9A2B-67F9960A02E4}
+		{219A39CD-BC09-4F55-9A2B-67F9960A02E4} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD0D1E44-8118-4682-8793-6B20ABFA824C}
