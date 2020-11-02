@@ -87,7 +87,7 @@
             public LocalAffinityClusterFixture() : base(3,
                 config =>
                 {
-                    config.WithMemberStrategyBuilder((cluster, kind) => new LocalAffinityStrategy(cluster, 1100));
+                    return config.WithMemberStrategyBuilder((cluster, kind) => new LocalAffinityStrategy(cluster, 1100));
                 }
             )
             {

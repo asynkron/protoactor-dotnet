@@ -23,16 +23,16 @@
         public ImmutableList<Cluster> Members { get; private set; }
 
         private readonly int _clusterSize;
-        private readonly Action<ClusterConfig> _configure;
+        private readonly Func<ClusterConfig,ClusterConfig> _configure;
 
-        protected ClusterFixture(int clusterSize, Action<ClusterConfig> configure = null)
+        protected ClusterFixture(int clusterSize, Func<ClusterConfig,ClusterConfig> configure = null)
         {
             _clusterSize = clusterSize;
             _configure = configure;
         }
 
 
-        private async Task<ImmutableList<Cluster>> SpawnClusterNodes(int count, Action<ClusterConfig> configure = null)
+        private async Task<ImmutableList<Cluster>> SpawnClusterNodes(int count, Func<ClusterConfig,ClusterConfig> configure = null)
         {
             var clusterName = $"test-cluster-{count}";
             return (await Task.WhenAll(
@@ -41,7 +41,7 @@
             )).ToImmutableList();
         }
 
-        protected virtual async Task<Cluster> SpawnClusterMember(Action<ClusterConfig> configure, string clusterName)
+        protected virtual async Task<Cluster> SpawnClusterMember(Func<ClusterConfig,ClusterConfig> configure, string clusterName)
         {
             var config = ClusterConfig.Setup(
                 clusterName,
@@ -52,7 +52,7 @@
                     .WithProtoMessages(MessagesReflection.Descriptor)
             ).WithClusterKinds(ClusterKinds);
 
-            configure?.Invoke(config);
+            config = configure?.Invoke(config) ?? config;
 
             var cluster = new Cluster(new ActorSystem(), config);
 
@@ -83,7 +83,7 @@
         private readonly Lazy<InMemAgent> _inMemAgent = new Lazy<InMemAgent>(() => new InMemAgent());
         private InMemAgent InMemAgent => _inMemAgent.Value;
 
-        protected BaseInMemoryClusterFixture(int clusterSize, Action<ClusterConfig> configure = null) : base(
+        protected BaseInMemoryClusterFixture(int clusterSize, Func<ClusterConfig,ClusterConfig> configure = null) : base(
             clusterSize, configure
         )
         {
