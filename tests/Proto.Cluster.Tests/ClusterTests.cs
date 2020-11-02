@@ -104,14 +104,10 @@
 
             var ids = GetActorIds(actorCount).ToList();
 
-            await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout))
-            );
+            await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout)));
             await Task.WhenAll(ids.Select(id =>
-                    entryNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout)
-                )
-            );
-            await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout))
-            );
+                    entryNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout)));
+            await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout)));
             timer.Stop();
             _testOutputHelper.WriteLine(
                 $"Spawned, killed and spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}"
@@ -159,12 +155,12 @@
             }
         }
 
-        private static async Task PingPong(Cluster cluster, string id, CancellationToken token = default)
+        private static async Task PingPong(Cluster cluster, string id, CancellationToken token = default, string kind = EchoActor.Kind)
         {
             await Task.Yield();
             var response = await cluster.Ping(id, id, token);
             response.Should().NotBeNull("We expect a response before timeout");
-            response.Message.Should().Be($"{id}:{id}", "Echo should come from the correct virtual actor");
+            response.Message.Should().Be($"{kind}/{id}:{id}", "Echo should come from the correct virtual actor");
         }
     }
 

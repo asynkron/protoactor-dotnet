@@ -14,6 +14,7 @@ namespace Proto.Cluster.Tests
         private static readonly ILogger Logger = Log.CreateLogger<EchoActor>();
 
         private string _identity;
+        private string _initKind;
 
         public Task ReceiveAsync(IContext context)
         {
@@ -24,10 +25,11 @@ namespace Proto.Cluster.Tests
                     break;
                 case ClusterInit init:
                     _identity = init.Identity;
+                    _initKind = init.Kind;
                     break;
                 case Ping ping:
                     Logger.LogDebug("Received Ping, replying Pong");
-                    context.Respond(new Pong {Message = $"{_identity}:{ping.Message}"});
+                    context.Respond(new Pong {Message = $"{_initKind}/{_identity}:{ping.Message}"});
                     break;
                 case WhereAreYou _:
                     Logger.LogDebug("Responding to location request");
