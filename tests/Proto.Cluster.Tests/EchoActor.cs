@@ -8,6 +8,7 @@ namespace Proto.Cluster.Tests
     public class EchoActor : IActor
     {
         public const string Kind = "echo";
+        public const string Kind2 = "echo2";
 
         public static readonly Props Props = Props.FromProducer(() => new EchoActor());
         private static readonly ILogger Logger = Log.CreateLogger<EchoActor>();

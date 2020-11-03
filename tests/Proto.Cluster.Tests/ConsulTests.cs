@@ -2,7 +2,7 @@
 {
     using Consul;
 
-    // ReSharper disable once ClassNeverInstantiated.Global
+    // ReSharper disable once UnusedType.Global
     public class ConsulClusterFixture : ClusterFixture
     {
         public ConsulClusterFixture() : base(3)

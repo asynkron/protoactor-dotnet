@@ -34,7 +34,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             {
                 if (context.Message is GetPid msg)
                 {
-                    if (_cluster.PidCache.TryGet(msg.Kind, msg.Identity, out var existing))
+                    if (_cluster.PidCache.TryGet(msg.ClusterIdentity, out var existing))
                     {
                         context.Respond(new PidResult
                             {
@@ -44,7 +44,7 @@ namespace Proto.Cluster.MongoIdentityLookup
                         return;
                     }
 
-                    var pid = await GetWithGlobalLock(msg.Key, msg.Identity, msg.Kind, CancellationToken.None);
+                    var pid = await GetWithGlobalLock(msg.Key, msg.ClusterIdentity, CancellationToken.None);
                     context.Respond(new PidResult
                         {
                             Pid = pid
@@ -59,39 +59,39 @@ namespace Proto.Cluster.MongoIdentityLookup
             }
         }
 
-        private async Task<PID> GetWithGlobalLock(string key, string identity, string kind, CancellationToken ct)
+        private async Task<PID> GetWithGlobalLock(string key, ClusterIdentity clusterIdentity, CancellationToken ct)
         {
-            var existingPid = await TryGetExistingActivationAsync(key, identity, kind, ct);
+            var existingPid = await TryGetExistingActivationAsync(key, clusterIdentity, ct);
             //we got an existing activation, use this
             if (existingPid != null) return existingPid;
 
             //are there any members that can spawn this kind?
             //if not, just bail out
-            var activator = _memberList.GetActivator(kind, _cluster.System.Address);
+            var activator = _memberList.GetActivator(clusterIdentity.Kind, _cluster.System.Address);
             if (activator == null) return null;
 
             //try to acquire global lock for this key
             var requestId = Guid.NewGuid().ToString();
-            var weOwnTheLock = await TryAcquireLockAsync(key, identity, kind, requestId);
+            var weOwnTheLock = await TryAcquireLockAsync(key, clusterIdentity, requestId);
 
             
             //we didn't get the lock, spin read for x times before giving up
-            if (!weOwnTheLock) return await SpinWaitOnLockAsync(key, identity, kind, ct);
+            if (!weOwnTheLock) return await SpinWaitOnLockAsync(key, clusterIdentity, ct);
             
             //we have the lock, spawn and return
-            var pid = await SpawnActivationAsync(key, identity, kind, activator, requestId, ct);
+            var pid = await SpawnActivationAsync(key, clusterIdentity, activator, requestId, ct);
 
             return pid;
         }
 
-        private async Task<bool> TryAcquireLockAsync(string key, string identity, string kind, string requestId)
+        private async Task<bool> TryAcquireLockAsync(string key, ClusterIdentity clusterIdentity, string requestId)
         {
             var lockEntity = new PidLookupEntity
             {
                 Address = null,
-                Identity = identity,
+                Identity = clusterIdentity.Identity,
                 Key = key,
-                Kind = kind,
+                Kind = clusterIdentity.Kind,
                 LockedBy = requestId,
                 Revision = 1,
                 MemberId = null
@@ -118,17 +118,16 @@ namespace Proto.Cluster.MongoIdentityLookup
             }
         }
 
-        private async Task<PID> SpawnActivationAsync(string key, string identity, string kind, Member activator,
+        private async Task<PID> SpawnActivationAsync(string key, ClusterIdentity clusterIdentity, Member activator,
             string requestId, CancellationToken ct)
         {
             //we own the lock
-            _logger.LogDebug("Storing placement lookup for {Identity} {Kind}", identity, kind);
+            _logger.LogDebug("Storing placement lookup for {Identity} {Kind}", clusterIdentity.Identity, clusterIdentity.Kind);
 
             var remotePid = _lookup.RemotePlacementActor(activator.Address);
             var req = new ActivationRequest
             {
-                Kind = kind,
-                Identity = identity
+                ClusterIdentity = clusterIdentity
             };
 
             try
@@ -158,7 +157,7 @@ namespace Proto.Cluster.MongoIdentityLookup
                 }
 
                 //update cache
-                _cluster.PidCache.TryAdd(kind, identity, resp.Pid);
+                _cluster.PidCache.TryAdd(clusterIdentity, resp.Pid);
                 return resp.Pid;
             }
             //TODO: decide if we throw or return null
@@ -177,7 +176,7 @@ namespace Proto.Cluster.MongoIdentityLookup
         }
 
 
-        private async Task<PID> SpinWaitOnLockAsync(string key, string identity, string kind, CancellationToken ct)
+        private async Task<PID> SpinWaitOnLockAsync(string key, ClusterIdentity clusterIdentity, CancellationToken ct)
         {
             var pidLookupEntity = await LookupKey(key, ct);
             var lockId = pidLookupEntity?.LockedBy;
@@ -195,7 +194,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             if (pidLookupEntity == null) return null;
             
             //lookup was unlocked, return this pid
-            if (pidLookupEntity.LockedBy == null) return await ValidateAndMapToPid(identity, kind, pidLookupEntity);
+            if (pidLookupEntity.LockedBy == null) return await ValidateAndMapToPid(clusterIdentity, pidLookupEntity);
             
             //Still locked but not by the same request that originally locked it, so not stale
             if (pidLookupEntity.LockedBy != lockId) return null;
@@ -206,15 +205,15 @@ namespace Proto.Cluster.MongoIdentityLookup
             return null;
         }
 
-        private async Task<PID> TryGetExistingActivationAsync(string key, string identity, string kind,
+        private async Task<PID> TryGetExistingActivationAsync(string key, ClusterIdentity clusterIdentity,
             CancellationToken ct)
         {
             var pidLookup = await LookupKey(key, ct);
             if (pidLookup == null) return null;
-            return await ValidateAndMapToPid(identity, kind, pidLookup);
+            return await ValidateAndMapToPid(clusterIdentity, pidLookup);
         }
 
-        private async Task<PID> ValidateAndMapToPid(string identity, string kind, PidLookupEntity pidLookup)
+        private async Task<PID> ValidateAndMapToPid(ClusterIdentity clusterIdentity, PidLookupEntity pidLookup)
         {
             var isLocked = pidLookup.LockedBy != null;
             if (isLocked) return null;
@@ -226,8 +225,8 @@ namespace Proto.Cluster.MongoIdentityLookup
                 {
                     _logger.LogWarning(
                         "Found placement lookup for {Identity} {Kind}, but Member {MemberId} is not part of cluster, dropping stale entries",
-                        identity,
-                        kind, pidLookup.MemberId
+                        clusterIdentity.Identity,
+                        clusterIdentity.Kind, pidLookup.MemberId
                     );
                 }
                 

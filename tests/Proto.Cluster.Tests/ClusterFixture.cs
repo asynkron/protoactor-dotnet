@@ -61,7 +61,11 @@
 
         protected virtual IIdentityLookup GetIdentityLookup(string clusterName) => new PartitionIdentityLookup();
 
-        protected virtual (string, Props)[] ClusterKinds => new[] {(EchoActor.Kind, EchoActor.Props)};
+        protected virtual (string, Props)[] ClusterKinds => new[]
+        {
+            (EchoActor.Kind, EchoActor.Props),
+            (EchoActor.Kind2, EchoActor.Props),
+        };
 
 
         public async Task InitializeAsync()

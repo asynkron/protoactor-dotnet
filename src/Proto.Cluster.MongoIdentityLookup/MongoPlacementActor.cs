@@ -20,8 +20,7 @@ namespace Proto.Cluster.MongoIdentityLookup
         //pid -> the actor that we have created here
         //kind -> the actor kind
         //eventId -> the cluster wide eventId when this actor was created
-        private readonly Dictionary<string, (PID pid, string kind)> _myActors =
-            new Dictionary<string, (PID pid, string kind)>();
+        private readonly Dictionary<ClusterIdentity, PID> _myActors = new Dictionary<ClusterIdentity, PID>();
 
         private readonly Remote.Remote _remote;
         private readonly MongoIdentityLookup _mongoIdentityLookup;
@@ -63,8 +62,8 @@ namespace Proto.Cluster.MongoIdentityLookup
         private async Task Terminated(IContext context, Terminated msg)
         {
             //TODO: if this turns out to be perf intensive, lets look at optimizations for reverse lookups
-            var (identity, _) = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(msg.Who));
-            _myActors.Remove(identity);
+            var (clusterIdentity, _) = _myActors.FirstOrDefault(kvp => kvp.Value.Equals(msg.Who));
+            _myActors.Remove(clusterIdentity);
             await _mongoIdentityLookup.RemoveUniqueIdentityAsync(msg.Who.Id);
         }
 
@@ -75,14 +74,12 @@ namespace Proto.Cluster.MongoIdentityLookup
             var kind = msg.Kind;
             try
             {
-                if (_myActors.TryGetValue(identity, out var existing))
+                if (_myActors.TryGetValue(msg.ClusterIdentity, out var existing))
                 {
-                    //TODO: should we use identity+kind as key?
-
                     //this identity already exists
                     var response = new ActivationResponse
                     {
-                        Pid = existing.pid
+                        Pid = existing
                     };
                     context.Respond(response);
                 }
@@ -94,10 +91,10 @@ namespace Proto.Cluster.MongoIdentityLookup
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
 
-                    var clusterProps = props.WithClusterInit(_cluster, identity, kind);
+                    var clusterProps = props.WithClusterInit(_cluster, msg.ClusterIdentity);
                     var pid = context.SpawnPrefix(clusterProps , identity);
 
-                    _myActors[identity] = (pid, kind);
+                    _myActors[msg.ClusterIdentity] = pid;
 
                     var response = new ActivationResponse
                     {

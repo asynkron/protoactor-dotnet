@@ -30,15 +30,17 @@ namespace Proto.Cluster.MongoIdentityLookup
             Pids = db.GetCollection<PidLookupEntity>("pids");
         }
 
-        public async Task<PID> GetAsync(string identity, string kind, CancellationToken ct)
+        public Task<PID> GetAsync(string identity, string kind, CancellationToken ct)
+            => GetAsync(new ClusterIdentity {Identity = identity, Kind = kind}, ct);
+
+        public async Task<PID> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
         {
-            var key = $"{_clusterName}-{kind}-{identity}";
+            var key = $"{_clusterName}-{clusterIdentity.Kind}-{clusterIdentity.Identity}";
 
             var msg = new GetPid
             {
                 Key = key,
-                Identity = identity,
-                Kind = kind,
+                ClusterIdentity = clusterIdentity,
                 CancellationToken = ct
             };
 
@@ -53,7 +55,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             MemberList = cluster.MemberList;
             _logger = Log.CreateLogger("MongoIdentityLookup-" + cluster.LoggerId);
             _isClient = isClient;
-            
+
             var workerProps = Props.FromProducer(() => new MongoIdentityWorker(this));
             //TODO: should pool size be configurable?
 
@@ -72,7 +74,7 @@ namespace Proto.Cluster.MongoIdentityLookup
             );
 
             if (isClient) return Task.CompletedTask;
-            var props = Props.FromProducer(() => new MongoPlacementActor(Cluster,this));
+            var props = Props.FromProducer(() => new MongoPlacementActor(Cluster, this));
             _placementActor = _system.Root.SpawnNamed(props, MongoPlacementActorName);
 
             return Task.CompletedTask;

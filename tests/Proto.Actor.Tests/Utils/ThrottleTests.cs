@@ -13,7 +13,7 @@
         [Fact]
         public void ThrottlesEfficiently()
         {
-            var maxEvents = 2;
+            const int maxEvents = 2;
             var triggered = 0;
             var shouldThrottle = Throttle.Create(maxEvents, TimeSpan.FromSeconds(1));
             var timer = Stopwatch.StartNew();
@@ -34,7 +34,7 @@
         [Fact]
         public async Task OpensAfterTimespan()
         {
-            var maxEvents = 2;
+            const int maxEvents = 2;
             var triggered = 0;
             var shouldThrottle = Throttle.Create(maxEvents, TimeSpan.FromMilliseconds(5));
             for (int i = 0; i < 100; i++)
@@ -63,13 +63,13 @@
         [Fact]
         public async Task GivesCorrectValveStatus()
         {
-            var maxEvents = 2;
+            const int maxEvents = 2;
             var shouldThrottle = Throttle.Create(maxEvents, TimeSpan.FromMilliseconds(1));
 
             shouldThrottle().Should().Be(Throttle.Valve.Open, "It accepts multiple event before closing");
             shouldThrottle().Should().Be(Throttle.Valve.Closing, "Last event before close");
             shouldThrottle().Should().Be(Throttle.Valve.Closed, "Anything over the limit is throttled");
-            await Task.Delay(3);
+            await Task.Delay(10);
             shouldThrottle().Should().Be(Throttle.Valve.Open, "After the period it should open again");
         }
     }
