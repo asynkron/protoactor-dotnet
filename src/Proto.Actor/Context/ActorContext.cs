@@ -26,8 +26,9 @@ namespace Proto.Context
         private object? _messageOrEnvelope;
         private ContextState _state;
 
-        public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self) => new ActorContext(system,props,parent,self);
-        
+        public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self) =>
+            new ActorContext(system, props, parent, self);
+
         public ActorContext(ActorSystem system, Props props, PID? parent, PID self)
         {
             System = system;
@@ -71,12 +72,12 @@ namespace Proto.Context
         {
             if (Sender != null)
             {
-                Logger.LogDebug("{Self} Responding to {Sender} with message {Message}",Self, Sender,message);
+                Logger.LogDebug("{Self} Responding to {Sender} with message {Message}", Self, Sender, message);
                 Send(Sender, message);
             }
             else
             {
-                Logger.LogWarning("{Self} Tried to respond but sender is null, with message {Message}",Self, message);
+                Logger.LogWarning("{Self} Tried to respond but sender is null, with message {Message}", Self, message);
             }
         }
 
@@ -185,13 +186,13 @@ namespace Proto.Context
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => RequestAsync(target, message, new FutureProcess<T>(System, timeout));
+            => RequestAsync<T>(target, message, new FutureProcess(System, timeout));
 
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => RequestAsync(target, message, new FutureProcess<T>(System, cancellationToken));
+            => RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
 
         public Task<T> RequestAsync<T>(PID target, object message) =>
-            RequestAsync(target, message, new FutureProcess<T>(System));
+            RequestAsync<T>(target, message, new FutureProcess(System));
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
@@ -203,7 +204,7 @@ namespace Proto.Context
                     await target;
                     Self.SendSystemMessage(System, cont);
                 }
-            ,CancellationToken.None);
+                , CancellationToken.None);
         }
 
         public void ReenterAfter(Task target, Action action)
@@ -235,7 +236,7 @@ namespace Proto.Context
 
         public Task StopAsync(PID pid)
         {
-            var future = new FutureProcess<object>(System);
+            var future = new FutureProcess(System);
 
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
@@ -243,11 +244,11 @@ namespace Proto.Context
             return future.Task;
         }
 
-        public void Poison(PID pid) => pid.SendUserMessage(System, new PoisonPill());
+        public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
 
         public Task PoisonAsync(PID pid)
         {
-            var future = new FutureProcess<object>(System);
+            var future = new FutureProcess(System);
 
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Poison(pid);
@@ -276,17 +277,17 @@ namespace Proto.Context
             {
                 return msg switch
                 {
-                    Started s         => InvokeUserMessageAsync(s),
-                    Stop _            => InitiateStopAsync(),
-                    Terminated t      => HandleTerminatedAsync(t),
-                    Watch w           => HandleWatch(w),
-                    Unwatch uw        => HandleUnwatch(uw),
-                    Failure f         => HandleFailure(f),
-                    Restart _         => HandleRestartAsync(),
-                    SuspendMailbox _  => Task.CompletedTask,
-                    ResumeMailbox _   => Task.CompletedTask,
+                    Started s => InvokeUserMessageAsync(s),
+                    Stop _ => InitiateStopAsync(),
+                    Terminated t => HandleTerminatedAsync(t),
+                    Watch w => HandleWatch(w),
+                    Unwatch uw => HandleUnwatch(uw),
+                    Failure f => HandleFailure(f),
+                    Restart _ => HandleRestartAsync(),
+                    SuspendMailbox _ => Task.CompletedTask,
+                    ResumeMailbox _ => Task.CompletedTask,
                     Continuation cont => HandleContinuation(cont),
-                    _                 => HandleUnknownSystemMessage(msg)
+                    _ => HandleUnknownSystemMessage(msg)
                 };
             }
             catch (Exception x)
@@ -398,11 +399,23 @@ namespace Proto.Context
             return DefaultReceive();
         }
 
-        private Task<T> RequestAsync<T>(PID target, object message, FutureProcess<T> future)
+        private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)
         {
             var messageEnvelope = new MessageEnvelope(message, future.Pid);
             SendUserMessage(target, messageEnvelope);
-            return future.Task;
+            var result = await future.Task;
+            switch (result)
+            {
+                case DeadLetterResponse _:
+                    throw new DeadLetterException(target);
+                case null:
+                case T _:
+                    return (T) result!;
+                default:
+                    throw new InvalidOperationException(
+                        $"Unexpected message. Was type {result?.GetType()} but expected {typeof(T)}"
+                    );
+            }
         }
 
         private void SendUserMessage(PID target, object message)
@@ -524,8 +537,8 @@ namespace Proto.Context
             return _state switch
             {
                 ContextState.Restarting => RestartAsync(),
-                ContextState.Stopping   => FinalizeStopAsync(),
-                _                       => Task.CompletedTask
+                ContextState.Stopping => FinalizeStopAsync(),
+                _ => Task.CompletedTask
             };
         }
 

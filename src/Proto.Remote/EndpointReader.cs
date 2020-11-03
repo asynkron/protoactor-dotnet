@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -86,19 +87,27 @@ namespace Proto.Remote
                     {
                         var target = targets[envelope.Target];
                         var typeName = typeNames[envelope.TypeId];
-                        var message = _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
-
-                        switch (message)
+                        try
                         {
-                            case Terminated msg:
-                                Terminated(msg, target);
-                                break;
-                            case SystemMessage sys:
-                                SystemMessage(sys, target);
-                                break;
-                            default:
-                                ReceiveMessages(envelope, message, target);
-                                break;
+                            var message =
+                                _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
+
+                            switch (message)
+                            {
+                                case Terminated msg:
+                                    Terminated(msg, target);
+                                    break;
+                                case SystemMessage sys:
+                                    SystemMessage(sys, target);
+                                    break;
+                                default:
+                                    ReceiveMessages(envelope, message, target);
+                                    break;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.LogError(e, "Failed to receive {Type} from {Remote}", typeName, context.Peer);
                         }
                     }
 

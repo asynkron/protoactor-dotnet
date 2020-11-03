@@ -232,7 +232,7 @@ namespace Proto.Cluster.Partition
             }
 
             //Get activator
-            var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind)?.Address;
+            var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
 
             //just make the code analyzer understand the address is not null after this block
             if (activatorAddress == null || string.IsNullOrEmpty(activatorAddress))
@@ -313,10 +313,11 @@ namespace Proto.Cluster.Partition
             }
 
             var self = context.Self!;
+            var sender = context.Sender;
             _ = Task.Run(async () =>
                 {
                     await Task.Delay(100);
-                    _cluster.System.Root.Request(self, msg, context.Sender);
+                    _cluster.System.Root.Request(self, msg, sender);
                 }
             );
 

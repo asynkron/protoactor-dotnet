@@ -61,7 +61,7 @@ namespace Proto.Cluster
 
         public bool IsLeader => _cluster.Id.Equals(_leader?.MemberId);
 
-        public Member? GetActivator(string kind)
+        public Member? GetActivator(string kind, string requestSourceAddress)
         {
             //TODO: clean this lock logic up
             var locked = _rwLock.TryEnterReadLock(1000);
@@ -76,7 +76,7 @@ namespace Proto.Cluster
             {
                 if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
                 {
-                    return memberStrategy.GetActivator();
+                    return memberStrategy.GetActivator(requestSourceAddress);
                 }
                 else
                 {
@@ -251,7 +251,7 @@ namespace Proto.Cluster
             {
                 if (!_memberStrategyByKind.ContainsKey(kind))
                 {
-                    _memberStrategyByKind[kind] = _cluster.Config!.MemberStrategyBuilder(kind);
+                    _memberStrategyByKind[kind] = _cluster.Config!.MemberStrategyBuilder(_cluster,kind) ?? new SimpleMemberStrategy();
                 }
 
                 //TODO: this doesnt work, just use the same strategy for all kinds...

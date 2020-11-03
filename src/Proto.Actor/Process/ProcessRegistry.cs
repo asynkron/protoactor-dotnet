@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 //   <copyright file="ProcessRegistry.cs" company="Asynkron AB">
 //       Copyright (C) 2015-2020 Asynkron AB All rights reserved
 //   </copyright>
@@ -58,5 +58,7 @@ namespace Proto
             var counter = Interlocked.Increment(ref _sequenceId);
             return "$" + counter;
         }
+
+        public int ProcessCount => _localProcesses.Count;
     }
 }

@@ -67,7 +67,7 @@ namespace Proto.Cluster.MongoIdentityLookup
 
             //are there any members that can spawn this kind?
             //if not, just bail out
-            var activator = _memberList.GetActivator(kind);
+            var activator = _memberList.GetActivator(kind, _cluster.System.Address);
             if (activator == null) return null;
 
             //try to acquire global lock for this key

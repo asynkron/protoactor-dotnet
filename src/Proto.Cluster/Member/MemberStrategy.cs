@@ -17,7 +17,7 @@ namespace Proto.Cluster
 
         void RemoveMember(Member member);
 
-        Member? GetActivator();
+        Member? GetActivator(string senderAddress);
     }
 
     internal class SimpleMemberStrategy : IMemberStrategy
@@ -56,6 +56,6 @@ namespace Proto.Cluster
         }
 
         public string GetActivatorAddress() => _rr.GetMemberAddress();
-        public Member? GetActivator() => _rr.GetMember();
+        public Member? GetActivator(string senderAddress) => _rr.GetMember();
     }
 }
