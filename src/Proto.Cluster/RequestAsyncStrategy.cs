@@ -9,7 +9,9 @@ namespace Proto.Cluster
 
     public interface IClusterContext
     {
-        Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct);
+        // default Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) => 
+
+        Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, CancellationToken ct);
     }
 
     public class DefaultClusterContext : IClusterContext
@@ -30,31 +32,31 @@ namespace Proto.Cluster
             _requestLogThrottle = Throttle.Create(
                 10,
                 TimeSpan.FromSeconds(5),
-                i => _logger.LogInformation("Throttled {LogCount} TryRequestAsync logs.",i));
-        }
-
-        void TryClearPidCache(string kind, string identity)
-        {
-            _logger.LogDebug(
-                _pidCache.TryRemove(kind, identity)
-                    ? "Removed {Kind}-{Identity} from PidCache"
-                    : "Failed to remove {Kind}-{Identity} from PidCache", kind, identity
+                i => _logger.LogInformation("Throttled {LogCount} TryRequestAsync logs.", i)
             );
         }
 
-        public async Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct)
+        void TryClearPidCache(ClusterIdentity clusterIdentity)
         {
-            _logger.LogDebug("Requesting {Identity}-{Kind} Message {Message}", identity, kind, message);
+            _logger.LogDebug(
+                _pidCache.TryRemove(clusterIdentity)
+                    ? "Removed {Kind}-{Identity} from PidCache"
+                    : "Failed to remove {Kind}-{Identity} from PidCache", clusterIdentity.Kind, clusterIdentity.Identity
+            );
+        }
+
+        public async Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, CancellationToken ct)
+        {
+            _logger.LogDebug("Requesting {Identity}-{Kind} Message {Message}", clusterIdentity, message);
             var i = 0;
             while (!ct.IsCancellationRequested)
             {
-                if (_pidCache.TryGet(kind, identity, out var cachedPid))
+                if (_pidCache.TryGet(clusterIdentity, out var cachedPid))
                 {
                     _logger.LogDebug("Requesting {Identity}-{Kind} Message {Message} - Got PID {Pid} from PidCache",
-                        identity,
-                        kind, message, cachedPid
+                        clusterIdentity.Identity, clusterIdentity.Kind, message, cachedPid
                     );
-                    var (status, res) = await TryRequestAsync<T>(identity, kind, message, cachedPid, "PidCache");
+                    var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, cachedPid, "PidCache");
                     if (status == ResponseStatus.Ok) return res;
                 }
 
@@ -64,26 +66,26 @@ namespace Proto.Cluster
                 //try get a pid from id lookup
                 try
                 {
-                    var pid = await _identityLookup.GetAsync(identity, kind, ct);
+                    var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
                     if (pid == null)
                     {
                         _logger.LogDebug(
                             "Requesting {Identity}-{Kind} Message {Message} - Did not get PID from IdentityLookup",
-                            identity, kind, message
+                            clusterIdentity.Identity, clusterIdentity.Kind, message
                         );
                         await Task.Delay(delay, CancellationToken.None);
                         continue;
                     }
 
                     //got one, update cache
-                    _pidCache.TryAdd(kind, identity, pid);
+                    _pidCache.TryAdd(clusterIdentity, pid);
 
                     _logger.LogDebug(
                         "Requesting {Identity}-{Kind} Message {Message} - Got PID {PID} from IdentityLookup",
-                        identity, kind, message, pid
+                        clusterIdentity.Identity, clusterIdentity.Kind, message, pid
                     );
 
-                    var (status, res) = await TryRequestAsync<T>(identity, kind, message, pid, "IIdentityLookup");
+                    var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, pid, "IIdentityLookup");
                     switch (status)
                     {
                         case ResponseStatus.Ok:
@@ -107,7 +109,8 @@ namespace Proto.Cluster
             return default!;
         }
 
-        private async Task<(ResponseStatus ok, T res)> TryRequestAsync<T>(string identity, string kind, object message,
+        private async Task<(ResponseStatus ok, T res)> TryRequestAsync<T>(ClusterIdentity clusterIdentity,
+            object message,
             PID cachedPid, string source)
         {
             try
@@ -125,7 +128,8 @@ namespace Proto.Cluster
                 {
                     _logger.LogInformation("TryRequestAsync failed, dead PID from {Source}", source);
                 }
-                _pidCache.RemoveByVal(kind, identity, cachedPid);
+
+                _pidCache.RemoveByVal(clusterIdentity, cachedPid);
                 return (ResponseStatus.DeadLetter, default)!;
             }
             catch (TimeoutException)
@@ -140,7 +144,7 @@ namespace Proto.Cluster
                 _logger.LogWarning(x, "TryRequestAsync failed with exception, PID from {Source}", source);
             }
 
-            _pidCache.RemoveByVal(kind, identity, cachedPid);
+            _pidCache.RemoveByVal(clusterIdentity, cachedPid);
 
             return (ResponseStatus.TimedOutOrException, default)!;
         }

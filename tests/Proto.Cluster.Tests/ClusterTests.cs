@@ -22,7 +22,7 @@
         [Fact]
         public async Task ReSpawnsClusterActorsFromDifferentNodes()
         {
-            var timeout = new CancellationTokenSource(5000).Token;
+            var timeout = new CancellationTokenSource(50000).Token;
             var id = CreateIdentity("1");
             await PingPong(Members[0], id, timeout);
             await PingPong(Members[1], id, timeout);
@@ -77,6 +77,26 @@
         }
 
         [Theory]
+        [InlineData(1, 4000)]
+        public async Task CanSpawnMultipleKindsWithSameIdentityConcurrently(int actorCount, int timeoutMs)
+        {
+            var timeout = new CancellationTokenSource(timeoutMs).Token;
+
+            var entryNode = Members.First();
+
+            var timer = Stopwatch.StartNew();
+            var actorIds = GetActorIds(actorCount);
+            await Task.WhenAll(actorIds.Select(id => Task.WhenAll(
+                        PingPong(entryNode, id, timeout, EchoActor.Kind),
+                        PingPong(entryNode, id, timeout, EchoActor.Kind2)
+                    )
+                )
+            );
+            timer.Stop();
+            _testOutputHelper.WriteLine($"Spawned {actorCount * 2} actors across {Members.Count} nodes in {timer.Elapsed}");
+        }
+
+        [Theory]
         [InlineData(1000, 4000)]
         public async Task CanSpawnVirtualActorsConcurrentlyOnAllNodes(int actorCount, int timeoutMs)
         {
@@ -105,7 +125,9 @@
 
             await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout)));
             await Task.WhenAll(ids.Select(id =>
-                    entryNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout)));
+                    entryNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout)
+                )
+            );
             await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout)));
             timer.Stop();
             _testOutputHelper.WriteLine(
@@ -154,31 +176,31 @@
             }
         }
 
-        private static async Task PingPong(Cluster cluster, string id, CancellationToken token = default, string kind = EchoActor.Kind)
+        private static async Task PingPong(Cluster cluster, string id, CancellationToken token = default,
+            string kind = EchoActor.Kind)
         {
             await Task.Yield();
-            var response = await cluster.Ping(id, id, token);
+            var response = await cluster.Ping(id, id, token, kind);
             response.Should().NotBeNull("We expect a response before timeout");
-            
+
             response.Should().BeEquivalentTo(new Pong
-            {
-                Identity = id,
-                Kind = kind,
-                Message = id
-            }, "Echo should come from the correct virtual actor");
+                {
+                    Identity = id,
+                    Kind = kind,
+                    Message = id
+                }, "Echo should come from the correct virtual actor"
+            );
         }
     }
 
-    // ReSharper disable once UnusedType.Global
-    public class InMemoryClusterTests : ClusterTests, IClassFixture<InMemoryClusterFixture>
-    {
-        // ReSharper disable once SuggestBaseTypeForParameter
-        public InMemoryClusterTests(ITestOutputHelper testOutputHelper, InMemoryClusterFixture clusterFixture) : base(
-            testOutputHelper, clusterFixture
-        )
-        {
-        }
-    }
-    
-
+    // // ReSharper disable once UnusedType.Global
+    // public class InMemoryClusterTests : ClusterTests, IClassFixture<InMemoryClusterFixture>
+    // {
+    //     // ReSharper disable once SuggestBaseTypeForParameter
+    //     public InMemoryClusterTests(ITestOutputHelper testOutputHelper, InMemoryClusterFixture clusterFixture) : base(
+    //         testOutputHelper, clusterFixture
+    //     )
+    //     {
+    //     }
+    // }
 }

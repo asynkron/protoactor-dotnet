@@ -20,25 +20,18 @@ namespace Proto.Cluster.Partition
         //pid -> the actor that we have created here
         //kind -> the actor kind
         //eventId -> the cluster wide eventId when this actor was created
-        private readonly Dictionary<string, (PID pid, string kind, ulong eventId)> _myActors =
-            new Dictionary<string, (PID pid, string kind, ulong eventId)>();
+        private readonly Dictionary<ClusterIdentity, (PID pid, ulong eventId)> _myActors =
+            new Dictionary<ClusterIdentity, (PID pid, ulong eventId)>();
 
-        private readonly PartitionManager _partitionManager;
         private readonly Rendezvous _rdv = new Rendezvous();
-
-        private readonly Remote.Remote _remote;
-        private readonly ActorSystem _system;
         
         //cluster wide eventId.
         //this is useful for knowing if we are in sync with, ahead of or behind other nodes requests
         private ulong _eventId; 
 
-        public PartitionPlacementActor(Cluster cluster, PartitionManager partitionManager)
+        public PartitionPlacementActor(Cluster cluster)
         {
             _cluster = cluster;
-            _remote = _cluster.Remote;
-            _system = _cluster.System;
-            _partitionManager = partitionManager;
             _logger = Log.CreateLogger($"{nameof(PartitionPlacementActor)}-{cluster.LoggerId}");
         }
 
@@ -71,21 +64,20 @@ namespace Proto.Cluster.Partition
         private Task Terminated(IContext context, Terminated msg)
         {
             //TODO: if this turns out to be perf intensive, lets look at optimizations for reverse lookups
-            var (identity, (pid, kind, eventId)) = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(msg.Who));
+            var (clusterIdentity, (pid, eventId)) = _myActors.FirstOrDefault(kvp => kvp.Value.pid.Equals(msg.Who));
 
             var activationTerminated = new ActivationTerminated
             {
                 Pid = pid,
-                Kind = kind,
+                ClusterIdentity = clusterIdentity,
                 EventId = eventId,
-                Identity = identity
             };
 
-            var ownerAddress = _rdv.GetOwnerMemberByIdentity(identity);
+            var ownerAddress = _rdv.GetOwnerMemberByIdentity(clusterIdentity.Identity);
             var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
 
             context.Send(ownerPid, activationTerminated);
-            _myActors.Remove(identity);
+            _myActors.Remove(clusterIdentity);
             return Task.CompletedTask;
         }
 
@@ -116,10 +108,10 @@ namespace Proto.Cluster.Partition
             var rdv = new Rendezvous();
             rdv.UpdateMembers(msg.Members);
             
-            foreach (var (identity, (pid, kind, eventId)) in _myActors)
+            foreach (var (clusterIdentity, (pid, eventId)) in _myActors)
             {
                 //who owns this identity according to the requesters memberlist?
-                var ownerAddress = rdv.GetOwnerMemberByIdentity(identity);
+                var ownerAddress = rdv.GetOwnerMemberByIdentity(clusterIdentity.Identity);
 
                 //this identity is not owned by the requester
                 if (ownerAddress != requestAddress)
@@ -127,11 +119,11 @@ namespace Proto.Cluster.Partition
                     continue;
                 }
 
-                _logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {EventId}", identity, ownerAddress,
+                _logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {EventId}", clusterIdentity, ownerAddress,
                     msg.EventId
                 );
                 
-                var actor = new Activation {Identity = identity, Kind = kind, Pid = pid, EventId = eventId};
+                var actor = new Activation {ClusterIdentity = clusterIdentity, Pid = pid, EventId = eventId};
                 response.Actors.Add(actor);
                 count++;
             }
@@ -146,15 +138,11 @@ namespace Proto.Cluster.Partition
 
         private Task ActivationRequest(IContext context, ActivationRequest msg)
         {
-            var props = _cluster.GetClusterKind(msg.Kind);
-            var identity = msg.Identity;
-            var kind = msg.Kind;
+            var props = _cluster.GetClusterKind(msg.ClusterIdentity.Kind);
             try
             {
-                if (_myActors.TryGetValue(identity, out var existing))
+                if (_myActors.TryGetValue(msg.ClusterIdentity, out var existing))
                 {
-                    //TODO: should we use identity+kind as key?
-
                     //this identity already exists
                     var response = new ActivationResponse
                     {
@@ -169,10 +157,10 @@ namespace Proto.Cluster.Partition
                     //spawn and remember this actor
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
-                    var clusterProps = props.WithClusterInit(_cluster, identity, kind);
-                    var pid = context.SpawnPrefix(clusterProps, identity);
+                    var clusterProps = props.WithClusterInit(_cluster, msg.ClusterIdentity);
+                    var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.Identity);
 
-                    _myActors[identity] = (pid, kind, _eventId);
+                    _myActors[msg.ClusterIdentity] = (pid, _eventId);
 
                     var response = new ActivationResponse
                     {

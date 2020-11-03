@@ -7,40 +7,31 @@ namespace Proto.Cluster
 
     public class PidCache
     {
-        private readonly ConcurrentDictionary<(string kind, string identity), PID> _cacheDict;
-        private readonly ICollection<KeyValuePair<(string kind, string identity), PID>> _cacheCollection;
+        private readonly ConcurrentDictionary<ClusterIdentity, PID> _cacheDict;
+        private readonly ICollection<KeyValuePair<ClusterIdentity, PID>> _cacheCollection;
 
         public PidCache()
         {
-            _cacheDict = new ConcurrentDictionary<(string kind, string identity), PID>();
+            _cacheDict = new ConcurrentDictionary<ClusterIdentity, PID>();
             _cacheCollection = _cacheDict;
         }
 
-        public bool TryGet(string kind, string identity, out PID pid)
+        public bool TryGet(ClusterIdentity clusterIdentity, out PID pid)
         {
-            if (string.IsNullOrEmpty(kind))
+            if (clusterIdentity == null)
             {
-                throw new ArgumentNullException(nameof(kind));
+                throw new ArgumentNullException(nameof(clusterIdentity));
             }
+
             
-            if (string.IsNullOrEmpty(identity))
-            {
-                throw new ArgumentNullException(nameof(identity));
-            }
-            
-            return _cacheDict.TryGetValue((kind, identity), out pid);
+            return _cacheDict.TryGetValue(clusterIdentity, out pid);
         }
 
-        public bool TryAdd(string kind, string identity, PID pid)
+        public bool TryAdd(ClusterIdentity clusterIdentity, PID pid)
         {
-            if (string.IsNullOrEmpty(kind))
+            if (clusterIdentity == null)
             {
-                throw new ArgumentNullException(nameof(kind));
-            }
-            
-            if (string.IsNullOrEmpty(identity))
-            {
-                throw new ArgumentNullException(nameof(identity));
+                throw new ArgumentNullException(nameof(clusterIdentity));
             }
             
             if (pid == null)
@@ -48,19 +39,14 @@ namespace Proto.Cluster
                 throw new ArgumentNullException(nameof(pid));
             }
             
-            return _cacheDict.TryAdd((kind, identity), pid);
+            return _cacheDict.TryAdd(clusterIdentity, pid);
         }
 
-        public bool TryUpdate(string kind, string identity, PID newPid, PID existingPid)
+        public bool TryUpdate(ClusterIdentity clusterIdentity, PID newPid, PID existingPid)
         {
-            if (string.IsNullOrEmpty(kind))
+            if (clusterIdentity == null)
             {
-                throw new ArgumentNullException(nameof(kind));
-            }
-            
-            if (string.IsNullOrEmpty(identity))
-            {
-                throw new ArgumentNullException(nameof(identity));
+                throw new ArgumentNullException(nameof(clusterIdentity));
             }
             
             if (newPid == null)
@@ -73,31 +59,26 @@ namespace Proto.Cluster
                 throw new ArgumentNullException(nameof(existingPid));
             }
             
-            return _cacheDict.TryUpdate((kind, identity), newPid, existingPid);
+            return _cacheDict.TryUpdate(clusterIdentity, newPid, existingPid);
         }
 
-        public bool TryRemove(string kind, string identity)
+        public bool TryRemove(ClusterIdentity clusterIdentity)
         {
-            if (string.IsNullOrEmpty(kind))
+            if (clusterIdentity == null)
             {
-                throw new ArgumentNullException(nameof(kind));
+                throw new ArgumentNullException(nameof(clusterIdentity));
             }
             
-            if (string.IsNullOrEmpty(identity))
-            {
-                throw new ArgumentNullException(nameof(identity));
-            }
-            
-            return _cacheDict.TryRemove((kind, identity), out _);
+            return _cacheDict.TryRemove(clusterIdentity, out _);
         }
 
-        public bool RemoveByVal(string kind, string identity, PID pid)
+        public bool RemoveByVal(ClusterIdentity clusterIdentity, PID pid)
         {
-            var key = (kind, identity);
+            var key = clusterIdentity;
             if (_cacheDict.TryGetValue(key, out var existingPid) && existingPid.Id == pid.Id &&
                 existingPid.Address == pid.Address)
             {
-                return _cacheCollection.Remove(new KeyValuePair<(string kind, string identity), PID>(key, existingPid));
+                return _cacheCollection.Remove(new KeyValuePair<ClusterIdentity, PID>(key, existingPid));
             }
 
             return false;
@@ -108,7 +89,7 @@ namespace Proto.Cluster
             RemoveByPredicate(pair => member.Address.Equals(pair.Value.Address));
         }
 
-        private void RemoveByPredicate(Func<KeyValuePair<(string kind, string identity), PID>, bool> predicate)
+        private void RemoveByPredicate(Func<KeyValuePair<ClusterIdentity, PID>, bool> predicate)
         {
             var toBeRemoved = _cacheDict.Where(predicate).ToList();
             if (toBeRemoved.Count == 0) return;

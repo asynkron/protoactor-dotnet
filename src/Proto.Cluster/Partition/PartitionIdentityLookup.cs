@@ -12,24 +12,25 @@ namespace Proto.Cluster.Partition
         private ILogger _logger = null!;
         private PartitionManager _partitionManager = null!;
 
-        public async Task<PID?> GetAsync(string identity, string kind, CancellationToken ct)
+        public async Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
         {
             //Get address to node owning this ID
-            var identityOwner = _partitionManager.Selector.GetIdentityOwner(identity);
+            var identityOwner = _partitionManager.Selector.GetIdentityOwner(clusterIdentity.Identity);
             _logger.LogDebug("Identity belongs to {address}", identityOwner);
             if (string.IsNullOrEmpty(identityOwner))
             {
                 return null;
             }
+
             var remotePid = PartitionManager.RemotePartitionIdentityActor(identityOwner);
 
             var req = new ActivationRequest
             {
-                Kind = kind,
-                Identity = identity
+                ClusterIdentity = clusterIdentity
             };
 
-            _logger.LogDebug("Requesting remote PID from {Partition}:{Remote} {@Request}", identityOwner, remotePid, req);
+            _logger.LogDebug("Requesting remote PID from {Partition}:{Remote} {@Request}", identityOwner, remotePid, req
+            );
 
             try
             {
@@ -64,7 +65,7 @@ namespace Proto.Cluster.Partition
         }
 
         public Task ShutdownAsync()
-        { 
+        {
             _partitionManager.Shutdown();
             return Task.CompletedTask;
         }
