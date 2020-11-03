@@ -147,8 +147,8 @@ namespace Proto
             var result = await future.Task;
             switch (result)
             {
-                case DeadLetterResponse _:
-                    throw new DeadLetterException(target);
+                case DeadLetterResponse deadLetterResponse:
+                    throw new DeadLetterException(deadLetterResponse.Target);
                 case null:
                 case T _:
                     return (T) result!;

@@ -9,6 +9,18 @@ message SendToRequest{
 
 message Ack {}
 
+message Ping {
+  string message = 1;
+}
+
+message Pong {
+  string message = 1;
+  string kind = 2;
+  string identity = 3;
+}
+
+message Die {
+}
 
 message WhereAreYou {}
 

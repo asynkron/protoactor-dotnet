@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Proto.Remote.Tests.Messages;
 
 namespace Proto.Cluster.Tests
 {
@@ -29,7 +28,7 @@ namespace Proto.Cluster.Tests
                     break;
                 case Ping ping:
                     Logger.LogDebug("Received Ping, replying Pong");
-                    context.Respond(new Pong {Message = $"{_initKind}/{_identity}:{ping.Message}"});
+                    context.Respond(new Pong {Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? ""});
                     break;
                 case WhereAreYou _:
                     Logger.LogDebug("Responding to location request");

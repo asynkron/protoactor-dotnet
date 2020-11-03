@@ -4,8 +4,8 @@
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using ClusterTest.Messages;
     using FluentAssertions;
-    using Remote.Tests.Messages;
     using Xunit;
     using Xunit.Abstractions;
 

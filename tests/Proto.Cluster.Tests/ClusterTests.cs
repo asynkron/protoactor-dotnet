@@ -6,7 +6,6 @@
     using System.Threading.Tasks;
     using ClusterTest.Messages;
     using FluentAssertions;
-    using Remote.Tests.Messages;
     using Xunit;
     using Xunit.Abstractions;
 
@@ -160,7 +159,13 @@
             await Task.Yield();
             var response = await cluster.Ping(id, id, token);
             response.Should().NotBeNull("We expect a response before timeout");
-            response.Message.Should().Be($"{kind}/{id}:{id}", "Echo should come from the correct virtual actor");
+            
+            response.Should().BeEquivalentTo(new Pong
+            {
+                Identity = id,
+                Kind = kind,
+                Message = id
+            }, "Echo should come from the correct virtual actor");
         }
     }
 

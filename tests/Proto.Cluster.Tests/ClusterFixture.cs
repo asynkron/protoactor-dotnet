@@ -1,7 +1,6 @@
 ﻿namespace Proto.Cluster.Tests
 {
     using System;
-    using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.Linq;
     using System.Threading.Tasks;
@@ -11,7 +10,6 @@
     using Remote;
     using Testing;
     using Xunit;
-    using ProtosReflection = Remote.Tests.Messages.ProtosReflection;
 
     public interface IClusterFixture
     {
@@ -48,7 +46,6 @@
                 GetClusterProvider(),
                 GetIdentityLookup(clusterName),
                 RemoteConfig.BindToLocalhost()
-                    .WithProtoMessages(ProtosReflection.Descriptor)
                     .WithProtoMessages(MessagesReflection.Descriptor)
             ).WithClusterKinds(ClusterKinds);
 
