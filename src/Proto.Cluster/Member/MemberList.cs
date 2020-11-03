@@ -27,7 +27,7 @@ namespace Proto.Cluster
     public record MemberList
     {
         //TODO: actually use this to prevent banned members from rejoining
-        private ConcurrentSet<string> BannedMembers { get; init; }
+        private ConcurrentSet<string> _bannedMembers { get; init; }
         private readonly Cluster _cluster;
         private readonly EventStream _eventStream;
         private readonly ILogger _logger;
@@ -36,9 +36,9 @@ namespace Proto.Cluster
         //The partition lookup broadcasts and use broadcasted information
         //meaning the partition infra might be ahead of this list.
         //come up with a good solution to keep all this in sync
-        private ImmutableDictionary<string, Member> Members { get; init; }
+        private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
 
-        private ImmutableDictionary<string, IMemberStrategy> MemberStrategyByKind { get; init; }
+        private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
 
         private readonly IRootContext _root;
 
@@ -57,9 +57,7 @@ namespace Proto.Cluster
 
             _logger = Log.CreateLogger($"MemberList-{_cluster.LoggerId}");
 
-            Members = ImmutableDictionary<string, Member>.Empty;
-            MemberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
-            BannedMembers = new ConcurrentSet<string>();
+            _bannedMembers = new ConcurrentSet<string>();
         }
 
         public bool IsLeader => _cluster.Id.Equals(_leader?.MemberId);
@@ -77,7 +75,7 @@ namespace Proto.Cluster
 
             try
             {
-                if (MemberStrategyByKind.TryGetValue(kind, out var memberStrategy))
+                if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
                 {
                     return memberStrategy.GetActivator();
                 }
@@ -103,7 +101,7 @@ namespace Proto.Cluster
             {
                 foreach (var b in leader.BannedMembers)
                 {
-                    BannedMembers.Add(b);
+                    _bannedMembers.Add(b);
                 }
             }
 
@@ -157,7 +155,7 @@ namespace Proto.Cluster
                 //these are all members that are currently active
                 var nonBannedStatuses =
                     statuses
-                        .Where(s => !BannedMembers.Contains(s.Id))
+                        .Where(s => !_bannedMembers.Contains(s.Id))
                         .ToArray();
 
                 //these are the member IDs hashset of currently active members
@@ -168,7 +166,7 @@ namespace Proto.Cluster
 
                 //these are all members that existed before, but are not in the current nonBannedMemberStatuses
                 var membersThatLeft =
-                    Members
+                    _members
                         .Where(m => !newMemberIds.Contains(m.Key))
                         .Select(m => m.Value)
                         .ToArray();
@@ -189,7 +187,7 @@ namespace Proto.Cluster
                 //these are all members that are new and did not exist before
                 var membersThatJoined =
                     nonBannedStatuses
-                        .Where(m => !Members.ContainsKey(m.Id))
+                        .Where(m => !_members.ContainsKey(m.Id))
                         .ToArray();
 
                 //notify that these members joined
@@ -205,7 +203,7 @@ namespace Proto.Cluster
                     );
                 }
 
-                topology.Members.AddRange(Members.Values);
+                topology.Members.AddRange(_members.Values);
                 
                 _logger.LogDebug("Published ClusterTopology event {ClusterTopology}",topology);
 
@@ -222,7 +220,7 @@ namespace Proto.Cluster
             //update MemberStrategy
             foreach (var k in memberThatLeft.Kinds)
             {
-                if (!MemberStrategyByKind.TryGetValue(k, out var ms))
+                if (!_memberStrategyByKind.TryGetValue(k, out var ms))
                 {
                     continue;
                 }
@@ -231,13 +229,13 @@ namespace Proto.Cluster
 
                 if (ms.GetAllMembers().Count == 0)
                 {
-                    MemberStrategyByKind.Remove(k);
+                    _memberStrategyByKind.Remove(k);
                 }
             }
 
-            BannedMembers.Add(memberThatLeft.Id);
+            _bannedMembers.Add(memberThatLeft.Id);
             
-            Members.Remove(memberThatLeft.Id);
+            _members = _members.Remove(memberThatLeft.Id);
 
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
             _logger.LogInformation("Published event {@EndpointTerminated}", endpointTerminated);
@@ -248,17 +246,17 @@ namespace Proto.Cluster
         {
             //TODO: looks fishy, no locks, are we sure this is safe? it is using private state _vars
 
-            Members.Add(newMember.Id, newMember);
+            _members = _members.Add(newMember.Id, newMember);
 
             foreach (var kind in newMember.Kinds)
             {
-                if (!MemberStrategyByKind.ContainsKey(kind))
+                if (!_memberStrategyByKind.ContainsKey(kind))
                 {
-                    MemberStrategyByKind.SetItem(kind, _cluster.Config!.MemberStrategyBuilder(kind));
+                    _memberStrategyByKind = _memberStrategyByKind.SetItem(kind, _cluster.Config!.MemberStrategyBuilder(kind));
                 }
 
                 //TODO: this doesnt work, just use the same strategy for all kinds...
-                MemberStrategyByKind[kind].AddMember(newMember);
+                _memberStrategyByKind[kind].AddMember(newMember);
             }
         }
 
@@ -268,7 +266,7 @@ namespace Proto.Cluster
         /// <param name="message"></param>
         public void BroadcastEvent(object message)
         {
-            foreach (var m in Members.ToArray())
+            foreach (var m in _members.ToArray())
             {
                 var pid = PID.FromAddress(m.Value.Address, "eventstream");
                 try
@@ -282,10 +280,10 @@ namespace Proto.Cluster
             }
         }
 
-        public bool ContainsMemberId(string memberId) => Members.ContainsKey(memberId);
+        public bool ContainsMemberId(string memberId) => _members.ContainsKey(memberId);
 
-        public bool TryGetMember(string memberId, out Member value) => Members.TryGetValue(memberId, out value);
+        public bool TryGetMember(string memberId, out Member value) => _members.TryGetValue(memberId, out value);
 
-        public Member[] GetAllMembers() => Members.Values.ToArray();
+        public Member[] GetAllMembers() => _members.Values.ToArray();
     }
 }
