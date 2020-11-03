@@ -45,7 +45,7 @@
         }
 
         [Theory]
-        [InlineData(1000, 4000)]
+        [InlineData(1000, 10000)]
         public async Task CanSpawnVirtualActorsSequentially(int actorCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -179,4 +179,6 @@
         {
         }
     }
+    
+
 }

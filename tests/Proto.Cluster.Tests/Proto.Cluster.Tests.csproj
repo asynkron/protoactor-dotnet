@@ -4,6 +4,7 @@
     <LangVersion>9</LangVersion>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
     <ProjectReference Include="..\..\src\Proto.Cluster.MongoIdentityLookup\Proto.Cluster.MongoIdentityLookup.csproj" />
     <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj" />
     <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />

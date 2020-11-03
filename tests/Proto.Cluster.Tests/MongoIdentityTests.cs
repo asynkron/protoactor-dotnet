@@ -1,10 +1,10 @@
-﻿using System;
-using MongoDB.Driver;
-using Proto.Cluster.IdentityLookup;
-using Proto.Cluster.Tests;
-
-namespace Proto.Cluster.MongoIdentityLookup.Tests
+﻿namespace Proto.Cluster.Tests
 {
+    using System;
+    using IdentityLookup;
+    using MongoDB.Driver;
+    using MongoIdentityLookup;
+
     public class MongoIdentityClusterFixture : BaseInMemoryClusterFixture
     {
         public MongoIdentityClusterFixture() : base(3)
@@ -29,4 +29,11 @@ namespace Proto.Cluster.MongoIdentityLookup.Tests
             return database;
         }
     }
+    
+    // public class MongoClusterTests: ClusterTests, IClassFixture<MongoIdentityClusterFixture>
+    // {
+    //     public MongoClusterTests(ITestOutputHelper testOutputHelper, MongoIdentityClusterFixture clusterFixture) : base(testOutputHelper, clusterFixture)
+    //     {
+    //     }
+    // }
 }

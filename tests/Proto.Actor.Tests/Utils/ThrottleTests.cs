@@ -69,7 +69,7 @@
             shouldThrottle().Should().Be(Throttle.Valve.Open, "It accepts multiple event before closing");
             shouldThrottle().Should().Be(Throttle.Valve.Closing, "Last event before close");
             shouldThrottle().Should().Be(Throttle.Valve.Closed, "Anything over the limit is throttled");
-            await Task.Delay(2);
+            await Task.Delay(3);
             shouldThrottle().Should().Be(Throttle.Valve.Open, "After the period it should open again");
         }
     }
