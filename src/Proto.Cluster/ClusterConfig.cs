@@ -17,47 +17,49 @@ namespace Proto.Cluster
     [PublicAPI]
     public record ClusterConfig
     {
-        private ClusterConfig(string clusterName, IClusterProvider clusterProvider, IIdentityLookup identityLookup,RemoteConfig remoteConfig)
+        private ClusterConfig(string clusterName, IClusterProvider clusterProvider, IIdentityLookup identityLookup,
+            RemoteConfig remoteConfig)
         {
             ClusterName = clusterName ?? throw new ArgumentNullException(nameof(clusterName));
             ClusterProvider = clusterProvider ?? throw new ArgumentNullException(nameof(clusterProvider));
             RemoteConfig = remoteConfig ?? throw new ArgumentNullException(nameof(remoteConfig));
             TimeoutTimespan = TimeSpan.FromSeconds(5);
             HeartBeatInterval = TimeSpan.FromSeconds(30);
-            MemberStrategyBuilder = _ => new SimpleMemberStrategy();
+            MemberStrategyBuilder = (_,_) => new SimpleMemberStrategy();
             ClusterKinds = ImmutableDictionary<string, Props>.Empty;
             IdentityLookup = identityLookup;
         }
 
         public string ClusterName { get; }
-        
-        public ImmutableDictionary<string, Props> ClusterKinds { get; init; } 
+
+        public ImmutableDictionary<string, Props> ClusterKinds { get; init; }
 
         public IClusterProvider ClusterProvider { get; }
 
         public RemoteConfig RemoteConfig { get; }
-        
+
         public TimeSpan TimeoutTimespan { get; init; }
 
-        public Func<string, IMemberStrategy> MemberStrategyBuilder { get; init; }
+        public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; init; }
 
         public IIdentityLookup? IdentityLookup { get; }
         public TimeSpan HeartBeatInterval { get; init; }
 
-        public ClusterConfig WithTimeout(TimeSpan timeSpan) => 
+        public ClusterConfig WithTimeout(TimeSpan timeSpan) =>
             this with {TimeoutTimespan = timeSpan};
 
-        public ClusterConfig WithMemberStrategyBuilder(Func<string, IMemberStrategy> builder) => 
+        public ClusterConfig WithMemberStrategyBuilder(Func<Cluster, string, IMemberStrategy> builder) =>
             this with {MemberStrategyBuilder = builder};
 
-        public ClusterConfig WithClusterKind(string kind, Props prop) => 
+        public ClusterConfig WithClusterKind(string kind, Props prop) =>
             this with { ClusterKinds = ClusterKinds.Add(kind, prop)};
 
-        public ClusterConfig WithClusterKinds(params (string kind, Props prop)[] knownKinds) => 
+        public ClusterConfig WithClusterKinds(params (string kind, Props prop)[] knownKinds) =>
             this with {
                 ClusterKinds = ClusterKinds
                     .AddRange(knownKinds
-                        .Select(kk => new KeyValuePair<string, Props>(kk.kind, kk.prop)))};
+                        .Select(kk => new KeyValuePair<string, Props>(kk.kind, kk.prop))
+                    )};
 
         public static ClusterConfig Setup(string clusterName, IClusterProvider clusterProvider,
             IIdentityLookup identityLookup, RemoteConfig remoteConfig) =>

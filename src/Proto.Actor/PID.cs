@@ -13,7 +13,7 @@ namespace Proto
 
         public static PID FromAddress(string address, string id) => new PID(address, id);
 
-        private PID(string address, string id)
+        public PID(string address, string id)
         {
             Address = address;
             Id = id;

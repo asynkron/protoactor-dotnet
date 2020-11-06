@@ -1,28 +1,33 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-
 namespace Proto.Cluster
 {
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
+
     public class ClusterHeartBeatActor : IActor
     {
         public Task ReceiveAsync(IContext context)
         {
             if (context.Message is HeartbeatRequest)
             {
-                context.Respond(new HeartbeatResponse());
+                context.Respond(new HeartbeatResponse
+                    {
+                        ActorCount = (uint) context.System.ProcessRegistry.ProcessCount
+                    }
+                );
             }
-            
+
             return Task.CompletedTask;
         }
     }
+
     public class ClusterHeartBeat
     {
         private readonly Cluster _cluster;
         private ILogger _logger = null!;
         private PID _pid = null!;
-        private const string ClusterHeartBeatName = "ClusterHeartBeat"; 
+        private const string ClusterHeartBeatName = "ClusterHeartBeat";
         private readonly CancellationTokenSource _ct = new CancellationTokenSource();
         private readonly ActorSystem _system;
         private readonly RootContext _context;
@@ -74,7 +79,7 @@ namespace Proto.Cluster
                 }
                 catch (Exception x)
                 {
-                    _logger.LogError(x,"Heartbeat loop failed");
+                    _logger.LogError(x, "Heartbeat loop failed");
                 }
             }
         }

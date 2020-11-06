@@ -97,7 +97,7 @@ namespace Proto.Cluster
             Logger.LogInformation("Started as cluster client");
         }
 
-        private async Task BeginStartAsync( bool client)
+        private async Task BeginStartAsync(bool client)
         {
             //default to partition identity lookup
             IdentityLookup = Config.IdentityLookup ?? new PartitionIdentityLookup();
@@ -127,9 +127,11 @@ namespace Proto.Cluster
 
         public Task<PID?> GetAsync(string identity, string kind) => GetAsync(identity, kind, CancellationToken.None);
 
-        public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct) => IdentityLookup!.GetAsync(identity, kind, ct);
+        public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct) =>
+            IdentityLookup!.GetAsync(new ClusterIdentity {Identity = identity, Kind = kind}, ct);
 
-        public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) => ClusterContext.RequestAsync<T>(identity, kind, message, ct);
+        public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) =>
+            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, ct);
 
         public Props GetClusterKind(string kind)
         {

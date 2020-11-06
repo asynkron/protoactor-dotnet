@@ -2,15 +2,16 @@ namespace Proto.Cluster
 {
     public class ClusterInit
     {
-        public ClusterInit(string identity, string kind, Cluster cluster)
+        public ClusterInit(ClusterIdentity clusterIdentity, Cluster cluster)
         {
-            Identity = identity;
-            Kind = kind;
+            ClusterIdentity = clusterIdentity;
             Cluster = cluster;
         }
 
-        public string Identity { get; }
-        public string Kind { get; }
+        public ClusterIdentity ClusterIdentity { get; }
+
+        public string Identity => ClusterIdentity.Identity;
+        public string Kind => ClusterIdentity.Kind;
 
         public Cluster Cluster { get; }
     }

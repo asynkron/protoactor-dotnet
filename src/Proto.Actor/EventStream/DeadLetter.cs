@@ -5,18 +5,21 @@
 // -----------------------------------------------------------------------
 // ReSharper disable once CheckNamespace
 
-using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
+
 namespace Proto
 {
+    using System;
+    using JetBrains.Annotations;
+
     [PublicAPI]
     public class DeadLetterEvent
     {
         public DeadLetterEvent(PID pid, object message, PID? sender) : this(pid, message, sender, MessageHeader.Empty)
         {
         }
-        
+
         public DeadLetterEvent(PID pid, object message, PID? sender, MessageHeader? header)
         {
             Pid = pid;
@@ -28,7 +31,7 @@ namespace Proto
         public PID Pid { get; }
         public object Message { get; }
         public PID? Sender { get; }
-        public MessageHeader Header { get;  }
+        public MessageHeader Header { get; }
     }
 
     public class DeadLetterProcess : Process
@@ -40,10 +43,19 @@ namespace Proto
         protected internal override void SendUserMessage(PID pid, object message)
         {
             var (msg, sender, header) = MessageEnvelope.Unwrap(message);
-            System.EventStream.Publish(new DeadLetterEvent(pid, msg, sender,header));
+            System.EventStream.Publish(new DeadLetterEvent(pid, msg, sender, header));
+            
+            if (sender != null && !(msg is PoisonPill)) System.Root.Send(sender, new DeadLetterResponse {Target = pid});
         }
 
         protected internal override void SendSystemMessage(PID pid, object message)
             => System.EventStream.Publish(new DeadLetterEvent(pid, message, null, null));
+    }
+
+    public class DeadLetterException : Exception
+    {
+        public DeadLetterException(PID pid) : base($"{pid.ToShortString()} no longer exists")
+        {
+        }
     }
 }

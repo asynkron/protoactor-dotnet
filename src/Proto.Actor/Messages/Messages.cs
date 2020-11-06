@@ -14,7 +14,7 @@ namespace Proto
     public sealed partial class Terminated : SystemMessage
     {
     }
-
+    
     public sealed class Restarting
     {
         public static readonly Restarting Instance = new Restarting();
@@ -22,6 +22,11 @@ namespace Proto
         private Restarting()
         {
         }
+    }
+    
+    public sealed partial class PoisonPill
+    {
+        public static readonly PoisonPill Instance = new PoisonPill();
     }
 
     public class Failure : SystemMessage
@@ -106,7 +111,7 @@ namespace Proto
         {
         }
     }
-
+    
     public interface INotInfluenceReceiveTimeout
     {
     }
