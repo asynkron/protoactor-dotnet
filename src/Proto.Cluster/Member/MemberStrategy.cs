@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Proto.Cluster.Partition;
 
@@ -12,7 +13,7 @@ namespace Proto.Cluster
 {
     public interface IMemberStrategy
     {
-        List<Member> GetAllMembers();
+        ImmutableList<Member> GetAllMembers();
         void AddMember(Member member);
 
         void RemoveMember(Member member);
@@ -22,18 +23,17 @@ namespace Proto.Cluster
 
     internal class SimpleMemberStrategy : IMemberStrategy
     {
-        private readonly List<Member> _members;
+        private ImmutableList<Member> _members = ImmutableList<Member>.Empty;
         private readonly Rendezvous _rdv;
         private readonly RoundRobinMemberSelector _rr;
 
         public SimpleMemberStrategy()
         {
-            _members = new List<Member>();
             _rdv = new Rendezvous();
             _rr = new RoundRobinMemberSelector(this);
         }
 
-        public List<Member> GetAllMembers() => _members;
+        public ImmutableList<Member> GetAllMembers() => _members;
 
         //TODO: account for Member.MemberId
         public void AddMember(Member member)
@@ -44,14 +44,14 @@ namespace Proto.Cluster
                 return;
             }
 
-            _members.Add(member);
+            _members = _members.Add(member);
             _rdv.UpdateMembers(_members);
         }
 
         //TODO: account for Member.MemberId
         public void RemoveMember(Member member)
         {
-            _members.RemoveAll(x => x.Address == member.Address);
+            _members = _members.RemoveAll(x => x.Address == member.Address);
             _rdv.UpdateMembers(_members);
         }
 

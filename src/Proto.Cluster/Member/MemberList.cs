@@ -24,10 +24,10 @@ namespace Proto.Cluster
 
     //TODO: check usage and threadsafety.
     [PublicAPI]
-    public class MemberList
+    public record MemberList
     {
         //TODO: actually use this to prevent banned members from rejoining
-        private readonly ConcurrentSet<string> _bannedMembers = new ConcurrentSet<string>();
+        private ConcurrentSet<string> _bannedMembers { get; init; }
         private readonly Cluster _cluster;
         private readonly EventStream _eventStream;
         private readonly ILogger _logger;
@@ -36,10 +36,9 @@ namespace Proto.Cluster
         //The partition lookup broadcasts and use broadcasted information
         //meaning the partition infra might be ahead of this list.
         //come up with a good solution to keep all this in sync
-        private readonly Dictionary<string, Member> _members = new Dictionary<string, Member>();
+        private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
 
-        private readonly Dictionary<string, IMemberStrategy> _memberStrategyByKind =
-            new Dictionary<string, IMemberStrategy>();
+        private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
 
         private readonly IRootContext _root;
 
@@ -57,6 +56,8 @@ namespace Proto.Cluster
             _eventStream = _system.EventStream;
 
             _logger = Log.CreateLogger($"MemberList-{_cluster.LoggerId}");
+
+            _bannedMembers = new ConcurrentSet<string>();
         }
 
         public bool IsLeader => _cluster.Id.Equals(_leader?.MemberId);
@@ -234,7 +235,7 @@ namespace Proto.Cluster
 
             _bannedMembers.Add(memberThatLeft.Id);
             
-            _members.Remove(memberThatLeft.Id);
+            _members = _members.Remove(memberThatLeft.Id);
 
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
             _logger.LogInformation("Published event {@EndpointTerminated}", endpointTerminated);
@@ -245,13 +246,13 @@ namespace Proto.Cluster
         {
             //TODO: looks fishy, no locks, are we sure this is safe? it is using private state _vars
 
-            _members.Add(newMember.Id, newMember);
+            _members = _members.Add(newMember.Id, newMember);
 
             foreach (var kind in newMember.Kinds)
             {
                 if (!_memberStrategyByKind.ContainsKey(kind))
                 {
-                    _memberStrategyByKind[kind] = _cluster.Config!.MemberStrategyBuilder(_cluster,kind) ?? new SimpleMemberStrategy();
+                    _memberStrategyByKind = _memberStrategyByKind.SetItem(kind, _cluster.Config!.MemberStrategyBuilder(kind)  ?? new SimpleMemberStrategy());
                 }
 
                 //TODO: this doesnt work, just use the same strategy for all kinds...
