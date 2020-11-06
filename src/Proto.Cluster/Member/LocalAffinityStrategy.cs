@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Proto.Cluster.Partition;
 
@@ -13,7 +14,7 @@ namespace Proto.Cluster
         private readonly Cluster _cluster;
         private readonly ProcessRegistry _registry;
         private readonly int _localAffinityActorLimit;
-        private readonly List<Member> _members;
+        private ImmutableList<Member> _members = ImmutableList<Member>.Empty;
         private readonly Rendezvous _rdv;
         private readonly RoundRobinMemberSelector _rr;
 
@@ -22,12 +23,11 @@ namespace Proto.Cluster
             _cluster = cluster;
             _registry = cluster.System.ProcessRegistry;
             _localAffinityActorLimit = localAffinityActorLimit;
-            _members = new List<Member>();
             _rdv = new Rendezvous();
             _rr = new RoundRobinMemberSelector(this);
         }
 
-        public List<Member> GetAllMembers() => _members;
+        public ImmutableList<Member> GetAllMembers() => _members;
 
         public void AddMember(Member member)
         {
@@ -41,13 +41,13 @@ namespace Proto.Cluster
             {
                 _me = member;
             }
-            _members.Add(member);
+            _members = _members.Add(member);
             _rdv.UpdateMembers(_members);
         }
 
         public void RemoveMember(Member member)
         {
-            _members.RemoveAll(x => x.Address == member.Address);
+            _members = _members.RemoveAll(x => x.Address == member.Address);
             _rdv.UpdateMembers(_members);
         }
 
