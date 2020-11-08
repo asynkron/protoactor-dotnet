@@ -28,7 +28,6 @@
             timer.Stop();
 
             triggered.Should().Be(maxEvents);
-            // timer.Elapsed.TotalMilliseconds.Should().BeLessThan(1);
         }
         
         [Fact]
@@ -46,7 +45,7 @@
             }
             triggered.Should().Be(maxEvents);
 
-            await Task.Delay(5);
+            await Task.Delay(500);
             for (int i = 0; i < 100; i++)
             {
                 if (shouldThrottle().IsOpen())

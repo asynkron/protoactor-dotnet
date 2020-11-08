@@ -8,6 +8,10 @@
 
     public static class Throttle
     {
+        /// <summary>
+        /// This has no guarantees that the throttle opens exactly after the period, since it is reset asynchronously
+        /// Throughput has been prioritized over exact re-opening 
+        /// </summary>
         /// <param name="maxEventsInPeriod"></param>
         /// <param name="period"></param>
         /// <param name="throttledCallBack">This will be called with the number of events what was throttled after the period</param>
@@ -28,6 +32,7 @@
                 {
                     StartTimer(throttledCallBack);
                 }
+
                 if (tries == maxEventsInPeriod)
                 {
                     return Valve.Closing;
