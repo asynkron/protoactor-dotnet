@@ -275,7 +275,7 @@ namespace Proto.Cluster.Consul
                                 );
 
 
-                                if (res.Response?.Value == null)
+                                if (res.Response?.Value is null)
                                 {
                                     _logger.LogError("No leader info was found");
                                     await Task.Delay(1000);
@@ -290,7 +290,7 @@ namespace Proto.Cluster.Consul
                                 var bannedMembers = Array.Empty<string>();
                                 var banned = await _client.KV.Get(_consulServiceName + "/banned");
 
-                                if (banned.Response?.Value != null)
+                                if (banned.Response?.Value is not null)
                                 {
                                     var json3 = Encoding.UTF8.GetString(banned.Response.Value);
                                     bannedMembers = JsonConvert.DeserializeObject<string[]>(json3);

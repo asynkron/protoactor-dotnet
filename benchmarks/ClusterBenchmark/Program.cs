@@ -49,7 +49,7 @@ namespace ClusterExperiment1
                             new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
                         );
 
-                        if (res == null)
+                        if (res is null)
                         {
                             logger.LogError("Null response");
                         }

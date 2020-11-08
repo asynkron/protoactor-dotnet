@@ -35,41 +35,42 @@ namespace SpawnBenchmark
         public Task ReceiveAsync(IContext context)
         {
             var msg = context.Message;
-            var r = msg as Request;
-            if (r != null)
+            switch (msg)
             {
-                if (r.Size == 1)
-                {
+                case Request {Size: 1} r:
                     context.Respond(r.Num);
                     context.Stop(context.Self);
                     return Task.CompletedTask;
-                }
-                _replies = r.Div;
-                _replyTo = context.Sender;
-                for (var i = 0; i < r.Div; i++)
+                case Request r:
                 {
-                    var child = _system.Root.Spawn(Props(_system));
-                    context.Request(child, new Request
+                    _replies = r.Div;
+                    _replyTo = context.Sender;
+                    for (var i = 0; i < r.Div; i++)
                     {
-                        Num = r.Num + i * (r.Size / r.Div),
-                        Size = r.Size / r.Div,
-                        Div = r.Div
-                    });
-                }
+                        var child = _system.Root.Spawn(Props(_system));
+                        context.Request(child, new Request
+                        {
+                            Num = r.Num + i * (r.Size / r.Div),
+                            Size = r.Size / r.Div,
+                            Div = r.Div
+                        });
+                    }
 
-                return Task.CompletedTask;
-            }
-            if (msg is Int64 res)
-            {
-                _sum += res;
-                _replies--;
-                if (_replies == 0)
-                {
-                    context.Send(_replyTo, _sum);
+                    return Task.CompletedTask;
                 }
-                return Task.CompletedTask;
+                case long res:
+                {
+                    _sum += res;
+                    _replies--;
+                    if (_replies == 0)
+                    {
+                        context.Send(_replyTo, _sum);
+                    }
+                    return Task.CompletedTask;
+                }
+                default:
+                    return Task.CompletedTask;
             }
-            return Task.CompletedTask;
         }
     }
 

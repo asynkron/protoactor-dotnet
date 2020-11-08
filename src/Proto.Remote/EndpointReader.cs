@@ -120,7 +120,7 @@ namespace Proto.Remote
         {
             Proto.MessageHeader? header = null;
 
-            if (envelope.MessageHeader != null)
+            if (envelope.MessageHeader is not null)
             {
                 header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
             }

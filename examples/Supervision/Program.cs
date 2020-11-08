@@ -56,7 +56,7 @@ class Program
         {
             PID child;
 
-            if (context.Children == null || context.Children.Count == 0)
+            if (context.Children is null || context.Children.Count == 0)
             {
                 var props = Props.FromProducer(() => new ChildActor());
                 child = context.Spawn(props);

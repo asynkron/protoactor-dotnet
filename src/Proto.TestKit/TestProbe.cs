@@ -25,7 +25,7 @@ namespace Proto.TestKit
                     Context = context;
                     break;
                 case RequestReference _:
-                    if (context.Sender != null)
+                    if (context.Sender is not null)
                     {
                         context.Respond(this);
                     }
@@ -51,7 +51,7 @@ namespace Proto.TestKit
         {
             get
             {
-                if (_context == null)
+                if (_context is null)
                 {
                     throw new InvalidOperationException("Probe context is null");
                 }
@@ -200,7 +200,7 @@ namespace Proto.TestKit
         /// <inheritdoc />
         public void Respond(object message)
         {
-            if (Sender == null)
+            if (Sender is null)
             {
                 return;
             }

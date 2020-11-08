@@ -35,7 +35,7 @@ namespace Proto
 
             var reff = _hostResolvers.Select(x => x(pid)).FirstOrDefault();
 
-            if (reff == null)
+            if (reff is null)
             {
                 throw new NotSupportedException("Unknown host");
             }

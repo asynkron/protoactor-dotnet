@@ -112,7 +112,7 @@ namespace Messages
                 }
                 catch (Exception)
                 {
-                    if (options.RetryAction != null)
+                    if (options.RetryAction is not null)
                     {
                         await options.RetryAction(i);
                     }

@@ -80,7 +80,7 @@ namespace Proto.Remote
                 var batch = new List<RemoteDeliver>(_batchSize);
                 var sys = _systemMessages.Pop();
 
-                if (sys != null)
+                if (sys is not null)
                 {
                     Logger.LogDebug("[EndpointWriterMailbox] Processing System Message {@Message}", sys);
 
@@ -100,7 +100,7 @@ namespace Proto.Remote
                         //Dump messages from user messages queue to deadletter 
                         object? usrMsg;
 
-                        while ((usrMsg = _userMessages.Pop()) != null)
+                        while ((usrMsg = _userMessages.Pop()) is not null)
                         {
                             if (usrMsg is RemoteDeliver rd)
                             {
@@ -115,7 +115,7 @@ namespace Proto.Remote
                     batch.Clear();
                     object? msg;
 
-                    while ((msg = _userMessages.Pop()) != null)
+                    while ((msg = _userMessages.Pop()) is not null)
                     {
                         Logger.LogDebug("[EndpointWriterMailbox] Processing User Message {@Message}", msg);
 

@@ -86,7 +86,7 @@ namespace Proto.Future
                 return;
             }
 
-            if (_cts == null || !_cts.IsCancellationRequested)
+            if (_cts is null || !_cts.IsCancellationRequested)
             {
                 _tcs.TrySetResult(default!);
             }

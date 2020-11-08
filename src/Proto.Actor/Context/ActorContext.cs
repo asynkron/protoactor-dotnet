@@ -62,7 +62,7 @@ namespace Proto.Context
 
         public void Stash()
         {
-            if (_messageOrEnvelope != null)
+            if (_messageOrEnvelope is not null)
             {
                 EnsureExtras().Stash.Push(_messageOrEnvelope);
             }
@@ -70,7 +70,7 @@ namespace Proto.Context
 
         public void Respond(object message)
         {
-            if (Sender != null)
+            if (Sender is not null)
             {
                 Logger.LogDebug("{Self} Responding to {Sender} with message {Message}", Self, Sender, message);
                 Send(Sender, message);
@@ -95,7 +95,7 @@ namespace Proto.Context
 
         public PID SpawnNamed(Props props, string name)
         {
-            if (props.GuardianStrategy != null)
+            if (props.GuardianStrategy is not null)
             {
                 throw new ArgumentException("Props used to spawn child cannot have GuardianStrategy.");
             }
@@ -127,7 +127,7 @@ namespace Proto.Context
             EnsureExtras();
             _extras!.StopReceiveTimeoutTimer();
 
-            if (_extras.ReceiveTimeoutTimer == null)
+            if (_extras.ReceiveTimeoutTimer is null)
             {
                 _extras.InitReceiveTimeoutTimer(
                     new Timer(
@@ -144,7 +144,7 @@ namespace Proto.Context
 
         public void CancelReceiveTimeout()
         {
-            if (_extras?.ReceiveTimeoutTimer == null)
+            if (_extras?.ReceiveTimeoutTimer is null)
             {
                 return;
             }
@@ -261,7 +261,7 @@ namespace Proto.Context
             var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
             Self.SendSystemMessage(System, SuspendMailbox.Instance);
 
-            if (Parent == null)
+            if (Parent is null)
             {
                 HandleRootFailure(failure);
             }
@@ -358,7 +358,7 @@ namespace Proto.Context
 
         private ActorContextExtras EnsureExtras()
         {
-            if (_extras == null)
+            if (_extras is null)
             {
                 var context = _props.ContextDecoratorChain?.Invoke(this) ?? this;
                 _extras = new ActorContextExtras(context);
@@ -372,7 +372,7 @@ namespace Proto.Context
             Message switch
             {
                 PoisonPill _ => HandlePoisonPill(),
-                _ => Actor!.ReceiveAsync(_props.ContextDecoratorChain != null ? EnsureExtras().Context : this)
+                _ => Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this)
             };
 
         private Task HandlePoisonPill()
@@ -384,12 +384,12 @@ namespace Proto.Context
         private Task ProcessMessageAsync(object msg)
         {
             //slow path, there is middleware, message must be wrapped in an envelop
-            if (_props.ReceiverMiddlewareChain != null)
+            if (_props.ReceiverMiddlewareChain is not null)
             {
                 return _props.ReceiverMiddlewareChain(EnsureExtras().Context, MessageEnvelope.Wrap(msg));
             }
 
-            if (_props.ContextDecoratorChain != null)
+            if (_props.ContextDecoratorChain is not null)
             {
                 return EnsureExtras().Context.Receive(MessageEnvelope.Wrap(msg));
             }
@@ -420,7 +420,7 @@ namespace Proto.Context
 
         private void SendUserMessage(PID target, object message)
         {
-            if (_props.SenderMiddlewareChain != null)
+            if (_props.SenderMiddlewareChain is not null)
             {
                 //slow path
                 _props.SenderMiddlewareChain(EnsureExtras().Context, target, MessageEnvelope.Wrap(message));
@@ -568,7 +568,7 @@ namespace Proto.Context
 
             await InvokeUserMessageAsync(Started.Instance);
 
-            if (_extras?.Stash != null)
+            if (_extras?.Stash is not null)
             {
                 var currentStash = new Stack<object>(_extras.Stash);
                 _extras.Stash.Clear();
@@ -592,7 +592,7 @@ namespace Proto.Context
 
         private void ReceiveTimeoutCallback(object state)
         {
-            if (_extras?.ReceiveTimeoutTimer == null)
+            if (_extras?.ReceiveTimeoutTimer is null)
             {
                 return;
             }

@@ -77,7 +77,7 @@ namespace Proto
         //TODO: make lockfree
         private void NotifyChanges()
         {
-            while (_currentExpectation != null && _events.TryDequeue(out var @event))
+            while (_currentExpectation is not null && _events.TryDequeue(out var @event))
             {
                 if (_currentExpectation.Evaluate(@event))
                 {

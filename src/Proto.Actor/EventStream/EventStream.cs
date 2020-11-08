@@ -240,7 +240,7 @@ namespace Proto
         /// <param name="subscription"> A subscription to remove</param>
         public void Unsubscribe(EventStreamSubscription<T>? subscription)
         {
-            if (subscription != null)
+            if (subscription is not null)
             {
                 Unsubscribe(subscription.Id);
             }

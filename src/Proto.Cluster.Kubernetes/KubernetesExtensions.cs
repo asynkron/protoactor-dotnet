@@ -52,7 +52,7 @@ namespace Proto.Cluster.Kubernetes
         /// <returns></returns>
         internal static (bool IsCandidate, bool IsAlive, Member Status) GetMemberStatus(this V1Pod pod)
         {
-            var isCandidate = pod.Status.Phase == "Running" && pod.Status.PodIP != null;
+            var isCandidate = pod.Status.Phase == "Running" && pod.Status.PodIP is not null;
 
             var kinds = pod
                 .Metadata
@@ -82,7 +82,7 @@ namespace Proto.Cluster.Kubernetes
         /// <returns>The pod namespace</returns>
         internal static string GetKubeNamespace()
         {
-            if (cachedNamespace == null)
+            if (cachedNamespace is null)
             {
                 var namespaceFile = Path.Combine(
                     $"{Path.DirectorySeparatorChar}var",
