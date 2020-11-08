@@ -20,6 +20,7 @@ namespace SpawnBenchmark
         public long Num;
         public long Size;
     }
+    
 
     internal class MyActor : IActor
     {
