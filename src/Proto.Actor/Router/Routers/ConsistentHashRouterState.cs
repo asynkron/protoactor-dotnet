@@ -45,7 +45,7 @@ namespace Proto.Router.Routers
 
         public override void RouteMessage(object message)
         {
-            if (_hashRing == null)
+            if (_hashRing is null)
             {
                 throw new InvalidOperationException("Routees not set");
             }

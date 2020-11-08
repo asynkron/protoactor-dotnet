@@ -18,7 +18,7 @@ namespace Proto
         /// <param name="system">Actor system</param>
         internal static void Stop(this IEnumerable<PID> self, ActorSystem system)
         {
-            if (self == null!)
+            if (self is null!)
             {
                 return;
             }

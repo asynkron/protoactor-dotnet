@@ -39,7 +39,7 @@ namespace Proto.Cluster.Kubernetes
 
         public KubernetesProvider(IKubernetes kubernetes)
         {
-            if (KubernetesExtensions.GetKubeNamespace() == null)
+            if (KubernetesExtensions.GetKubeNamespace() is null)
                 throw new InvalidOperationException("The application doesn't seem to be running in Kubernetes");
 
             _kubernetes = kubernetes;
@@ -89,13 +89,13 @@ namespace Proto.Cluster.Kubernetes
             Logger.LogInformation("Registering service {PodName} on {PodIp}", _podName, _address);
 
             var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace());
-            if (pod == null) throw new ApplicationException($"Unable to get own pod information for {_podName}");
+            if (pod is null) throw new ApplicationException($"Unable to get own pod information for {_podName}");
             
             Logger.LogInformation("Using Kubernetes namespace: " + pod.Namespace());
 
             var matchingPort = pod.FindPort(_port);
 
-            if (matchingPort == null) Logger.LogWarning("Registration port doesn't match any of the container ports");
+            if (matchingPort is null) Logger.LogWarning("Registration port doesn't match any of the container ports");
             
             Logger.LogInformation("Using Kubernetes port: " + _port);
 

@@ -26,7 +26,7 @@ namespace Proto
 
         internal Process? Ref(ActorSystem system)
         {
-            if (_process != null)
+            if (_process is not null)
             {
                 if (_process is ActorProcess actorProcess && actorProcess.IsDead)
                 {

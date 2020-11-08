@@ -71,7 +71,7 @@ namespace Proto.Mailbox.Tests
                     {
                         var popped = sut.Pop();
 
-                        while (popped == null)
+                        while (popped is null)
                         {
                             if (cancelSource.IsCancellationRequested) return;
 

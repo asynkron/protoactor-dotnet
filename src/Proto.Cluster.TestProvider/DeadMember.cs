@@ -22,6 +22,6 @@ namespace Proto.Cluster.Testing
             => !ReferenceEquals(null, obj) &&
                (ReferenceEquals(this, obj) || obj.GetType() == GetType() && Equals((DeadMember) obj));
 
-        public override int GetHashCode() => MemberId != null ? MemberId.GetHashCode() : 0;
+        public override int GetHashCode() => MemberId is not null ? MemberId.GetHashCode() : 0;
     }
 }

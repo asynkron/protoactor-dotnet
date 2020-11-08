@@ -73,6 +73,6 @@ namespace Proto.Cluster
         }
 
         private static bool IsRemote(this PID? sender, IInfoContext context)
-            => sender != null && sender.Address != context.System.Address;
+            => sender is not null && sender.Address != context.System.Address;
     }
 }

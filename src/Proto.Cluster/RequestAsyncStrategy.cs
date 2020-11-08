@@ -67,7 +67,7 @@ namespace Proto.Cluster
                 try
                 {
                     var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
-                    if (pid == null)
+                    if (pid is null)
                     {
                         _logger.LogDebug(
                             "Requesting {Identity}-{Kind} Message {Message} - Did not get PID from IdentityLookup",
@@ -117,7 +117,7 @@ namespace Proto.Cluster
             {
                 var res = await _context.RequestAsync<T>(cachedPid, message, TimeSpan.FromSeconds(5));
 
-                if (res != null)
+                if (res is not null)
                 {
                     return (ResponseStatus.Ok, res);
                 }

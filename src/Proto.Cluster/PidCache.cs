@@ -18,7 +18,7 @@ namespace Proto.Cluster
 
         public bool TryGet(ClusterIdentity clusterIdentity, out PID pid)
         {
-            if (clusterIdentity == null)
+            if (clusterIdentity is null)
             {
                 throw new ArgumentNullException(nameof(clusterIdentity));
             }
@@ -29,12 +29,12 @@ namespace Proto.Cluster
 
         public bool TryAdd(ClusterIdentity clusterIdentity, PID pid)
         {
-            if (clusterIdentity == null)
+            if (clusterIdentity is null)
             {
                 throw new ArgumentNullException(nameof(clusterIdentity));
             }
             
-            if (pid == null)
+            if (pid is null)
             {
                 throw new ArgumentNullException(nameof(pid));
             }
@@ -44,17 +44,17 @@ namespace Proto.Cluster
 
         public bool TryUpdate(ClusterIdentity clusterIdentity, PID newPid, PID existingPid)
         {
-            if (clusterIdentity == null)
+            if (clusterIdentity is null)
             {
                 throw new ArgumentNullException(nameof(clusterIdentity));
             }
             
-            if (newPid == null)
+            if (newPid is null)
             {
                 throw new ArgumentNullException(nameof(newPid));
             }
             
-            if (existingPid == null)
+            if (existingPid is null)
             {
                 throw new ArgumentNullException(nameof(existingPid));
             }
@@ -64,7 +64,7 @@ namespace Proto.Cluster
 
         public bool TryRemove(ClusterIdentity clusterIdentity)
         {
-            if (clusterIdentity == null)
+            if (clusterIdentity is null)
             {
                 throw new ArgumentNullException(nameof(clusterIdentity));
             }
