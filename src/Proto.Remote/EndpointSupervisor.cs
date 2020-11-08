@@ -27,7 +27,7 @@ namespace Proto.Remote
 
         public EndpointSupervisor(Remote remote, ActorSystem system)
         {
-            if (remote.Config == null)
+            if (remote.Config is null)
             {
                 throw new ArgumentException("RemoteConfig may not be null", nameof(remote));
             }
@@ -125,7 +125,7 @@ namespace Proto.Remote
                 throw new ArgumentNullException(nameof(address));
             }
             
-            if (remote.Config == null)
+            if (remote.Config is null)
             {
                 throw new ArgumentNullException(nameof(remote));
             }

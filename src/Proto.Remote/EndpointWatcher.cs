@@ -123,7 +123,7 @@ namespace Proto.Remote
 
             _watched.Clear();
             _behavior.Become(TerminatedAsync);
-            if (context.Self != null)
+            if (context.Self is not null)
             {
                 context.Stop(context.Self);
             }
