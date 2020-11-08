@@ -63,12 +63,12 @@ namespace Proto.Cluster.MongoIdentityLookup
         {
             var existingPid = await TryGetExistingActivationAsync(key, clusterIdentity, ct);
             //we got an existing activation, use this
-            if (existingPid != null) return existingPid;
+            if (existingPid is not null) return existingPid;
 
             //are there any members that can spawn this kind?
             //if not, just bail out
             var activator = _memberList.GetActivator(clusterIdentity.Kind, _cluster.System.Address);
-            if (activator == null) return null;
+            if (activator is null) return null;
 
             //try to acquire global lock for this key
             var requestId = Guid.NewGuid().ToString();
@@ -180,7 +180,7 @@ namespace Proto.Cluster.MongoIdentityLookup
         {
             var pidLookupEntity = await LookupKey(key, ct);
             var lockId = pidLookupEntity?.LockedBy;
-            if (lockId != null)
+            if (lockId is not null)
             {
                 //There is an active lock on the pid, spin wait
                 var i = 0;
@@ -191,10 +191,10 @@ namespace Proto.Cluster.MongoIdentityLookup
             }
 
             //the lookup entity was lost, stale lock maybe?
-            if (pidLookupEntity == null) return null;
+            if (pidLookupEntity is null) return null;
             
             //lookup was unlocked, return this pid
-            if (pidLookupEntity.LockedBy == null) return await ValidateAndMapToPid(clusterIdentity, pidLookupEntity);
+            if (pidLookupEntity.LockedBy is null) return await ValidateAndMapToPid(clusterIdentity, pidLookupEntity);
             
             //Still locked but not by the same request that originally locked it, so not stale
             if (pidLookupEntity.LockedBy != lockId) return null;
@@ -209,16 +209,16 @@ namespace Proto.Cluster.MongoIdentityLookup
             CancellationToken ct)
         {
             var pidLookup = await LookupKey(key, ct);
-            if (pidLookup == null) return null;
+            if (pidLookup is null) return null;
             return await ValidateAndMapToPid(clusterIdentity, pidLookup);
         }
 
         private async Task<PID> ValidateAndMapToPid(ClusterIdentity clusterIdentity, PidLookupEntity pidLookup)
         {
-            var isLocked = pidLookup.LockedBy != null;
+            var isLocked = pidLookup.LockedBy is not null;
             if (isLocked) return null;
             
-            var memberExists = pidLookup.MemberId == null || _memberList.ContainsMemberId(pidLookup.MemberId);
+            var memberExists = pidLookup.MemberId is null || _memberList.ContainsMemberId(pidLookup.MemberId);
             if (!memberExists)
             {
                 if (StaleMembers.TryAdd(pidLookup.MemberId))

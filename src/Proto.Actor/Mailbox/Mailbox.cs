@@ -134,7 +134,7 @@ namespace Proto.Mailbox
             {
                 for (var i = 0; i < _dispatcher.Throughput; i++)
                 {
-                    if (Interlocked.Read(ref _systemMessageCount) > 0 && (msg = _systemMessages.Pop()) != null)
+                    if (Interlocked.Read(ref _systemMessageCount) > 0 && (msg = _systemMessages.Pop()) is not null)
                     {
                         Interlocked.Decrement(ref _systemMessageCount);
 
@@ -177,7 +177,7 @@ namespace Proto.Mailbox
                         break;
                     }
 
-                    if ((msg = _userMailbox.Pop()) != null)
+                    if ((msg = _userMailbox.Pop()) is not null)
                     {
                         var t = _invoker.InvokeUserMessageAsync(msg);
                         if (t.IsFaulted)

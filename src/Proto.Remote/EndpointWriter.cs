@@ -92,7 +92,7 @@ namespace Proto.Remote
 
                 MessageHeader? header = null;
 
-                if (rd.Header != null && rd.Header.Count > 0)
+                if (rd.Header is not null && rd.Header.Count > 0)
                 {
                     header = new MessageHeader();
                     header.HeaderData.Add(rd.Header.ToDictionary());
@@ -125,7 +125,7 @@ namespace Proto.Remote
 
         private static Task EndpointTerminatedEvent(IContext context)
         {
-            if (context.Self != null) //TODO: how can Self ever be null?
+            if (context.Self is not null) //TODO: how can Self ever be null?
             {
                 context.Stop(context.Self);
             }
@@ -135,7 +135,7 @@ namespace Proto.Remote
 
         private async Task SendEnvelopesAsync(MessageBatch batch, IContext context)
         {
-            if (_streamWriter == null)
+            if (_streamWriter is null)
             {
                 Logger.LogError(
                     "[EndpointWriter] gRPC Failed to send to address {Address}, reason No Connection available",
@@ -172,7 +172,7 @@ namespace Proto.Remote
 
         private Task ShutDownChannel()
         {
-            if (_channel != null && _channel.State != ChannelState.Shutdown)
+            if (_channel is not null && _channel.State != ChannelState.Shutdown)
             {
                 return _channel.ShutdownAsync();
             }

@@ -239,7 +239,7 @@ namespace Proto.Cluster.Partition
 
         private Task GetOrSpawn(ActivationRequest msg, IContext context)
         {
-            if (context.Sender == null)
+            if (context.Sender is null)
             {
                 _logger.LogCritical("NO SENDER IN GET OR SPAWN!!");
                 return Task.CompletedTask;
@@ -265,7 +265,7 @@ namespace Proto.Cluster.Partition
 
             if (_mode == ProcessingMode.Waiting)
             {
-                if (_resumeProcessing == null)
+                if (_resumeProcessing is null)
                 {
                     _logger.LogCritical("Reenter task was null in wait mode!");
                 }
@@ -282,7 +282,7 @@ namespace Proto.Cluster.Partition
             var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender.Address)?.Address;
 
             //just make the code analyzer understand the address is not null after this block
-            if (activatorAddress == null || string.IsNullOrEmpty(activatorAddress))
+            if (activatorAddress is null || string.IsNullOrEmpty(activatorAddress))
             {
                 //No activator currently available, return unavailable
                 _logger.LogWarning("No members currently available for kind {Kind}", msg.Kind);

@@ -56,7 +56,7 @@ namespace Proto.Remote
             }
 
             var message = obj as IMessage;
-            if (message == null)
+            if (message is null)
             {
                 throw new ArgumentException("obj must be of type IMessage", nameof(obj));
             }
@@ -90,7 +90,7 @@ namespace Proto.Remote
         public string GetTypeName(object obj)
         {
             var message = obj as IMessage;
-            if (message == null)
+            if (message is null)
             {
                 throw new ArgumentException("obj must be of type IMessage", nameof(obj));
             }

@@ -70,7 +70,7 @@
                     Enumerable.Range(0, 1000).Select(async i =>
                         {
                             Pong pong = null;
-                            while (pong == null)
+                            while (pong is null)
                             {
                                 timeout.ThrowIfCancellationRequested();
                                 pong = await cluster.Ping(i.ToString(), "hello", timeout);

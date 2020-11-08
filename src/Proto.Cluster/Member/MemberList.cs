@@ -97,7 +97,7 @@ namespace Proto.Cluster
         public void UpdateLeader(LeaderInfo leader)
         {
             //TODO: could likely be done better
-            if (leader?.BannedMembers != null)
+            if (leader?.BannedMembers is not null)
             {
                 foreach (var b in leader.BannedMembers)
                 {

@@ -42,7 +42,7 @@ namespace Proto.Cluster
 
                     var task = receiver(context, envelope);
 
-                    if (!(envelope.Message is PoisonPill && !(envelope.Message is SystemMessage))
+                    if (!(envelope.Message is PoisonPill && envelope.Message is not SystemMessage)
                         && sender.IsRemote(context)
                         && hasLocalAffinity(envelope)
                         && shouldRelocate()
@@ -73,6 +73,6 @@ namespace Proto.Cluster
         }
 
         private static bool IsRemote(this PID? sender, IInfoContext context)
-            => sender != null && sender.Address != context.System.Address;
+            => sender is not null && sender.Address != context.System.Address;
     }
 }

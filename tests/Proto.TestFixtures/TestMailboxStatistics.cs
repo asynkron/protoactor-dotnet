@@ -37,7 +37,7 @@ namespace Proto.TestFixtures
         {
             Stats.Add(message);
             Received.Add(message);
-            if (_waitForReceived != null && _waitForReceived(message))
+            if (_waitForReceived is not null && _waitForReceived(message))
                 Reset.Set();
         }
 

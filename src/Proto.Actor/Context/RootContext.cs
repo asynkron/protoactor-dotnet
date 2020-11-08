@@ -53,7 +53,7 @@ namespace Proto
 
         public PID SpawnNamed(Props props, string name)
         {
-            var parent = props.GuardianStrategy != null
+            var parent = props.GuardianStrategy is not null
                 ? System.Guardians.GetGuardianPid(props.GuardianStrategy)
                 : null;
             return props.Spawn(System, name, parent);
@@ -88,7 +88,7 @@ namespace Proto
 
         public void Stop(PID? pid)
         {
-            if (pid == null)
+            if (pid is null)
             {
                 return;
             }
@@ -137,7 +137,7 @@ namespace Proto
 
         private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)
         {
-            if (target == null)
+            if (target is null)
             {
                 throw new ArgumentNullException(nameof(target));
             }
@@ -161,12 +161,12 @@ namespace Proto
 
         private void SendUserMessage(PID target, object message)
         {
-            if (target == null)
+            if (target is null)
             {
                 throw new ArgumentNullException(nameof(target));
             }
 
-            if (SenderMiddleware != null)
+            if (SenderMiddleware is not null)
             {
                 //slow path
                 SenderMiddleware(this, target, MessageEnvelope.Wrap(message));

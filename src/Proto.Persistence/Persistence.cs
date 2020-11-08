@@ -37,17 +37,17 @@ namespace Proto.Persistence
         }
 
         public long Index { get; private set; } = -1;
-        private bool UsingSnapshotting => _applySnapshot != null; //TODO: why not used?
-        private bool UsingEventSourcing => _applyEvent != null;
+        private bool UsingSnapshotting => _applySnapshot is not null; //TODO: why not used?
+        private bool UsingEventSourcing => _applyEvent is not null;
 
         public static Persistence WithEventSourcing(IEventStore eventStore, string actorId, Action<Event> applyEvent)
         {
-            if (eventStore == null)
+            if (eventStore is null)
             {
                 throw new ArgumentNullException(nameof(eventStore));
             }
 
-            if (applyEvent == null)
+            if (applyEvent is null)
             {
                 throw new ArgumentNullException(nameof(applyEvent));
             }
@@ -58,12 +58,12 @@ namespace Proto.Persistence
         public static Persistence WithSnapshotting(ISnapshotStore snapshotStore, string actorId,
             Action<Snapshot> applySnapshot)
         {
-            if (snapshotStore == null)
+            if (snapshotStore is null)
             {
                 throw new ArgumentNullException(nameof(snapshotStore));
             }
 
-            if (applySnapshot == null)
+            if (applySnapshot is null)
             {
                 throw new ArgumentNullException(nameof(applySnapshot));
             }
@@ -76,22 +76,22 @@ namespace Proto.Persistence
             Action<Snapshot> applySnapshot
         )
         {
-            if (eventStore == null)
+            if (eventStore is null)
             {
                 throw new ArgumentNullException(nameof(eventStore));
             }
 
-            if (snapshotStore == null)
+            if (snapshotStore is null)
             {
                 throw new ArgumentNullException(nameof(snapshotStore));
             }
 
-            if (applyEvent == null)
+            if (applyEvent is null)
             {
                 throw new ArgumentNullException(nameof(applyEvent));
             }
 
-            if (applySnapshot == null)
+            if (applySnapshot is null)
             {
                 throw new ArgumentNullException(nameof(applySnapshot));
             }
@@ -104,32 +104,32 @@ namespace Proto.Persistence
             Action<Snapshot> applySnapshot, ISnapshotStrategy snapshotStrategy, Func<object> getState
         )
         {
-            if (eventStore == null)
+            if (eventStore is null)
             {
                 throw new ArgumentNullException(nameof(eventStore));
             }
 
-            if (snapshotStore == null)
+            if (snapshotStore is null)
             {
                 throw new ArgumentNullException(nameof(snapshotStore));
             }
 
-            if (applyEvent == null)
+            if (applyEvent is null)
             {
                 throw new ArgumentNullException(nameof(applyEvent));
             }
 
-            if (applySnapshot == null)
+            if (applySnapshot is null)
             {
                 throw new ArgumentNullException(nameof(applySnapshot));
             }
 
-            if (snapshotStrategy == null)
+            if (snapshotStrategy is null)
             {
                 throw new ArgumentNullException(nameof(snapshotStrategy));
             }
 
-            if (getState == null)
+            if (getState is null)
             {
                 throw new ArgumentNullException(nameof(getState));
             }
@@ -147,7 +147,7 @@ namespace Proto.Persistence
         {
             var (snapshot, lastSnapshotIndex) = await _snapshotStore.GetSnapshotAsync(_actorId);
 
-            if (snapshot != null && _applySnapshot != null)
+            if (snapshot is not null && _applySnapshot is not null)
             {
                 Index = lastSnapshotIndex;
                 _applySnapshot(new RecoverSnapshot(snapshot, lastSnapshotIndex));
@@ -208,7 +208,7 @@ namespace Proto.Persistence
 
             _applyEvent?.Invoke(persistedEvent);
 
-            if (_snapshotStrategy?.ShouldTakeSnapshot(persistedEvent) == true && _getState != null)
+            if (_snapshotStrategy?.ShouldTakeSnapshot(persistedEvent) == true && _getState is not null)
             {
                 var persistedSnapshot = new PersistedSnapshot(_getState(), persistedEvent.Index);
 
