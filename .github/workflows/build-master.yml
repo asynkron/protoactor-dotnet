@@ -23,9 +23,13 @@ jobs:
       - name: Build
         run: dotnet build -c Release
 
-      - name: Run tests
+      - name: Run tests netcoreapp3.1
         run: |
-          dotnet test -c Release
+          dotnet test -c Release --framework netcoreapp3.1
+
+      - name: Run tests net5.0
+        run: |
+          dotnet test -c Release --framework net5.0
         
   nuget:
     runs-on: windows-latest
