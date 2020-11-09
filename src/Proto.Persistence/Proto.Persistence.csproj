@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
     <IsPackable>true</IsPackable>
     <Nullable>enable</Nullable>
     <LangVersion>9</LangVersion>
+    <TargetFrameworks>netstandard2.1;net5.0</TargetFrameworks>
   </PropertyGroup>
 </Project>
