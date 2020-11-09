@@ -95,21 +95,24 @@ namespace Proto.Tests
                 Props.FromFunc(async ctx =>
                     {
                         if (ctx.Message is string)
+                        {
                             try
                             {
                                 await Task.Delay(5000, ctx.CancellationToken);
                             }
-                            catch (System.Exception e)
+                            catch (Exception e)
                             {
                                 messages.Enqueue(e);
                             }
+                        }
+
                         messages.Enqueue(ctx.Message);
                     })
                 );
 
             Context.Send(pid, "hello");
-            // Wait a little while the actor starts to process the message
-            await Task.Delay(10);
+            // Wait a little while the actor starts to process the message//
+            await Task.Delay(15);
             await Context.StopAsync(pid);
 
             Assert.Equal(5, messages.Count);
