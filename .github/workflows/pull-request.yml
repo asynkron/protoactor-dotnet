@@ -21,8 +21,8 @@ jobs:
           
       - name: Run tests netcoreapp3.1
         run: |
-          dotnet test -c Release -framework netcoreapp3.1
+          dotnet test -c Release --framework netcoreapp3.1
           
       - name: Run tests net5
         run: |
-            dotnet test -c Release -framework net5.0
+            dotnet test -c Release --framework net5.0
