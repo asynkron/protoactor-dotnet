@@ -39,9 +39,12 @@ namespace Proto.Cluster.Testing
         }
 
 
-        public Task StartMemberAsync(Cluster cluster, string clusterName, string host, int port, string[] kinds,
-            MemberList memberList)
+        public Task StartMemberAsync(Cluster cluster)
         {
+            var memberList = cluster.MemberList;
+            var clusterName = cluster.Config.ClusterName;
+            var (host, port) = cluster.System.GetAddress();
+            var kinds = cluster.GetClusterKinds();
             _id = Guid.NewGuid();
             _clusterName = clusterName;
             _system = cluster.System;
@@ -61,8 +64,11 @@ namespace Proto.Cluster.Testing
             return Task.CompletedTask;
         }
 
-        public Task StartClientAsync(Cluster cluster, string clusterName, string host, int port, MemberList memberList)
+        public Task StartClientAsync(Cluster cluster)
         {
+            var memberList = cluster.MemberList;
+            var clusterName = cluster.Config.ClusterName;
+
             _id = Guid.NewGuid();
             _clusterName = clusterName;
             _system = cluster.System;

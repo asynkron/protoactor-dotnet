@@ -84,10 +84,11 @@ namespace Proto.Cluster.Consul
         {
         }
 
-        public async Task StartMemberAsync(Cluster cluster, string clusterName, string host, int port, string[] kinds,
-            MemberList memberList)
+        public async Task StartMemberAsync(Cluster cluster)
         {
-            SetState(cluster, clusterName, host, port, kinds, memberList);
+            var (host,port) = cluster.System.GetAddress();
+            var kinds = cluster.GetClusterKinds();
+            SetState(cluster, cluster.Config.ClusterName, host, port, kinds, cluster.MemberList);
             await RegisterMemberAsync();
             StartUpdateTtlLoop();
             StartMonitorMemberStatusChangesLoop();
@@ -96,6 +97,7 @@ namespace Proto.Cluster.Consul
 
         private void SetState(Cluster cluster, string clusterName, string host, int port, string[] kinds, MemberList memberList)
         {
+            
             _cluster = cluster;
             _consulServiceInstanceId = $"{clusterName}-{_cluster.Id}@{host}:{port}";
             _consulServiceName = clusterName;
@@ -106,9 +108,10 @@ namespace Proto.Cluster.Consul
             _logger = Log.CreateLogger($"ConsulProvider-{_cluster.LoggerId}");
         }
 
-        public Task StartClientAsync(Cluster cluster, string clusterName, string host, int port,  MemberList memberList)
+        public Task StartClientAsync(Cluster cluster)
         {
-            SetState(cluster, clusterName, host, port, null, memberList);
+            var (host,port) = cluster.System.GetAddress();
+            SetState(cluster, cluster.Config.ClusterName, host, port, null, cluster.MemberList);
             
             StartMonitorMemberStatusChangesLoop();
             
