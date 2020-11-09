@@ -23,6 +23,6 @@ jobs:
         run: |
           dotnet test -c Release --framework netcoreapp3.1
           
-      - name: Run tests net5
+      - name: Run tests net5.0
         run: |
             dotnet test -c Release --framework net5.0
