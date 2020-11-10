@@ -55,8 +55,6 @@
             }
             
             triggered.Should().Be(maxEvents * 2, "We expect the throttle to open after the timespan");
-
-
         }
         
         [Fact]

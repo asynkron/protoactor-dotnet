@@ -45,9 +45,12 @@ namespace Proto.Cluster.Kubernetes
             _kubernetes = kubernetes;
         }
 
-        public async Task StartMemberAsync(Cluster cluster, string clusterName, string host, int port, string[] kinds,
-            MemberList memberList)
+        public async Task StartMemberAsync(Cluster cluster)
         {
+            var memberList = cluster.MemberList;
+            var clusterName = cluster.Config.ClusterName;
+            var (host, port) = cluster.System.GetAddress();
+            var kinds = cluster.GetClusterKinds();
             _cluster = cluster;
             _memberList = memberList;
             _clusterName = clusterName;
@@ -60,8 +63,11 @@ namespace Proto.Cluster.Kubernetes
             MonitorMemberStatusChanges();
         }
 
-        public Task StartClientAsync(Cluster cluster, string clusterName, string host, int port, MemberList memberList)
+        public Task StartClientAsync(Cluster cluster)
         {
+            var memberList = cluster.MemberList;
+            var clusterName = cluster.Config.ClusterName;
+            var (host, port) = cluster.System.GetAddress();
             _cluster = cluster;
             _memberList = memberList;
             _clusterName = clusterName;
