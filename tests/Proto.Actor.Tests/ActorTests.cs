@@ -55,7 +55,7 @@ namespace Proto.Tests
                 return Task.CompletedTask;
             });
 
-            var reply = await Context.RequestAsync<object>(pid, "hello", TimeSpan.FromMilliseconds(100));
+            var reply = await Context.RequestAsync<object>(pid, "hello", TimeSpan.FromMilliseconds(1000));
 
             Assert.Equal("hey", reply);
         }
