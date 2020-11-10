@@ -86,6 +86,7 @@ namespace Proto.Tests
             Assert.IsType<Stopped>(msgs[3]);
         }
 
+        
         // [Fact(Skip = "fails on CI")]
         // public async Task StopActorWithLongRunningTask()
         // {
