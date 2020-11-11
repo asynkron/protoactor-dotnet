@@ -11,6 +11,7 @@
     <PackageReference Include="Google.Protobuf" Version="3.11.4" />
     <PackageReference Include="Grpc.Tools" Version="2.23.0" PrivateAssets="All" />
     <PackageReference Include="IsExternalInit.System.Runtime.CompilerServices" Version="1.0.0" Condition="'$(TargetFramework)' == 'netstandard2.1'" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.0" />
     <PackageReference Include="System.Collections.Immutable" Version="1.7.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
     <PackageReference Include="System.Threading.Channels" Version="4.6.0" />
