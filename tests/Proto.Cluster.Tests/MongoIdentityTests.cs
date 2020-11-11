@@ -1,4 +1,8 @@
-﻿namespace Proto.Cluster.Tests
+﻿using Divergic.Logging.Xunit;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace Proto.Cluster.Tests
 {
     using System;
     using IdentityLookup;
@@ -15,7 +19,8 @@
         protected override IIdentityLookup GetIdentityLookup(string clusterName)
         {
             var db = GetMongo();
-            var identity = new MongoIdentityLookup(clusterName, db);
+            var pids = db.GetCollection<PidLookupEntity>("pids");
+            var identity = new ExternalIdentityLookup(new MongoIdentityStorage(clusterName, pids));
             return identity;
         }
 
@@ -31,10 +36,12 @@
         }
     }
 
-    // public class MongoClusterTests: ClusterTests, IClassFixture<MongoIdentityClusterFixture>
-    // {
-    //     public MongoClusterTests(ITestOutputHelper testOutputHelper, MongoIdentityClusterFixture clusterFixture) : base(testOutputHelper, clusterFixture)
-    //     {
-    //     }
-    // }
+    public class MongoClusterTests : ClusterTests, IClassFixture<MongoIdentityClusterFixture>
+    {
+        // ReSharper disable once SuggestBaseTypeForParameter
+        public MongoClusterTests(ITestOutputHelper testOutputHelper, MongoIdentityClusterFixture clusterFixture)
+            : base(testOutputHelper, clusterFixture)
+        {
+        }
+    }
 }

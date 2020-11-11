@@ -45,7 +45,7 @@ namespace Proto.Cluster.Testing
             var clusterName = cluster.Config.ClusterName;
             var (host, port) = cluster.System.GetAddress();
             var kinds = cluster.GetClusterKinds();
-            _id = Guid.NewGuid();
+            _id = cluster.Id;
             _clusterName = clusterName;
             _system = cluster.System;
             _memberList = memberList;
@@ -69,7 +69,7 @@ namespace Proto.Cluster.Testing
             var memberList = cluster.MemberList;
             var clusterName = cluster.Config.ClusterName;
 
-            _id = Guid.NewGuid();
+            _id = cluster.Id;
             _clusterName = clusterName;
             _system = cluster.System;
             _memberList = memberList;

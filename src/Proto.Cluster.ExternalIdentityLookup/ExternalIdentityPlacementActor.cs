@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 //   <copyright file="Activator.cs" company="Asynkron AB">
 //       Copyright (C) 2015-2020 Asynkron AB All rights reserved
 //   </copyright>
@@ -10,9 +10,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Proto.Cluster.MongoIdentityLookup
+namespace Proto.Cluster
 {
-    internal class MongoPlacementActor : IActor
+    internal class ExternalIdentityPlacementActor : IActor
     {
         private readonly Cluster _cluster;
         private readonly ILogger _logger;
@@ -22,15 +22,13 @@ namespace Proto.Cluster.MongoIdentityLookup
         //eventId -> the cluster wide eventId when this actor was created
         private readonly Dictionary<ClusterIdentity, PID> _myActors = new Dictionary<ClusterIdentity, PID>();
 
-        private readonly Remote.Remote _remote;
-        private readonly MongoIdentityLookup _mongoIdentityLookup;
+        private readonly ExternalIdentityLookup _identityLookup;
 
-        public MongoPlacementActor(Cluster cluster, MongoIdentityLookup mongoIdentityLookup)
+        public ExternalIdentityPlacementActor(Cluster cluster, ExternalIdentityLookup identityLookup)
         {
             _cluster = cluster;
-            _remote = _cluster.Remote;
-            _mongoIdentityLookup = mongoIdentityLookup;
-            _logger = Log.CreateLogger($"{nameof(MongoPlacementActor)}-{cluster.LoggerId}");
+            _identityLookup = identityLookup;
+            _logger = Log.CreateLogger($"{nameof(ExternalIdentityPlacementActor)}-{cluster.LoggerId}");
         }
 
         public Task ReceiveAsync(IContext context)
@@ -39,13 +37,13 @@ namespace Proto.Cluster.MongoIdentityLookup
                    {
                        Started _             => Started(context),
                        ReceiveTimeout _      => ReceiveTimeout(context),
-                       Terminated msg        => Terminated(context, msg),
+                       Terminated msg        => Terminated(msg),
                        ActivationRequest msg => ActivationRequest(context, msg),
                        _                     => Task.CompletedTask
                    };
         }
 
-        private Task Started(IContext context)
+        private static Task Started(IContext context)
         {
             context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
             return Task.CompletedTask;
@@ -59,19 +57,17 @@ namespace Proto.Cluster.MongoIdentityLookup
             return Task.CompletedTask;
         }
 
-        private async Task Terminated(IContext context, Terminated msg)
+        private async Task Terminated(Terminated msg)
         {
             //TODO: if this turns out to be perf intensive, lets look at optimizations for reverse lookups
-            var (clusterIdentity, _) = _myActors.FirstOrDefault(kvp => kvp.Value.Equals(msg.Who));
-            _myActors.Remove(clusterIdentity);
-            await _mongoIdentityLookup.RemoveUniqueIdentityAsync(msg.Who.Id);
+            var (identity, _) = _myActors.FirstOrDefault(kvp => kvp.Value.Equals(msg.Who));
+            _myActors.Remove(identity);
+            await _identityLookup.RemovePidAsync(msg.Who);
         }
 
         private Task ActivationRequest(IContext context, ActivationRequest msg)
         {
             var props = _cluster.GetClusterKind(msg.Kind);
-            var identity = msg.Identity;
-            var kind = msg.Kind;
             try
             {
                 if (_myActors.TryGetValue(msg.ClusterIdentity, out var existing))
@@ -92,15 +88,18 @@ namespace Proto.Cluster.MongoIdentityLookup
                     //we cannot get ProcessNameAlreadyExists exception here
 
                     var clusterProps = props.WithClusterInit(_cluster, msg.ClusterIdentity);
-                    var pid = context.SpawnPrefix(clusterProps , identity);
+                    var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.ToShortString());
 
                     _myActors[msg.ClusterIdentity] = pid;
+                    _cluster.PidCache.TryAdd(msg.ClusterIdentity, pid);
 
                     var response = new ActivationResponse
                     {
                         Pid = pid
                     };
                     context.Respond(response);
+
+                    PersistActivation(context, msg, pid);
                 }
             }
             catch
@@ -113,6 +112,22 @@ namespace Proto.Cluster.MongoIdentityLookup
             }
 
             return Task.CompletedTask;
+        }
+
+        private void PersistActivation(IContext context, ActivationRequest msg, PID pid)
+        {
+            var spawnLock = new SpawnLock(msg.RequestId, msg.ClusterIdentity);
+            try
+            {
+                _identityLookup.Storage.StoreActivation(_cluster.Id.ToString(), spawnLock, pid,
+                    context.CancellationToken
+                );
+            }
+            catch (StorageFailure e)
+            {
+                //meaning, we spawned an actor but its placement is not stored anywhere
+                _logger.LogCritical(e, "No entry was updated {@SpawnLock}", spawnLock);
+            }
         }
     }
 }

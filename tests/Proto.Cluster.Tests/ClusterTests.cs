@@ -1,4 +1,6 @@
-﻿namespace Proto.Cluster.Tests
+﻿using System;
+
+namespace Proto.Cluster.Tests
 {
     using System.Diagnostics;
     using System.Linq;
@@ -63,7 +65,7 @@
         }
 
         [Theory]
-        [InlineData(1000, 4000)]
+        [InlineData(1000, 10000)]
         public async Task CanSpawnVirtualActorsConcurrently(int actorCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -77,7 +79,7 @@
         }
 
         [Theory]
-        [InlineData(1, 4000)]
+        [InlineData(100, 6000)]
         public async Task CanSpawnMultipleKindsWithSameIdentityConcurrently(int actorCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -97,7 +99,7 @@
         }
 
         [Theory]
-        [InlineData(1000, 4000)]
+        [InlineData(100, 4000)]
         public async Task CanSpawnVirtualActorsConcurrentlyOnAllNodes(int actorCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -112,7 +114,7 @@
         }
 
         [Theory]
-        [InlineData(1000, 4000)]
+        [InlineData(100, 4000)]
         public async Task CanRespawnVirtualActors(int actorCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -153,7 +155,7 @@
 
             var afterPing = await GetActorCountFromHeartbeat();
 
-            afterPing.Should().Be(count + virtualActorCount, "We expect the echo actors to be added to the count");
+            afterPing.Should().BeGreaterOrEqualTo(count + virtualActorCount, "We expect the echo actors to be added to the count");
 
 
             async Task<int> GetActorCountFromHeartbeat()
@@ -176,12 +178,21 @@
             }
         }
 
-        private static async Task PingPong(Cluster cluster, string id, CancellationToken token = default,
+        private async Task PingPong(Cluster cluster, string id, CancellationToken token = default,
             string kind = EchoActor.Kind)
         {
             await Task.Yield();
-            var response = await cluster.Ping(id, id, token, kind);
-            response.Should().NotBeNull("We expect a response before timeout");
+            
+            var response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind);
+            var tries = 1;
+            while (response == null && !token.IsCancellationRequested)
+            {
+                await Task.Delay(200,token);
+                _testOutputHelper.WriteLine($"Retrying ping {kind}/{id}, attempt {++tries}");
+                response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind);
+            }
+            
+            response.Should().NotBeNull($"We expect a response before timeout on {kind}/{id}");
 
             response.Should().BeEquivalentTo(new Pong
                 {
@@ -193,14 +204,14 @@
         }
     }
 
-    // // ReSharper disable once UnusedType.Global
-    // public class InMemoryClusterTests : ClusterTests, IClassFixture<InMemoryClusterFixture>
-    // {
-    //     // ReSharper disable once SuggestBaseTypeForParameter
-    //     public InMemoryClusterTests(ITestOutputHelper testOutputHelper, InMemoryClusterFixture clusterFixture) : base(
-    //         testOutputHelper, clusterFixture
-    //     )
-    //     {
-    //     }
-    // }
+    // ReSharper disable once UnusedType.Global
+    public class InMemoryClusterTests : ClusterTests, IClassFixture<InMemoryClusterFixture>
+    {
+        // ReSharper disable once SuggestBaseTypeForParameter
+        public InMemoryClusterTests(ITestOutputHelper testOutputHelper, InMemoryClusterFixture clusterFixture) : base(
+            testOutputHelper, clusterFixture
+        )
+        {
+        }
+    }
 }

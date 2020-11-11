@@ -159,10 +159,11 @@ namespace ClusterExperiment1
             }
         }
 
-        private static MongoIdentityLookup GetIdentityLookup()
+        private static IIdentityLookup GetIdentityLookup()
         {
             var db = GetMongo();
-            var identity = new MongoIdentityLookup("mycluster", db);
+            var identity = new ExternalIdentityLookup(
+                new MongoIdentityStorage("mycluster", db.GetCollection<PidLookupEntity>("pids")));
             return identity;
         }
 
