@@ -22,6 +22,8 @@ namespace Proto.Cluster
 
         public Cluster(ActorSystem system, ClusterConfig config)
         {
+            system.RegisterClusterPlugin(this);
+            
             Id = Guid.NewGuid();
             PidCache = new PidCache();
             System = system;
