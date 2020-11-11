@@ -4,7 +4,7 @@ namespace Proto.Extensions
 {
     public class ActorSystemExtensions
     {
-        private readonly List<IActorSystemExtension> _extensions = new List<IActorSystemExtension>();
+        private readonly IActorSystemExtension[] _extensions = new IActorSystemExtension[100];
         private readonly ActorSystem _actorSystem;
 
         public ActorSystemExtensions(ActorSystem actorSystem)
@@ -19,11 +19,7 @@ namespace Proto.Extensions
 
         public void RegisterExtension(int extensionId, IActorSystemExtension extension)
         {
-            if (_extensions.Capacity <= extensionId)
-            {
-                _extensions.Capacity = extensionId;
-            }
-
+            //TODO, ensure capacity
             _extensions[extensionId] = extension;
         }
     }
