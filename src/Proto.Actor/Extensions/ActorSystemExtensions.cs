@@ -12,13 +12,13 @@ namespace Proto.Extensions
             _actorSystem = actorSystem;
         }
 
-        public T GetExtension<T>() where T: IActorSystemExtension
+        public T Get<T>() where T: IActorSystemExtension
         {
             var id = IActorSystemExtension<T>.Id;
             return (T)_extensions[id];
         }
 
-        public void RegisterExtension<T>(IActorSystemExtension<T> extension) where T:IActorSystemExtension
+        public void Register<T>(IActorSystemExtension<T> extension) where T:IActorSystemExtension
         {
             var id = IActorSystemExtension<T>.Id;
             //TODO, ensure capacity
