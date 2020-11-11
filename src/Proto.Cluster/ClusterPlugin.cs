@@ -4,7 +4,6 @@ namespace Proto.Cluster
 {
     public class ClusterPlugin : IActorSystemExtension
     {
-      
         public Cluster Cluster { get; }
 
         public ClusterPlugin(Cluster cluster)
@@ -15,17 +14,17 @@ namespace Proto.Cluster
 
     public static class ClusterPluginExtensions
     {
-        public static readonly int PluginId = ActorSystemExtension.GetNextId();
+        private static readonly ActorSystemExtensionId<ClusterPlugin> ExtensionId = new();
 
         public static void RegisterClusterPlugin(this ActorSystem system, Cluster cluster)
         {
             var plugin = new ClusterPlugin(cluster);
-            system.Extensions.RegisterExtension(PluginId, plugin);
+            system.Extensions.RegisterExtension(ExtensionId, plugin);
         }
         
         public static Cluster Cluster(this IContext self)
         {
-            var plugin = self.System.Extensions.GetExtension<ClusterPlugin>(PluginId);
+            var plugin = self.System.Extensions.GetExtension(ExtensionId);
             return plugin.Cluster;
         }
     } 
