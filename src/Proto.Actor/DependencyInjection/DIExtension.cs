@@ -39,9 +39,9 @@ namespace Proto.DependencyInjection
         //     throw new NotImplementedException();
         // }
 
-        public Props Create<TActor>() where TActor : IActor => Props.FromProducer(() => _services.GetService<TActor>()!);
+        public Props PropsFor<TActor>() where TActor : IActor => Proto.Props.FromProducer(() => _services.GetService<TActor>()!);
 
-        public Props Create(Type actorType) => Props.FromProducer(() => (IActor)_services.GetService(actorType)!);
+        public Props PropsFor(Type actorType) => Proto.Props.FromProducer(() => (IActor)_services.GetService(actorType)!);
 
         public void Release(IActor actor)
         {
