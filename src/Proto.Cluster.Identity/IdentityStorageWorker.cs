@@ -122,37 +122,46 @@ namespace Proto.Cluster.Identity
 
         private async Task<PID?> GetWithGlobalLock(PID sender, ClusterIdentity clusterIdentity, CancellationToken ct)
         {
-            var activation = await _storage.TryGetExistingActivationAsync(clusterIdentity, ct);
-            //we got an existing activation, use this
-            if (activation != null)
+            try
             {
-                var existingPid = await ValidateAndMapToPid(clusterIdentity, activation);
-                if (existingPid != null)
+                var activation = await _storage.TryGetExistingActivationAsync(clusterIdentity, ct);
+                //we got an existing activation, use this
+                if (activation != null)
                 {
-                    return existingPid;
+                    var existingPid = await ValidateAndMapToPid(clusterIdentity, activation);
+                    if (existingPid != null)
+                    {
+                        return existingPid;
+                    }
                 }
+
+                //are there any members that can spawn this kind?
+                //if not, just bail out
+                var activator = _memberList.GetActivator(clusterIdentity.Kind, sender.Address);
+                if (activator == null) return null;
+
+                //try to acquire global lock
+                var spawnLock = await _storage.TryAcquireLockAsync(clusterIdentity, ct);
+
+
+                //we didn't get the lock, wait for activation to complete
+                if (spawnLock == null)
+                    return await ValidateAndMapToPid(
+                        clusterIdentity,
+                        await _storage.WaitForActivationAsync(clusterIdentity, ct)
+                    );
+
+                //we have the lock, spawn and return
+                var pid = await SpawnActivationAsync(activator, spawnLock, ct);
+
+                return pid;
             }
-
-            //are there any members that can spawn this kind?
-            //if not, just bail out
-            var activator = _memberList.GetActivator(clusterIdentity.Kind, sender.Address);
-            if (activator == null) return null;
-
-            //try to acquire global lock
-            var spawnLock = await _storage.TryAcquireLockAsync(clusterIdentity, ct);
-
-
-            //we didn't get the lock, wait for activation to complete
-            if (spawnLock == null)
-                return await ValidateAndMapToPid(
-                    clusterIdentity,
-                    await _storage.WaitForActivationAsync(clusterIdentity, ct)
-                );
-
-            //we have the lock, spawn and return
-            var pid = await SpawnActivationAsync(activator, spawnLock, ct);
-
-            return pid;
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity.ToShortString());
+                return null;
+            }
+            
         }
 
         private async Task<PID?> SpawnActivationAsync(Member activator, SpawnLock spawnLock, CancellationToken ct)

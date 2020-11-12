@@ -60,8 +60,9 @@ namespace Proto.Cluster.Identity
         private async Task Terminated(Terminated msg)
         {
             //TODO: if this turns out to be perf intensive, lets look at optimizations for reverse lookups
-            var (identity, _) = _myActors.FirstOrDefault(kvp => kvp.Value.Equals(msg.Who));
+            var (identity, pid) = _myActors.FirstOrDefault(kvp => kvp.Value.Equals(msg.Who));
             _myActors.Remove(identity);
+            _cluster.PidCache.RemoveByVal(identity, pid);
             await _identityLookup.RemovePidAsync(msg.Who);
         }
 
