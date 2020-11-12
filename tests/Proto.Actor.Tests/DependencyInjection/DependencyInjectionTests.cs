@@ -42,7 +42,7 @@ namespace Proto.Tests.DependencyInjection
             s.AddTransient<DiActor>();
             var provider = s.BuildServiceProvider();
 
-            var resolver = new MsExtDependencyResolver(provider);
+            var resolver = new DependencyResolver(provider);
             var plugin = new DIExtension(resolver);
             
             var system = new ActorSystem();
