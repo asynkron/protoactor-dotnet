@@ -31,6 +31,32 @@ namespace Proto.Tests
             }
         }
 
+        private class AsyncDisposableActor : IActor, IAsyncDisposable
+        {
+            private readonly Action _onDispose;
+
+            public AsyncDisposableActor(Action onDispose)
+            {
+                _onDispose = onDispose;
+            }
+
+            public Task ReceiveAsync(IContext context)
+            {
+                switch (context.Message)
+                {
+                    case string _:
+                        throw new Exception();
+                }
+                return Task.CompletedTask;
+            }
+
+            public ValueTask DisposeAsync()
+            {
+                _onDispose();
+                return default;
+            }
+        }
+        
         private class DisposableActor : IActor, IDisposable
         {
             private readonly Action _onDispose;
@@ -104,6 +130,24 @@ namespace Proto.Tests
             childMailboxStats.Reset.Wait(1000);
             Assert.True(disposeCalled);
         }
+        
+        [Fact]
+        public void WhenActorRestarted_DisposeAsyncIsCalled()
+        {
+            var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            var disposeCalled = false;
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
+            var childProps = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true))
+                .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
+                .WithChildSupervisorStrategy(strategy);
+            var props = Props.FromProducer(() => new SupervisingActor(childProps))
+                .WithMailbox(() => new TestMailbox())
+                .WithChildSupervisorStrategy(strategy);
+            var parent = Context.Spawn(props);
+            Context.Send(parent, "crash");
+            childMailboxStats.Reset.Wait(1000);
+            Assert.True(disposeCalled);
+        }
 
         [Fact]
         public void WhenActorResumed_DisposeIsNotCalled()
@@ -122,12 +166,41 @@ namespace Proto.Tests
             childMailboxStats.Reset.Wait(1000);
             Assert.False(disposeCalled);
         }
+        
+        [Fact]
+        public void WhenActorResumed_DisposeAsyncIsNotCalled()
+        {
+            var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            var disposeCalled = false;
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
+            var childProps = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true))
+                .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
+                .WithChildSupervisorStrategy(strategy);
+            var props = Props.FromProducer(() => new SupervisingActor(childProps))
+                .WithMailbox(() => new TestMailbox())
+                .WithChildSupervisorStrategy(strategy);
+            var parent = Context.Spawn(props);
+            Context.Send(parent, "crash");
+            childMailboxStats.Reset.Wait(1000);
+            Assert.False(disposeCalled);
+        }
 
         [Fact]
         public async void WhenActorStopped_DisposeIsCalled()
         {
             var disposeCalled = false;
             var props = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
+                .WithMailbox(() => new TestMailbox());
+            var pid = Context.Spawn(props);
+            await Context.StopAsync(pid);
+            Assert.True(disposeCalled);
+        }
+        
+        [Fact]
+        public async void WhenActorStopped_DisposeAsyncIsCalled()
+        {
+            var disposeCalled = false;
+            var props = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => new TestMailbox());
             var pid = Context.Spawn(props);
             await Context.StopAsync(pid);

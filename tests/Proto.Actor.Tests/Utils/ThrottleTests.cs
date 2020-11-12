@@ -45,7 +45,7 @@
             }
             triggered.Should().Be(maxEvents);
 
-            await Task.Delay(500);
+            await Task.Delay(1000);
             for (int i = 0; i < 100; i++)
             {
                 if (shouldThrottle().IsOpen())
@@ -66,7 +66,7 @@
             shouldThrottle().Should().Be(Throttle.Valve.Open, "It accepts multiple event before closing");
             shouldThrottle().Should().Be(Throttle.Valve.Closing, "Last event before close");
             shouldThrottle().Should().Be(Throttle.Valve.Closed, "Anything over the limit is throttled");
-            await Task.Delay(500);
+            await Task.Delay(1000);
             shouldThrottle().Should().Be(Throttle.Valve.Open, "After the period it should open again");
         }
     }

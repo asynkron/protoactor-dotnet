@@ -549,7 +549,7 @@ namespace Proto.Context
             //This is intentional
             await InvokeUserMessageAsync(Stopped.Instance);
 
-            DisposeActorIfDisposable();
+            await DisposeActorIfDisposable();
 
             //Notify watchers
             _extras?.Watchers.SendSystemMessage(Terminated.From(Self), System);
@@ -562,7 +562,7 @@ namespace Proto.Context
 
         private async Task RestartAsync()
         {
-            DisposeActorIfDisposable();
+            await DisposeActorIfDisposable();
             Actor = IncarnateActor();
             Self.SendSystemMessage(System, ResumeMailbox.Instance);
 
@@ -582,12 +582,18 @@ namespace Proto.Context
             }
         }
 
-        private void DisposeActorIfDisposable()
+        private ValueTask DisposeActorIfDisposable()
         {
-            if (Actor is IDisposable disposableActor)
+            switch (Actor)
             {
-                disposableActor.Dispose();
+                case IAsyncDisposable asyncDisposableActor:
+                    return asyncDisposableActor.DisposeAsync();
+                case IDisposable disposableActor:
+                    disposableActor.Dispose();
+                    break;
             }
+
+            return default;
         }
 
         private void ReceiveTimeoutCallback(object state)
