@@ -36,12 +36,12 @@ namespace Proto.Cluster.Tests
         }
     }
 
-    public class MongoClusterTests : ClusterTests, IClassFixture<MongoIdentityClusterFixture>
-    {
-        // ReSharper disable once SuggestBaseTypeForParameter
-        public MongoClusterTests(ITestOutputHelper testOutputHelper, MongoIdentityClusterFixture clusterFixture)
-            : base(testOutputHelper, clusterFixture)
-        {
-        }
-    }
+    // public class MongoClusterTests : ClusterTests, IClassFixture<MongoIdentityClusterFixture>
+    // {
+    //     // ReSharper disable once SuggestBaseTypeForParameter
+    //     public MongoClusterTests(ITestOutputHelper testOutputHelper, MongoIdentityClusterFixture clusterFixture)
+    //         : base(testOutputHelper, clusterFixture)
+    //     {
+    //     }
+    // }
 }

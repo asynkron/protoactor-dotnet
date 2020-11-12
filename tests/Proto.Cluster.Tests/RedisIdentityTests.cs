@@ -20,12 +20,12 @@ namespace Proto.Cluster.Tests
         }
     }
 
-    public class RedisClusterTests : ClusterTests, IClassFixture<RedisIdentityClusterFixture>
-    {
-        // ReSharper disable once SuggestBaseTypeForParameter
-        public RedisClusterTests(ITestOutputHelper testOutputHelper, RedisIdentityClusterFixture clusterFixture)
-            : base(testOutputHelper, clusterFixture)
-        {
-        }
-    }
+    // public class RedisClusterTests : ClusterTests, IClassFixture<RedisIdentityClusterFixture>
+    // {
+    //     // ReSharper disable once SuggestBaseTypeForParameter
+    //     public RedisClusterTests(ITestOutputHelper testOutputHelper, RedisIdentityClusterFixture clusterFixture)
+    //         : base(testOutputHelper, clusterFixture)
+    //     {
+    //     }
+    // }
 }
