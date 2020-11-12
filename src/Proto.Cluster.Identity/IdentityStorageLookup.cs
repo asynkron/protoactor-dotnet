@@ -81,9 +81,9 @@
             return PID.FromAddress(address, PlacementActorName);
         }
 
-        public Task RemovePidAsync(PID pid)
+        public Task RemovePidAsync(PID pid, CancellationToken ct)
         {
-            return Storage.RemoveActivation(pid, CancellationToken.None);
+            return Storage.RemoveActivation(pid, ct);
         }
 
         public static bool TryGetClusterIdentityShortString(string pidId, out string? clusterIdentity)

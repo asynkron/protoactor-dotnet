@@ -23,6 +23,12 @@ namespace Proto.Cluster.Tests
             return Task.FromResult(_pid)!;
         }
 
+        public Task RemovePidAsync(PID pid, CancellationToken ct)
+        {
+            return Task.CompletedTask;
+
+        }
+
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
         {
             return Task.CompletedTask;

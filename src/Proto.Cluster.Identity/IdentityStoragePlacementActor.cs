@@ -9,6 +9,7 @@ namespace Proto.Cluster.Identity
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
 
@@ -63,7 +64,7 @@ namespace Proto.Cluster.Identity
             var (identity, pid) = _myActors.FirstOrDefault(kvp => kvp.Value.Equals(msg.Who));
             _myActors.Remove(identity);
             _cluster.PidCache.RemoveByVal(identity, pid);
-            await _identityLookup.RemovePidAsync(msg.Who);
+            await _identityLookup.RemovePidAsync(msg.Who,CancellationToken.None);
         }
 
         private Task ActivationRequest(IContext context, ActivationRequest msg)

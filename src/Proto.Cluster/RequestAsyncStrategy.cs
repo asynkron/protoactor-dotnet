@@ -83,7 +83,7 @@ namespace Proto.Cluster
                             await Task.Delay(delay, CancellationToken.None);
                             break;
                         case ResponseStatus.DeadLetter:
-                            //TODO: Purge IdentityLookup PID?
+                            await _identityLookup.RemovePidAsync(pid, ct);
                             break;
                     }
                 }
