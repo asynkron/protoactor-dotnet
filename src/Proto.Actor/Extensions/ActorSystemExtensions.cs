@@ -1,11 +1,13 @@
+using System;
 using System.Collections.Generic;
 
 namespace Proto.Extensions
 {
     public class ActorSystemExtensions
     {
-        private readonly IActorSystemExtension[] _extensions = new IActorSystemExtension[100];
+        private IActorSystemExtension[] _extensions = new IActorSystemExtension[10];
         private readonly ActorSystem _actorSystem;
+        private readonly object _lockObject = new object();
 
         public ActorSystemExtensions(ActorSystem actorSystem)
         {
@@ -20,9 +22,17 @@ namespace Proto.Extensions
 
         public void Register<T>(IActorSystemExtension<T> extension) where T:IActorSystemExtension
         {
-            var id = IActorSystemExtension<T>.Id;
-            //TODO, ensure capacity
-            _extensions[id] = extension;
+            lock (_lockObject)
+            {
+                var id = IActorSystemExtension<T>.Id;
+                if (id >= _extensions.Length)
+                {
+                    var newSize = id * 2; //double size when growing
+                    Array.Resize(ref _extensions, newSize);
+                }
+                
+                _extensions[id] = extension;
+            }
         }
     }
 }
