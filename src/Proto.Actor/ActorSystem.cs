@@ -1,5 +1,7 @@
 using System;
+using Google.Protobuf;
 using JetBrains.Annotations;
+using Proto.Extensions;
 
 namespace Proto
 {
@@ -25,6 +27,7 @@ namespace Proto
             EventStream = new EventStream(config.DeadLetterThrottleInterval, config.DeadLetterThrottleCount);
             var eventStreamProcess = new EventStreamProcess(this);
             ProcessRegistry.TryAdd("eventstream", eventStreamProcess);
+            Extensions = new ActorSystemExtensions(this);
         }
 
         public string Address { get; private set; } = NoHost;
@@ -40,6 +43,8 @@ namespace Proto
         public DeadLetterProcess DeadLetter { get; }
 
         public EventStream EventStream { get; }
+
+        public ActorSystemExtensions Extensions { get; }
 
         public void SetAddress(string host, int port)
         {

@@ -9,7 +9,7 @@ using Proto.Mailbox;
 
 namespace Proto
 {
-    public static class Extensions
+    public static class UtilExtensions
     {
         /// <summary>
         ///     Stop the current actor

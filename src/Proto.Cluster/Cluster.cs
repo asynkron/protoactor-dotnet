@@ -12,16 +12,19 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.IdentityLookup;
 using Proto.Cluster.Partition;
+using Proto.Extensions;
 
 namespace Proto.Cluster
 {
     [PublicAPI]
-    public class Cluster
+    public class Cluster : IActorSystemExtension<Cluster>
     {
         private ClusterHeartBeat _clusterHeartBeat;
 
         public Cluster(ActorSystem system, ClusterConfig config)
         {
+            system.Extensions.Register(this);
+
             Id = Guid.NewGuid();
             PidCache = new PidCache();
             System = system;
