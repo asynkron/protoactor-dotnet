@@ -29,15 +29,7 @@ namespace DependencyInjection
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton(x =>
-                {
-                    var actorSystem = new ActorSystem();
-                    var dependencyResolver = new DependencyResolver(x);
-                    var diExtension = new DIExtension(dependencyResolver);
-                    actorSystem.Extensions.Register(diExtension);
-                    return actorSystem;
-                }
-            );
+            services.AddSingleton(serviceProvider => new ActorSystem().WithServiceProvider(serviceProvider));
             services.AddTransient<DependencyInjectedActor>();
             services.AddControllers();
             services.AddSwaggerGen(c =>
