@@ -1,8 +1,8 @@
-﻿using System.Threading;
-using Proto.Router;
-
-namespace Proto.Cluster
+﻿namespace Proto.Cluster.Identity
 {
+    using System.Threading;
+    using Router;
+
     internal class GetPid : IHashable
     {
         public ClusterIdentity ClusterIdentity { get; }

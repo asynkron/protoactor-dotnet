@@ -1,7 +1,7 @@
-using MongoDB.Bson.Serialization.Attributes;
-
-namespace Proto.Cluster.MongoIdentityLookup
+namespace Proto.Cluster.Identity.MongoDb
 {
+    using MongoDB.Bson.Serialization.Attributes;
+
     public class PidLookupEntity
     {
         [BsonId] public string Key { get; set; }

@@ -1,31 +1,31 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Proto.Cluster.Utils;
-
-namespace Proto.Cluster
+namespace Proto.Cluster.Identity
 {
-    internal class ExternalIdentityWorker : IActor
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
+    using Utils;
+
+    internal class IdentityStorageWorker : IActor
     {
         private static readonly ConcurrentSet<string> StaleMembers = new ConcurrentSet<string>();
 
         private readonly Cluster _cluster;
-        private readonly ILogger _logger = Log.CreateLogger<ExternalIdentityWorker>();
-        private readonly ExternalIdentityLookup _lookup;
+        private readonly ILogger _logger = Log.CreateLogger<IdentityStorageWorker>();
+        private readonly IdentityStorageLookup _lookup;
         private readonly MemberList _memberList;
         private readonly IIdentityStorage _storage;
 
         private readonly Dictionary<ClusterIdentity, Task<PID?>> _inProgress =
             new Dictionary<ClusterIdentity, Task<PID?>>();
 
-        public ExternalIdentityWorker(ExternalIdentityLookup lookup)
+        public IdentityStorageWorker(IdentityStorageLookup storageLookup)
         {
-            _cluster = lookup.Cluster;
-            _memberList = lookup.MemberList;
-            _lookup = lookup;
-            _storage = lookup.Storage;
+            _cluster = storageLookup.Cluster;
+            _memberList = storageLookup.MemberList;
+            _lookup = storageLookup;
+            _storage = storageLookup.Storage;
         }
 
         public Task ReceiveAsync(IContext context)
@@ -39,7 +39,7 @@ namespace Proto.Cluster
 
             if (_cluster.PidCache.TryGet(msg.ClusterIdentity, out var existing))
             {
-                _logger.LogInformation("Found {ClusterIdentity} in pidcache", msg.ClusterIdentity.ToShortString());
+                _logger.LogDebug("Found {ClusterIdentity} in pidcache", msg.ClusterIdentity.ToShortString());
                 context.Respond(new PidResult
                     {
                         Pid = existing

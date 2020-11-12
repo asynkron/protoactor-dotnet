@@ -3,18 +3,17 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using StackExchange.Redis;
 using Xunit;
 
-namespace Proto.Cluster.ExternalIdentity.Tests
+namespace Proto.Cluster.Identity.Tests
 {
-    public abstract class ExternalIdentityStorageTests : IDisposable
+    public abstract class IdentityStorageTests : IDisposable
     {
         private readonly IIdentityStorage _storage;
         private readonly IIdentityStorage _storageInstance2;
         private static int _testId = 1;
 
-        protected ExternalIdentityStorageTests(Func<string, IIdentityStorage> storageFactory)
+        protected IdentityStorageTests(Func<string, IIdentityStorage> storageFactory)
         {
             var clusterName = "test-" + Guid.NewGuid().ToString("N").Substring(0, 6);
             _storage = storageFactory(clusterName);
@@ -234,15 +233,5 @@ namespace Proto.Cluster.ExternalIdentity.Tests
         }
     }
 
-    // public class RedisIdentityTests : ExternalIdentityStorageTests
-    // {
-    //     public RedisIdentityTests() : base(Init)
-    //     {
-    //     }
-    //
-    //     private static IIdentityStorage Init(string clusterName)
-    //     {
-    //         return new RedisIdentityStorage(clusterName, ConnectionMultiplexer.Connect("localhost:6379"));
-    //     }
-    // }
+
 }

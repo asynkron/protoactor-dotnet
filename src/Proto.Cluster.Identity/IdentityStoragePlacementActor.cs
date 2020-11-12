@@ -4,15 +4,15 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-
-namespace Proto.Cluster
+namespace Proto.Cluster.Identity
 {
-    internal class ExternalIdentityPlacementActor : IActor
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
+
+    internal class IdentityStoragePlacementActor : IActor
     {
         private readonly Cluster _cluster;
         private readonly ILogger _logger;
@@ -22,25 +22,25 @@ namespace Proto.Cluster
         //eventId -> the cluster wide eventId when this actor was created
         private readonly Dictionary<ClusterIdentity, PID> _myActors = new Dictionary<ClusterIdentity, PID>();
 
-        private readonly ExternalIdentityLookup _identityLookup;
+        private readonly IdentityStorageLookup _identityLookup;
 
-        public ExternalIdentityPlacementActor(Cluster cluster, ExternalIdentityLookup identityLookup)
+        public IdentityStoragePlacementActor(Cluster cluster, IdentityStorageLookup identityLookup)
         {
             _cluster = cluster;
             _identityLookup = identityLookup;
-            _logger = Log.CreateLogger($"{nameof(ExternalIdentityPlacementActor)}-{cluster.LoggerId}");
+            _logger = Log.CreateLogger($"{nameof(IdentityStoragePlacementActor)}-{cluster.LoggerId}");
         }
 
         public Task ReceiveAsync(IContext context)
         {
             return context.Message switch
-                   {
-                       Started _             => Started(context),
-                       ReceiveTimeout _      => ReceiveTimeout(context),
-                       Terminated msg        => Terminated(msg),
-                       ActivationRequest msg => ActivationRequest(context, msg),
-                       _                     => Task.CompletedTask
-                   };
+            {
+                Started _ => Started(context),
+                ReceiveTimeout _ => ReceiveTimeout(context),
+                Terminated msg => Terminated(msg),
+                ActivationRequest msg => ActivationRequest(context, msg),
+                _ => Task.CompletedTask
+            };
         }
 
         private static Task Started(IContext context)
@@ -123,7 +123,7 @@ namespace Proto.Cluster
                     context.CancellationToken
                 );
             }
-            catch (StorageFailure e)
+            catch (Exception e)
             {
                 //meaning, we spawned an actor but its placement is not stored anywhere
                 _logger.LogCritical(e, "No entry was updated {@SpawnLock}", spawnLock);

@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Proto.Cluster.ExternalIdentityLookup\Proto.Cluster.ExternalIdentityLookup.csproj" />
+      <ProjectReference Include="..\Proto.Cluster.Identity\Proto.Cluster.Identity.csproj" />
       <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj" />
     </ItemGroup>
 

@@ -4,8 +4,6 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Immutable;
-
 namespace Proto.Router.Routers
 {
     public abstract record GroupRouterConfig(ISenderContext SenderContext, PID[] Routees) : RouterConfig

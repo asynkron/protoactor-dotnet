@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using StackExchange.Redis;
-
-namespace Proto.Cluster
+﻿namespace Proto.Cluster.Identity.Redis
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Identity;
+    using Microsoft.Extensions.Logging;
+    using StackExchange.Redis;
+
     public class RedisIdentityStorage : IIdentityStorage
     {
         private static readonly ILogger Logger = Log.CreateLogger<RedisIdentityStorage>();
@@ -174,7 +175,7 @@ namespace Proto.Cluster
         private RedisKey IdKey(ClusterIdentity clusterIdentity) => IdKey(clusterIdentity.ToShortString());
 
         private RedisKey IdKeyFromPidId(string pidId) =>
-            ExternalIdentityLookup.TryGetClusterIdentityShortString(pidId, out var clusterId)
+            IdentityStorageLookup.TryGetClusterIdentityShortString(pidId, out var clusterId)
                 ? IdKey(clusterId!)
                 : NoKey;
 

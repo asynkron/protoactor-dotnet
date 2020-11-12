@@ -4,7 +4,6 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Immutable;
 using System.Linq;
 
 namespace Proto.Router.Routers

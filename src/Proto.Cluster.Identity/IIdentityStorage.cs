@@ -1,9 +1,9 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Proto.Cluster
+﻿namespace Proto.Cluster.Identity
 {
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     public interface IIdentityStorage: IDisposable
     {
         public Task<StoredActivation?> TryGetExistingActivationAsync(ClusterIdentity clusterIdentity, CancellationToken token);

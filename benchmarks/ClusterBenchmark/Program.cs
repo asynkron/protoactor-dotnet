@@ -10,8 +10,9 @@ using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.IdentityLookup;
 using Proto.Cluster.Kubernetes;
-using Proto.Cluster.MongoIdentityLookup;
 using Proto.Remote;
+using Proto.Cluster.Identity;
+using Proto.Cluster.Identity.MongoDb;
 
 namespace ClusterExperiment1
 {
@@ -162,7 +163,7 @@ namespace ClusterExperiment1
         private static IIdentityLookup GetIdentityLookup()
         {
             var db = GetMongo();
-            var identity = new ExternalIdentityLookup(
+            var identity = new IdentityStorageLookup(
                 new MongoIdentityStorage("mycluster", db.GetCollection<PidLookupEntity>("pids")));
             return identity;
         }

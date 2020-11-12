@@ -3,12 +3,11 @@
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
         <LangVersion>9</LangVersion>
-        <RootNamespace>Proto.Cluster.RedisIdentityLookup</RootNamespace>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Proto.Cluster.ExternalIdentityLookup\Proto.Cluster.ExternalIdentityLookup.csproj" />
+      <ProjectReference Include="..\Proto.Cluster.Identity\Proto.Cluster.Identity.csproj" />
       <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj" />
     </ItemGroup>
 

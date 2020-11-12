@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Proto.Cluster.Tests
+﻿namespace Proto.Cluster.Tests
 {
     using System.Diagnostics;
     using System.Linq;
@@ -24,7 +22,7 @@ namespace Proto.Cluster.Tests
         [Fact]
         public async Task ReSpawnsClusterActorsFromDifferentNodes()
         {
-            var timeout = new CancellationTokenSource(50000).Token;
+            var timeout = new CancellationTokenSource(5000).Token;
             var id = CreateIdentity("1");
             await PingPong(Members[0], id, timeout);
             await PingPong(Members[1], id, timeout);
@@ -135,47 +133,6 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine(
                 $"Spawned, killed and spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}"
             );
-        }
-
-        [Fact]
-        public async Task CanCollectHeartbeatMetrics()
-        {
-            var timeout = new CancellationTokenSource(5000);
-
-
-            await PingAll("ping1", timeout.Token);
-            var count = await GetActorCountFromHeartbeat();
-            count.Should().BePositive();
-
-            const int virtualActorCount = 10;
-            foreach (var id in GetActorIds(virtualActorCount))
-            {
-                await PingAll(id, timeout.Token);
-            }
-
-            var afterPing = await GetActorCountFromHeartbeat();
-
-            afterPing.Should().BeGreaterOrEqualTo(count + virtualActorCount, "We expect the echo actors to be added to the count");
-
-
-            async Task<int> GetActorCountFromHeartbeat()
-            {
-                var heartbeatResponses = await Task.WhenAll(Members.Select(c =>
-                        c.System.Root.RequestAsync<HeartbeatResponse>(
-                            PID.FromAddress(c.System.Address, "ClusterHeartBeat"), new HeartbeatRequest(), timeout.Token
-                        )
-                    )
-                );
-                return heartbeatResponses.Select(response => (int) response.ActorCount).Sum();
-            }
-
-            async Task PingAll(string identity, CancellationToken token)
-            {
-                foreach (var cluster in Members)
-                {
-                    await cluster.Ping(identity, "", token);
-                }
-            }
         }
 
         private async Task PingPong(Cluster cluster, string id, CancellationToken token = default,

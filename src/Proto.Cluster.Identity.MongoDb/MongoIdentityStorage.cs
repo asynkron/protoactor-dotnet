@@ -1,11 +1,12 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using MongoDB.Driver;
-
-namespace Proto.Cluster.MongoIdentityLookup
+﻿namespace Proto.Cluster.Identity.MongoDb
 {
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Identity;
+    using Microsoft.Extensions.Logging;
+    using MongoDB.Driver;
+
     public class MongoIdentityStorage : IIdentityStorage
     {
         private static readonly ILogger Logger = Log.CreateLogger<MongoIdentityStorage>();

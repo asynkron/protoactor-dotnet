@@ -1,12 +1,12 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Proto.Cluster.IdentityLookup;
-using Proto.Router;
-
-namespace Proto.Cluster
+﻿namespace Proto.Cluster.Identity
 {
-    public class ExternalIdentityLookup : IIdentityLookup
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using IdentityLookup;
+    using Router;
+
+    public class IdentityStorageLookup : IIdentityLookup
     {
         internal IIdentityStorage Storage { get; }
         private const string PlacementActorName = "placement-activator";
@@ -19,7 +19,7 @@ namespace Proto.Cluster
         private PID _router;
         private string _memberId;
 
-        public ExternalIdentityLookup(IIdentityStorage storage)
+        public IdentityStorageLookup(IIdentityStorage storage)
         {
             Storage = storage;
         }
@@ -40,7 +40,7 @@ namespace Proto.Cluster
             MemberList = cluster.MemberList;
             _isClient = isClient;
 
-            var workerProps = Props.FromProducer(() => new ExternalIdentityWorker(this));
+            var workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
             //TODO: should pool size be configurable?
 
             var routerProps = _system.Root.NewConsistentHashPool(workerProps, 50);
@@ -58,7 +58,7 @@ namespace Proto.Cluster
             );
 
             if (isClient) return Task.CompletedTask;
-            var props = Props.FromProducer(() => new ExternalIdentityPlacementActor(Cluster, this));
+            var props = Props.FromProducer(() => new IdentityStoragePlacementActor(Cluster, this));
             _placementActor = _system.Root.SpawnNamed(props, PlacementActorName);
 
             return Task.CompletedTask;
