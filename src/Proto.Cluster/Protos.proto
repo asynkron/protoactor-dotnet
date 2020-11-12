@@ -36,6 +36,7 @@ message ActivationTerminated {
 
 message ActivationRequest {
     ClusterIdentity cluster_identity = 1;
+    string request_id = 2;
 }
 
 message ActivationResponse {

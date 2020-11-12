@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Divergic.Logging.Xunit;
 using Microsoft.Extensions.Logging;
 using Proto.Remote.Tests.Messages;
 using Xunit;

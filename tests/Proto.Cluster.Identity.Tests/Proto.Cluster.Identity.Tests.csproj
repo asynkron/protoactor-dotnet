@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+  <PropertyGroup>
+    <LangVersion>9</LangVersion>
+    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
+    <RootNamespace>Proto.Cluster.Identity.Tests</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Cluster.Identity.Redis\Proto.Cluster.Identity.Redis.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Cluster.Identity\Proto.Cluster.Identity.csproj" />
+    <ProjectReference Include="..\Proto.Cluster.Tests\Proto.Cluster.Tests.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Divergic.Logging.Xunit" Version="3.5.1" />
+  </ItemGroup>
+</Project>

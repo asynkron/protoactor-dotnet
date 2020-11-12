@@ -21,16 +21,17 @@
         public ImmutableList<Cluster> Members { get; private set; }
 
         private readonly int _clusterSize;
-        private readonly Func<ClusterConfig,ClusterConfig> _configure;
+        private readonly Func<ClusterConfig, ClusterConfig> _configure;
 
-        protected ClusterFixture(int clusterSize, Func<ClusterConfig,ClusterConfig> configure = null)
+        protected ClusterFixture(int clusterSize, Func<ClusterConfig, ClusterConfig> configure = null)
         {
             _clusterSize = clusterSize;
             _configure = configure;
         }
 
 
-        private async Task<ImmutableList<Cluster>> SpawnClusterNodes(int count, Func<ClusterConfig,ClusterConfig> configure = null)
+        private async Task<ImmutableList<Cluster>> SpawnClusterNodes(int count,
+            Func<ClusterConfig, ClusterConfig> configure = null)
         {
             var clusterName = $"test-cluster-{count}";
             return (await Task.WhenAll(
@@ -39,7 +40,8 @@
             )).ToImmutableList();
         }
 
-        protected virtual async Task<Cluster> SpawnClusterMember(Func<ClusterConfig,ClusterConfig> configure, string clusterName)
+        protected virtual async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig> configure,
+            string clusterName)
         {
             var config = ClusterConfig.Setup(
                 clusterName,
@@ -73,9 +75,17 @@
             Members = await SpawnClusterNodes(_clusterSize, _configure);
         }
 
-        public Task DisposeAsync()
+        public async Task DisposeAsync()
         {
-            return Task.WhenAll(Members.Select(cluster => cluster.ShutdownAsync()));
+            try
+            {
+                await Task.WhenAll(Members?.Select(cluster => cluster.ShutdownAsync()) ?? new[] {Task.CompletedTask});
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
     }
 
@@ -84,9 +94,10 @@
         private readonly Lazy<InMemAgent> _inMemAgent = new Lazy<InMemAgent>(() => new InMemAgent());
         private InMemAgent InMemAgent => _inMemAgent.Value;
 
-        protected BaseInMemoryClusterFixture(int clusterSize, Func<ClusterConfig,ClusterConfig> configure = null) : base(
-            clusterSize, configure
-        )
+        protected BaseInMemoryClusterFixture(int clusterSize, Func<ClusterConfig, ClusterConfig> configure = null) :
+            base(
+                clusterSize, configure
+            )
         {
         }
 

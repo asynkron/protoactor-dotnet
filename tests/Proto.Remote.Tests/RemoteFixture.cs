@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
-using Proto.Remote.Tests.Messages;
 using Xunit;
 
 namespace Proto.Remote.Tests

@@ -1,8 +1,6 @@
 ﻿// ReSharper disable once CheckNamespace
 namespace Proto.Cluster
 {
-    using System;
-
     public sealed partial class ClusterIdentity
     {
         public string ToShortString() => $"{Kind}/{Identity}";

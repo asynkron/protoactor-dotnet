@@ -1,16 +1,14 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Proto.Cluster.IdentityLookup;
+using Proto.Utils;
+
 namespace Proto.Cluster
 {
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using IdentityLookup;
-    using Microsoft.Extensions.Logging;
-    using Proto.Utils;
-
     public interface IClusterContext
     {
-        // default Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) => 
-
         Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, CancellationToken ct);
     }
 
@@ -36,18 +34,9 @@ namespace Proto.Cluster
             );
         }
 
-        void TryClearPidCache(ClusterIdentity clusterIdentity)
-        {
-            _logger.LogDebug(
-                _pidCache.TryRemove(clusterIdentity)
-                    ? "Removed {Kind}-{Identity} from PidCache"
-                    : "Failed to remove {Kind}-{Identity} from PidCache", clusterIdentity.Kind, clusterIdentity.Identity
-            );
-        }
-
         public async Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, CancellationToken ct)
         {
-            _logger.LogDebug("Requesting {Identity}-{Kind} Message {Message}", clusterIdentity, message);
+            _logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity.ToShortString(), message);
             var i = 0;
             while (!ct.IsCancellationRequested)
             {
@@ -94,14 +83,13 @@ namespace Proto.Cluster
                             await Task.Delay(delay, CancellationToken.None);
                             break;
                         case ResponseStatus.DeadLetter:
-                            //No need to delay since we know that the actor is removed.
+                            await _identityLookup.RemovePidAsync(pid, ct);
                             break;
                     }
                 }
                 catch
                 {
                     _logger.LogWarning("Failed to get PID from IIdentityLookup");
-                    //failed to get pid from IdentityLookup
                     await Task.Delay(delay, CancellationToken.None);
                 }
             }
@@ -128,7 +116,6 @@ namespace Proto.Cluster
                 {
                     _logger.LogInformation("TryRequestAsync failed, dead PID from {Source}", source);
                 }
-
                 _pidCache.RemoveByVal(clusterIdentity, cachedPid);
                 return (ResponseStatus.DeadLetter, default)!;
             }

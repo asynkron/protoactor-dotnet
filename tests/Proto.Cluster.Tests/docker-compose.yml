@@ -36,6 +36,11 @@ services:
     volumes:
       - mongodb_data:/data/db
 
+  redis:
+    image: redis:latest
+    ports:
+      - 127.0.0.1:6379:6379
+
 networks:
   consul:
 

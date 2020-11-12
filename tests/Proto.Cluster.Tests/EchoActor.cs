@@ -1,10 +1,9 @@
 using System.Threading.Tasks;
+using ClusterTest.Messages;
 using Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster.Tests
 {
-    using ClusterTest.Messages;
-
     public class EchoActor : IActor
     {
         public const string Kind = "echo";
@@ -28,8 +27,9 @@ namespace Proto.Cluster.Tests
                     _initKind = init.Kind;
                     break;
                 case Ping ping:
-                    Logger.LogDebug("Received Ping, replying Pong");
-                    context.Respond(new Pong {Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? ""});
+                    var pong = new Pong {Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? ""};
+                    Logger.LogDebug("Received Ping, replying Pong: {@Pong}", pong);
+                    context.Respond(pong);
                     break;
                 case WhereAreYou _:
                     Logger.LogDebug("Responding to location request");
