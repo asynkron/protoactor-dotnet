@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DependencyInjection.Controllers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -37,6 +38,7 @@ namespace DependencyInjection
                     return actorSystem;
                 }
             );
+            services.AddTransient<DependencyInjectedActor>();
             services.AddControllers();
             services.AddSwaggerGen(c =>
                 {
