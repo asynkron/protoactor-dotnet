@@ -39,6 +39,9 @@ namespace Node2
     {
         static void Main(string[] args)
         {
+#if NETCORE
+        AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+#endif
             var system = new ActorSystem();
             var context = new RootContext(system);
             var remoteConfig =  RemoteConfig.BindToLocalhost(12000).WithProtoMessages(ProtosReflection.Descriptor);

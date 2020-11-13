@@ -16,6 +16,9 @@ class Program
 {
     static async Task Main(string[] args)
     {
+#if NETCORE
+        AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+#endif
         var system = new ActorSystem();
         var context = new RootContext(system);
 
