@@ -10,7 +10,7 @@ namespace Proto.Remote
         {
         }
         
-        public static RemoteConfig BinToAllInterfaces(string advertisedHost, int port = 0) =>
+        public static RemoteConfig BindToAllInterfaces(string advertisedHost, int port = 0) =>
             new RemoteConfig(AllInterfaces, port).WithAdvertisedHost(advertisedHost);
         
         public static RemoteConfig BindToLocalhost(int port = 0) => new RemoteConfig(Localhost, port);
