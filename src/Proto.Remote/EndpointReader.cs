@@ -21,8 +21,6 @@ namespace Proto.Remote
         private readonly Serialization _serialization;
         private readonly ActorSystem _system;
 
-        private bool _suspended;
-
         public EndpointReader(ActorSystem system, EndpointManager endpointManager, Serialization serialization)
         {
             _system = system;
@@ -32,7 +30,7 @@ namespace Proto.Remote
 
         public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
         {
-            if (_suspended)
+            if (_endpointManager.CancellationToken.IsCancellationRequested)
             {
                 Logger.LogWarning("[EndpointReader] Attempt to connect to the suspended reader has been rejected");
 
@@ -51,69 +49,81 @@ namespace Proto.Remote
             );
         }
 
-        public override Task Receive(
+        public override async Task Receive(
             IAsyncStreamReader<MessageBatch> requestStream,
             IServerStreamWriter<Unit> responseStream, ServerCallContext context
         )
         {
-            var targets = new PID[100];
-
-            return requestStream.ForEachAsync(
-                batch =>
+            using var cancellationTokenRegistration = _endpointManager.CancellationToken.Register(() =>
+            {
+                Logger.LogDebug("[EndpointReader] Telling to {Address} to stop", context.Peer);
+                try
                 {
-                    Logger.LogDebug("[EndpointReader] Received a batch of {Count} messages from {Remote}",
+                    responseStream.WriteAsync(new Unit());
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e, "[EndpointReader] Didn't tell to {Address} to stop", context.Peer);
+                }
+            });
+
+            var targets = new PID[100];
+            while (await requestStream.MoveNext(context.CancellationToken))
+            {
+                if (_endpointManager.CancellationToken.IsCancellationRequested)
+                {
+                    // We read all the messages ignoring them to gracefully end the request
+                    continue;
+                }
+
+                var batch = requestStream.Current;
+
+                Logger.LogDebug("[EndpointReader] Received a batch of {Count} messages from {Remote}",
                         batch.TargetNames.Count, context.Peer
                     );
 
-                    if (_suspended)
-                    {
-                        return Task.CompletedTask;
-                    }
-
-                    //only grow pid lookup if needed
-                    if (batch.TargetNames.Count > targets.Length)
-                    {
-                        targets = new PID[batch.TargetNames.Count];
-                    }
-
-                    for (var i = 0; i < batch.TargetNames.Count; i++)
-                    {
-                        targets[i] = PID.FromAddress(_system.Address, batch.TargetNames[i]);
-                    }
-
-                    var typeNames = batch.TypeNames.ToArray();
-
-                    foreach (var envelope in batch.Envelopes)
-                    {
-                        var target = targets[envelope.Target];
-                        var typeName = typeNames[envelope.TypeId];
-                        try
-                        {
-                            var message =
-                                _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
-
-                            switch (message)
-                            {
-                                case Terminated msg:
-                                    Terminated(msg, target);
-                                    break;
-                                case SystemMessage sys:
-                                    SystemMessage(sys, target);
-                                    break;
-                                default:
-                                    ReceiveMessages(envelope, message, target);
-                                    break;
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            Logger.LogError(e, "Failed to receive {Type} from {Remote}", typeName, context.Peer);
-                        }
-                    }
-
-                    return Task.CompletedTask;
+                //only grow pid lookup if needed
+                if (batch.TargetNames.Count > targets.Length)
+                {
+                    targets = new PID[batch.TargetNames.Count];
                 }
-            );
+
+                for (var i = 0; i < batch.TargetNames.Count; i++)
+                {
+                    targets[i] = PID.FromAddress(_system.Address, batch.TargetNames[i]);
+                }
+
+                var typeNames = batch.TypeNames.ToArray();
+
+                foreach (var envelope in batch.Envelopes)
+                {
+                    var target = targets[envelope.Target];
+                    var typeName = typeNames[envelope.TypeId];
+                    try
+                    {
+                        var message =
+                            _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
+
+                        switch (message)
+                        {
+                            case Terminated msg:
+                                Terminated(msg, target);
+                                break;
+                            case SystemMessage sys:
+                                SystemMessage(sys, target);
+                                break;
+                            default:
+                                ReceiveMessages(envelope, message, target);
+                                break;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError(e, "Failed to receive {Type} from {Remote}", typeName, context.Peer);
+                    }
+                }
+            }
+            Logger.LogDebug("[EndpointReader] Stream closed by {Remote}", context.Peer);
         }
 
         private void ReceiveMessages(MessageEnvelope envelope, object message, PID target)
@@ -148,12 +158,6 @@ namespace Proto.Remote
 
             var rt = new RemoteTerminate(target, msg.Who);
             _endpointManager.RemoteTerminate(rt);
-        }
-
-        public void Suspend(bool suspended)
-        {
-            Logger.LogDebug("[EndpointReader] Suspended");
-            _suspended = suspended;
         }
     }
 }

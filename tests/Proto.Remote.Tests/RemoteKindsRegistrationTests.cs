@@ -15,7 +15,7 @@ namespace Proto.Remote.Tests
                 .WithRemoteKinds((kind, props))
             );
 
-            Assert.Equal(props, remote.GetRemoteKind(kind));
+            Assert.Equal(props, remote.Config.GetRemoteKind(kind));
         }
 
         [Fact]
@@ -33,7 +33,7 @@ namespace Proto.Remote.Tests
                     )
             );
 
-            var kinds = remote.GetRemoteKinds();
+            var kinds = remote.Config.GetRemoteKinds();
             Assert.Contains(kind1, kinds);
             Assert.Contains(kind2, kinds);
         }
@@ -43,7 +43,7 @@ namespace Proto.Remote.Tests
         {
             var remote = new Remote(new ActorSystem(), RemoteConfig.BindToLocalhost());
 
-            Assert.Throws<ArgumentException>(() => { remote.GetRemoteKind("not registered"); });
+            Assert.Throws<ArgumentException>(() => { remote.Config.GetRemoteKind("not registered"); });
         }
     }
 }

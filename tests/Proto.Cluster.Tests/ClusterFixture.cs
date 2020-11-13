@@ -43,17 +43,21 @@
         protected virtual async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig> configure,
             string clusterName)
         {
+            var remoteConfig = RemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
+
             var config = ClusterConfig.Setup(
                 clusterName,
                 GetClusterProvider(),
                 GetIdentityLookup(clusterName),
-                RemoteConfig.BindToLocalhost()
-                    .WithProtoMessages(MessagesReflection.Descriptor)
+                remoteConfig
             ).WithClusterKinds(ClusterKinds);
 
             config = configure?.Invoke(config) ?? config;
+            var system = new ActorSystem();
+            
+            var _ = new Remote(system, remoteConfig);
 
-            var cluster = new Cluster(new ActorSystem(), config);
+            var cluster = new Cluster(system, config);
 
             await cluster.StartMemberAsync();
             return cluster;
