@@ -9,6 +9,6 @@
     <ProjectReference Include="..\..\..\src\Proto.Actor\Proto.Actor.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Protobuf Include="Chat.proto" GrpcServices="Server" ProtoRoot=".; ..\..\..\src" />
+    <Protobuf Include="Chat.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\..\src" />
   </ItemGroup>
 </Project>
