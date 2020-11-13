@@ -81,7 +81,7 @@ namespace Proto.Cluster
                 }
                 else
                 {
-                    _logger.LogDebug("MemberList did not find any activator for kind '{Kind}'",kind);
+                    _logger.LogError("MemberList did not find any activator for kind '{Kind}'",kind);
                     return null;
                 }
             }

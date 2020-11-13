@@ -67,7 +67,7 @@
         public Task RemoveLock(SpawnLock spawnLock, CancellationToken ct)
             => _pids.DeleteManyAsync(p => p.LockedBy == spawnLock.LockId, ct);
 
-        public async Task StoreActivation(string memberId, SpawnLock spawnLock, PID pid, CancellationToken token)
+        public async Task StoreActivation(string memberId, SpawnLock spawnLock, PID pid, CancellationToken ct)
         {
             Logger.LogDebug("Storing activation: {@ActivatorId}, {@SpawnLock}, {@PID}", memberId, spawnLock, pid);
             var key = GetKey(spawnLock.ClusterIdentity);
@@ -79,7 +79,7 @@
                     .Set(l => l.UniqueIdentity, pid.Id)
                     .Set(l => l.Revision, 2)
                     .Unset(l => l.LockedBy)
-                , new UpdateOptions(), token
+                , new UpdateOptions(), ct
             );
             if (res.MatchedCount != 1)
             {
@@ -91,11 +91,7 @@
         {
             Logger.LogDebug("Removing activation: {@PID}", pid);
 
-            var result = await _pids.DeleteManyAsync(p => p.UniqueIdentity == pid.Id, ct);
-            if (result.DeletedCount != 1)
-            {
-                Console.WriteLine("Fack");
-            }
+            await _pids.DeleteManyAsync(p => p.UniqueIdentity == pid.Id, ct);
         }
 
         public Task RemoveMemberIdAsync(string memberId, CancellationToken ct)
