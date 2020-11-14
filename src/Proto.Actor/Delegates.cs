@@ -13,6 +13,7 @@ namespace Proto
     public delegate PID Spawner(ActorSystem system, string id, Props props, PID? parent);
 
     public delegate IActor Producer();
+    public delegate IActor ProducerWithSystem(ActorSystem system);
 
     public delegate IMailbox MailboxProducer();
 }
