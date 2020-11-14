@@ -18,13 +18,26 @@ namespace Proto.Cluster.CodeGeneration
             title: "Couldn't parse XML file",
             messageFormat: "Couldn't parse XML file '{0}'.",
             category: "MyXmlGenerator",
-            DiagnosticSeverity.Error,
+            DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
         
         public void Initialize(GeneratorInitializationContext context) {}
 
         public void Execute(GeneratorExecutionContext context)
         {
+            //just to se if it runs at all.....
+            context.AddSource("myGeneratedFile.cs", SourceText.From(@"
+namespace GeneratedNamespace
+{
+    public class GeneratedClass
+    {
+        public static void GeneratedMethod()
+        {
+            // generated code
+        }
+    }
+}", Encoding.UTF8));
+            
             // find anything that matches our files
             var myFiles = context.AdditionalFiles.Where(at => at.Path.EndsWith(".proto"));
             foreach (var file in myFiles)
