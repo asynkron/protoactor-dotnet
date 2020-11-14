@@ -36,7 +36,8 @@ namespace Proto.Cluster.CodeGeneration
         {
             var f = new FileDescriptorProto();
             var errors = new List<Error>();
-            f.Parse(TextReader.Null, errors, protoContent);
+            var t = new StringReader(protoContent);
+            f.Parse(t, errors, "someFile");
 
             // do some transforms based on the file context
             var ast = new ProtoFile
