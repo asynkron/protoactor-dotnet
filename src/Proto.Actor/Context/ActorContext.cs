@@ -435,7 +435,7 @@ namespace Proto.Context
         private IActor? IncarnateActor()
         {
             _state = ContextState.Alive;
-            return _props.Producer();
+            return _props.Producer(System);
         }
 
         private async Task HandleRestartAsync()
