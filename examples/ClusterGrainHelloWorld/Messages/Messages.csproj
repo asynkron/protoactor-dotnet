@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.13.0" />
@@ -10,5 +10,8 @@
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="Protos.proto" GrpcServices="Server" ProtoRoot=".; ..\..\..\src" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Proto.Cluster.CodeGeneration\Proto.Cluster.CodeGeneration.csproj" />
   </ItemGroup>
 </Project>
