@@ -7,20 +7,15 @@ using Microsoft.CodeAnalysis.Text;
 using System.Linq;
 using Google.Protobuf.Reflection;
 using HandlebarsDotNet;
+using JetBrains.Annotations;
 using ProtoBuf.Reflection;
 
 namespace Proto.Cluster.CodeGeneration
 {
     [Generator]
+    [PublicAPI]
     public class GrainSourceGenerator : ISourceGenerator
     {
-        private static readonly DiagnosticDescriptor error = new DiagnosticDescriptor(id: "MYXMLGEN001",
-            title: "Couldn't parse XML file",
-            messageFormat: "Couldn't parse XML file '{0}'.",
-            category: "MyXmlGenerator",
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true);
-        
         public void Initialize(GeneratorInitializationContext context) {}
 
         public void Execute(GeneratorExecutionContext context)
@@ -52,9 +47,9 @@ namespace GeneratedNamespace
 
                     context.AddSource($"{file.Path}generated.cs", sourceText);
                 }
-                catch(Exception x)
+                catch(Exception)
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(error, Location.None, file.Path));
+                 //   context.ReportDiagnostic(Diagnostic.Create(error, Location.None, file.Path));
                 }
             }
         }
@@ -64,7 +59,9 @@ namespace GeneratedNamespace
             var f = new FileDescriptorProto();
             var errors = new List<Error>();
             var t = new StringReader(protoContent);
+#pragma warning disable 618
             f.Parse(t, errors, "someFile");
+#pragma warning restore 618
 
             // do some transforms based on the file context
             var ast = new ProtoFile

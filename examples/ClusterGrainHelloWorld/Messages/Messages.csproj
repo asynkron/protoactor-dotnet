@@ -1,5 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
+    
     <TargetFramework>net5.0</TargetFramework>
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
@@ -15,10 +17,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Proto.Cluster.CodeGeneration\Proto.Cluster.CodeGeneration.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="3.8.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
+  <PropertyGroup>
+    <RestoreAdditionalProjectSources>https://dotnet.myget.org/F/roslyn/api/v3/index.json ;$(RestoreAdditionalProjectSources)</RestoreAdditionalProjectSources>
+  </PropertyGroup>
+  
 </Project>
