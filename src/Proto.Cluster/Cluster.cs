@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Proto.Cluster.IdentityLookup;
 using Proto.Cluster.Partition;
 using Proto.Extensions;
+using Proto.Logging;
 
 namespace Proto.Cluster
 {
@@ -89,7 +90,7 @@ namespace Proto.Cluster
             IdentityLookup = Config.IdentityLookup ?? new PartitionIdentityLookup();
             Remote = new Remote.Remote(System, Config.RemoteConfig);
             await Remote.StartAsync();
-            Logger = Log.CreateLogger($"Cluster-{LoggerId}");
+            Logger = System.LoggerFactory().CreateLogger($"Cluster-{LoggerId}");
             Logger.LogInformation("Starting");
             MemberList = new MemberList(this);
             ClusterContext = new DefaultClusterContext(IdentityLookup, PidCache, System.Root, Logger);

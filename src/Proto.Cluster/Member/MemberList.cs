@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Proto.Cluster.Data;
 using Proto.Cluster.Events;
 using Proto.Cluster.Utils;
+using Proto.Logging;
 using Proto.Remote;
 
 namespace Proto.Cluster
@@ -55,7 +56,7 @@ namespace Proto.Cluster
             _root = _system.Root;
             _eventStream = _system.EventStream;
 
-            _logger = Log.CreateLogger($"MemberList-{_cluster.LoggerId}");
+            _logger = _cluster.System.LoggerFactory().CreateLogger($"MemberList-{_cluster.LoggerId}");
 
             _bannedMembers = new ConcurrentSet<string>();
         }

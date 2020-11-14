@@ -2,6 +2,7 @@ using System;
 using Google.Protobuf;
 using JetBrains.Annotations;
 using Proto.Extensions;
+using Proto.Logging;
 
 namespace Proto
 {
@@ -28,6 +29,9 @@ namespace Proto
             var eventStreamProcess = new EventStreamProcess(this);
             ProcessRegistry.TryAdd("eventstream", eventStreamProcess);
             Extensions = new ActorSystemExtensions(this);
+            
+            //temp solution. copy whatever value exists in the current static solution, into the plugin
+            Extensions.Register(new LogExtension(Log._loggerFactory));
         }
 
         public string Address { get; private set; } = NoHost;

@@ -12,13 +12,14 @@ using Grpc.Health.V1;
 using Grpc.HealthCheck;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 
 namespace Proto.Remote
 {
     [PublicAPI]
     public class Remote
     {
-        private static readonly ILogger Logger = Log.CreateLogger<Remote>();
+        private ILogger Logger { get; }
         
         private readonly ActorSystem _system;
         private EndpointManager _endpointManager = null!;
@@ -30,6 +31,7 @@ namespace Proto.Remote
         {
             _system = system;
             Config = config;
+            Logger = system.LoggerFactory().CreateLogger<Remote>();
         }
 
         public RemoteConfig Config { get; private set; }

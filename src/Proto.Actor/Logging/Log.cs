@@ -13,7 +13,7 @@ namespace Proto
     [PublicAPI]
     public static class Log
     {
-        private static ILoggerFactory _loggerFactory = new NullLoggerFactory();
+        internal static ILoggerFactory _loggerFactory = new NullLoggerFactory();
 
         public static void SetLoggerFactory(ILoggerFactory loggerFactory)
         {
