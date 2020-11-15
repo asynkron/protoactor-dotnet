@@ -5,27 +5,20 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using Proto;
 using Proto.Cluster;
-using Proto.Remote;
 
 namespace Messages
 {
     public class Grains
     {
-        public Cluster Cluster { get; }
+        private Cluster Cluster { get; }
 
         public Grains(Cluster cluster) => Cluster = cluster;
 
-        internal Func<string, IHelloGrain> GetHelloGrain { get; private set; }
+        internal Func<IHelloGrain> GetHelloGrain { get; private set; }
 
-        public void HelloGrainFactory(Func<string, IHelloGrain> factory) 
-        {
-            GetHelloGrain = factory;
-        //    Cluster.Remote.RegisterKnownKind("HelloGrain", Props.FromProducer(() => new HelloGrainActor(this)));
-        } 
+        public void HelloGrainFactory(Func<IHelloGrain> factory) => GetHelloGrain = factory;
 
-        public void HelloGrainFactory(Func<IHelloGrain> factory) => HelloGrainFactory(id => factory());
-
-        public HelloGrainClient HelloGrain(string id) => new HelloGrainClient(Cluster, id);
+        public HelloGrainClient HelloGrain(string id) => new(Cluster, id);
     }
 
     public interface IHelloGrain
@@ -46,10 +39,8 @@ namespace Messages
 
         public Task<HelloResponse> SayHello(HelloRequest request) => SayHello(request, CancellationToken.None);
 
-        public async Task<HelloResponse> SayHello(HelloRequest request, CancellationToken ct, GrainCallOptions options = null)
+        private async Task<HelloResponse> SayHello(HelloRequest request, CancellationToken ct)
         {
-            options ??= GrainCallOptions.Default;
-            
             var gr = new GrainRequest
             {
                 MethodIndex = 0,
@@ -71,21 +62,7 @@ namespace Messages
                     _ => throw new NotSupportedException()
                 };
             }
-
-            for (int i = 0; i < options.RetryCount; i++)
-            {
-                try
-                {
-                    return await Inner();
-                }
-                catch (Exception)
-                {
-                    if (options.RetryAction != null)
-                    {
-                        await options.RetryAction(i);
-                    }
-                }
-            }
+            
             return await Inner();
         }
     }
@@ -106,14 +83,10 @@ namespace Messages
         {
             switch (context.Message)
             {
-                case Started _:
-                {
-                    _inner = _grains.GetHelloGrain(context.Self!.Id);
-                    context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
-                    break;
-                }
                 case ClusterInit msg: 
                 {
+                    _inner = _grains.GetHelloGrain();
+                    context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
                     _identity = msg.Identity;
                     _kind = msg.Kind;
                     break;
