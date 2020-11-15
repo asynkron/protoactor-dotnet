@@ -20,7 +20,7 @@ namespace Messages
         public void HelloGrainFactory(Func<string, IHelloGrain> factory) 
         {
             GetHelloGrain = factory;
-            Cluster.Remote.RegisterKnownKind("HelloGrain", Props.FromProducer(() => new HelloGrainActor(this)));
+        //    Cluster.Remote.RegisterKnownKind("HelloGrain", Props.FromProducer(() => new HelloGrainActor(this)));
         } 
 
         public void HelloGrainFactory(Func<IHelloGrain> factory) => HelloGrainFactory(id => factory());
@@ -112,7 +112,7 @@ namespace Messages
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
                     break;
                 }
-                case GrainInit msg: 
+                case ClusterInit msg: 
                 {
                     _identity = msg.Identity;
                     _kind = msg.Kind;
