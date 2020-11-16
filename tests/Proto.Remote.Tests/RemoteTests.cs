@@ -83,8 +83,6 @@ namespace Proto.Remote.Tests
         [DisplayTestMethodName]
         public async Task CanSendAndReceiveToExistingRemote()
         {
-
-
             var remoteActor = PID.FromAddress(_fixture.RemoteAddress, "EchoActorInstance");
 
             var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping { Message = "Hello" },

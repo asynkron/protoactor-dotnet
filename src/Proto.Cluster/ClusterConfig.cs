@@ -17,12 +17,10 @@ namespace Proto.Cluster
     [PublicAPI]
     public record ClusterConfig
     {
-        private ClusterConfig(string clusterName, IClusterProvider clusterProvider, IIdentityLookup identityLookup,
-            RemoteConfigBase remoteConfig)
+        private ClusterConfig(string clusterName, IClusterProvider clusterProvider, IIdentityLookup identityLookup)
         {
             ClusterName = clusterName ?? throw new ArgumentNullException(nameof(clusterName));
             ClusterProvider = clusterProvider ?? throw new ArgumentNullException(nameof(clusterProvider));
-            RemoteConfig = remoteConfig ?? throw new ArgumentNullException(nameof(remoteConfig));
             TimeoutTimespan = TimeSpan.FromSeconds(5);
             HeartBeatInterval = TimeSpan.FromSeconds(30);
             MemberStrategyBuilder = (_,_) => new SimpleMemberStrategy();
@@ -63,6 +61,6 @@ namespace Proto.Cluster
 
         public static ClusterConfig Setup(string clusterName, IClusterProvider clusterProvider,
             IIdentityLookup identityLookup, RemoteConfigBase remoteConfig) =>
-            new ClusterConfig(clusterName, clusterProvider, identityLookup, remoteConfig);
+            new(clusterName, clusterProvider, identityLookup);
     }
 }
