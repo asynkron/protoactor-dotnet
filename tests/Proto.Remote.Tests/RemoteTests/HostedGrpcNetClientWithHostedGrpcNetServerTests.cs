@@ -24,6 +24,8 @@ namespace Proto.Remote.Tests
             {
                 await _clientHost.StopAsync();
                 await _serverHost.StopAsync();
+                _clientHost.Dispose();
+                _serverHost.Dispose();
             }
         }
         public HostedGrpcNetClientWithHostedGrpcNetServerTests(HostedGrpcNetClientWithHostedGrpcNetServerFixture fixture) : base(fixture)
