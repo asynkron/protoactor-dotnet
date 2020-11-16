@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Messages;
 using Proto;
 using Proto.Remote;
+using Proto.Remote.GrpcNet;
 using ProtosReflection = Messages.ProtosReflection;
 
 namespace Node2
@@ -44,8 +45,8 @@ namespace Node2
 #endif
             var system = new ActorSystem();
             var context = new RootContext(system);
-            var remoteConfig =  RemoteConfig.BindToLocalhost(12000).WithProtoMessages(ProtosReflection.Descriptor);
-            var remote = new Remote(system, remoteConfig);
+            var remoteConfig =  GrpcNetRemoteConfig.BindToLocalhost(12000).WithProtoMessages(ProtosReflection.Descriptor);
+            var remote = new GrpcNetRemote(system, remoteConfig);
             remote.StartAsync();
             context.SpawnNamed(Props.FromProducer(() => new EchoActor()), "remote");
             Console.ReadLine();

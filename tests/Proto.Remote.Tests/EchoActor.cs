@@ -8,15 +8,6 @@ namespace Proto.Remote.Tests
     {
         private static readonly ILogger Logger = Log.CreateLogger<EchoActor>();
 
-        private readonly string _host;
-        private readonly int _port;
-
-        public EchoActor(string host, int port)
-        {
-            _host = host;
-            _port = port;
-        }
-
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
@@ -26,7 +17,7 @@ namespace Proto.Remote.Tests
                     break;
                 case Ping ping:
                     Logger.LogDebug("Received Ping, replying Pong");
-                    context.Respond(new Pong { Message = $"{_host}:{_port} {ping.Message}" });
+                    context.Respond(new Pong { Message = $"{context.System.Address} {ping.Message}" });
                     break;
                 case Die _:
                     Logger.LogDebug("Received termination request, stopping");

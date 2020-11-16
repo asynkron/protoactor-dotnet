@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 
-namespace Proto.Remote
+namespace Proto.Remote.GrpcNet
 {
     internal class RemoteHostedService : IHostedService
     {

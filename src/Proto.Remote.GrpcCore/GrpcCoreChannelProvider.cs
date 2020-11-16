@@ -1,12 +1,12 @@
 using Grpc.Core;
 
-namespace Proto.Remote
+namespace Proto.Remote.GrpcCore
 {
-    public class ChannelProvider : IChannelProvider
+    public class GrpcCoreChannelProvider : IChannelProvider
     {
-        private readonly RemoteConfig _remoteConfig;
+        private readonly GrpcCoreRemoteConfig _remoteConfig;
 
-        public ChannelProvider(RemoteConfig remoteConfig)
+        public GrpcCoreChannelProvider(GrpcCoreRemoteConfig remoteConfig)
         {
             _remoteConfig = remoteConfig;
         }

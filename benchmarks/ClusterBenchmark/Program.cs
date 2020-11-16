@@ -11,6 +11,7 @@ using Proto.Cluster.Consul;
 using Proto.Cluster.IdentityLookup;
 using Proto.Cluster.Kubernetes;
 using Proto.Remote;
+using Proto.Remote.GrpcCore;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
 
@@ -107,7 +108,7 @@ namespace ClusterExperiment1
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
             var (clusterConfig, remoteConfig) = GetClusterConfig(clusterProvider, identity);
-            var remote = new Remote(system, remoteConfig);
+            var remote = new GrpcCoreRemote(system, remoteConfig);
             var cluster = new Cluster(system, clusterConfig);
             await cluster.StartClientAsync();
             return cluster;
@@ -121,21 +122,21 @@ namespace ClusterExperiment1
             var helloProps = Props.FromProducer(() => new HelloActor());
             var (clusterConfig, remoteConfig) = GetClusterConfig(clusterProvider, identity);
             clusterConfig = clusterConfig.WithClusterKind("hello", helloProps);
-            var remote = new Remote(system, remoteConfig);
+            var remote = new GrpcCoreRemote(system, remoteConfig);
             var cluster = new Cluster(system, clusterConfig);
             
             cluster.StartMemberAsync();
             return cluster;
         }
 
-        private static (ClusterConfig, RemoteConfig) GetClusterConfig(IClusterProvider clusterProvider, IIdentityLookup identityLookup)
+        private static (ClusterConfig, GrpcCoreRemoteConfig) GetClusterConfig(IClusterProvider clusterProvider, IIdentityLookup identityLookup)
         {
-            var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfig.AnyFreePort}";
+            var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{GrpcCoreRemoteConfig.AnyFreePort}";
             var port = int.Parse(portStr);
-            var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? RemoteConfig.Localhost;
+            var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? GrpcCoreRemoteConfig.Localhost;
             var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
 
-            var remoteConfig = RemoteConfig
+            var remoteConfig = GrpcCoreRemoteConfig
                                     .BindTo(host, port)
                                     .WithAdvertisedHost(advertisedHost)
                                     .WithProtoMessages(MessagesReflection.Descriptor);

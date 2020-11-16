@@ -1,24 +1,22 @@
 using System;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Logging;
 
-namespace Proto.Remote
+namespace Proto.Remote.GrpcNet
 {
-    public class HostedRemote : IRemote
+    public class HostedGrpcNetRemote : IRemote
     {
         private readonly ILogger _logger;
         private readonly EndpointManager _endpointManager;
-        private readonly RemoteConfig _config;
+        private readonly GrpcNetRemoteConfig _config;
 
         public IServerAddressesFeature? ServerAddressesFeature { get; set; }
         public RemoteConfigBase Config => _config;
         public ActorSystem System { get; }
 
-        public HostedRemote(ActorSystem system, RemoteConfig config, EndpointManager endpointManager, ILogger<HostedRemote> logger)
+        public HostedGrpcNetRemote(ActorSystem system, GrpcNetRemoteConfig config, EndpointManager endpointManager, ILogger<HostedGrpcNetRemote> logger)
         {
             System = system;
             _config = config;

@@ -1,14 +1,12 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Net.Client;
 
-namespace Proto.Remote
+namespace Proto.Remote.GrpcNet
 {
-    public class ChannelProvider : IChannelProvider
+    public class GrpcNetChannelProvider : IChannelProvider
     {
-        private readonly RemoteConfig _remoteConfig;
-        public ChannelProvider(RemoteConfig remoteConfig)
+        private readonly GrpcNetRemoteConfig _remoteConfig;
+        public GrpcNetChannelProvider(GrpcNetRemoteConfig remoteConfig)
         {
             _remoteConfig = remoteConfig;
         }

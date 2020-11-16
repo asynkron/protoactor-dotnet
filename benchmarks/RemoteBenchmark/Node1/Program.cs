@@ -11,6 +11,7 @@ using Messages;
 using Proto;
 using Proto.Remote;
 using ProtosReflection = Messages.ProtosReflection;
+using Proto.Remote.GrpcNet;
 
 class Program
 {
@@ -22,8 +23,8 @@ class Program
         var system = new ActorSystem();
         var context = new RootContext(system);
 
-        var remote = new Remote(system,
-            RemoteConfig.BindToLocalhost(12001).WithProtoMessages(ProtosReflection.Descriptor));
+        var remote = new GrpcNetRemote(system,
+            GrpcNetRemoteConfig.BindToLocalhost(12001).WithProtoMessages(ProtosReflection.Descriptor));
         await remote.StartAsync();
 
         var messageCount = 1000000;

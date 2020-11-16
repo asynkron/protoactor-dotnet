@@ -1,4 +1,5 @@
 using System;
+using Proto.Remote.GrpcCore;
 using Xunit;
 
 namespace Proto.Remote.Tests
@@ -10,8 +11,8 @@ namespace Proto.Remote.Tests
         {
             var props = new Props();
             var kind = Guid.NewGuid().ToString();
-            var remote = new Remote(new ActorSystem(), 
-                 RemoteConfig.BindToLocalhost()
+            var remote = new GrpcCoreRemote(new ActorSystem(), 
+                 GrpcCoreRemoteConfig.BindToLocalhost()
                 .WithRemoteKinds((kind, props))
             );
 
@@ -24,8 +25,8 @@ namespace Proto.Remote.Tests
             var props = new Props();
             var kind1 = Guid.NewGuid().ToString();
             var kind2 = Guid.NewGuid().ToString();
-            var remote = new Remote(new ActorSystem(),
-                RemoteConfig
+            var remote = new GrpcCoreRemote(new ActorSystem(),
+                GrpcCoreRemoteConfig
                     .BindToLocalhost()
                     .WithRemoteKinds(
                         (kind1, props),
@@ -41,7 +42,7 @@ namespace Proto.Remote.Tests
         [Fact]
         public void UnknownKindThrowsException()
         {
-            var remote = new Remote(new ActorSystem(), RemoteConfig.BindToLocalhost());
+            var remote = new GrpcCoreRemote(new ActorSystem(), GrpcCoreRemoteConfig.BindToLocalhost());
 
             Assert.Throws<ArgumentException>(() => { remote.Config.GetRemoteKind("not registered"); });
         }

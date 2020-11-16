@@ -7,17 +7,17 @@
 using System.Collections.Generic;
 using Grpc.Core;
 
-namespace Proto.Remote
+namespace Proto.Remote.GrpcCore
 {
     public static class RemoteConfigExtensions
     {
-        public static RemoteConfig WithChannelOptions(this RemoteConfig remoteConfig, IEnumerable<ChannelOption> options) =>
+        public static GrpcCoreRemoteConfig WithChannelOptions(this GrpcCoreRemoteConfig remoteConfig, IEnumerable<ChannelOption> options) =>
             remoteConfig with { ChannelOptions = options };
 
-        public static RemoteConfig WithChannelCredentials(this RemoteConfig remoteConfig, ChannelCredentials channelCredentials) =>
+        public static GrpcCoreRemoteConfig WithChannelCredentials(this GrpcCoreRemoteConfig remoteConfig, ChannelCredentials channelCredentials) =>
             remoteConfig with { ChannelCredentials = channelCredentials };
 
-        public static RemoteConfig WithServerCredentials(this RemoteConfig remoteConfig, ServerCredentials serverCredentials) =>
+        public static GrpcCoreRemoteConfig WithServerCredentials(this GrpcCoreRemoteConfig remoteConfig, ServerCredentials serverCredentials) =>
             remoteConfig with { ServerCredentials = serverCredentials };
 
     }

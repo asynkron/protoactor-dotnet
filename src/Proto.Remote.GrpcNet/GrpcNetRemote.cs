@@ -11,20 +11,20 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Proto.Remote
+namespace Proto.Remote.GrpcNet
 {
-    public class Remote : IRemote
+    public class GrpcNetRemote : IRemote
     {
-        private readonly ILogger _logger = Log.CreateLogger<Remote>();
+        private readonly ILogger _logger = Log.CreateLogger<GrpcNetRemote>();
         private EndpointManager _endpointManager = null!;
         private EndpointReader _endpointReader = null!;
         private HealthServiceImpl _healthCheck = null!;
-        private readonly RemoteConfig _config;
+        private readonly GrpcNetRemoteConfig _config;
         private IWebHost? _host;
         public bool Started { get; private set; }
         public RemoteConfigBase Config => _config;
         public ActorSystem System { get; }
-        public Remote(ActorSystem system, RemoteConfig config)
+        public GrpcNetRemote(ActorSystem system, GrpcNetRemoteConfig config)
         {
             System = system;
             _config = config;
@@ -36,7 +36,7 @@ namespace Proto.Remote
             {
                 if (Started)
                     return Task.CompletedTask;
-                var channelProvider = new ChannelProvider(_config);
+                var channelProvider = new GrpcNetChannelProvider(_config);
                 _endpointManager = new EndpointManager(System, Config, channelProvider);
                 _endpointReader = new EndpointReader(System, _endpointManager, Config.Serialization);
                 _healthCheck = new HealthServiceImpl();

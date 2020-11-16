@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="Remote.cs" company="Asynkron AB">
+//   <copyright file="GrpcCoreRemote.cs" company="Asynkron AB">
 //       Copyright (C) 2015-2020 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
@@ -13,19 +13,19 @@ using Grpc.HealthCheck;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
-namespace Proto.Remote
+namespace Proto.Remote.GrpcCore
 {
     [PublicAPI]
-    public class Remote : IRemote
+    public class GrpcCoreRemote : IRemote
     {
-        private static readonly ILogger Logger = Log.CreateLogger<Remote>();
+        private static readonly ILogger Logger = Log.CreateLogger<GrpcCoreRemote>();
         private EndpointManager _endpointManager = null!;
         private EndpointReader _endpointReader = null!;
         private HealthServiceImpl _healthCheck = null!;
         private Server _server = null!;
-        private readonly RemoteConfig _config;
+        private readonly GrpcCoreRemoteConfig _config;
 
-        public Remote(ActorSystem system, RemoteConfig config)
+        public GrpcCoreRemote(ActorSystem system, GrpcCoreRemoteConfig config)
         {
             System = system;
             _config = config;
@@ -41,7 +41,7 @@ namespace Proto.Remote
             {
                 if (Started)
                     return Task.CompletedTask;
-                var channelProvider = new ChannelProvider(_config);
+                var channelProvider = new GrpcCoreChannelProvider(_config);
                 _endpointManager = new EndpointManager(System, Config, channelProvider);
                 _endpointReader = new EndpointReader(System, _endpointManager, Config.Serialization);
                 _healthCheck = new HealthServiceImpl();

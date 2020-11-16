@@ -9,5 +9,6 @@ namespace Proto.Remote
         bool Started { get; }
         Task ShutdownAsync(bool graceful = true);
         Task StartAsync();
+        void SendMessage(PID pid, object msg, int serializerId);
     }
 }
