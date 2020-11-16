@@ -18,7 +18,7 @@ namespace Proto.Cluster
     public record ClusterConfig
     {
         private ClusterConfig(string clusterName, IClusterProvider clusterProvider, IIdentityLookup identityLookup,
-            RemoteConfig remoteConfig)
+            RemoteConfigBase remoteConfig)
         {
             ClusterName = clusterName ?? throw new ArgumentNullException(nameof(clusterName));
             ClusterProvider = clusterProvider ?? throw new ArgumentNullException(nameof(clusterProvider));
@@ -36,7 +36,7 @@ namespace Proto.Cluster
 
         public IClusterProvider ClusterProvider { get; }
 
-        public RemoteConfig RemoteConfig { get; }
+        public RemoteConfigBase RemoteConfig { get; }
 
         public TimeSpan TimeoutTimespan { get; init; }
 
@@ -62,7 +62,7 @@ namespace Proto.Cluster
                     )};
 
         public static ClusterConfig Setup(string clusterName, IClusterProvider clusterProvider,
-            IIdentityLookup identityLookup, RemoteConfig remoteConfig) =>
+            IIdentityLookup identityLookup, RemoteConfigBase remoteConfig) =>
             new ClusterConfig(clusterName, clusterProvider, identityLookup, remoteConfig);
     }
 }

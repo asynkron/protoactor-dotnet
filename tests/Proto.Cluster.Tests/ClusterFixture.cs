@@ -10,6 +10,7 @@
     using Remote;
     using Testing;
     using Xunit;
+    using Proto.Remote.GrpcCore;
 
     public interface IClusterFixture
     {
@@ -43,17 +44,21 @@
         protected virtual async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig> configure,
             string clusterName)
         {
+            var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
+
             var config = ClusterConfig.Setup(
                 clusterName,
                 GetClusterProvider(),
                 GetIdentityLookup(clusterName),
-                RemoteConfig.BindToLocalhost()
-                    .WithProtoMessages(MessagesReflection.Descriptor)
+                remoteConfig
             ).WithClusterKinds(ClusterKinds);
 
             config = configure?.Invoke(config) ?? config;
+            var system = new ActorSystem();
+            
+            var _ = new GrpcCoreRemote(system, remoteConfig);
 
-            var cluster = new Cluster(new ActorSystem(), config);
+            var cluster = new Cluster(system, config);
 
             await cluster.StartMemberAsync();
             return cluster;

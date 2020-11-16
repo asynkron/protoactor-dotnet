@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using chat.messages;
 using Proto;
 using Proto.Remote;
+using Proto.Remote.GrpcCore;
 
 namespace Server
 {
@@ -14,7 +15,7 @@ namespace Server
             var system = new ActorSystem();
             var context = new RootContext(system);
             
-            var remote = new Remote(system, RemoteConfig.BindToLocalhost(8000)
+            var remote = new GrpcCoreRemote(system, GrpcCoreRemoteConfig.BindToLocalhost(8000)
                 .WithProtoMessages(ChatReflection.Descriptor));
             remote.StartAsync();
 

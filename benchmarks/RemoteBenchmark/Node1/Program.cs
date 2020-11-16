@@ -11,16 +11,20 @@ using Messages;
 using Proto;
 using Proto.Remote;
 using ProtosReflection = Messages.ProtosReflection;
+using Proto.Remote.GrpcNet;
 
 class Program
 {
     static async Task Main(string[] args)
     {
+#if NETCORE
+        AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+#endif
         var system = new ActorSystem();
         var context = new RootContext(system);
 
-        var remote = new Remote(system,
-            RemoteConfig.BindToLocalhost(12001).WithProtoMessages(ProtosReflection.Descriptor));
+        var remote = new GrpcNetRemote(system,
+            GrpcNetRemoteConfig.BindToLocalhost(12001).WithProtoMessages(ProtosReflection.Descriptor));
         await remote.StartAsync();
 
         var messageCount = 1000000;

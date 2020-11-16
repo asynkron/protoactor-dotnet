@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using chat.messages;
 using Proto;
 using Proto.Remote;
+using Proto.Remote.GrpcCore;
 
 namespace Client
 {
@@ -11,7 +12,7 @@ namespace Client
         static void Main()
         {
             var system = new ActorSystem();
-            var remote = new Remote(system, RemoteConfig.BindToLocalhost()
+            var remote = new GrpcCoreRemote(system, GrpcCoreRemoteConfig.BindToLocalhost()
                 .WithProtoMessages(ChatReflection.Descriptor));
             
             remote.StartAsync();

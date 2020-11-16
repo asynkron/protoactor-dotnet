@@ -20,6 +20,8 @@ namespace Proto
             _loggerFactory = loggerFactory;
         }
 
+        public static ILoggerFactory GetLoggerFactory() => _loggerFactory;
+
         public static ILogger CreateLogger(string categoryName) => _loggerFactory.CreateLogger(categoryName);
 
         public static ILogger CreateLogger<T>() => _loggerFactory.CreateLogger<T>();

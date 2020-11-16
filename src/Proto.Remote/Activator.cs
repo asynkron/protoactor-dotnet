@@ -10,12 +10,12 @@ namespace Proto.Remote
 {
     public class Activator : IActor
     {
-        private readonly Remote _remote;
+        private readonly RemoteConfigBase _remoteConfig;
         private readonly ActorSystem _system;
 
-        public Activator(Remote remote, ActorSystem system)
+        public Activator(RemoteConfigBase remoteConfig, ActorSystem system)
         {
-            _remote = remote;
+            _remoteConfig = remoteConfig;
             _system = system;
         }
 
@@ -24,7 +24,7 @@ namespace Proto.Remote
             switch (context.Message)
             {
                 case ActorPidRequest msg:
-                    var props = _remote.GetRemoteKind(msg.Kind);
+                    var props = _remoteConfig.GetRemoteKind(msg.Kind);
                     var name = msg.Name;
                     if (string.IsNullOrEmpty(name))
                     {

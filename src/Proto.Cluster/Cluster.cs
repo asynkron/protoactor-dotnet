@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Proto.Cluster.IdentityLookup;
 using Proto.Cluster.Partition;
 using Proto.Extensions;
+using Proto.Remote;
 
 namespace Proto.Cluster
 {
@@ -48,7 +49,7 @@ namespace Proto.Cluster
 
         public ActorSystem System { get; }
 
-        public Remote.Remote Remote { get; private set; } = null!;
+        public IRemote Remote { get; private set; } = null!;
 
         public MemberList MemberList { get; private set; } = null!;
 
@@ -87,7 +88,7 @@ namespace Proto.Cluster
         {
             //default to partition identity lookup
             IdentityLookup = Config.IdentityLookup ?? new PartitionIdentityLookup();
-            Remote = new Remote.Remote(System, Config.RemoteConfig);
+            Remote = System.Extensions.Get<IRemote>();
             await Remote.StartAsync();
             Logger = Log.CreateLogger($"Cluster-{LoggerId}");
             Logger.LogInformation("Starting");

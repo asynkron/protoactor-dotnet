@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using Proto.Future;
 using Proto.Mailbox;
 
 namespace Proto.Remote
@@ -33,11 +34,13 @@ namespace Proto.Remote
 
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
+        private readonly string _address;
 
-        public EndpointWriterMailbox(ActorSystem system, int batchSize)
+        public EndpointWriterMailbox(ActorSystem system, int batchSize, string address)
         {
             _system = system;
             _batchSize = batchSize;
+            _address = address;
         }
 
         public void PostUserMessage(object msg)
@@ -86,27 +89,57 @@ namespace Proto.Remote
 
                     _suspended = sys switch
                     {
-                        SuspendMailbox _         => true,
+                        SuspendMailbox _ => true,
                         EndpointConnectedEvent _ => false,
-                        _                        => _suspended
+                        _ => _suspended
                     };
 
                     m = sys;
-                    await _invoker!.InvokeSystemMessageAsync(sys);
+
+                    switch (m)
+                    {
+                        case EndpointErrorEvent e:
+                            if (!_suspended)// Since it's already stopped, there is no need to throw the error
+                                await _invoker!.InvokeUserMessageAsync(sys);
+                            break;
+                        default:
+                            await _invoker!.InvokeSystemMessageAsync(sys);
+                            break;
+                    }
 
                     if (sys is Stop)
                     {
-                        Logger.LogWarning("Endpoint writer is stopping...");
-                        //Dump messages from user messages queue to deadletter 
+                        // Logger.LogWarning("Endpoint writer is stopping...");
+                        //Dump messages from user messages queue to deadletter and inform watchers about termination
                         object? usrMsg;
-
+                        int droppedRemoteDeliverCount = 0;
+                        int remoteTerminateCount = 0;
                         while ((usrMsg = _userMessages.Pop()) is not null)
                         {
-                            if (usrMsg is RemoteDeliver rd)
+                            switch (usrMsg)
                             {
-                                _system.EventStream.Publish(new DeadLetterEvent(rd.Target, rd.Message, rd.Sender));
+                                case RemoteWatch msg:
+                                    remoteTerminateCount++;
+                                    msg.Watcher.SendSystemMessage(_system, new Terminated
+                                    {
+                                        AddressTerminated = true,
+                                        Who = msg.Watchee
+                                    });
+                                    break;
+                                case RemoteDeliver rd:
+                                    droppedRemoteDeliverCount++;
+                                    if (rd.Sender != null)
+                                        _system.Root.Send(rd.Sender, new DeadLetterResponse { Target = rd.Target });
+                                    _system.EventStream.Publish(new DeadLetterEvent(rd.Target, rd.Message, rd.Sender));
+                                    break;
+                                default:
+                                    break;
                             }
                         }
+                        if (droppedRemoteDeliverCount > 0)
+                            Logger.LogInformation("[EndpointWriterMailbox] Dropped {count} user Messages for {Address}", droppedRemoteDeliverCount, _address);
+                        if (remoteTerminateCount > 0)
+                            Logger.LogInformation("[EndpointWriterMailbox] Sent {Count} remote terminations for {Address}", remoteTerminateCount, _address);
                     }
                 }
 
@@ -119,14 +152,16 @@ namespace Proto.Remote
                     {
                         Logger.LogDebug("[EndpointWriterMailbox] Processing User Message {@Message}", msg);
 
-                        if (msg is EndpointTerminatedEvent
-                        ) //The mailbox was crashing when it received this particular message 
+                        switch (msg)
                         {
-                            await _invoker!.InvokeUserMessageAsync(msg);
-                            continue;
+                            case RemoteWatch _:
+                            case RemoteUnwatch _:
+                            case RemoteTerminate _:
+                                await _invoker!.InvokeUserMessageAsync(msg);
+                                continue;
                         }
 
-                        batch.Add((RemoteDeliver) msg);
+                        batch.Add((RemoteDeliver)msg);
 
                         if (batch.Count >= _batchSize)
                         {
@@ -144,14 +179,14 @@ namespace Proto.Remote
             }
             catch (Exception x)
             {
-                if (x is RpcException rpc && rpc.Status.StatusCode == StatusCode.Unavailable)
-                {
-                    Logger.LogError( "Endpoint writer failed, status unavailable");
-                }
-                else
-                {
-                    Logger.LogError(x, "Endpoint writer failed");
-                }
+                // if (x is RpcException rpc && rpc.Status.StatusCode == StatusCode.Unavailable)
+                // {
+                //     Logger.LogError( "Endpoint writer failed, status unavailable");
+                // }
+                // else
+                // {
+                //     Logger.LogError(x, "Endpoint writer failed");
+                // }
 
                 _suspended = true;
                 _invoker!.EscalateFailure(x, m);
