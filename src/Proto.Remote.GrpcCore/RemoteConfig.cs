@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using Grpc.Core;
+using JetBrains.Annotations;
 
 namespace Proto.Remote.GrpcCore
 {
+    [PublicAPI]
     public record GrpcCoreRemoteConfig : RemoteConfigBase
     {
         protected GrpcCoreRemoteConfig(string host, int port) : base(host, port)

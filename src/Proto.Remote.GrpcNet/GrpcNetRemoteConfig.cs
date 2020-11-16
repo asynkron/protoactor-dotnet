@@ -6,10 +6,12 @@
 
 using System;
 using Grpc.Net.Client;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace Proto.Remote.GrpcNet
 {
+    [PublicAPI]
     public record GrpcNetRemoteConfig : RemoteConfigBase
     {
         protected GrpcNetRemoteConfig(string host, int port) : base(host, port)

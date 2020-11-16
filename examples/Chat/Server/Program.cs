@@ -5,6 +5,7 @@ using chat.messages;
 using Proto;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
+using static Proto.Remote.GrpcCore.GrpcCoreRemoteConfig;
 
 namespace Server
 {
@@ -12,12 +13,16 @@ namespace Server
     {
         static void Main()
         {
-            var system = new ActorSystem();
-            var context = new RootContext(system);
+            var config = 
+                BindToLocalhost(8000)
+                .WithProtoMessages(ChatReflection.Descriptor);
             
-            var remote = new GrpcCoreRemote(system, GrpcCoreRemoteConfig.BindToLocalhost(8000)
-                .WithProtoMessages(ChatReflection.Descriptor));
-            remote.StartAsync();
+            var system = new ActorSystem()
+                .WithRemote(config);
+            
+            system.Remote().StartAsync();
+            
+            var context = new RootContext(system);
 
             var clients = new HashSet<PID>();
 

@@ -8,7 +8,7 @@ namespace Proto
     [PublicAPI]
     public class ActorSystem
     {
-      //  public static readonly ActorSystem Default = new ActorSystem();
+        //  public static readonly ActorSystem Default = new ActorSystem();
         internal const string NoHost = "nonhost";
         private string _host = NoHost;
         private int _port;
@@ -16,7 +16,7 @@ namespace Proto
         public ActorSystem() : this(new ActorSystemConfig())
         {
         }
-        
+
         public ActorSystem(ActorSystemConfig config)
         {
             Config = config ?? throw new ArgumentNullException(nameof(config));
@@ -33,7 +33,7 @@ namespace Proto
         public string Address { get; private set; } = NoHost;
 
         public ActorSystemConfig Config { get; }
-        
+
         public ProcessRegistry ProcessRegistry { get; }
 
         public RootContext Root { get; }
@@ -52,6 +52,9 @@ namespace Proto
             _port = port;
             Address = $"{host}:{port}";
         }
+
+        public RootContext NewRoot(MessageHeader? headers = null, params Func<Sender, Sender>[] middleware) =>
+            new(this, headers, middleware);
 
         public (string Host, int Port) GetAddress() => (_host, _port);
     }
