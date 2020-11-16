@@ -69,39 +69,38 @@ namespace Proto.Remote.GrpcCore
             }
         }
 
-        public Task ShutdownAsync(bool graceful = true)
+        public async Task ShutdownAsync(bool graceful = true)
         {
             lock (this)
             {
                 if (!Started)
-                    return Task.CompletedTask;
-                try
-                {
-                    if (graceful)
-                    {
-                        _endpointManager.Stop();
-                        _server.ShutdownAsync().GetAwaiter().GetResult();
-                    }
-                    else
-                    {
-                        _server.KillAsync().GetAwaiter().GetResult();
-                    }
-
-                    Logger.LogDebug(
-                        "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
-                        System.Address, graceful
-                    );
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(
-                        ex, "Proto.Actor server stopped on {Address} with error: {Message}",
-                        System.Address, ex.Message
-                    );
-                    _server.KillAsync().GetAwaiter().GetResult();
-                }
+                    return;
                 Started = false;
-                return Task.CompletedTask;
+            }
+            try
+            {
+                if (graceful)
+                {
+                    _endpointManager.Stop();
+                    await _server.ShutdownAsync();
+                }
+                else
+                {
+                    await _server.KillAsync();
+                }
+
+                Logger.LogDebug(
+                    "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
+                    System.Address, graceful
+                );
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(
+                    ex, "Proto.Actor server stopped on {Address} with error: {Message}",
+                    System.Address, ex.Message
+                );
+                await _server.KillAsync();
             }
         }
 
