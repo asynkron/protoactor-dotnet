@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
+using Proto.Extensions;
 
 namespace Proto.Remote
 {
@@ -51,17 +52,12 @@ namespace Proto.Remote
         public string GetTypeName(object obj)
         {
             if (obj is JsonMessage jsonMessage)
-            {
                 return jsonMessage.TypeName;
-            }
 
-            var message = obj as IMessage;
-            if (message is null)
-            {
-                throw new ArgumentException("obj must be of type IMessage", nameof(obj));
-            }
-
-            return message.Descriptor.File.Package + "." + message.Descriptor.Name;
+            if (obj is IMessage message) 
+                return message.Descriptor.File.Package + "." + message.Descriptor.Name;
+            
+            throw new ArgumentException("obj must be of type IMessage", nameof(obj));
         }
     }
 
@@ -89,20 +85,17 @@ namespace Proto.Remote
 
         public string GetTypeName(object obj)
         {
-            var message = obj as IMessage;
-            if (message is null)
-            {
-                throw new ArgumentException("obj must be of type IMessage", nameof(obj));
-            }
-
-            return message.Descriptor.File.Package + "." + message.Descriptor.Name;
+            if (obj is IMessage message) 
+                return $"{message.Descriptor.File.Package}.{message.Descriptor.Name}";
+            
+            throw new ArgumentException("obj must be of type IMessage", nameof(obj));
         }
     }
 
-    public class Serialization
+    public class Serialization : IActorSystemExtension<Serialization>
     {
-        private readonly List<ISerializer> Serializers = new List<ISerializer>();
-        internal readonly Dictionary<string, MessageParser> TypeLookup = new Dictionary<string, MessageParser>();
+        private readonly List<ISerializer> _serializers = new();
+        internal readonly Dictionary<string, MessageParser> TypeLookup = new();
 
         public Serialization()
         {
@@ -116,10 +109,10 @@ namespace Proto.Remote
 
         public void RegisterSerializer(ISerializer serializer, bool makeDefault = false)
         {
-            Serializers.Add(serializer);
+            _serializers.Add(serializer);
             if (makeDefault)
             {
-                DefaultSerializerId = Serializers.Count - 1;
+                DefaultSerializerId = _serializers.Count - 1;
             }
         }
 
@@ -127,16 +120,16 @@ namespace Proto.Remote
         {
             foreach (var msg in fd.MessageTypes)
             {
-                var name = fd.Package + "." + msg.Name;
+                var name = $"{fd.Package}.{msg.Name}";
                 TypeLookup.Add(name, msg.Parser);
             }
         }
 
-        public ByteString Serialize(object message, int serializerId) => Serializers[serializerId].Serialize(message);
+        public ByteString Serialize(object message, int serializerId) => _serializers[serializerId].Serialize(message);
 
-        public string GetTypeName(object message, int serializerId) => Serializers[serializerId].GetTypeName(message);
+        public string GetTypeName(object message, int serializerId) => _serializers[serializerId].GetTypeName(message);
 
         public object Deserialize(string typeName, ByteString bytes, int serializerId) =>
-            Serializers[serializerId].Deserialize(bytes, typeName);
+            _serializers[serializerId].Deserialize(bytes, typeName);
     }
 }

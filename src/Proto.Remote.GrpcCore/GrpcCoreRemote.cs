@@ -30,6 +30,7 @@ namespace Proto.Remote.GrpcCore
             System = system;
             _config = config;
             System.Extensions.Register(this);
+            System.Extensions.Register(config.Serialization);
         }
         public bool Started { get; private set; }
         public ActorSystem System { get; }

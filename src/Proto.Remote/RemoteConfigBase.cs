@@ -60,6 +60,5 @@ namespace Proto.Remote
         public EndpointWriterOptions EndpointWriterOptions { get; init; } = new();
 
         public Serialization Serialization { get; init; } = new();
-
     }
 }

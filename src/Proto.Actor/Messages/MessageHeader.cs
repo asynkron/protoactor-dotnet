@@ -15,7 +15,7 @@ namespace Proto
     [PublicAPI]
     public record MessageHeader : IReadOnlyDictionary<string, string>
     {
-        public static readonly MessageHeader Empty = new MessageHeader(ImmutableDictionary<string, string>.Empty);
+        public static readonly MessageHeader Empty = new(ImmutableDictionary<string, string>.Empty);
 
         private ImmutableDictionary<string, string> Inner { get; init; }
         

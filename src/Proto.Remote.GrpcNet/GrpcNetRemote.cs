@@ -29,6 +29,7 @@ namespace Proto.Remote.GrpcNet
             System = system;
             _config = config;
             System.Extensions.Register(this);
+            System.Extensions.Register(config.Serialization);
         }
         public Task StartAsync()
         {
