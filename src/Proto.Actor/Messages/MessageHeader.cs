@@ -24,15 +24,18 @@ namespace Proto
             Inner = headers.ToImmutableDictionary();
         }
 
-        public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => Inner.GetEnumerator();
+        public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => 
+            Inner.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator() => Inner.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => 
+            Inner.GetEnumerator();
 
         public int Count => Inner.Count;
 
         public bool ContainsKey(string key) => Inner.ContainsKey(key);
 
-        public bool TryGetValue(string key, out string value) => Inner.TryGetValue(key, out value);
+        public bool TryGetValue(string key, out string value) => 
+            Inner.TryGetValue(key, out value);
 
         public string this[string key] => Inner[key];
 
