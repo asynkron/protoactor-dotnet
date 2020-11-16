@@ -57,9 +57,9 @@ namespace Proto.Remote
         /// </summary>
         public int? AdvertisedPort { get; init; }
 
-        public EndpointWriterOptions EndpointWriterOptions { get; init; } = new EndpointWriterOptions();
+        public EndpointWriterOptions EndpointWriterOptions { get; init; } = new();
 
-        public Serialization Serialization { get; init; } = new Serialization();
+        public Serialization Serialization { get; init; } = new();
 
     }
 }

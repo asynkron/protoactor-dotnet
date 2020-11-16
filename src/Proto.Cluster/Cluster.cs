@@ -30,7 +30,7 @@ namespace Proto.Cluster
             PidCache = new PidCache();
             System = system;
             Config = config;
-            Config.RemoteConfig.WithProtoMessages(ProtosReflection.Descriptor);
+            system.Remote().Config.Serialization.RegisterFileDescriptor(ProtosReflection.Descriptor);
 
             _clusterHeartBeat = new ClusterHeartBeat(this);
             system.EventStream.Subscribe<ClusterTopology>(e =>

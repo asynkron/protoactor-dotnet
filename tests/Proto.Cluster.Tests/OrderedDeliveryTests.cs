@@ -106,7 +106,7 @@ namespace Proto.Cluster.Tests
                     case SequentialIdRequest request:
                         HandleOrderedRequest(request, context);
                         break;
-                    case AskAggregator _:
+                    case AskAggregator:
                         context.Respond(new AggregatorResult
                             {
                                 SequenceKeyCount = _lastReceivedSeq.Count,

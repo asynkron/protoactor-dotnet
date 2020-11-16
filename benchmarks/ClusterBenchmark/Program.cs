@@ -38,35 +38,34 @@ namespace ClusterExperiment1
             await Task.Delay(5000);
 
             _ = Task.Run(async () =>
-            {
-                var rnd = new Random();
-                while (true)
                 {
-
-                    var id = "myactor" + rnd.Next(0, 1000);
-                    try
+                    var rnd = new Random();
+                    while (true)
                     {
 
-                        var res = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                            new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
-                        );
+                        var id = "myactor" + rnd.Next(0, 1000);
+                        try
+                        {
+                            var res = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+                                new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
+                            );
 
-                        if (res is null)
-                        {
-                            logger.LogError("Null response");
+                            if (res is null)
+                            {
+                                logger.LogError("Null response");
+                            }
+                            else
+                            {
+                                Console.Write(".");
+                            }
                         }
-                        else
+                        catch (Exception x)
                         {
-                            Console.Write(".");
+                            logger.LogError(x, "Request timeout for {Id}", id);
                         }
                     }
-                    catch (Exception x)
-                    {
-                        logger.LogError(x, "Request timeout for {Id}", id);
-                    }
+
                 }
-
-            }
             );
 
         Console.ReadLine();
@@ -140,11 +139,16 @@ namespace ClusterExperiment1
                                     .BindTo(host, port)
                                     .WithAdvertisedHost(advertisedHost)
                                     .WithProtoMessages(MessagesReflection.Descriptor);
+            
             var clusterConfig = ClusterConfig
                 .Setup("mycluster", clusterProvider, identityLookup, remoteConfig);
             return (clusterConfig, remoteConfig);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private static IClusterProvider ClusterProvider()
         {
             try
@@ -153,7 +157,7 @@ namespace ClusterExperiment1
 
                 var kubernetesConfig =
                     KubernetesClientConfiguration
-                        .InClusterConfig(); //   KubernetesClientConfiguration.BuildConfigFromConfigFile(cachedNamespace);
+                        .InClusterConfig(); 
                 var kubernetes = new Kubernetes(kubernetesConfig);
                 return new KubernetesProvider(kubernetes);
             }
