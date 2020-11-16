@@ -1,10 +1,14 @@
-﻿namespace Proto.Remote.GrpcCore
+﻿using System;
+using JetBrains.Annotations;
+
+namespace Proto.Remote.GrpcCore
 {
+    [PublicAPI]
     public static class RemoteExtensions
     {
         public static ActorSystem WithRemote(this ActorSystem system, GrpcCoreRemoteConfig remoteConfig)
         {
-            var _ = new GrpcCoreRemote(system, remoteConfig);
+            _ = new GrpcCoreRemote(system, remoteConfig);
             return system;
         }
     }

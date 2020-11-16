@@ -32,27 +32,34 @@ namespace Node2
     {
         static async Task Main(string[] args)
         {
-            var system = new ActorSystem();
-            
-            var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor);
+            var remoteConfig = GrpcCoreRemoteConfig
+                .BindToLocalhost()
+                .WithProtoMessages(ProtosReflection.Descriptor);
             
             var consulProvider =
                 new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://consul:8500/"));
 
             var clusterConfig =
-                ClusterConfig.Setup("MyCluster", consulProvider, new PartitionIdentityLookup(), remoteConfig);
+                ClusterConfig
+                    .Setup("MyCluster", consulProvider, new PartitionIdentityLookup(), remoteConfig);
 
-            var remote = new GrpcCoreRemote(system, remoteConfig);
-            var cluster = new Cluster(system, clusterConfig);
-            var grains = new Grains(cluster);
+            var system = new ActorSystem()
+                .WithRemote(remoteConfig)
+                .WithCluster(clusterConfig);
+
+            await system
+                .Cluster()
+                .StartMemberAsync();
+
+            var grains = new Grains( system.Cluster());
             grains.HelloGrainFactory(() => new HelloGrain());
-            
-            await cluster.StartMemberAsync();
 
             Console.CancelKeyPress += async (e, y) =>
             {
                 Console.WriteLine("Shutting Down...");
-                await cluster.ShutdownAsync();
+                await system
+                    .Cluster()
+                    .ShutdownAsync();
             };
             await Task.Delay(-1);
         }

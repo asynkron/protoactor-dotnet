@@ -4,21 +4,26 @@ using chat.messages;
 using Proto;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
-
+using static Proto.Remote.GrpcCore.GrpcCoreRemoteConfig;
 namespace Client
 {
     static class Program
     {
         static void Main()
         {
-            var system = new ActorSystem();
-            var remote = new GrpcCoreRemote(system, GrpcCoreRemoteConfig.BindToLocalhost()
-                .WithProtoMessages(ChatReflection.Descriptor));
+            var config = 
+                BindToLocalhost()
+                .WithProtoMessages(ChatReflection.Descriptor);
             
-            remote.StartAsync();
-            
+            var system = new ActorSystem()
+                .WithRemote(config);
+
+            system
+                .Remote()
+                .StartAsync();
+
             var server = PID.FromAddress("127.0.0.1:8000", "chatserver");
-            var context = new RootContext(system);
+            var context = system.Root;
 
             var props = Props.FromFunc(
                 ctx =>
