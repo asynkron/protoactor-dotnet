@@ -14,7 +14,7 @@ namespace Proto.Mailbox
     {
         private readonly int _maxSize;
 
-        private readonly ConcurrentQueue<object> _messages = new ConcurrentQueue<object>();
+        private readonly ConcurrentQueue<object> _messages = new();
         private readonly Action<object> _overflowAction;
         private readonly TimeSpan _timeout;
 

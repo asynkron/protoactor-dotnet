@@ -11,7 +11,7 @@ namespace Proto
         private readonly Func<T, bool> _predicate;
 
         private readonly TaskCompletionSource<T> _source =
-            new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public EventExpectation(Func<T, bool> predicate)
         {

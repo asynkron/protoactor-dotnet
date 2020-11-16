@@ -27,7 +27,7 @@ namespace Proto.Context
         private ContextState _state;
 
         public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self) =>
-            new ActorContext(system, props, parent, self);
+            new(system, props, parent, self);
 
         public ActorContext(ActorSystem system, Props props, PID? parent, PID self)
         {
@@ -219,7 +219,12 @@ namespace Proto.Context
                 }, msg
             );
 
-            target.ContinueWith(t => Self.SendSystemMessage(System, cont));
+            Task.Run(async () =>
+                {
+                    await target;
+                    Self.SendSystemMessage(System, cont);
+                }
+                , CancellationToken.None);
         }
 
         public Task Receive(MessageEnvelope envelope)
@@ -409,7 +414,7 @@ namespace Proto.Context
                 case DeadLetterResponse _:
                     throw new DeadLetterException(target);
                 case null:
-                case T _:
+                case T:
                     return (T) result!;
                 default:
                     throw new InvalidOperationException(
@@ -432,7 +437,7 @@ namespace Proto.Context
             }
         }
 
-        private IActor? IncarnateActor()
+        private IActor IncarnateActor()
         {
             _state = ContextState.Alive;
             return _props.Producer(System);

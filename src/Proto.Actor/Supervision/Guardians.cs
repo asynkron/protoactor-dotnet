@@ -13,8 +13,7 @@ namespace Proto
 {
     public class Guardians
     {
-        private readonly ConcurrentDictionary<ISupervisorStrategy, GuardianProcess> _guardianStrategies =
-            new ConcurrentDictionary<ISupervisorStrategy, GuardianProcess>();
+        private readonly ConcurrentDictionary<ISupervisorStrategy, GuardianProcess> _guardianStrategies = new();
 
         public Guardians(ActorSystem system)
         {
@@ -25,7 +24,7 @@ namespace Proto
 
         internal PID GetGuardianPid(ISupervisorStrategy strategy)
         {
-            GuardianProcess ValueFactory(ISupervisorStrategy s) => new GuardianProcess(System, s);
+            GuardianProcess ValueFactory(ISupervisorStrategy s) => new(System, s);
 
             var guardian = _guardianStrategies.GetOrAdd(strategy, ValueFactory);
             return guardian.Pid;

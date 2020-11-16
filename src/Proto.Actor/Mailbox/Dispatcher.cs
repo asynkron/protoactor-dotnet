@@ -26,8 +26,8 @@ namespace Proto.Mailbox
 
     public static class Dispatchers
     {
-        public static ThreadPoolDispatcher DefaultDispatcher { get; } = new ThreadPoolDispatcher();
-        public static SynchronousDispatcher SynchronousDispatcher { get; } = new SynchronousDispatcher();
+        public static ThreadPoolDispatcher DefaultDispatcher { get; } = new();
+        public static SynchronousDispatcher SynchronousDispatcher { get; } = new();
     }
 
     public sealed class SynchronousDispatcher : IDispatcher

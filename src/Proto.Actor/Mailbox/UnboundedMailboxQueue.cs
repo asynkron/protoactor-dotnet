@@ -10,7 +10,7 @@ namespace Proto.Mailbox
 {
     public class UnboundedMailboxQueue : IMailboxQueue
     {
-        private readonly ConcurrentQueue<object> _messages = new ConcurrentQueue<object>();
+        private readonly ConcurrentQueue<object> _messages = new();
 
         public void Push(object message) => _messages.Enqueue(message);
 

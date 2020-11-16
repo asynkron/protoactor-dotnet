@@ -56,8 +56,7 @@ namespace Proto
     {
         private readonly ILogger _logger = Log.CreateLogger<EventStream<T>>();
 
-        private readonly ConcurrentDictionary<Guid, EventStreamSubscription<T>> _subscriptions =
-            new ConcurrentDictionary<Guid, EventStreamSubscription<T>>();
+        private readonly ConcurrentDictionary<Guid, EventStreamSubscription<T>> _subscriptions = new();
 
         internal EventStream()
         {

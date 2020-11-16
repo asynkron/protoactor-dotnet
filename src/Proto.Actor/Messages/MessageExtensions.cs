@@ -3,7 +3,7 @@
     public partial class Terminated
     {
         public static Terminated From(PID who)
-            => new Terminated
+            => new()
             {
                 Who = who,
                 AddressTerminated = false

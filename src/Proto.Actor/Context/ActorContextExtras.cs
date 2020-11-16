@@ -20,11 +20,11 @@ namespace Proto
 
         public ImmutableHashSet<PID> Children { get; private set; } = ImmutableHashSet<PID>.Empty;
         public Timer? ReceiveTimeoutTimer { get; private set; }
-        public RestartStatistics RestartStatistics { get; } = new RestartStatistics(0, null);
-        public Stack<object> Stash { get; } = new Stack<object>();
+        public RestartStatistics RestartStatistics { get; } = new(0, null);
+        public Stack<object> Stash { get; } = new();
         public ImmutableHashSet<PID> Watchers { get; private set; } = ImmutableHashSet<PID>.Empty;
         public IContext Context { get; }
-        public CancellationTokenSource CancellationTokenSource { get; } = new CancellationTokenSource();
+        public CancellationTokenSource CancellationTokenSource { get; } = new();
 
         public void InitReceiveTimeoutTimer(Timer timer) => ReceiveTimeoutTimer = timer;
 

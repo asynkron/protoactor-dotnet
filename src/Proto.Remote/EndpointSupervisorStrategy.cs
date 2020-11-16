@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -18,11 +17,11 @@ namespace Proto.Remote
         private readonly TimeSpan _backoff;
 
         private readonly int _maxNrOfRetries;
-        private readonly Random _random = new Random();
+        private readonly Random _random = new();
         private readonly ActorSystem _system;
         private readonly TimeSpan? _withinTimeSpan;
         private readonly string _address;
-        private readonly CancellationTokenSource _cancelFutureRetries = new CancellationTokenSource();
+        private readonly CancellationTokenSource _cancelFutureRetries = new();
         public EndpointSupervisorStrategy(string address, RemoteConfigBase remoteConfig, ActorSystem system)
         {
             _address = address;

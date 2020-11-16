@@ -17,7 +17,7 @@ namespace Proto
     
     public sealed class Restarting
     {
-        public static readonly Restarting Instance = new Restarting();
+        public static readonly Restarting Instance = new();
 
         private Restarting()
         {
@@ -26,7 +26,7 @@ namespace Proto
     
     public sealed partial class PoisonPill
     {
-        public static readonly PoisonPill Instance = new PoisonPill();
+        public static readonly PoisonPill Instance = new();
     }
 
     public class Failure : SystemMessage

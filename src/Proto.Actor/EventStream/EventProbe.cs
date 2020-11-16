@@ -9,14 +9,14 @@ namespace Proto
     [PublicAPI]
     public static class EventStreamExtensions
     {
-        public static EventProbe<T> GetProbe<T>(this EventStream<T> eventStream) => new EventProbe<T>(eventStream);
+        public static EventProbe<T> GetProbe<T>(this EventStream<T> eventStream) => new(eventStream);
     }
 
     [PublicAPI]
     public class EventProbe<T>
     {
-        private readonly ConcurrentQueue<T> _events = new ConcurrentQueue<T>();
-        private readonly object _lock = new object();
+        private readonly ConcurrentQueue<T> _events = new();
+        private readonly object _lock = new();
         private readonly ILogger _logger = Log.CreateLogger<EventProbe<T>>();
         private readonly EventStreamSubscription<T> _eventStreamSubscription;
         private EventExpectation<T>? _currentExpectation;

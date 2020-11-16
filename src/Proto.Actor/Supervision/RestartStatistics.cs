@@ -12,7 +12,7 @@ namespace Proto
 {
     public class RestartStatistics
     {
-        private readonly List<DateTimeOffset> _failureTimes = new List<DateTimeOffset>();
+        private readonly List<DateTimeOffset> _failureTimes = new();
 
         public RestartStatistics(int failureCount, DateTimeOffset? lastFailureTime)
         {

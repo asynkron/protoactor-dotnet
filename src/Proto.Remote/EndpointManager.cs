@@ -47,7 +47,7 @@ namespace Proto.Remote
 
         public void Stop()
         {
-           lock (_synLock)
+            lock (_synLock)
             {
                 if (CancellationToken.IsCancellationRequested) return;
                 Logger.LogDebug("[EndpointManager] Stopping");

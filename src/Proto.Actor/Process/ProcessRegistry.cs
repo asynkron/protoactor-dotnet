@@ -13,8 +13,8 @@ namespace Proto
 {
     public class ProcessRegistry
     {
-        private readonly IList<Func<PID, Process>> _hostResolvers = new List<Func<PID, Process>>();
-        private readonly HashedConcurrentDictionary _localProcesses = new HashedConcurrentDictionary();
+        private readonly List<Func<PID, Process>> _hostResolvers = new();
+        private readonly HashedConcurrentDictionary _localProcesses = new();
         private int _sequenceId;
 
         public ProcessRegistry(ActorSystem system)
