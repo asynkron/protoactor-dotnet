@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Divergic.Logging.Xunit;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -9,10 +10,11 @@ using Microsoft.Extensions.Logging;
 using Proto.Remote.GrpcCore;
 using Proto.Remote.GrpcNet;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Proto.Remote.Tests
 {
-    public interface IRemoteFixture
+    public interface IRemoteFixture: IAsyncLifetime
     {
         string RemoteAddress { get; }
         IRemote Remote { get; }
@@ -20,7 +22,7 @@ namespace Proto.Remote.Tests
         IRemote ServerRemote { get; }
     }
 
-    public abstract class RemoteFixture : IAsyncLifetime, IRemoteFixture
+    public abstract class RemoteFixture : IRemoteFixture
     {
         public string RemoteAddress => ServerRemote.System.Address;
 
@@ -30,10 +32,6 @@ namespace Proto.Remote.Tests
         public IRemote ServerRemote { get; protected set; }
         private static readonly Props EchoActorProps = Props.FromProducer(() => new EchoActor());
 
-        public RemoteFixture()
-        {
-            Log.SetLoggerFactory(LoggerFactory.Create(c => c.AddConsole()));
-        }
         protected static TRemoteConfig ConfigureServerRemoteConfig<TRemoteConfig>(TRemoteConfig serverRemoteConfig)
         where TRemoteConfig : RemoteConfigBase
         {
@@ -75,7 +73,7 @@ namespace Proto.Remote.Tests
             .ConfigureServices(services =>
             {
                 services.AddGrpc();
-                // services.AddLogging(b => b.ClearProviders());
+                services.AddSingleton<ILoggerFactory>(Log.GetLoggerFactory());
                 services.AddSingleton(sp => new ActorSystem());
                 services.AddRemote(config.WithAdvertisedHost("localhost"));
             })
@@ -90,7 +88,6 @@ namespace Proto.Remote.Tests
                 })
                 .Configure((app) =>
                 {
-                    Log.SetLoggerFactory(app.ApplicationServices.GetRequiredService<ILoggerFactory>());
                     app.UseRouting();
                     app.UseProtoRemote();
                 });

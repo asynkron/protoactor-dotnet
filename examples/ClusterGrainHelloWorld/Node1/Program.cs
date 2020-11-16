@@ -13,6 +13,7 @@ using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
 using Proto.Remote;
 using ProtosReflection = Messages.ProtosReflection;
+using Proto.Remote.GrpcCore;
 
 class Program
 {
@@ -20,13 +21,15 @@ class Program
     {
         var system = new ActorSystem();
         
-        var remoteConfig = RemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor);
+        var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor);
             
         var consulProvider =
             new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://consul:8500/"));
 
         var clusterConfig =
             ClusterConfig.Setup("MyCluster", consulProvider, new PartitionIdentityLookup(), remoteConfig);
+
+        var remote = new GrpcCoreRemote(system, remoteConfig);
 
         var cluster = new Cluster(system, clusterConfig);
         

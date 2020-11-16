@@ -67,7 +67,7 @@ namespace Proto.Remote
             catch (Exception e)
             {
                 Logger.LogError(e, "[EndpointActor] Error connecting to {_address}.", _address);
-                throw e;
+                throw;
             }
 
             _client = new Remoting.RemotingClient(_channel);
