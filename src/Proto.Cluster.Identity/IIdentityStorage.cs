@@ -6,15 +6,15 @@
 
     public interface IIdentityStorage: IDisposable
     {
-        public Task<StoredActivation?> TryGetExistingActivationAsync(ClusterIdentity clusterIdentity, CancellationToken token);
+        public Task<StoredActivation?> TryGetExistingActivationAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
 
         public Task<SpawnLock?> TryAcquireLockAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
         
-        public Task<StoredActivation?> WaitForActivationAsync(ClusterIdentity clusterIdentity, CancellationToken token);
+        public Task<StoredActivation?> WaitForActivationAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
 
         public Task RemoveLock(SpawnLock spawnLock, CancellationToken ct);
 
-        public Task StoreActivation(string memberId, SpawnLock spawnLock, PID pid, CancellationToken token);
+        public Task StoreActivation(string memberId, SpawnLock spawnLock, PID pid, CancellationToken ct);
 
         public Task RemoveActivation(PID pid, CancellationToken ct);
 

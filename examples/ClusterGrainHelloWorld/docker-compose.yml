@@ -1,0 +1,22 @@
+version: "3.7"
+
+services:
+  node1:
+    build: ./Node1
+    ports:
+      - 12001:12001
+  
+  node2:
+    build: ./Node2
+    ports:
+      - 12000:12000
+
+  consul:
+    image: bitnami/consul:latest
+    ports:
+      - '8300:8300'
+      - '8301:8301'
+      - '8301:8301/udp'
+      - '8500:8500'
+      - '8600:8600'
+      - '8600:8600/udp'  

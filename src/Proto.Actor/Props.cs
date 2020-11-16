@@ -18,7 +18,7 @@ namespace Proto
     {
         public static readonly Props Empty = new Props();
 
-        public Producer Producer { get; init; } = () => null!;
+        public ProducerWithSystem Producer { get; init; } = _ => null!;
         public MailboxProducer MailboxProducer { get; init; } = () => UnboundedMailbox.Create();
         public ISupervisorStrategy? GuardianStrategy { get; init; }
         public ISupervisorStrategy SupervisorStrategy { get; init; } = Supervision.DefaultStrategy;
@@ -62,6 +62,9 @@ namespace Proto
         }
 
         public Props WithProducer(Producer producer) =>
+            this with {Producer = _ => producer()};
+        
+        public Props WithProducer(ProducerWithSystem producer) =>
             this with {Producer = producer};
 
         public Props WithDispatcher(IDispatcher dispatcher) =>
@@ -115,7 +118,8 @@ namespace Proto
             this with {Spawner = spawner};
 
         internal PID Spawn(ActorSystem system, string name, PID? parent) => Spawner(system, name, this, parent);
-        public static Props FromProducer(Producer producer) => Empty.WithProducer(producer);
+        public static Props FromProducer(Producer producer) => Empty.WithProducer(s => producer());
+        public static Props FromProducer(ProducerWithSystem producer) => Empty.WithProducer(producer);
         public static Props FromFunc(Receive receive) => FromProducer(() => new FunctionActor(receive));
     }
 }

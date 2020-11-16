@@ -69,7 +69,7 @@ namespace Proto.Cluster
                                 TimeSpan.FromSeconds(5)
                             );
                             
-                            _logger.LogInformation("Heartbeat request for member id {MemberId} Address {Address} succeeded",member.Id,member.Address);
+                            _logger.LogDebug("Heartbeat request for member id {MemberId} Address {Address} succeeded",member.Id,member.Address);
                         }
                         catch (TimeoutException)
                         {

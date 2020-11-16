@@ -8,7 +8,7 @@ namespace Proto
     [PublicAPI]
     public class ActorSystem
     {
-        public static readonly ActorSystem Default = new ActorSystem();
+      //  public static readonly ActorSystem Default = new ActorSystem();
         internal const string NoHost = "nonhost";
         private string _host = NoHost;
         private int _port;
