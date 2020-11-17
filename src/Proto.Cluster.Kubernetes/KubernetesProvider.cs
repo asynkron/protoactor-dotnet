@@ -104,7 +104,9 @@ namespace Proto.Cluster.Kubernetes
             
             Logger.LogInformation("Using Kubernetes port: " + _port);
 
-            var labels = new Dictionary<string, string>(pod.Metadata.Labels)
+            var existingLabels = pod.Metadata.Labels;
+            
+            var labels = new Dictionary<string, string>
             {
                 [LabelCluster] = _clusterName,
                 [LabelPort] = _port.ToString(),
@@ -115,6 +117,12 @@ namespace Proto.Cluster.Kubernetes
             {
                 var labelKey = $"{LabelKind}-{kind}";
                 labels.TryAdd(labelKey,"true");
+            }
+
+            //add existing labels back
+            foreach (var existing in existingLabels)
+            {
+                labels.TryAdd(existing.Key, existing.Value);
             }
 
             try
