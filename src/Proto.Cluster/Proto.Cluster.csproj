@@ -14,7 +14,4 @@
   <ItemGroup>
     <Protobuf Include="Protos.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Identity" />
-  </ItemGroup>
 </Project>

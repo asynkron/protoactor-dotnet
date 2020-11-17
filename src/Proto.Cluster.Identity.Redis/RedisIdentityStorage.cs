@@ -69,7 +69,6 @@
         {
             Logger.LogDebug("Deleting spawn lock {@SpawnLock}", spawnLock.ClusterIdentity);
             var db = GetDb();
-            // var lockKey = LockKey(spawnLock.ClusterIdentity);
 
             var key = IdKey(spawnLock.ClusterIdentity);
             var transaction = db.CreateTransaction();
