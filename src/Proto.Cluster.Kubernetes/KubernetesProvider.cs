@@ -160,8 +160,15 @@ namespace Proto.Cluster.Kubernetes
             
             foreach (var kind in _kinds)
             {
-                var labelKey = $"{LabelKind}-{kind}";
-                pod.SetLabel(labelKey, null);
+                try
+                {
+                    var labelKey = $"{LabelKind}-{kind}";
+                    pod.SetLabel(labelKey, null);
+                }
+                catch(Exception x)
+                {
+                    Logger.LogError(x, "Failed to remove label");
+                }
             }
             
             pod.SetLabel(LabelCluster, null);
