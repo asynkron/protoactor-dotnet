@@ -34,8 +34,6 @@ namespace Proto.Cluster
 
         public IClusterProvider ClusterProvider { get; }
 
-        public RemoteConfigBase RemoteConfig { get; }
-
         public TimeSpan TimeoutTimespan { get; init; }
 
         public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; init; }
@@ -60,7 +58,7 @@ namespace Proto.Cluster
                     )};
 
         public static ClusterConfig Setup(string clusterName, IClusterProvider clusterProvider,
-            IIdentityLookup identityLookup, RemoteConfigBase remoteConfig) =>
+            IIdentityLookup identityLookup) =>
             new(clusterName, clusterProvider, identityLookup);
     }
 }

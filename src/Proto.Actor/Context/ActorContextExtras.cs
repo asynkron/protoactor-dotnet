@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
+using System.Threading.Channels;
+
 // ReSharper disable once CheckNamespace
 namespace Proto
 {

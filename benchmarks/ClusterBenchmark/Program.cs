@@ -141,7 +141,7 @@ namespace ClusterExperiment1
                                     .WithProtoMessages(MessagesReflection.Descriptor);
             
             var clusterConfig = ClusterConfig
-                .Setup("mycluster", clusterProvider, identityLookup, remoteConfig);
+                .Setup("mycluster", clusterProvider, identityLookup);
             return (clusterConfig, remoteConfig);
         }
 

@@ -28,7 +28,7 @@ class Program
 
         var clusterConfig =
             ClusterConfig
-                .Setup("MyCluster", consulProvider, new PartitionIdentityLookup(), remoteConfig);
+                .Setup("MyCluster", consulProvider, new PartitionIdentityLookup());
 
         var system = new ActorSystem()
             .WithRemote(remoteConfig)

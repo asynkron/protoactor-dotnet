@@ -44,18 +44,18 @@
         protected virtual async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig> configure,
             string clusterName)
         {
-            var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
+           
+            
 
             var config = ClusterConfig.Setup(
                 clusterName,
                 GetClusterProvider(),
-                GetIdentityLookup(clusterName),
-                remoteConfig
-            ).WithClusterKinds(ClusterKinds);
+                GetIdentityLookup(clusterName)).WithClusterKinds(ClusterKinds);
 
             config = configure?.Invoke(config) ?? config;
             var system = new ActorSystem();
             
+            var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
             var _ = new GrpcCoreRemote(system, remoteConfig);
 
             var cluster = new Cluster(system, config);
