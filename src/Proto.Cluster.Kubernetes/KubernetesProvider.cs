@@ -104,10 +104,6 @@ namespace Proto.Cluster.Kubernetes
             
             Logger.LogInformation("Using Kubernetes port: " + _port);
 
-            var protoKinds = new List<string>();
-
-            protoKinds.AddRange(_kinds);
-
             var labels = new Dictionary<string, string>(pod.Metadata.Labels)
             {
                 [LabelCluster] = _clusterName,
@@ -117,7 +113,8 @@ namespace Proto.Cluster.Kubernetes
 
             foreach (var kind in _kinds)
             {
-                labels.Add($"{LabelKind}-{kind}","true");
+                var labelKey = $"{LabelKind}-{kind}";
+                labels.TryAdd(labelKey,"true");
             }
 
             try
@@ -163,10 +160,12 @@ namespace Proto.Cluster.Kubernetes
             
             foreach (var kind in _kinds)
             {
-                pod.SetLabel($"{LabelKind}-{kind}", null);
+                var labelKey = $"{LabelKind}-{kind}";
+                pod.SetLabel(labelKey, null);
             }
             
             pod.SetLabel(LabelCluster, null);
+            
             await _kubernetes.ReplacePodLabels(_podName, kubeNamespace, pod.Labels());
 
             cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
