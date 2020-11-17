@@ -83,7 +83,7 @@ namespace Proto.Remote.GrpcCore
                 if (graceful)
                 {
                     _endpointManager.Stop();
-                    await _server.ShutdownAsync();
+                    await _server.KillAsync();
                 }
                 else
                 {
