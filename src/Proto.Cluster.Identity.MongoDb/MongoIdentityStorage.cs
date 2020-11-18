@@ -73,6 +73,7 @@ namespace Proto.Cluster.Identity.MongoDb
         public async Task StoreActivation(string memberId, SpawnLock spawnLock, PID pid, CancellationToken ct)
         {
             Logger.LogDebug("Storing activation: {@ActivatorId}, {@SpawnLock}, {@PID}", memberId, spawnLock, pid);
+
             var key = GetKey(spawnLock.ClusterIdentity);
 
             var res = await ConnectionThrottlingPipeline.AddRequest(
@@ -94,11 +95,11 @@ namespace Proto.Cluster.Identity.MongoDb
             }
         }
 
-        public async Task RemoveActivation(PID pid, CancellationToken ct)
+        public Task RemoveActivation(PID pid, CancellationToken ct)
         {
             Logger.LogDebug("Removing activation: {@PID}", pid);
 
-            await _pids.DeleteManyAsync(p => p.UniqueIdentity == pid.Id, ct);
+            return _pids.DeleteManyAsync(p => p.UniqueIdentity == pid.Id, ct);
         }
 
         public Task RemoveMemberIdAsync(string memberId, CancellationToken ct) => _pids.DeleteManyAsync(p => p.MemberId == memberId, ct);
@@ -156,7 +157,7 @@ namespace Proto.Cluster.Identity.MongoDb
 
                 //if l.MatchCount == 1, then one document was updated by us, and we should own the lock, no?
                 var gotLock = l.IsAcknowledged && l.ModifiedCount == 1;
-                Logger.LogDebug("Did {Got}get lock on second try for {ClusterIdentity}", gotLock ? "" : "not ", clusterIdentity);
+                Logger.LogDebug("Did {Got} get lock on second try for {ClusterIdentity}", gotLock ? "" : "not ", clusterIdentity);
                 return gotLock;
             }
         }

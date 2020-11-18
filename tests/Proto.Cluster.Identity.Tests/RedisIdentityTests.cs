@@ -1,18 +1,17 @@
 ﻿// ReSharper disable UnusedType.Global
 // ReSharper disable UnusedMember.Global
 
+using Proto.Cluster.Tests;
+using StackExchange.Redis;
 using Microsoft.Extensions.Configuration;
+using Proto.Cluster.Identity.Redis;
+using Proto.Cluster.IdentityLookup;
 using Proto.TestFixtures;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Proto.Cluster.Identity.Tests
 {
-    using IdentityLookup;
-    using Proto.Cluster.Tests;
-    using Redis;
-    using StackExchange.Redis;
-
     public class RedisIdentityClusterFixture : BaseInMemoryClusterFixture
     {
         public RedisIdentityClusterFixture() : base(3)
@@ -36,13 +35,13 @@ namespace Proto.Cluster.Identity.Tests
         {
         }
     }
-    
+
     public class RedisStorageTests : IdentityStorageTests
     {
         public RedisStorageTests() : base(Init)
         {
         }
-    
+
         private static IIdentityStorage Init(string clusterName)
         {
             return new RedisIdentityStorage(clusterName, ConnectionMultiplexer.Connect("localhost:6379"));
