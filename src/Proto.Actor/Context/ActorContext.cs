@@ -199,12 +199,7 @@ namespace Proto.Context
             var msg = _messageOrEnvelope;
             var cont = new Continuation(() => action(target), msg);
 
-            Task.Run(async () =>
-                {
-                    await target;
-                    Self.SendSystemMessage(System, cont);
-                }
-                , CancellationToken.None);
+            ScheduleContinuation(target, cont);
         }
 
         public void ReenterAfter(Task target, Action action)
@@ -219,14 +214,18 @@ namespace Proto.Context
                 }, msg
             );
 
-            Task.Run(async () =>
+            ScheduleContinuation(target, cont);
+        }
+
+        private void ScheduleContinuation(Task target, Continuation cont) =>
+            _ = Task.Run(async () =>
                 {
                     await target;
                     Self.SendSystemMessage(System, cont);
                 }
-                , CancellationToken.None);
-        }
-
+                , CancellationToken.None
+            );
+        
         public Task Receive(MessageEnvelope envelope)
         {
             _messageOrEnvelope = envelope;
@@ -343,13 +342,19 @@ namespace Proto.Context
                 //special handle non completed tasks that need to reset ReceiveTimout
                 if (!res.IsCompleted)
                 {
-                    return res.ContinueWith(_ => _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout));
+                    return ContinueAfter();
                 }
 
                 _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
             }
 
             return res;
+
+            async Task ContinueAfter()
+            {
+                await res;
+                _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
+            }
         }
 
         public IImmutableSet<PID> Children => _extras?.Children ?? EmptyChildren;
