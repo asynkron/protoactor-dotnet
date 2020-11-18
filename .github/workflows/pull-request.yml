@@ -38,7 +38,7 @@ jobs:
 
       - name: Run tests net5.0
         env:
-          ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
-          ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }}
+          ConnectionStrings__MongoDB: mongodb://mongo:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
+          ConnectionStrings__Redis: redis:${{ job.services.redis.ports[6379] }}
         run: |
           dotnet test -c Release --framework net5.0 --no-build
