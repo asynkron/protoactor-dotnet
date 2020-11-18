@@ -21,7 +21,7 @@ jobs:
           dotnet-version: '3.1.x'
       - uses: supercharge/redis-github-action@1.1.0
         with:
-          redis-version: '6.x'          
+          redis-version: '6'          
       - uses: supercharge/mongodb-github-action@1.3.0
         with:
           mongodb-version: '4.2'                  
