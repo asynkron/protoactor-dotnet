@@ -4,10 +4,10 @@ namespace Proto.Cluster.Identity.MongoDb
 
     public class PidLookupEntity
     {
-        [BsonId] public string Key { get; set; }
-        public string Identity { get; set; }
+        [BsonId] public string Key { get; set; } = null!;
+        public string Identity { get; set; } = null!;
         public string? UniqueIdentity { get; set; }
-        public string Kind { get; set; }
+        public string Kind { get; set; } = null!;
         public string? Address { get; set; }
         public string? MemberId { get; set; }
         public string? LockedBy { get; set; }

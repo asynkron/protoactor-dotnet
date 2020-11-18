@@ -58,7 +58,7 @@
         }
 
         public PID Pid { get; }
-        public string MemberId;
+        public string MemberId { get; }
     }
 
     public class StorageFailure : Exception

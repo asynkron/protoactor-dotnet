@@ -4,7 +4,6 @@ using Proto.TestFixtures;
 
 namespace Proto.Cluster.Identity.Tests
 {
-    using System;
     using IdentityLookup;
     using MongoDb;
     using MongoDB.Driver;
