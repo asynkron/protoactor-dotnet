@@ -25,14 +25,14 @@ jobs:
 
       - name: Build
         run: |
-          dotnet build -c Release
+          dotnet build -c Release --framework netcoreapp3.1
 
       - name: Run tests
         env:
           ConnectionStrings__MongoDB: mongodb://mongo:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
           ConnectionStrings__Redis: redis:${{ job.services.redis.ports[6379] }}
         run: |
-          dotnet test -c Release
+          dotnet test -c Release --framework netcoreapp3.1
 
 
   build-net5:
@@ -57,11 +57,11 @@ jobs:
 
       - name: Build
         run: |
-          dotnet build -c Release
+          dotnet build -c Release --framework net5.0
           
       - name: Run tests
         env:
           ConnectionStrings__MongoDB: mongodb://mongo:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
           ConnectionStrings__Redis: redis:${{ job.services.redis.ports[6379] }}
         run: |
-          dotnet test -c Release
+          dotnet test -c Release --framework net5.0
