@@ -114,12 +114,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".meta", ".meta", "{222D5932-627D-406B-9FA5-B60B38FD3019}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
-		.github\workflows\build-master.yml = .github\workflows\build-master.yml
-		.github\ISSUE_TEMPLATE.md = .github\ISSUE_TEMPLATE.md
-		.github\workflows\pull-request.yml = .github\workflows\pull-request.yml
 		.github\PULL_REQUEST_TEMPLATE.md = .github\PULL_REQUEST_TEMPLATE.md
-		README.md = README.md
-		Terminology.md = Terminology.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.Identity", "src\Proto.Cluster.Identity\Proto.Cluster.Identity.csproj", "{9E7E2074-1A0D-451D-B0E2-95D8AE7389B9}"
@@ -143,6 +138,23 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Remote.GrpcNet", "src\Proto.Remote.GrpcNet\Proto.Remote.GrpcNet.csproj", "{AE486B56-98CC-4E9A-ADC7-B94358B68D43}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Remote.GrpcCore", "src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj", "{4C38FFE1-705F-41FC-9411-C4EA878B41DB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "templates", "templates", "{5C1A4C10-E037-4945-9EDC-DFBFBD501A4A}"
+ProjectSection(SolutionItems) = preProject
+	.github\ISSUE_TEMPLATE.md = .github\ISSUE_TEMPLATE.md
+EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{C8C3C2EE-083A-46B4-8F5A-0C0F442C14BE}"
+ProjectSection(SolutionItems) = preProject
+	Terminology.md = Terminology.md
+	README.md = README.md
+EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ci", "ci", "{8B241043-F933-4C1F-AB57-BAE8B624F133}"
+ProjectSection(SolutionItems) = preProject
+	.github\workflows\pull-request.yml = .github\workflows\pull-request.yml
+	.github\workflows\build-master.yml = .github\workflows\build-master.yml
+EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -778,6 +790,9 @@ Global
 		{6470D036-4A40-4A5A-9850-EF647B7213CC} = {B0563D5E-1900-4562-A7D0-19C50E8256C4}
 		{AE486B56-98CC-4E9A-ADC7-B94358B68D43} = {771514F1-12AE-4A26-89CB-2646D3EF7034}
 		{4C38FFE1-705F-41FC-9411-C4EA878B41DB} = {771514F1-12AE-4A26-89CB-2646D3EF7034}
+		{5C1A4C10-E037-4945-9EDC-DFBFBD501A4A} = {222D5932-627D-406B-9FA5-B60B38FD3019}
+		{C8C3C2EE-083A-46B4-8F5A-0C0F442C14BE} = {222D5932-627D-406B-9FA5-B60B38FD3019}
+		{8B241043-F933-4C1F-AB57-BAE8B624F133} = {222D5932-627D-406B-9FA5-B60B38FD3019}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD0D1E44-8118-4682-8793-6B20ABFA824C}

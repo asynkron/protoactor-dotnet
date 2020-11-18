@@ -1,4 +1,7 @@
 ﻿// ReSharper disable UnusedType.Global
+using Microsoft.Extensions.Configuration;
+using Proto.TestFixtures;
+
 namespace Proto.Cluster.Identity.Tests
 {
     using System;
@@ -25,8 +28,7 @@ namespace Proto.Cluster.Identity.Tests
 
         internal static IMongoDatabase GetMongo()
         {
-            var connectionString =
-                Environment.GetEnvironmentVariable("MONGO") ?? "mongodb://127.0.0.1:27017/ProtoMongo";
+            var connectionString = TestConfig.Configuration.GetConnectionString("MongoDB");
             var url = MongoUrl.Create(connectionString);
             var settings = MongoClientSettings.FromUrl(url);
             var client = new MongoClient(settings);

@@ -1,6 +1,8 @@
 ﻿// ReSharper disable UnusedType.Global
 // ReSharper disable UnusedMember.Global
 
+using Microsoft.Extensions.Configuration;
+using Proto.TestFixtures;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -19,7 +21,8 @@ namespace Proto.Cluster.Identity.Tests
 
         protected override IIdentityLookup GetIdentityLookup(string clusterName)
         {
-            var multiplexer = ConnectionMultiplexer.Connect("localhost:6379");
+            var connectionString = TestConfig.Configuration.GetConnectionString("Redis");
+            var multiplexer = ConnectionMultiplexer.Connect(connectionString);
             var identity = new IdentityStorageLookup(new RedisIdentityStorage(clusterName, multiplexer));
             return identity;
         }
