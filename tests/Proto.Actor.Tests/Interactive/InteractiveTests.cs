@@ -32,7 +32,7 @@ namespace Proto.Tests.Interactive
             );
             
             //this is not really guaranteed to be true, in theory you could have a threadpool of 1 I suppose (?)
-            Assert.True(threads.Count > 1);
+        //    Assert.True(threads.Count > 1);
             Assert.Equal(100,numbers.Count);
         }
     }
