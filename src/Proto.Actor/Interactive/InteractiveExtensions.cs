@@ -46,8 +46,6 @@ namespace Proto.Interactive
                 }, concurrencyLevel
             );
 
-
-
         private static async Task Shutdown(PID[] routees, ActorSystem s, PID router)
         {
             foreach (var routee in routees)
