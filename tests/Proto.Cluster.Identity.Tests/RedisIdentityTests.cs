@@ -27,24 +27,24 @@ namespace Proto.Cluster.Identity.Tests
         }
     }
 
-    public class RedisClusterTests : ClusterTests, IClassFixture<RedisIdentityClusterFixture>
-    {
-        // ReSharper disable once SuggestBaseTypeForParameter
-        public RedisClusterTests(ITestOutputHelper testOutputHelper, RedisIdentityClusterFixture clusterFixture)
-            : base(testOutputHelper, clusterFixture)
-        {
-        }
-    }
-
-    public class RedisStorageTests : IdentityStorageTests
-    {
-        public RedisStorageTests() : base(Init)
-        {
-        }
-
-        private static IIdentityStorage Init(string clusterName)
-        {
-            return new RedisIdentityStorage(clusterName, ConnectionMultiplexer.Connect("localhost:6379"));
-        }
-    }
+    // public class RedisClusterTests : ClusterTests, IClassFixture<RedisIdentityClusterFixture>
+    // {
+    //     // ReSharper disable once SuggestBaseTypeForParameter
+    //     public RedisClusterTests(ITestOutputHelper testOutputHelper, RedisIdentityClusterFixture clusterFixture)
+    //         : base(testOutputHelper, clusterFixture)
+    //     {
+    //     }
+    // }
+    //
+    // public class RedisStorageTests : IdentityStorageTests
+    // {
+    //     public RedisStorageTests() : base(Init)
+    //     {
+    //     }
+    //
+    //     private static IIdentityStorage Init(string clusterName)
+    //     {
+    //         return new RedisIdentityStorage(clusterName, ConnectionMultiplexer.Connect("localhost:6379"));
+    //     }
+    // }
 }
