@@ -3,26 +3,65 @@ name: Build and test PRs
 on: [pull_request]
 
 jobs:
-  build:
+  build-netcore31:
     runs-on: ubuntu-latest
+
+    container: 
+      image: mcr.microsoft.com/dotnet/sdk:3.1
+
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+        options: --entrypoint redis-server
+      mongodb:
+        image: mongo
+        ports:
+          - 27017:27017
 
     steps:
       - uses: actions/checkout@v1
-      - uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '5.0.100'
-      - uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '3.1.x'               
 
       - name: Build
         run: |
-          dotnet build -c Release
-          
-      - name: Run tests netcoreapp3.1
+          dotnet build -c Release --framework netcoreapp3.1
+
+      - name: Run tests
+        env:
+          ConnectionStrings__MongoDB: mongodb://mongo:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
+          ConnectionStrings__Redis: redis:${{ job.services.redis.ports[6379] }}
         run: |
           dotnet test -c Release --framework netcoreapp3.1
-          
-      - name: Run tests net5.0
+
+
+  build-net5:
+    runs-on: ubuntu-latest
+
+    container: 
+      image: mcr.microsoft.com/dotnet/sdk:5.0
+
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+        options: --entrypoint redis-server
+      mongodb:
+        image: mongo
+        ports:
+          - 27017:27017
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Build
         run: |
-            dotnet test -c Release --framework net5.0
+          dotnet build -c Release --framework net5.0
+          
+      - name: Run tests
+        env:
+          ConnectionStrings__MongoDB: mongodb://mongo:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
+          ConnectionStrings__Redis: redis:${{ job.services.redis.ports[6379] }}
+        run: |
+          dotnet test -c Release --framework net5.0

@@ -1,14 +1,15 @@
 ﻿// ReSharper disable UnusedType.Global
+using MongoDB.Driver;
+using Proto.Cluster.Tests;
+using Xunit;
+using Xunit.Abstractions;
+using Microsoft.Extensions.Configuration;
+using Proto.Cluster.Identity.MongoDb;
+using Proto.Cluster.IdentityLookup;
+using Proto.TestFixtures;
+
 namespace Proto.Cluster.Identity.Tests
 {
-    using System;
-    using IdentityLookup;
-    using MongoDb;
-    using MongoDB.Driver;
-    using Proto.Cluster.Tests;
-    using Xunit;
-    using Xunit.Abstractions;
-
     public class MongoIdentityClusterFixture : BaseInMemoryClusterFixture
     {
         public MongoIdentityClusterFixture() : base(3)
@@ -25,10 +26,11 @@ namespace Proto.Cluster.Identity.Tests
 
         internal static IMongoDatabase GetMongo()
         {
-            var connectionString =
-                Environment.GetEnvironmentVariable("MONGO") ?? "mongodb://127.0.0.1:27017/ProtoMongo";
-            var url = MongoUrl.Create(connectionString);
-            var settings = MongoClientSettings.FromUrl(url);
+            var connectionString = TestConfig.Configuration.GetConnectionString("MongoDB");
+            var settings = MongoClientSettings.FromConnectionString(connectionString);
+            settings.MaxConnectionPoolSize = 200;
+            settings.RetryReads = true;
+            settings.RetryWrites = true;
             var client = new MongoClient(settings);
             var database = client.GetDatabase("ProtoMongo");
             return database;

@@ -30,31 +30,34 @@
             _configure = configure;
         }
 
-
-        private async Task<ImmutableList<Cluster>> SpawnClusterNodes(int count,
-            Func<ClusterConfig, ClusterConfig> configure = null)
+        private async Task<ImmutableList<Cluster>> SpawnClusterNodes(
+            int count,
+            Func<ClusterConfig, ClusterConfig> configure = null
+        )
         {
             var clusterName = $"test-cluster-{count}";
+
             return (await Task.WhenAll(
                 Enumerable.Range(0, count)
                     .Select(_ => SpawnClusterMember(configure, clusterName))
             )).ToImmutableList();
         }
 
-        protected virtual async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig> configure,
-            string clusterName)
+        protected virtual async Task<Cluster> SpawnClusterMember(
+            Func<ClusterConfig, ClusterConfig> configure,
+            string clusterName
+        )
         {
-           
-            
-
             var config = ClusterConfig.Setup(
-                clusterName,
-                GetClusterProvider(),
-                GetIdentityLookup(clusterName)).WithClusterKinds(ClusterKinds);
+                    clusterName,
+                    GetClusterProvider(),
+                    GetIdentityLookup(clusterName)
+                )
+                .WithClusterKinds(ClusterKinds);
 
             config = configure?.Invoke(config) ?? config;
             var system = new ActorSystem();
-            
+
             var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
             var _ = new GrpcCoreRemote(system, remoteConfig);
 
@@ -68,12 +71,10 @@
 
         protected virtual IIdentityLookup GetIdentityLookup(string clusterName) => new PartitionIdentityLookup();
 
-        protected virtual (string, Props)[] ClusterKinds => new[]
-        {
+        protected virtual (string, Props)[] ClusterKinds => new[] {
             (EchoActor.Kind, EchoActor.Props),
             (EchoActor.Kind2, EchoActor.Props),
         };
-
 
         public async Task InitializeAsync()
         {
@@ -82,12 +83,10 @@
 
         public async Task DisposeAsync()
         {
-            try
-            {
+            try {
                 await Task.WhenAll(Members?.Select(cluster => cluster.ShutdownAsync()) ?? new[] {Task.CompletedTask});
             }
-            catch (Exception e)
-            {
+            catch (Exception e) {
                 Console.WriteLine(e);
                 throw;
             }
@@ -96,18 +95,18 @@
 
     public abstract class BaseInMemoryClusterFixture : ClusterFixture
     {
-        private readonly Lazy<InMemAgent> _inMemAgent = new Lazy<InMemAgent>(() => new InMemAgent());
+        private readonly Lazy<InMemAgent> _inMemAgent = new(() => new InMemAgent());
         private InMemAgent InMemAgent => _inMemAgent.Value;
 
         protected BaseInMemoryClusterFixture(int clusterSize, Func<ClusterConfig, ClusterConfig> configure = null) :
             base(
-                clusterSize, configure
+                clusterSize,
+                configure
             )
         {
         }
 
-        protected override IClusterProvider GetClusterProvider() =>
-            new TestProvider(new TestProviderOptions(), InMemAgent);
+        protected override IClusterProvider GetClusterProvider() => new TestProvider(new TestProviderOptions(), InMemAgent);
     }
 
     // ReSharper disable once ClassNeverInstantiated.Global
