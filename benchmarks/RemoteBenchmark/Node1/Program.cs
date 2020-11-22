@@ -11,58 +11,121 @@ using Messages;
 using Proto;
 using Proto.Remote;
 using ProtosReflection = Messages.ProtosReflection;
+using Proto.Remote.GrpcCore;
+using Microsoft.Extensions.Logging;
 using Proto.Remote.GrpcNet;
+using System.Diagnostics;
 
 class Program
 {
     static async Task Main(string[] args)
     {
+        Log.SetLoggerFactory(LoggerFactory.Create(c => c
+            .SetMinimumLevel(LogLevel.Information)
+            .AddFilter("Proto.EventStream", LogLevel.None)
+            .AddConsole()));
+
+        var logger = Log.CreateLogger<Program>();
 #if NETCORE
         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
+
+        Console.WriteLine("Enter 0 to use GrpcCore provider");
+        Console.WriteLine("Enter 1 to use GrpcNet provider");
+        if (!int.TryParse(Console.ReadLine(), out var provider))
+            provider = 0;
+
         var system = new ActorSystem();
         var context = new RootContext(system);
 
-        var remote = new GrpcNetRemote(system,
-            GrpcNetRemoteConfig.BindToLocalhost(12001).WithProtoMessages(ProtosReflection.Descriptor));
+        IRemote remote;
+        if (provider == 0)
+        {
+            var remoteConfig = GrpcCoreRemoteConfig
+            .BindToLocalhost(0)
+            .WithEndpointWriterMaxRetries(0)
+            .WithProtoMessages(ProtosReflection.Descriptor);
+            remote = new GrpcCoreRemote(system, remoteConfig);
+        }
+        else
+        {
+            var remoteConfig = GrpcNetRemoteConfig
+            .BindToLocalhost(0)
+            .WithEndpointWriterMaxRetries(0)
+            .WithProtoMessages(ProtosReflection.Descriptor);
+            remote = new GrpcNetRemote(system, remoteConfig);
+        }
+
         await remote.StartAsync();
 
         var messageCount = 1000000;
-        var wg = new AutoResetEvent(false);
-        var props = Props.FromProducer(() => new LocalActor(0, messageCount, wg));
-
-        var pid = context.Spawn(props);
-        var remotePid =  PID.FromAddress("127.0.0.1:12000", "remote");
-        context.RequestAsync<Start>(remotePid, new StartRemote { Sender = pid }).Wait();
-
-        var start = DateTime.Now;
-        Console.WriteLine("Starting to send");
-        var msg = new Ping();
-        for (var i = 0; i < messageCount; i++)
+        var cancellationTokenSource = new CancellationTokenSource();
+        _ = Task.Run(async () =>
         {
-            context.Send(remotePid, msg);
-        }
-        wg.WaitOne();
-        var elapsed = DateTime.Now - start;
-        Console.WriteLine("Elapsed {0}", elapsed);
+            while (!cancellationTokenSource.IsCancellationRequested)
+            {
+                var semaphore = new SemaphoreSlim(0);
+                var props = Props.FromProducer(() => new LocalActor(0, messageCount, semaphore));
 
-        var t = messageCount * 2.0 / elapsed.TotalMilliseconds * 1000;
-        Console.WriteLine("Throughput {0} msg / sec", t);
+                var pid = context.Spawn(props);
+                try
+                {
+                    var actorPidResponse = await remote.SpawnAsync("127.0.0.1:12000", "echo", TimeSpan.FromSeconds(1));
+                    if (actorPidResponse.StatusCode == (int)ResponseStatusCode.OK)
+                    {
+                        var remotePid = actorPidResponse.Pid;
+                        await context.RequestAsync<Start>(remotePid, new StartRemote { Sender = pid }, TimeSpan.FromSeconds(1));
+                        var stopWatch = new Stopwatch();
+                        stopWatch.Start();
+                        Console.WriteLine("Starting to send");
+                        var msg = new Ping();
+                        for (var i = 0; i < messageCount; i++)
+                        {
+                            context.Send(remotePid, msg);
+                        }
+                        var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token, new CancellationTokenSource(2000).Token);
+                        await semaphore.WaitAsync(linkedTokenSource.Token);
+                        stopWatch.Stop();
+                        var elapsed = stopWatch.Elapsed;
+                        Console.WriteLine("Elapsed {0}", elapsed);
+
+                        var t = messageCount * 2.0 / elapsed.TotalMilliseconds * 1000;
+                        Console.Clear();
+                        Console.WriteLine("Throughput {0} msg / sec", t);
+                        await context.StopAsync(remotePid);
+                    }
+                }
+                catch (TaskCanceledException)
+                {
+                    logger.LogInformation("Cancelled");
+                }
+                catch (Exception e)
+                {
+                    logger?.LogError(e, "Error");
+                    await Task.Delay(5000);
+                }
+                await context.StopAsync(pid);
+            }
+        }, cancellationTokenSource.Token);
 
         Console.ReadLine();
+        cancellationTokenSource.Cancel();
+        Console.WriteLine("Press enter to quit");
+        Console.ReadLine();
+        await remote.ShutdownAsync();
     }
 
     public class LocalActor : IActor
     {
         private int _count;
         private readonly int _messageCount;
-        private readonly AutoResetEvent _wg;
+        private readonly SemaphoreSlim _semaphore;
 
-        public LocalActor(int count, int messageCount, AutoResetEvent wg)
+        public LocalActor(int count, int messageCount, SemaphoreSlim semaphore)
         {
             _count = count;
             _messageCount = messageCount;
-            _wg = wg;
+            _semaphore = semaphore;
         }
 
 
@@ -78,7 +141,7 @@ class Program
                     }
                     if (_count == _messageCount)
                     {
-                        _wg.Set();
+                        _semaphore.Release();
                     }
                     break;
             }

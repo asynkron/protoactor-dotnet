@@ -65,6 +65,10 @@ namespace Proto.Remote
             return remoteConfig;
         }
 
+        public static TRemoteConfig WithWaitAfterEndpointTerminationTimeSpan<TRemoteConfig>(this TRemoteConfig remoteConfig, TimeSpan waitAfterEndpointTerminationTimeSpan)
+        where TRemoteConfig : RemoteConfigBase =>
+            remoteConfig with { WaitAfterEndpointTerminationTimeSpan = waitAfterEndpointTerminationTimeSpan};
+
         public static TRemoteConfig WithEndpointWriterRetryBackOff<TRemoteConfig>(this TRemoteConfig remoteConfig, TimeSpan endpointWriterRetryBackoff)
         where TRemoteConfig : RemoteConfigBase
         {

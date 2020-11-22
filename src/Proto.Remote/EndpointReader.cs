@@ -8,7 +8,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
-using Grpc.Core.Utils;
 using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
 
@@ -44,7 +43,7 @@ namespace Proto.Remote
             return Task.FromResult(
                 new ConnectResponse
                 {
-                    DefaultSerializerId = Serialization.DefaultSerializerId
+                    DefaultSerializerId = _serialization.DefaultSerializerId
                 }
             );
         }
@@ -157,7 +156,9 @@ namespace Proto.Remote
             );
 
             var rt = new RemoteTerminate(target, msg.Who);
-            _endpointManager.RemoteTerminate(rt);
+            var endpoint = _endpointManager.GetEndpoint(rt.Watchee.Address);
+            if (endpoint is null) return;
+            _system.Root.Send(endpoint, rt);
         }
     }
 }

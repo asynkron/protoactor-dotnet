@@ -23,35 +23,33 @@ namespace Proto.Remote
 
         private void Send(object msg)
         {
+            object message;
+            var endpoint = _endpointManager.GetEndpoint(_pid.Address);
             switch (msg)
             {
                 case Watch w:
-                    Watch(w);
+                    if (endpoint is null)
+                    {
+                        System.Root.Send(w.Watcher, new Terminated { AddressTerminated = true, Who = _pid });
+                        return;
+                    }
+                    message = new RemoteWatch(w.Watcher, _pid);
                     break;
                 case Unwatch uw:
-                    Unwatch(uw);
+                    if (endpoint is null) return;
+                    message = new RemoteUnwatch(uw.Watcher, _pid);
                     break;
                 default:
-                    SendMessage(msg);
+                    var (m, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
+                    if (endpoint is null)
+                    {
+                        System.EventStream.Publish(new DeadLetterEvent(_pid, m, sender));
+                        return;
+                    }
+                    message = new RemoteDeliver(header!, m, _pid, sender!, -1);
                     break;
             }
-        }
-
-        private void SendMessage(object msg)
-        {
-            _endpointManager.SendMessage(_pid, msg, -1);
-        }
-
-        private void Unwatch(Unwatch uw)
-        {
-            var ruw = new RemoteUnwatch(uw.Watcher, _pid);
-            _endpointManager.RemoteUnwatch(ruw);
-        }
-
-        private void Watch(Watch w)
-        {
-            var rw = new RemoteWatch(w.Watcher, _pid);
-            _endpointManager.RemoteWatch(rw);
+            System.Root.Send(endpoint, message);
         }
     }
 }

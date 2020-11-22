@@ -23,6 +23,7 @@ namespace Proto.Remote.GrpcNet
             _endpointManager = endpointManager;
             _logger = logger;
             System.Extensions.Register(this);
+            System.Extensions.Register(config.Serialization);
         }
         public bool Started { get; private set; }
         public Task StartAsync()
@@ -53,7 +54,7 @@ namespace Proto.Remote.GrpcNet
                 try
                 {
                     _endpointManager.Stop();
-                    _logger.LogDebug(
+                    _logger.LogInformation(
                         "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
                         System.Address, graceful
                     );
@@ -69,11 +70,6 @@ namespace Proto.Remote.GrpcNet
                 Started = false;
                 return Task.CompletedTask;
             }
-        }
-
-        public void SendMessage(PID pid, object msg, int serializerId)
-        {
-            _endpointManager.SendMessage(pid, msg, serializerId);
         }
     }
 }

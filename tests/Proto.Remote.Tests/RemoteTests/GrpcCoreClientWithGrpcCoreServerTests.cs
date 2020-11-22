@@ -5,11 +5,11 @@ using Xunit;
 
 namespace Proto.Remote.Tests
 {
-    public class GrpcCoreClientWithGrpcCoreServerTests : RemoteTests, IClassFixture<GrpcCoreClientWithGrpcCoreServerTests.GrpcCoreClientWithGrpcCoreServerFixture>
+    public class GrpcCoreClientWithGrpcCoreServerTests : RemoteTests, IClassFixture<GrpcCoreClientWithGrpcCoreServerTests.Fixture>
     {
-        public class GrpcCoreClientWithGrpcCoreServerFixture : RemoteFixture
+        public class Fixture : RemoteFixture
         {
-            public GrpcCoreClientWithGrpcCoreServerFixture()
+            public Fixture()
             {
                 var clientConfig = ConfigureClientRemoteConfig(GrpcCoreRemoteConfig.BindToLocalhost(5000));
                 Remote = GetGrpcCoreRemote(clientConfig);
@@ -17,7 +17,7 @@ namespace Proto.Remote.Tests
                 ServerRemote = GetGrpcCoreRemote(serverConfig);
             }
         }
-        public GrpcCoreClientWithGrpcCoreServerTests(GrpcCoreClientWithGrpcCoreServerFixture fixture) : base(fixture)
+        public GrpcCoreClientWithGrpcCoreServerTests(Fixture fixture) : base(fixture)
         {
         }
     }

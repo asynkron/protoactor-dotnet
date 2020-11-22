@@ -126,11 +126,5 @@ namespace Proto.Remote.GrpcNet
                 return Task.CompletedTask;
             }
         }
-
-        // Only used in tests ?
-        public void SendMessage(PID pid, object msg, int serializerId)
-        {
-            _endpointManager.SendMessage(pid, msg, serializerId);
-        }
     }
 }
