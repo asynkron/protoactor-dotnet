@@ -44,7 +44,6 @@ namespace Node2
         {
             Log.SetLoggerFactory(LoggerFactory.Create(c => c
             .SetMinimumLevel(LogLevel.Information)
-            .AddFilter("Proto.EventStream", LogLevel.None)
             .AddConsole()));
 
 #if NETCORE
@@ -56,14 +55,16 @@ namespace Node2
             if (!int.TryParse(Console.ReadLine(), out var provider))
                 provider = 0;
 
-            var system = new ActorSystem();
+            var actorSystemConfig = new ActorSystemConfig()
+                                    .WithDeadLetterThrottleCount(10)
+                                    .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(2));
+            var system = new ActorSystem(actorSystemConfig);
             var context = new RootContext(system);
             IRemote remote;
             if (provider == 0)
             {
                 var remoteConfig = GrpcCoreRemoteConfig
                 .BindToLocalhost(12000)
-                .WithEndpointWriterMaxRetries(0)
                 .WithProtoMessages(ProtosReflection.Descriptor)
                 .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
                 remote = new GrpcCoreRemote(system, remoteConfig);
@@ -72,7 +73,6 @@ namespace Node2
             {
                 var remoteConfig = GrpcNetRemoteConfig
                 .BindToLocalhost(12000)
-                .WithEndpointWriterMaxRetries(0)
                 .WithProtoMessages(ProtosReflection.Descriptor)
                 .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
                 remote = new GrpcNetRemote(system, remoteConfig);
