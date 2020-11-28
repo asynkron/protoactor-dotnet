@@ -176,31 +176,7 @@ namespace Proto.Remote
                     {
                         m = batch;
                         // Logger.LogDebug("[EndpointWriterMailbox] Calling message invoker");
-                        try
-                        {
-                            await _invoker!.InvokeUserMessageAsync(batch).ConfigureAwait(false);
-                        }
-                        catch (Exception e)
-                        {
-                            Logger.LogError(e, "Fail to send batch with {messageCount} remote devilers", batch.Count);
-                            foreach (var rd in batch)
-                            {
-                                switch (rd.Message)
-                                {
-                                    case Watch watch:
-                                        _system.Root.Send(watch.Watcher, new Terminated { AddressTerminated = true, Who = rd.Target });
-                                        break;
-                                    case Unwatch unwatch:
-                                        break;
-                                    default:
-                                        if (rd.Sender != null)
-                                            _system.Root.Send(rd.Sender, new DeadLetterResponse { Target = rd.Target });
-                                        _system.EventStream.Publish(new DeadLetterEvent(rd.Target, rd.Message, rd.Sender));
-                                        break;
-                                }
-                            }
-                            throw;
-                        }
+                        await _invoker!.InvokeUserMessageAsync(batch).ConfigureAwait(false);
                     }
                 }
             }
