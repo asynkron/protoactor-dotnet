@@ -51,7 +51,7 @@ namespace Proto.Remote
                 RemoteWatch msg => RemoteWatch(context, msg),
                 Restarting _ => EndpointTerminated(context),
                 Stopped _ => EndpointTerminated(context),
-                IEnumerable<RemoteDeliver> m => RemoteDeliver(m, context),
+                IEnumerable<RemoteDeliver> m => RemoteDeliver(m),
                 _ => Ignore
             };
         private async Task ConnectAsync(IContext context)
@@ -214,7 +214,7 @@ namespace Proto.Remote
             var env = new RemoteDeliver(header!, message, pid, sender!, -1);
             context.Send(context.Self!, env);
         }
-        private Task RemoteDeliver(IEnumerable<RemoteDeliver> m, IContext context)
+        private Task RemoteDeliver(IEnumerable<RemoteDeliver> m)
         {
             var envelopes = new List<MessageEnvelope>();
             var typeNames = new Dictionary<string, int>();
@@ -271,32 +271,16 @@ namespace Proto.Remote
 
             Logger.LogDebug("[EndpointActor] Sending {Count} envelopes for {Address}", envelopes.Count, _address);
 
-            return SendEnvelopesAsync(batch, context);
+            return SendEnvelopesAsync(batch);
         }
-        private async Task SendEnvelopesAsync(MessageBatch batch, IContext context)
+        private Task SendEnvelopesAsync(MessageBatch batch)
         {
             if (_stream == null || _stream.RequestStream == null)
             {
-                Logger.LogError(
-                    "[EndpointActor] gRPC Failed to send to address {Address}, reason No Connection available"
-                    , _address
-                );
-                return;
+                throw new InvalidOperationException($"gRPC Failed to send to address {_address}, reason No Connection available");
             }
-            try
-            {
-                Logger.LogDebug("[EndpointActor] Writing batch to {Address}", _address);
-
-                await _stream.RequestStream.WriteAsync(batch).ConfigureAwait(false);
-            }
-            catch (Exception x)
-            {
-                Logger.LogError(x, "[EndpointActor] gRPC Failed to send to address {Address}, reason {Message}", _address,
-                    x.Message
-                );
-                context.Stash();
-                throw;
-            }
+            Logger.LogDebug("[EndpointActor] Writing batch to {Address}", _address);
+            return _stream.RequestStream.WriteAsync(batch);
         }
     }
 }

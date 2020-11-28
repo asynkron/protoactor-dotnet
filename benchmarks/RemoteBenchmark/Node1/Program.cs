@@ -95,18 +95,24 @@ class Program
                         await context.StopAsync(remotePid);
                     }
                 }
-                catch (OperationCanceledException) { }
+                catch (OperationCanceledException)
+                {
+                    await Task.Delay(1000);
+                }
                 catch (Exception e)
                 {
                     logger?.LogError(e, "Error");
                     await Task.Delay(5000);
                 }
-                await context.StopAsync(pid);
+                await context.PoisonAsync(pid);
             }
         }, cancellationTokenSource.Token);
 
         Console.ReadLine();
         cancellationTokenSource.Cancel();
+        await Task.Delay(1000);
+        Console.WriteLine("Press enter to quit");
+        Console.ReadLine();
         await remote.ShutdownAsync();
     }
 

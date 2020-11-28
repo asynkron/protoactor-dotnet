@@ -159,10 +159,13 @@ namespace Proto.Remote
                             case RemoteTerminate _:
                                 await _invoker!.InvokeUserMessageAsync(msg);
                                 continue;
+                            case RemoteDeliver remoteDeliver:
+                                batch.Add(remoteDeliver);
+                                break;
+                            default:
+                                Logger.LogWarning("[EndpointWriterMailbox] Unknown User Message {@Message} (@type)", msg, msg.GetType().Name);
+                                break;
                         }
-
-                        batch.Add((RemoteDeliver)msg);
-
                         if (batch.Count >= _batchSize)
                         {
                             break;
@@ -173,7 +176,32 @@ namespace Proto.Remote
                     {
                         m = batch;
                         Logger.LogDebug("[EndpointWriterMailbox] Calling message invoker");
-                        await _invoker!.InvokeUserMessageAsync(batch);
+                        try
+                        {
+                            await _invoker!.InvokeUserMessageAsync(batch);
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.LogError(e, "Fail to send batch with {messageCount} remote devilers", batch.Count);
+                            foreach (var rd in batch)
+                            {
+                                switch (rd.Message)
+                                {
+                                    case Watch watch:
+                                        _system.Root.Send(watch.Watcher, new Terminated { AddressTerminated = true, Who = rd.Target });
+                                        break;
+                                    case Unwatch unwatch:
+                                        break;
+                                    default:
+                                        if (rd.Sender != null)
+                                            _system.Root.Send(rd.Sender, new DeadLetterResponse { Target = rd.Target });
+                                        _system.EventStream.Publish(new DeadLetterEvent(rd.Target, rd.Message, rd.Sender));
+                                        break;
+                                }
+                            }
+                            _suspended = true;
+                            _invoker!.EscalateFailure(e, m);
+                        }
                     }
                 }
             }
