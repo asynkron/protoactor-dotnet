@@ -58,7 +58,7 @@ namespace Proto.Remote
                 Logger.LogDebug("[EndpointReader] Telling to {Address} to stop", context.Peer);
                 try
                 {
-                    responseStream.WriteAsync(new Unit());
+                    _ = responseStream.WriteAsync(new Unit());
                 }
                 catch (Exception e)
                 {
@@ -67,7 +67,7 @@ namespace Proto.Remote
             });
 
             var targets = new PID[100];
-            while (await requestStream.MoveNext(context.CancellationToken))
+            while (await requestStream.MoveNext(context.CancellationToken).ConfigureAwait(false))
             {
                 if (_endpointManager.CancellationToken.IsCancellationRequested)
                 {
@@ -98,28 +98,22 @@ namespace Proto.Remote
                 {
                     var target = targets[envelope.Target];
                     var typeName = typeNames[envelope.TypeId];
-                    try
-                    {
-                        var message =
-                            _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
+                    var message =
+                        _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
 
-                        switch (message)
-                        {
-                            case Terminated msg:
-                                Terminated(msg, target);
-                                break;
-                            case SystemMessage sys:
-                                SystemMessage(sys, target);
-                                break;
-                            default:
-                                ReceiveMessages(envelope, message, target);
-                                break;
-                        }
-                    }
-                    catch (Exception e)
+                    switch (message)
                     {
-                        Logger.LogError(e, "Failed to receive {Type} from {Remote}", typeName, context.Peer);
+                        case Terminated msg:
+                            Terminated(msg, target);
+                            break;
+                        case SystemMessage sys:
+                            SystemMessage(sys, target);
+                            break;
+                        default:
+                            ReceiveMessages(envelope, message, target);
+                            break;
                     }
+
                 }
             }
             Logger.LogDebug("[EndpointReader] Stream closed by {Remote}", context.Peer);
@@ -134,26 +128,26 @@ namespace Proto.Remote
                 header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
             }
 
-            Logger.LogDebug("[EndpointReader] Forwarding remote user message {@Message}", message);
+            // Logger.LogDebug("[EndpointReader] Forwarding remote user message {@Message}", message);
             var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
             _system.Root.Send(target, localEnvelope);
         }
 
         private void SystemMessage(SystemMessage sys, PID target)
         {
-            Logger.LogDebug(
-                "[EndpointReader] Forwarding remote system message {@MessageType}:{@Message}",
-                sys.GetType().Name, sys
-            );
+            // Logger.LogDebug(
+            //     "[EndpointReader] Forwarding remote system message {@MessageType}:{@Message}",
+            //     sys.GetType().Name, sys
+            // );
 
             target.SendSystemMessage(_system, sys);
         }
 
         private void Terminated(Terminated msg, PID target)
         {
-            Logger.LogDebug(
-                "[EndpointReader] Forwarding remote endpoint termination request for {Who}", msg.Who
-            );
+            // Logger.LogDebug(
+            //     "[EndpointReader] Forwarding remote endpoint termination request for {Who}", msg.Who
+            // );
 
             var rt = new RemoteTerminate(target, msg.Who);
             var endpoint = _endpointManager.GetEndpoint(rt.Watchee.Address);

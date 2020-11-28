@@ -269,7 +269,7 @@ namespace Proto.Remote
             batch.TypeNames.AddRange(typeNameList);
             batch.Envelopes.AddRange(envelopes);
 
-            Logger.LogDebug("[EndpointActor] Sending {Count} envelopes for {Address}", envelopes.Count, _address);
+            // Logger.LogDebug("[EndpointActor] Sending {Count} envelopes for {Address}", envelopes.Count, _address);
 
             return SendEnvelopesAsync(batch);
         }
@@ -279,7 +279,7 @@ namespace Proto.Remote
             {
                 throw new InvalidOperationException($"gRPC Failed to send to address {_address}, reason No Connection available");
             }
-            Logger.LogDebug("[EndpointActor] Writing batch to {Address}", _address);
+            // Logger.LogDebug("[EndpointActor] Writing batch to {Address}", _address);
             return _stream.RequestStream.WriteAsync(batch);
         }
     }
