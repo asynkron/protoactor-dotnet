@@ -77,10 +77,8 @@ namespace Proto.Remote
 
         private void OnEndpointError(EndpointErrorEvent evt)
         {
-            var endpoint = GetEndpoint(evt.Address);
-            if (endpoint is null)
-                return;
-            endpoint.SendSystemMessage(_system, evt);
+            if (_connections.TryGetValue(evt.Address, out var endpoint))
+                endpoint.SendSystemMessage(_system, evt);
         }
 
         private void OnEndpointTerminated(EndpointTerminatedEvent evt)
