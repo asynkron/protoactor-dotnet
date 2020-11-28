@@ -14,15 +14,17 @@ namespace Proto.Router.Routers
     {
         private readonly Func<string, uint> _hash;
         private readonly int _replicaCount;
-        private readonly Dictionary<string, PID> _routeeMap = new Dictionary<string, PID>();
+        private readonly Dictionary<string, PID> _routeeMap = new();
         private readonly ISenderContext _senderContext;
         private HashRing? _hashRing;
+        private readonly Func<object, string>? _messageHasher;
 
-        public ConsistentHashRouterState(ISenderContext senderContext, Func<string, uint> hash, int replicaCount)
+        public ConsistentHashRouterState(ISenderContext senderContext, Func<string, uint> hash, int replicaCount, Func<object, string>? messageHasher)
         {
             _senderContext = senderContext;
             _hash = hash;
             _replicaCount = replicaCount;
+            _messageHasher = messageHasher;
         }
 
         public override HashSet<PID> GetRoutees() => _routeeMap.Values.ToHashSet();
@@ -54,6 +56,15 @@ namespace Proto.Router.Routers
             if (env.message is IHashable hashable)
             {
                 var key = hashable.HashBy();
+                var node = _hashRing.GetNode(key);
+                var routee = _routeeMap[node];
+
+                //by design, just forward message
+                _senderContext.Send(routee, message);
+            }
+            else if (_messageHasher is not null)
+            {
+                var key = _messageHasher(message);
                 var node = _hashRing.GetNode(key);
                 var routee = _routeeMap[node];
 
