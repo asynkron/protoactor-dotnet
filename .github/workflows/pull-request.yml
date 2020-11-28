@@ -23,10 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
-      - name: Build
-        run: |
-          dotnet build -c Release --framework netcoreapp3.1
-
       - name: Run tests
         env:
           ConnectionStrings__MongoDB: mongodb://mongo:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
@@ -54,10 +50,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1
-
-      - name: Build
-        run: |
-          dotnet build -c Release --framework net5.0
           
       - name: Run tests
         env:
