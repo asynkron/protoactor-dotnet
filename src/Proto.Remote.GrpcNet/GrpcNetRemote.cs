@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Grpc.HealthCheck;
 using Microsoft.AspNetCore.Builder;
@@ -97,34 +98,38 @@ namespace Proto.Remote.GrpcNet
             }
         }
 
-        public Task ShutdownAsync(bool graceful = true)
+        public async Task ShutdownAsync(bool graceful = true)
         {
             lock (this)
             {
                 if (!Started)
-                    return Task.CompletedTask;
-                try
-                {
-                    using (_host)
-                    {
-                        if (graceful)
-                            _endpointManager.Stop();
-                    }
-                    _logger.LogInformation(
-                            "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
-                            System.Address, graceful
-                        );
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(
-                        ex, "Proto.Actor server stopped on {Address} with error: {Message}",
-                        System.Address, ex.Message
-                    );
-                }
+                    return;
                 Started = false;
-                return Task.CompletedTask;
+            }
+            try
+            {
+                using (_host)
+                {
+                    if (graceful)
+                    {
+                        _endpointManager.Stop();
+                        if (_host is not null)
+                            await _host.StopAsync();
+                    }
+                }
+                _logger.LogInformation(
+                        "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
+                        System.Address, graceful
+                    );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex, "Proto.Actor server stopped on {Address} with error: {Message}",
+                    System.Address, ex.Message
+                );
             }
         }
     }
+}
 }
