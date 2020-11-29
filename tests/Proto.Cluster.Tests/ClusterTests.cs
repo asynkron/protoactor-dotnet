@@ -45,7 +45,7 @@
         }
 
         [Theory]
-        [InlineData(1000, 10000)]
+        [InlineData(100, 10000)]
         public async Task CanSpawnVirtualActorsSequentially(int actorCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -63,7 +63,7 @@
         }
 
         [Theory]
-        [InlineData(1000, 10000)]
+        [InlineData(100, 10000)]
         public async Task CanSpawnVirtualActorsConcurrently(int actorCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -77,7 +77,7 @@
         }
 
         [Theory]
-        [InlineData(100, 6000)]
+        [InlineData(100, 10000)]
         public async Task CanSpawnMultipleKindsWithSameIdentityConcurrently(int actorCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -97,7 +97,7 @@
         }
 
         [Theory]
-        [InlineData(100, 4000)]
+        [InlineData(100, 10000)]
         public async Task CanSpawnVirtualActorsConcurrentlyOnAllNodes(int actorCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -112,7 +112,7 @@
         }
 
         [Theory]
-        [InlineData(100, 4000)]
+        [InlineData(100, 10000)]
         public async Task CanRespawnVirtualActors(int actorCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;

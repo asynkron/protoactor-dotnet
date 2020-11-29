@@ -1,4 +1,6 @@
-﻿namespace Proto.Cluster.Tests
+﻿using Proto.Remote;
+
+namespace Proto.Cluster.Tests
 {
     using System;
     using System.Collections.Immutable;
@@ -7,10 +9,10 @@
     using ClusterTest.Messages;
     using IdentityLookup;
     using Partition;
-    using Remote;
     using Testing;
     using Xunit;
-    using Proto.Remote.GrpcCore;
+    using Remote.GrpcCore;
+    using Microsoft.Extensions.Logging;
 
     public interface IClusterFixture
     {
@@ -19,6 +21,8 @@
 
     public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture
     {
+        private readonly ILogger _logger = Log.CreateLogger(nameof(GetType));
+        
         public ImmutableList<Cluster> Members { get; private set; }
 
         private readonly int _clusterSize;
@@ -86,8 +90,9 @@
             try {
                 await Task.WhenAll(Members?.Select(cluster => cluster.ShutdownAsync()) ?? new[] {Task.CompletedTask});
             }
-            catch (Exception e) {
-                Console.WriteLine(e);
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to shutdown gracefully");
                 throw;
             }
         }

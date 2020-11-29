@@ -4,13 +4,20 @@
     using System.Threading;
     using System.Threading.Tasks;
 
-    public interface IIdentityStorage: IDisposable
+    public interface IIdentityStorage : IDisposable
     {
-        public Task<StoredActivation?> TryGetExistingActivationAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
+        public Task<StoredActivation?> TryGetExistingActivation(ClusterIdentity clusterIdentity,
+            CancellationToken ct);
 
-        public Task<SpawnLock?> TryAcquireLockAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
-        
-        public Task<StoredActivation?> WaitForActivationAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
+        public Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity, CancellationToken ct);
+
+        /// <summary>
+        /// Wait on lock, return activation when present. Responsible for deleting stale locks
+        /// </summary>
+        /// <param name="clusterIdentity"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public Task<StoredActivation?> WaitForActivation(ClusterIdentity clusterIdentity, CancellationToken ct);
 
         public Task RemoveLock(SpawnLock spawnLock, CancellationToken ct);
 
@@ -18,7 +25,9 @@
 
         public Task RemoveActivation(PID pid, CancellationToken ct);
 
-        public Task RemoveMemberIdAsync(string memberId, CancellationToken ct);
+        public Task RemoveMember(string memberId, CancellationToken ct);
+
+        public Task Init();
     }
 
     public class SpawnLock
@@ -30,22 +39,6 @@
         {
             LockId = lockId;
             ClusterIdentity = clusterIdentity;
-        }
-    }
-
-    public class LookupResult
-    {
-        public StoredActivation? StoredActivation { get; }
-        public SpawnLock? SpawnLock { get; }
-
-        public LookupResult(StoredActivation storedActivation)
-        {
-            StoredActivation = storedActivation;
-        }
-
-        public LookupResult(SpawnLock spawnLock)
-        {
-            SpawnLock = spawnLock;
         }
     }
 
@@ -68,6 +61,13 @@
         }
 
         public StorageFailure(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+    }
+
+    public class LockNotFoundException : StorageFailure
+    {
+        public LockNotFoundException(string message) : base(message)
         {
         }
     }

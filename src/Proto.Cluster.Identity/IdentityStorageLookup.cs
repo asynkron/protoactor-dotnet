@@ -1,4 +1,6 @@
-﻿namespace Proto.Cluster.Identity
+﻿using Microsoft.Extensions.Logging;
+
+namespace Proto.Cluster.Identity
 {
     using System;
     using System.Threading;
@@ -8,12 +10,13 @@
 
     public class IdentityStorageLookup : IIdentityLookup
     {
-        internal IIdentityStorage Storage { get; }
         private const string PlacementActorName = "placement-activator";
         private static readonly int PidClusterIdentityStartIndex = PlacementActorName.Length + 1;
+        private readonly ILogger _logger = Log.CreateLogger<IdentityStorageLookup>();
+        internal IIdentityStorage Storage { get; }
         internal Cluster Cluster;
-        private bool _isClient;
         internal MemberList MemberList;
+        private bool _isClient;
         private PID _placementActor;
         private ActorSystem _system;
         private PID _router;
@@ -32,7 +35,7 @@
             return res?.Pid;
         }
 
-        public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
+        public async Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
         {
             Cluster = cluster;
             _system = cluster.System;
@@ -57,23 +60,33 @@
                 }
             );
 
-            if (isClient) return Task.CompletedTask;
+            if (isClient) return;
             var props = Props.FromProducer(() => new IdentityStoragePlacementActor(Cluster, this));
             _placementActor = _system.Root.SpawnNamed(props, PlacementActorName);
 
-            return Task.CompletedTask;
+            await Storage.Init();
         }
 
         public async Task ShutdownAsync()
         {
-            if (!_isClient) await Cluster.System.Root.PoisonAsync(_placementActor);
-
-            await RemoveMemberAsync(_memberId);
+            if (!_isClient)
+            {
+                //TODO: rewrite to respond to pending activations
+                await Cluster.System.Root.StopAsync(_placementActor);
+                try
+                {
+                    await RemoveMemberAsync(_memberId);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Failed to remove stored member activations for {MemberId}", _memberId);
+                }
+            }
         }
 
         internal Task RemoveMemberAsync(string memberId)
         {
-            return Storage.RemoveMemberIdAsync(memberId, CancellationToken.None);
+            return Storage.RemoveMember(memberId, CancellationToken.None);
         }
 
         internal PID RemotePlacementActor(string address)
