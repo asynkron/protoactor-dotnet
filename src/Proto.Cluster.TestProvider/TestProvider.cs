@@ -30,7 +30,6 @@ namespace Proto.Cluster.Testing
         {
             _options = options;
             _agent = agent;
-            agent.StatusUpdate += AgentOnStatusUpdate;
         }
 
         private void AgentOnStatusUpdate(object sender, EventArgs e)
@@ -49,7 +48,7 @@ namespace Proto.Cluster.Testing
             _clusterName = clusterName;
             _system = cluster.System;
             _memberList = memberList;
-
+            _agent.StatusUpdate += AgentOnStatusUpdate;
             StartTtlTimer();
             
             _agent.RegisterService(new AgentServiceRegistration
