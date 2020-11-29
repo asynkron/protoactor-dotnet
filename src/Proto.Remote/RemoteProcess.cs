@@ -10,6 +10,7 @@ namespace Proto.Remote
     {
         private readonly EndpointManager _endpointManager;
         private readonly PID _pid;
+        private PID? _endpoint;
 
         public RemoteProcess(ActorSystem system, EndpointManager endpointManager, PID pid) : base(system)
         {
@@ -24,11 +25,11 @@ namespace Proto.Remote
         private void Send(object msg)
         {
             object message;
-            var endpoint = _endpointManager.GetEndpoint(_pid.Address);
+            _endpoint ??= _endpointManager.GetEndpoint(_pid.Address);
             switch (msg)
             {
                 case Watch w:
-                    if (endpoint is null)
+                    if (_endpoint is null)
                     {
                         System.Root.Send(w.Watcher, new Terminated { AddressTerminated = true, Who = _pid });
                         return;
@@ -36,12 +37,12 @@ namespace Proto.Remote
                     message = new RemoteWatch(w.Watcher, _pid);
                     break;
                 case Unwatch uw:
-                    if (endpoint is null) return;
+                    if (_endpoint is null) return;
                     message = new RemoteUnwatch(uw.Watcher, _pid);
                     break;
                 default:
                     var (m, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
-                    if (endpoint is null)
+                    if (_endpoint is null)
                     {
                         System.EventStream.Publish(new DeadLetterEvent(_pid, m, sender));
                         return;
@@ -49,7 +50,7 @@ namespace Proto.Remote
                     message = new RemoteDeliver(header!, m, _pid, sender!, -1);
                     break;
             }
-            System.Root.Send(endpoint, message);
+            System.Root.Send(_endpoint, message);
         }
     }
 }

@@ -24,6 +24,7 @@ namespace Proto.Remote
         private readonly EventStreamSubscription<object>? _endpointConnectedEvnSub;
         private readonly EventStreamSubscription<object>? _endpointTerminatedEvnSub;
         private readonly EventStreamSubscription<object> _endpointErrorEvnSub;
+        private readonly EventStreamSubscription<object> _deadLetterEvnSub;
         private readonly RemoteConfigBase _remoteConfig;
         private readonly IChannelProvider _channelProvider;
         private readonly object _synLock = new object();
@@ -39,6 +40,26 @@ namespace Proto.Remote
             _endpointTerminatedEvnSub = _system.EventStream.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated, Dispatchers.DefaultDispatcher);
             _endpointConnectedEvnSub = _system.EventStream.Subscribe<EndpointConnectedEvent>(OnEndpointConnected);
             _endpointErrorEvnSub = _system.EventStream.Subscribe<EndpointErrorEvent>(OnEndpointError);
+            _deadLetterEvnSub = _system.EventStream.Subscribe<DeadLetterEvent>(OnDeadLetterEvent);
+        }
+
+        private void OnDeadLetterEvent(DeadLetterEvent deadLetterEvent)
+        {
+            switch (deadLetterEvent.Message)
+            {
+                case RemoteWatch msg:
+                    msg.Watcher.SendSystemMessage(_system, new Terminated
+                    {
+                        AddressTerminated = true,
+                        Who = msg.Watchee
+                    });
+                    break;
+                case RemoteDeliver rd:
+                    if (rd.Sender != null)
+                        _system.Root.Send(rd.Sender, new DeadLetterResponse { Target = rd.Target });
+                    _system.EventStream.Publish(new DeadLetterEvent(rd.Target, rd.Message, rd.Sender));
+                    break;
+            }
         }
 
         public void Start()
@@ -56,6 +77,7 @@ namespace Proto.Remote
                 _system.EventStream.Unsubscribe(_endpointTerminatedEvnSub);
                 _system.EventStream.Unsubscribe(_endpointConnectedEvnSub);
                 _system.EventStream.Unsubscribe(_endpointErrorEvnSub);
+                _system.EventStream.Unsubscribe(_deadLetterEvnSub);
 
                 var stopEndpointTasks = new List<Task>();
                 foreach (var endpoint in _connections.Values)
