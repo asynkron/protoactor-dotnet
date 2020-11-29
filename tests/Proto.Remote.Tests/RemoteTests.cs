@@ -25,62 +25,6 @@ namespace Proto.Remote.Tests
 
         [Fact]
         [DisplayTestMethodName]
-        public void CanSerializeAndDeserializeJsonPid()
-        {
-            var serialization = new Serialization();
-            const string typeName = "actor.PID";
-            var json = new JsonMessage(typeName, "{ \"Address\":\"123\", \"Id\":\"456\"}");
-            var bytes = serialization.Serialize(json, 1);
-            var deserialized = serialization.Deserialize(typeName, bytes, 1) as PID;
-            Assert.NotNull(deserialized);
-            Assert.Equal("123", deserialized.Address);
-            Assert.Equal("456", deserialized.Id);
-        }
-
-        [Fact]
-        [DisplayTestMethodName]
-        public void CanSerializeAndDeserializeJson()
-        {
-            var serialization = new Serialization();
-            serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
-            const string typeName = "remote_test_messages.Ping";
-            var json = new JsonMessage(typeName, "{ \"message\":\"Hello\"}");
-            var bytes = serialization.Serialize(json, 1);
-            var deserialized = serialization.Deserialize(typeName, bytes, 1) as Ping;
-            Assert.NotNull(deserialized);
-            Assert.Equal("Hello", deserialized.Message);
-        }
-
-        [Fact]
-        [DisplayTestMethodName]
-        public void CanSendJsonAndReceiveToExistingRemote()
-        {
-
-            var remoteActor = PID.FromAddress(_fixture.RemoteAddress, "EchoActorInstance");
-            var tcs = new TaskCompletionSource<bool>();
-
-            var localActor = System.Root.Spawn(
-                Props.FromFunc(
-                    ctx =>
-                    {
-                        if (ctx.Message is Pong)
-                        {
-                            tcs.SetResult(true);
-                            ctx.Stop(ctx.Self!);
-                        }
-
-                        return Task.CompletedTask;
-                    }
-                )
-            );
-
-            var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
-            var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
-            Remote.SendMessage(remoteActor, envelope, 1);
-        }
-
-        [Fact]
-        [DisplayTestMethodName]
         public async Task CanSendAndReceiveToExistingRemote()
         {
             var remoteActor = PID.FromAddress(_fixture.RemoteAddress, "EchoActorInstance");
@@ -90,8 +34,6 @@ namespace Proto.Remote.Tests
             );
 
             Assert.Equal($"{_fixture.RemoteAddress} Hello", pong.Message);
-
-            // await service.StopAsync();
         }
 
         [Fact]
@@ -295,14 +237,15 @@ namespace Proto.Remote.Tests
 
             // The local actor watches the remote one - we wait here for the RemoteWatch 
             // message to propagate to the remote actor
-            Console.WriteLine("Waiting for RemoteWatch to propagate...");
-            await Task.Delay(2000);
+            var logger = Log.CreateLogger(nameof(SpawnLocalActorAndWatch));
+            logger.LogInformation("Waiting for RemoteWatch to propagate...");
+            await Task.Delay(20);
             return actor;
         }
 
         private Task<bool> PollUntilTrue(Func<Task<bool>> predicate)
         {
-            return PollUntilTrue(predicate, 10, TimeSpan.FromMilliseconds(500));
+            return PollUntilTrue(predicate, 100, TimeSpan.FromMilliseconds(50));
         }
 
         private async Task<bool> PollUntilTrue(Func<Task<bool>> predicate, int attempts, TimeSpan interval)
@@ -346,6 +289,7 @@ namespace Proto.Remote.Tests
 
     public class LocalActor : IActor
     {
+        private readonly ILogger _logger = Log.CreateLogger<LocalActor>();
         private readonly List<PID> _remoteActors = new List<PID>();
         private readonly List<Terminated> _terminatedMessages = new List<Terminated>();
 
@@ -394,7 +338,7 @@ namespace Proto.Remote.Tests
 
         private void HandleTerminated(Terminated msg)
         {
-            Console.WriteLine(
+            _logger.LogInformation(
                 $"Received Terminated message for {msg.Who.Address}: {msg.Who.Id}. Address terminated? {msg.AddressTerminated}"
             );
             _terminatedMessages.Add(msg);

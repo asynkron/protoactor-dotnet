@@ -75,17 +75,17 @@ namespace Proto.Remote
 
             try
             {
-                Logger.LogDebug(
-                    "[EndpointWriterMailbox] Running Mailbox Loop HasSystemMessages: {HasSystemMessages} HasUserMessages: {HasUserMessages} Suspended: {Suspended}",
-                    _systemMessages.HasMessages, _userMessages.HasMessages, _suspended
-                );
+                // Logger.LogDebug(
+                //     "[EndpointWriterMailbox] Running Mailbox Loop HasSystemMessages: {HasSystemMessages} HasUserMessages: {HasUserMessages} Suspended: {Suspended}",
+                //     _systemMessages.HasMessages, _userMessages.HasMessages, _suspended
+                // );
                 var _ = _dispatcher!.Throughput; //not used for batch mailbox
                 var batch = new List<RemoteDeliver>(_batchSize);
                 var sys = _systemMessages.Pop();
 
                 if (sys is not null)
                 {
-                    Logger.LogDebug("[EndpointWriterMailbox] Processing System Message {@Message}", sys);
+                    // Logger.LogDebug("[EndpointWriterMailbox] Processing System Message {@Message}", sys);
 
                     _suspended = sys switch
                     {
@@ -100,10 +100,10 @@ namespace Proto.Remote
                     {
                         case EndpointErrorEvent e:
                             if (!_suspended)// Since it's already stopped, there is no need to throw the error
-                                await _invoker!.InvokeUserMessageAsync(sys);
+                                await _invoker!.InvokeUserMessageAsync(sys).ConfigureAwait(false);
                             break;
                         default:
-                            await _invoker!.InvokeSystemMessageAsync(sys);
+                            await _invoker!.InvokeSystemMessageAsync(sys).ConfigureAwait(false);
                             break;
                     }
 
@@ -150,19 +150,22 @@ namespace Proto.Remote
 
                     while ((msg = _userMessages.Pop()) is not null)
                     {
-                        Logger.LogDebug("[EndpointWriterMailbox] Processing User Message {@Message}", msg);
+                        // Logger.LogDebug("[EndpointWriterMailbox] Processing User Message {@Message}", msg);
 
                         switch (msg)
                         {
                             case RemoteWatch _:
                             case RemoteUnwatch _:
                             case RemoteTerminate _:
-                                await _invoker!.InvokeUserMessageAsync(msg);
+                                await _invoker!.InvokeUserMessageAsync(msg).ConfigureAwait(false);
                                 continue;
+                            case RemoteDeliver remoteDeliver:
+                                batch.Add(remoteDeliver);
+                                break;
+                            default:
+                                Logger.LogWarning("[EndpointWriterMailbox] Unknown User Message {@Message} (@type)", msg, msg.GetType().Name);
+                                break;
                         }
-
-                        batch.Add((RemoteDeliver)msg);
-
                         if (batch.Count >= _batchSize)
                         {
                             break;
@@ -172,22 +175,13 @@ namespace Proto.Remote
                     if (batch.Count > 0)
                     {
                         m = batch;
-                        Logger.LogDebug("[EndpointWriterMailbox] Calling message invoker");
-                        await _invoker!.InvokeUserMessageAsync(batch);
+                        // Logger.LogDebug("[EndpointWriterMailbox] Calling message invoker");
+                        await _invoker!.InvokeUserMessageAsync(batch).ConfigureAwait(false);
                     }
                 }
             }
             catch (Exception x)
             {
-                // if (x is RpcException rpc && rpc.Status.StatusCode == StatusCode.Unavailable)
-                // {
-                //     Logger.LogError( "Endpoint writer failed, status unavailable");
-                // }
-                // else
-                // {
-                //     Logger.LogError(x, "Endpoint writer failed");
-                // }
-
                 _suspended = true;
                 _invoker!.EscalateFailure(x, m);
             }

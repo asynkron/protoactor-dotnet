@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Proto.Remote.Tests
 {
-    public class HostedGrpcNetClientWithHostedGrpcNetServerTests : RemoteTests, IClassFixture<HostedGrpcNetClientWithHostedGrpcNetServerTests.Fixture>
+    public class WithJsonSerializeAsDefaultTests : RemoteTests, IClassFixture<WithJsonSerializeAsDefaultTests.Fixture>
     {
         public class Fixture : RemoteFixture
         {
@@ -15,9 +15,10 @@ namespace Proto.Remote.Tests
             private readonly IHost _serverHost;
             public Fixture()
             {
-                var clientConfig = ConfigureClientRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost(5000));
+                var clientConfig = ConfigureClientRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost());
+                clientConfig.Serialization.DefaultSerializerId = 1;
                 (_clientHost, Remote) = GetHostedGrpcNetRemote(clientConfig);
-                var serverConfig = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost(5001));
+                var serverConfig = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost());
                 (_serverHost, ServerRemote) = GetHostedGrpcNetRemote(serverConfig);
             }
             public override async Task DisposeAsync()
@@ -28,7 +29,7 @@ namespace Proto.Remote.Tests
                 _serverHost.Dispose();
             }
         }
-        public HostedGrpcNetClientWithHostedGrpcNetServerTests(Fixture fixture) : base(fixture)
+        public WithJsonSerializeAsDefaultTests(Fixture fixture) : base(fixture)
         {
         }
     }

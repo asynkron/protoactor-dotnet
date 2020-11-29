@@ -8,12 +8,12 @@ using Xunit;
 
 namespace Proto.Remote.Tests
 {
-    public class HostedGrpcNetClientWithGrpcCoreServerTests : RemoteTests, IClassFixture<HostedGrpcNetClientWithGrpcCoreServerTests.HostedGrpcNetClientWithGrpcCoreServerFixture>
+    public class HostedGrpcNetClientWithGrpcCoreServerTests : RemoteTests, IClassFixture<HostedGrpcNetClientWithGrpcCoreServerTests.Fixture>
     {
-        public class HostedGrpcNetClientWithGrpcCoreServerFixture : RemoteFixture
+        public class Fixture : RemoteFixture
         {
             private readonly IHost _clientHost;
-            public HostedGrpcNetClientWithGrpcCoreServerFixture()
+            public Fixture()
             {
                 var clientConfig = ConfigureClientRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost(5000));
                 (_clientHost, Remote) = GetHostedGrpcNetRemote(clientConfig);
@@ -23,11 +23,11 @@ namespace Proto.Remote.Tests
             public override async Task DisposeAsync()
             {
                 await _clientHost.StopAsync();
-                await ServerRemote.ShutdownAsync();
                 _clientHost.Dispose();
+                await ServerRemote.ShutdownAsync();
             }
         }
-        public HostedGrpcNetClientWithGrpcCoreServerTests(HostedGrpcNetClientWithGrpcCoreServerFixture fixture) : base(fixture)
+        public HostedGrpcNetClientWithGrpcCoreServerTests(Fixture fixture) : base(fixture)
         {
         }
     }

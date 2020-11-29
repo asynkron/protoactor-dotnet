@@ -8,8 +8,12 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Proto.Actor\Proto.Actor.csproj" />
+    <ProjectReference Include="..\..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
     <ProjectReference Include="..\..\..\src\Proto.Remote.GrpcNet\Proto.Remote.GrpcNet.csproj" />
     <ProjectReference Include="..\Messages\Messages.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.8" />
   </ItemGroup>
   <PropertyGroup Condition="'$(TargetFramework)' != 'net5.0'">
     <DefineConstants>NETCORE</DefineConstants>
