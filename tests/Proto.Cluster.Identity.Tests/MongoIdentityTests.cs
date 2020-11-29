@@ -37,25 +37,25 @@ namespace Proto.Cluster.Identity.Tests
         }
     }
 
-    // public class MongoClusterTests : ClusterTests, IClassFixture<MongoIdentityClusterFixture>
-    // {
-    //     // ReSharper disable once SuggestBaseTypeForParameter
-    //     public MongoClusterTests(ITestOutputHelper testOutputHelper, MongoIdentityClusterFixture clusterFixture)
-    //         : base(testOutputHelper, clusterFixture)
-    //     {
-    //     }
-    // }
-    //
-    // public class MongoStorageTests : IdentityStorageTests
-    // {
-    //     public MongoStorageTests() : base(Init)
-    //     {
-    //     }
-    //
-    //     private static IIdentityStorage Init(string clusterName)
-    //     {
-    //         var db = MongoIdentityClusterFixture.GetMongo();
-    //         return new MongoIdentityStorage(clusterName, db.GetCollection<PidLookupEntity>("pids"));
-    //     }
-    // }
+    public class MongoClusterTests : ClusterTests, IClassFixture<MongoIdentityClusterFixture>
+    {
+        // ReSharper disable once SuggestBaseTypeForParameter
+        public MongoClusterTests(ITestOutputHelper testOutputHelper, MongoIdentityClusterFixture clusterFixture)
+            : base(testOutputHelper, clusterFixture)
+        {
+        }
+    }
+    
+    public class MongoStorageTests : IdentityStorageTests
+    {
+        public MongoStorageTests() : base(Init)
+        {
+        }
+    
+        private static IIdentityStorage Init(string clusterName)
+        {
+            var db = MongoIdentityClusterFixture.GetMongo();
+            return new MongoIdentityStorage(clusterName, db.GetCollection<PidLookupEntity>("pids"));
+        }
+    }
 }
