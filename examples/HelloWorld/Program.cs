@@ -7,36 +7,39 @@ using System;
 using System.Threading.Tasks;
 using Proto;
 
-internal class Program
+namespace HelloWorld
 {
-    private static void Main(string[] args)
+    internal class Program
     {
-        var system = new ActorSystem();
-        var props = Props.FromProducer(() => new HelloActor());
-        var pid = system.Root.Spawn(props);
-        system.Root.Send(pid, new Hello("ProtoActor"));
-        Console.ReadLine();
-    }
-
-    //Messages should be immutable to prevent race conditions between multiple actors
-    private class Hello
-    {
-        public Hello(string who)
+        private static void Main(string[] args)
         {
-            Who = who;
+            var system = new ActorSystem();
+            var props = Props.FromProducer(() => new HelloActor());
+            var pid = system.Root.Spawn(props);
+            system.Root.Send(pid, new Hello("ProtoActor"));
+            Console.ReadLine();
         }
 
-        public string Who { get; }
-    }
-
-    //This is a standard actor
-    private class HelloActor : IActor
-    {
-        public Task ReceiveAsync(IContext context)
+        //Messages should be immutable to prevent race conditions between multiple actors
+        private class Hello
         {
-            var msg = context.Message;
-            if (msg is Hello r) Console.WriteLine($"Hello {r.Who}");
-            return Task.CompletedTask;
+            public Hello(string who)
+            {
+                Who = who;
+            }
+
+            public string Who { get; }
+        }
+
+        //This is a standard actor
+        private class HelloActor : IActor
+        {
+            public Task ReceiveAsync(IContext context)
+            {
+                var msg = context.Message;
+                if (msg is Hello r) Console.WriteLine($"Hello {r.Who}");
+                return Task.CompletedTask;
+            }
         }
     }
 }
