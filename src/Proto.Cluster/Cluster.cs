@@ -68,8 +68,7 @@ namespace Proto.Cluster
             await BeginStartAsync(false);
             Provider = Config.ClusterProvider;
             var kinds = GetClusterKinds();
-            await Provider.StartMemberAsync(
-                this);
+            await Provider.StartMemberAsync(this);
 
             Logger.LogInformation("Started as cluster member");
         }
@@ -102,14 +101,14 @@ namespace Proto.Cluster
 
         public async Task ShutdownAsync(bool graceful = true)
         {
-            await _clusterHeartBeat.ShutdownAsync();
-            Logger.LogInformation("Stopping");
-            if (graceful) await IdentityLookup!.ShutdownAsync();
+            Logger.LogInformation("Stopping Cluster {Id}", Id);
 
+            await _clusterHeartBeat.ShutdownAsync();
+            if (graceful) await IdentityLookup!.ShutdownAsync();
             await Config!.ClusterProvider.ShutdownAsync(graceful);
             await Remote.ShutdownAsync(graceful);
 
-            Logger.LogInformation("Stopped");
+            Logger.LogInformation("Stopped Cluster {Id}", Id);
         }
 
         public Task<PID?> GetAsync(string identity, string kind) => GetAsync(identity, kind, CancellationToken.None);

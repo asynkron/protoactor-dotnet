@@ -15,13 +15,11 @@ namespace Proto.Cluster.Testing
         public int Port { get; set; }
 
         public string[] Kinds { get; set; }
-        public string StatusValue { get; set; } //what goes here?
     }
 
     public sealed class InMemAgent
     {
-        private readonly ConcurrentDictionary<Guid, AgentServiceStatus> _services =
-            new ConcurrentDictionary<Guid, AgentServiceStatus>();
+        private readonly ConcurrentDictionary<Guid, AgentServiceStatus> _services = new();
 
         public event EventHandler StatusUpdate;
 

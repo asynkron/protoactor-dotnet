@@ -10,6 +10,7 @@ namespace Proto.Cluster.Identity.MongoDb
     public class MongoIdentityStorage : IIdentityStorage
     {
         private static readonly ILogger Logger = Log.CreateLogger<MongoIdentityStorage>();
+        private static readonly Random Jitter = new();
 
         private readonly string _clusterName;
         private readonly IMongoCollection<PidLookupEntity> _pids;
@@ -21,7 +22,7 @@ namespace Proto.Cluster.Identity.MongoDb
             _pids = pids;
         }
 
-        public async Task<SpawnLock?> TryAcquireLockAsync(
+        public async Task<SpawnLock?> TryAcquireLock(
             ClusterIdentity clusterIdentity,
             CancellationToken ct
         )
@@ -31,7 +32,7 @@ namespace Proto.Cluster.Identity.MongoDb
             return hasLock ? new SpawnLock(requestId, clusterIdentity) : null;
         }
 
-        public async Task<StoredActivation?> WaitForActivationAsync(
+        public async Task<StoredActivation?> WaitForActivation(
             ClusterIdentity clusterIdentity,
             CancellationToken ct
         )
@@ -45,8 +46,9 @@ namespace Proto.Cluster.Identity.MongoDb
                 var i = 0;
 
                 do {
-                    await Task.Delay(20 * i, ct);
-                } while ((pidLookupEntity = await LookupKey(key, ct))?.LockedBy == lockId && ++i < 10);
+                    await Task.Delay(Jitter.Next(20) + 100 * i, ct);
+                } while ((pidLookupEntity = await LookupKey(key, ct))?.LockedBy == lockId && ++i < 10 &&
+                         !ct.IsCancellationRequested);
             }
 
             //the lookup entity was lost, stale lock maybe?
@@ -55,8 +57,8 @@ namespace Proto.Cluster.Identity.MongoDb
             //lookup was unlocked, return this pid
             if (pidLookupEntity.LockedBy == null)
                 return new StoredActivation(
-                    pidLookupEntity.MemberId,
-                    PID.FromAddress(pidLookupEntity.Address, pidLookupEntity.UniqueIdentity)
+                    pidLookupEntity.MemberId!,
+                    PID.FromAddress(pidLookupEntity.Address!, pidLookupEntity.UniqueIdentity!)
                 );
 
             //Still locked but not by the same request that originally locked it, so not stale
@@ -91,7 +93,7 @@ namespace Proto.Cluster.Identity.MongoDb
             );
 
             if (res.MatchedCount != 1) {
-                throw new StorageFailure($"Failed to store activation of {pid.ToShortString()}");
+                throw new LockNotFoundException($"Failed to store activation of {pid.ToShortString()}");
             }
         }
 
@@ -102,9 +104,9 @@ namespace Proto.Cluster.Identity.MongoDb
             return _pids.DeleteManyAsync(p => p.UniqueIdentity == pid.Id, ct);
         }
 
-        public Task RemoveMemberIdAsync(string memberId, CancellationToken ct) => _pids.DeleteManyAsync(p => p.MemberId == memberId, ct);
+        public Task RemoveMember(string memberId, CancellationToken ct) => _pids.DeleteManyAsync(p => p.MemberId == memberId, ct);
 
-        public async Task<StoredActivation?> TryGetExistingActivationAsync(
+        public async Task<StoredActivation?> TryGetExistingActivation(
             ClusterIdentity clusterIdentity,
             CancellationToken ct
         )
@@ -114,7 +116,7 @@ namespace Proto.Cluster.Identity.MongoDb
             return pidLookup == null || pidLookup.Address == null || pidLookup.UniqueIdentity == null
                 ? null
                 : new StoredActivation(
-                    pidLookup.MemberId,
+                    pidLookup.MemberId!,
                     PID.FromAddress(pidLookup.Address, pidLookup.UniqueIdentity)
                 );
         }
@@ -157,7 +159,9 @@ namespace Proto.Cluster.Identity.MongoDb
 
                 //if l.MatchCount == 1, then one document was updated by us, and we should own the lock, no?
                 var gotLock = l.IsAcknowledged && l.ModifiedCount == 1;
-                Logger.LogDebug("Did {Got} get lock on second try for {ClusterIdentity}", gotLock ? "" : "not ", clusterIdentity);
+                Logger.LogDebug("Did {Got} get lock on second try for {ClusterIdentity}", gotLock ? "" : "not ",
+                    clusterIdentity
+                );
                 return gotLock;
             }
         }
@@ -168,5 +172,10 @@ namespace Proto.Cluster.Identity.MongoDb
         private string GetKey(ClusterIdentity clusterIdentity) => $"{_clusterName}/{clusterIdentity.ToShortString()}";
 
         public void Dispose() => GC.SuppressFinalize(this);
+
+        public Task Init()
+        {
+            return _pids.Indexes.CreateOneAsync(new CreateIndexModel<PidLookupEntity>("{ MemberId: 1 }"));
+        }
     }
 }

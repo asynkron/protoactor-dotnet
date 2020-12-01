@@ -37,6 +37,7 @@ namespace Proto.Cluster.Identity.Tests
         }
     }
 
+    // [Collection("MongoDb")]
     // public class MongoClusterTests : ClusterTests, IClassFixture<MongoIdentityClusterFixture>
     // {
     //     // ReSharper disable once SuggestBaseTypeForParameter
@@ -46,6 +47,7 @@ namespace Proto.Cluster.Identity.Tests
     //     }
     // }
     //
+    // [Collection("MongoDb")]
     // public class MongoStorageTests : IdentityStorageTests
     // {
     //     public MongoStorageTests() : base(Init)

@@ -75,6 +75,10 @@ namespace Proto.Cluster
                         {
                             _logger.LogWarning("Heartbeat request for member id {MemberId} Address {Address} timed out",member.Id,member.Address);
                         }
+                        catch (DeadLetterException)
+                        {
+                            _logger.LogWarning("Heartbeat request for member id {MemberId} Address {Address} got dead letter response",member.Id,member.Address);
+                        }
                     }
                 }
                 catch (Exception x)
