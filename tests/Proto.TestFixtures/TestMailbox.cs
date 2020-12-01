@@ -12,9 +12,9 @@ namespace Proto.TestFixtures
     public class TestMailbox : IMailbox
     {
         private IMessageInvoker _invoker;
-        public List<object> UserMessages { get; } = new List<object>();
-        public List<object> SystemMessages { get; } = new List<object>();
-        
+        public List<object> UserMessages { get; } = new();
+        public List<object> SystemMessages { get; } = new();
+
         public void PostUserMessage(object msg)
         {
             UserMessages.Add(msg);

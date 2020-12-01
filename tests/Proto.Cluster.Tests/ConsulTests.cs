@@ -1,7 +1,7 @@
-﻿namespace Proto.Cluster.Tests
-{
-    using Consul;
+﻿using Proto.Cluster.Consul;
 
+namespace Proto.Cluster.Tests
+{
     // ReSharper disable once UnusedType.Global
     public class ConsulClusterFixture : ClusterFixture
     {
@@ -9,10 +9,7 @@
         {
         }
 
-        protected override IClusterProvider GetClusterProvider()
-        {
-            return new ConsulProvider(new ConsulProviderConfig());
-        }
+        protected override IClusterProvider GetClusterProvider() => new ConsulProvider(new ConsulProviderConfig());
     }
 
     // // ReSharper disable once UnusedType.Global

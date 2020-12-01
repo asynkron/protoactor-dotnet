@@ -1,14 +1,13 @@
-﻿namespace Proto.Tests
-{
-    using System.Threading.Tasks;
-    using FluentAssertions;
-    using Xunit;
+﻿using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
 
+namespace Proto.Tests
+{
     public class DeadLetterResponseTests
     {
-        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly ActorSystem System = new();
         private static readonly RootContext Context = System.Root;
-
 
         private static readonly Props EchoProps = Props.FromFunc(context =>
             {
@@ -46,8 +45,8 @@
 
         private class DeadLetterResponseValidationActor : IActor
         {
-            private PID _sender;
             private PID _deadLetterTarget;
+            private PID _sender;
 
             public async Task ReceiveAsync(IContext context)
             {

@@ -1,15 +1,15 @@
 ﻿// ReSharper disable UnusedType.Global
 // ReSharper disable UnusedMember.Global
 
+using Microsoft.Extensions.Configuration;
+using Proto.Cluster.Identity.Redis;
+using Proto.Cluster.IdentityLookup;
+using Proto.Cluster.Tests;
+using Proto.TestFixtures;
+using StackExchange.Redis;
+
 namespace Proto.Cluster.Identity.Tests
 {
-    using Redis;
-    using IdentityLookup;
-    using Proto.Cluster.Tests;
-    using StackExchange.Redis;
-    using TestFixtures;
-    using Microsoft.Extensions.Configuration;
-
     public class RedisIdentityClusterFixture : BaseInMemoryClusterFixture
     {
         public RedisIdentityClusterFixture() : base(3)
@@ -40,7 +40,6 @@ namespace Proto.Cluster.Identity.Tests
             return identity;
         }
     }
-
 
     // public class RedisClusterTests : ClusterTests, IClassFixture<RedisIdentityClusterFixture>
     // {

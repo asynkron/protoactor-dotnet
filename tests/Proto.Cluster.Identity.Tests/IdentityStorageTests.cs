@@ -9,15 +9,21 @@ namespace Proto.Cluster.Identity.Tests
 {
     public abstract class IdentityStorageTests : IDisposable
     {
+        private static int _testId = 1;
         private readonly IIdentityStorage _storage;
         private readonly IIdentityStorage _storageInstance2;
-        private static int _testId = 1;
 
         protected IdentityStorageTests(Func<string, IIdentityStorage> storageFactory)
         {
             var clusterName = "test-" + Guid.NewGuid().ToString("N").Substring(0, 6);
             _storage = storageFactory(clusterName);
             _storageInstance2 = storageFactory(clusterName);
+        }
+
+        public void Dispose()
+        {
+            _storage?.Dispose();
+            _storageInstance2?.Dispose();
         }
 
         [Fact]
@@ -245,16 +251,13 @@ namespace Proto.Cluster.Identity.Tests
             );
         }
 
-
-        private PID Activate(Member activator, ClusterIdentity identity)
-        {
-            return PID.FromAddress(activator.Address, "placement-activator/" + identity.ToShortString() + "$" + NextId()
+        private PID Activate(Member activator, ClusterIdentity identity) =>
+            PID.FromAddress(activator.Address, "placement-activator/" + identity.ToShortString() + "$" + NextId()
             );
-        }
 
         private Member GetFakeActivator()
         {
-            Member activator = new Member
+            var activator = new Member
             {
                 Host = "127.0.0.1",
                 Port = NextId(),
@@ -264,15 +267,6 @@ namespace Proto.Cluster.Identity.Tests
             return activator;
         }
 
-        private int NextId()
-        {
-            return Interlocked.Increment(ref _testId);
-        }
-
-        public void Dispose()
-        {
-            _storage?.Dispose();
-            _storageInstance2?.Dispose();
-        }
+        private int NextId() => Interlocked.Increment(ref _testId);
     }
 }

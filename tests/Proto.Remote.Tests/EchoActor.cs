@@ -17,7 +17,7 @@ namespace Proto.Remote.Tests
                     break;
                 case Ping ping:
                     Logger.LogDebug("Received Ping, replying Pong");
-                    context.Respond(new Pong { Message = $"{context.System.Address} {ping.Message}" });
+                    context.Respond(new Pong {Message = $"{context.System.Address} {ping.Message}"});
                     break;
                 case Die _:
                     Logger.LogDebug("Received termination request, stopping");

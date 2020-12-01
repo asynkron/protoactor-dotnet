@@ -1,24 +1,24 @@
-﻿namespace Proto.Cluster.Tests
+﻿using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using ClusterTest.Messages;
+using FluentAssertions;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace Proto.Cluster.Tests
 {
-    using System.Diagnostics;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using ClusterTest.Messages;
-    using FluentAssertions;
-    using Xunit;
-    using Xunit.Abstractions;
-
-    public class LocalAffinityStrategyTests : ClusterTestBase, IClassFixture<LocalAffinityStrategyTests.LocalAffinityClusterFixture>
+    public class LocalAffinityStrategyTests : ClusterTestBase,
+        IClassFixture<LocalAffinityStrategyTests.LocalAffinityClusterFixture>
     {
-        private ITestOutputHelper TestOutputHelper { get; }
-
         public LocalAffinityStrategyTests(ITestOutputHelper testOutputHelper,
             LocalAffinityClusterFixture clusterFixture) : base(clusterFixture)
         {
             TestOutputHelper = testOutputHelper;
         }
 
+        private ITestOutputHelper TestOutputHelper { get; }
 
         [Fact]
         public async Task PrefersLocalPlacement()
@@ -87,7 +87,8 @@
             public LocalAffinityClusterFixture() : base(3,
                 config =>
                 {
-                    return config.WithMemberStrategyBuilder((cluster, kind) => new LocalAffinityStrategy(cluster, 1100));
+                    return config.WithMemberStrategyBuilder((cluster, kind) => new LocalAffinityStrategy(cluster, 1100)
+                    );
                 }
             )
             {

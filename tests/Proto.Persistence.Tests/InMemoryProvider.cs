@@ -15,17 +15,13 @@ namespace Proto.Persistence.Tests
 {
     public class InMemoryProvider : IProvider
     {
-        private readonly ConcurrentDictionary<string, Dictionary<long, object>> _events = new ConcurrentDictionary<string, Dictionary<long, object>>();
+        private readonly ConcurrentDictionary<string, Dictionary<long, object>> _events = new();
 
-        private readonly ConcurrentDictionary<string, Dictionary<long, object>> _snapshots = new ConcurrentDictionary<string, Dictionary<long, object>>();
+        private readonly ConcurrentDictionary<string, Dictionary<long, object>> _snapshots = new();
 
-        public Dictionary<long, object> GetSnapshots(string actorId)
-        {
-            return _snapshots[actorId];
-        }
         public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
-            if (!_snapshots.TryGetValue(actorName, out Dictionary<long, object> snapshots))
+            if (!_snapshots.TryGetValue(actorName, out var snapshots))
                 return Task.FromResult<(object, long)>((null, 0));
 
             var snapshot = snapshots.OrderBy(ss => ss.Key).LastOrDefault();
@@ -34,13 +30,14 @@ namespace Proto.Persistence.Tests
 
         public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
-            if (_events.TryGetValue(actorName, out Dictionary<long, object> events))
+            if (_events.TryGetValue(actorName, out var events))
             {
                 foreach (var e in events.Where(e => e.Key >= indexStart && e.Key <= indexEnd))
                 {
                     callback(e.Value);
                 }
             }
+
             return Task.FromResult(0L);
         }
 
@@ -66,12 +63,12 @@ namespace Proto.Persistence.Tests
 
         public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
         {
-            if (!_events.TryGetValue(actorName, out Dictionary<long, object> events))
+            if (!_events.TryGetValue(actorName, out var events))
                 return Task.FromResult<(object, long)>((null, 0));
 
             var eventsToRemove = events.Where(s => s.Key <= inclusiveToIndex)
-                                             .Select(e => e.Key)
-                                             .ToList();
+                .Select(e => e.Key)
+                .ToList();
 
             eventsToRemove.ForEach(key => events.Remove(key));
 
@@ -80,16 +77,18 @@ namespace Proto.Persistence.Tests
 
         public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
         {
-            if (!_snapshots.TryGetValue(actorName, out Dictionary<long, object> snapshots))
+            if (!_snapshots.TryGetValue(actorName, out var snapshots))
                 return Task.FromResult<(object, long)>((null, 0));
 
             var snapshotsToRemove = snapshots.Where(s => s.Key <= inclusiveToIndex)
-                                             .Select(snapshot => snapshot.Key)
-                                             .ToList();
+                .Select(snapshot => snapshot.Key)
+                .ToList();
 
             snapshotsToRemove.ForEach(key => snapshots.Remove(key));
 
             return Task.FromResult(0);
         }
+
+        public Dictionary<long, object> GetSnapshots(string actorId) => _snapshots[actorId];
     }
 }

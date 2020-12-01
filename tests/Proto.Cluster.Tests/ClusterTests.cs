@@ -1,14 +1,14 @@
-﻿namespace Proto.Cluster.Tests
-{
-    using System.Diagnostics;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using ClusterTest.Messages;
-    using FluentAssertions;
-    using Xunit;
-    using Xunit.Abstractions;
+﻿using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using ClusterTest.Messages;
+using FluentAssertions;
+using Xunit;
+using Xunit.Abstractions;
 
+namespace Proto.Cluster.Tests
+{
     public abstract class ClusterTests : ClusterTestBase
     {
         private readonly ITestOutputHelper _testOutputHelper;
@@ -87,13 +87,15 @@
             var timer = Stopwatch.StartNew();
             var actorIds = GetActorIds(actorCount);
             await Task.WhenAll(actorIds.Select(id => Task.WhenAll(
-                        PingPong(entryNode, id, timeout, EchoActor.Kind),
+                        PingPong(entryNode, id, timeout),
                         PingPong(entryNode, id, timeout, EchoActor.Kind2)
                     )
                 )
             );
             timer.Stop();
-            _testOutputHelper.WriteLine($"Spawned {actorCount * 2} actors across {Members.Count} nodes in {timer.Elapsed}");
+            _testOutputHelper.WriteLine(
+                $"Spawned {actorCount * 2} actors across {Members.Count} nodes in {timer.Elapsed}"
+            );
         }
 
         [Theory]
@@ -139,16 +141,16 @@
             string kind = EchoActor.Kind)
         {
             await Task.Yield();
-            
+
             var response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind);
             var tries = 1;
             while (response == null && !token.IsCancellationRequested)
             {
-                await Task.Delay(200,token);
+                await Task.Delay(200, token);
                 _testOutputHelper.WriteLine($"Retrying ping {kind}/{id}, attempt {++tries}");
                 response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind);
             }
-            
+
             response.Should().NotBeNull($"We expect a response before timeout on {kind}/{id}");
 
             response.Should().BeEquivalentTo(new Pong

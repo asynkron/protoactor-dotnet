@@ -7,9 +7,9 @@ namespace Proto.Cluster.Identity.Tests
 {
     public class FailureInjectionStorage : IIdentityStorage
     {
-        private readonly IIdentityStorage _identityStorageImplementation;
-        private static readonly Random Mayhem = new();
         private const double SuccessRate = 0.8;
+        private static readonly Random Mayhem = new();
+        private readonly IIdentityStorage _identityStorageImplementation;
 
         public FailureInjectionStorage(IIdentityStorage identityStorageImplementation)
         {
@@ -50,7 +50,9 @@ namespace Proto.Cluster.Identity.Tests
             if (Mayhem.NextDouble() > SuccessRate)
             {
                 RemoveLock(spawnLock, ct);
-                throw (Mayhem.Next() % 2 == 0 ? new Exception("Activation fail") : new LockNotFoundException("fake lock"));
+                throw Mayhem.Next() % 2 == 0
+                    ? new Exception("Activation fail")
+                    : new LockNotFoundException("fake lock");
             }
 
             return _identityStorageImplementation.StoreActivation(memberId, spawnLock, pid, ct);
@@ -68,17 +70,11 @@ namespace Proto.Cluster.Identity.Tests
             return _identityStorageImplementation.RemoveMember(memberId, ct);
         }
 
-        public Task Init()
-        {
-            return _identityStorageImplementation.Init();
-        }
+        public Task Init() => _identityStorageImplementation.Init();
 
         private void MaybeFail()
         {
-            if (Mayhem.NextDouble() > SuccessRate)
-            {
-                throw new Exception("Chaos monkey at work");
-            }
+            if (Mayhem.NextDouble() > SuccessRate) throw new Exception("Chaos monkey at work");
         }
     }
 }

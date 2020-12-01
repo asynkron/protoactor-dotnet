@@ -1,8 +1,7 @@
-﻿using Proto.TestFixtures;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using Proto.TestFixtures;
 using Xunit;
-using TestMessage = Proto.TestFixtures.TestMessage;
 
 namespace Proto.Mailbox.Tests
 {
@@ -22,7 +21,9 @@ namespace Proto.Mailbox.Tests
 
             mailbox.PostUserMessage(msg1);
             mailbox.PostUserMessage(msg2);
-            Assert.True(userMailbox.HasMessages, "Mailbox should not have processed msg2 because processing of msg1 is not completed.");
+            Assert.True(userMailbox.HasMessages,
+                "Mailbox should not have processed msg2 because processing of msg1 is not completed."
+            );
 
             Action resumeMailboxTrigger = () =>
             {
@@ -35,7 +36,9 @@ namespace Proto.Mailbox.Tests
             await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
                 .ConfigureAwait(false);
 
-            Assert.False(userMailbox.HasMessages, "Mailbox should have processed msg2 because processing of msg1 is completed.");
+            Assert.False(userMailbox.HasMessages,
+                "Mailbox should have processed msg2 because processing of msg1 is completed."
+            );
         }
 
         [Fact]
@@ -54,7 +57,9 @@ namespace Proto.Mailbox.Tests
 
             mailbox.PostUserMessage(msg1);
             mailbox.PostUserMessage(msg2);
-            Assert.False(userMailbox.HasMessages, "Mailbox should have processed both messages because they were already completed.");
+            Assert.False(userMailbox.HasMessages,
+                "Mailbox should have processed both messages because they were already completed."
+            );
         }
 
         [Fact]
@@ -71,7 +76,9 @@ namespace Proto.Mailbox.Tests
 
             mailbox.PostSystemMessage(msg1);
             mailbox.PostSystemMessage(msg2);
-            Assert.True(systemMessages.HasMessages, "Mailbox should not have processed msg2 because processing of msg1 is not completed.");
+            Assert.True(systemMessages.HasMessages,
+                "Mailbox should not have processed msg2 because processing of msg1 is not completed."
+            );
 
             void ResumeMailboxTrigger()
             {
@@ -84,7 +91,9 @@ namespace Proto.Mailbox.Tests
             await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(ResumeMailboxTrigger)
                 .ConfigureAwait(false);
 
-            Assert.False(systemMessages.HasMessages, "Mailbox should have processed msg2 because processing of msg1 is completed.");
+            Assert.False(systemMessages.HasMessages,
+                "Mailbox should have processed msg2 because processing of msg1 is completed."
+            );
         }
 
         [Fact]
@@ -103,7 +112,9 @@ namespace Proto.Mailbox.Tests
 
             mailbox.PostSystemMessage(msg1);
             mailbox.PostSystemMessage(msg2);
-            Assert.False(systemMessages.HasMessages, "Mailbox should have processed both messages because they were already completed.");
+            Assert.False(systemMessages.HasMessages,
+                "Mailbox should have processed both messages because they were already completed."
+            );
         }
 
         [Fact]
@@ -122,7 +133,9 @@ namespace Proto.Mailbox.Tests
             await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(ResumeMailboxTrigger)
                 .ConfigureAwait(false);
 
-            Assert.True(mailbox.Status == MailboxStatus.Idle, "Mailbox should be set back to Idle after completion of message.");
+            Assert.True(mailbox.Status == MailboxStatus.Idle,
+                "Mailbox should be set back to Idle after completion of message."
+            );
         }
     }
 }
