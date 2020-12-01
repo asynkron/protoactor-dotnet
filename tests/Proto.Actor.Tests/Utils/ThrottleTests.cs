@@ -15,13 +15,10 @@ namespace Proto.Tests.Utils
             const int maxEvents = 2;
             var triggered = 0;
             var shouldThrottle = Throttle.Create(maxEvents, TimeSpan.FromSeconds(1));
-            var timer = Stopwatch.StartNew();
             for (var i = 0; i < 10000; i++)
             {
                 if (shouldThrottle().IsOpen()) triggered++;
             }
-
-            timer.Stop();
 
             triggered.Should().Be(maxEvents);
         }
@@ -31,7 +28,7 @@ namespace Proto.Tests.Utils
         {
             const int maxEvents = 2;
             var triggered = 0;
-            var shouldThrottle = Throttle.Create(maxEvents, TimeSpan.FromMilliseconds(5));
+            var shouldThrottle = Throttle.Create(maxEvents, TimeSpan.FromMilliseconds(50));
             for (var i = 0; i < 100; i++)
             {
                 if (shouldThrottle().IsOpen()) triggered++;
@@ -52,7 +49,7 @@ namespace Proto.Tests.Utils
         public async Task GivesCorrectValveStatus()
         {
             const int maxEvents = 2;
-            var shouldThrottle = Throttle.Create(maxEvents, TimeSpan.FromMilliseconds(1));
+            var shouldThrottle = Throttle.Create(maxEvents, TimeSpan.FromMilliseconds(50));
 
             shouldThrottle().Should().Be(Throttle.Valve.Open, "It accepts multiple event before closing");
             shouldThrottle().Should().Be(Throttle.Valve.Closing, "Last event before close");

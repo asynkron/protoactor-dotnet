@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="RedisIdentityStorage.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
@@ -45,11 +45,6 @@ namespace Proto.Cluster.Identity.Redis
         {
             var requestId = Guid.NewGuid().ToString();
             var hasLock = await TryAcquireLockAsync(clusterIdentity, requestId);
-
-            Logger.LogDebug(
-                hasLock ? "Took lock on {@ClusterIdentity}" : "Did not get lock on {@ClusterIdentity}",
-                clusterIdentity
-            );
 
             return hasLock ? new SpawnLock(requestId, clusterIdentity) : null;
         }
@@ -112,15 +107,7 @@ namespace Proto.Cluster.Identity.Redis
             CancellationToken ct
         )
         {
-            Logger.LogDebug(
-                "Storing activation {@Activation} for {@ClusterIdentity} on member {MemberId}",
-                pid,
-                spawnLock.ClusterIdentity,
-                memberId
-            );
-
             var key = IdKey(spawnLock.ClusterIdentity);
-
             var db = GetDb();
 
             var values = new[]
@@ -142,8 +129,6 @@ namespace Proto.Cluster.Identity.Redis
 
         public async Task RemoveActivation(PID pid, CancellationToken ct)
         {
-            Logger.LogDebug("Removing activation: {@PID}", pid);
-
             var key = IdKeyFromPidId(pid.Id);
             if (key == NoKey) return;
 
@@ -163,11 +148,11 @@ namespace Proto.Cluster.Identity.Redis
 
         public async Task RemoveMember(string memberId, CancellationToken ct)
         {
-            var key = MemberKey(memberId);
+            var memberKey = MemberKey(memberId);
 
             var db = GetDb();
             //TODO: Consider rewriting as serverside script.
-            var pidIds = db.SetScanAsync(key);
+            var pidIds = db.SetScanAsync(memberKey);
 
             var transactionsFinished = new List<Task>();
 
@@ -182,7 +167,7 @@ namespace Proto.Cluster.Identity.Redis
                 transactionsFinished.Add(transaction.ExecuteAsync());
             }
 
-            transactionsFinished.Add(db.KeyDeleteAsync(key));
+            transactionsFinished.Add(db.KeyDeleteAsync(memberKey));
 
             await Task.WhenAll(transactionsFinished);
         }

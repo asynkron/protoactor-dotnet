@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -78,8 +77,6 @@ namespace Proto.Cluster.Identity
                     _logger.LogWarning(e, "Failed to remove pid from storage");
                 }
             }
-            else
-                _logger.LogInformation("Terminated actor {PID} was not present", msg.Who);
         }
 
         private Task ActivationRequest(IContext context, ActivationRequest msg)
@@ -88,17 +85,14 @@ namespace Proto.Cluster.Identity
             {
                 if (_myActors.TryGetValue(msg.ClusterIdentity, out var existing))
                 {
-                    _logger.LogDebug("Pid already present: {Identity}", msg.ClusterIdentity);
                     //this identity already exists
                     Respond(existing);
                 }
                 else if (_pendingActivations.TryGetValue(msg.ClusterIdentity, out var task))
                 {
-                    _logger.LogDebug("Pid pending: {Identity}", msg.ClusterIdentity);
                     //Already pending, wait for result in reentrant context
                     context.ReenterAfter(task, completedTask =>
                         {
-                            _logger.LogDebug("Pid pending rentrant: {Identity}", msg.ClusterIdentity);
                             try
                             {
                                 Respond(completedTask.Result);
@@ -106,7 +100,7 @@ namespace Proto.Cluster.Identity
                             }
                             catch (Exception e)
                             {
-                                _logger.LogError(e, "Failed to respond to pending: {Identity}", msg.ClusterIdentity);
+                                _logger.LogError(e, "Failed to respond to pending: {Kind}/{Identity}", msg.Kind, msg.Identity);
                                 throw;
                             }
                         }
@@ -127,17 +121,10 @@ namespace Proto.Cluster.Identity
                     var completionCallback = new TaskCompletionSource<PID?>();
                     _pendingActivations.Add(msg.ClusterIdentity, completionCallback.Task);
 
-                    var persistTimer = Stopwatch.StartNew();
-                    _logger.LogInformation("Starting to persist {ClusterIdentity}", msg.ClusterIdentity);
                     context.ReenterAfter(Task.Run(() => PersistActivation(context, msg, pid)), persistResult =>
                         {
-                            var elapsed = persistTimer.Elapsed;
                             var wasPersistedCorrectly = persistResult.Result;
-                            _logger.LogInformation(
-                                $"Returned after {elapsed}, {msg.ClusterIdentity} was {(wasPersistedCorrectly ? "" : "not ")} persisted"
-                            );
                             _pendingActivations.Remove(msg.ClusterIdentity);
-
 
                             if (wasPersistedCorrectly)
                             {
