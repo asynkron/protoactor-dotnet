@@ -15,13 +15,10 @@ namespace Proto.Tests.Utils
             const int maxEvents = 2;
             var triggered = 0;
             var shouldThrottle = Throttle.Create(maxEvents, TimeSpan.FromSeconds(1));
-            var timer = Stopwatch.StartNew();
             for (var i = 0; i < 10000; i++)
             {
                 if (shouldThrottle().IsOpen()) triggered++;
             }
-
-            timer.Stop();
 
             triggered.Should().Be(maxEvents);
         }
