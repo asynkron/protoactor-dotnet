@@ -1,16 +1,16 @@
 using System;
 using System.Threading.Tasks;
-using Xunit;
 using Proto.Router.Messages;
 using Proto.TestFixtures;
+using Xunit;
 
 namespace Proto.Router.Tests
 {
     public class BroadcastGroupTests
     {
-        private readonly ActorSystem ActorSystem = new ActorSystem();
         private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor());
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
+        private readonly ActorSystem ActorSystem = new();
 
         [Fact]
         public async Task BroadcastGroupRouter_AllRouteesReceiveMessages()
@@ -115,7 +115,8 @@ namespace Proto.Router.Tests
             Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));
         }
 
-        private static (PID router, PID routee1, PID routee2, PID routee3) CreateBroadcastGroupRouterWith3Routees(ActorSystem system)
+        private static (PID router, PID routee1, PID routee2, PID routee3) CreateBroadcastGroupRouterWith3Routees(
+            ActorSystem system)
         {
             var routee1 = system.Root.Spawn(MyActorProps);
             var routee2 = system.Root.Spawn(MyActorProps);
@@ -130,6 +131,7 @@ namespace Proto.Router.Tests
         internal class MyTestActor : IActor
         {
             private string _received;
+
             public async Task ReceiveAsync(IContext context)
             {
                 switch (context.Message)

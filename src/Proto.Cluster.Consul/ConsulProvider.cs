@@ -55,7 +55,6 @@ namespace Proto.Cluster.Consul
         private volatile bool _deregistered;
         private string _host;
 
-
         private string[] _kinds;
         private ILogger _logger;
         private MemberList _memberList;
@@ -79,14 +78,15 @@ namespace Proto.Cluster.Consul
         {
         }
 
-        public ConsulProvider(IOptions<ConsulProviderConfig> options, Action<ConsulClientConfiguration> clientConfiguration) :
+        public ConsulProvider(IOptions<ConsulProviderConfig> options,
+            Action<ConsulClientConfiguration> clientConfiguration) :
             this(options.Value, clientConfiguration)
         {
         }
 
         public async Task StartMemberAsync(Cluster cluster)
         {
-            var (host,port) = cluster.System.GetAddress();
+            var (host, port) = cluster.System.GetAddress();
             var kinds = cluster.GetClusterKinds();
             SetState(cluster, cluster.Config.ClusterName, host, port, kinds, cluster.MemberList);
             await RegisterMemberAsync();
@@ -95,39 +95,22 @@ namespace Proto.Cluster.Consul
             StartLeaderElectionLoop();
         }
 
-        private void SetState(Cluster cluster, string clusterName, string host, int port, string[] kinds, MemberList memberList)
-        {
-            
-            _cluster = cluster;
-            _consulServiceInstanceId = $"{clusterName}-{_cluster.Id}@{host}:{port}";
-            _consulServiceName = clusterName;
-            _host = host;
-            _port = port;
-            _kinds = kinds;
-            _memberList = memberList;
-            _logger = Log.CreateLogger($"ConsulProvider-{_cluster.LoggerId}");
-        }
-
         public Task StartClientAsync(Cluster cluster)
         {
-            var (host,port) = cluster.System.GetAddress();
+            var (host, port) = cluster.System.GetAddress();
             SetState(cluster, cluster.Config.ClusterName, host, port, null, cluster.MemberList);
-            
+
             StartMonitorMemberStatusChangesLoop();
-            
+
             return Task.CompletedTask;
         }
-
 
         public async Task ShutdownAsync(bool graceful)
         {
             _logger.LogInformation("Shutting down consul provider");
             //flag for shutdown. used in thread loops
             _shutdown = true;
-            if (!graceful)
-            {
-                return;
-            }
+            if (!graceful) return;
 
             //DeregisterService
             await DeregisterServiceAsync();
@@ -147,10 +130,20 @@ namespace Proto.Cluster.Consul
 
             var updated = await _client.KV.Put(kvp);
 
-            if (!updated.Response)
-            {
-                _logger.LogError("Failed to update cluster state");
-            }
+            if (!updated.Response) _logger.LogError("Failed to update cluster state");
+        }
+
+        private void SetState(Cluster cluster, string clusterName, string host, int port, string[] kinds,
+            MemberList memberList)
+        {
+            _cluster = cluster;
+            _consulServiceInstanceId = $"{clusterName}-{_cluster.Id}@{host}:{port}";
+            _consulServiceName = clusterName;
+            _host = host;
+            _port = port;
+            _kinds = kinds;
+            _memberList = memberList;
+            _logger = Log.CreateLogger($"ConsulProvider-{_cluster.LoggerId}");
         }
 
         private void StartMonitorMemberStatusChangesLoop()
@@ -166,10 +159,7 @@ namespace Proto.Cluster.Consul
                                 WaitTime = _blockingWaitTime
                             }
                         );
-                        if (_deregistered)
-                        {
-                            break;
-                        }
+                        if (_deregistered) break;
 
                         _logger.LogDebug("Got status updates from Consul");
 
@@ -205,7 +195,6 @@ namespace Proto.Cluster.Consul
                 return member;
             }
         }
-
 
         private void StartUpdateTtlLoop()
         {
@@ -347,7 +336,6 @@ namespace Proto.Cluster.Consul
             };
             await _client.Agent.ServiceRegister(s);
         }
-
 
         //unregister this cluster from consul
         private async Task DeregisterServiceAsync()

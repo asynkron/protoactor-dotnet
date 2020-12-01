@@ -5,17 +5,17 @@ using Proto.Cluster.Partition;
 namespace Proto.Cluster
 {
     /// <summary>
-    /// Prioritizes placement on current node, to optimize performance on partitioned workloads
+    ///     Prioritizes placement on current node, to optimize performance on partitioned workloads
     /// </summary>
-    public class LocalAffinityStrategy: IMemberStrategy
+    public class LocalAffinityStrategy : IMemberStrategy
     {
-        private Member? _me;
         private readonly Cluster _cluster;
-        private readonly ProcessRegistry _registry;
         private readonly int _localAffinityActorLimit;
-        private ImmutableList<Member> _members = ImmutableList<Member>.Empty;
         private readonly Rendezvous _rdv;
+        private readonly ProcessRegistry _registry;
         private readonly RoundRobinMemberSelector _rr;
+        private Member? _me;
+        private ImmutableList<Member> _members = ImmutableList<Member>.Empty;
 
         public LocalAffinityStrategy(Cluster cluster, int localAffinityActorLimit)
         {
@@ -31,15 +31,9 @@ namespace Proto.Cluster
         public void AddMember(Member member)
         {
             // Avoid adding the same member twice
-            if (_members.Any(x => x.Address == member.Address))
-            {
-                return;
-            }
+            if (_members.Any(x => x.Address == member.Address)) return;
 
-            if (member.Address.Equals(_cluster.System.Address))
-            {
-                _me = member;
-            }
+            if (member.Address.Equals(_cluster.System.Address)) _me = member;
             _members = _members.Add(member);
             _rdv.UpdateMembers(_members);
         }
@@ -52,11 +46,9 @@ namespace Proto.Cluster
 
         public Member? GetActivator(string senderAddress)
         {
-            if (_me?.Address.Equals(senderAddress) == true && _registry.ProcessCount < _localAffinityActorLimit)
-            {
-               return _me;
-            }
-            
+            if (_me?.Address.Equals(senderAddress) == true &&
+                _registry.ProcessCount < _localAffinityActorLimit) return _me;
+
             var sender = _members.FirstOrDefault(member => member.Address == senderAddress);
             //TODO: Verify that the member is not overloaded already
             return sender ?? _rr.GetMember();

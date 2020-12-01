@@ -1,31 +1,31 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Proto.Cluster.IdentityLookup;
+using Proto.Router;
 
 namespace Proto.Cluster.Identity
 {
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using IdentityLookup;
-    using Router;
-
     public class IdentityStorageLookup : IIdentityLookup
     {
         private const string PlacementActorName = "placement-activator";
         private static readonly int PidClusterIdentityStartIndex = PlacementActorName.Length + 1;
         private readonly ILogger _logger = Log.CreateLogger<IdentityStorageLookup>();
-        internal IIdentityStorage Storage { get; }
+        private bool _isClient;
+        private string _memberId;
+        private PID _placementActor;
+        private PID _router;
+        private ActorSystem _system;
         internal Cluster Cluster;
         internal MemberList MemberList;
-        private bool _isClient;
-        private PID _placementActor;
-        private ActorSystem _system;
-        private PID _router;
-        private string _memberId;
 
         public IdentityStorageLookup(IIdentityStorage storage)
         {
             Storage = storage;
         }
+
+        internal IIdentityStorage Storage { get; }
 
         public async Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
         {
@@ -56,7 +56,9 @@ namespace Proto.Cluster.Identity
                     //delete all members that have left from the lookup
                     foreach (var left in e.Left)
                         //YOLO. event stream is not async
+                    {
                         _ = RemoveMemberAsync(left.Id);
+                    }
                 }
             );
 
@@ -84,20 +86,11 @@ namespace Proto.Cluster.Identity
             }
         }
 
-        internal Task RemoveMemberAsync(string memberId)
-        {
-            return Storage.RemoveMember(memberId, CancellationToken.None);
-        }
+        public Task RemovePidAsync(PID pid, CancellationToken ct) => Storage.RemoveActivation(pid, ct);
 
-        internal PID RemotePlacementActor(string address)
-        {
-            return PID.FromAddress(address, PlacementActorName);
-        }
+        internal Task RemoveMemberAsync(string memberId) => Storage.RemoveMember(memberId, CancellationToken.None);
 
-        public Task RemovePidAsync(PID pid, CancellationToken ct)
-        {
-            return Storage.RemoveActivation(pid, ct);
-        }
+        internal PID RemotePlacementActor(string address) => PID.FromAddress(address, PlacementActorName);
 
         public static bool TryGetClusterIdentityShortString(string pidId, out string? clusterIdentity)
         {

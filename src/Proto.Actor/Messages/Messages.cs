@@ -14,7 +14,7 @@ namespace Proto
     public sealed partial class Terminated : SystemMessage
     {
     }
-    
+
     public sealed class Restarting
     {
         public static readonly Restarting Instance = new();
@@ -23,7 +23,7 @@ namespace Proto
         {
         }
     }
-    
+
     public sealed partial class PoisonPill
     {
         public static readonly PoisonPill Instance = new();
@@ -73,12 +73,12 @@ namespace Proto
 
     public partial class Stop : SystemMessage
     {
-        public static readonly Stop Instance = new Stop();
+        public static readonly Stop Instance = new();
     }
 
     public sealed class Stopping : SystemMessage
     {
-        public static readonly Stopping Instance = new Stopping();
+        public static readonly Stopping Instance = new();
 
         private Stopping()
         {
@@ -87,7 +87,7 @@ namespace Proto
 
     public sealed class Started : SystemMessage
     {
-        public static readonly Started Instance = new Started();
+        public static readonly Started Instance = new();
 
         private Started()
         {
@@ -96,7 +96,7 @@ namespace Proto
 
     public sealed class Stopped : SystemMessage
     {
-        public static readonly Stopped Instance = new Stopped();
+        public static readonly Stopped Instance = new();
 
         private Stopped()
         {
@@ -105,13 +105,13 @@ namespace Proto
 
     public class ReceiveTimeout : SystemMessage
     {
-        public static readonly ReceiveTimeout Instance = new ReceiveTimeout();
+        public static readonly ReceiveTimeout Instance = new();
 
         private ReceiveTimeout()
         {
         }
     }
-    
+
     public interface INotInfluenceReceiveTimeout
     {
     }

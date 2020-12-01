@@ -42,15 +42,9 @@ namespace Proto.Persistence
 
         public static Persistence WithEventSourcing(IEventStore eventStore, string actorId, Action<Event> applyEvent)
         {
-            if (eventStore is null)
-            {
-                throw new ArgumentNullException(nameof(eventStore));
-            }
+            if (eventStore is null) throw new ArgumentNullException(nameof(eventStore));
 
-            if (applyEvent is null)
-            {
-                throw new ArgumentNullException(nameof(applyEvent));
-            }
+            if (applyEvent is null) throw new ArgumentNullException(nameof(applyEvent));
 
             return new Persistence(eventStore, new NoSnapshotStore(), actorId, applyEvent);
         }
@@ -58,15 +52,9 @@ namespace Proto.Persistence
         public static Persistence WithSnapshotting(ISnapshotStore snapshotStore, string actorId,
             Action<Snapshot> applySnapshot)
         {
-            if (snapshotStore is null)
-            {
-                throw new ArgumentNullException(nameof(snapshotStore));
-            }
+            if (snapshotStore is null) throw new ArgumentNullException(nameof(snapshotStore));
 
-            if (applySnapshot is null)
-            {
-                throw new ArgumentNullException(nameof(applySnapshot));
-            }
+            if (applySnapshot is null) throw new ArgumentNullException(nameof(applySnapshot));
 
             return new Persistence(new NoEventStore(), snapshotStore, actorId, null, applySnapshot);
         }
@@ -76,25 +64,13 @@ namespace Proto.Persistence
             Action<Snapshot> applySnapshot
         )
         {
-            if (eventStore is null)
-            {
-                throw new ArgumentNullException(nameof(eventStore));
-            }
+            if (eventStore is null) throw new ArgumentNullException(nameof(eventStore));
 
-            if (snapshotStore is null)
-            {
-                throw new ArgumentNullException(nameof(snapshotStore));
-            }
+            if (snapshotStore is null) throw new ArgumentNullException(nameof(snapshotStore));
 
-            if (applyEvent is null)
-            {
-                throw new ArgumentNullException(nameof(applyEvent));
-            }
+            if (applyEvent is null) throw new ArgumentNullException(nameof(applyEvent));
 
-            if (applySnapshot is null)
-            {
-                throw new ArgumentNullException(nameof(applySnapshot));
-            }
+            if (applySnapshot is null) throw new ArgumentNullException(nameof(applySnapshot));
 
             return new Persistence(eventStore, snapshotStore, actorId, applyEvent, applySnapshot);
         }
@@ -104,35 +80,17 @@ namespace Proto.Persistence
             Action<Snapshot> applySnapshot, ISnapshotStrategy snapshotStrategy, Func<object> getState
         )
         {
-            if (eventStore is null)
-            {
-                throw new ArgumentNullException(nameof(eventStore));
-            }
+            if (eventStore is null) throw new ArgumentNullException(nameof(eventStore));
 
-            if (snapshotStore is null)
-            {
-                throw new ArgumentNullException(nameof(snapshotStore));
-            }
+            if (snapshotStore is null) throw new ArgumentNullException(nameof(snapshotStore));
 
-            if (applyEvent is null)
-            {
-                throw new ArgumentNullException(nameof(applyEvent));
-            }
+            if (applyEvent is null) throw new ArgumentNullException(nameof(applyEvent));
 
-            if (applySnapshot is null)
-            {
-                throw new ArgumentNullException(nameof(applySnapshot));
-            }
+            if (applySnapshot is null) throw new ArgumentNullException(nameof(applySnapshot));
 
-            if (snapshotStrategy is null)
-            {
-                throw new ArgumentNullException(nameof(snapshotStrategy));
-            }
+            if (snapshotStrategy is null) throw new ArgumentNullException(nameof(snapshotStrategy));
 
-            if (getState is null)
-            {
-                throw new ArgumentNullException(nameof(getState));
-            }
+            if (getState is null) throw new ArgumentNullException(nameof(getState));
 
             return new Persistence(eventStore, snapshotStore, actorId, applyEvent, applySnapshot, snapshotStrategy,
                 getState
@@ -174,10 +132,7 @@ namespace Proto.Persistence
         /// </summary>
         public async Task ReplayEvents(long fromIndex, long toIndex)
         {
-            if (!UsingEventSourcing)
-            {
-                throw new Exception("Events cannot be replayed without using Event Sourcing.");
-            }
+            if (!UsingEventSourcing) throw new Exception("Events cannot be replayed without using Event Sourcing.");
 
             Index = fromIndex;
 
@@ -195,10 +150,7 @@ namespace Proto.Persistence
 
         public async Task PersistEventAsync(object @event)
         {
-            if (!UsingEventSourcing)
-            {
-                throw new Exception("Event cannot be persisted without using Event Sourcing.");
-            }
+            if (!UsingEventSourcing) throw new Exception("Event cannot be persisted without using Event Sourcing.");
 
             var persistedEvent = new PersistedEvent(@event, Index + 1);
 

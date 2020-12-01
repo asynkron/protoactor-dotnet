@@ -13,13 +13,14 @@ namespace Proto.Router.Routers
     internal class ConsistentHashRouterState : RouterState
     {
         private readonly Func<string, uint> _hash;
+        private readonly Func<object, string>? _messageHasher;
         private readonly int _replicaCount;
         private readonly Dictionary<string, PID> _routeeMap = new();
         private readonly ISenderContext _senderContext;
         private HashRing? _hashRing;
-        private readonly Func<object, string>? _messageHasher;
 
-        public ConsistentHashRouterState(ISenderContext senderContext, Func<string, uint> hash, int replicaCount, Func<object, string>? messageHasher)
+        public ConsistentHashRouterState(ISenderContext senderContext, Func<string, uint> hash, int replicaCount,
+            Func<object, string>? messageHasher)
         {
             _senderContext = senderContext;
             _hash = hash;
@@ -46,10 +47,7 @@ namespace Proto.Router.Routers
 
         public override void RouteMessage(object message)
         {
-            if (_hashRing is null)
-            {
-                throw new InvalidOperationException("Routees not set");
-            }
+            if (_hashRing is null) throw new InvalidOperationException("Routees not set");
 
             var env = MessageEnvelope.Unwrap(message);
 

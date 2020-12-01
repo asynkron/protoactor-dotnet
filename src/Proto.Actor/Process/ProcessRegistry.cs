@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
@@ -24,21 +25,18 @@ namespace Proto
 
         private ActorSystem System { get; }
 
+        public int ProcessCount => _localProcesses.Count;
+
         public void RegisterHostResolver(Func<PID, Process> resolver) => _hostResolvers.Add(resolver);
 
         public Process Get(PID pid)
         {
             if (pid.Address == ActorSystem.NoHost || pid.Address == System.Address)
-            {
                 return _localProcesses.TryGetValue(pid.Id, out var process) ? process : System.DeadLetter;
-            }
 
             var reff = _hostResolvers.Select(x => x(pid)).FirstOrDefault();
 
-            if (reff is null)
-            {
-                throw new NotSupportedException("Unknown host");
-            }
+            if (reff is null) throw new NotSupportedException("Unknown host");
 
             return reff;
         }
@@ -58,7 +56,5 @@ namespace Proto
             var counter = Interlocked.Increment(ref _sequenceId);
             return "$" + counter;
         }
-
-        public int ProcessCount => _localProcesses.Count;
     }
 }

@@ -22,9 +22,9 @@ namespace Proto.Cluster
 
     internal class SimpleMemberStrategy : IMemberStrategy
     {
-        private ImmutableList<Member> _members = ImmutableList<Member>.Empty;
         private readonly Rendezvous _rdv;
         private readonly RoundRobinMemberSelector _rr;
+        private ImmutableList<Member> _members = ImmutableList<Member>.Empty;
 
         public SimpleMemberStrategy()
         {
@@ -38,10 +38,7 @@ namespace Proto.Cluster
         public void AddMember(Member member)
         {
             // Avoid adding the same member twice
-            if (_members.Any(x => x.Address == member.Address))
-            {
-                return;
-            }
+            if (_members.Any(x => x.Address == member.Address)) return;
 
             _members = _members.Add(member);
             _rdv.UpdateMembers(_members);
@@ -54,7 +51,8 @@ namespace Proto.Cluster
             _rdv.UpdateMembers(_members);
         }
 
-        public string GetActivatorAddress() => _rr.GetMemberAddress();
         public Member? GetActivator(string senderAddress) => _rr.GetMember();
+
+        public string GetActivatorAddress() => _rr.GetMemberAddress();
     }
 }

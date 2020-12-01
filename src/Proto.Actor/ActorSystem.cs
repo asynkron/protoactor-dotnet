@@ -1,5 +1,4 @@
 using System;
-using Google.Protobuf;
 using JetBrains.Annotations;
 using Proto.Extensions;
 

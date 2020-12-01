@@ -12,7 +12,7 @@ namespace Proto.Router.Routers
     {
         private readonly Random _random;
         private readonly ISenderContext _senderContext;
-        
+
         public RandomRouterState(ISenderContext senderContext, int? seed)
         {
             _random = seed.HasValue ? new Random(seed.Value) : new Random();

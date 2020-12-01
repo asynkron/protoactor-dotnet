@@ -27,7 +27,7 @@ namespace Proto.Cluster
                 }
             }
         }
-        
+
         public Member? GetMember()
         {
             var members = _memberStrategy.GetAllMembers();

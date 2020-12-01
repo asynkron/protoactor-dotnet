@@ -18,10 +18,7 @@ namespace Proto.Persistence.SnapshotStrategies
         public bool ShouldTakeSnapshot(PersistedEvent persistedEvent)
         {
             var now = _getNow();
-            if (_lastTaken.Add(_interval) > now)
-            {
-                return false;
-            }
+            if (_lastTaken.Add(_interval) > now) return false;
 
             _lastTaken = now;
             return true;

@@ -4,22 +4,22 @@ namespace Proto.Extensions
 {
     public class ActorSystemExtensions
     {
-        private IActorSystemExtension[] _extensions = new IActorSystemExtension[10];
         private readonly ActorSystem _actorSystem;
-        private readonly object _lockObject = new object();
+        private readonly object _lockObject = new();
+        private IActorSystemExtension[] _extensions = new IActorSystemExtension[10];
 
         public ActorSystemExtensions(ActorSystem actorSystem)
         {
             _actorSystem = actorSystem;
         }
 
-        public T Get<T>() where T: IActorSystemExtension
+        public T Get<T>() where T : IActorSystemExtension
         {
             var id = IActorSystemExtension<T>.Id;
-            return (T)_extensions[id];
+            return (T) _extensions[id];
         }
 
-        public void Register<T>(IActorSystemExtension<T> extension) where T:IActorSystemExtension
+        public void Register<T>(IActorSystemExtension<T> extension) where T : IActorSystemExtension
         {
             lock (_lockObject)
             {
@@ -29,7 +29,7 @@ namespace Proto.Extensions
                     var newSize = id * 2; //double size when growing
                     Array.Resize(ref _extensions, newSize);
                 }
-                
+
                 _extensions[id] = extension;
             }
         }

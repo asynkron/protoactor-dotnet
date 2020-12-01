@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
@@ -17,6 +18,7 @@ namespace Proto
         ///     Gets the CancellationToken. Pass this token in long running tasks to stop them when the actor is about to stop
         /// </summary>
         CancellationToken CancellationToken { get; }
+
         /// <summary>
         ///     Gets the receive timeout.
         /// </summary>

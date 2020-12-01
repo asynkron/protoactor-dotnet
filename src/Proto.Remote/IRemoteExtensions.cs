@@ -6,7 +6,7 @@ namespace Proto.Remote
     public static class IRemoteExtensions
     {
         public static IRemote Remote(this ActorSystem system) => system.Extensions.Get<IRemote>();
-        public static IRemote Remote(this IContext context)=> context.System.Remote();
+        public static IRemote Remote(this IContext context) => context.System.Remote();
 
         /// <summary>
         ///     Spawn a remote actor with auto-generated name
@@ -15,7 +15,8 @@ namespace Proto.Remote
         /// <param name="kind">Actor kind, must be known on the remote node</param>
         /// <param name="timeout">Timeout for the confirmation to be received from the remote node</param>
         /// <returns></returns>
-        public static Task<ActorPidResponse> SpawnAsync(this IRemote remote, string address, string kind, TimeSpan timeout) =>
+        public static Task<ActorPidResponse> SpawnAsync(this IRemote remote, string address, string kind,
+            TimeSpan timeout) =>
             SpawnNamedAsync(remote, address, "", kind, timeout);
 
         /// <summary>
@@ -26,7 +27,8 @@ namespace Proto.Remote
         /// <param name="kind">Actor kind, must be known on the remote node</param>
         /// <param name="timeout">Timeout for the confirmation to be received from the remote node</param>
         /// <returns></returns>
-        public static async Task<ActorPidResponse> SpawnNamedAsync(this IRemote remote, string address, string name, string kind, TimeSpan timeout)
+        public static async Task<ActorPidResponse> SpawnNamedAsync(this IRemote remote, string address, string name,
+            string kind, TimeSpan timeout)
         {
             var activator = ActivatorForAddress(address);
 

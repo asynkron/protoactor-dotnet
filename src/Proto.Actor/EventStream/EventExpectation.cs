@@ -22,10 +22,7 @@ namespace Proto
 
         public bool Evaluate(T @event)
         {
-            if (!_predicate(@event))
-            {
-                return false;
-            }
+            if (!_predicate(@event)) return false;
 
             _source.SetResult(@event);
             return true;

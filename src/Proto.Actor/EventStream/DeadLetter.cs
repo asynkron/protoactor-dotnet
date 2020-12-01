@@ -5,14 +5,13 @@
 // -----------------------------------------------------------------------
 // ReSharper disable once CheckNamespace
 
-
 // ReSharper disable once CheckNamespace
+
+using System;
+using JetBrains.Annotations;
 
 namespace Proto
 {
-    using System;
-    using JetBrains.Annotations;
-
     [PublicAPI]
     public class DeadLetterEvent
     {
@@ -44,8 +43,9 @@ namespace Proto
         {
             var (msg, sender, header) = MessageEnvelope.Unwrap(message);
             System.EventStream.Publish(new DeadLetterEvent(pid, msg, sender, header));
-            
-            if (sender is not null && msg is not PoisonPill) System.Root.Send(sender, new DeadLetterResponse {Target = pid});
+
+            if (sender is not null && msg is not PoisonPill)
+                System.Root.Send(sender, new DeadLetterResponse {Target = pid});
         }
 
         protected internal override void SendSystemMessage(PID pid, object message)

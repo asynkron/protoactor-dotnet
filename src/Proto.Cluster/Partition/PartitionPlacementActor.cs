@@ -21,13 +21,13 @@ namespace Proto.Cluster.Partition
         //kind -> the actor kind
         //eventId -> the cluster wide eventId when this actor was created
         private readonly Dictionary<ClusterIdentity, (PID pid, ulong eventId)> _myActors =
-            new Dictionary<ClusterIdentity, (PID pid, ulong eventId)>();
+            new();
 
-        private readonly Rendezvous _rdv = new Rendezvous();
-        
+        private readonly Rendezvous _rdv = new();
+
         //cluster wide eventId.
         //this is useful for knowing if we are in sync with, ahead of or behind other nodes requests
-        private ulong _eventId; 
+        private ulong _eventId;
 
         public PartitionPlacementActor(Cluster cluster)
         {
@@ -70,7 +70,7 @@ namespace Proto.Cluster.Partition
             {
                 Pid = pid,
                 ClusterIdentity = clusterIdentity,
-                EventId = eventId,
+                EventId = eventId
             };
 
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(clusterIdentity.Identity);
@@ -84,10 +84,7 @@ namespace Proto.Cluster.Partition
         private Task ClusterTopology(ClusterTopology msg)
         {
             //ignore outdated events
-            if (msg.EventId <= _eventId)
-            {
-                return Task.CompletedTask;
-            }
+            if (msg.EventId <= _eventId) return Task.CompletedTask;
 
             _eventId = msg.EventId;
             _rdv.UpdateMembers(msg.Members);
@@ -107,22 +104,19 @@ namespace Proto.Cluster.Partition
             //use a local selector, which is based on the requesters view of the world
             var rdv = new Rendezvous();
             rdv.UpdateMembers(msg.Members);
-            
+
             foreach (var (clusterIdentity, (pid, eventId)) in _myActors)
             {
                 //who owns this identity according to the requesters memberlist?
                 var ownerAddress = rdv.GetOwnerMemberByIdentity(clusterIdentity.Identity);
 
                 //this identity is not owned by the requester
-                if (ownerAddress != requestAddress)
-                {
-                    continue;
-                }
+                if (ownerAddress != requestAddress) continue;
 
                 _logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {EventId}", clusterIdentity, ownerAddress,
                     msg.EventId
                 );
-                
+
                 var actor = new Activation {ClusterIdentity = clusterIdentity, Pid = pid, EventId = eventId};
                 response.Actors.Add(actor);
                 count++;
@@ -153,7 +147,7 @@ namespace Proto.Cluster.Partition
                 else
                 {
                     //this actor did not exist, lets spawn a new activation
-                    
+
                     //spawn and remember this actor
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here

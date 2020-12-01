@@ -1,23 +1,23 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Proto.Cluster.Utils;
+
 namespace Proto.Cluster.Identity
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.Logging;
-    using Utils;
-
     internal class IdentityStorageWorker : IActor
     {
         private static readonly ConcurrentSet<string> StaleMembers = new();
 
         private readonly Cluster _cluster;
+
+        private readonly Dictionary<ClusterIdentity, Task<PID?>> _inProgress = new();
         private readonly ILogger _logger = Log.CreateLogger<IdentityStorageWorker>();
         private readonly IdentityStorageLookup _lookup;
         private readonly MemberList _memberList;
         private readonly IIdentityStorage _storage;
-
-        private readonly Dictionary<ClusterIdentity, Task<PID?>> _inProgress = new();
 
         public IdentityStorageWorker(IdentityStorageLookup storageLookup)
         {
@@ -58,10 +58,7 @@ namespace Proto.Cluster.Identity
                         try
                         {
                             var pid = getPid.Result;
-                            if (pid != null)
-                            {
-                                _cluster.PidCache.TryAdd(msg.ClusterIdentity, pid);
-                            }
+                            if (pid != null) _cluster.PidCache.TryAdd(msg.ClusterIdentity, pid);
 
                             Respond(getPid.Result);
                             return Task.CompletedTask;
@@ -112,10 +109,7 @@ namespace Proto.Cluster.Identity
                 if (activation != null)
                 {
                     var existingPid = await ValidateAndMapToPid(clusterIdentity, activation);
-                    if (existingPid != null)
-                    {
-                        return existingPid;
-                    }
+                    if (existingPid != null) return existingPid;
                 }
 
                 //are there any members that can spawn this kind?
@@ -198,13 +192,9 @@ namespace Proto.Cluster.Identity
             return null;
         }
 
-
         private async Task<PID?> ValidateAndMapToPid(ClusterIdentity clusterIdentity, StoredActivation? activation)
         {
-            if (activation?.Pid == null)
-            {
-                return null;
-            }
+            if (activation?.Pid == null) return null;
 
             var memberExists = activation.MemberId == null || _memberList.ContainsMemberId(activation.MemberId);
             if (!memberExists)

@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Extensions.Logging;
+
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
@@ -60,10 +61,7 @@ namespace Proto
 
         private bool ShouldStop(RestartStatistics rs)
         {
-            if (_maxNrOfRetries == 0)
-            {
-                return true;
-            }
+            if (_maxNrOfRetries == 0) return true;
 
             rs.Fail();
 

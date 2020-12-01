@@ -7,6 +7,7 @@
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
+
 // ReSharper disable once CheckNamespace
 namespace Proto
 {

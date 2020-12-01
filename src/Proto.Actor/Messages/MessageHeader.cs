@@ -17,24 +17,24 @@ namespace Proto
     {
         public static readonly MessageHeader Empty = new(ImmutableDictionary<string, string>.Empty);
 
-        private ImmutableDictionary<string, string> Inner { get; init; }
-        
         public MessageHeader(IDictionary<string, string> headers)
         {
             Inner = headers.ToImmutableDictionary();
         }
 
-        public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => 
+        private ImmutableDictionary<string, string> Inner { get; init; }
+
+        public IEnumerator<KeyValuePair<string, string>> GetEnumerator() =>
             Inner.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator() => 
+        IEnumerator IEnumerable.GetEnumerator() =>
             Inner.GetEnumerator();
 
         public int Count => Inner.Count;
 
         public bool ContainsKey(string key) => Inner.ContainsKey(key);
 
-        public bool TryGetValue(string key, out string value) => 
+        public bool TryGetValue(string key, out string value) =>
             Inner.TryGetValue(key, out value);
 
         public string this[string key] => Inner[key];
@@ -47,10 +47,10 @@ namespace Proto
         public string? GetOrDefault(string key, string? @default = null) =>
             TryGetValue(key, out var value) ? value : @default;
 
-        public MessageHeader With(string key, string value) => 
+        public MessageHeader With(string key, string value) =>
             this with { Inner = Inner.SetItem(key, value)};
 
-        public MessageHeader With(IEnumerable<KeyValuePair<string, string>> items) => 
+        public MessageHeader With(IEnumerable<KeyValuePair<string, string>> items) =>
             this with { Inner = Inner.SetItems(items)};
     }
 }

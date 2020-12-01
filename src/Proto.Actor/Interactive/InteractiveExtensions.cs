@@ -14,7 +14,7 @@ namespace Proto.Interactive
         public static async Task ParallelForEach<T>(this IEnumerable<T> self, Func<T, Task> body,
             int concurrencyLevel = 10)
         {
-            var (s,routees,router) = Start(body, concurrencyLevel);
+            var (s, routees, router) = Start(body, concurrencyLevel);
 
             foreach (var msg in self)
             {
@@ -23,11 +23,11 @@ namespace Proto.Interactive
 
             await Shutdown(routees, s, router);
         }
-        
+
         public static async Task ParallelForEach<T>(this IAsyncEnumerable<T> self, Func<T, Task> body,
             int concurrencyLevel = 10)
         {
-            var (s,routees,router) = Start(body, concurrencyLevel);
+            var (s, routees, router) = Start(body, concurrencyLevel);
 
             await foreach (var msg in self)
             {
@@ -61,10 +61,7 @@ namespace Proto.Interactive
             var s = new ActorSystem();
             var props = Props.FromFunc(async ctx =>
                 {
-                    if (ctx.Message is T msg)
-                    {
-                        await body(msg);
-                    }
+                    if (ctx.Message is T msg) await body(msg);
                 }
             ).WithMailbox(() => new DefaultMailbox(new UnboundedMailboxQueue(), new BoundedMailboxQueue(10)));
 
@@ -75,7 +72,7 @@ namespace Proto.Interactive
 
             var routerProps = s.Root.NewRoundRobinGroup(routees);
             var router = s.Root.Spawn(routerProps);
-            return (s,routees,router);
+            return (s, routees, router);
         }
     }
 }

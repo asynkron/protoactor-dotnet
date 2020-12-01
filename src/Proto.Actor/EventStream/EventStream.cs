@@ -4,19 +4,17 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-
-
 // ReSharper disable once CheckNamespace
+using System;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
+using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
+using Proto.Mailbox;
+using Proto.Utils;
+
 namespace Proto
 {
-    using System;
-    using System.Collections.Concurrent;
-    using System.Threading.Tasks;
-    using JetBrains.Annotations;
-    using Mailbox;
-    using Microsoft.Extensions.Logging;
-    using Utils;
-
     [PublicAPI]
     public class EventStream : EventStream<object>
     {
@@ -29,7 +27,8 @@ namespace Proto
         internal EventStream(TimeSpan throttleInterval, int throttleCount)
         {
             var shouldThrottle = Throttle.Create(throttleCount, throttleInterval,
-                droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs.", droppedLogs));
+                droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs.", droppedLogs)
+            );
             Subscribe<DeadLetterEvent>(
                 dl =>
                 {
@@ -40,7 +39,8 @@ namespace Proto
                             dl.Message.GetType().Name,
                             dl.Message,
                             dl.Pid.ToShortString(),
-                            dl.Sender?.ToShortString());
+                            dl.Sender?.ToShortString()
+                        );
                     }
                 }
             );
@@ -110,10 +110,7 @@ namespace Proto
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
                 msg =>
                 {
-                    if (msg is TMsg typed)
-                    {
-                        action(typed);
-                    }
+                    if (msg is TMsg typed) action(typed);
 
                     return Task.CompletedTask;
                 }
@@ -122,7 +119,6 @@ namespace Proto
             _subscriptions.TryAdd(sub.Id, sub);
             return sub;
         }
-
 
         /// <summary>
         ///     Subscribe to the specified message type, which is a derived type from <see cref="T" />
@@ -139,10 +135,7 @@ namespace Proto
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
                 msg =>
                 {
-                    if (msg is TMsg typed && predicate(typed))
-                    {
-                        action(typed);
-                    }
+                    if (msg is TMsg typed && predicate(typed)) action(typed);
 
                     return Task.CompletedTask;
                 }
@@ -151,7 +144,6 @@ namespace Proto
             _subscriptions.TryAdd(sub.Id, sub);
             return sub;
         }
-
 
         /// <summary>
         ///     Subscribe to the specified message type, which is a derived type from <see cref="T" />
@@ -239,10 +231,7 @@ namespace Proto
         /// <param name="subscription"> A subscription to remove</param>
         public void Unsubscribe(EventStreamSubscription<T>? subscription)
         {
-            if (subscription is not null)
-            {
-                Unsubscribe(subscription.Id);
-            }
+            if (subscription is not null) Unsubscribe(subscription.Id);
         }
     }
 

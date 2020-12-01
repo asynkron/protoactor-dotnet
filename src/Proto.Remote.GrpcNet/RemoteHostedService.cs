@@ -30,14 +30,11 @@ namespace Proto.Remote.GrpcNet
             return Task.CompletedTask;
         }
 
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
         private void OnStarted()
         {
             _remote.StartAsync().GetAwaiter().GetResult();
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
         }
 
         private void OnStopping()

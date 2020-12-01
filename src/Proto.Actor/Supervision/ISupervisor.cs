@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+
 // ReSharper disable once CheckNamespace
 namespace Proto
 {

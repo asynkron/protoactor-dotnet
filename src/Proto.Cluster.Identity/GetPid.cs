@@ -1,18 +1,18 @@
-﻿namespace Proto.Cluster.Identity
-{
-    using System.Threading;
-    using Router;
+﻿using System.Threading;
+using Proto.Router;
 
+namespace Proto.Cluster.Identity
+{
     internal class GetPid : IHashable
     {
-        public ClusterIdentity ClusterIdentity { get; }
-        public CancellationToken CancellationToken { get; }
-
         public GetPid(ClusterIdentity clusterIdentity, CancellationToken cancellationToken)
         {
             ClusterIdentity = clusterIdentity;
             CancellationToken = cancellationToken;
         }
+
+        public ClusterIdentity ClusterIdentity { get; }
+        public CancellationToken CancellationToken { get; }
 
         public string HashBy() => ClusterIdentity.ToShortString();
     }

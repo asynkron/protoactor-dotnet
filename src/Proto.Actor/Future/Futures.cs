@@ -37,20 +37,14 @@ namespace Proto.Future
             var name = System.ProcessRegistry.NextId();
             var (pid, absent) = System.ProcessRegistry.TryAdd(name, this);
 
-            if (!absent)
-            {
-                throw new ProcessNameExistException(name, pid);
-            }
+            if (!absent) throw new ProcessNameExistException(name, pid);
 
             Pid = pid;
 
             _cts?.Token.Register(
                 () =>
                 {
-                    if (_tcs.Task.IsCompleted)
-                    {
-                        return;
-                    }
+                    if (_tcs.Task.IsCompleted) return;
 
                     _tcs.TrySetException(
                         new TimeoutException("Request didn't receive any Response within the expected time.")
@@ -86,10 +80,7 @@ namespace Proto.Future
                 return;
             }
 
-            if (_cts is null || !_cts.IsCancellationRequested)
-            {
-                _tcs.TrySetResult(default!);
-            }
+            if (_cts is null || !_cts.IsCancellationRequested) _tcs.TrySetResult(default!);
 
             Stop(pid);
         }

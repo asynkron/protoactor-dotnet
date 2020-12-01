@@ -1,9 +1,9 @@
-﻿namespace Proto.Cluster.Identity
-{
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 
+namespace Proto.Cluster.Identity
+{
     public interface IIdentityStorage : IDisposable
     {
         public Task<StoredActivation?> TryGetExistingActivation(ClusterIdentity clusterIdentity,
@@ -12,7 +12,7 @@
         public Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity, CancellationToken ct);
 
         /// <summary>
-        /// Wait on lock, return activation when present. Responsible for deleting stale locks
+        ///     Wait on lock, return activation when present. Responsible for deleting stale locks
         /// </summary>
         /// <param name="clusterIdentity"></param>
         /// <param name="ct"></param>
@@ -32,14 +32,14 @@
 
     public class SpawnLock
     {
-        public string LockId { get; }
-        public ClusterIdentity ClusterIdentity { get; }
-
         public SpawnLock(string lockId, ClusterIdentity clusterIdentity)
         {
             LockId = lockId;
             ClusterIdentity = clusterIdentity;
         }
+
+        public string LockId { get; }
+        public ClusterIdentity ClusterIdentity { get; }
     }
 
     public class StoredActivation

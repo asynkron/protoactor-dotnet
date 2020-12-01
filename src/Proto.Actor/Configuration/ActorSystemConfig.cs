@@ -13,15 +13,14 @@ namespace Proto
     [PublicAPI]
     public record ActorSystemConfig
     {
-        public static ActorSystemConfig Setup() => new ActorSystemConfig();
-        
         public TimeSpan DeadLetterThrottleInterval { get; init; }
         public int DeadLetterThrottleCount { get; init; }
+        public static ActorSystemConfig Setup() => new();
 
-        public ActorSystemConfig WithDeadLetterThrottleInterval(TimeSpan deadLetterThrottleInterval) => 
+        public ActorSystemConfig WithDeadLetterThrottleInterval(TimeSpan deadLetterThrottleInterval) =>
             this with { DeadLetterThrottleInterval = deadLetterThrottleInterval};
 
-        public ActorSystemConfig WithDeadLetterThrottleCount(int deadLetterThrottleCount) => 
+        public ActorSystemConfig WithDeadLetterThrottleCount(int deadLetterThrottleCount) =>
             this with {DeadLetterThrottleCount = deadLetterThrottleCount};
     }
 }

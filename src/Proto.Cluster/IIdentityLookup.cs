@@ -14,7 +14,7 @@ namespace Proto.Cluster.IdentityLookup
         Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
 
         Task RemovePidAsync(PID pid, CancellationToken ct);
-        
+
         Task SetupAsync(Cluster cluster, string[] kinds, bool isClient);
         Task ShutdownAsync();
     }

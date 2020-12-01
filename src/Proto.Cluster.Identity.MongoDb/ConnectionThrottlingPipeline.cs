@@ -14,25 +14,31 @@ namespace Proto.Cluster.Identity.MongoDb
                 client.Settings.MaxConnectionPoolSize / 2
             );
 
-        public static async Task<T> AddRequest<T>(Task<T> task) {
+        public static async Task<T> AddRequest<T>(Task<T> task)
+        {
             openConnectionSemaphore.WaitOne();
 
-            try {
+            try
+            {
                 var result = await task;
                 return result;
             }
-            finally {
+            finally
+            {
                 openConnectionSemaphore.Release();
             }
         }
-        
-        public static async Task AddRequest(Task task) {
+
+        public static async Task AddRequest(Task task)
+        {
             openConnectionSemaphore.WaitOne();
 
-            try {
+            try
+            {
                 await task;
             }
-            finally {
+            finally
+            {
                 openConnectionSemaphore.Release();
             }
         }

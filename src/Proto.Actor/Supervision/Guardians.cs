@@ -8,6 +8,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using Proto.Mailbox;
+
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
@@ -42,10 +43,7 @@ namespace Proto
             var name = $"Guardian{System.ProcessRegistry.NextId()}";
             var (pid, ok) = System.ProcessRegistry.TryAdd(name, this);
 
-            if (!ok)
-            {
-                throw new ProcessNameExistException(name, pid);
-            }
+            if (!ok) throw new ProcessNameExistException(name, pid);
 
             Pid = pid;
         }
@@ -71,9 +69,7 @@ namespace Proto
         protected internal override void SendSystemMessage(PID pid, object message)
         {
             if (message is Failure msg)
-            {
                 _supervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason, msg.Message);
-            }
         }
     }
 }

@@ -4,15 +4,15 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using JetBrains.Annotations;
+using Proto.Future;
+
 namespace Proto
 {
-    using System;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Future;
-    using JetBrains.Annotations;
-
     public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext
     {
     }
@@ -88,10 +88,7 @@ namespace Proto
 
         public void Stop(PID? pid)
         {
-            if (pid is null)
-            {
-                return;
-            }
+            if (pid is null) return;
 
             var reff = System.ProcessRegistry.Get(pid);
             reff.Stop(pid);
@@ -127,7 +124,6 @@ namespace Proto
                 SenderMiddleware = middleware.Reverse()
                     .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner))
                 };
-        
 
         private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
         {
@@ -137,10 +133,7 @@ namespace Proto
 
         private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)
         {
-            if (target is null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
+            if (target is null) throw new ArgumentNullException(nameof(target));
 
             var messageEnvelope = new MessageEnvelope(message, future.Pid);
             SendUserMessage(target, messageEnvelope);
@@ -161,10 +154,7 @@ namespace Proto
 
         private void SendUserMessage(PID target, object message)
         {
-            if (target is null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
+            if (target is null) throw new ArgumentNullException(nameof(target));
 
             if (SenderMiddleware is not null)
             {

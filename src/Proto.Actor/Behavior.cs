@@ -11,7 +11,7 @@ namespace Proto
 {
     public class Behavior
     {
-        private readonly Stack<Receive> _behaviors = new Stack<Receive>();
+        private readonly Stack<Receive> _behaviors = new();
 
         public Behavior()
         {

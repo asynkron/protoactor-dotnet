@@ -14,7 +14,7 @@ namespace Proto.Cluster
     public interface IClusterProvider
     {
         Task StartMemberAsync(Cluster cluster);
-        
+
         Task StartClientAsync(Cluster cluster);
 
         Task ShutdownAsync(bool graceful);

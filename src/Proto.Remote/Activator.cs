@@ -26,10 +26,7 @@ namespace Proto.Remote
                 case ActorPidRequest msg:
                     var props = _remoteConfig.GetRemoteKind(msg.Kind);
                     var name = msg.Name;
-                    if (string.IsNullOrEmpty(name))
-                    {
-                        name = _system.ProcessRegistry.NextId();
-                    }
+                    if (string.IsNullOrEmpty(name)) name = _system.ProcessRegistry.NextId();
 
                     try
                     {

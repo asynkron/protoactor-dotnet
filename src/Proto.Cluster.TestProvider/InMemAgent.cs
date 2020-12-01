@@ -50,10 +50,7 @@ namespace Proto.Cluster.Testing
         public void RefreshServiceTTL(Guid id)
         {
             //TODO: this is racy, but yolo for now
-            if (_services.TryGetValue(id, out var service))
-            {
-                service.TTL = DateTimeOffset.Now;
-            }
+            if (_services.TryGetValue(id, out var service)) service.TTL = DateTimeOffset.Now;
         }
     }
 }

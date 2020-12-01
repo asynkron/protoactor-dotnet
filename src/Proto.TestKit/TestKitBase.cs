@@ -22,10 +22,7 @@ namespace Proto.TestKit
         {
             get
             {
-                if (_probe is null)
-                {
-                    throw new TestKitException("Probe hasn't been set up");
-                }
+                if (_probe is null) throw new TestKitException("Probe hasn't been set up");
 
                 return _probe;
             }
@@ -107,10 +104,7 @@ namespace Proto.TestKit
         /// </summary>
         public virtual void TearDown()
         {
-            if (Context?.Self is not null)
-            {
-                Context.Stop(Context.Self);
-            }
+            if (Context?.Self is not null) Context.Stop(Context.Self);
 
             _probe = null;
         }

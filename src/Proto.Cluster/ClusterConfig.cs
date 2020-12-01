@@ -10,7 +10,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using JetBrains.Annotations;
 using Proto.Cluster.IdentityLookup;
-using Proto.Remote;
 
 namespace Proto.Cluster
 {
@@ -23,7 +22,7 @@ namespace Proto.Cluster
             ClusterProvider = clusterProvider ?? throw new ArgumentNullException(nameof(clusterProvider));
             TimeoutTimespan = TimeSpan.FromSeconds(5);
             HeartBeatInterval = TimeSpan.FromSeconds(30);
-            MemberStrategyBuilder = (_,_) => new SimpleMemberStrategy();
+            MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
             ClusterKinds = ImmutableDictionary<string, Props>.Empty;
             IdentityLookup = identityLookup;
         }

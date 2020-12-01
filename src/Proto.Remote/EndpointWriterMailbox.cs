@@ -8,9 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core;
 using Microsoft.Extensions.Logging;
-using Proto.Future;
 using Proto.Mailbox;
 
 namespace Proto.Remote
@@ -24,6 +22,7 @@ namespace Proto.Remote
     public class EndpointWriterMailbox : IMailbox
     {
         private static readonly ILogger Logger = Log.CreateLogger<EndpointWriterMailbox>();
+        private readonly string _address;
 
         private readonly int _batchSize;
         private readonly ActorSystem _system;
@@ -34,7 +33,6 @@ namespace Proto.Remote
 
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
-        private readonly string _address;
 
         public EndpointWriterMailbox(ActorSystem system, int batchSize, string address)
         {
@@ -88,18 +86,18 @@ namespace Proto.Remote
                     // Logger.LogDebug("[EndpointWriterMailbox] Processing System Message {@Message}", sys);
 
                     _suspended = sys switch
-                    {
-                        SuspendMailbox _ => true,
-                        EndpointConnectedEvent _ => false,
-                        _ => _suspended
-                    };
+                                 {
+                                     SuspendMailbox _         => true,
+                                     EndpointConnectedEvent _ => false,
+                                     _                        => _suspended
+                                 };
 
                     m = sys;
 
                     switch (m)
                     {
                         case EndpointErrorEvent e:
-                            if (!_suspended)// Since it's already stopped, there is no need to throw the error
+                            if (!_suspended) // Since it's already stopped, there is no need to throw the error
                                 await _invoker!.InvokeUserMessageAsync(sys).ConfigureAwait(false);
                             break;
                         default:
@@ -112,8 +110,8 @@ namespace Proto.Remote
                         // Logger.LogWarning("Endpoint writer is stopping...");
                         //Dump messages from user messages queue to deadletter and inform watchers about termination
                         object? usrMsg;
-                        int droppedRemoteDeliverCount = 0;
-                        int remoteTerminateCount = 0;
+                        var droppedRemoteDeliverCount = 0;
+                        var remoteTerminateCount = 0;
                         while ((usrMsg = _userMessages.Pop()) is not null)
                         {
                             switch (usrMsg)
@@ -121,25 +119,35 @@ namespace Proto.Remote
                                 case RemoteWatch msg:
                                     remoteTerminateCount++;
                                     msg.Watcher.SendSystemMessage(_system, new Terminated
-                                    {
-                                        AddressTerminated = true,
-                                        Who = msg.Watchee
-                                    });
+                                        {
+                                            AddressTerminated = true,
+                                            Who = msg.Watchee
+                                        }
+                                    );
                                     break;
                                 case RemoteDeliver rd:
                                     droppedRemoteDeliverCount++;
                                     if (rd.Sender != null)
-                                        _system.Root.Send(rd.Sender, new DeadLetterResponse { Target = rd.Target });
+                                        _system.Root.Send(rd.Sender, new DeadLetterResponse {Target = rd.Target});
                                     _system.EventStream.Publish(new DeadLetterEvent(rd.Target, rd.Message, rd.Sender));
-                                    break;
-                                default:
                                     break;
                             }
                         }
+
                         if (droppedRemoteDeliverCount > 0)
-                            Logger.LogInformation("[EndpointWriterMailbox] Dropped {count} user Messages for {Address}", droppedRemoteDeliverCount, _address);
+                        {
+                            Logger.LogInformation("[EndpointWriterMailbox] Dropped {count} user Messages for {Address}",
+                                droppedRemoteDeliverCount, _address
+                            );
+                        }
+
                         if (remoteTerminateCount > 0)
-                            Logger.LogInformation("[EndpointWriterMailbox] Sent {Count} remote terminations for {Address}", remoteTerminateCount, _address);
+                        {
+                            Logger.LogInformation(
+                                "[EndpointWriterMailbox] Sent {Count} remote terminations for {Address}",
+                                remoteTerminateCount, _address
+                            );
+                        }
                     }
                 }
 
@@ -163,13 +171,13 @@ namespace Proto.Remote
                                 batch.Add(remoteDeliver);
                                 break;
                             default:
-                                Logger.LogWarning("[EndpointWriterMailbox] Unknown User Message {@Message} (@type)", msg, msg.GetType().Name);
+                                Logger.LogWarning("[EndpointWriterMailbox] Unknown User Message {@Message} (@type)",
+                                    msg, msg.GetType().Name
+                                );
                                 break;
                         }
-                        if (batch.Count >= _batchSize)
-                        {
-                            break;
-                        }
+
+                        if (batch.Count >= _batchSize) break;
                     }
 
                     if (batch.Count > 0)
@@ -188,18 +196,13 @@ namespace Proto.Remote
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
-            if (_systemMessages.HasMessages || _userMessages.HasMessages & !_suspended)
-            {
-                Schedule();
-            }
+            if (_systemMessages.HasMessages || _userMessages.HasMessages & !_suspended) Schedule();
         }
 
         private void Schedule()
         {
             if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
-            {
                 _dispatcher!.Schedule(RunAsync);
-            }
         }
     }
 }

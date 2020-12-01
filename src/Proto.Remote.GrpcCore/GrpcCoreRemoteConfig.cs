@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Grpc.Core;
 using JetBrains.Annotations;
 
@@ -11,13 +10,7 @@ namespace Proto.Remote.GrpcCore
         protected GrpcCoreRemoteConfig(string host, int port) : base(host, port)
         {
         }
-        
-        public static GrpcCoreRemoteConfig BindToAllInterfaces(string advertisedHost, int port = 0) =>
-            new GrpcCoreRemoteConfig(AllInterfaces, port).WithAdvertisedHost(advertisedHost);
-        
-        public static GrpcCoreRemoteConfig BindToLocalhost(int port = 0) => new GrpcCoreRemoteConfig(Localhost, port);
-        
-        public static GrpcCoreRemoteConfig BindTo(string host, int port = 0) => new GrpcCoreRemoteConfig(host, port);
+
         /// <summary>
         ///     Gets or sets the ChannelOptions for the gRPC channel.
         /// </summary>
@@ -32,5 +25,12 @@ namespace Proto.Remote.GrpcCore
         ///     Gets or sets the ServerCredentials for the gRPC server. The default is Insecure.
         /// </summary>
         public ServerCredentials ServerCredentials { get; init; } = ServerCredentials.Insecure;
+
+        public static GrpcCoreRemoteConfig BindToAllInterfaces(string advertisedHost, int port = 0) =>
+            new GrpcCoreRemoteConfig(AllInterfaces, port).WithAdvertisedHost(advertisedHost);
+
+        public static GrpcCoreRemoteConfig BindToLocalhost(int port = 0) => new(Localhost, port);
+
+        public static GrpcCoreRemoteConfig BindTo(string host, int port = 0) => new(host, port);
     }
 }

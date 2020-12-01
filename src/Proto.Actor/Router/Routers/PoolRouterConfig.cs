@@ -14,6 +14,7 @@ namespace Proto.Router.Routers
             router.SetRoutees(Enumerable
                 .Range(0, PoolSize)
                 .Select(_ => context.Spawn(RouteeProps))
-                .ToArray());
+                .ToArray()
+            );
     }
 }

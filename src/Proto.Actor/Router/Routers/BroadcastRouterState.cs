@@ -10,7 +10,10 @@ namespace Proto.Router.Routers
     {
         private readonly ISenderContext _senderContext;
 
-        internal BroadcastRouterState(ISenderContext senderContext) => _senderContext = senderContext;
+        internal BroadcastRouterState(ISenderContext senderContext)
+        {
+            _senderContext = senderContext;
+        }
 
         public override void RouteMessage(object message)
         {

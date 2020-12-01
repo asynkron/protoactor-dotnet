@@ -4,30 +4,29 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster.Identity
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.Logging;
-
     internal class IdentityStoragePlacementActor : IActor
     {
-        private readonly Cluster _cluster;
-        private readonly ILogger _logger;
         private static readonly Random Jitter = new();
+        private readonly Cluster _cluster;
+
+        private readonly IdentityStorageLookup _identityLookup;
+        private readonly ILogger _logger;
+        private readonly Dictionary<ClusterIdentity, PID> _myActors = new();
 
         //pid -> the actor that we have created here
         //kind -> the actor kind
         //eventId -> the cluster wide eventId when this actor was created
         private readonly Dictionary<ClusterIdentity, Task<PID?>> _pendingActivations = new();
-        private readonly Dictionary<ClusterIdentity, PID> _myActors = new();
-
-        private readonly IdentityStorageLookup _identityLookup;
 
         public IdentityStoragePlacementActor(Cluster cluster, IdentityStorageLookup identityLookup)
         {
@@ -39,13 +38,13 @@ namespace Proto.Cluster.Identity
         public Task ReceiveAsync(IContext context)
         {
             return context.Message switch
-            {
-                Started _ => Started(context),
-                ReceiveTimeout _ => ReceiveTimeout(context),
-                Terminated msg => Terminated(msg),
-                ActivationRequest msg => ActivationRequest(context, msg),
-                _ => Task.CompletedTask
-            };
+                   {
+                       Started _             => Started(context),
+                       ReceiveTimeout _      => ReceiveTimeout(context),
+                       Terminated msg        => Terminated(msg),
+                       ActivationRequest msg => ActivationRequest(context, msg),
+                       _                     => Task.CompletedTask
+                   };
         }
 
         private static Task Started(IContext context)
@@ -70,7 +69,7 @@ namespace Proto.Cluster.Identity
             {
                 _myActors.Remove(identity);
                 _cluster.PidCache.RemoveByVal(identity, pid);
-                
+
                 try
                 {
                     await _identityLookup.RemovePidAsync(msg.Who, CancellationToken.None);
@@ -81,9 +80,7 @@ namespace Proto.Cluster.Identity
                 }
             }
             else
-            {
                 _logger.LogInformation("Terminated actor {PID} was not present", msg.Who);
-            }
         }
 
         private Task ActivationRequest(IContext context, ActivationRequest msg)

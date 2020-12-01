@@ -12,9 +12,9 @@ namespace Proto.Mailbox
 {
     public interface IMessageInvoker
     {
+        CancellationTokenSource? CancellationTokenSource { get; }
         Task InvokeSystemMessageAsync(object msg);
         Task InvokeUserMessageAsync(object msg);
-        CancellationTokenSource? CancellationTokenSource { get; }
         void EscalateFailure(Exception reason, object? message);
     }
 

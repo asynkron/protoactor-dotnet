@@ -27,7 +27,6 @@ namespace Proto.Cluster.Kubernetes
             public string ClusterName { get; }
         }
 
-
         // public class EnsureWatcher
         // {
         //     public static EnsureWatcher Instance { get; } = new EnsureWatcher();

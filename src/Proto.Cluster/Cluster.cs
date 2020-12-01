@@ -35,7 +35,10 @@ namespace Proto.Cluster
             _clusterHeartBeat = new ClusterHeartBeat(this);
             system.EventStream.Subscribe<ClusterTopology>(e =>
                 {
-                    foreach (var member in e.Left) PidCache.RemoveByMember(member);
+                    foreach (var member in e.Left)
+                    {
+                        PidCache.RemoveByMember(member);
+                    }
                 }
             );
         }
@@ -122,9 +125,7 @@ namespace Proto.Cluster
         public Props GetClusterKind(string kind)
         {
             if (!Config.ClusterKinds.TryGetValue(kind, out var props))
-            {
                 throw new ArgumentException($"No Props found for kind '{kind}'");
-            }
 
             return props;
         }

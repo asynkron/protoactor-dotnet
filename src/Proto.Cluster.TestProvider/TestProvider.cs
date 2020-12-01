@@ -7,36 +7,30 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Timers;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Data;
-using Timer = System.Timers.Timer;
 
 namespace Proto.Cluster.Testing
 {
     public class TestProvider : IClusterProvider
     {
-        private readonly TestProviderOptions _options;
-        private Timer _ttlReportTimer;
-        private Guid _id;
-        private string _clusterName;
-        private ActorSystem _system;
         private static readonly ILogger Logger = Log.CreateLogger<TestProvider>();
         private readonly InMemAgent _agent;
-        private MemberList _memberList;
+        private readonly TestProviderOptions _options;
+        private string _clusterName;
 
         private ulong _eventId;
+        private Guid _id;
+        private MemberList _memberList;
+        private ActorSystem _system;
+        private Timer _ttlReportTimer;
 
         public TestProvider(TestProviderOptions options, InMemAgent agent)
         {
             _options = options;
             _agent = agent;
         }
-
-        private void AgentOnStatusUpdate(object sender, EventArgs e)
-        {
-            NotifyStatuses();
-        }
-
 
         public Task StartMemberAsync(Cluster cluster)
         {
@@ -50,13 +44,13 @@ namespace Proto.Cluster.Testing
             _memberList = memberList;
             _agent.StatusUpdate += AgentOnStatusUpdate;
             StartTtlTimer();
-            
+
             _agent.RegisterService(new AgentServiceRegistration
                 {
                     Host = host,
                     ID = _id,
                     Kinds = kinds,
-                    Port = port,
+                    Port = port
                 }
             );
 
@@ -74,6 +68,22 @@ namespace Proto.Cluster.Testing
             _memberList = memberList;
 
             return Task.CompletedTask;
+        }
+
+        public Task ShutdownAsync(bool graceful)
+        {
+            Logger.LogDebug("Unregistering service {Service}", _id);
+
+            _ttlReportTimer.Stop();
+            _agent.DeregisterService(_id);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateClusterState(ClusterState state) => throw new NotImplementedException();
+
+        private void AgentOnStatusUpdate(object sender, EventArgs e)
+        {
+            NotifyStatuses();
         }
 
         private void NotifyStatuses()
@@ -99,7 +109,6 @@ namespace Proto.Cluster.Testing
                     .ToList();
 
             _memberList.UpdateClusterTopology(memberStatuses, ++_eventId);
-            
         }
 
         private void StartTtlTimer()
@@ -115,16 +124,5 @@ namespace Proto.Cluster.Testing
         {
             _agent.RefreshServiceTTL(_id);
         }
-
-        public Task ShutdownAsync(bool graceful)
-        {
-            Logger.LogDebug("Unregistering service {Service}", _id);
-
-            _ttlReportTimer.Stop();
-            _agent.DeregisterService(_id);
-            return Task.CompletedTask;
-        }
-
-        public Task UpdateClusterState(ClusterState state) => throw new NotImplementedException();
     }
 }

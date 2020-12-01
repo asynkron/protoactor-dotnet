@@ -11,16 +11,14 @@ namespace Proto.Router.Routers
     internal record ConsistentHashGroupRouterConfig : GroupRouterConfig
     {
         private readonly Func<string, uint> _hash;
-        private readonly int _replicaCount;
         private readonly Func<object, string>? _messageHasher;
+        private readonly int _replicaCount;
 
-        public ConsistentHashGroupRouterConfig(ISenderContext senderContext, Func<string, uint> hash, int replicaCount, Func<object, string>? messageHasher, params PID[] routees)
+        public ConsistentHashGroupRouterConfig(ISenderContext senderContext, Func<string, uint> hash, int replicaCount,
+            Func<object, string>? messageHasher, params PID[] routees)
             : base(senderContext, routees)
         {
-            if (replicaCount <= 0)
-            {
-                throw new ArgumentException("ReplicaCount must be greater than 0");
-            }
+            if (replicaCount <= 0) throw new ArgumentException("ReplicaCount must be greater than 0");
 
             _hash = hash;
             _replicaCount = replicaCount;
@@ -28,6 +26,6 @@ namespace Proto.Router.Routers
         }
 
         protected override RouterState CreateRouterState() =>
-            new ConsistentHashRouterState(SenderContext, _hash, _replicaCount,_messageHasher);
+            new ConsistentHashRouterState(SenderContext, _hash, _replicaCount, _messageHasher);
     }
 }

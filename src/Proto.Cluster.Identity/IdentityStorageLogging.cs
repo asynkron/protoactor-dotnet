@@ -16,49 +16,6 @@ namespace Proto.Cluster.Identity
             _storage = storage;
         }
 
-        private async Task LogCall(Func<Task> call, string method, string subject)
-        {
-            var timer = Stopwatch.StartNew();
-            try
-            {
-                await call();
-                timer.Stop();
-                _logger.LogDebug("{Method}: {Subject} after {Elapsed}",
-                    method, subject, timer.Elapsed
-                );
-            }
-            catch (Exception e)
-            {
-                timer.Stop();
-                _logger.LogError(e, "{Method}: {Subject} failed after {Elapsed}",
-                    method, subject, timer.Elapsed
-                );
-                throw;
-            }
-        }
-
-        private async Task<T> LogCall<T>(Func<Task<T>> call, string method, string subject)
-        {
-            var timer = Stopwatch.StartNew();
-            try
-            {
-                var result = await call();
-                timer.Stop();
-                _logger.LogDebug("{Method}: {Subject} after {Elapsed}",
-                    method, subject, timer.Elapsed
-                );
-                return result;
-            }
-            catch (Exception e)
-            {
-                timer.Stop();
-                _logger.LogError(e, "{Method}: {Subject} failed after {Elapsed}",
-                    method, subject, timer.Elapsed
-                );
-                throw;
-            }
-        }
-
         public Task<StoredActivation?> TryGetExistingActivation(ClusterIdentity clusterIdentity,
             CancellationToken ct)
         {
@@ -119,6 +76,49 @@ namespace Proto.Cluster.Identity
         public void Dispose()
         {
             _storage.Dispose();
+        }
+
+        private async Task LogCall(Func<Task> call, string method, string subject)
+        {
+            var timer = Stopwatch.StartNew();
+            try
+            {
+                await call();
+                timer.Stop();
+                _logger.LogDebug("{Method}: {Subject} after {Elapsed}",
+                    method, subject, timer.Elapsed
+                );
+            }
+            catch (Exception e)
+            {
+                timer.Stop();
+                _logger.LogError(e, "{Method}: {Subject} failed after {Elapsed}",
+                    method, subject, timer.Elapsed
+                );
+                throw;
+            }
+        }
+
+        private async Task<T> LogCall<T>(Func<Task<T>> call, string method, string subject)
+        {
+            var timer = Stopwatch.StartNew();
+            try
+            {
+                var result = await call();
+                timer.Stop();
+                _logger.LogDebug("{Method}: {Subject} after {Elapsed}",
+                    method, subject, timer.Elapsed
+                );
+                return result;
+            }
+            catch (Exception e)
+            {
+                timer.Stop();
+                _logger.LogError(e, "{Method}: {Subject} failed after {Elapsed}",
+                    method, subject, timer.Elapsed
+                );
+                throw;
+            }
         }
     }
 }

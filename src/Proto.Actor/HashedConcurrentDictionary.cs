@@ -12,14 +12,12 @@ namespace Proto
 {
     internal class HashedConcurrentDictionary
     {
-        
         private const int HashSize = 1024;
         private readonly Partition[] _partitions = new Partition[HashSize];
 
         private int _count;
-        public int Count => _count;
 //        public int Count => _partitions.Select(partition => partition.Count).Sum();
-        
+
         internal HashedConcurrentDictionary()
         {
             for (var i = 0; i < _partitions.Length; i++)
@@ -27,6 +25,8 @@ namespace Proto
                 _partitions[i] = new Partition();
             }
         }
+
+        public int Count => _count;
 
         private Partition GetPartition(string key)
         {
@@ -40,10 +40,7 @@ namespace Proto
             var p = GetPartition(key);
             lock (p)
             {
-                if (p.ContainsKey(key))
-                {
-                    return false;
-                }
+                if (p.ContainsKey(key)) return false;
 
                 p.Add(key, reff);
                 Interlocked.Increment(ref _count);
@@ -65,10 +62,7 @@ namespace Proto
             var p = GetPartition(key);
             lock (p)
             {
-                if (p.Remove(key))
-                {
-                    Interlocked.Decrement(ref _count);
-                }
+                if (p.Remove(key)) Interlocked.Decrement(ref _count);
             }
         }
 

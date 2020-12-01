@@ -45,15 +45,10 @@ namespace Proto.Mailbox
 
         public MPMCQueue(int bufferSize)
         {
-            if (bufferSize < 2)
-            {
-                throw new ArgumentException($"{nameof(bufferSize)} should be greater than 2");
-            }
+            if (bufferSize < 2) throw new ArgumentException($"{nameof(bufferSize)} should be greater than 2");
 
             if ((bufferSize & (bufferSize - 1)) != 0)
-            {
                 throw new ArgumentException($"{nameof(bufferSize)} should be a power of 2");
-            }
 
             _bufferMask = bufferSize - 1;
             _buffer = new Cell[bufferSize];
@@ -84,10 +79,7 @@ namespace Proto.Mailbox
                     return true;
                 }
 
-                if (cell.Sequence < pos)
-                {
-                    return false;
-                }
+                if (cell.Sequence < pos) return false;
             } while (true);
         }
 
@@ -95,10 +87,7 @@ namespace Proto.Mailbox
         {
             while (true)
             {
-                if (TryEnqueue(item))
-                {
-                    break;
-                }
+                if (TryEnqueue(item)) break;
 
                 Task.Delay(1)
                     .Wait(); // Could be Thread.Sleep(1) or Thread.SpinWait() if the assembly is not portable lib.

@@ -12,7 +12,7 @@ namespace Proto.Router.Routers
 {
     public abstract class RouterState
     {
-        protected HashSet<PID> Routees = new HashSet<PID>();
+        protected HashSet<PID> Routees = new();
         protected ImmutableList<PID> Values = ImmutableList<PID>.Empty;
 
         public virtual HashSet<PID> GetRoutees() => Routees;

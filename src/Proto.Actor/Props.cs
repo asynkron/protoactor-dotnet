@@ -16,7 +16,7 @@ namespace Proto
     [PublicAPI]
     public sealed record Props
     {
-        public static readonly Props Empty = new Props();
+        public static readonly Props Empty = new();
 
         public ProducerWithSystem Producer { get; init; } = _ => null!;
         public MailboxProducer MailboxProducer { get; init; } = () => UnboundedMailbox.Create();
@@ -27,8 +27,9 @@ namespace Proto
         public ImmutableList<Func<Receiver, Receiver>> ReceiverMiddleware { get; init; } =
             ImmutableList<Func<Receiver, Receiver>>.Empty;
 
-        public ImmutableList<Func<Sender, Sender>> SenderMiddleware { get; init; } =  
+        public ImmutableList<Func<Sender, Sender>> SenderMiddleware { get; init; } =
             ImmutableList<Func<Sender, Sender>>.Empty;
+
         public Receiver? ReceiverMiddlewareChain { get; init; }
         public Sender? SenderMiddlewareChain { get; init; }
 
@@ -48,10 +49,7 @@ namespace Proto
             var process = new ActorProcess(system, mailbox);
             var (self, absent) = system.ProcessRegistry.TryAdd(name, process);
 
-            if (!absent)
-            {
-                throw new ProcessNameExistException(name, self);
-            }
+            if (!absent) throw new ProcessNameExistException(name, self);
 
             var ctx = ActorContext.Setup(system, props, parent, self);
             mailbox.RegisterHandlers(ctx, dispatcher);
@@ -63,7 +61,7 @@ namespace Proto
 
         public Props WithProducer(Producer producer) =>
             this with {Producer = _ => producer()};
-        
+
         public Props WithProducer(ProducerWithSystem producer) =>
             this with {Producer = producer};
 

@@ -13,9 +13,6 @@ namespace Proto.Cluster.Identity.Redis
     {
         private static readonly ILogger Logger = Log.CreateLogger<RedisIdentityStorage>();
         private static readonly Random Jitter = new();
-
-        private readonly RedisKey _clusterIdentityKey;
-        private readonly RedisKey _memberKey;
         private static readonly RedisKey NoKey = new();
 
         private static readonly RedisValue UniqueIdentity = "pid";
@@ -23,10 +20,11 @@ namespace Proto.Cluster.Identity.Redis
         private static readonly RedisValue MemberId = "mid";
         private static readonly RedisValue LockId = "lid";
 
+        private readonly RedisKey _clusterIdentityKey;
+
         private readonly IConnectionMultiplexer _connections;
         private readonly TimeSpan _maxLockTime;
-
-        private IDatabase GetDb() => _connections.GetDatabase();
+        private readonly RedisKey _memberKey;
 
         public RedisIdentityStorage(string clusterName, IConnectionMultiplexer connections,
             TimeSpan? maxWaitBeforeStaleLock = null)
@@ -125,7 +123,7 @@ namespace Proto.Cluster.Identity.Redis
                 new HashEntry(UniqueIdentity, pid.Id),
                 new HashEntry(Address, pid.Address),
                 new HashEntry(MemberId, memberId),
-                new HashEntry(LockId, RedisValue.EmptyString),
+                new HashEntry(LockId, RedisValue.EmptyString)
             };
 
             var transaction = db.CreateTransaction();
@@ -134,10 +132,7 @@ namespace Proto.Cluster.Identity.Redis
             _ = transaction.SetAddAsync(MemberKey(memberId), pid.Id, CommandFlags.DemandMaster);
 
             var executed = await transaction.ExecuteAsync();
-            if (!executed)
-            {
-                throw new LockNotFoundException($"Failed to store activation of {pid.ToShortString()}");
-            }
+            if (!executed) throw new LockNotFoundException($"Failed to store activation of {pid.ToShortString()}");
         }
 
         public async Task RemoveActivation(PID pid, CancellationToken ct)
@@ -187,13 +182,18 @@ namespace Proto.Cluster.Identity.Redis
             await Task.WhenAll(transactionsFinished);
         }
 
-
         public async Task<StoredActivation?> TryGetExistingActivation(ClusterIdentity clusterIdentity,
             CancellationToken ct)
         {
             var activationStatus = await LookupKey(GetDb(), IdKey(clusterIdentity));
             return activationStatus?.Activation;
         }
+
+        public void Dispose() => _connections.Dispose();
+
+        public Task Init() => Task.CompletedTask;
+
+        private IDatabase GetDb() => _connections.GetDatabase();
 
         private Task<bool> TryAcquireLockAsync(
             ClusterIdentity clusterIdentity,
@@ -235,30 +235,23 @@ namespace Proto.Cluster.Identity.Redis
 
         private RedisKey MemberKey(string memberId) => _memberKey.Append(memberId);
 
-        public void Dispose() => _connections.Dispose();
-
-        public Task Init() => Task.CompletedTask;
-
         private class ActivationStatus
         {
-            public StoredActivation? Activation { get; }
-
-            public string? ActiveLockId { get; }
-
             public ActivationStatus(string? uniqueIdentity, string? address, string? memberId)
             {
-                if (uniqueIdentity == null || address == null || memberId == null)
-                {
-                    throw new ArgumentException();
-                }
+                if (uniqueIdentity == null || address == null || memberId == null) throw new ArgumentException();
 
-                Activation = new(memberId!, PID.FromAddress(address!, uniqueIdentity!));
+                Activation = new StoredActivation?(memberId!, PID.FromAddress(address!, uniqueIdentity!));
             }
 
             public ActivationStatus(string? lockId)
             {
                 ActiveLockId = lockId;
             }
+
+            public StoredActivation? Activation { get; }
+
+            public string? ActiveLockId { get; }
         }
     }
 }

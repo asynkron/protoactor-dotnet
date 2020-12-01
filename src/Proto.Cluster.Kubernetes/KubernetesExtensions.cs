@@ -44,7 +44,6 @@ namespace Proto.Cluster.Kubernetes
             return kubernetes.PatchNamespacedPodAsync(new V1Patch(patch), podName, podNamespace);
         }
 
-        
         /// <summary>
         ///     Get the pod status. The pod must be running in order to be considered as a candidate.
         /// </summary>
@@ -57,10 +56,10 @@ namespace Proto.Cluster.Kubernetes
             var kinds = pod
                 .Metadata
                 .Labels
-                .Where(l => l.Key.StartsWith(LabelKind) && l.Value=="true")
-                .Select(l => l.Key.Substring(LabelKind.Length+1))
+                .Where(l => l.Key.StartsWith(LabelKind) && l.Value == "true")
+                .Select(l => l.Key.Substring(LabelKind.Length + 1))
                 .ToArray();
-            
+
             var host = pod.Status.PodIP ?? "";
             var port = Convert.ToInt32(pod.Metadata.Labels[LabelPort]);
             var mid = pod.Metadata.Labels[LabelMemberId];
@@ -103,9 +102,6 @@ namespace Proto.Cluster.Kubernetes
         ///     A wrapper about getting the machine name. The pod name is always the "machine" name/
         /// </summary>
         /// <returns></returns>
-        internal static string GetPodName()
-        {
-            return Environment.MachineName;
-        }
+        internal static string GetPodName() => Environment.MachineName;
     }
 }

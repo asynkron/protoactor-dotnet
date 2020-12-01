@@ -54,17 +54,18 @@ namespace Proto.Remote
         )
         {
             using var cancellationTokenRegistration = _endpointManager.CancellationToken.Register(() =>
-            {
-                Logger.LogDebug("[EndpointReader] Telling to {Address} to stop", context.Peer);
-                try
                 {
-                    _ = responseStream.WriteAsync(new Unit());
+                    Logger.LogDebug("[EndpointReader] Telling to {Address} to stop", context.Peer);
+                    try
+                    {
+                        _ = responseStream.WriteAsync(new Unit());
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError(e, "[EndpointReader] Didn't tell to {Address} to stop", context.Peer);
+                    }
                 }
-                catch (Exception e)
-                {
-                    Logger.LogError(e, "[EndpointReader] Didn't tell to {Address} to stop", context.Peer);
-                }
-            });
+            );
 
             var targets = new PID[100];
             while (await requestStream.MoveNext(context.CancellationToken).ConfigureAwait(false))
@@ -78,14 +79,11 @@ namespace Proto.Remote
                 var batch = requestStream.Current;
 
                 Logger.LogDebug("[EndpointReader] Received a batch of {Count} messages from {Remote}",
-                        batch.TargetNames.Count, context.Peer
-                    );
+                    batch.TargetNames.Count, context.Peer
+                );
 
                 //only grow pid lookup if needed
-                if (batch.TargetNames.Count > targets.Length)
-                {
-                    targets = new PID[batch.TargetNames.Count];
-                }
+                if (batch.TargetNames.Count > targets.Length) targets = new PID[batch.TargetNames.Count];
 
                 for (var i = 0; i < batch.TargetNames.Count; i++)
                 {
@@ -113,9 +111,9 @@ namespace Proto.Remote
                             ReceiveMessages(envelope, message, target);
                             break;
                     }
-
                 }
             }
+
             Logger.LogDebug("[EndpointReader] Stream closed by {Remote}", context.Peer);
         }
 
@@ -123,10 +121,7 @@ namespace Proto.Remote
         {
             Proto.MessageHeader? header = null;
 
-            if (envelope.MessageHeader is not null)
-            {
-                header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
-            }
+            if (envelope.MessageHeader is not null) header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
 
             // Logger.LogDebug("[EndpointReader] Forwarding remote user message {@Message}", message);
             var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);

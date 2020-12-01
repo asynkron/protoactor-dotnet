@@ -11,19 +11,16 @@ namespace Proto.Router.Routers
     internal record ConsistentHashPoolRouterConfig : PoolRouterConfig
     {
         private readonly Func<string, uint> _hash;
+        private readonly Func<object, string>? _messageHasher;
         private readonly int _replicaCount;
         private readonly ISenderContext _senderContext;
-        private readonly Func<object, string>? _messageHasher;
 
         public ConsistentHashPoolRouterConfig(ISenderContext senderContext, int poolSize, Props routeeProps,
             Func<string, uint> hash, int replicaCount, Func<object, string>? messageHasher)
             : base(poolSize, routeeProps)
         {
             _senderContext = senderContext;
-            if (replicaCount <= 0)
-            {
-                throw new ArgumentException("ReplicaCount must be greater than 0");
-            }
+            if (replicaCount <= 0) throw new ArgumentException("ReplicaCount must be greater than 0");
 
             _hash = hash;
             _replicaCount = replicaCount;
@@ -31,6 +28,6 @@ namespace Proto.Router.Routers
         }
 
         protected override RouterState CreateRouterState() =>
-            new ConsistentHashRouterState(_senderContext, _hash, _replicaCount,_messageHasher);
+            new ConsistentHashRouterState(_senderContext, _hash, _replicaCount, _messageHasher);
     }
 }

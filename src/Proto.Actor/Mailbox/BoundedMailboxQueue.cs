@@ -25,6 +25,7 @@ namespace Proto.Mailbox
             {
                 Thread.Sleep(50);
             }
+
             _hasMessages = true;
         }
 

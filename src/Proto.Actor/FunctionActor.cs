@@ -7,7 +7,10 @@ namespace Proto
     {
         private readonly Receive _receive;
 
-        public FunctionActor(Receive receive) => _receive = receive;
+        public FunctionActor(Receive receive)
+        {
+            _receive = receive;
+        }
 
         public Task ReceiveAsync(IContext context) => _receive(context);
     }

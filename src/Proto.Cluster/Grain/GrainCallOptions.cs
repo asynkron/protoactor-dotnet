@@ -7,7 +7,7 @@ namespace Proto.Cluster
     [PublicAPI]
     public class GrainCallOptions
     {
-        public static readonly GrainCallOptions Default = new GrainCallOptions();
+        public static readonly GrainCallOptions Default = new();
 
         public int RetryCount { get; set; } = 10;
 

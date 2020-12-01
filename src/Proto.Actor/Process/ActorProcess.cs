@@ -1,5 +1,6 @@
 using System.Threading;
 using Proto.Mailbox;
+
 // ReSharper disable once CheckNamespace
 namespace Proto
 {

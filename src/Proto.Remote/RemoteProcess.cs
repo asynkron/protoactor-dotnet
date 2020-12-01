@@ -31,9 +31,10 @@ namespace Proto.Remote
                 case Watch w:
                     if (_endpoint is null)
                     {
-                        System.Root.Send(w.Watcher, new Terminated { AddressTerminated = true, Who = _pid });
+                        System.Root.Send(w.Watcher, new Terminated {AddressTerminated = true, Who = _pid});
                         return;
                     }
+
                     message = new RemoteWatch(w.Watcher, _pid);
                     break;
                 case Unwatch uw:
@@ -47,9 +48,11 @@ namespace Proto.Remote
                         System.EventStream.Publish(new DeadLetterEvent(_pid, m, sender));
                         return;
                     }
+
                     message = new RemoteDeliver(header!, m, _pid, sender!, -1);
                     break;
             }
+
             System.Root.Send(_endpoint, message);
         }
     }

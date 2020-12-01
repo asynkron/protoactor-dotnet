@@ -14,10 +14,10 @@ namespace Proto.Cluster
 
     public class DefaultClusterContext : IClusterContext
     {
-        private readonly IIdentityLookup _identityLookup;
-        private readonly PidCache _pidCache;
         private readonly ISenderContext _context;
+        private readonly IIdentityLookup _identityLookup;
         private readonly ILogger _logger;
+        private readonly PidCache _pidCache;
         private readonly ShouldThrottle _requestLogThrottle;
 
         public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ISenderContext context,
@@ -36,7 +36,8 @@ namespace Proto.Cluster
 
         public async Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, CancellationToken ct)
         {
-            _logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity.ToShortString(), message);
+            _logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity.ToShortString(), message
+            );
             var i = 0;
             while (!ct.IsCancellationRequested)
             {
@@ -105,26 +106,19 @@ namespace Proto.Cluster
             {
                 var res = await _context.RequestAsync<T>(cachedPid, message, TimeSpan.FromSeconds(5));
 
-                if (res is not null)
-                {
-                    return (ResponseStatus.Ok, res);
-                }
+                if (res is not null) return (ResponseStatus.Ok, res);
             }
             catch (DeadLetterException)
             {
                 if (_requestLogThrottle().IsOpen())
-                {
                     _logger.LogInformation("TryRequestAsync failed, dead PID from {Source}", source);
-                }
                 _pidCache.RemoveByVal(clusterIdentity, cachedPid);
                 return (ResponseStatus.DeadLetter, default)!;
             }
             catch (TimeoutException)
             {
                 if (_requestLogThrottle().IsOpen())
-                {
                     _logger.LogWarning("TryRequestAsync timed out, PID from {Source}", source);
-                }
             }
             catch (Exception x)
             {
