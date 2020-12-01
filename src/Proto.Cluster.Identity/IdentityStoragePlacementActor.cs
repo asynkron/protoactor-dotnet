@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="Activator.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="IdentityStoragePlacementActor.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

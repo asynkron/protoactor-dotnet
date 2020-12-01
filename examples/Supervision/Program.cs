@@ -1,24 +1,24 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Program.cs" company="Asynkron AB">
+// <copyright file="Program.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//  </copyright>
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Proto;
 using Microsoft.Extensions.Logging;
+using Proto;
 
-class Program
+internal class Program
 {
-    static void Main()
+    private static void Main()
     {
         var context = new RootContext(new ActorSystem());
         Log.SetLoggerFactory(LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Debug)));
 
-        var props = Props.FromProducer(() => new ParentActor()).WithChildSupervisorStrategy(new OneForOneStrategy(Decider.Decide, 1, null));
+        var props = Props.FromProducer(() => new ParentActor())
+            .WithChildSupervisorStrategy(new OneForOneStrategy(Decider.Decide, 1, null));
 
         var actor = context.Spawn(props);
 
@@ -43,11 +43,11 @@ class Program
     {
         public static SupervisorDirective Decide(PID pid, Exception reason)
             => reason switch
-            {
-                RecoverableException _ => SupervisorDirective.Restart,
-                FatalException _ => SupervisorDirective.Stop,
-                _ => SupervisorDirective.Escalate
-            };
+               {
+                   RecoverableException _ => SupervisorDirective.Restart,
+                   FatalException _       => SupervisorDirective.Stop,
+                   _                      => SupervisorDirective.Escalate
+               };
     }
 
     private class ParentActor : IActor
@@ -62,9 +62,7 @@ class Program
                 child = context.Spawn(props);
             }
             else
-            {
                 child = context.Children.First();
-            }
 
             switch (context.Message)
             {
@@ -120,11 +118,19 @@ class Program
         public string Who;
     }
 
-    private class RecoverableException : Exception { }
+    private class RecoverableException : Exception
+    {
+    }
 
-    private class FatalException : Exception { }
+    private class FatalException : Exception
+    {
+    }
 
-    private class Fatal { }
+    private class Fatal
+    {
+    }
 
-    private class Recoverable { }
+    private class Recoverable
+    {
+    }
 }

@@ -1,7 +1,7 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="RemoteConfig.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="RemoteConfigBase.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Immutable;

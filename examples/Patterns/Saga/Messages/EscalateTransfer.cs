@@ -1,17 +1,19 @@
-﻿namespace Saga.Messages
+﻿// -----------------------------------------------------------------------
+// <copyright file="EscalateTransfer.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+namespace Saga.Messages
 {
     internal class EscalateTransfer
     {
-        public string Message { get; }
-
         public EscalateTransfer(string message)
         {
             Message = message;
         }
 
-        public override string ToString()
-        {
-            return $"{base.ToString()}: {Message}";
-        }
+        public string Message { get; }
+
+        public override string ToString() => $"{base.ToString()}: {Message}";
     }
 }

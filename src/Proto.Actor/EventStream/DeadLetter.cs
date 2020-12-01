@@ -1,8 +1,9 @@
 // -----------------------------------------------------------------------
-//   <copyright file="DeadLetter.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="DeadLetter.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
+
 // ReSharper disable once CheckNamespace
 
 // ReSharper disable once CheckNamespace

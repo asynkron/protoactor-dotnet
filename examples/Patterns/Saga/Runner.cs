@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Runner.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,21 +16,22 @@ namespace Saga
 {
     public class Runner : IActor
     {
-        private int _intervalBetweenConsoleUpdates;
-        private readonly int _numberOfIterations;
-        private readonly double _uptime;
-        private readonly double _refusalProbability;
         private readonly double _busyProbability;
+        private readonly int _intervalBetweenConsoleUpdates;
+        private readonly int _numberOfIterations;
+        private readonly double _refusalProbability;
         private readonly int _retryAttempts;
-        private readonly bool _verbose;
         private readonly HashSet<PID> _transfers = new HashSet<PID>();
-        private int _successResults;
+        private readonly double _uptime;
+        private readonly bool _verbose;
         private int _failedAndInconsistentResults;
         private int _failedButConsistentResults;
-        private int _unknownResults;
         private InMemoryProvider _inMemoryProvider;
+        private int _successResults;
+        private int _unknownResults;
 
-        public Runner(int numberOfIterations, int intervalBetweenConsoleUpdates, double uptime, double refusalProbability, double busyProbability, int retryAttempts, bool verbose)
+        public Runner(int numberOfIterations, int intervalBetweenConsoleUpdates, double uptime,
+            double refusalProbability, double busyProbability, int retryAttempts, bool verbose)
         {
             _numberOfIterations = numberOfIterations;
             _intervalBetweenConsoleUpdates = intervalBetweenConsoleUpdates;
@@ -34,12 +40,6 @@ namespace Saga
             _busyProbability = busyProbability;
             _retryAttempts = retryAttempts;
             _verbose = verbose;
-        }
-
-        private PID CreateAccount(IContext context, string name, Random random)
-        {
-            var accountProps = Props.FromProducer(() => new Account(name, _uptime, _refusalProbability, _busyProbability, random));
-            return context.SpawnNamed(accountProps, name);
         }
 
         public Task ReceiveAsync(IContext context)
@@ -69,19 +69,32 @@ namespace Saga
                         i => Console.WriteLine($"Started {i}/{_numberOfIterations} processes"),
                         (i, nth) =>
                         {
-                            int j = i;
+                            var j = i;
                             var fromAccount = CreateAccount(context, $"FromAccount{j}", random);
                             var toAccount = CreateAccount(context, $"ToAccount{j}", random);
                             var actorName = $"Transfer Process {j}";
                             var persistanceID = $"Transfer Process {j}";
-                            var factory = new TransferFactory(context, _inMemoryProvider, random, _uptime, _retryAttempts);
+                            var factory = new TransferFactory(context, _inMemoryProvider, random, _uptime,
+                                _retryAttempts
+                            );
                             var transfer = factory.CreateTransfer(actorName, fromAccount, toAccount, 10, persistanceID);
                             _transfers.Add(transfer);
-                            if (i == _numberOfIterations && !nth) Console.WriteLine($"Started {j}/{_numberOfIterations} proesses");
-                        });
+                            if (i == _numberOfIterations && !nth)
+                                Console.WriteLine($"Started {j}/{_numberOfIterations} proesses");
+                        }
+                    );
                     break;
             }
+
             return Task.CompletedTask;
+        }
+
+        private PID CreateAccount(IContext context, string name, Random random)
+        {
+            var accountProps = Props.FromProducer(() =>
+                new Account(name, _uptime, _refusalProbability, _busyProbability, random)
+            );
+            return context.SpawnNamed(accountProps, name);
         }
 
         private void CheckForCompletion(PID pid)
@@ -99,24 +112,27 @@ namespace Saga
                 }
             }
             else
-            {
                 Console.WriteLine($"{remaining} processes remaining");
-            }
 
             if (remaining == 0)
             {
                 Thread.Sleep(250);
                 Console.WriteLine();
                 Console.WriteLine(
-                    $"RESULTS for {_uptime}% uptime, {_refusalProbability}% chance of refusal, {_busyProbability}% of being busy and {_retryAttempts} retry attempts:");
+                    $"RESULTS for {_uptime}% uptime, {_refusalProbability}% chance of refusal, {_busyProbability}% of being busy and {_retryAttempts} retry attempts:"
+                );
                 Console.WriteLine(
-                    $"{AsPercentage(_numberOfIterations, _successResults)}% ({_successResults}/{_numberOfIterations}) successful transfers");
+                    $"{AsPercentage(_numberOfIterations, _successResults)}% ({_successResults}/{_numberOfIterations}) successful transfers"
+                );
                 Console.WriteLine(
-                    $"{AsPercentage(_numberOfIterations, _failedButConsistentResults)}% ({_failedButConsistentResults}/{_numberOfIterations}) failures leaving a consistent system");
+                    $"{AsPercentage(_numberOfIterations, _failedButConsistentResults)}% ({_failedButConsistentResults}/{_numberOfIterations}) failures leaving a consistent system"
+                );
                 Console.WriteLine(
-                    $"{AsPercentage(_numberOfIterations, _failedAndInconsistentResults)}% ({_failedAndInconsistentResults}/{_numberOfIterations}) failures leaving an inconsistent system");
+                    $"{AsPercentage(_numberOfIterations, _failedAndInconsistentResults)}% ({_failedAndInconsistentResults}/{_numberOfIterations}) failures leaving an inconsistent system"
+                );
                 Console.WriteLine(
-                    $"{AsPercentage(_numberOfIterations, _unknownResults)}% ({_unknownResults}/{_numberOfIterations}) unknown results");
+                    $"{AsPercentage(_numberOfIterations, _unknownResults)}% ({_unknownResults}/{_numberOfIterations}) unknown results"
+                );
 
                 if (_verbose)
                 {
@@ -133,9 +149,6 @@ namespace Saga
             }
         }
 
-        private double AsPercentage(double numberOfIterations, double results)
-        {
-            return (results / numberOfIterations) * 100;
-        }
+        private double AsPercentage(double numberOfIterations, double results) => results / numberOfIterations * 100;
     }
 }

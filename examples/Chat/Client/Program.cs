@@ -1,20 +1,26 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Program.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
 using System.Threading.Tasks;
 using chat.messages;
 using Proto;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using static Proto.Remote.GrpcCore.GrpcCoreRemoteConfig;
+
 namespace Client
 {
-    static class Program
+    internal static class Program
     {
-        static void Main()
+        private static void Main()
         {
-            var config = 
+            var config =
                 BindToLocalhost()
-                .WithProtoMessages(ChatReflection.Descriptor);
-            
+                    .WithProtoMessages(ChatReflection.Descriptor);
+
             var system = new ActorSystem()
                 .WithRemote(config);
 

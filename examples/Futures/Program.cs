@@ -1,26 +1,23 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Program.cs" company="Asynkron AB">
+// <copyright file="Program.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//  </copyright>
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Threading.Tasks;
 using Proto;
 
-class Program
+internal class Program
 {
-    static async Task Main(string[] args)
+    private static async Task Main(string[] args)
     {
         var context = new RootContext(new ActorSystem());
         var props = Props.FromFunc(ctx =>
-        {
-            if (ctx.Message is string)
             {
-                ctx.Respond("hey");
+                if (ctx.Message is string) ctx.Respond("hey");
+                return Task.CompletedTask;
             }
-            return Task.CompletedTask;
-        });
+        );
         var pid = context.Spawn(props);
 
         var reply = await context.RequestAsync<object>(pid, "hello");

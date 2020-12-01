@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Program.cs" company="Asynkron AB">
+// <copyright file="Program.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//  </copyright>
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Diagnostics;
 using System.Runtime;
@@ -12,7 +11,6 @@ using Proto;
 
 namespace SpawnBenchmark
 {
-
     internal class Request
     {
         public long Div;
@@ -22,14 +20,15 @@ namespace SpawnBenchmark
 
     internal class MyActor : IActor
     {
-        private static MyActor ProduceActor(ActorSystem system) => new MyActor(system);
-        public static Props Props(ActorSystem system) => Proto.Props.FromProducer(() => ProduceActor(system));
+        private readonly ActorSystem _system;
         private long _replies;
         private PID _replyTo;
         private long _sum;
-        private readonly ActorSystem _system;
 
-        private MyActor(ActorSystem system) => _system = system;
+        private MyActor(ActorSystem system)
+        {
+            _system = system;
+        }
 
         public Task ReceiveAsync(IContext context)
         {
@@ -48,11 +47,12 @@ namespace SpawnBenchmark
                     {
                         var child = _system.Root.Spawn(Props(_system));
                         context.Request(child, new Request
-                        {
-                            Num = r.Num + i * (r.Size / r.Div),
-                            Size = r.Size / r.Div,
-                            Div = r.Div
-                        });
+                            {
+                                Num = r.Num + i * (r.Size / r.Div),
+                                Size = r.Size / r.Div,
+                                Div = r.Div
+                            }
+                        );
                     }
 
                     return Task.CompletedTask;
@@ -61,16 +61,16 @@ namespace SpawnBenchmark
                 {
                     _sum += res;
                     _replies--;
-                    if (_replies == 0)
-                    {
-                        context.Send(_replyTo, _sum);
-                    }
+                    if (_replies == 0) context.Send(_replyTo, _sum);
                     return Task.CompletedTask;
                 }
                 default:
                     return Task.CompletedTask;
             }
         }
+
+        private static MyActor ProduceActor(ActorSystem system) => new(system);
+        public static Props Props(ActorSystem system) => Proto.Props.FromProducer(() => ProduceActor(system));
     }
 
     internal class Program
@@ -86,11 +86,12 @@ namespace SpawnBenchmark
                 var pid = context.Spawn(MyActor.Props(system));
                 var sw = Stopwatch.StartNew();
                 var t = context.RequestAsync<long>(pid, new Request
-                {
-                    Num = 0,
-                    Size = 1000000,
-                    Div = 10
-                });
+                    {
+                        Num = 0,
+                        Size = 1000000,
+                        Div = 10
+                    }
+                );
                 t.ConfigureAwait(false);
                 var res = t.Result;
                 Console.WriteLine(sw.Elapsed);
@@ -98,6 +99,7 @@ namespace SpawnBenchmark
                 context.StopAsync(pid).Wait();
                 Task.Delay(500).Wait();
             }
+
             //   Console.ReadLine();
         }
     }

@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Persistence.cs" company="Asynkron AB">
+// <copyright file="Persistence.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//  </copyright>
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;

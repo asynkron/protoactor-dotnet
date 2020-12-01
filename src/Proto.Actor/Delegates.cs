@@ -1,4 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Delegates.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System.Threading.Tasks;
 using Proto.Mailbox;
 
 // ReSharper disable once CheckNamespace

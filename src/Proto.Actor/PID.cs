@@ -1,9 +1,8 @@
 // -----------------------------------------------------------------------
-//   <copyright file="PID.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="PID.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 namespace Proto
 {
     // ReSharper disable once InconsistentNaming

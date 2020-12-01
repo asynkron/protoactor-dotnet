@@ -1,16 +1,15 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Program.cs" company="Asynkron AB">
+// <copyright file="Program.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//  </copyright>
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Threading.Tasks;
 using Proto;
 
-class Program
+internal class Program
 {
-    static void Main(string[] args)
+    private static void Main(string[] args)
     {
         var system = new ActorSystem();
         var props = Props.FromProducer(() => new HelloActor());
@@ -22,12 +21,12 @@ class Program
     //Messages should be immutable to prevent race conditions between multiple actors
     private class Hello
     {
-        public string Who { get; }
-
         public Hello(string who)
         {
             Who = who;
         }
+
+        public string Who { get; }
     }
 
     //This is a standard actor
@@ -36,10 +35,7 @@ class Program
         public Task ReceiveAsync(IContext context)
         {
             var msg = context.Message;
-            if (msg is Hello r)
-            {
-                Console.WriteLine($"Hello {r.Who}");
-            }
+            if (msg is Hello r) Console.WriteLine($"Hello {r.Who}");
             return Task.CompletedTask;
         }
     }

@@ -1,9 +1,8 @@
 // -----------------------------------------------------------------------
-//   <copyright file="KubernetesProvider.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
-//   </copyright>
+// <copyright file="KubernetesClusterMonitor.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Collections.Generic;
 using System.Linq;

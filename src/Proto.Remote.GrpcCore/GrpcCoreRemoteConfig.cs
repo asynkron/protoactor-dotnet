@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+﻿// -----------------------------------------------------------------------
+// <copyright file="GrpcCoreRemoteConfig.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System.Collections.Generic;
 using Grpc.Core;
 using JetBrains.Annotations;
 

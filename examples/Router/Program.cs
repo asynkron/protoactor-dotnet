@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Program.cs" company="Asynkron AB">
+// <copyright file="Program.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//  </copyright>
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Threading.Tasks;
 using Proto;
@@ -15,25 +14,16 @@ namespace RouterExample
     {
         public string Text;
 
-        public string HashBy()
-        {
-            return Text;
-        }
+        public string HashBy() => Text;
 
-        public override string ToString()
-        {
-            return Text;
-        }
+        public override string ToString() => Text;
     }
 
     internal class MyActor : IActor
     {
         public Task ReceiveAsync(IContext context)
         {
-            if (context.Message is Message msg)
-            {
-                Console.WriteLine($"Actor {context.Self.Id} got message '{msg.Text}'.");
-            }
+            if (context.Message is Message msg) Console.WriteLine($"Actor {context.Self.Id} got message '{msg.Text}'.");
             return Task.CompletedTask;
         }
     }
@@ -72,7 +62,7 @@ namespace RouterExample
             for (var i = 0; i < 10; i++)
             {
                 var pid = context.Spawn(props);
-                context.Send(pid, new Message { Text = $"{i % 4}" });
+                context.Send(pid, new Message {Text = $"{i % 4}"});
             }
         }
 
@@ -84,7 +74,7 @@ namespace RouterExample
             var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                context.Send(pid, new Message { Text = $"{i % 4}" });
+                context.Send(pid, new Message {Text = $"{i % 4}"});
             }
         }
 
@@ -101,7 +91,7 @@ namespace RouterExample
             var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                context.Send(pid, new Message { Text = $"{i % 4}" });
+                context.Send(pid, new Message {Text = $"{i % 4}"});
             }
         }
 
@@ -113,7 +103,7 @@ namespace RouterExample
             var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                context.Send(pid, new Message { Text = $"{i % 4}" });
+                context.Send(pid, new Message {Text = $"{i % 4}"});
             }
         }
 
@@ -130,7 +120,7 @@ namespace RouterExample
             var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                context.Send(pid, new Message { Text = $"{i % 4}" });
+                context.Send(pid, new Message {Text = $"{i % 4}"});
             }
         }
 
@@ -142,7 +132,7 @@ namespace RouterExample
             var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                context.Send(pid, new Message { Text = $"{i % 4}" });
+                context.Send(pid, new Message {Text = $"{i % 4}"});
             }
         }
 
@@ -159,7 +149,7 @@ namespace RouterExample
             var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                context.Send(pid, new Message { Text = $"{i % 4}" });
+                context.Send(pid, new Message {Text = $"{i % 4}"});
             }
         }
 
@@ -171,7 +161,7 @@ namespace RouterExample
             var pid = context.Spawn(props);
             for (var i = 0; i < 10; i++)
             {
-                context.Send(pid, new Message { Text = $"{i % 4}" });
+                context.Send(pid, new Message {Text = $"{i % 4}"});
             }
         }
     }

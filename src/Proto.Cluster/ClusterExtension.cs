@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="ClusterExtension.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 namespace Proto.Cluster
 {
     public static class Extensions

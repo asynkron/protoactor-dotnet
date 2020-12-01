@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="Messages.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="Messages.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 
 namespace Proto.Remote

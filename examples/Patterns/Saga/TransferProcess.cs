@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="TransferProcess.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
 using System.Threading.Tasks;
 using Proto;
 using Proto.Persistence;
@@ -6,27 +11,22 @@ using Saga.Messages;
 
 namespace Saga
 {
-    class TransferProcess : IActor
+    internal class TransferProcess : IActor
     {
-        private readonly PID _from;
-        private readonly PID _to;
         private readonly decimal _amount;
+        private readonly double _availability;
+        private readonly Behavior _behavior = new Behavior();
+        private readonly PID _from;
+        private readonly Persistence _persistence;
         private readonly string _persistenceId;
         private readonly Random _random;
-        private readonly double _availability;
-        private readonly Persistence _persistence;
-        private readonly Behavior _behavior = new Behavior();
+        private readonly PID _to;
+        private bool _processCompleted;
         private bool _restarting;
         private bool _stopping;
-        private bool _processCompleted;
 
-        private Props TryCredit(PID targetActor, decimal amount) => Props
-            .FromProducer(() => new AccountProxy(targetActor, sender => new Credit(amount, sender)));
-
-        private Props TryDebit(PID targetActor, decimal amount) => Props
-            .FromProducer(() => new AccountProxy(targetActor, sender => new Debit(amount, sender)));
-
-        public TransferProcess(PID from, PID to, decimal amount, IProvider provider, string persistenceId, Random random, double availability)
+        public TransferProcess(PID from, PID to, decimal amount, IProvider provider, string persistenceId,
+            Random random, double availability)
         {
             _from = from;
             _to = to;
@@ -37,9 +37,58 @@ namespace Saga
             _persistence = Persistence.WithEventSourcing(provider, persistenceId, ApplyEvent);
         }
 
+        public async Task ReceiveAsync(IContext context)
+        {
+            var message = context.Message;
+            Console.WriteLine($"[{_persistenceId}] Recieiving :{message}");
+            switch (message)
+            {
+                case Started msg:
+                    // default to Starting behavior
+                    _behavior.Become(Starting);
+
+                    // recover state from persistence - if there are any events, the current behavior 
+                    // should change
+                    await _persistence.RecoverStateAsync();
+                    break;
+                case Stopping msg:
+                    _stopping = true;
+                    break;
+                case Restarting msg:
+                    _restarting = true;
+                    break;
+                case Stopped _ when !_processCompleted:
+                    await _persistence.PersistEventAsync(new TransferFailed("Unknown. Transfer Process crashed"));
+                    await _persistence.PersistEventAsync(
+                        new EscalateTransfer("Unknown failure. Transfer Process crashed")
+                    );
+                    context.Send(context.Parent, new UnknownResult(context.Self));
+                    return;
+                case Terminated _ when _restarting || _stopping:
+                    // if the TransferProcess itself is restarting or stopping due to failure, we will receive a
+                    // Terminated message for any child actors due to them being stopped but we should not
+                    // treat this as a failure of the saga, so return here to stop further processing
+                    return;
+                default:
+                    // simulate failures of the transfer process itself
+                    if (Fail()) throw new Exception();
+                    break;
+            }
+
+            // pass through all messages to the current behavior. Note this includes the Started message we
+            // may have just handled as what we should do when started depends on the current behavior
+            await _behavior.ReceiveAsync(context);
+        }
+
+        private Props TryCredit(PID targetActor, decimal amount) => Props
+            .FromProducer(() => new AccountProxy(targetActor, sender => new Credit(amount, sender)));
+
+        private Props TryDebit(PID targetActor, decimal amount) => Props
+            .FromProducer(() => new AccountProxy(targetActor, sender => new Debit(amount, sender)));
+
         private void ApplyEvent(Event @event)
         {
-            Console.WriteLine($"Applying event: {@event.Data.ToString()}");
+            Console.WriteLine($"Applying event: {@event.Data}");
             switch (@event.Data)
             {
                 case TransferStarted msg:
@@ -63,50 +112,6 @@ namespace Saga
         {
             var comparison = _random.NextDouble() * 100;
             return comparison > _availability;
-        }
-
-        public async Task ReceiveAsync(IContext context)
-        {
-            var message = context.Message;
-            Console.WriteLine($"[{_persistenceId}] Recieiving :{message.ToString()}");
-            switch (message)
-            {
-                case Started msg:
-                    // default to Starting behavior
-                    _behavior.Become(Starting);
-
-                    // recover state from persistence - if there are any events, the current behavior 
-                    // should change
-                    await _persistence.RecoverStateAsync();
-                    break;
-                case Stopping msg:
-                    _stopping = true;
-                    break;
-                case Restarting msg:
-                    _restarting = true;
-                    break;
-                case Stopped _ when !_processCompleted:
-                    await _persistence.PersistEventAsync(new TransferFailed($"Unknown. Transfer Process crashed"));
-                    await _persistence.PersistEventAsync(new EscalateTransfer($"Unknown failure. Transfer Process crashed"));
-                    context.Send(context.Parent, new UnknownResult(context.Self));
-                    return;
-                case Terminated _ when _restarting || _stopping:
-                    // if the TransferProcess itself is restarting or stopping due to failure, we will receive a
-                    // Terminated message for any child actors due to them being stopped but we should not
-                    // treat this as a failure of the saga, so return here to stop further processing
-                    return;
-                default:
-                    // simulate failures of the transfer process itself
-                    if (Fail())
-                    {
-                        throw new Exception();
-                    }
-                    break;
-            }
-
-            // pass through all messages to the current behavior. Note this includes the Started message we
-            // may have just handled as what we should do when started depends on the current behavior
-            await _behavior.ReceiveAsync(context);
         }
 
         private async Task Starting(IContext context)
@@ -133,7 +138,7 @@ namespace Saga
                     break;
                 case Refused _:
                     // the debit has been refused, and should not be retried 
-                    await _persistence.PersistEventAsync(new TransferFailed($"Debit refused"));
+                    await _persistence.PersistEventAsync(new TransferFailed("Debit refused"));
                     context.Send(context.Parent, new FailedButConsistentResult(context.Self));
                     StopAll(context);
                     break;
@@ -155,8 +160,10 @@ namespace Saga
                     context.SpawnNamed(TryCredit(_to, +_amount), "CreditAttempt");
                     break;
                 case OK msg:
-                    decimal fromBalance = await context.RequestAsync<decimal>(_from, new GetBalance(), TimeSpan.FromMilliseconds(2000));
-                    decimal toBalance = await context.RequestAsync<decimal>(_to, new GetBalance(), TimeSpan.FromMilliseconds(2000));
+                    var fromBalance =
+                        await context.RequestAsync<decimal>(_from, new GetBalance(), TimeSpan.FromMilliseconds(2000));
+                    var toBalance =
+                        await context.RequestAsync<decimal>(_to, new GetBalance(), TimeSpan.FromMilliseconds(2000));
 
                     await _persistence.PersistEventAsync(new AccountCredited());
                     await _persistence.PersistEventAsync(new TransferCompleted(_from, fromBalance, _to, toBalance));
@@ -190,7 +197,7 @@ namespace Saga
             {
                 case Started _:
                     // if we are in this state when started then we need to recreate the TryCredit actor
-                    context.SpawnNamed(TryCredit(_from, +_amount), $"RollbackDebit");
+                    context.SpawnNamed(TryCredit(_from, +_amount), "RollbackDebit");
                     break;
                 case OK _:
                     await _persistence.PersistEventAsync(new DebitRolledBack());
@@ -200,7 +207,9 @@ namespace Saga
                     break;
                 case Refused _: // in between making the credit and debit, the _from account has started refusing!! :O
                 case Terminated _:
-                    await _persistence.PersistEventAsync(new TransferFailed($"Unable to rollback process. {_from.Id} is owed {_amount}"));
+                    await _persistence.PersistEventAsync(
+                        new TransferFailed($"Unable to rollback process. {_from.Id} is owed {_amount}")
+                    );
                     await _persistence.PersistEventAsync(new EscalateTransfer($"{_from.Id} is owed {_amount}"));
                     context.Send(context.Parent, new FailedAndInconsistent(context.Self));
                     StopAll(context);

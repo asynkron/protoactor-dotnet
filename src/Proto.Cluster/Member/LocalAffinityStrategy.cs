@@ -1,4 +1,9 @@
-﻿using System.Collections.Immutable;
+﻿// -----------------------------------------------------------------------
+// <copyright file="LocalAffinityStrategy.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System.Collections.Immutable;
 using System.Linq;
 using Proto.Cluster.Partition;
 

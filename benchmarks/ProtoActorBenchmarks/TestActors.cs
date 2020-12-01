@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="TestActors.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System.Threading.Tasks;
 using Proto;
 
@@ -27,15 +32,9 @@ namespace ProtoActorBenchmarks
                 case Msg m:
                     _batch--;
 
-                    if (_batch > 0)
-                    {
-                        break;
-                    }
+                    if (_batch > 0) break;
 
-                    if (!SendBatch(context, m.Sender))
-                    {
-                        _wgStop.SetResult(true);
-                    }
+                    if (!SendBatch(context, m.Sender)) _wgStop.SetResult(true);
 
                     break;
             }
@@ -45,10 +44,7 @@ namespace ProtoActorBenchmarks
 
         private bool SendBatch(IContext context, PID sender)
         {
-            if (_messageCount == 0)
-            {
-                return false;
-            }
+            if (_messageCount == 0) return false;
 
             var m = new Msg(context.Self);
 
@@ -95,14 +91,20 @@ namespace ProtoActorBenchmarks
 
     public class Start
     {
-        public Start(PID sender) => Sender = sender;
+        public Start(PID sender)
+        {
+            Sender = sender;
+        }
 
         public PID Sender { get; }
     }
 
     public class Msg
     {
-        public Msg(PID sender) => Sender = sender;
+        public Msg(PID sender)
+        {
+            Sender = sender;
+        }
 
         public PID Sender { get; }
     }

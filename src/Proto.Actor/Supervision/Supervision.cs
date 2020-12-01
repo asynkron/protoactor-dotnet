@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="Supervision.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="Supervision.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 
 // ReSharper disable once CheckNamespace

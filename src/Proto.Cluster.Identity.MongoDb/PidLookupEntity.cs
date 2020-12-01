@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="PidLookupEntity.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace Proto.Cluster.Identity.MongoDb

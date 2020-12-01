@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Program.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2016 Asynkron AB All rights reserved
-//  </copyright>
+// <copyright file="Program.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Diagnostics;
 using System.Globalization;
@@ -14,10 +13,9 @@ using System.Threading.Tasks;
 using Proto;
 using Proto.Mailbox;
 
-
 public class Program
 {
-    static void Main(string[] args)
+    private static void Main(string[] args)
     {
         var context = new RootContext(new ActorSystem());
         Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
@@ -25,10 +23,10 @@ public class Program
         const int batchSize = 100;
 
         Console.WriteLine("Dispatcher\t\tElapsed\t\tMsg/sec");
-        var tps = new[] { 50,100,200,300, 400, 500, 600, 700, 800, 900 };
+        var tps = new[] {50, 100, 200, 300, 400, 500, 600, 700, 800, 900};
         foreach (var t in tps)
         {
-            var d = new ThreadPoolDispatcher { Throughput = t };
+            var d = new ThreadPoolDispatcher {Throughput = t};
 
             var clientCount = Environment.ProcessorCount * 1;
             var clients = new PID[clientCount];
@@ -50,6 +48,7 @@ public class Program
                 clients[i] = context.Spawn(clientProps);
                 echos[i] = context.Spawn(echoProps);
             }
+
             var tasks = completions.Select(tsc => tsc.Task).ToArray();
             var sw = Stopwatch.StartNew();
             for (var i = 0; i < clientCount; i++)
@@ -59,12 +58,15 @@ public class Program
 
                 context.Send(client, new Start(echo));
             }
+
             Task.WaitAll(tasks);
 
             sw.Stop();
             var totalMessages = messageCount * 2 * clientCount;
 
-            var x = ((int)(totalMessages / (double)sw.ElapsedMilliseconds * 1000.0d)).ToString("#,##0,,M", CultureInfo.InvariantCulture);
+            var x = ((int) (totalMessages / (double) sw.ElapsedMilliseconds * 1000.0d)).ToString("#,##0,,M",
+                CultureInfo.InvariantCulture
+            );
             Console.WriteLine($"{t}\t\t\t{sw.ElapsedMilliseconds} ms\t\t{x}");
             Thread.Sleep(2000);
         }
@@ -103,10 +105,10 @@ public class EchoActor : IActor
                 context.Send(msg.PingActor, msg);
                 break;
         }
+
         return Task.CompletedTask;
     }
 }
-
 
 public class PingActor : IActor
 {
@@ -133,15 +135,13 @@ public class PingActor : IActor
                 break;
             case Msg m:
                 _messageCount--;
-                
-                context.Send(_targetPid,m);
 
-                if (_messageCount <= 0)
-                {
-                    _wgStop.SetResult(true);
-                }
+                context.Send(_targetPid, m);
+
+                if (_messageCount <= 0) _wgStop.SetResult(true);
                 break;
         }
+
         return Task.CompletedTask;
     }
 

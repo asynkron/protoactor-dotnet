@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="GrpcNetChannelProvider.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using Grpc.Core;
 using Grpc.Net.Client;
 

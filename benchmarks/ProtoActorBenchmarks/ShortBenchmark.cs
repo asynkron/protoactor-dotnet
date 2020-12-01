@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="ShortBenchmark.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
@@ -6,12 +11,13 @@ using Proto.Mailbox;
 
 namespace ProtoActorBenchmarks
 {
-    [MemoryDiagnoser, InProcess]
+    [MemoryDiagnoser]
+    [InProcess]
     public class ShortBenchmark
     {
         private RootContext _context;
-        private Props _echoProps;
         private PID _echoActor;
+        private Props _echoProps;
         private TimeSpan _timeout;
 
         [GlobalSetup]

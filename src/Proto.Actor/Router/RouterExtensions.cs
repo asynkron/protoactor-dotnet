@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="Router.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="RouterExtensions.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using Proto.Router.Routers;
 

@@ -1,4 +1,9 @@
-﻿using JetBrains.Annotations;
+﻿// -----------------------------------------------------------------------
+// <copyright file="RemoteExtensions.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using JetBrains.Annotations;
 
 namespace Proto.Remote.GrpcCore
 {

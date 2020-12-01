@@ -1,4 +1,9 @@
-﻿using System.Threading;
+﻿// -----------------------------------------------------------------------
+// <copyright file="GetPid.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System.Threading;
 using Proto.Router;
 
 namespace Proto.Cluster.Identity

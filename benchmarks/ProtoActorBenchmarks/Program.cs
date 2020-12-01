@@ -1,4 +1,9 @@
-﻿using BenchmarkDotNet.Running;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Program.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using BenchmarkDotNet.Running;
 
 namespace ProtoActorBenchmarks
 {

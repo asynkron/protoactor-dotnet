@@ -1,10 +1,15 @@
-﻿using System.CommandLine;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Program.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System.CommandLine;
 using System.Threading.Tasks;
 
 namespace ProtoGrainGenerator
 {
-    class Program
+    internal class Program
     {
-        static Task Main(string[] args) => Commands.CreateCommands().InvokeAsync(args);
+        private static Task Main(string[] args) => Commands.CreateCommands().InvokeAsync(args);
     }
 }
