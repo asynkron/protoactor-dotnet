@@ -35,7 +35,6 @@ namespace Proto.Cluster.Identity
         public Task ReceiveAsync(IContext context)
         {
             if (context.Message is not GetPid msg) return Task.CompletedTask;
-            var reqId = Guid.NewGuid();
 
             if (context.Sender == null)
             {
@@ -51,7 +50,7 @@ namespace Proto.Cluster.Identity
 
             try
             {
-                if (!_inProgress.TryGetValue(msg.ClusterIdentity, out Task<PID?> getPid))
+                if (!_inProgress.TryGetValue(msg.ClusterIdentity, out var getPid))
                 {
                     //First one to try to get identity.
                     getPid = GetWithGlobalLock(context.Sender!, msg.ClusterIdentity, context.CancellationToken);
@@ -67,13 +66,6 @@ namespace Proto.Cluster.Identity
 
                             Respond(getPid.Result);
                             return Task.CompletedTask;
-                        }
-                        catch (Exception x)
-                        {
-                            _logger.LogError(x, "Identity worker crashed in reentrant context: {Id}",
-                                context.Self!.ToShortString()
-                            );
-                            throw;
                         }
                         finally
                         {
@@ -93,10 +85,6 @@ namespace Proto.Cluster.Identity
 
             void Respond(PID? pid)
             {
-                _logger.LogDebug("Worker Responding to {@ClusterIdentity}, req {Request}, Resp {PID}",
-                    msg.ClusterIdentity.ToShortString(), reqId, pid
-                );
-
                 context.Respond(new PidResult
                     {
                         Pid = pid
@@ -131,7 +119,6 @@ namespace Proto.Cluster.Identity
 
                 //we have the lock, spawn and return
                 var pid = await SpawnActivationAsync(activator, spawnLock, ct);
-                _logger.LogDebug("Got {PID} for {ClusterIdentity}", pid, clusterIdentity.ToShortString());
                 return pid;
             }
             catch (Exception e)
