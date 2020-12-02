@@ -8,9 +8,9 @@ namespace Proto.Router.Tests
 {
     public class RandomGroupRouterTests
     {
-        private readonly ActorSystem ActorSystem = new ActorSystem();
         private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor());
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
+        private readonly ActorSystem ActorSystem = new();
 
         [Fact]
         public async Task RandomGroupRouter_RouteesReceiveMessagesInRandomOrder()
@@ -53,7 +53,7 @@ namespace Proto.Router.Tests
 
             ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
 
-            for (int i = 0; i < 100; i++)
+            for (var i = 0; i < 100; i++)
             {
                 ActorSystem.Root.Send(router, i.ToString());
             }

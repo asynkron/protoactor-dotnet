@@ -1,71 +1,18 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto.Mailbox;
 using Proto.TestFixtures;
 using Xunit;
-using System.Linq;
 
 namespace Proto.Tests
 {
     public class SupervisionTests_OneForOne
     {
-        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly ActorSystem System = new();
         private static readonly RootContext Context = System.Root;
-        private static readonly Exception Exception = new Exception("boo hoo");
-        class ParentActor : IActor
-        {
-            private readonly Props _childProps;
-
-            public ParentActor(Props childProps)
-            {
-                _childProps = childProps;
-            }
-
-            public PID Child { get; set; }
-
-            public Task ReceiveAsync(IContext context)
-            {
-                switch (context.Message)
-                {
-                    case Started _:
-                        Child = context.Spawn(_childProps);
-                        break;
-                    case string _:
-                        context.Forward(Child);
-                        break;
-                }
-                return Task.CompletedTask;
-            }
-        }
-
-        class ChildActor : IActor
-        {
-
-            public Task ReceiveAsync(IContext context)
-            {
-                switch (context.Message)
-                {
-                    case string _:
-                        throw Exception;
-                }
-                return Task.CompletedTask;
-            }
-        }
-
-        class ThrowOnStartedChildActor : IActor
-        {
-
-            public Task ReceiveAsync(IContext context)
-            {
-                switch (context.Message)
-                {
-                    case Started _:
-                        throw new Exception("in started");
-                }
-                return Task.CompletedTask;
-            }
-        }
+        private static readonly Exception Exception = new("boo hoo");
 
         [Fact]
         public void OneForOneStrategy_Should_ResumeChildOnFailure()
@@ -122,10 +69,13 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void OneForOneStrategy_WhenRestartedLessThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldNotStopChild()
+        public void
+            OneForOneStrategy_WhenRestartedLessThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldNotStopChild()
         {
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 3, TimeSpan.FromMilliseconds(100));
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 3,
+                TimeSpan.FromMilliseconds(100)
+            );
             var childProps = Props.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Props.FromProducer(() => new ParentActor(childProps))
@@ -149,10 +99,13 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void OneForOneStrategy_WhenRestartedMoreThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldStopChild()
+        public void
+            OneForOneStrategy_WhenRestartedMoreThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldStopChild()
         {
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 3, TimeSpan.FromMilliseconds(100));
+            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 3,
+                TimeSpan.FromMilliseconds(100)
+            );
             var childProps = Props.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Props.FromProducer(() => new ParentActor(childProps))
@@ -184,8 +137,8 @@ namespace Proto.Tests
             Context.Send(parent, "hello");
 
             childMailboxStats.Reset.Wait(1000);
-            Assert.Contains(childMailboxStats.Posted, msg => (msg is Restart r) && r.Reason == Exception);
-            Assert.Contains(childMailboxStats.Received, msg => (msg is Restart r) && r.Reason == Exception);
+            Assert.Contains(childMailboxStats.Posted, msg => msg is Restart r && r.Reason == Exception);
+            Assert.Contains(childMailboxStats.Received, msg => msg is Restart r && r.Reason == Exception);
         }
 
         [Fact]
@@ -228,13 +181,9 @@ namespace Proto.Tests
             foreach (var failure in failures)
             {
                 if (failure.Reason is AggregateException ae)
-                {
                     Assert.IsType<Exception>(ae.InnerException);
-                }
                 else
-                {
                     Assert.IsType<Exception>(failure.Reason);
-                }
             }
         }
 
@@ -282,12 +231,70 @@ namespace Proto.Tests
                 .WithChildSupervisorStrategy(strategy)
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
             var grandParentProps = Props.FromProducer(() => new ParentActor(parentProps))
-                .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, TimeSpan.FromSeconds(1)));
+                .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1,
+                        TimeSpan.FromSeconds(1)
+                    )
+                );
             var grandParent = Context.Spawn(grandParentProps);
 
             parentMailboxStats.Reset.Wait(1000);
             Thread.Sleep(1000); //parentMailboxStats.Received could still be modified without a wait here
             Assert.Contains(parentMailboxStats.Received, msg => msg is Restart);
+        }
+
+        private class ParentActor : IActor
+        {
+            private readonly Props _childProps;
+
+            public ParentActor(Props childProps)
+            {
+                _childProps = childProps;
+            }
+
+            public PID Child { get; set; }
+
+            public Task ReceiveAsync(IContext context)
+            {
+                switch (context.Message)
+                {
+                    case Started _:
+                        Child = context.Spawn(_childProps);
+                        break;
+                    case string _:
+                        context.Forward(Child);
+                        break;
+                }
+
+                return Task.CompletedTask;
+            }
+        }
+
+        private class ChildActor : IActor
+        {
+            public Task ReceiveAsync(IContext context)
+            {
+                switch (context.Message)
+                {
+                    case string _:
+                        throw Exception;
+                }
+
+                return Task.CompletedTask;
+            }
+        }
+
+        private class ThrowOnStartedChildActor : IActor
+        {
+            public Task ReceiveAsync(IContext context)
+            {
+                switch (context.Message)
+                {
+                    case Started _:
+                        throw new Exception("in started");
+                }
+
+                return Task.CompletedTask;
+            }
         }
     }
 }

@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="DIExtension.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
 using JetBrains.Annotations;
 using Proto.Extensions;
@@ -11,10 +16,11 @@ namespace Proto.DependencyInjection
         {
             Resolver = resolver;
         }
+
         public IDependencyResolver Resolver { get; }
     }
 
-    public static class Extensions 
+    public static class Extensions
     {
         public static ActorSystem WithServiceProvider(this ActorSystem actorSystem, IServiceProvider serviceProvider)
         {
@@ -23,7 +29,7 @@ namespace Proto.DependencyInjection
             actorSystem.Extensions.Register(diExtension);
             return actorSystem;
         }
-        
+
         public static IDependencyResolver DI(this ActorSystem system) => system.Extensions.Get<DIExtension>().Resolver;
     }
 }

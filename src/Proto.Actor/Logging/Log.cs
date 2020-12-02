@@ -1,12 +1,12 @@
 // -----------------------------------------------------------------------
-//   <copyright file="Log.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="Log.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
+
 // ReSharper disable once CheckNamespace
 namespace Proto
 {

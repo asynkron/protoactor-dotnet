@@ -1,5 +1,3 @@
-using System;
-using System.Reflection;
 using Xunit.Sdk;
 
 namespace Proto.Remote.Tests

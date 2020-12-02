@@ -1,41 +1,42 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Program.cs" company="Asynkron AB">
+// <copyright file="Program.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//  </copyright>
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto;
 
-class Program
+internal class Program
 {
-    static void Main(string[] args)
+    private static void Main(string[] args)
     {
         var rootContext = new RootContext(new ActorSystem());
         var c = 0;
         var props = Props.FromFunc(context =>
-        {
-            switch (context.Message)
             {
-                case Started _:
-                    Console.WriteLine($"{DateTime.Now} Started");
-                    context.SetReceiveTimeout(TimeSpan.FromSeconds(1));
-                    break;
-                case ReceiveTimeout _:
-                    c++;
-                    Console.WriteLine($"{DateTime.Now} ReceiveTimeout: {c}");
-                    break;
-                case NoInfluence _:
-                    Console.WriteLine($"{DateTime.Now} Received a no-influence message");
-                    break;
-                case string s:
-                    Console.WriteLine($"{DateTime.Now} Received message: {s}");
-                    break;
+                switch (context.Message)
+                {
+                    case Started _:
+                        Console.WriteLine($"{DateTime.Now} Started");
+                        context.SetReceiveTimeout(TimeSpan.FromSeconds(1));
+                        break;
+                    case ReceiveTimeout _:
+                        c++;
+                        Console.WriteLine($"{DateTime.Now} ReceiveTimeout: {c}");
+                        break;
+                    case NoInfluence _:
+                        Console.WriteLine($"{DateTime.Now} Received a no-influence message");
+                        break;
+                    case string s:
+                        Console.WriteLine($"{DateTime.Now} Received message: {s}");
+                        break;
+                }
+
+                return Task.CompletedTask;
             }
-            return Task.CompletedTask;
-        });
+        );
         var pid = rootContext.Spawn(props);
         for (var i = 0; i < 6; i++)
         {

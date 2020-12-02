@@ -1,17 +1,14 @@
 // -----------------------------------------------------------------------
-//   <copyright file="PID.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="PID.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 namespace Proto
 {
     // ReSharper disable once InconsistentNaming
     public partial class PID
     {
         private Process? _process;
-
-        public static PID FromAddress(string address, string id) => new PID(address, id);
 
         public PID(string address, string id)
         {
@@ -24,23 +21,19 @@ namespace Proto
             _process = process;
         }
 
+        public static PID FromAddress(string address, string id) => new(address, id);
+
         internal Process? Ref(ActorSystem system)
         {
             if (_process is not null)
             {
-                if (_process is ActorProcess actorProcess && actorProcess.IsDead)
-                {
-                    _process = null;
-                }
+                if (_process is ActorProcess actorProcess && actorProcess.IsDead) _process = null;
 
                 return _process;
             }
 
             var reff = system.ProcessRegistry.Get(this);
-            if (!(reff is DeadLetterProcess))
-            {
-                _process = reff;
-            }
+            if (!(reff is DeadLetterProcess)) _process = reff;
 
             return _process;
         }

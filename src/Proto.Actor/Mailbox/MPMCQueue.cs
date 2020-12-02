@@ -1,30 +1,8 @@
-﻿// Based on MPMCQueue.NET by Alexandr Nikitin
-// https://github.com/alexandrnikitin/MPMCQueue.NET
-//
-// Original license:
-//
-// MIT License
-//
-// Copyright(c) 2016 Alexandr Nikitin
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-
+﻿// -----------------------------------------------------------------------
+// <copyright file="MPMCQueue.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -45,15 +23,10 @@ namespace Proto.Mailbox
 
         public MPMCQueue(int bufferSize)
         {
-            if (bufferSize < 2)
-            {
-                throw new ArgumentException($"{nameof(bufferSize)} should be greater than 2");
-            }
+            if (bufferSize < 2) throw new ArgumentException($"{nameof(bufferSize)} should be greater than 2");
 
             if ((bufferSize & (bufferSize - 1)) != 0)
-            {
                 throw new ArgumentException($"{nameof(bufferSize)} should be a power of 2");
-            }
 
             _bufferMask = bufferSize - 1;
             _buffer = new Cell[bufferSize];
@@ -84,10 +57,7 @@ namespace Proto.Mailbox
                     return true;
                 }
 
-                if (cell.Sequence < pos)
-                {
-                    return false;
-                }
+                if (cell.Sequence < pos) return false;
             } while (true);
         }
 
@@ -95,10 +65,7 @@ namespace Proto.Mailbox
         {
             while (true)
             {
-                if (TryEnqueue(item))
-                {
-                    break;
-                }
+                if (TryEnqueue(item)) break;
 
                 Task.Delay(1)
                     .Wait(); // Could be Thread.Sleep(1) or Thread.SpinWait() if the assembly is not portable lib.

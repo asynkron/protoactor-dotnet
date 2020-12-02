@@ -7,9 +7,9 @@ namespace Proto.Router.Tests
 {
     public class PoolRouterTests
     {
-        private readonly ActorSystem ActorSystem = new ActorSystem();
         private static readonly Props MyActorProps = Props.FromProducer(() => new DoNothingActor());
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
+        private readonly ActorSystem ActorSystem = new();
 
         [Fact]
         public async void BroadcastGroupPool_CreatesRoutees()
@@ -44,7 +44,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async void RandomPool_CreatesRoutees()
         {
-            var props = new ActorSystem().Root.NewRandomPool(MyActorProps, 3,0)
+            var props = new ActorSystem().Root.NewRandomPool(MyActorProps, 3, 0)
                 .WithMailbox(() => new TestMailbox());
             var router = ActorSystem.Root.Spawn(props);
             var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);

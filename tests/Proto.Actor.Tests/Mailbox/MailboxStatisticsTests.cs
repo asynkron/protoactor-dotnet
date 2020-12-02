@@ -1,15 +1,15 @@
 using System;
+using System.Threading.Tasks;
 using Proto.TestFixtures;
 using Xunit;
-using System.Threading.Tasks;
 
 namespace Proto.Mailbox.Tests
 {
     public class MailboxStatisticsTests
     {
+        private readonly DefaultMailbox _mailbox;
         private readonly TestMailboxHandler _mailboxHandler;
         private readonly TestMailboxStatistics _mailboxStatistics;
-        private readonly DefaultMailbox _mailbox;
 
         public MailboxStatisticsTests()
         {
@@ -20,7 +20,7 @@ namespace Proto.Mailbox.Tests
             _mailbox = new DefaultMailbox(systemMessages, userMailbox, _mailboxStatistics);
             _mailbox.RegisterHandlers(_mailboxHandler, _mailboxHandler);
         }
-        
+
         [Fact]
         public void GivenMailboxStarted_ShouldInvokeMailboxStarted()
         {

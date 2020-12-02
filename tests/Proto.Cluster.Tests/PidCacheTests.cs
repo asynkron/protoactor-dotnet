@@ -1,14 +1,13 @@
 #nullable enable
 using System.Threading;
 using System.Threading.Tasks;
+using ClusterTest.Messages;
 using FluentAssertions;
 using Proto.Cluster.IdentityLookup;
 using Xunit;
 
 namespace Proto.Cluster.Tests
 {
-    using ClusterTest.Messages;
-
     public class DummyIdentityLookup : IIdentityLookup
     {
         private readonly PID _pid;
@@ -18,26 +17,13 @@ namespace Proto.Cluster.Tests
             _pid = pid;
         }
 
-        public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
-        {
-            return Task.FromResult(_pid)!;
-        }
+        public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct) => Task.FromResult(_pid)!;
 
-        public Task RemovePidAsync(PID pid, CancellationToken ct)
-        {
-            return Task.CompletedTask;
+        public Task RemovePidAsync(PID pid, CancellationToken ct) => Task.CompletedTask;
 
-        }
+        public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient) => Task.CompletedTask;
 
-        public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
-        {
-            return Task.CompletedTask;
-        }
-
-        public Task ShutdownAsync()
-        {
-            return Task.CompletedTask;
-        }
+        public Task ShutdownAsync() => Task.CompletedTask;
     }
 
     public class PidCacheTests

@@ -1,9 +1,8 @@
 // -----------------------------------------------------------------------
-//   <copyright file="ConsulProvider.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
-//   </copyright>
+// <copyright file="KubernetesProvider.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -30,11 +29,11 @@ namespace Proto.Cluster.Kubernetes
 
         private PID _clusterMonitor;
         private string _clusterName;
+        private string _host;
         private string[] _kinds;
+        private MemberList _memberList;
         private string _podName;
         private int _port;
-        private MemberList _memberList;
-        private string _host;
 
         public KubernetesProvider(IKubernetes kubernetes)
         {
@@ -84,10 +83,7 @@ namespace Proto.Cluster.Kubernetes
             await _cluster.System.Root.StopAsync(_clusterMonitor);
         }
 
-        public Task UpdateClusterState(ClusterState state)
-        {
-            return Task.CompletedTask;
-        }
+        public Task UpdateClusterState(ClusterState state) => Task.CompletedTask;
 
         public async Task RegisterMemberAsync()
         {
@@ -95,17 +91,17 @@ namespace Proto.Cluster.Kubernetes
 
             var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace());
             if (pod is null) throw new ApplicationException($"Unable to get own pod information for {_podName}");
-            
+
             Logger.LogInformation("Using Kubernetes namespace: " + pod.Namespace());
 
             var matchingPort = pod.FindPort(_port);
 
             if (matchingPort is null) Logger.LogWarning("Registration port doesn't match any of the container ports");
-            
+
             Logger.LogInformation("Using Kubernetes port: " + _port);
 
             var existingLabels = pod.Metadata.Labels;
-            
+
             var labels = new Dictionary<string, string>
             {
                 [LabelCluster] = _clusterName,
@@ -116,7 +112,7 @@ namespace Proto.Cluster.Kubernetes
             foreach (var kind in _kinds)
             {
                 var labelKey = $"{LabelKind}-{kind}";
-                labels.TryAdd(labelKey,"true");
+                labels.TryAdd(labelKey, "true");
             }
 
             //add existing labels back
@@ -144,7 +140,7 @@ namespace Proto.Cluster.Kubernetes
                 .WithDispatcher(Dispatchers.SynchronousDispatcher);
             _clusterMonitor = _cluster.System.Root.SpawnNamed(props, "ClusterMonitor");
             _podName = KubernetesExtensions.GetPodName();
-            
+
             _cluster.System.Root.Send(
                 _clusterMonitor,
                 new RegisterMember
@@ -165,7 +161,7 @@ namespace Proto.Cluster.Kubernetes
             var kubeNamespace = KubernetesExtensions.GetKubeNamespace();
 
             var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace);
-            
+
             foreach (var kind in _kinds)
             {
                 try
@@ -173,19 +169,18 @@ namespace Proto.Cluster.Kubernetes
                     var labelKey = $"{LabelKind}-{kind}";
                     pod.SetLabel(labelKey, null);
                 }
-                catch(Exception x)
+                catch (Exception x)
                 {
                     Logger.LogError(x, "Failed to remove label");
                 }
             }
-            
+
             pod.SetLabel(LabelCluster, null);
-            
+
             await _kubernetes.ReplacePodLabels(_podName, kubeNamespace, pod.Labels());
 
             cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
         }
-
 
         public void MonitorMemberStatusChanges()
         {

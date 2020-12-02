@@ -6,7 +6,8 @@ namespace Proto.Tests
 {
     public class ProcessRegistryTests
     {
-        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly ActorSystem System = new();
+
         [Fact]
         public void Given_PIDDoesNotExist_TryAddShouldAddLocalPID()
         {

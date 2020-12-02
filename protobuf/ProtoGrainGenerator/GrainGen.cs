@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="GrainGen.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="GrainGen.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Linq;
 using Google.Protobuf.Reflection;
@@ -48,7 +47,7 @@ namespace GrainGenerator
                                         Index = i,
                                         Name = m.Name,
                                         InputName = RemovePackageName(m.InputType),
-                                        OutputName = RemovePackageName(m.OutputType),
+                                        OutputName = RemovePackageName(m.OutputType)
                                     }
                                 )
                                 .ToArray()
@@ -69,6 +68,7 @@ namespace GrainGenerator
         }
 
         #region UnusedMethods
+
         protected override void WriteNamespaceHeader(GeneratorContext ctx, string @namespace)
         {
             throw new NotImplementedException();
@@ -78,8 +78,9 @@ namespace GrainGenerator
         {
             throw new NotImplementedException();
         }
-        
-        protected override void WriteField(GeneratorContext ctx, FieldDescriptorProto obj, ref object state, OneOfStub[] oneOfs)
+
+        protected override void WriteField(GeneratorContext ctx, FieldDescriptorProto obj, ref object state,
+            OneOfStub[] oneOfs)
         {
             throw new NotImplementedException();
         }
@@ -108,6 +109,7 @@ namespace GrainGenerator
         {
             throw new NotImplementedException();
         }
+
         #endregion
     }
 }

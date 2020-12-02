@@ -1,9 +1,8 @@
 // -----------------------------------------------------------------------
-//   <copyright file="RouterProcess.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="RouterProcess.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using Proto.Mailbox;
 using Proto.Router.Messages;
 using Proto.Router.Routers;

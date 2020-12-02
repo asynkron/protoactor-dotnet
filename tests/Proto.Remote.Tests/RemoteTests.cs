@@ -15,13 +15,13 @@ namespace Proto.Remote.Tests
     {
         private readonly IRemoteFixture _fixture;
 
-        private ActorSystem System => _fixture.ActorSystem;
-        private IRemote Remote => _fixture.Remote;
-
         public RemoteTests(IRemoteFixture fixture)
         {
             _fixture = fixture;
         }
+
+        private ActorSystem System => _fixture.ActorSystem;
+        private IRemote Remote => _fixture.Remote;
 
         [Fact]
         [DisplayTestMethodName]
@@ -29,7 +29,7 @@ namespace Proto.Remote.Tests
         {
             var remoteActor = PID.FromAddress(_fixture.RemoteAddress, "EchoActorInstance");
 
-            var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping { Message = "Hello" },
+            var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
                 TimeSpan.FromMilliseconds(5000)
             );
 
@@ -40,13 +40,12 @@ namespace Proto.Remote.Tests
         [DisplayTestMethodName]
         public async Task WhenRemoteActorNotFound_DeadLetterException()
         {
-
             var unknownRemoteActor = PID.FromAddress(_fixture.RemoteAddress, "doesn't exist");
 
             await Assert.ThrowsAsync<DeadLetterException>(
                 async () =>
                 {
-                    await System.Root.RequestAsync<Pong>(unknownRemoteActor, new Ping { Message = "Hello" },
+                    await System.Root.RequestAsync<Pong>(unknownRemoteActor, new Ping {Message = "Hello"},
                         TimeSpan.FromMilliseconds(2000)
                     );
                 }
@@ -57,14 +56,13 @@ namespace Proto.Remote.Tests
         [DisplayTestMethodName]
         public async Task CanSpawnRemoteActor()
         {
-
             var remoteActorName = Guid.NewGuid().ToString();
 
             var remoteActorResp = await Remote.SpawnNamedAsync(
                 _fixture.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5)
             );
             var remoteActor = remoteActorResp.Pid;
-            var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping { Message = "Hello" },
+            var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
                 TimeSpan.FromMilliseconds(5000)
             );
             Assert.Equal($"{_fixture.RemoteAddress} Hello", pong.Message);
@@ -74,7 +72,6 @@ namespace Proto.Remote.Tests
         [DisplayTestMethodName]
         public async Task CanWatchRemoteActor()
         {
-
             var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
             var localActor = await SpawnLocalActorAndWatch(remoteActor);
 
@@ -96,7 +93,6 @@ namespace Proto.Remote.Tests
         [DisplayTestMethodName]
         public async Task CanWatchMultipleRemoteActors()
         {
-
             var remoteActor1 = await SpawnRemoteActor(_fixture.RemoteAddress);
             var remoteActor2 = await SpawnRemoteActor(_fixture.RemoteAddress);
             var localActor = await SpawnLocalActorAndWatch(remoteActor1, remoteActor2);
@@ -131,7 +127,6 @@ namespace Proto.Remote.Tests
         [DisplayTestMethodName]
         public async Task MultipleLocalActorsCanWatchRemoteActor()
         {
-
             var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
 
             var localActor1 = await SpawnLocalActorAndWatch(remoteActor);
@@ -165,7 +160,6 @@ namespace Proto.Remote.Tests
         [DisplayTestMethodName]
         public async Task CanUnwatchRemoteActor()
         {
-
             var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
             var localActor1 = await SpawnLocalActorAndWatch(remoteActor);
             var localActor2 = await SpawnLocalActorAndWatch(remoteActor);
@@ -199,7 +193,6 @@ namespace Proto.Remote.Tests
         [DisplayTestMethodName]
         public async Task WhenRemoteTerminated_LocalWatcherReceivesNotification()
         {
-
             var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
             var localActor = await SpawnLocalActorAndWatch(remoteActor);
 
@@ -231,7 +224,6 @@ namespace Proto.Remote.Tests
 
         private async Task<PID> SpawnLocalActorAndWatch(params PID[] remoteActors)
         {
-
             var props = Props.FromProducer(() => new LocalActor(remoteActors));
             var actor = System.Root.Spawn(props);
 
@@ -243,10 +235,8 @@ namespace Proto.Remote.Tests
             return actor;
         }
 
-        private Task<bool> PollUntilTrue(Func<Task<bool>> predicate)
-        {
-            return PollUntilTrue(predicate, 100, TimeSpan.FromMilliseconds(50));
-        }
+        private Task<bool> PollUntilTrue(Func<Task<bool>> predicate) =>
+            PollUntilTrue(predicate, 100, TimeSpan.FromMilliseconds(50));
 
         private async Task<bool> PollUntilTrue(Func<Task<bool>> predicate, int attempts, TimeSpan interval)
         {
@@ -290,8 +280,8 @@ namespace Proto.Remote.Tests
     public class LocalActor : IActor
     {
         private readonly ILogger _logger = Log.CreateLogger<LocalActor>();
-        private readonly List<PID> _remoteActors = new List<PID>();
-        private readonly List<Terminated> _terminatedMessages = new List<Terminated>();
+        private readonly List<PID> _remoteActors = new();
+        private readonly List<Terminated> _terminatedMessages = new();
 
         public LocalActor(params PID[] remoteActors)
         {
@@ -356,7 +346,10 @@ namespace Proto.Remote.Tests
 
         private void HandleStarted(IContext context)
         {
-            foreach (var remoteActor in _remoteActors) context.Watch(remoteActor);
+            foreach (var remoteActor in _remoteActors)
+            {
+                context.Watch(remoteActor);
+            }
         }
     }
 }

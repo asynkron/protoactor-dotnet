@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="InMemAgent.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -15,13 +20,11 @@ namespace Proto.Cluster.Testing
         public int Port { get; set; }
 
         public string[] Kinds { get; set; }
-        public string StatusValue { get; set; } //what goes here?
     }
 
     public sealed class InMemAgent
     {
-        private readonly ConcurrentDictionary<Guid, AgentServiceStatus> _services =
-            new ConcurrentDictionary<Guid, AgentServiceStatus>();
+        private readonly ConcurrentDictionary<Guid, AgentServiceStatus> _services = new();
 
         public event EventHandler StatusUpdate;
 
@@ -52,10 +55,7 @@ namespace Proto.Cluster.Testing
         public void RefreshServiceTTL(Guid id)
         {
             //TODO: this is racy, but yolo for now
-            if (_services.TryGetValue(id, out var service))
-            {
-                service.TTL = DateTimeOffset.Now;
-            }
+            if (_services.TryGetValue(id, out var service)) service.TTL = DateTimeOffset.Now;
         }
     }
 }

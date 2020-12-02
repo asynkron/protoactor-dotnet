@@ -1,9 +1,8 @@
 // -----------------------------------------------------------------------
-//   <copyright file="RemoteConfigExtensions.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="RemoteConfigExtensions.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,83 +19,99 @@ namespace Proto.Remote
         public static Props GetRemoteKind(this RemoteConfigBase remoteConfig, string kind)
         {
             if (!remoteConfig.RemoteKinds.TryGetValue(kind, out var props))
-            {
                 throw new ArgumentException($"No Props found for kind '{kind}'");
-            }
 
             return props;
         }
 
         public static TRemoteConfig WithCallOptions<TRemoteConfig>(this TRemoteConfig remoteConfig, CallOptions options)
-        where TRemoteConfig : RemoteConfigBase =>
+            where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with { CallOptions = options };
 
-        public static TRemoteConfig WithAdvertisedHost<TRemoteConfig>(this TRemoteConfig remoteConfig, string? advertisedHostname)
-        where TRemoteConfig : RemoteConfigBase =>
+        public static TRemoteConfig WithAdvertisedHost<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            string? advertisedHostname)
+            where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with { AdvertisedHost = advertisedHostname };
 
         /// <summary>
-        /// Advertised port can be different from the bound port, e.g. in container scenarios
+        ///     Advertised port can be different from the bound port, e.g. in container scenarios
         /// </summary>
         /// <param name="advertisedPort"></param>
         /// <returns></returns>
-        public static TRemoteConfig WithAdvertisedPort<TRemoteConfig>(this TRemoteConfig remoteConfig, int? advertisedPort)
-        where TRemoteConfig : RemoteConfigBase =>
+        public static TRemoteConfig WithAdvertisedPort<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            int? advertisedPort)
+            where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with { AdvertisedPort = advertisedPort };
 
-        public static TRemoteConfig WithEndpointWriterBatchSize<TRemoteConfig>(this TRemoteConfig remoteConfig, int endpointWriterBatchSize)
-        where TRemoteConfig : RemoteConfigBase
+        public static TRemoteConfig WithEndpointWriterBatchSize<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            int endpointWriterBatchSize)
+            where TRemoteConfig : RemoteConfigBase
         {
             remoteConfig.EndpointWriterOptions.EndpointWriterBatchSize = endpointWriterBatchSize;
             return remoteConfig;
         }
 
-        public static TRemoteConfig WithEndpointWriterMaxRetries<TRemoteConfig>(this TRemoteConfig remoteConfig, int endpointWriterMaxRetries)
-        where TRemoteConfig : RemoteConfigBase
+        public static TRemoteConfig WithEndpointWriterMaxRetries<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            int endpointWriterMaxRetries)
+            where TRemoteConfig : RemoteConfigBase
         {
             remoteConfig.EndpointWriterOptions.MaxRetries = endpointWriterMaxRetries;
             return remoteConfig;
         }
 
-        public static TRemoteConfig WithEndpointWriterRetryTimeSpan<TRemoteConfig>(this TRemoteConfig remoteConfig, TimeSpan endpointWriterRetryTimeSpan)
-        where TRemoteConfig : RemoteConfigBase
+        public static TRemoteConfig WithEndpointWriterRetryTimeSpan<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            TimeSpan endpointWriterRetryTimeSpan)
+            where TRemoteConfig : RemoteConfigBase
         {
             remoteConfig.EndpointWriterOptions.RetryTimeSpan = endpointWriterRetryTimeSpan;
             return remoteConfig;
         }
 
-        public static TRemoteConfig WithWaitAfterEndpointTerminationTimeSpan<TRemoteConfig>(this TRemoteConfig remoteConfig, TimeSpan waitAfterEndpointTerminationTimeSpan)
-        where TRemoteConfig : RemoteConfigBase =>
+        public static TRemoteConfig WithWaitAfterEndpointTerminationTimeSpan<TRemoteConfig>(
+            this TRemoteConfig remoteConfig, TimeSpan waitAfterEndpointTerminationTimeSpan)
+            where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with { WaitAfterEndpointTerminationTimeSpan = waitAfterEndpointTerminationTimeSpan};
 
-        public static TRemoteConfig WithEndpointWriterRetryBackOff<TRemoteConfig>(this TRemoteConfig remoteConfig, TimeSpan endpointWriterRetryBackoff)
-        where TRemoteConfig : RemoteConfigBase
+        public static TRemoteConfig WithEndpointWriterRetryBackOff<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            TimeSpan endpointWriterRetryBackoff)
+            where TRemoteConfig : RemoteConfigBase
         {
             remoteConfig.EndpointWriterOptions.RetryBackOff = endpointWriterRetryBackoff;
             return remoteConfig;
         }
 
-        public static TRemoteConfig WithProtoMessages<TRemoteConfig>(this TRemoteConfig remoteConfig, params FileDescriptor[] fileDescriptors)
-        where TRemoteConfig : RemoteConfigBase
+        public static TRemoteConfig WithProtoMessages<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            params FileDescriptor[] fileDescriptors)
+            where TRemoteConfig : RemoteConfigBase
         {
-            foreach (var fd in fileDescriptors) remoteConfig.Serialization.RegisterFileDescriptor(fd);
+            foreach (var fd in fileDescriptors)
+            {
+                remoteConfig.Serialization.RegisterFileDescriptor(fd);
+            }
+
             return remoteConfig;
         }
 
-        public static TRemoteConfig WithRemoteKind<TRemoteConfig>(this TRemoteConfig remoteConfig, string kind, Props prop)
-        where TRemoteConfig : RemoteConfigBase =>
+        public static TRemoteConfig WithRemoteKind<TRemoteConfig>(this TRemoteConfig remoteConfig, string kind,
+            Props prop)
+            where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with { RemoteKinds = remoteConfig.RemoteKinds.Add(kind, prop) };
 
-        public static TRemoteConfig WithRemoteKinds<TRemoteConfig>(this TRemoteConfig remoteConfig, params (string kind, Props prop)[] knownKinds)
-        where TRemoteConfig : RemoteConfigBase =>
+        public static TRemoteConfig WithRemoteKinds<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            params (string kind, Props prop)[] knownKinds)
+            where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with
-            {
+                {
                 RemoteKinds =
-                remoteConfig.RemoteKinds.AddRange(knownKinds.Select(kk => new KeyValuePair<string, Props>(kk.kind, kk.prop)))
-            };
+                remoteConfig.RemoteKinds.AddRange(knownKinds.Select(kk =>
+                        new KeyValuePair<string, Props>(kk.kind, kk.prop)
+                    )
+                )
+                };
 
-        public static TRemoteConfig WithSerializer<TRemoteConfig>(this TRemoteConfig remoteConfig, ISerializer serializer, bool makeDefault = false)
-        where TRemoteConfig : RemoteConfigBase
+        public static TRemoteConfig WithSerializer<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            ISerializer serializer, bool makeDefault = false)
+            where TRemoteConfig : RemoteConfigBase
         {
             remoteConfig.Serialization.RegisterSerializer(serializer, makeDefault);
             return remoteConfig;

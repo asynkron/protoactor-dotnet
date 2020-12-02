@@ -1,32 +1,42 @@
-﻿using Proto;
-using Proto.Persistence;
+﻿// -----------------------------------------------------------------------
+// <copyright file="TransferFactory.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
+using Proto;
+using Proto.Persistence;
 
 namespace Saga.Factories
 {
     internal class TransferFactory
     {
-        private readonly Random _random;
         private readonly double _availability;
-        private readonly int _retryAttempts;
         private readonly IContext _context;
         private readonly IProvider _provider;
+        private readonly Random _random;
+        private readonly int _retryAttempts;
 
-        internal TransferFactory(IContext context, IProvider provider, Random random, double availability, int retryAttempts)
+        internal TransferFactory(IContext context, IProvider provider, Random random, double availability,
+            int retryAttempts)
         {
-            this._random = random;
-            this._availability = availability;
-            this._retryAttempts = retryAttempts;
-            this._context = context;
-            this._provider = provider;
+            _random = random;
+            _availability = availability;
+            _retryAttempts = retryAttempts;
+            _context = context;
+            _provider = provider;
         }
 
-        internal PID CreateTransfer(string actorName, PID fromAccount, PID toAccount, decimal amount, string persistenceId)
+        internal PID CreateTransfer(string actorName, PID fromAccount, PID toAccount, decimal amount,
+            string persistenceId)
         {
             var transferProps = Props.FromProducer(() =>
-                new TransferProcess(fromAccount, toAccount, amount, _provider, persistenceId, _random, _availability))
-                    .WithChildSupervisorStrategy(
-                        new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, _retryAttempts, null));
+                    new TransferProcess(fromAccount, toAccount, amount, _provider, persistenceId, _random, _availability
+                    )
+                )
+                .WithChildSupervisorStrategy(
+                    new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, _retryAttempts, null)
+                );
             var transfer = _context.SpawnNamed(transferProps, actorName);
             return transfer;
         }

@@ -1,12 +1,12 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="RestartStatistics.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="RestartStatistics.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 // ReSharper disable once CheckNamespace
 namespace Proto
 {

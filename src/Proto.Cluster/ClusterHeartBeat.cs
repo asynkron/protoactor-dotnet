@@ -1,10 +1,15 @@
+// -----------------------------------------------------------------------
+// <copyright file="ClusterHeartBeat.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+
 namespace Proto.Cluster
 {
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.Logging;
-
     public class ClusterHeartBeatActor : IActor
     {
         public Task ReceiveAsync(IContext context)
@@ -24,13 +29,13 @@ namespace Proto.Cluster
 
     public class ClusterHeartBeat
     {
+        private const string ClusterHeartBeatName = "ClusterHeartBeat";
         private readonly Cluster _cluster;
+        private readonly RootContext _context;
+        private readonly CancellationTokenSource _ct = new();
+        private readonly ActorSystem _system;
         private ILogger _logger = null!;
         private PID _pid = null!;
-        private const string ClusterHeartBeatName = "ClusterHeartBeat";
-        private readonly CancellationTokenSource _ct = new CancellationTokenSource();
-        private readonly ActorSystem _system;
-        private readonly RootContext _context;
 
         public ClusterHeartBeat(Cluster cluster)
         {
@@ -61,19 +66,30 @@ namespace Proto.Cluster
 
                     foreach (var member in members)
                     {
-                        var pid = PID.FromAddress(member.Address,ClusterHeartBeatName);
-                        
+                        var pid = PID.FromAddress(member.Address, ClusterHeartBeatName);
+
                         try
                         {
                             await _context.RequestAsync<HeartbeatResponse>(pid, new HeartbeatRequest(),
                                 TimeSpan.FromSeconds(5)
                             );
-                            
-                            _logger.LogDebug("Heartbeat request for member id {MemberId} Address {Address} succeeded",member.Id,member.Address);
+
+                            _logger.LogDebug("Heartbeat request for member id {MemberId} Address {Address} succeeded",
+                                member.Id, member.Address
+                            );
                         }
                         catch (TimeoutException)
                         {
-                            _logger.LogWarning("Heartbeat request for member id {MemberId} Address {Address} timed out",member.Id,member.Address);
+                            _logger.LogWarning("Heartbeat request for member id {MemberId} Address {Address} timed out",
+                                member.Id, member.Address
+                            );
+                        }
+                        catch (DeadLetterException)
+                        {
+                            _logger.LogWarning(
+                                "Heartbeat request for member id {MemberId} Address {Address} got dead letter response",
+                                member.Id, member.Address
+                            );
                         }
                     }
                 }

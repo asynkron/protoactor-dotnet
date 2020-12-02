@@ -1,16 +1,28 @@
-﻿namespace Proto.Cluster.Identity
+﻿// -----------------------------------------------------------------------
+// <copyright file="IIdentityStorage.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Proto.Cluster.Identity
 {
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
-
-    public interface IIdentityStorage: IDisposable
+    public interface IIdentityStorage : IDisposable
     {
-        public Task<StoredActivation?> TryGetExistingActivationAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
+        public Task<StoredActivation?> TryGetExistingActivation(ClusterIdentity clusterIdentity,
+            CancellationToken ct);
 
-        public Task<SpawnLock?> TryAcquireLockAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
-        
-        public Task<StoredActivation?> WaitForActivationAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
+        public Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity, CancellationToken ct);
+
+        /// <summary>
+        ///     Wait on lock, return activation when present. Responsible for deleting stale locks
+        /// </summary>
+        /// <param name="clusterIdentity"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public Task<StoredActivation?> WaitForActivation(ClusterIdentity clusterIdentity, CancellationToken ct);
 
         public Task RemoveLock(SpawnLock spawnLock, CancellationToken ct);
 
@@ -18,35 +30,21 @@
 
         public Task RemoveActivation(PID pid, CancellationToken ct);
 
-        public Task RemoveMemberIdAsync(string memberId, CancellationToken ct);
+        public Task RemoveMember(string memberId, CancellationToken ct);
+
+        public Task Init();
     }
 
     public class SpawnLock
     {
-        public string LockId { get; }
-        public ClusterIdentity ClusterIdentity { get; }
-
         public SpawnLock(string lockId, ClusterIdentity clusterIdentity)
         {
             LockId = lockId;
             ClusterIdentity = clusterIdentity;
         }
-    }
 
-    public class LookupResult
-    {
-        public StoredActivation? StoredActivation { get; }
-        public SpawnLock? SpawnLock { get; }
-
-        public LookupResult(StoredActivation storedActivation)
-        {
-            StoredActivation = storedActivation;
-        }
-
-        public LookupResult(SpawnLock spawnLock)
-        {
-            SpawnLock = spawnLock;
-        }
+        public string LockId { get; }
+        public ClusterIdentity ClusterIdentity { get; }
     }
 
     public class StoredActivation
@@ -68,6 +66,13 @@
         }
 
         public StorageFailure(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+    }
+
+    public class LockNotFoundException : StorageFailure
+    {
+        public LockNotFoundException(string message) : base(message)
         {
         }
     }

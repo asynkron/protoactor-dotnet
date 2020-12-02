@@ -1,9 +1,8 @@
 // -----------------------------------------------------------------------
-//   <copyright file="RouterActor.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="RouterActor.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,10 +36,7 @@ namespace Proto.Router
             if (context.Message is RouterAddRoutee addRoutee)
             {
                 var r = _routerState.GetRoutees();
-                if (r.Contains(addRoutee.Pid))
-                {
-                    return Task.CompletedTask;
-                }
+                if (r.Contains(addRoutee.Pid)) return Task.CompletedTask;
 
                 context.Watch(addRoutee.Pid);
                 r.Add(addRoutee.Pid);
@@ -51,10 +47,7 @@ namespace Proto.Router
             if (context.Message is RouterRemoveRoutee removeRoutee)
             {
                 var r = _routerState.GetRoutees();
-                if (!r.Contains(removeRoutee.Pid))
-                {
-                    return Task.CompletedTask;
-                }
+                if (!r.Contains(removeRoutee.Pid)) return Task.CompletedTask;
 
                 context.Unwatch(removeRoutee.Pid);
                 r.Remove(removeRoutee.Pid);

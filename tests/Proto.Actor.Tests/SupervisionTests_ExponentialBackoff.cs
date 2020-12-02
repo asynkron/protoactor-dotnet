@@ -13,7 +13,7 @@ namespace Proto.Tests
             strategy.HandleFailure(null, null, rs, null, null);
             Assert.Equal(1, rs.FailureCount);
         }
-        
+
         [Fact]
         public void FailureInsideWindow_IncrementsFailureCount()
         {

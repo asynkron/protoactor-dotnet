@@ -9,12 +9,11 @@ namespace Proto.Router.Tests
 {
     public class ConsistentHashGroupTests
     {
-        private readonly ActorSystem ActorSystem = new ActorSystem();
-
         private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor())
             .WithMailbox(() => new TestMailbox());
 
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
+        private readonly ActorSystem ActorSystem = new();
 
         [Fact]
         public async Task ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee()
@@ -29,7 +28,7 @@ namespace Proto.Router.Tests
             Assert.Equal(0, await ActorSystem.Root.RequestAsync<int>(routee2, "received?", _timeout));
             Assert.Equal(0, await ActorSystem.Root.RequestAsync<int>(routee3, "received?", _timeout));
         }
-        
+
         [Fact]
         public async Task ConsistentHashGroupRouter_with_MessageHasherFunc_MessageWithSameHashAlwaysGoesToSameRoutee()
         {
@@ -148,14 +147,17 @@ namespace Proto.Router.Tests
             Assert.Equal(1, await ActorSystem.Root.RequestAsync<int>(routee3, "received?", _timeout));
         }
 
-        private static (PID router, PID routee1, PID routee2, PID routee3) CreateRouterWith3Routees(ActorSystem system,Func<object, string>? messageHasher = null)
+        private static (PID router, PID routee1, PID routee2, PID routee3) CreateRouterWith3Routees(ActorSystem system,
+            Func<object, string>? messageHasher = null)
         {
             // assign unique names for when tests run in parallel
             var routee1 = system.Root.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee1");
             var routee2 = system.Root.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee2");
             var routee3 = system.Root.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee3");
 
-            var props = system.Root.NewConsistentHashGroup(SuperIntelligentDeterministicHash.Hash, 1,messageHasher,  routee1, routee2, routee3)
+            var props = system.Root.NewConsistentHashGroup(SuperIntelligentDeterministicHash.Hash, 1, messageHasher,
+                    routee1, routee2, routee3
+                )
                 .WithMailbox(() => new TestMailbox());
             var router = system.Root.Spawn(props);
             return (router, routee1, routee2, routee3);
@@ -187,20 +189,14 @@ namespace Proto.Router.Tests
                 _value = value;
             }
 
-            public string HashBy()
-            {
-                return _value;
-            }
+            public string HashBy() => _value;
 
-            public override string ToString()
-            {
-                return _value;
-            }
+            public override string ToString() => _value;
         }
 
         internal class MyTestActor : IActor
         {
-            private readonly List<string> _receivedMessages = new List<string>();
+            private readonly List<string> _receivedMessages = new();
 
             public Task ReceiveAsync(IContext context)
             {

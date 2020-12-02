@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="Messages.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 namespace Proto.Cluster.Testing
 {
     internal static class Messages

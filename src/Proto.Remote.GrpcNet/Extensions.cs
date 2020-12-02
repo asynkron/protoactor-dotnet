@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="Extensions.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
 using Grpc.HealthCheck;
 using Microsoft.AspNetCore.Builder;
@@ -16,7 +21,8 @@ namespace Proto.Remote.GrpcNet
             return system;
         }
 
-        public static IServiceCollection AddRemote(this IServiceCollection services, Func<IServiceProvider, GrpcNetRemoteConfig> configure)
+        public static IServiceCollection AddRemote(this IServiceCollection services,
+            Func<IServiceProvider, GrpcNetRemoteConfig> configure)
         {
             services.AddSingleton(sp => configure(sp));
             AddAllServices(services);
@@ -38,9 +44,11 @@ namespace Proto.Remote.GrpcNet
             services.AddSingleton<HostedGrpcNetRemote>();
             services.AddSingleton<IRemote, HostedGrpcNetRemote>(sp => sp.GetRequiredService<HostedGrpcNetRemote>());
             services.AddSingleton<EndpointManager>();
-            services.AddSingleton<RemoteConfigBase, GrpcNetRemoteConfig>(sp => sp.GetRequiredService<GrpcNetRemoteConfig>());
+            services.AddSingleton<RemoteConfigBase, GrpcNetRemoteConfig>(sp =>
+                sp.GetRequiredService<GrpcNetRemoteConfig>()
+            );
             services.AddSingleton<EndpointReader, EndpointReader>();
-            services.AddSingleton<Serialization>(sp => sp.GetRequiredService<GrpcNetRemoteConfig>().Serialization);
+            services.AddSingleton(sp => sp.GetRequiredService<GrpcNetRemoteConfig>().Serialization);
             services.AddSingleton<Remoting.RemotingBase, EndpointReader>(sp => sp.GetRequiredService<EndpointReader>());
             services.AddSingleton<IChannelProvider, GrpcNetChannelProvider>();
         }
@@ -58,7 +66,8 @@ namespace Proto.Remote.GrpcNet
             applicationBuilder.UseEndpoints(c => AddProtoRemoteEndpoint(c));
         }
 
-        public static void UseProtoRemote(this IApplicationBuilder applicationBuilder, Action<GrpcServiceEndpointConventionBuilder> configure)
+        public static void UseProtoRemote(this IApplicationBuilder applicationBuilder,
+            Action<GrpcServiceEndpointConventionBuilder> configure)
         {
             var hostedRemote = applicationBuilder.ApplicationServices.GetRequiredService<HostedGrpcNetRemote>();
             hostedRemote.ServerAddressesFeature = applicationBuilder.ServerFeatures.Get<IServerAddressesFeature>();

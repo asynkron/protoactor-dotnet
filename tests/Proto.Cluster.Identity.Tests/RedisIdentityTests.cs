@@ -1,14 +1,12 @@
 ﻿// ReSharper disable UnusedType.Global
 // ReSharper disable UnusedMember.Global
 
-using Proto.Cluster.Tests;
-using StackExchange.Redis;
 using Microsoft.Extensions.Configuration;
 using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.IdentityLookup;
+using Proto.Cluster.Tests;
 using Proto.TestFixtures;
-using Xunit;
-using Xunit.Abstractions;
+using StackExchange.Redis;
 
 namespace Proto.Cluster.Identity.Tests
 {
@@ -27,10 +25,36 @@ namespace Proto.Cluster.Identity.Tests
         }
     }
 
+    public class ChaosMonkeyRedisIdentityClusterFixture : BaseInMemoryClusterFixture
+    {
+        public ChaosMonkeyRedisIdentityClusterFixture() : base(3)
+        {
+        }
+
+        protected override IIdentityLookup GetIdentityLookup(string clusterName)
+        {
+            var multiplexer = ConnectionMultiplexer.Connect("localhost:6379");
+            var identity = new IdentityStorageLookup(
+                new FailureInjectionStorage(new RedisIdentityStorage(clusterName, multiplexer))
+            );
+            return identity;
+        }
+    }
+
     // public class RedisClusterTests : ClusterTests, IClassFixture<RedisIdentityClusterFixture>
     // {
     //     // ReSharper disable once SuggestBaseTypeForParameter
     //     public RedisClusterTests(ITestOutputHelper testOutputHelper, RedisIdentityClusterFixture clusterFixture)
+    //         : base(testOutputHelper, clusterFixture)
+    //     {
+    //     }
+    // }
+    //
+    // public class ResilienceRedisClusterTests : ClusterTests, IClassFixture<ChaosMonkeyRedisIdentityClusterFixture>
+    // {
+    //     // ReSharper disable once SuggestBaseTypeForParameter
+    //     public ResilienceRedisClusterTests(ITestOutputHelper testOutputHelper,
+    //         ChaosMonkeyRedisIdentityClusterFixture clusterFixture)
     //         : base(testOutputHelper, clusterFixture)
     //     {
     //     }
@@ -44,7 +68,9 @@ namespace Proto.Cluster.Identity.Tests
     //
     //     private static IIdentityStorage Init(string clusterName)
     //     {
-    //         return new RedisIdentityStorage(clusterName, ConnectionMultiplexer.Connect("localhost:6379"));
+    //         return new RedisIdentityStorage(clusterName, ConnectionMultiplexer.Connect("localhost:6379"),
+    //             TimeSpan.FromMilliseconds(1500)
+    //         );
     //     }
     // }
 }

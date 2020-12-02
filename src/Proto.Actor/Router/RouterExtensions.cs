@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="Router.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="RouterExtensions.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using Proto.Router.Routers;
 
@@ -15,19 +14,20 @@ namespace Proto.Router
             => new BroadcastGroupRouterConfig(senderContext, routees).Props();
 
         public static Props NewConsistentHashGroup(this ISenderContext senderContext, params PID[] routees)
-            => new ConsistentHashGroupRouterConfig(senderContext, MurmurHash2.Hash, 100,null, routees).Props();
+            => new ConsistentHashGroupRouterConfig(senderContext, MurmurHash2.Hash, 100, null, routees).Props();
 
-        
-        public static Props NewConsistentHashGroup(this ISenderContext senderContext, Func<object, string> messageHasher, params PID[] routees)
-            => new ConsistentHashGroupRouterConfig(senderContext, MurmurHash2.Hash, 100,messageHasher, routees).Props();
+        public static Props NewConsistentHashGroup(this ISenderContext senderContext,
+            Func<object, string> messageHasher, params PID[] routees)
+            => new ConsistentHashGroupRouterConfig(senderContext, MurmurHash2.Hash, 100, messageHasher, routees)
+                .Props();
 
         public static Props NewConsistentHashGroup(this ISenderContext senderContext, Func<string, uint> hash,
-            int replicaCount, params PID[] routees        )
-            => new ConsistentHashGroupRouterConfig(senderContext, hash, replicaCount,null, routees).Props();
-        
+            int replicaCount, params PID[] routees)
+            => new ConsistentHashGroupRouterConfig(senderContext, hash, replicaCount, null, routees).Props();
+
         public static Props NewConsistentHashGroup(this ISenderContext senderContext, Func<string, uint> hash,
-            int replicaCount, Func<object, string>? messageHasher, params PID[] routees        )
-            => new ConsistentHashGroupRouterConfig(senderContext, hash, replicaCount,messageHasher, routees).Props();
+            int replicaCount, Func<object, string>? messageHasher, params PID[] routees)
+            => new ConsistentHashGroupRouterConfig(senderContext, hash, replicaCount, messageHasher, routees).Props();
 
         public static Props NewRandomGroup(this ISenderContext senderContext, params PID[] routees)
             => new RandomGroupRouterConfig(senderContext, routees).Props();
@@ -42,8 +42,10 @@ namespace Proto.Router
             => new BroadcastPoolRouterConfig(senderContext, poolSize, props).Props();
 
         public static Props NewConsistentHashPool(this ISenderContext senderContext, Props props, int poolSize,
-            Func<string, uint>? hash = null, int replicaCount = 100,        Func<object, string>? messageHasher = null)
-            => new ConsistentHashPoolRouterConfig(senderContext, poolSize, props, hash ?? MurmurHash2.Hash, replicaCount, messageHasher)
+            Func<string, uint>? hash = null, int replicaCount = 100, Func<object, string>? messageHasher = null)
+            => new ConsistentHashPoolRouterConfig(senderContext, poolSize, props, hash ?? MurmurHash2.Hash,
+                    replicaCount, messageHasher
+                )
                 .Props();
 
         public static Props NewRandomPool(this ISenderContext senderContext, Props props, int poolSize,

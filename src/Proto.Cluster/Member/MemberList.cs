@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="MemberList.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="MemberList.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -26,11 +25,16 @@ namespace Proto.Cluster
     [PublicAPI]
     public record MemberList
     {
-        //TODO: actually use this to prevent banned members from rejoining
-        private ConcurrentSet<string> _bannedMembers { get; init; }
         private readonly Cluster _cluster;
         private readonly EventStream _eventStream;
         private readonly ILogger _logger;
+
+        private readonly IRootContext _root;
+
+        private readonly ReaderWriterLockSlim _rwLock = new();
+        private readonly ActorSystem _system;
+
+        private LeaderInfo? _leader;
 
         //TODO: the members here are only from the cluster provider
         //The partition lookup broadcasts and use broadcasted information
@@ -38,15 +42,8 @@ namespace Proto.Cluster
         //come up with a good solution to keep all this in sync
         private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
 
-        private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
-
-        private readonly IRootContext _root;
-
-
-        private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
-        private readonly ActorSystem _system;
-
-        private LeaderInfo? _leader;
+        private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind =
+            ImmutableDictionary<string, IMemberStrategy>.Empty;
 
         public MemberList(Cluster cluster)
         {
@@ -59,6 +56,9 @@ namespace Proto.Cluster
 
             _bannedMembers = new ConcurrentSet<string>();
         }
+
+        //TODO: actually use this to prevent banned members from rejoining
+        private ConcurrentSet<string> _bannedMembers { get; init; }
 
         public bool IsLeader => _cluster.Id.Equals(_leader?.MemberId);
 
@@ -76,12 +76,10 @@ namespace Proto.Cluster
             try
             {
                 if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
-                {
                     return memberStrategy.GetActivator(requestSourceAddress);
-                }
                 else
                 {
-                    _logger.LogError("MemberList did not find any activator for kind '{Kind}'",kind);
+                    _logger.LogError("MemberList did not find any activator for kind '{Kind}'", kind);
                     return null;
                 }
             }
@@ -123,13 +121,9 @@ namespace Proto.Cluster
             _eventStream.Publish(new LeaderElectedEvent(leader, oldLeader));
 
             if (IsLeader)
-            {
                 _logger.LogInformation("I am leader!");
-            }
             else
-            {
                 _logger.LogInformation("{Address}:{Id} is leader!", leader?.Address, leader?.MemberId);
-            }
         }
 
         public void UpdateClusterTopology(IReadOnlyCollection<Member> statuses, ulong eventId)
@@ -204,8 +198,8 @@ namespace Proto.Cluster
                 }
 
                 topology.Members.AddRange(_members.Values);
-                
-                _logger.LogDebug("Published ClusterTopology event {ClusterTopology}",topology);
+
+                _logger.LogDebug("Published ClusterTopology event {ClusterTopology}", topology);
 
                 _eventStream.Publish(topology);
             }
@@ -220,21 +214,15 @@ namespace Proto.Cluster
             //update MemberStrategy
             foreach (var k in memberThatLeft.Kinds)
             {
-                if (!_memberStrategyByKind.TryGetValue(k, out var ms))
-                {
-                    continue;
-                }
+                if (!_memberStrategyByKind.TryGetValue(k, out var ms)) continue;
 
                 ms.RemoveMember(memberThatLeft);
 
-                if (ms.GetAllMembers().Count == 0)
-                {
-                    _memberStrategyByKind.Remove(k);
-                }
+                if (ms.GetAllMembers().Count == 0) _memberStrategyByKind.Remove(k);
             }
 
             _bannedMembers.Add(memberThatLeft.Id);
-            
+
             _members = _members.Remove(memberThatLeft.Id);
 
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
@@ -252,7 +240,9 @@ namespace Proto.Cluster
             {
                 if (!_memberStrategyByKind.ContainsKey(kind))
                 {
-                    _memberStrategyByKind = _memberStrategyByKind.SetItem(kind, _cluster.Config!.MemberStrategyBuilder(_cluster, kind)  ?? new SimpleMemberStrategy());
+                    _memberStrategyByKind = _memberStrategyByKind.SetItem(kind,
+                        _cluster.Config!.MemberStrategyBuilder(_cluster, kind) ?? new SimpleMemberStrategy()
+                    );
                 }
 
                 //TODO: this doesnt work, just use the same strategy for all kinds...

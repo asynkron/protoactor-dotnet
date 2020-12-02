@@ -1,21 +1,26 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="AccountProxy.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
 using System.Threading.Tasks;
 using Proto;
 using Saga.Messages;
 
 namespace Saga
 {
-    class AccountProxy : IActor
+    internal class AccountProxy : IActor
     {
-        private readonly PID _target;
         private readonly Func<PID, object> _createMessage;
+        private readonly PID _target;
 
         public AccountProxy(PID target, Func<PID, object> createMessage)
         {
             _target = target;
             _createMessage = createMessage;
         }
-        
+
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
@@ -40,7 +45,7 @@ namespace Saga
                 case ServiceUnavailable _: //TODO - this gives us more information than a failure
                     throw new Exception();
             }
-            
+
             return Task.CompletedTask;
         }
     }

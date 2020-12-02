@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="BoundedMailboxQueue.cs" company="Asynkron AB">
+// <copyright file="BoundedMailboxQueue.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//  </copyright>
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System.Threading;
 using System.Threading.Channels;
 
@@ -25,6 +24,7 @@ namespace Proto.Mailbox
             {
                 Thread.Sleep(50);
             }
+
             _hasMessages = true;
         }
 

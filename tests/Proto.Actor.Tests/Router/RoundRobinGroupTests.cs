@@ -8,12 +8,11 @@ namespace Proto.Router.Tests
 {
     public class RoundRobinGroupTests
     {
-        private readonly ActorSystem ActorSystem = new ActorSystem();
-
         private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor())
             .WithMailbox(() => new TestMailbox());
 
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
+        private readonly ActorSystem ActorSystem = new();
 
         [Fact]
         public async void RoundRobinGroupRouter_RouteesReceiveMessagesInRoundRobinStyle()
@@ -119,7 +118,8 @@ namespace Proto.Router.Tests
             Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));
         }
 
-        private (PID router, PID routee1, PID routee2, PID routee3) CreateRoundRobinRouterWith3Routees(ActorSystem system)
+        private (PID router, PID routee1, PID routee2, PID routee3) CreateRoundRobinRouterWith3Routees(
+            ActorSystem system)
         {
             var routee1 = system.Root.Spawn(MyActorProps);
             var routee2 = system.Root.Spawn(MyActorProps);

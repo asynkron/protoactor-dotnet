@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="LeaderElectedEvent.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using JetBrains.Annotations;
 using Proto.Cluster.Data;
 

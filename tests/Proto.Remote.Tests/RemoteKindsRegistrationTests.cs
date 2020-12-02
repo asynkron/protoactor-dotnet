@@ -11,9 +11,9 @@ namespace Proto.Remote.Tests
         {
             var props = new Props();
             var kind = Guid.NewGuid().ToString();
-            var remote = new GrpcCoreRemote(new ActorSystem(), 
-                 GrpcCoreRemoteConfig.BindToLocalhost()
-                .WithRemoteKinds((kind, props))
+            var remote = new GrpcCoreRemote(new ActorSystem(),
+                GrpcCoreRemoteConfig.BindToLocalhost()
+                    .WithRemoteKinds((kind, props))
             );
 
             Assert.Equal(props, remote.Config.GetRemoteKind(kind));

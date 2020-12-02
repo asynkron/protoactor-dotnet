@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="EndpointWriterOptions.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
 
 namespace Proto.Remote
@@ -25,6 +30,5 @@ namespace Proto.Remote
         ///     each retry backs off by an exponential ratio of this timespan
         /// </summary>
         public TimeSpan RetryBackOff { get; set; } = TimeSpan.FromMilliseconds(100);
-        
     }
 }
