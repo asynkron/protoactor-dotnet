@@ -14,6 +14,7 @@ namespace Proto
     public class ProcessRegistry
     {
         private readonly List<Func<PID, Process>> _hostResolvers = new();
+        private readonly List<Func<PID, Process>> _clientResolvers = new();
         private readonly HashedConcurrentDictionary _localProcesses = new();
         private int _sequenceId;
 
@@ -28,10 +29,25 @@ namespace Proto
 
         public void RegisterHostResolver(Func<PID, Process> resolver) => _hostResolvers.Add(resolver);
 
+        public void RegisterClientResolver(Func<PID, Process> resolver) => _clientResolvers.Add(resolver);
+
         public Process Get(PID pid)
         {
             if (pid.Address == ActorSystem.NoHost || pid.Address == System.Address)
-                return _localProcesses.TryGetValue(pid.Id, out var process) ? process : System.DeadLetter;
+
+            {
+                if(_localProcesses.TryGetValue(pid.Id, out var process)){
+                    return process;
+                }
+
+                var client = _clientResolvers.Select(x => x(pid)).FirstOrDefault();
+                if(client is null){
+                    return System.DeadLetter;
+                }
+                return client;
+
+            }
+
 
             var reff = _hostResolvers.Select(x => x(pid)).FirstOrDefault();
 
