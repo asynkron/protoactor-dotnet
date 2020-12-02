@@ -56,7 +56,7 @@ namespace Proto.Cluster.Partition
         {
             context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
             var count = _myActors.Count;
-            _logger.LogInformation("Statistics: Actor Count {ActorCount}", count);
+            _logger.LogDebug("Statistics: Actor Count {ActorCount}", count);
             return Task.CompletedTask;
         }
 
