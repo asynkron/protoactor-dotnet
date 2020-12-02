@@ -93,7 +93,7 @@ namespace Proto.Cluster.Identity
 
             void Respond(PID? pid)
             {
-                _logger.LogInformation("Worker Responding to {@ClusterIdentity}, req {Request}, Resp {PID}",
+                _logger.LogDebug("Worker Responding to {@ClusterIdentity}, req {Request}, Resp {PID}",
                     msg.ClusterIdentity.ToShortString(), reqId, pid
                 );
 
@@ -131,7 +131,7 @@ namespace Proto.Cluster.Identity
 
                 //we have the lock, spawn and return
                 var pid = await SpawnActivationAsync(activator, spawnLock, ct);
-                _logger.LogInformation("Got {PID} for {ClusterIdentity}", pid, clusterIdentity.ToShortString());
+                _logger.LogDebug("Got {PID} for {ClusterIdentity}", pid, clusterIdentity.ToShortString());
                 return pid;
             }
             catch (Exception e)
