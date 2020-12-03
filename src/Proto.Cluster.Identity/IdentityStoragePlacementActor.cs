@@ -14,7 +14,9 @@ namespace Proto.Cluster.Identity
 {
     internal class IdentityStoragePlacementActor : IActor
     {
+        private const int PersistenceRetries = 3;
         private static readonly Random Jitter = new();
+
         private readonly Cluster _cluster;
 
         private readonly IdentityStorageLookup _identityLookup;
@@ -36,13 +38,13 @@ namespace Proto.Cluster.Identity
         public Task ReceiveAsync(IContext context)
         {
             return context.Message switch
-                   {
-                       Started _             => Started(context),
-                       ReceiveTimeout _      => ReceiveTimeout(context),
-                       Terminated msg        => Terminated(msg),
-                       ActivationRequest msg => ActivationRequest(context, msg),
-                       _                     => Task.CompletedTask
-                   };
+            {
+                Started _ => Started(context),
+                ReceiveTimeout _ => ReceiveTimeout(context),
+                Terminated msg => Terminated(msg),
+                ActivationRequest msg => ActivationRequest(context, msg),
+                _ => Task.CompletedTask
+            };
         }
 
         private static Task Started(IContext context)
@@ -167,7 +169,7 @@ namespace Proto.Cluster.Identity
         {
             var attempts = 0;
             var spawnLock = new SpawnLock(msg.RequestId, msg.ClusterIdentity);
-            while (attempts < 3)
+            while (attempts < PersistenceRetries)
             {
                 try
                 {
@@ -183,11 +185,16 @@ namespace Proto.Cluster.Identity
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "No entry was updated {@SpawnLock}", spawnLock);
-                    attempts++;
+                    if (++attempts < PersistenceRetries)
+                    {
+                        _logger.LogWarning(e, "No entry was updated {@SpawnLock}. Retrying.", spawnLock);
+                        await Task.Delay(50 + Jitter.Next(100));
+                    }
+                    else
+                    {
+                        _logger.LogError(e, "Failed to persist activation: {@SpawnLock}", spawnLock);
+                    }
                 }
-
-                await Task.Delay(50 + Jitter.Next(100));
             }
 
             return false;
