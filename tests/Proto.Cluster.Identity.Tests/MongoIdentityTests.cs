@@ -5,6 +5,8 @@ using Proto.Cluster.Identity.MongoDb;
 using Proto.Cluster.IdentityLookup;
 using Proto.Cluster.Tests;
 using Proto.TestFixtures;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace Proto.Cluster.Identity.Tests
 {
@@ -22,7 +24,7 @@ namespace Proto.Cluster.Identity.Tests
             return identity;
         }
 
-        internal static IMongoDatabase GetMongo()
+        private static IMongoDatabase GetMongo()
         {
             var connectionString = TestConfig.Configuration.GetConnectionString("MongoDB");
             var settings = MongoClientSettings.FromConnectionString(connectionString);
@@ -33,29 +35,29 @@ namespace Proto.Cluster.Identity.Tests
             var database = client.GetDatabase("ProtoMongo");
             return database;
         }
-    }
 
-    // [Collection("MongoDb")]
-    // public class MongoClusterTests : ClusterTests, IClassFixture<MongoIdentityClusterFixture>
-    // {
-    //     // ReSharper disable once SuggestBaseTypeForParameter
-    //     public MongoClusterTests(ITestOutputHelper testOutputHelper, MongoIdentityClusterFixture clusterFixture)
-    //         : base(testOutputHelper, clusterFixture)
-    //     {
-    //     }
-    // }
-    //
-    // [Collection("MongoDb")]
-    // public class MongoStorageTests : IdentityStorageTests
-    // {
-    //     public MongoStorageTests() : base(Init)
-    //     {
-    //     }
-    //
-    //     private static IIdentityStorage Init(string clusterName)
-    //     {
-    //         var db = MongoIdentityClusterFixture.GetMongo();
-    //         return new MongoIdentityStorage(clusterName, db.GetCollection<PidLookupEntity>("pids"));
-    //     }
-    // }
+        [Collection("MongoDb")]
+        public class MongoClusterTests : ClusterTests, IClassFixture<MongoIdentityClusterFixture>
+        {
+            // ReSharper disable once SuggestBaseTypeForParameter
+            public MongoClusterTests(ITestOutputHelper testOutputHelper, MongoIdentityClusterFixture clusterFixture)
+                : base(testOutputHelper, clusterFixture)
+            {
+            }
+        }
+
+        [Collection("MongoDb")]
+        public class MongoStorageTests : IdentityStorageTests
+        {
+            public MongoStorageTests() : base(Init)
+            {
+            }
+
+            private static IIdentityStorage Init(string clusterName)
+            {
+                var db = MongoIdentityClusterFixture.GetMongo();
+                return new MongoIdentityStorage(clusterName, db.GetCollection<PidLookupEntity>("pids"));
+            }
+        }
+    }
 }

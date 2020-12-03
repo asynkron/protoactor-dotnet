@@ -1,12 +1,15 @@
 ﻿// ReSharper disable UnusedType.Global
 // ReSharper disable UnusedMember.Global
 
+using System;
 using Microsoft.Extensions.Configuration;
 using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.IdentityLookup;
 using Proto.Cluster.Tests;
 using Proto.TestFixtures;
 using StackExchange.Redis;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace Proto.Cluster.Identity.Tests
 {
@@ -39,38 +42,38 @@ namespace Proto.Cluster.Identity.Tests
             );
             return identity;
         }
-    }
 
-    // public class RedisClusterTests : ClusterTests, IClassFixture<RedisIdentityClusterFixture>
-    // {
-    //     // ReSharper disable once SuggestBaseTypeForParameter
-    //     public RedisClusterTests(ITestOutputHelper testOutputHelper, RedisIdentityClusterFixture clusterFixture)
-    //         : base(testOutputHelper, clusterFixture)
-    //     {
-    //     }
-    // }
-    //
-    // public class ResilienceRedisClusterTests : ClusterTests, IClassFixture<ChaosMonkeyRedisIdentityClusterFixture>
-    // {
-    //     // ReSharper disable once SuggestBaseTypeForParameter
-    //     public ResilienceRedisClusterTests(ITestOutputHelper testOutputHelper,
-    //         ChaosMonkeyRedisIdentityClusterFixture clusterFixture)
-    //         : base(testOutputHelper, clusterFixture)
-    //     {
-    //     }
-    // }
-    //
-    // public class RedisStorageTests : IdentityStorageTests
-    // {
-    //     public RedisStorageTests() : base(Init)
-    //     {
-    //     }
-    //
-    //     private static IIdentityStorage Init(string clusterName)
-    //     {
-    //         return new RedisIdentityStorage(clusterName, ConnectionMultiplexer.Connect("localhost:6379"),
-    //             TimeSpan.FromMilliseconds(1500)
-    //         );
-    //     }
-    // }
+        public class RedisClusterTests : ClusterTests, IClassFixture<RedisIdentityClusterFixture>
+        {
+            // ReSharper disable once SuggestBaseTypeForParameter
+            public RedisClusterTests(ITestOutputHelper testOutputHelper, RedisIdentityClusterFixture clusterFixture)
+                : base(testOutputHelper, clusterFixture)
+            {
+            }
+        }
+
+        public class ResilienceRedisClusterTests : ClusterTests, IClassFixture<ChaosMonkeyRedisIdentityClusterFixture>
+        {
+            // ReSharper disable once SuggestBaseTypeForParameter
+            public ResilienceRedisClusterTests(
+                ITestOutputHelper testOutputHelper,
+                ChaosMonkeyRedisIdentityClusterFixture clusterFixture
+            )
+                : base(testOutputHelper, clusterFixture)
+            {
+            }
+        }
+
+        public class RedisStorageTests : IdentityStorageTests
+        {
+            public RedisStorageTests() : base(Init)
+            {
+            }
+
+            private static IIdentityStorage Init(string clusterName) => new RedisIdentityStorage(clusterName,
+                ConnectionMultiplexer.Connect("localhost:6379"),
+                TimeSpan.FromMilliseconds(1500)
+            );
+        }
+    }
 }
