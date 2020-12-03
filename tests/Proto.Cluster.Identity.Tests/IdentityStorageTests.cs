@@ -234,7 +234,7 @@ namespace Proto.Cluster.Identity.Tests
             activation!.Pid.Should().BeEquivalentTo(pid);
         }
 
-        [Fact] //(Skip = "Doesn't work")]
+        [Fact]
         public async Task RemovesLockIfStale()
         {
             var activator = GetFakeActivator();
