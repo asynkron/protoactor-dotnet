@@ -62,7 +62,7 @@ namespace Proto.Cluster.Identity.Tests
     //
     // public class RedisStorageTests : IdentityStorageTests
     // {
-    //     public RedisStorageTests() : base(Init)
+    //     public RedisStorageTests(ITestOutputHelper testOutputHelper) : base(Init, testOutputHelper)
     //     {
     //     }
     //
