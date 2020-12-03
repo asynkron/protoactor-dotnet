@@ -9,13 +9,13 @@ namespace Proto.Cluster.Identity.Tests
 {
     public abstract class IdentityStorageTests : IDisposable
     {
-        private static int _testId = 1;
+        private static int testId = 1;
         private readonly IIdentityStorage _storage;
         private readonly IIdentityStorage _storageInstance2;
 
         protected IdentityStorageTests(Func<string, IIdentityStorage> storageFactory)
         {
-            var clusterName = "test-" + Guid.NewGuid().ToString("N").Substring(0, 6);
+            var clusterName = $"test-{Guid.NewGuid().ToString("N").Substring(0, 6)}";
             _storage = storageFactory(clusterName);
             _storageInstance2 = storageFactory(clusterName);
         }
@@ -238,7 +238,7 @@ namespace Proto.Cluster.Identity.Tests
         public async Task RemovesLockIfStale()
         {
             var activator = GetFakeActivator();
-            var timeout = new CancellationTokenSource(5000).Token;
+            var timeout = new CancellationTokenSource(10000).Token;
             var identity = new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
             await _storage.TryAcquireLock(identity, timeout);
 
@@ -267,6 +267,6 @@ namespace Proto.Cluster.Identity.Tests
             return activator;
         }
 
-        private int NextId() => Interlocked.Increment(ref _testId);
+        private int NextId() => Interlocked.Increment(ref testId);
     }
 }

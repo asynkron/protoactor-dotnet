@@ -11,15 +11,9 @@ namespace Proto.Cluster.Identity.Tests
         private static readonly Random Mayhem = new();
         private readonly IIdentityStorage _identityStorageImplementation;
 
-        public FailureInjectionStorage(IIdentityStorage identityStorageImplementation)
-        {
-            _identityStorageImplementation = identityStorageImplementation;
-        }
+        public FailureInjectionStorage(IIdentityStorage identityStorageImplementation) => _identityStorageImplementation = identityStorageImplementation;
 
-        public void Dispose()
-        {
-            _identityStorageImplementation.Dispose();
-        }
+        public void Dispose() => _identityStorageImplementation.Dispose();
 
         public Task<StoredActivation?> TryGetExistingActivation(ClusterIdentity clusterIdentity, CancellationToken ct)
         {
@@ -72,7 +66,7 @@ namespace Proto.Cluster.Identity.Tests
 
         public Task Init() => _identityStorageImplementation.Init();
 
-        private void MaybeFail()
+        private static void MaybeFail()
         {
             if (Mayhem.NextDouble() > SuccessRate) throw new Exception("Chaos monkey at work");
         }

@@ -15,8 +15,8 @@ namespace Proto.Cluster.Identity.MongoDb
 
         public static void Initialize(IMongoClient client)
             => openConnectionSemaphore = new Semaphore(
-                client.Settings.MaxConnectionPoolSize / 2,
-                client.Settings.MaxConnectionPoolSize / 2
+                client.Settings.MaxConnectionPoolSize,
+                client.Settings.MaxConnectionPoolSize * 10
             );
 
         public static async Task<T> AddRequest<T>(Task<T> task)
