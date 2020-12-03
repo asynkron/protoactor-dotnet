@@ -2,7 +2,8 @@
   <PropertyGroup>
     <LangVersion>9</LangVersion>
     <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
-    <RootNamespace>Proto.Cluster.Identity.Tests</RootNamespace>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerComposeProjectPath>..\docker-compose\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj" />

@@ -18,25 +18,11 @@ namespace Proto.Cluster.Identity.Tests
 
         protected override IIdentityLookup GetIdentityLookup(string clusterName)
         {
-            var db = GetMongo();
-            var pids = db.GetCollection<PidLookupEntity>("pids");
+            var pids = MongoFixture.Database.GetCollection<PidLookupEntity>("pids");
             var identity = new IdentityStorageLookup(new MongoIdentityStorage(clusterName, pids));
             return identity;
         }
 
-        private static IMongoDatabase GetMongo()
-        {
-            var connectionString = TestConfig.Configuration.GetConnectionString("MongoDB");
-            var settings = MongoClientSettings.FromConnectionString(connectionString);
-            settings.MaxConnectionPoolSize = 200;
-            settings.RetryReads = true;
-            settings.RetryWrites = true;
-            var client = new MongoClient(settings);
-            var database = client.GetDatabase("ProtoMongo");
-            return database;
-        }
-
-        [Collection("MongoDb")]
         public class MongoClusterTests : ClusterTests, IClassFixture<MongoIdentityClusterFixture>
         {
             // ReSharper disable once SuggestBaseTypeForParameter
@@ -46,7 +32,6 @@ namespace Proto.Cluster.Identity.Tests
             }
         }
 
-        [Collection("MongoDb")]
         public class MongoStorageTests : IdentityStorageTests
         {
             public MongoStorageTests() : base(Init)
@@ -54,10 +39,25 @@ namespace Proto.Cluster.Identity.Tests
             }
 
             private static IIdentityStorage Init(string clusterName)
-            {
-                var db = MongoIdentityClusterFixture.GetMongo();
-                return new MongoIdentityStorage(clusterName, db.GetCollection<PidLookupEntity>("pids"));
-            }
+                => new MongoIdentityStorage(clusterName, MongoFixture.Database.GetCollection<PidLookupEntity>("pids"));
         }
+    }
+
+    static class MongoFixture
+    {
+        static MongoFixture()
+        {
+            var connectionString = TestConfig.Configuration.GetConnectionString("MongoDB");
+            var settings = MongoClientSettings.FromConnectionString(connectionString);
+            settings.MaxConnectionPoolSize = 200;
+            settings.RetryReads = true;
+            settings.RetryWrites = true;
+            Client = new MongoClient(settings);
+            Database = Client.GetDatabase("ProtoMongo");
+        }
+
+        public static IMongoDatabase Database { get; }
+
+        public static MongoClient Client { get; }
     }
 }

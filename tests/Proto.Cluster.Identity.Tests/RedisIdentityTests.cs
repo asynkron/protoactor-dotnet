@@ -2,6 +2,7 @@
 // ReSharper disable UnusedMember.Global
 
 using System;
+using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.IdentityLookup;
@@ -21,9 +22,7 @@ namespace Proto.Cluster.Identity.Tests
 
         protected override IIdentityLookup GetIdentityLookup(string clusterName)
         {
-            var connectionString = TestConfig.Configuration.GetConnectionString("Redis");
-            var multiplexer = ConnectionMultiplexer.Connect(connectionString);
-            var identity = new IdentityStorageLookup(new RedisIdentityStorage(clusterName, multiplexer));
+            var identity = new IdentityStorageLookup(new RedisIdentityStorage(clusterName, RedisFixture.Multiplexer));
             return identity;
         }
     }
@@ -36,9 +35,8 @@ namespace Proto.Cluster.Identity.Tests
 
         protected override IIdentityLookup GetIdentityLookup(string clusterName)
         {
-            var multiplexer = ConnectionMultiplexer.Connect("localhost:6379");
             var identity = new IdentityStorageLookup(
-                new FailureInjectionStorage(new RedisIdentityStorage(clusterName, multiplexer))
+                new FailureInjectionStorage(new RedisIdentityStorage(clusterName, RedisFixture.Multiplexer))
             );
             return identity;
         }
@@ -70,10 +68,24 @@ namespace Proto.Cluster.Identity.Tests
             {
             }
 
-            private static IIdentityStorage Init(string clusterName) => new RedisIdentityStorage(clusterName,
-                ConnectionMultiplexer.Connect("localhost:6379"),
-                TimeSpan.FromMilliseconds(1500)
-            );
+            private static IIdentityStorage Init(string clusterName)
+                =>
+                    new RedisIdentityStorage(clusterName,
+                        RedisFixture.Multiplexer,
+                        TimeSpan.FromMilliseconds(1500)
+                    );
         }
+    }
+
+    static class RedisFixture
+    {
+        static RedisFixture()
+        {
+            var connectionString = TestConfig.Configuration.GetConnectionString("Redis");
+            Multiplexer = ConnectionMultiplexer.Connect(connectionString);
+            ThreadPool.SetMinThreads(250, 250);
+        }
+
+        public static ConnectionMultiplexer Multiplexer { get; }
     }
 }

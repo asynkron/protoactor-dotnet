@@ -13,11 +13,8 @@ namespace Proto.Cluster.Tests
     {
         private readonly ITestOutputHelper _testOutputHelper;
 
-        protected ClusterTests(ITestOutputHelper testOutputHelper, IClusterFixture clusterFixture) : base(clusterFixture
-        )
-        {
-            _testOutputHelper = testOutputHelper;
-        }
+        protected ClusterTests(ITestOutputHelper testOutputHelper, IClusterFixture clusterFixture)
+            : base(clusterFixture) => _testOutputHelper = testOutputHelper;
 
         [Fact]
         public async Task ReSpawnsClusterActorsFromDifferentNodes()
@@ -53,6 +50,7 @@ namespace Proto.Cluster.Tests
             var entryNode = Members.First();
 
             var timer = Stopwatch.StartNew();
+
             foreach (var id in GetActorIds(actorCount))
             {
                 await PingPong(entryNode, id, timeout);
@@ -76,7 +74,7 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
 
-        [Theory]
+        [Theory] //(Skip = "Doesn't work with Redis")]
         [InlineData(100, 10000)]
         public async Task CanSpawnMultipleKindsWithSameIdentityConcurrently(int actorCount, int timeoutMs)
         {
@@ -113,7 +111,7 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
 
-        [Theory]
+        [Theory] //(Skip = "Does't work")]
         [InlineData(100, 10000)]
         public async Task CanRespawnVirtualActors(int actorCount, int timeoutMs)
         {
@@ -137,13 +135,18 @@ namespace Proto.Cluster.Tests
             );
         }
 
-        private async Task PingPong(Cluster cluster, string id, CancellationToken token = default,
-            string kind = EchoActor.Kind)
+        private async Task PingPong(
+            Cluster cluster,
+            string id,
+            CancellationToken token = default,
+            string kind = EchoActor.Kind
+        )
         {
             await Task.Yield();
 
             var response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind);
             var tries = 1;
+
             while (response == null && !token.IsCancellationRequested)
             {
                 await Task.Delay(200, token);
