@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Account.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,17 +12,18 @@ using Saga.Messages;
 
 namespace Saga
 {
-    class Account : IActor
+    internal class Account : IActor
     {
-        private readonly string _name;
-        private readonly double _serviceUptime;
-        private readonly double _refusalProbability;
         private readonly double _busyProbability;
+        private readonly string _name;
         private readonly Dictionary<PID, object> _processedMessages = new Dictionary<PID, object>();
-        private decimal _balance = 10;
         private readonly Random _random;
+        private readonly double _refusalProbability;
+        private readonly double _serviceUptime;
+        private decimal _balance = 10;
 
-        public Account(string name, double serviceUptime, double refusalProbability, double busyProbability, Random random)
+        public Account(string name, double serviceUptime, double refusalProbability, double busyProbability,
+            Random random)
         {
             _name = name;
             _serviceUptime = serviceUptime;
@@ -56,13 +62,13 @@ namespace Saga
         }
 
         /// <summary>
-        ///  we want to simulate the following: 
-        ///  * permanent refusals to process the message
-        ///  * temporary refusals to process the message 
-        ///  * failures before updating the balance
-        ///  * failures after updating the balance
-        ///  * slow processing
-        ///  * successful processing
+        ///     we want to simulate the following:
+        ///     * permanent refusals to process the message
+        ///     * temporary refusals to process the message
+        ///     * failures before updating the balance
+        ///     * failures after updating the balance
+        ///     * slow processing
+        ///     * successful processing
         /// </summary>
         private Task AdjustBalance(IContext context, PID replyTo, decimal amount)
         {
@@ -120,9 +126,7 @@ namespace Saga
             var comparision = _random.NextDouble() * 100;
 
             if (comparision > _serviceUptime)
-            {
                 return _random.NextDouble() * 100 > 50 ? Behavior.FailBeforeProcessing : Behavior.FailAfterProcessing;
-            }
 
             return Behavior.ProcessSuccessfully;
         }

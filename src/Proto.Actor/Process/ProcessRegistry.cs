@@ -1,19 +1,20 @@
 // -----------------------------------------------------------------------
-//   <copyright file="ProcessRegistry.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="ProcessRegistry.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
     public class ProcessRegistry
     {
         private readonly List<Func<PID, Process>> _hostResolvers = new();
+        private readonly List<Func<PID, Process>> _clientResolvers = new();
         private readonly HashedConcurrentDictionary _localProcesses = new();
         private int _sequenceId;
 
@@ -24,21 +25,33 @@ namespace Proto
 
         private ActorSystem System { get; }
 
+        public int ProcessCount => _localProcesses.Count;
+
         public void RegisterHostResolver(Func<PID, Process> resolver) => _hostResolvers.Add(resolver);
+
+        public void RegisterClientResolver(Func<PID, Process> resolver) => _clientResolvers.Add(resolver);
 
         public Process Get(PID pid)
         {
             if (pid.Address == ActorSystem.NoHost || pid.Address == System.Address)
+
             {
-                return _localProcesses.TryGetValue(pid.Id, out var process) ? process : System.DeadLetter;
+                if(_localProcesses.TryGetValue(pid.Id, out var process)){
+                    return process;
+                }
+
+                var client = _clientResolvers.Select(x => x(pid)).FirstOrDefault();
+                if(client is null){
+                    return System.DeadLetter;
+                }
+                return client;
+
             }
+
 
             var reff = _hostResolvers.Select(x => x(pid)).FirstOrDefault();
 
-            if (reff is null)
-            {
-                throw new NotSupportedException("Unknown host");
-            }
+            if (reff is null) throw new NotSupportedException("Unknown host");
 
             return reff;
         }
@@ -58,7 +71,5 @@ namespace Proto
             var counter = Interlocked.Increment(ref _sequenceId);
             return "$" + counter;
         }
-
-        public int ProcessCount => _localProcesses.Count;
     }
 }

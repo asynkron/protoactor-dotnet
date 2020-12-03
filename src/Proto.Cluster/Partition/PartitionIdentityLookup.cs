@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="PartitionIdentityLookup.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,10 +22,7 @@ namespace Proto.Cluster.Partition
             //Get address to node owning this ID
             var identityOwner = _partitionManager.Selector.GetIdentityOwner(clusterIdentity.Identity);
             _logger.LogDebug("Identity belongs to {address}", identityOwner);
-            if (string.IsNullOrEmpty(identityOwner))
-            {
-                return null;
-            }
+            if (string.IsNullOrEmpty(identityOwner)) return null;
 
             var remotePid = PartitionManager.RemotePartitionIdentityActor(identityOwner);
 
@@ -55,10 +57,7 @@ namespace Proto.Cluster.Partition
             }
         }
 
-        public Task RemovePidAsync(PID pid, CancellationToken ct)
-        {
-            return Task.CompletedTask;
-        }
+        public Task RemovePidAsync(PID pid, CancellationToken ct) => Task.CompletedTask;
 
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
         {

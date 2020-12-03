@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="ProtoLabels.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 namespace Proto.Cluster.Kubernetes
 {
     public class ProtoLabels

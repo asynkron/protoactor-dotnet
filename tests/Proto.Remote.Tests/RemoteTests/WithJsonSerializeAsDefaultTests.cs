@@ -9,10 +9,15 @@ namespace Proto.Remote.Tests
 {
     public class WithJsonSerializeAsDefaultTests : RemoteTests, IClassFixture<WithJsonSerializeAsDefaultTests.Fixture>
     {
+        public WithJsonSerializeAsDefaultTests(Fixture fixture) : base(fixture)
+        {
+        }
+
         public class Fixture : RemoteFixture
         {
             private readonly IHost _clientHost;
             private readonly IHost _serverHost;
+
             public Fixture()
             {
                 var clientConfig = ConfigureClientRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost());
@@ -21,6 +26,7 @@ namespace Proto.Remote.Tests
                 var serverConfig = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost());
                 (_serverHost, ServerRemote) = GetHostedGrpcNetRemote(serverConfig);
             }
+
             public override async Task DisposeAsync()
             {
                 await _clientHost.StopAsync();
@@ -28,9 +34,6 @@ namespace Proto.Remote.Tests
                 await _serverHost.StopAsync();
                 _serverHost.Dispose();
             }
-        }
-        public WithJsonSerializeAsDefaultTests(Fixture fixture) : base(fixture)
-        {
         }
     }
 }

@@ -1,16 +1,28 @@
-﻿namespace Proto.Utils
-{
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Throttle.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
+namespace Proto.Utils
+{
     public delegate Throttle.Valve ShouldThrottle();
 
     public static class Throttle
     {
+        public enum Valve
+        {
+            Open,
+            Closing,
+            Closed
+        }
+
         /// <summary>
-        /// This has no guarantees that the throttle opens exactly after the period, since it is reset asynchronously
-        /// Throughput has been prioritized over exact re-opening 
+        ///     This has no guarantees that the throttle opens exactly after the period, since it is reset asynchronously
+        ///     Throughput has been prioritized over exact re-opening
         /// </summary>
         /// <param name="maxEventsInPeriod"></param>
         /// <param name="period"></param>
@@ -20,23 +32,15 @@
             Action<int>? throttledCallBack = null)
         {
             if (period == TimeSpan.Zero || maxEventsInPeriod < 1 || maxEventsInPeriod == int.MaxValue)
-            {
                 return () => Valve.Open;
-            }
 
             var currentEvents = 0;
             return () =>
             {
                 var tries = Interlocked.Increment(ref currentEvents);
-                if (tries == 1)
-                {
-                    StartTimer(throttledCallBack);
-                }
+                if (tries == 1) StartTimer(throttledCallBack);
 
-                if (tries == maxEventsInPeriod)
-                {
-                    return Valve.Closing;
-                }
+                if (tries == maxEventsInPeriod) return Valve.Closing;
 
                 return tries > maxEventsInPeriod ? Valve.Closed : Valve.Open;
             };
@@ -47,25 +51,12 @@
                     {
                         await Task.Delay(period);
                         var timesCalled = Interlocked.Exchange(ref currentEvents, 0);
-                        if (timesCalled > maxEventsInPeriod)
-                        {
-                            callBack?.Invoke(timesCalled - maxEventsInPeriod);
-                        }
+                        if (timesCalled > maxEventsInPeriod) callBack?.Invoke(timesCalled - maxEventsInPeriod);
                     }
                 );
             }
         }
 
-        public enum Valve
-        {
-            Open,
-            Closing,
-            Closed
-        }
-
-        public static bool IsOpen(this Valve valve)
-        {
-            return valve != Valve.Closed;
-        }
+        public static bool IsOpen(this Valve valve) => valve != Valve.Closed;
     }
 }

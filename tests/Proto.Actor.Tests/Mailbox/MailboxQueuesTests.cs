@@ -11,11 +11,11 @@ namespace Proto.Mailbox.Tests
 
         private IMailboxQueue GetMailboxQueue(MailboxQueueKind kind)
             => kind switch
-            {
-                MailboxQueueKind.Bounded   => (IMailboxQueue) new BoundedMailboxQueue(4),
-                MailboxQueueKind.Unbounded => new UnboundedMailboxQueue(),
-                _                          => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
-            };
+               {
+                   MailboxQueueKind.Bounded   => new BoundedMailboxQueue(4),
+                   MailboxQueueKind.Unbounded => new UnboundedMailboxQueue(),
+                   _                          => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+               };
 
         [Theory]
         //[InlineData(MailboxQueueKind.Bounded)] -- temporarily disabled because the Bounded queue doesn't seem to work correctly
@@ -41,7 +41,9 @@ namespace Proto.Mailbox.Tests
         [Theory]
         //[InlineData(MailboxQueueKind.Bounded)] -- temporarily disabled because the Bounded queue doesn't seem to work correctly
         [InlineData(MailboxQueueKind.Unbounded)]
-        public void Given_MailboxQueue_when_enqueue_and_dequeue_in_different_threads_Then_we_get_the_elements_in_the_FIFO_order(MailboxQueueKind kind)
+        public void
+            Given_MailboxQueue_when_enqueue_and_dequeue_in_different_threads_Then_we_get_the_elements_in_the_FIFO_order(
+                MailboxQueueKind kind)
         {
             const int msgCount = 1000;
             var cancelSource = new CancellationTokenSource();
@@ -51,7 +53,7 @@ namespace Proto.Mailbox.Tests
             var producer = new Thread(
                 _ =>
                 {
-                    for (int i = 0; i < msgCount; i++)
+                    for (var i = 0; i < msgCount; i++)
                     {
                         if (cancelSource.IsCancellationRequested) return;
 

@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="PartitionMemberSelector.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System.Collections.Generic;
 
 namespace Proto.Cluster.Partition
@@ -6,12 +11,11 @@ namespace Proto.Cluster.Partition
     //this is the key algorithm for the distributed hash table
     internal class PartitionMemberSelector
     {
-        private readonly object _lock = new object();
-        private readonly List<Member> _members = new List<Member>();
-        private readonly Rendezvous _rdv = new Rendezvous();
+        private readonly object _lock = new();
+        private readonly List<Member> _members = new();
+        private readonly Rendezvous _rdv = new();
 
         public int Count => _members.Count;
-
 
         public void Update(Member[] members)
         {

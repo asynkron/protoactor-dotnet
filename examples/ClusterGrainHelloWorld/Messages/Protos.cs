@@ -1,4 +1,8 @@
-
+// -----------------------------------------------------------------------
+// <copyright file="Protos.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,9 +14,12 @@ namespace Messages
 {
     public class Grains
     {
-        private Cluster Cluster { get; }
+        public Grains(Cluster cluster)
+        {
+            Cluster = cluster;
+        }
 
-        public Grains(Cluster cluster) => Cluster = cluster;
+        private Cluster Cluster { get; }
 
         internal Func<IHelloGrain> GetHelloGrain { get; private set; }
 
@@ -28,8 +35,8 @@ namespace Messages
 
     public class HelloGrainClient
     {
-        private readonly string _id;
         private readonly Cluster _cluster;
+        private readonly string _id;
 
         public HelloGrainClient(Cluster cluster, string id)
         {
@@ -47,48 +54,50 @@ namespace Messages
                 MessageData = request.ToByteString()
             };
 
-            async Task<HelloResponse> Inner() 
+            async Task<HelloResponse> Inner()
             {
                 //request the RPC method to be invoked
                 var res = await _cluster.RequestAsync<object>(_id, "HelloGrain", gr, ct);
 
                 return res switch
-                {
-                    // normal response
-                    GrainResponse grainResponse => HelloResponse.Parser.ParseFrom(grainResponse.MessageData),
-                    // error response
-                    GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
-                    // unsupported response
-                    _ => throw new NotSupportedException()
-                };
+                       {
+                           // normal response
+                           GrainResponse grainResponse => HelloResponse.Parser.ParseFrom(grainResponse.MessageData),
+                           // error response
+                           GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                           // unsupported response
+                           _ => throw new NotSupportedException()
+                       };
             }
-            
+
             return await Inner();
         }
     }
 
     public class HelloGrainActor : IActor
     {
-        private IHelloGrain _inner;
         private readonly Grains _grains;
+        private IHelloGrain _inner;
 
-        public HelloGrainActor(Grains grains) => _grains = grains;
-        private string _identity;
-        private string _kind;
+        public HelloGrainActor(Grains grains)
+        {
+            _grains = grains;
+        }
 
-        protected string Identity => _identity;
-        protected string Kind => _kind;
+        protected string Identity { get; private set; }
+
+        protected string Kind { get; private set; }
 
         public async Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
-                case ClusterInit msg: 
+                case ClusterInit msg:
                 {
                     _inner = _grains.GetHelloGrain();
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
-                    _identity = msg.Identity;
-                    _kind = msg.Kind;
+                    Identity = msg.Identity;
+                    Kind = msg.Kind;
                     break;
                 }
                 case ReceiveTimeout _:
@@ -108,7 +117,7 @@ namespace Messages
                                 var res = await _inner.SayHello(r);
                                 var grainResponse = new GrainResponse
                                 {
-                                    MessageData = res.ToByteString(),
+                                    MessageData = res.ToByteString()
                                 };
                                 context.Respond(grainResponse);
                             }
@@ -131,4 +140,3 @@ namespace Messages
         }
     }
 }
-

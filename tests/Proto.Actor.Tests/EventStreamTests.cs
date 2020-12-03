@@ -18,7 +18,7 @@ namespace Proto.Tests
 
         [Fact]
         public void EventStream_CanSubscribeToAllEventTypes()
-        { 
+        {
             var receivedEvents = new List<object>();
             var eventStream = new EventStream();
             eventStream.Subscribe(@event => receivedEvents.Add(@event));
@@ -56,10 +56,11 @@ namespace Proto.Tests
             string received;
             var eventStream = new EventStream();
             eventStream.Subscribe<string>(theString =>
-            {
-                received = theString;
-                Assert.Equal("hello", received);
-            }, Dispatchers.DefaultDispatcher);
+                {
+                    received = theString;
+                    Assert.Equal("hello", received);
+                }, Dispatchers.DefaultDispatcher
+            );
             eventStream.Publish("hello");
         }
     }

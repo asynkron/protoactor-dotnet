@@ -12,7 +12,7 @@ namespace Proto.Tests
 {
     public class SpawnTests
     {
-        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly ActorSystem System = new();
         private static readonly RootContext Context = System.Root;
 
         [Fact]
@@ -34,10 +34,7 @@ namespace Proto.Tests
 
             var uniqueName = Guid.NewGuid().ToString();
             Context.SpawnNamed(props, uniqueName);
-            var x = Assert.Throws<ProcessNameExistException>(() =>
-            {
-                Context.SpawnNamed(props, uniqueName);
-            });
+            var x = Assert.Throws<ProcessNameExistException>(() => { Context.SpawnNamed(props, uniqueName); });
             Assert.Equal(uniqueName, x.Name);
         }
 

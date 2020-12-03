@@ -1,8 +1,14 @@
+// -----------------------------------------------------------------------
+// <copyright file="EventProbe.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
@@ -16,9 +22,9 @@ namespace Proto
     public class EventProbe<T>
     {
         private readonly ConcurrentQueue<T> _events = new();
+        private readonly EventStreamSubscription<T> _eventStreamSubscription;
         private readonly object _lock = new();
         private readonly ILogger _logger = Log.CreateLogger<EventProbe<T>>();
-        private readonly EventStreamSubscription<T> _eventStreamSubscription;
         private EventExpectation<T>? _currentExpectation;
 
         public EventProbe(EventStream<T> eventStream)
@@ -52,10 +58,10 @@ namespace Proto
                 var expectation = new EventExpectation<T>(@event =>
                     {
                         return @event switch
-                        {
-                            TE e when predicate(e) => true,
-                            _                      => false
-                        };
+                               {
+                                   TE e when predicate(e) => true,
+                                   _                      => false
+                               };
                     }
                 );
                 _logger.LogDebug("Setting expectation");

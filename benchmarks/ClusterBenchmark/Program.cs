@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Program.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
@@ -8,12 +13,12 @@ using MongoDB.Driver;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
+using Proto.Cluster.Identity;
+using Proto.Cluster.Identity.MongoDb;
 using Proto.Cluster.IdentityLookup;
 using Proto.Cluster.Kubernetes;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
-using Proto.Cluster.Identity;
-using Proto.Cluster.Identity.MongoDb;
 
 namespace ClusterExperiment1
 {
@@ -26,7 +31,7 @@ namespace ClusterExperiment1
             SpawnMember();
 
             Thread.Sleep(Timeout.Infinite);
-            return Task.CompletedTask;            
+            return Task.CompletedTask;
         }
 
         private static async Task RunLeader()
@@ -42,7 +47,6 @@ namespace ClusterExperiment1
                     var rnd = new Random();
                     while (true)
                     {
-
                         var id = "myactor" + rnd.Next(0, 1000);
                         try
                         {
@@ -51,24 +55,19 @@ namespace ClusterExperiment1
                             );
 
                             if (res is null)
-                            {
                                 logger.LogError("Null response");
-                            }
                             else
-                            {
                                 Console.Write(".");
-                            }
                         }
                         catch (Exception x)
                         {
                             logger.LogError(x, "Request timeout for {Id}", id);
                         }
                     }
-
                 }
             );
 
-        Console.ReadLine();
+            Console.ReadLine();
 
             //   Thread.Sleep(Timeout.Infinite);
         }
@@ -88,17 +87,12 @@ namespace ClusterExperiment1
             return logger;
         }
 
-
         public static async Task Main(string[] args)
         {
-            if (args.Length == 0 )
-            {
+            if (args.Length == 0)
                 await RunLeader();
-            }
             else
-            {
                 await RunFollower();
-            }
         }
 
         private static async Task<Cluster> SpawnClient()
@@ -123,30 +117,30 @@ namespace ClusterExperiment1
             clusterConfig = clusterConfig.WithClusterKind("hello", helloProps);
             var remote = new GrpcCoreRemote(system, remoteConfig);
             var cluster = new Cluster(system, clusterConfig);
-            
+
             cluster.StartMemberAsync();
             return cluster;
         }
 
-        private static (ClusterConfig, GrpcCoreRemoteConfig) GetClusterConfig(IClusterProvider clusterProvider, IIdentityLookup identityLookup)
+        private static (ClusterConfig, GrpcCoreRemoteConfig) GetClusterConfig(IClusterProvider clusterProvider,
+            IIdentityLookup identityLookup)
         {
-            var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{GrpcCoreRemoteConfig.AnyFreePort}";
+            var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfigBase.AnyFreePort}";
             var port = int.Parse(portStr);
-            var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? GrpcCoreRemoteConfig.Localhost;
+            var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? RemoteConfigBase.Localhost;
             var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
 
             var remoteConfig = GrpcCoreRemoteConfig
-                                    .BindTo(host, port)
-                                    .WithAdvertisedHost(advertisedHost)
-                                    .WithProtoMessages(MessagesReflection.Descriptor);
-            
+                .BindTo(host, port)
+                .WithAdvertisedHost(advertisedHost)
+                .WithProtoMessages(MessagesReflection.Descriptor);
+
             var clusterConfig = ClusterConfig
                 .Setup("mycluster", clusterProvider, identityLookup);
             return (clusterConfig, remoteConfig);
         }
 
         /// <summary>
-        /// 
         /// </summary>
         /// <returns></returns>
         private static IClusterProvider ClusterProvider()
@@ -157,7 +151,7 @@ namespace ClusterExperiment1
 
                 var kubernetesConfig =
                     KubernetesClientConfiguration
-                        .InClusterConfig(); 
+                        .InClusterConfig();
                 var kubernetes = new Kubernetes(kubernetesConfig);
                 return new KubernetesProvider(kubernetes);
             }
@@ -171,13 +165,15 @@ namespace ClusterExperiment1
         {
             var db = GetMongo();
             var identity = new IdentityStorageLookup(
-                new MongoIdentityStorage("mycluster", db.GetCollection<PidLookupEntity>("pids")));
+                new MongoIdentityStorage("mycluster", db.GetCollection<PidLookupEntity>("pids"))
+            );
             return identity;
         }
 
-        static IMongoDatabase GetMongo()
+        private static IMongoDatabase GetMongo()
         {
-            var connectionString = Environment.GetEnvironmentVariable("MONGO") ?? "mongodb://127.0.0.1:27017/ProtoMongo";
+            var connectionString =
+                Environment.GetEnvironmentVariable("MONGO") ?? "mongodb://127.0.0.1:27017/ProtoMongo";
             var url = MongoUrl.Create(connectionString);
             var settings = MongoClientSettings.FromUrl(url);
             settings.WriteConcern = WriteConcern.Acknowledged;
@@ -187,8 +183,6 @@ namespace ClusterExperiment1
             return database;
         }
     }
-    
-    
 
     public class HelloActor : IActor
     {
@@ -203,10 +197,7 @@ namespace ClusterExperiment1
                 //_log.LogInformation("I started " + ctx.Self);
             }
 
-            if (ctx.Message is HelloRequest)
-            {
-                ctx.Respond(new HelloResponse());
-            }
+            if (ctx.Message is HelloRequest) ctx.Respond(new HelloResponse());
 
             if (ctx.Message is Stopped)
             {

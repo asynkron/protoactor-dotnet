@@ -59,7 +59,6 @@ namespace Proto.Cluster.Tests
             private string _instanceId;
             private int _seq;
 
-
             public async Task ReceiveAsync(IContext context)
             {
                 switch (context.Message)
@@ -93,11 +92,11 @@ namespace Proto.Cluster.Tests
         {
             public const string Kind = "aggregator";
 
+            private readonly Dictionary<string, int> _lastReceivedSeq = new();
+            private readonly HashSet<string> _senders = new();
+
             private int _outOfOrderErrors;
             private int _seqRequests;
-
-            private readonly Dictionary<string, int> _lastReceivedSeq = new Dictionary<string, int>();
-            private readonly HashSet<string> _senders = new HashSet<string>();
 
             public Task ReceiveAsync(IContext context)
             {
@@ -128,10 +127,7 @@ namespace Proto.Cluster.Tests
                 var outOfOrder = _lastReceivedSeq.TryGetValue(request.SequenceKey, out var last) &&
                                  last + 1 != request.SequenceId;
                 _lastReceivedSeq[request.SequenceKey] = request.SequenceId;
-                if (outOfOrder)
-                {
-                    _outOfOrderErrors++;
-                }
+                if (outOfOrder) _outOfOrderErrors++;
 
                 context.Respond(new Ack());
             }

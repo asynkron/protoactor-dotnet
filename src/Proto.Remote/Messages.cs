@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="Messages.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="Messages.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 
 namespace Proto.Remote
@@ -32,7 +31,8 @@ namespace Proto.Remote
 
     public sealed record RemoteUnwatch(PID Watcher, PID Watchee);
 
-    public sealed record RemoteDeliver (Proto.MessageHeader Header, object Message, PID Target, PID Sender, int SerializerId);
+    public sealed record RemoteDeliver (Proto.MessageHeader Header, object Message, PID Target, PID Sender,
+        int SerializerId);
 
     public class JsonMessage
     {
@@ -47,5 +47,4 @@ namespace Proto.Remote
         public string Json { get; set; }
         public string TypeName { get; set; }
     }
-    
 }

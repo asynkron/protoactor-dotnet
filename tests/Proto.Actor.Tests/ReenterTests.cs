@@ -8,7 +8,7 @@ namespace Proto.Tests
 {
     public class ReenterTests
     {
-        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly ActorSystem System = new();
         private static readonly RootContext Context = System.Root;
 
         private readonly ITestOutputHelper output;
@@ -18,38 +18,34 @@ namespace Proto.Tests
             this.output = output;
         }
 
-
         [Fact]
         public async Task ReenterAfterCompletedTask()
         {
-            
             var props = Props.FromFunc(ctx =>
                 {
-                    if ( ctx.Message is string str && str == "reenter")
+                    if (ctx.Message is string str && str == "reenter")
                     {
                         var delay = Task.Delay(500);
-                        ctx.ReenterAfter(delay, () =>
-                        {
-                            ctx.Respond("response");
-                        });
+                        ctx.ReenterAfter(delay, () => { ctx.Respond("response"); });
                     }
+
                     return Task.CompletedTask;
                 }
             );
 
             var pid = Context.Spawn(props);
-            
-            var res = await Context.RequestAsync<string>(pid, "reenter",TimeSpan.FromSeconds(1));
-            Assert.Equal("response",res);
+
+            var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(1));
+            Assert.Equal("response", res);
         }
-        
+
         [Fact]
         public async Task ReenterAfterHonorsActorConcurrency()
         {
             var activeCount = 0;
             var correct = true;
             var counter = 0;
-            var props = Props.FromFunc( ctx =>
+            var props = Props.FromFunc(ctx =>
                 {
                     if (ctx.Message is string msg && msg == "reenter")
                     {
@@ -60,10 +56,7 @@ namespace Proto.Tests
                         ctx.ReenterAfter(task, () =>
                             {
                                 var res = Interlocked.Increment(ref activeCount);
-                                if (res != 1)
-                                {
-                                    correct = false;
-                                }
+                                if (res != 1) correct = false;
 
                                 Interlocked.Decrement(ref activeCount);
                             }
@@ -79,13 +72,12 @@ namespace Proto.Tests
             //concurrency yolo, no way to force a failure, especially not if the implementation is correct, as expected
             for (var i = 0; i < 100000; i++)
             {
-                Context.Send(pid, "reenter");    
+                Context.Send(pid, "reenter");
             }
 
             await Context.PoisonAsync(pid);
             Assert.True(correct);
-            Assert.Equal(100000,counter);
-
+            Assert.Equal(100000, counter);
         }
     }
 }

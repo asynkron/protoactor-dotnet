@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="GrainCallOptions.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
@@ -7,7 +12,7 @@ namespace Proto.Cluster
     [PublicAPI]
     public class GrainCallOptions
     {
-        public static readonly GrainCallOptions Default = new GrainCallOptions();
+        public static readonly GrainCallOptions Default = new();
 
         public int RetryCount { get; set; } = 10;
 

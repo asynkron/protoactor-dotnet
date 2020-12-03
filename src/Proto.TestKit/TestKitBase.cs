@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="TestKitBase.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
@@ -22,10 +27,7 @@ namespace Proto.TestKit
         {
             get
             {
-                if (_probe is null)
-                {
-                    throw new TestKitException("Probe hasn't been set up");
-                }
+                if (_probe is null) throw new TestKitException("Probe hasn't been set up");
 
                 return _probe;
             }
@@ -107,10 +109,7 @@ namespace Proto.TestKit
         /// </summary>
         public virtual void TearDown()
         {
-            if (Context?.Self is not null)
-            {
-                Context.Stop(Context.Self);
-            }
+            if (Context?.Self is not null) Context.Stop(Context.Self);
 
             _probe = null;
         }

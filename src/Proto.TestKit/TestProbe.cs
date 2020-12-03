@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="TestProbe.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -12,7 +17,7 @@ namespace Proto.TestKit
     public class TestProbe : IActor, ITestProbe
     {
         private readonly BlockingCollection<MessageAndSender>
-            _messageQueue = new BlockingCollection<MessageAndSender>();
+            _messageQueue = new();
 
         private IContext? _context;
 
@@ -25,10 +30,7 @@ namespace Proto.TestKit
                     Context = context;
                     break;
                 case RequestReference _:
-                    if (context.Sender is not null)
-                    {
-                        context.Respond(this);
-                    }
+                    if (context.Sender is not null) context.Respond(this);
 
                     break;
                 case Terminated _:
@@ -51,10 +53,7 @@ namespace Proto.TestKit
         {
             get
             {
-                if (_context is null)
-                {
-                    throw new InvalidOperationException("Probe context is null");
-                }
+                if (_context is null) throw new InvalidOperationException("Probe context is null");
 
                 return _context;
             }
@@ -77,9 +76,7 @@ namespace Proto.TestKit
         {
             var time = timeAllowed ?? TimeSpan.FromSeconds(1);
             if (!_messageQueue.TryTake(out var output, time))
-            {
                 throw new TestKitException($"Waited {time.Seconds} seconds but failed to receive a message");
-            }
 
             Sender = output?.Sender;
             return output?.Message;
@@ -91,9 +88,7 @@ namespace Proto.TestKit
             var output = GetNextMessage(timeAllowed);
 
             if (!(output is T))
-            {
                 throw new TestKitException($"Message expected type {typeof(T)}, actual type {output?.GetType()}");
-            }
 
             return (T) output;
         }
@@ -102,10 +97,7 @@ namespace Proto.TestKit
         public T GetNextMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null)
         {
             var output = GetNextMessage<T>(timeAllowed);
-            if (!when(output))
-            {
-                throw new TestKitException("Condition not met");
-            }
+            if (!when(output)) throw new TestKitException("Condition not met");
 
             return output;
         }
@@ -200,10 +192,7 @@ namespace Proto.TestKit
         /// <inheritdoc />
         public void Respond(object message)
         {
-            if (Sender is null)
-            {
-                return;
-            }
+            if (Sender is null) return;
 
             Send(Sender, message);
         }

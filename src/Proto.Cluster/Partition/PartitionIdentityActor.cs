@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="PartitionIdentityActor.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,20 +35,18 @@ namespace Proto.Cluster.Partition
         private readonly string _myAddress;
 
         private readonly Dictionary<ClusterIdentity, (PID pid, string kind)> _partitionLookup =
-            new Dictionary<ClusterIdentity, (PID pid, string kind)>(); //actor/grain name to PID
+            new(); //actor/grain name to PID
 
-        private readonly Rendezvous _rdv = new Rendezvous();
+        private readonly Rendezvous _rdv = new();
 
         private readonly Dictionary<ClusterIdentity, Task<ActivationResponse>> _spawns =
-            new Dictionary<ClusterIdentity, Task<ActivationResponse>>();
+            new();
 
         private ulong _eventId;
         private DateTime _lastEventTimestamp;
 
         private ProcessingMode _mode = ProcessingMode.Waiting;
         private Task? _resumeProcessing;
-
-        private TimeSpan StartWorkingIn => (_lastEventTimestamp + TopologyChangeTimeout) - DateTime.Now;
 
         public PartitionIdentityActor(Cluster cluster)
         {
@@ -52,15 +55,17 @@ namespace Proto.Cluster.Partition
             _myAddress = cluster.System.Address;
         }
 
+        private TimeSpan StartWorkingIn => _lastEventTimestamp + TopologyChangeTimeout - DateTime.Now;
+
         public Task ReceiveAsync(IContext context) =>
             context.Message switch
             {
-                Started _ => Start(context),
-                ReceiveTimeout _ => ReceiveTimeout(context),
-                ActivationRequest msg => GetOrSpawn(msg, context),
+                Started _                => Start(context),
+                ReceiveTimeout _         => ReceiveTimeout(context),
+                ActivationRequest msg    => GetOrSpawn(msg, context),
                 ActivationTerminated msg => ActivationTerminated(msg, context),
-                ClusterTopology msg => ClusterTopology(msg, context),
-                _ => Unhandled()
+                ClusterTopology msg      => ClusterTopology(msg, context),
+                _                        => Unhandled()
             };
 
         private static Task Unhandled() => Task.CompletedTask;
@@ -84,9 +89,7 @@ namespace Proto.Cluster.Partition
                 context.ReenterAfter(Task.Delay(duration), ConsiderResumeProcessing(context, resume));
             }
             else
-            {
                 _mode = ProcessingMode.Working;
-            }
         }
 
         private Action ConsiderResumeProcessing(IContext context, TaskCompletionSource<bool> resume)
@@ -117,10 +120,7 @@ namespace Proto.Cluster.Partition
 
         private async Task ClusterTopology(ClusterTopology msg, IContext context)
         {
-            if (_eventId >= msg.EventId)
-            {
-                return;
-            }
+            if (_eventId >= msg.EventId) return;
 
             _eventId = msg.EventId;
             _lastEventTimestamp = DateTime.Now;
@@ -167,13 +167,9 @@ namespace Proto.Cluster.Partition
                         TakeOwnership(actor);
 
                         if (!_partitionLookup.ContainsKey(actor.ClusterIdentity))
-                        {
                             _logger.LogError("Ownership bug, we should own {Identity}", actor.ClusterIdentity);
-                        }
                         else
-                        {
                             _logger.LogDebug("I have ownership of {Identity}", actor.ClusterIdentity);
-                        }
                     }
                 }
             }
@@ -192,16 +188,10 @@ namespace Proto.Cluster.Partition
             //scan through all id lookups and remove cases where the address is no longer part of cluster members
             foreach (var (actorId, (pid, _)) in _partitionLookup.ToArray())
             {
-                if (!membersLookup.ContainsKey(pid.Address))
-                {
-                    _partitionLookup.Remove(actorId);
-                }
+                if (!membersLookup.ContainsKey(pid.Address)) _partitionLookup.Remove(actorId);
             }
 
-            if (_mode == ProcessingMode.Working)
-            {
-                PauseProcessing(context, StartWorkingIn);
-            }
+            if (_mode == ProcessingMode.Working) PauseProcessing(context, StartWorkingIn);
         }
 
         private Task ActivationTerminated(ActivationTerminated msg, IContext context)
@@ -227,10 +217,7 @@ namespace Proto.Cluster.Partition
             if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var existing))
             {
                 //these are the same, that's good, just ignore message
-                if (existing.pid.Address == msg.Pid.Address)
-                {
-                    return;
-                }
+                if (existing.pid.Address == msg.Pid.Address) return;
             }
 
             _logger.LogDebug("Taking Ownership of: {Identity}, pid: {Pid}", msg.Identity, msg.Pid);
@@ -266,9 +253,7 @@ namespace Proto.Cluster.Partition
             if (_mode == ProcessingMode.Waiting)
             {
                 if (_resumeProcessing is null)
-                {
                     _logger.LogCritical("Reenter task was null in wait mode!");
-                }
                 else
                 {
                     _logger.LogDebug("");
@@ -349,7 +334,6 @@ namespace Proto.Cluster.Partition
             );
             return Task.CompletedTask;
         }
-
 
         private async Task<ActivationResponse> SpawnRemoteActor(ActivationRequest req, string activator)
         {

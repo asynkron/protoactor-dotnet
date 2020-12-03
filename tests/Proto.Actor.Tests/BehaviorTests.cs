@@ -5,7 +5,7 @@ namespace Proto.Tests
 {
     public class BehaviorTests
     {
-        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly ActorSystem System = new();
         private static readonly RootContext Context = System.Root;
 
         [Fact]
@@ -45,20 +45,23 @@ namespace Proto.Tests
         {
             var behavior = new Behavior();
             behavior.Become(ctx =>
-            {
-                if (ctx.Message is string)
                 {
-                    behavior.BecomeStacked(ctx2 =>
+                    if (ctx.Message is string)
                     {
-                        ctx2.Respond(42);
-                        behavior.UnbecomeStacked();
-                        return Task.CompletedTask;
-                    });
-                    ctx.Respond(ctx.Message);
+                        behavior.BecomeStacked(ctx2 =>
+                            {
+                                ctx2.Respond(42);
+                                behavior.UnbecomeStacked();
+                                return Task.CompletedTask;
+                            }
+                        );
+                        ctx.Respond(ctx.Message);
+                    }
+
+                    return Task.CompletedTask;
                 }
-                return Task.CompletedTask;
-            });
-            PID pid = SpawnActorFromFunc(behavior.ReceiveAsync);
+            );
+            var pid = SpawnActorFromFunc(behavior.ReceiveAsync);
 
             var reply = await Context.RequestAsync<string>(pid, "number");
             var replyAfterPush = await Context.RequestAsync<int>(pid, null);
@@ -77,6 +80,27 @@ namespace Proto.Tests
         {
             _behavior = new Behavior();
             _behavior.Become(Off);
+        }
+
+        public Task ReceiveAsync(IContext context)
+        {
+            // any "global" message handling here
+            switch (context.Message)
+            {
+                case HitWithHammer _:
+                    context.Respond("Smashed!");
+                    _smashed = true;
+                    return Task.CompletedTask;
+                case PressSwitch _ when _smashed:
+                    context.Respond("Broken");
+                    return Task.CompletedTask;
+                case Touch _ when _smashed:
+                    context.Respond("OW!");
+                    return Task.CompletedTask;
+            }
+
+            // if not handled, use behavior specific
+            return _behavior.ReceiveAsync(context);
         }
 
         private Task Off(IContext context)
@@ -110,29 +134,17 @@ namespace Proto.Tests
 
             return Task.CompletedTask;
         }
-
-        public Task ReceiveAsync(IContext context)
-        {
-            // any "global" message handling here
-            switch (context.Message)
-            {
-                case HitWithHammer _:
-                    context.Respond("Smashed!");
-                    _smashed = true;
-                    return Task.CompletedTask;
-                case PressSwitch _ when _smashed:
-                    context.Respond("Broken");
-                    return Task.CompletedTask;
-                case Touch _ when _smashed:
-                    context.Respond("OW!");
-                    return Task.CompletedTask;
-            }
-            // if not handled, use behavior specific
-            return _behavior.ReceiveAsync(context);
-        }
     }
 
-    public class PressSwitch { }
-    public class Touch { }
-    public class HitWithHammer { }
+    public class PressSwitch
+    {
+    }
+
+    public class Touch
+    {
+    }
+
+    public class HitWithHammer
+    {
+    }
 }

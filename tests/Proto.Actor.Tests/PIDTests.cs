@@ -1,15 +1,15 @@
 ﻿using System;
 using Proto.TestFixtures;
 using Xunit;
-
 using static Proto.TestFixtures.Receivers;
 
 namespace Proto.Tests
 {
     public class PIDTests
     {
-        private static readonly ActorSystem System = new ActorSystem();
+        private static readonly ActorSystem System = new();
         private static readonly RootContext Context = System.Root;
+
         [Fact]
         public void Given_ActorNotDead_Ref_ShouldReturnIt()
         {

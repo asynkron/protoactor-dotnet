@@ -1,6 +1,6 @@
-﻿using Proto.Mailbox;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using Proto.Mailbox;
 using Proto.TestFixtures;
 using Xunit;
 
@@ -8,26 +8,13 @@ namespace Proto.Tests
 {
     public class PropsTests
     {
-        public class ActorWithSystem : IActor
-        {
-            public ActorSystem System { get; }
-            public ActorWithSystem(ActorSystem system)
-            {
-                System = system;
-            }
-            public Task ReceiveAsync(IContext context)
-            {
-                throw new NotImplementedException();
-            }
-        }
-        
         [Fact]
         public void Can_pass_ActorSystem_via_Props()
         {
             var system = new ActorSystem();
             var props = Props.FromProducer(s => new ActorWithSystem(s));
-            var actor = (ActorWithSystem)props.Producer(system);
-            Assert.Same(system,actor.System);
+            var actor = (ActorWithSystem) props.Producer(system);
+            Assert.Same(system, actor.System);
         }
 
         [Fact]
@@ -117,7 +104,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_Props_When_WithSpawner_Then_mutate_Spawner()
         {
-            PID Spawner(ActorSystem s, string id, Props p, PID? parent) => new PID();
+            PID Spawner(ActorSystem s, string id, Props p, PID? parent) => new();
 
             var props = new Props();
             var props2 = props.WithSpawner(Spawner);
@@ -152,6 +139,18 @@ namespace Proto.Tests
             Assert.Equal(props.Producer, props2.Producer);
             Assert.Equal(props.Spawner, props2.Spawner);
             Assert.NotEqual(props.SupervisorStrategy, props2.SupervisorStrategy);
+        }
+
+        public class ActorWithSystem : IActor
+        {
+            public ActorWithSystem(ActorSystem system)
+            {
+                System = system;
+            }
+
+            public ActorSystem System { get; }
+
+            public Task ReceiveAsync(IContext context) => throw new NotImplementedException();
         }
     }
 }

@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Messages.cs" company="Asynkron AB">
+// <copyright file="Messages.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//  </copyright>
+// </copyright>
 // -----------------------------------------------------------------------
-
 namespace Proto.Mailbox
 {
     public interface SystemMessage

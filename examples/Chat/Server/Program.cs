@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Program.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using chat.messages;
@@ -9,19 +14,19 @@ using static Proto.Remote.GrpcCore.GrpcCoreRemoteConfig;
 
 namespace Server
 {
-    class Program
+    internal class Program
     {
-        static void Main()
+        private static void Main()
         {
-            var config = 
+            var config =
                 BindToLocalhost(8000)
-                .WithProtoMessages(ChatReflection.Descriptor);
-            
+                    .WithProtoMessages(ChatReflection.Descriptor);
+
             var system = new ActorSystem()
                 .WithRemote(config);
-            
+
             system.Remote().StartAsync();
-            
+
             var context = new RootContext(system);
 
             var clients = new HashSet<PID>();

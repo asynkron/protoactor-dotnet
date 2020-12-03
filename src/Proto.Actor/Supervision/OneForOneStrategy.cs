@@ -1,5 +1,11 @@
+// -----------------------------------------------------------------------
+// <copyright file="OneForOneStrategy.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
 using Microsoft.Extensions.Logging;
+
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
@@ -60,10 +66,7 @@ namespace Proto
 
         private bool ShouldStop(RestartStatistics rs)
         {
-            if (_maxNrOfRetries == 0)
-            {
-                return true;
-            }
+            if (_maxNrOfRetries == 0) return true;
 
             rs.Fail();
 

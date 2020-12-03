@@ -1,9 +1,8 @@
 // -----------------------------------------------------------------------
-//   <copyright file="KubernetesProvider.cs" company="Asynkron HB">
-//       Copyright (C) 2015-2018 Asynkron HB All rights reserved
-//   </copyright>
+// <copyright file="KubernetesClusterMonitor.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,20 +20,20 @@ namespace Proto.Cluster.Kubernetes
     internal class KubernetesClusterMonitor : IActor
     {
         private static readonly ILogger Logger = Log.CreateLogger<KubernetesClusterMonitor>();
+        private readonly Cluster _cluster;
 
-        private readonly Dictionary<string, V1Pod> _clusterPods = new Dictionary<string, V1Pod>();
+        private readonly Dictionary<string, V1Pod> _clusterPods = new();
         private readonly IKubernetes _kubernetes;
-        
+
         private string _address;
 
         private string _clusterName;
+        private string _memberId;
         private string _podName;
         private bool _stopping;
         private Watcher<V1Pod> _watcher;
         private Task<HttpOperationResponse<V1PodList>> _watcherTask;
         private bool _watching;
-        private readonly Cluster _cluster;
-        private string _memberId;
 
         public KubernetesClusterMonitor(Cluster cluster, IKubernetes kubernetes)
         {
@@ -154,9 +153,9 @@ namespace Proto.Cluster.Kubernetes
                 .Select(x => x.Status)
                 .ToList();
             Logger.LogInformation("Cluster members updated {@Members}", memberStatuses);
-            _cluster.MemberList.UpdateClusterTopology(memberStatuses,0ul);
+            _cluster.MemberList.UpdateClusterTopology(memberStatuses, 0ul);
             var topology = new ClusterTopologyEvent(memberStatuses);
-           _cluster.System.EventStream.Publish(topology);
+            _cluster.System.EventStream.Publish(topology);
         }
     }
 }

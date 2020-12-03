@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Program.cs" company="Asynkron AB">
+// <copyright file="Program.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//  </copyright>
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Threading.Tasks;
 using Proto;
@@ -17,7 +16,9 @@ namespace LifecycleEvents
             var system = new ActorSystem();
 
             system.EventStream.Subscribe<DeadLetterEvent>(
-                dl => Console.WriteLine($"DeadLetter from {dl.Sender} to {dl.Pid} : {dl.Message.GetType().Name} = '{dl.Message}'")
+                dl => Console.WriteLine(
+                    $"DeadLetter from {dl.Sender} to {dl.Pid} : {dl.Message.GetType().Name} = '{dl.Message}'"
+                )
             );
 
             var context = new RootContext(system);
@@ -32,7 +33,7 @@ namespace LifecycleEvents
                     Who = "Alex"
                 }
             );
-            
+
             //StopAsync. Stop instantly kills actor
             //Poison lets it process any waiting messages first
             await system.Root.PoisonAsync(actor);

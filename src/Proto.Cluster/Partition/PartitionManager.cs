@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="Partition.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="PartitionManager.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System.Linq;
 
 namespace Proto.Cluster.Partition
@@ -15,11 +14,10 @@ namespace Proto.Cluster.Partition
         private const string PartitionPlacementActorName = "partition-activator";
         private readonly Cluster _cluster;
         private readonly IRootContext _context;
+        private readonly bool _isClient;
         private readonly ActorSystem _system;
         private PID _partitionActivator = null!;
         private PID _partitionActor = null!;
-        private readonly bool _isClient;
-
 
         internal PartitionManager(Cluster cluster, bool isClient)
         {
@@ -29,11 +27,10 @@ namespace Proto.Cluster.Partition
             _isClient = isClient;
         }
 
-        internal PartitionMemberSelector Selector { get; } = new PartitionMemberSelector();
+        internal PartitionMemberSelector Selector { get; } = new();
 
         public void Setup()
         {
-
             if (_isClient)
             {
                 var eventId = 0ul;
@@ -78,12 +75,11 @@ namespace Proto.Cluster.Partition
                 );
             }
         }
-        
+
         public void Shutdown()
         {
             if (_isClient)
             {
-                 
             }
             else
             {
@@ -92,8 +88,10 @@ namespace Proto.Cluster.Partition
             }
         }
 
-        public static PID RemotePartitionIdentityActor(string address) => PID.FromAddress(address, PartitionIdentityActorName);
+        public static PID RemotePartitionIdentityActor(string address) =>
+            PID.FromAddress(address, PartitionIdentityActorName);
 
-        public static PID RemotePartitionPlacementActor(string address) => PID.FromAddress(address, PartitionPlacementActorName);
+        public static PID RemotePartitionPlacementActor(string address) =>
+            PID.FromAddress(address, PartitionPlacementActorName);
     }
 }

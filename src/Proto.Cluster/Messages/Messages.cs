@@ -1,4 +1,10 @@
-﻿// ReSharper disable once CheckNamespace
+﻿// -----------------------------------------------------------------------
+// <copyright file="Messages.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+
+// ReSharper disable once CheckNamespace
 namespace Proto.Cluster
 {
     public sealed partial class ClusterIdentity

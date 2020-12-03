@@ -1,9 +1,8 @@
 // -----------------------------------------------------------------------
-//   <copyright file="RandomGroupRouterConfig.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="RandomGroupRouterConfig.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 namespace Proto.Router.Routers
 {
     internal record RandomGroupRouterConfig : GroupRouterConfig

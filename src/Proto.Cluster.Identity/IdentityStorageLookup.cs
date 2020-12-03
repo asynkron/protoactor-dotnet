@@ -1,28 +1,36 @@
-﻿namespace Proto.Cluster.Identity
-{
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using IdentityLookup;
-    using Router;
+﻿// -----------------------------------------------------------------------
+// <copyright file="IdentityStorageLookup.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Proto.Cluster.IdentityLookup;
+using Proto.Router;
 
+namespace Proto.Cluster.Identity
+{
     public class IdentityStorageLookup : IIdentityLookup
     {
-        internal IIdentityStorage Storage { get; }
         private const string PlacementActorName = "placement-activator";
         private static readonly int PidClusterIdentityStartIndex = PlacementActorName.Length + 1;
-        internal Cluster Cluster;
+        private readonly ILogger _logger = Log.CreateLogger<IdentityStorageLookup>();
         private bool _isClient;
-        internal MemberList MemberList;
-        private PID _placementActor;
-        private ActorSystem _system;
-        private PID _router;
         private string _memberId;
+        private PID _placementActor;
+        private PID _router;
+        private ActorSystem _system;
+        internal Cluster Cluster;
+        internal MemberList MemberList;
 
         public IdentityStorageLookup(IIdentityStorage storage)
         {
             Storage = storage;
         }
+
+        internal IIdentityStorage Storage { get; }
 
         public async Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
         {
@@ -32,7 +40,7 @@
             return res?.Pid;
         }
 
-        public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
+        public async Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
         {
             Cluster = cluster;
             _system = cluster.System;
@@ -53,38 +61,41 @@
                     //delete all members that have left from the lookup
                     foreach (var left in e.Left)
                         //YOLO. event stream is not async
+                    {
                         _ = RemoveMemberAsync(left.Id);
+                    }
                 }
             );
 
-            if (isClient) return Task.CompletedTask;
+            if (isClient) return;
             var props = Props.FromProducer(() => new IdentityStoragePlacementActor(Cluster, this));
             _placementActor = _system.Root.SpawnNamed(props, PlacementActorName);
 
-            return Task.CompletedTask;
+            await Storage.Init();
         }
 
         public async Task ShutdownAsync()
         {
-            if (!_isClient) await Cluster.System.Root.PoisonAsync(_placementActor);
-
-            await RemoveMemberAsync(_memberId);
+            if (!_isClient)
+            {
+                //TODO: rewrite to respond to pending activations
+                await Cluster.System.Root.StopAsync(_placementActor);
+                try
+                {
+                    await RemoveMemberAsync(_memberId);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Failed to remove stored member activations for {MemberId}", _memberId);
+                }
+            }
         }
 
-        internal Task RemoveMemberAsync(string memberId)
-        {
-            return Storage.RemoveMemberIdAsync(memberId, CancellationToken.None);
-        }
+        public Task RemovePidAsync(PID pid, CancellationToken ct) => Storage.RemoveActivation(pid, ct);
 
-        internal PID RemotePlacementActor(string address)
-        {
-            return PID.FromAddress(address, PlacementActorName);
-        }
+        internal Task RemoveMemberAsync(string memberId) => Storage.RemoveMember(memberId, CancellationToken.None);
 
-        public Task RemovePidAsync(PID pid, CancellationToken ct)
-        {
-            return Storage.RemoveActivation(pid, ct);
-        }
+        internal PID RemotePlacementActor(string address) => PID.FromAddress(address, PlacementActorName);
 
         public static bool TryGetClusterIdentityShortString(string pidId, out string? clusterIdentity)
         {

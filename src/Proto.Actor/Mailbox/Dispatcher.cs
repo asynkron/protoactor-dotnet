@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Dispatcher.cs" company="Asynkron AB">
+// <copyright file="Dispatcher.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//  </copyright>
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,9 +11,9 @@ namespace Proto.Mailbox
 {
     public interface IMessageInvoker
     {
+        CancellationTokenSource? CancellationTokenSource { get; }
         Task InvokeSystemMessageAsync(object msg);
         Task InvokeUserMessageAsync(object msg);
-        CancellationTokenSource? CancellationTokenSource { get; }
         void EscalateFailure(Exception reason, object? message);
     }
 

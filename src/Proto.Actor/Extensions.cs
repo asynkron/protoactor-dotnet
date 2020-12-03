@@ -1,9 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="Extensions.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
+// <copyright file="Extensions.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
 // -----------------------------------------------------------------------
-
 using System.Collections.Generic;
 using Proto.Mailbox;
 
@@ -18,10 +17,7 @@ namespace Proto
         /// <param name="system">Actor system</param>
         internal static void Stop(this IEnumerable<PID> self, ActorSystem system)
         {
-            if (self is null!)
-            {
-                return;
-            }
+            if (self is null!) return;
 
             foreach (var pid in self)
             {

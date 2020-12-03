@@ -1,4 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿// -----------------------------------------------------------------------
+// <copyright file="FunctionActor.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System.Threading.Tasks;
 
 namespace Proto
 {
@@ -7,7 +12,10 @@ namespace Proto
     {
         private readonly Receive _receive;
 
-        public FunctionActor(Receive receive) => _receive = receive;
+        public FunctionActor(Receive receive)
+        {
+            _receive = receive;
+        }
 
         public Task ReceiveAsync(IContext context) => _receive(context);
     }

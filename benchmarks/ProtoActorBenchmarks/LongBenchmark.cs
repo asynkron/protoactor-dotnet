@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="LongBenchmark.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,7 +12,8 @@ using Proto.Mailbox;
 
 namespace ProtoActorBenchmarks
 {
-    [MemoryDiagnoser, InProcess]
+    [MemoryDiagnoser]
+    [InProcess]
     public class LongBenchmark
     {
         private RootContext _context;
@@ -15,11 +21,9 @@ namespace ProtoActorBenchmarks
         [Params(300, 400, 500, 600, 700, 800, 900)]
         public int Tps { get; set; }
 
-        [Params(1000000)]
-        public int MessageCount { get; set; }
+        [Params(1000000)] public int MessageCount { get; set; }
 
-        [Params(100)]
-        public int BatchSize { get; set; }
+        [Params(100)] public int BatchSize { get; set; }
 
         [GlobalSetup]
         public void Setup() => _context = new RootContext(new ActorSystem());
@@ -27,7 +31,7 @@ namespace ProtoActorBenchmarks
         [Benchmark]
         public Task InProcessPingPong()
         {
-            var d = new ThreadPoolDispatcher { Throughput = Tps };
+            var d = new ThreadPoolDispatcher {Throughput = Tps};
 
             var clientCount = Environment.ProcessorCount * 1;
             var clients = new PID[clientCount];

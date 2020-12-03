@@ -4,7 +4,6 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-
 using System.Threading.Tasks;
 
 namespace Proto.TestFixtures

@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="Generator.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,7 +25,7 @@ namespace ProtoGrainGenerator
 
             return ProcessAndWriteFiles(set);
         }
-        
+
         internal static Task GenerateMany(IEnumerable<FileInfo> input, IEnumerable<DirectoryInfo> importPath)
         {
             var set = GetSet(importPath);
@@ -41,7 +46,7 @@ namespace ProtoGrainGenerator
 
             foreach (var path in importPaths)
             {
-               set.AddImportPath(path.FullName);
+                set.AddImportPath(path.FullName);
             }
 
             return set;
@@ -55,11 +60,12 @@ namespace ProtoGrainGenerator
             var res = gen.Generate(set).ToList();
 
             return Task.WhenAll(res.Select(x =>
-                {
-                    Console.WriteLine($"Writing generated file: {x.Name}");
-                    return File.WriteAllTextAsync(x.Name, x.Text);
-                }
-            ));
+                    {
+                        Console.WriteLine($"Writing generated file: {x.Name}");
+                        return File.WriteAllTextAsync(x.Name, x.Text);
+                    }
+                )
+            );
         }
     }
 }
