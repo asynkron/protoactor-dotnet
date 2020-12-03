@@ -74,7 +74,7 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
 
-        [Theory] //(Skip = "Doesn't work with Redis")]
+        [Theory]
         [InlineData(100, 10000)]
         public async Task CanSpawnMultipleKindsWithSameIdentityConcurrently(int actorCount, int timeoutMs)
         {
@@ -111,7 +111,7 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
 
-        [Theory] //(Skip = "Does't work")]
+        [Theory]
         [InlineData(100, 10000)]
         public async Task CanRespawnVirtualActors(int actorCount, int timeoutMs)
         {
