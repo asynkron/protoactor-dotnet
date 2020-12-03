@@ -7,14 +7,21 @@ using Xunit;
 
 namespace Proto.Cluster.Identity.Tests
 {
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using Xunit.Abstractions;
+
     public abstract class IdentityStorageTests : IDisposable
     {
         private static int _testId = 1;
         private readonly IIdentityStorage _storage;
         private readonly IIdentityStorage _storageInstance2;
+        private readonly ITestOutputHelper _testOutputHelper;
 
-        protected IdentityStorageTests(Func<string, IIdentityStorage> storageFactory)
+        protected IdentityStorageTests(Func<string, IIdentityStorage> storageFactory,
+            ITestOutputHelper testOutputHelper)
         {
+            _testOutputHelper = testOutputHelper;
             var clusterName = "test-" + Guid.NewGuid().ToString("N").Substring(0, 6);
             _storage = storageFactory(clusterName);
             _storageInstance2 = storageFactory(clusterName);
@@ -198,11 +205,59 @@ namespace Proto.Cluster.Identity.Tests
             storedActivation.Should().BeNull();
         }
 
-        private async Task<(Member, ClusterIdentity, PID activation)> GetActivatedClusterIdentity(
-            CancellationToken timeout)
+        [Fact]
+        public async Task WillNotRemoveCurrentActivationByPrevMember()
         {
+            var timeout = new CancellationTokenSource(1000).Token;
+            var (originalActivator, identity, origPid) = await GetActivatedClusterIdentity(timeout);
+
+            await _storage.RemoveActivation(origPid, timeout);
+
+            var (newActivator, _, newPid) = await GetActivatedClusterIdentity(timeout, identity: identity);
+
+            await _storage.RemoveMember(originalActivator.Id, timeout);
+
+            var activation = await _storage.TryGetExistingActivation(identity, timeout);
+
+            activation.Should().NotBeNull();
+            activation!.MemberId.Should().Be(newActivator.Id);
+            activation!.Pid.Should().BeEquivalentTo(newPid);
+        }
+
+        [Theory]
+        [InlineData(200, 10000)]
+        public async Task CanRemoveMemberWithManyActivations(int activations, int msTimeout)
+        {
+            var identities = new List<ClusterIdentity>();
+            var timeout = new CancellationTokenSource(msTimeout).Token;
             var activator = GetFakeActivator();
-            var identity = new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
+            for (var i = 0; i < activations; i++)
+            {
+                var (_, identity, _) = await GetActivatedClusterIdentity(timeout, activator);
+                identities.Add(identity);
+            }
+
+            var timer = Stopwatch.StartNew();
+            
+            await _storage.RemoveMember(activator.Id, timeout);
+            timer.Stop();
+            _testOutputHelper.WriteLine($"Removed {activations} activations in {timer.Elapsed}");
+            
+            foreach (var clusterIdentity in identities)
+            {
+                var storedActivation = await _storage.TryGetExistingActivation(clusterIdentity, timeout);
+                storedActivation.Should().BeNull();
+            }
+        }
+
+        private async Task<(Member, ClusterIdentity, PID activation)> GetActivatedClusterIdentity(
+            CancellationToken timeout,
+            Member activator = null,
+            ClusterIdentity identity = null
+        )
+        {
+            activator ??= GetFakeActivator();
+            identity ??= new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
             var spawnLock = await _storage.TryAcquireLock(identity, timeout);
             var pid = Activate(activator, identity);
             await _storage.StoreActivation(activator.Id, spawnLock!, pid, timeout);
