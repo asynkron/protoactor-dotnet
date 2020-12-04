@@ -79,13 +79,11 @@ namespace Proto.Cluster.Identity.Tests
 
     static class RedisFixture
     {
-        static RedisFixture()
-        {
-            var connectionString = TestConfig.Configuration.GetConnectionString("Redis");
-            Multiplexer = ConnectionMultiplexer.Connect(connectionString);
-            ThreadPool.SetMinThreads(250, 250);
-        }
+        static RedisFixture() => ThreadPool.SetMinThreads(250, 250);
 
-        public static ConnectionMultiplexer Multiplexer { get; }
+        private static readonly Lazy<ConnectionMultiplexer> LazyConnection = new(() 
+            => ConnectionMultiplexer.Connect(TestConfig.Configuration.GetConnectionString("Redis")));
+
+        public static ConnectionMultiplexer Multiplexer => LazyConnection.Value;
     }
 }
