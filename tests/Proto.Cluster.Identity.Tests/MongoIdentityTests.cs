@@ -34,7 +34,7 @@ namespace Proto.Cluster.Identity.Tests
 
         public class MongoStorageTests : IdentityStorageTests
         {
-            public MongoStorageTests() : base(Init)
+            public MongoStorageTests(ITestOutputHelper testOutputHelper) : base(Init, testOutputHelper)
             {
             }
 
