@@ -33,7 +33,7 @@ namespace Proto.Cluster.Identity.MongoDb
         )
         {
             var requestId = Guid.NewGuid().ToString();
-            var hasLock = await TryAcquireLockAsync(clusterIdentity, requestId, ct);
+            var hasLock = await TryAcquireLockAsync(clusterIdentity, requestId, ct).ConfigureAwait(false);
             return hasLock ? new SpawnLock(requestId, clusterIdentity) : null;
         }
 
@@ -43,7 +43,7 @@ namespace Proto.Cluster.Identity.MongoDb
         )
         {
             var key = GetKey(clusterIdentity);
-            var pidLookupEntity = await LookupKey(key, ct);
+            var pidLookupEntity = await LookupKey(key, ct).ConfigureAwait(false);
             var lockId = pidLookupEntity?.LockedBy;
 
             if (lockId != null)
@@ -53,8 +53,8 @@ namespace Proto.Cluster.Identity.MongoDb
 
                 do
                 {
-                    await Task.Delay(Jitter.Next(20) + 100 * i, ct);
-                } while ((pidLookupEntity = await LookupKey(key, ct))?.LockedBy == lockId && ++i < 10 &&
+                    await Task.Delay(Jitter.Next(20) + 100 * i, ct).ConfigureAwait(false);
+                } while ((pidLookupEntity = await LookupKey(key, ct).ConfigureAwait(false))?.LockedBy == lockId && ++i < 10 &&
                          !ct.IsCancellationRequested);
             }
 
@@ -75,7 +75,7 @@ namespace Proto.Cluster.Identity.MongoDb
 
             //Stale lock. just delete it and let cluster retry
             // _logger.LogDebug($"Stale lock: {pidLookupEntity.Key}");
-            await RemoveLock(new SpawnLock(lockId!, clusterIdentity), CancellationToken.None);
+            await RemoveLock(new SpawnLock(lockId!, clusterIdentity), CancellationToken.None).ConfigureAwait(false);
             return null;
         }
 
@@ -100,7 +100,7 @@ namespace Proto.Cluster.Identity.MongoDb
                     new UpdateOptions(),
                     ct
                 )
-            );
+            ).ConfigureAwait(false);
 
             if (res.MatchedCount != 1)
                 throw new LockNotFoundException($"Failed to store activation of {pid.ToShortString()}");
@@ -121,7 +121,7 @@ namespace Proto.Cluster.Identity.MongoDb
             CancellationToken ct
         )
         {
-            var pidLookup = await LookupKey(GetKey(clusterIdentity), ct);
+            var pidLookup = await LookupKey(GetKey(clusterIdentity), ct).ConfigureAwait(false);
 
             return pidLookup == null || pidLookup.Address == null || pidLookup.UniqueIdentity == null
                 ? null
@@ -157,11 +157,12 @@ namespace Proto.Cluster.Identity.MongoDb
             try
             {
                 //be 100% sure own the lock here
-                await ConnectionThrottlingPipeline.AddRequest(_pids.InsertOneAsync(lockEntity, new InsertOneOptions(),
-                        ct
-                    )
-                );
+                await ConnectionThrottlingPipeline.AddRequest(
+                    _pids.InsertOneAsync(lockEntity, new InsertOneOptions(), ct )
+                ).ConfigureAwait(false);
+                
                 Logger.LogDebug("Got lock on first try for {ClusterIdentity}", clusterIdentity);
+                
                 return true;
             }
             catch (MongoWriteException)
@@ -176,13 +177,14 @@ namespace Proto.Cluster.Identity.MongoDb
                         },
                         ct
                     )
-                );
+                ).ConfigureAwait(false);
 
                 //if l.MatchCount == 1, then one document was updated by us, and we should own the lock, no?
                 var gotLock = l.IsAcknowledged && l.ModifiedCount == 1;
                 Logger.LogDebug("Did {Got} get lock on second try for {ClusterIdentity}", gotLock ? "" : "not ",
                     clusterIdentity
                 );
+                
                 return gotLock;
             }
         }
@@ -190,7 +192,7 @@ namespace Proto.Cluster.Identity.MongoDb
         private async Task<PidLookupEntity?> LookupKey(string key, CancellationToken ct)
             => await ConnectionThrottlingPipeline.AddRequest(_pids.Find(x => x.Key == key).Limit(1)
                 .SingleOrDefaultAsync(ct)
-            );
+            ).ConfigureAwait(false);
 
         private string GetKey(ClusterIdentity clusterIdentity) => $"{_clusterName}/{clusterIdentity.ToShortString()}";
     }

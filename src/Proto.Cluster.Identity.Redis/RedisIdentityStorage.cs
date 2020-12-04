@@ -38,13 +38,13 @@ namespace Proto.Cluster.Identity.Redis
             _clusterIdentityKey = baseKey.Append("ci:");
             _memberKey = baseKey.Append("mb:");
             _connections = connections;
-            _maxLockTime = maxWaitBeforeStaleLock ?? TimeSpan.FromSeconds(3);
+            _maxLockTime = maxWaitBeforeStaleLock ?? TimeSpan.FromSeconds(5);
         }
 
         public async Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity, CancellationToken ct)
         {
             var requestId = Guid.NewGuid().ToString();
-            var hasLock = await TryAcquireLockAsync(clusterIdentity, requestId);
+            var hasLock = await TryAcquireLockAsync(clusterIdentity, requestId).ConfigureAwait(false);
 
             return hasLock ? new SpawnLock(requestId, clusterIdentity) : null;
         }
@@ -58,7 +58,7 @@ namespace Proto.Cluster.Identity.Redis
             var key = IdKey(clusterIdentity);
             var db = GetDb();
 
-            var activationStatus = await LookupKey(db, key);
+            var activationStatus = await LookupKey(db, key).ConfigureAwait(false);
             var lockId = activationStatus?.ActiveLockId;
 
             if (lockId != null)
@@ -68,7 +68,7 @@ namespace Proto.Cluster.Identity.Redis
                 do
                 {
                     await Task.Delay(Jitter.Next(20) + 100 * i++, ct);
-                } while ((activationStatus = await LookupKey(db, key))?.ActiveLockId == lockId &&
+                } while ((activationStatus = await LookupKey(db, key).ConfigureAwait(false))?.ActiveLockId == lockId &&
                          _maxLockTime > timer.Elapsed &&
                          !ct.IsCancellationRequested);
             }
@@ -84,7 +84,7 @@ namespace Proto.Cluster.Identity.Redis
             if (activationStatus.ActiveLockId != lockId) return null;
 
             //Stale lock. just delete it and let cluster retry
-            await RemoveLock(new SpawnLock(lockId!, clusterIdentity), CancellationToken.None);
+            await RemoveLock(new SpawnLock(lockId!, clusterIdentity), CancellationToken.None).ConfigureAwait(false);
 
             return null;
         }
@@ -99,6 +99,7 @@ namespace Proto.Cluster.Identity.Redis
             transaction.AddCondition(Condition.HashEqual(key, LockId, spawnLock.LockId));
             transaction.HashDeleteAsync(key, LockId);
             transaction.Execute(CommandFlags.FireAndForget);
+            
             return Task.CompletedTask;
         }
 
@@ -125,7 +126,7 @@ namespace Proto.Cluster.Identity.Redis
                 CommandFlags.DemandMaster
             );
 
-            var executed = await transaction.ExecuteAsync();
+            var executed = await transaction.ExecuteAsync().ConfigureAwait(false);
             if (!executed) throw new LockNotFoundException($"Failed to store activation of {pid.ToShortString()}");
         }
 
@@ -135,7 +136,7 @@ namespace Proto.Cluster.Identity.Redis
             if (key == NoKey) return;
 
             var db = GetDb();
-            var activationStatus = await LookupKey(db, key);
+            var activationStatus = await LookupKey(db, key).ConfigureAwait(false);
 
             if (activationStatus?.Activation?.Pid.Equals(pid) != true) return;
 
@@ -145,7 +146,7 @@ namespace Proto.Cluster.Identity.Redis
             transaction.AddCondition(Condition.HashEqual(key, UniqueIdentity, pid.Id));
             _ = transaction.KeyDeleteAsync(key);
             _ = transaction.SetRemoveAsync(memberKey, key.ToString());
-            await transaction.ExecuteAsync();
+            await transaction.ExecuteAsync().ConfigureAwait(false);
         }
 
         public Task RemoveMember(string memberId, CancellationToken ct)
@@ -168,11 +169,13 @@ namespace Proto.Cluster.Identity.Redis
         public async Task<StoredActivation?> TryGetExistingActivation(ClusterIdentity clusterIdentity,
             CancellationToken ct)
         {
-            var activationStatus = await LookupKey(GetDb(), IdKey(clusterIdentity));
+            var activationStatus = await LookupKey(GetDb(), IdKey(clusterIdentity)).ConfigureAwait(false);
             return activationStatus?.Activation;
         }
 
-        public void Dispose() => _connections.Dispose();
+        public void Dispose()
+        {
+        }
 
         public Task Init() => Task.CompletedTask;
 
@@ -189,7 +192,7 @@ namespace Proto.Cluster.Identity.Redis
 
         private static async Task<ActivationStatus?> LookupKey(IDatabaseAsync db, RedisKey key)
         {
-            var result = await db.HashGetAllAsync(key);
+            var result = await db.HashGetAllAsync(key).ConfigureAwait(false);
 
             switch (result?.Length)
             {
@@ -227,10 +230,7 @@ namespace Proto.Cluster.Identity.Redis
                 Activation = new StoredActivation(memberId!, PID.FromAddress(address!, uniqueIdentity!));
             }
 
-            public ActivationStatus(string? lockId)
-            {
-                ActiveLockId = lockId;
-            }
+            public ActivationStatus(string? lockId) => ActiveLockId = lockId;
 
             public StoredActivation? Activation { get; }
 
