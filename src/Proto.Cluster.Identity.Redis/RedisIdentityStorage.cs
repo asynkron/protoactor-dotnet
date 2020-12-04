@@ -122,7 +122,9 @@ namespace Proto.Cluster.Identity.Redis
             var transaction = db.CreateTransaction();
             transaction.AddCondition(Condition.HashEqual(key, LockId, spawnLock.LockId));
             _ = transaction.HashSetAsync(key, values, CommandFlags.DemandMaster);
-            _ = transaction.SetAddAsync(MemberKey(memberId), pid.Id, CommandFlags.DemandMaster);
+            _ = transaction.SetAddAsync(MemberKey(memberId), key.ToString(),
+                CommandFlags.DemandMaster
+            );
 
             var executed = await transaction.ExecuteAsync().ConfigureAwait(false);
             if (!executed) throw new LockNotFoundException($"Failed to store activation of {pid.ToShortString()}");
@@ -143,34 +145,25 @@ namespace Proto.Cluster.Identity.Redis
 
             transaction.AddCondition(Condition.HashEqual(key, UniqueIdentity, pid.Id));
             _ = transaction.KeyDeleteAsync(key);
-            _ = transaction.SetRemoveAsync(memberKey, pid.Id);
+            _ = transaction.SetRemoveAsync(memberKey, key.ToString());
             await transaction.ExecuteAsync().ConfigureAwait(false);
         }
 
-        public async Task RemoveMember(string memberId, CancellationToken ct)
+        public Task RemoveMember(string memberId, CancellationToken ct)
         {
             var memberKey = MemberKey(memberId);
+            RedisValue mVal = memberKey.ToString();
 
-            var db = GetDb();
-            //TODO: Consider rewriting as serverside script.
-            var pidIds = db.SetScanAsync(memberKey);
+            const string removeMember = "local cursor = 0\n" +
+                                        "repeat\n" +
+                                        " local rep = redis.call('SSCAN', ARGV[1], cursor)\n" +
+                                         " if rep[2][1] == nil then break end" +
+                                        " cursor = rep[1]\n" +
+                                        " redis.call('DEL', unpack(rep[2]))\n" +
+                                        "until cursor == '0'\n" +
+                                        "redis.call('DEL', KEYS[1]);";
 
-            var transactionsFinished = new List<Task>();
-
-            await foreach (var pidId in pidIds.WithCancellation(ct))
-            {
-                var pidKey = IdKeyFromPidId(pidId);
-                if (pidKey == NoKey) continue;
-
-                var transaction = db.CreateTransaction();
-                transaction.AddCondition(Condition.HashEqual(pidKey, UniqueIdentity, pidId));
-                _ = transaction.KeyDeleteAsync(pidKey);
-                transactionsFinished.Add(transaction.ExecuteAsync());
-            }
-
-            transactionsFinished.Add(db.KeyDeleteAsync(memberKey));
-
-            await Task.WhenAll(transactionsFinished).ConfigureAwait(false);
+            return  GetDb().ScriptEvaluateAsync(removeMember, new[] {memberKey}, new[] {mVal});
         }
 
         public async Task<StoredActivation?> TryGetExistingActivation(ClusterIdentity clusterIdentity,
