@@ -269,7 +269,7 @@ namespace Proto.Cluster.Identity.Tests
         public async Task CanWaitForActivation()
         {
             var activator = GetFakeActivator();
-            var timeout = new CancellationTokenSource(5000).Token;
+            var timeout = new CancellationTokenSource(10000).Token;
             var identity = new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
             var spawnLock = await _storage.TryAcquireLock(identity, timeout);
             var pid = Activate(activator, identity);
