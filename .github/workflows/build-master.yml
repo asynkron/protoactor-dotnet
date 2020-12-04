@@ -9,83 +9,60 @@ on:
 
 jobs:
 
-  build-netcore31:
+  test:
     runs-on: ubuntu-latest
-
-    container:
-      image: mcr.microsoft.com/dotnet/sdk:3.1
 
     services:
       redis:
         image: redis
         ports:
-          - 6379:6379
+          - 6379/tcp
         options: --entrypoint redis-server
       mongodb:
         image: mongo
         ports:
-          - 27017:27017
+          - 27017/tcp
 
     steps:
       - uses: actions/checkout@v1
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.100'
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '3.1.x'
 
       - name: Build
-        run: |
-          dotnet build -c Release --framework netcoreapp3.1
+        run: dotnet build -c Release
 
-      - name: Run tests
+      - name: Run tests netcoreapp3.1
         env:
-          ConnectionStrings__MongoDB: mongodb://mongo:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
-          ConnectionStrings__Redis: redis:${{ job.services.redis.ports[6379] }}
+          ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
+          ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }}
         run: |
-          dotnet test -c Release --framework netcoreapp3.1
+          dotnet test -c Release --framework netcoreapp3.1 --no-build
 
-
-  build-net5:
-    runs-on: ubuntu-latest
-
-    container:
-      image: mcr.microsoft.com/dotnet/sdk:5.0
-
-    services:
-      redis:
-        image: redis
-        ports:
-          - 6379:6379
-        options: --entrypoint redis-server
-      mongodb:
-        image: mongo
-        ports:
-          - 27017:27017
-
-    steps:
-      - uses: actions/checkout@v1
-
-      - name: Build
-        run: |
-          dotnet build -c Release --framework net5.0
-
-      - name: Run tests
+      - name: Run tests net5.0
         env:
-          ConnectionStrings__MongoDB: mongodb://mongo:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
-          ConnectionStrings__Redis: redis:${{ job.services.redis.ports[6379] }}
+          ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
+          ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }}
         run: |
-          dotnet test -c Release --framework net5.0
+          dotnet test -c Release --framework net5.0 --no-build
         
-#  nuget:
-#    runs-on: windows-latest
-#    needs: [test]
-#
-#    steps:
-#      - uses: actions/checkout@v1
-#      - uses: actions/setup-dotnet@v1
-#        with:
-#          dotnet-version: '5.0.100'
-#      - uses: actions/setup-dotnet@v1
-#        with:
-#          dotnet-version: '3.1.x'
-#
-#      - name: Create and push NuGet package
-#        run: |
-#          dotnet pack -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
-#          dotnet nuget push **/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+  nuget:
+    runs-on: ubuntu-latest
+    needs: [test]
+
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.100'
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '3.1.x'
+
+      - name: Create and push NuGet package
+        run: |
+          dotnet pack -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
+          dotnet nuget push **/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate

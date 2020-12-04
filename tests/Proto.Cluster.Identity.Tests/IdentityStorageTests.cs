@@ -10,8 +10,6 @@ using Xunit.Abstractions;
 
 namespace Proto.Cluster.Identity.Tests
 {
-
-
     public abstract class IdentityStorageTests : IDisposable
     {
         private static int testId = 1;
