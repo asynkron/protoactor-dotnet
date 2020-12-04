@@ -95,8 +95,17 @@ namespace Proto.Remote
                 {
                     var target = targets[envelope.Target];
                     var typeName = typeNames[envelope.TypeId];
-                    var message =
-                        _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
+                    object? message = null;
+
+                    // try
+                    // {
+                        message = _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
+                    // }
+                    // catch(Exception x)
+                    // {
+                    //     Logger.LogCritical("Deserialization of message type {MessageType} failed, missing type registration?",typeName);
+                    // }
+                    
 
                     switch (message)
                     {
