@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
+using Proto.Interactive;
 using static MongoDB.Driver.Builders<Proto.Cluster.Identity.MongoDb.PidLookupEntity>;
 
 namespace Proto.Cluster.Identity.MongoDb
@@ -19,10 +20,11 @@ namespace Proto.Cluster.Identity.MongoDb
 
         private readonly string _clusterName;
         private readonly IMongoCollection<PidLookupEntity> _pids;
+        private readonly Throttler _throttler;
 
-        public MongoIdentityStorage(string clusterName, IMongoCollection<PidLookupEntity> pids)
+        public MongoIdentityStorage(string clusterName, IMongoCollection<PidLookupEntity> pids,int maxConcurrency = 100)
         {
-            ConnectionThrottlingPipeline.Initialize(pids.Database.Client);
+            _throttler = new Throttler(maxConcurrency);
             _clusterName = clusterName;
             _pids = pids;
         }
@@ -88,7 +90,7 @@ namespace Proto.Cluster.Identity.MongoDb
 
             var key = GetKey(spawnLock.ClusterIdentity);
 
-            var res = await ConnectionThrottlingPipeline.AddRequest(
+            var res = await _throttler.AddRequest(
                 _pids.UpdateOneAsync(
                     s => s.Key == key && s.LockedBy == spawnLock.LockId && s.Revision == 1,
                     Update
@@ -157,7 +159,7 @@ namespace Proto.Cluster.Identity.MongoDb
             try
             {
                 //be 100% sure own the lock here
-                await ConnectionThrottlingPipeline.AddRequest(
+                await _throttler.AddRequest(
                     _pids.InsertOneAsync(lockEntity, new InsertOneOptions(), ct )
                 ).ConfigureAwait(false);
                 
@@ -167,7 +169,7 @@ namespace Proto.Cluster.Identity.MongoDb
             }
             catch (MongoWriteException)
             {
-                var l = await ConnectionThrottlingPipeline.AddRequest(
+                var l = await _throttler.AddRequest(
                     _pids.ReplaceOneAsync(
                         x => x.Key == key && x.LockedBy == null && x.Revision == 0,
                         lockEntity,
@@ -190,7 +192,7 @@ namespace Proto.Cluster.Identity.MongoDb
         }
 
         private async Task<PidLookupEntity?> LookupKey(string key, CancellationToken ct)
-            => await ConnectionThrottlingPipeline.AddRequest(_pids.Find(x => x.Key == key).Limit(1)
+            => await _throttler.AddRequest(_pids.Find(x => x.Key == key).Limit(1)
                 .SingleOrDefaultAsync(ct)
             ).ConfigureAwait(false);
 
