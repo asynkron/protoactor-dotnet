@@ -59,6 +59,23 @@ namespace Proto.Cluster.Tests
             timer.Stop();
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
+        
+        [Theory]
+        [InlineData(100, 10000)]
+        public async Task ConcurrentActivationsOnSameIdWorks(int clientCount, int timeoutMs)
+        {
+            var timeout = new CancellationTokenSource(timeoutMs).Token;
+
+            var entryNode = Members.First();
+            var timer = Stopwatch.StartNew();
+
+            var id = GetActorIds(clientCount).First();
+
+            await Task.WhenAll(Enumerable.Range(0, clientCount).Select(_ => PingPong(entryNode, id, timeout)));
+
+            timer.Stop();
+            _testOutputHelper.WriteLine($"Spawned 1 actor from {clientCount} clients in {timer.Elapsed}");
+        }
 
         [Theory]
         [InlineData(100, 10000)]

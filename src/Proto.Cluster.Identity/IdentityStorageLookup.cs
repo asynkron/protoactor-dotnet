@@ -20,15 +20,12 @@ namespace Proto.Cluster.Identity
         private bool _isClient;
         private string _memberId;
         private PID _placementActor;
-        private PID _router;
+        private PID _worker;
         private ActorSystem _system;
         internal Cluster Cluster;
         internal MemberList MemberList;
 
-        public IdentityStorageLookup(IIdentityStorage storage)
-        {
-            Storage = storage;
-        }
+        public IdentityStorageLookup(IIdentityStorage storage) => Storage = storage;
 
         internal IIdentityStorage Storage { get; }
 
@@ -36,7 +33,7 @@ namespace Proto.Cluster.Identity
         {
             var msg = new GetPid(clusterIdentity, ct);
 
-            var res = await _system.Root.RequestAsync<PidResult>(_router, msg, ct);
+            var res = await _system.Root.RequestAsync<PidResult>(_worker, msg, ct);
             return res?.Pid;
         }
 
@@ -49,11 +46,8 @@ namespace Proto.Cluster.Identity
             _isClient = isClient;
 
             var workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
-            //TODO: should pool size be configurable?
 
-            var routerProps = _system.Root.NewConsistentHashPool(workerProps, 50);
-
-            _router = _system.Root.Spawn(routerProps);
+            _worker = _system.Root.Spawn(workerProps);
 
             //hook up events
             cluster.System.EventStream.Subscribe<ClusterTopology>(e =>

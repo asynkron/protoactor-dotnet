@@ -56,7 +56,7 @@ namespace Proto.Cluster.Identity.Tests
             const int attempts = 10;
 
             var locks = await Task.WhenAll(Enumerable.Range(1, attempts)
-                .SelectMany(i => new[]
+                .SelectMany(_ => new[]
                     {
                         _storage.TryAcquireLock(identity, timeout),
                         _storageInstance2.TryAcquireLock(identity, timeout)
@@ -124,7 +124,7 @@ namespace Proto.Cluster.Identity.Tests
         public async Task CannotStoreOverExisting()
         {
             var timeout = new CancellationTokenSource(1000).Token;
-            var (activator, identity, pid) = await GetActivatedClusterIdentity(timeout);
+            var (activator, identity, _) = await GetActivatedClusterIdentity(timeout);
 
             var otherPid = Activate(activator, identity);
 
@@ -290,7 +290,6 @@ namespace Proto.Cluster.Identity.Tests
         [Fact]
         public async Task RemovesLockIfStale()
         {
-            var activator = GetFakeActivator();
             var timeout = new CancellationTokenSource(10000).Token;
             var identity = new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
             await _storage.TryAcquireLock(identity, timeout);
