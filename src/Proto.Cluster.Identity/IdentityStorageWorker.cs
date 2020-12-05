@@ -32,49 +32,28 @@ namespace Proto.Cluster.Identity
             _storage = storageLookup.Storage;
         }
 
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
-            if (context.Message is not GetPid msg) return Task.CompletedTask;
+            if (context.Message is not GetPid msg) return;
 
             if (context.Sender == null)
             {
                 _logger.LogCritical("No sender in GetPid request");
-                return Task.CompletedTask;
+                return;
             }
 
             if (_cluster.PidCache.TryGet(msg.ClusterIdentity, out var existing))
             {
                 Respond(existing);
-                return Task.CompletedTask;
+                return;
             }
 
             try
             {
-                if (!_inProgress.TryGetValue(msg.ClusterIdentity, out var getPid))
-                {
-                    //First one to try to get identity.
-                    getPid = GetWithGlobalLock(context.Sender!, msg.ClusterIdentity, context.CancellationToken);
-                    _inProgress[msg.ClusterIdentity] = getPid;
-                }
+                var pid = await GetWithGlobalLock(context.Sender!, msg.ClusterIdentity, context.CancellationToken);
+                if (pid != null) _cluster.PidCache.TryAdd(msg.ClusterIdentity, pid);
 
-                context.ReenterAfter(getPid, task =>
-                    {
-                        try
-                        {
-                            var pid = getPid.Result;
-                            if (pid != null) _cluster.PidCache.TryAdd(msg.ClusterIdentity, pid);
-
-                            Respond(getPid.Result);
-                            return Task.CompletedTask;
-                        }
-                        finally
-                        {
-                            _inProgress.Remove(msg.ClusterIdentity);
-                        }
-                    }
-                );
-
-                return Task.CompletedTask;
+                Respond(pid);
             }
             catch (Exception x)
             {
