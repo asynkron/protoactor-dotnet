@@ -13,6 +13,7 @@ namespace Proto.Cluster.Identity.MongoDb
     {
         private static SemaphoreSlim openConnectionSemaphore = null!;
 
+
         public static void Initialize(int maxConcurrencyLevel)
             => openConnectionSemaphore = new SemaphoreSlim(
                 maxConcurrencyLevel,
