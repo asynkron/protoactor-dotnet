@@ -105,15 +105,7 @@ namespace Proto
 
         public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
 
-        public Task PoisonAsync(PID pid)
-        {
-            var future = new FutureProcess(System);
-
-            pid.SendSystemMessage(System, new Watch(future.Pid));
-            Poison(pid);
-
-            return future.Task;
-        }
+        public Task PoisonAsync(PID pid) => RequestAsync<Terminated>(pid, PoisonPill.Instance, CancellationToken.None);
 
         public RootContext WithHeaders(MessageHeader headers) =>
             this with {Headers = headers};
@@ -137,6 +129,7 @@ namespace Proto
             var messageEnvelope = new MessageEnvelope(message, future.Pid);
             SendUserMessage(target, messageEnvelope);
             var result = await future.Task;
+
             switch (result)
             {
                 case DeadLetterResponse deadLetterResponse:

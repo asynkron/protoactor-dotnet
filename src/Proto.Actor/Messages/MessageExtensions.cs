@@ -7,11 +7,11 @@ namespace Proto
 {
     public partial class Terminated
     {
-        public static Terminated From(PID who)
+        public static Terminated From(PID who, TerminatedReason why)
             => new()
             {
                 Who = who,
-                AddressTerminated = false
+                why_ = why
             };
     }
 }

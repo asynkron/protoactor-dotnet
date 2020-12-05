@@ -141,7 +141,7 @@ namespace Proto.Remote
                     pid => new Terminated
                     {
                         Who = pid,
-                        AddressTerminated = true
+                        Why = TerminatedReason.AddressTerminated
                     }
                 ))
                 {

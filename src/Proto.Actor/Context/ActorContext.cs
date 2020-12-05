@@ -185,8 +185,7 @@ namespace Proto.Context
             var msg = _messageOrEnvelope;
 
             var cont = new Continuation(
-                () =>
-                {
+                () => {
                     action();
                     return Task.CompletedTask;
                 }, msg
@@ -219,15 +218,7 @@ namespace Proto.Context
 
         public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
 
-        public Task PoisonAsync(PID pid)
-        {
-            var future = new FutureProcess(System);
-
-            pid.SendSystemMessage(System, new Watch(future.Pid));
-            Poison(pid);
-
-            return future.Task;
-        }
+        public Task PoisonAsync(PID pid) => RequestAsync<Terminated>(pid, PoisonPill.Instance, CancellationToken.None);
 
         public CancellationTokenSource? CancellationTokenSource => _extras?.CancellationTokenSource;
 
@@ -247,19 +238,19 @@ namespace Proto.Context
             try
             {
                 return msg switch
-                       {
-                           Started s         => InvokeUserMessageAsync(s),
-                           Stop _            => InitiateStopAsync(),
-                           Terminated t      => HandleTerminatedAsync(t),
-                           Watch w           => HandleWatch(w),
-                           Unwatch uw        => HandleUnwatch(uw),
-                           Failure f         => HandleFailureAsync(f),
-                           Restart _         => HandleRestartAsync(),
-                           SuspendMailbox _  => Task.CompletedTask,
-                           ResumeMailbox _   => Task.CompletedTask,
-                           Continuation cont => HandleContinuation(cont),
-                           _                 => HandleUnknownSystemMessage(msg)
-                       };
+                {
+                    Started s         => InvokeUserMessageAsync(s),
+                    Stop _            => InitiateStopAsync(),
+                    Terminated t      => HandleTerminatedAsync(t),
+                    Watch w           => HandleWatch(w),
+                    Unwatch uw        => HandleUnwatch(uw),
+                    Failure f         => HandleFailureAsync(f),
+                    Restart _         => HandleRestartAsync(),
+                    SuspendMailbox _  => Task.CompletedTask,
+                    ResumeMailbox _   => Task.CompletedTask,
+                    Continuation cont => HandleContinuation(cont),
+                    _                 => HandleUnknownSystemMessage(msg)
+                };
             }
             catch (Exception x)
             {
@@ -319,8 +310,7 @@ namespace Proto.Context
             new(system, props, parent, self);
 
         private void ScheduleContinuation(Task target, Continuation cont) =>
-            _ = Task.Run(async () =>
-                {
+            _ = Task.Run(async () => {
                     await target;
                     Self.SendSystemMessage(System, cont);
                 }
@@ -354,18 +344,24 @@ namespace Proto.Context
             Message switch
             {
                 PoisonPill => HandlePoisonPill(),
-                _ => Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this)
+                _          => Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this)
             };
 
         private Task HandlePoisonPill()
         {
             Stop(Self);
+
+            if (Sender != null)
+            {
+                Send(Sender, new Terminated {Who = Self}); //Stopped is default, no need to set it.
+            }
+
             return Task.CompletedTask;
         }
 
         private Task ProcessMessageAsync(object msg)
         {
-            //slow path, there is middleware, message must be wrapped in an envelop
+            //slow path, there is middleware, message must be wrapped in an envelope
             if (_props.ReceiverMiddlewareChain is not null)
                 return _props.ReceiverMiddlewareChain(EnsureExtras().Context, MessageEnvelope.Wrap(msg));
 
@@ -382,6 +378,7 @@ namespace Proto.Context
             var messageEnvelope = new MessageEnvelope(message, future.Pid);
             SendUserMessage(target, messageEnvelope);
             var result = await future.Task;
+
             switch (result)
             {
                 case DeadLetterResponse:
@@ -433,7 +430,7 @@ namespace Proto.Context
         private Task HandleWatch(Watch w)
         {
             if (_state >= ContextState.Stopping)
-                w.Watcher.SendSystemMessage(System, Terminated.From(Self));
+                w.Watcher.SendSystemMessage(System, Terminated.From(Self, TerminatedReason.Stopped));
             else
                 EnsureExtras().Watch(w.Watcher);
 
@@ -503,11 +500,11 @@ namespace Proto.Context
             CancelReceiveTimeout();
 
             return _state switch
-                   {
-                       ContextState.Restarting => RestartAsync(),
-                       ContextState.Stopping   => FinalizeStopAsync(),
-                       _                       => Task.CompletedTask
-                   };
+            {
+                ContextState.Restarting => RestartAsync(),
+                ContextState.Stopping   => FinalizeStopAsync(),
+                _                       => Task.CompletedTask
+            };
         }
 
         //Last and final termination step
@@ -520,10 +517,10 @@ namespace Proto.Context
             await DisposeActorIfDisposable();
 
             //Notify watchers
-            _extras?.Watchers.SendSystemMessage(Terminated.From(Self), System);
+            _extras?.Watchers.SendSystemMessage(Terminated.From(Self, TerminatedReason.Stopped), System);
 
             //Notify parent
-            Parent?.SendSystemMessage(System, Terminated.From(Self));
+            Parent?.SendSystemMessage(System, Terminated.From(Self, TerminatedReason.Stopped));
 
             _state = ContextState.Stopped;
         }

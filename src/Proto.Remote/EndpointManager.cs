@@ -53,7 +53,7 @@ namespace Proto.Remote
                 case RemoteWatch msg:
                     msg.Watcher.SendSystemMessage(_system, new Terminated
                         {
-                            AddressTerminated = true,
+                            Why = TerminatedReason.AddressTerminated,
                             Who = msg.Watchee
                         }
                     );

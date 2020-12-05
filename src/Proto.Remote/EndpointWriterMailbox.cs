@@ -119,7 +119,7 @@ namespace Proto.Remote
                                     remoteTerminateCount++;
                                     msg.Watcher.SendSystemMessage(_system, new Terminated
                                         {
-                                            AddressTerminated = true,
+                                            Why = TerminatedReason.AddressTerminated,
                                             Who = msg.Watchee
                                         }
                                     );

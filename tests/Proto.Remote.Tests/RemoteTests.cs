@@ -329,7 +329,7 @@ namespace Proto.Remote.Tests
         private void HandleTerminated(Terminated msg)
         {
             _logger.LogInformation(
-                $"Received Terminated message for {msg.Who.Address}: {msg.Who.Id}. Address terminated? {msg.AddressTerminated}"
+                $"Received Terminated message for {msg.Who.Address}: {msg.Who.Id}. Reason? {msg.Why}"
             );
             _terminatedMessages.Add(msg);
         }

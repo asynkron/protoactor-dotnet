@@ -26,7 +26,13 @@ message Unwatch {
 
 message Terminated {
     PID who = 1;
-    bool AddressTerminated = 2;
+    TerminatedReason Why = 2;
+}
+
+enum TerminatedReason {
+   Stopped = 0;
+   AddressTerminated = 1;
+   NotFound = 2;
 }
 
 message Stop {
