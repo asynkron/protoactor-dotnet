@@ -11,17 +11,18 @@ namespace Proto.Cluster.Identity.MongoDb
 {
     public static class ConnectionThrottlingPipeline
     {
-        private static Semaphore openConnectionSemaphore = null!;
+        private static SemaphoreSlim openConnectionSemaphore = null!;
 
         public static void Initialize(IMongoClient client)
-            => openConnectionSemaphore = new Semaphore(
+            => openConnectionSemaphore = new SemaphoreSlim(
                 client.Settings.MaxConnectionPoolSize,
                 client.Settings.MaxConnectionPoolSize * 10
             );
 
         public static async Task<T> AddRequest<T>(Task<T> task)
         {
-            openConnectionSemaphore.WaitOne();
+
+            await openConnectionSemaphore.WaitAsync();
 
             try
             {
@@ -36,7 +37,7 @@ namespace Proto.Cluster.Identity.MongoDb
 
         public static async Task AddRequest(Task task)
         {
-            openConnectionSemaphore.WaitOne();
+            await openConnectionSemaphore.WaitAsync();
 
             try
             {
