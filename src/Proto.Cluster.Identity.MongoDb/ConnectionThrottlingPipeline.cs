@@ -13,10 +13,10 @@ namespace Proto.Cluster.Identity.MongoDb
     {
         private static SemaphoreSlim openConnectionSemaphore = null!;
 
-        public static void Initialize(IMongoClient client)
+        public static void Initialize(int maxConcurrencyLevel)
             => openConnectionSemaphore = new SemaphoreSlim(
-                client.Settings.MaxConnectionPoolSize,
-                client.Settings.MaxConnectionPoolSize * 10
+                maxConcurrencyLevel,
+                maxConcurrencyLevel
             );
 
         public static async Task<T> AddRequest<T>(Task<T> task)

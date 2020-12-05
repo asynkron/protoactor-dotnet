@@ -20,9 +20,9 @@ namespace Proto.Cluster.Identity.MongoDb
         private readonly string _clusterName;
         private readonly IMongoCollection<PidLookupEntity> _pids;
 
-        public MongoIdentityStorage(string clusterName, IMongoCollection<PidLookupEntity> pids)
+        public MongoIdentityStorage(string clusterName, IMongoCollection<PidLookupEntity> pids, int maxConcurrentRequests)
         {
-            ConnectionThrottlingPipeline.Initialize(pids.Database.Client);
+            ConnectionThrottlingPipeline.Initialize(maxConcurrentRequests);
             _clusterName = clusterName;
             _pids = pids;
         }

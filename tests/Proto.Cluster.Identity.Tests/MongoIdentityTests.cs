@@ -19,7 +19,7 @@ namespace Proto.Cluster.Identity.Tests
         protected override IIdentityLookup GetIdentityLookup(string clusterName)
         {
             var pids = MongoFixture.Database.GetCollection<PidLookupEntity>("pids");
-            var identity = new IdentityStorageLookup(new MongoIdentityStorage(clusterName, pids));
+            var identity = new IdentityStorageLookup(new MongoIdentityStorage(clusterName, pids,30));
             return identity;
         }
 
@@ -39,7 +39,7 @@ namespace Proto.Cluster.Identity.Tests
             }
 
             private static IIdentityStorage Init(string clusterName)
-                => new MongoIdentityStorage(clusterName, MongoFixture.Database.GetCollection<PidLookupEntity>("pids"));
+                => new MongoIdentityStorage(clusterName, MongoFixture.Database.GetCollection<PidLookupEntity>("pids"),30);
         }
     }
 
