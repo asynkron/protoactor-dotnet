@@ -349,13 +349,12 @@ namespace Proto.Context
 
         private Task HandlePoisonPill()
         {
-            Stop(Self);
-
             if (Sender != null)
             {
-                Send(Sender, new Terminated {Who = Self}); //Stopped is default, no need to set it.
+                HandleWatch(new Watch(Sender));
             }
 
+            Stop(Self);
             return Task.CompletedTask;
         }
 
