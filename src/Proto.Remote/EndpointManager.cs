@@ -1,8 +1,9 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="EndpointManager.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-// </copyright>
+//   <copyright file="EndpointManager.cs" company="Asynkron AB">
+//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -16,17 +17,17 @@ namespace Proto.Remote
     public class EndpointManager
     {
         private static readonly ILogger Logger = Log.CreateLogger<EndpointManager>();
-        private readonly CancellationTokenSource _cancellationTokenSource = new();
-        private readonly IChannelProvider _channelProvider;
-        private readonly ConcurrentDictionary<string, PID> _connections = new();
-        private readonly EventStreamSubscription<object> _deadLetterEvnSub;
-        private readonly EventStreamSubscription<object>? _endpointConnectedEvnSub;
-        private readonly EventStreamSubscription<object> _endpointErrorEvnSub;
-        private readonly EventStreamSubscription<object>? _endpointTerminatedEvnSub;
-        private readonly RemoteConfigBase _remoteConfig;
-        private readonly object _synLock = new();
+        private readonly ConcurrentDictionary<string, PID> _connections = new ConcurrentDictionary<string, PID>();
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly ActorSystem _system;
-        private readonly ConcurrentDictionary<string, PID> _terminatedConnections = new();
+        private readonly EventStreamSubscription<object>? _endpointConnectedEvnSub;
+        private readonly EventStreamSubscription<object>? _endpointTerminatedEvnSub;
+        private readonly EventStreamSubscription<object> _endpointErrorEvnSub;
+        private readonly RemoteConfigBase _remoteConfig;
+        private readonly IChannelProvider _channelProvider;
+        private readonly object _synLock = new object();
+        public CancellationToken CancellationToken => _cancellationTokenSource.Token;
+        public PID? ActivatorPid { get; private set; }
 
         public EndpointManager(ActorSystem system, RemoteConfigBase remoteConfig, IChannelProvider channelProvider)
         {
@@ -34,36 +35,9 @@ namespace Proto.Remote
             _system.ProcessRegistry.RegisterHostResolver(pid => new RemoteProcess(_system, this, pid));
             _remoteConfig = remoteConfig;
             _channelProvider = channelProvider;
-            _endpointTerminatedEvnSub =
-                _system.EventStream.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated,
-                    Dispatchers.DefaultDispatcher
-                );
+            _endpointTerminatedEvnSub = _system.EventStream.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated, Dispatchers.DefaultDispatcher);
             _endpointConnectedEvnSub = _system.EventStream.Subscribe<EndpointConnectedEvent>(OnEndpointConnected);
             _endpointErrorEvnSub = _system.EventStream.Subscribe<EndpointErrorEvent>(OnEndpointError);
-            _deadLetterEvnSub = _system.EventStream.Subscribe<DeadLetterEvent>(OnDeadLetterEvent);
-        }
-
-        public CancellationToken CancellationToken => _cancellationTokenSource.Token;
-        public PID? ActivatorPid { get; private set; }
-
-        private void OnDeadLetterEvent(DeadLetterEvent deadLetterEvent)
-        {
-            switch (deadLetterEvent.Message)
-            {
-                case RemoteWatch msg:
-                    msg.Watcher.SendSystemMessage(_system, new Terminated
-                        {
-                            Why = TerminatedReason.AddressTerminated,
-                            Who = msg.Watchee
-                        }
-                    );
-                    break;
-                case RemoteDeliver rd:
-                    if (rd.Sender != null)
-                        _system.Root.Send(rd.Sender, new DeadLetterResponse {Target = rd.Target});
-                    _system.EventStream.Publish(new DeadLetterEvent(rd.Target, rd.Message, rd.Sender));
-                    break;
-            }
         }
 
         public void Start()
@@ -81,7 +55,8 @@ namespace Proto.Remote
                 _system.EventStream.Unsubscribe(_endpointTerminatedEvnSub);
                 _system.EventStream.Unsubscribe(_endpointConnectedEvnSub);
                 _system.EventStream.Unsubscribe(_endpointErrorEvnSub);
-                _system.EventStream.Unsubscribe(_deadLetterEvnSub);
+
+                _cancellationTokenSource.Cancel();
 
                 var stopEndpointTasks = new List<Task>();
                 foreach (var endpoint in _connections.Values)
@@ -90,8 +65,6 @@ namespace Proto.Remote
                 }
 
                 Task.WhenAll(stopEndpointTasks).GetAwaiter().GetResult();
-
-                _cancellationTokenSource.Cancel();
 
                 _connections.Clear();
 
@@ -103,8 +76,11 @@ namespace Proto.Remote
 
         private void OnEndpointError(EndpointErrorEvent evt)
         {
-            if (_connections.TryGetValue(evt.Address, out var endpoint))
+            lock (_synLock)
+            {
+                var endpoint = GetEndpoint(evt.Address);
                 endpoint.SendSystemMessage(_system, evt);
+            }
         }
 
         private void OnEndpointTerminated(EndpointTerminatedEvent evt)
@@ -115,52 +91,90 @@ namespace Proto.Remote
                 if (_connections.TryRemove(evt.Address, out var endpoint))
                 {
                     _system.Root.StopAsync(endpoint).GetAwaiter().GetResult();
-                    if (_remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue &&
-                        _terminatedConnections.TryAdd(evt.Address, endpoint))
-                    {
-                        _ = Task.Run(async () =>
-                            {
-                                await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value);
-                                _terminatedConnections.TryRemove(evt.Address, out var _);
-                            }
-                        );
-                    }
                 }
             }
         }
 
         private void OnEndpointConnected(EndpointConnectedEvent evt)
         {
-            var endpoint = GetEndpoint(evt.Address);
-            if (endpoint is null)
-                return;
-            endpoint.SendSystemMessage(_system, evt);
-        }
-
-        internal PID? GetEndpoint(string address)
-        {
-            if (string.IsNullOrWhiteSpace(address)) throw new ArgumentNullException(nameof(address));
             lock (_synLock)
             {
-                if (_terminatedConnections.ContainsKey(address) ||
-                    _cancellationTokenSource.IsCancellationRequested) return null;
-
-                return _connections.GetOrAdd(address, v =>
-                    {
-                        Logger.LogDebug("[EndpointManager] Requesting new endpoint for {Address}", v);
-                        var props = Props
-                            .FromProducer(() => new EndpointActor(v, _remoteConfig, _channelProvider))
-                            .WithMailbox(() => new EndpointWriterMailbox(_system,
-                                    _remoteConfig.EndpointWriterOptions.EndpointWriterBatchSize, v
-                                )
-                            )
-                            .WithGuardianSupervisorStrategy(new EndpointSupervisorStrategy(v, _remoteConfig, _system));
-                        var endpointActorPid = _system.Root.SpawnNamed(props, $"endpoint-{v}");
-                        Logger.LogDebug("[EndpointManager] Created new endpoint for {Address}", v);
-                        return endpointActorPid;
-                    }
-                );
+                var endpoint = GetEndpoint(evt.Address);
+                endpoint.SendSystemMessage(_system, evt);
             }
+        }
+
+        public void RemoteTerminate(RemoteTerminate msg)
+        {
+            lock (_synLock)
+            {
+                var endpoint = GetEndpoint(msg.Watchee.Address);
+                _system.Root.Send(endpoint, msg);
+            }
+        }
+
+        public void RemoteWatch(RemoteWatch msg)
+        {
+            lock (_synLock)
+            {
+                var endpoint = GetEndpoint(msg.Watchee.Address);
+                _system.Root.Send(endpoint, msg);
+            }
+        }
+
+        public void RemoteUnwatch(RemoteUnwatch msg)
+        {
+            lock (_synLock)
+            {
+                var endpoint = GetEndpoint(msg.Watchee.Address);
+                _system.Root.Send(endpoint, msg);
+            }
+        }
+
+        public void RemoteDeliver(RemoteDeliver msg)
+        {
+            if (string.IsNullOrWhiteSpace(msg.Target.Address))
+                throw new ArgumentOutOfRangeException("Target");
+            if (CancellationToken.IsCancellationRequested)
+            {
+                _system.EventStream.Publish(new DeadLetterEvent(msg.Target, msg.Message, msg.Sender));
+                return;
+            };
+            lock (_synLock)
+            {
+                var endpoint = GetEndpoint(msg.Target.Address);
+                Logger.LogDebug(
+                    "[EndpointManager] Forwarding message {Message} from {From} for {Address} through EndpointWriter {Writer}",
+                    msg.Message?.GetType(), msg.Sender?.Address, msg.Target?.Address, endpoint
+                );
+                _system.Root.Send(endpoint, msg);
+            }
+        }
+
+        private PID GetEndpoint(string address)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                throw new ArgumentNullException(nameof(address));
+            }
+            return _connections.GetOrAdd(address, v =>
+            {
+                Logger.LogDebug("[EndpointManager] Requesting new endpoint for {Address}", v);
+                var props = Props
+                    .FromProducer(() => new EndpointActor(v, this, _remoteConfig, _channelProvider))
+                    .WithMailbox(() => new EndpointWriterMailbox(_system, _remoteConfig.EndpointWriterOptions.EndpointWriterBatchSize, v))
+                    .WithGuardianSupervisorStrategy(new EndpointSupervisorStrategy(v, _remoteConfig, _system));
+                var endpointActorPid = _system.Root.SpawnNamed(props, $"endpoint-{v}");
+                Logger.LogDebug("[EndpointManager] Created new endpoint for {Address}", v);
+                return endpointActorPid;
+            });
+        }
+
+        public void SendMessage(PID pid, object msg, int serializerId)
+        {
+            var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
+            var env = new RemoteDeliver(header!, message, pid, sender!, serializerId);
+            RemoteDeliver(env);
         }
 
         private void SpawnActivator()

@@ -1,8 +1,9 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="Activator.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-// </copyright>
+//   <copyright file="Activator.cs" company="Asynkron AB">
+//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
+
 using System.Threading.Tasks;
 
 namespace Proto.Remote
@@ -25,7 +26,10 @@ namespace Proto.Remote
                 case ActorPidRequest msg:
                     var props = _remoteConfig.GetRemoteKind(msg.Kind);
                     var name = msg.Name;
-                    if (string.IsNullOrEmpty(name)) name = _system.ProcessRegistry.NextId();
+                    if (string.IsNullOrEmpty(name))
+                    {
+                        name = _system.ProcessRegistry.NextId();
+                    }
 
                     try
                     {

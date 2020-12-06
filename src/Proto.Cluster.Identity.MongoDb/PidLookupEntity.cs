@@ -1,18 +1,13 @@
-// -----------------------------------------------------------------------
-// <copyright file="PidLookupEntity.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-// </copyright>
-// -----------------------------------------------------------------------
-using MongoDB.Bson.Serialization.Attributes;
-
 namespace Proto.Cluster.Identity.MongoDb
 {
+    using MongoDB.Bson.Serialization.Attributes;
+
     public class PidLookupEntity
     {
-        [BsonId] public string Key { get; set; } = null!;
-        public string Identity { get; set; } = null!;
+        [BsonId] public string Key { get; set; }
+        public string Identity { get; set; }
         public string? UniqueIdentity { get; set; }
-        public string Kind { get; set; } = null!;
+        public string Kind { get; set; }
         public string? Address { get; set; }
         public string? MemberId { get; set; }
         public string? LockedBy { get; set; }

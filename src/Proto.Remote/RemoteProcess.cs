@@ -1,15 +1,15 @@
 // -----------------------------------------------------------------------
-// <copyright file="RemoteProcess.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-// </copyright>
+//   <copyright file="RemoteProcess.cs" company="Asynkron AB">
+//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Remote
 {
     public class RemoteProcess : Process
     {
         private readonly EndpointManager _endpointManager;
         private readonly PID _pid;
-        private PID? _endpoint;
 
         public RemoteProcess(ActorSystem system, EndpointManager endpointManager, PID pid) : base(system)
         {
@@ -23,36 +23,35 @@ namespace Proto.Remote
 
         private void Send(object msg)
         {
-            object message;
-            _endpoint ??= _endpointManager.GetEndpoint(_pid.Address);
             switch (msg)
             {
                 case Watch w:
-                    if (_endpoint is null)
-                    {
-                        System.Root.Send(w.Watcher, new Terminated {Why = TerminatedReason.AddressTerminated, Who = _pid});
-                        return;
-                    }
-
-                    message = new RemoteWatch(w.Watcher, _pid);
+                    Watch(w);
                     break;
                 case Unwatch uw:
-                    if (_endpoint is null) return;
-                    message = new RemoteUnwatch(uw.Watcher, _pid);
+                    Unwatch(uw);
                     break;
                 default:
-                    var (m, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
-                    if (_endpoint is null)
-                    {
-                        System.EventStream.Publish(new DeadLetterEvent(_pid, m, sender));
-                        return;
-                    }
-
-                    message = new RemoteDeliver(header!, m, _pid, sender!, -1);
+                    SendMessage(msg);
                     break;
             }
+        }
 
-            System.Root.Send(_endpoint, message);
+        private void SendMessage(object msg)
+        {
+            _endpointManager.SendMessage(_pid, msg, -1);
+        }
+
+        private void Unwatch(Unwatch uw)
+        {
+            var ruw = new RemoteUnwatch(uw.Watcher, _pid);
+            _endpointManager.RemoteUnwatch(ruw);
+        }
+
+        private void Watch(Watch w)
+        {
+            var rw = new RemoteWatch(w.Watcher, _pid);
+            _endpointManager.RemoteWatch(rw);
         }
     }
 }
