@@ -125,7 +125,7 @@ namespace Proto
         private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)
         {
             if (target is null) throw new ArgumentNullException(nameof(target));
-
+            
             var messageEnvelope = new MessageEnvelope(message, future.Pid);
             SendUserMessage(target, messageEnvelope);
             var result = await future.Task;

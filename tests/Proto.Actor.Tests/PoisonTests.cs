@@ -13,6 +13,7 @@ namespace Proto.Tests
     {
         private static readonly ActorSystem System = new();
         private static readonly RootContext Context = System.Root;
+
         private static readonly Props EchoProps = Props.FromFunc(ctx => {
                 if (ctx.Sender != null)
                 {
@@ -51,21 +52,6 @@ namespace Proto.Tests
             poisonTask.IsCompleted.Should().BeTrue("Or we did not get a response when poisoning a live pid");
 
             Context.Invoking(ctx => ctx.RequestAsync<string>(pid, message)).Should().ThrowExactly<DeadLetterException>();
-        }
-        
-        [Fact]
-        public async Task PoisonPillResponsesAreCorrect()
-        {
-            var pid = Context.Spawn(EchoProps);
-            
-            var terminated = await Context.RequestAsync<Terminated>(pid, PoisonPill.Instance);
-            var terminatedAgain = await Context.RequestAsync<Terminated>(pid, PoisonPill.Instance);
-
-            terminated.Who.Should().Be(pid);
-            terminated.Why.Should().Be(TerminatedReason.Stopped);
-            
-            terminatedAgain.Who.Should().Be(pid);
-            terminatedAgain.Why.Should().Be(TerminatedReason.NotFound);
         }
     }
 }
