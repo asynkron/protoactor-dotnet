@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
@@ -19,35 +20,59 @@ using Proto.Cluster.IdentityLookup;
 using Proto.Cluster.Kubernetes;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
+using Serilog;
+using Serilog.Events;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
+using Log = Proto.Log;
 
 namespace ClusterExperiment1
 {
     public static class Program
     {
-        private static Task RunFollower()
+        private static ILogger SetupLogger()
         {
-            SetupLogger();
-
-            SpawnMember();
-
-            Thread.Sleep(Timeout.Infinite);
-            return Task.CompletedTask;
+            Serilog.Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console(LogEventLevel.Information,outputTemplate:
+                    "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}")
+                .MinimumLevel.Information()
+                // .Filter.ByExcluding(e => e.Exception != null && e.Level == LogEventLevel.Warning)
+                .CreateLogger();
+            
+            var l = LoggerFactory.Create(l =>
+                l.AddSerilog()
+                .SetMinimumLevel(LogLevel.Error)
+            );
+            
+            Log.SetLoggerFactory(l);
+            var logger = Log.CreateLogger(nameof(Program));
+            return logger;
         }
 
-        private static async Task RunLeader()
+        public static async Task Main()
         {
             var logger = SetupLogger();
+            
+            var ts = new TaskCompletionSource<bool>();
+            
+            RunWorkers(ts);
 
-            var cluster = await SpawnClient();
+            RunClient(logger);
 
-            await Task.Delay(5000);
+            await ts.Task;
+        }
 
-            _ = Task.Run(async () =>
-                {
+        private static void RunClient(ILogger logger)
+        {
+            _ = Task.Run(async () => {
+                    await Task.Delay(5000);
+
+                    var cluster = await SpawnClient();
                     var rnd = new Random();
+
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, 1000);
+
                         try
                         {
                             var res = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
@@ -66,33 +91,29 @@ namespace ClusterExperiment1
                     }
                 }
             );
-
-            Console.ReadLine();
-
-            //   Thread.Sleep(Timeout.Infinite);
         }
 
-        private static ILogger SetupLogger()
+        private static void RunWorkers(TaskCompletionSource<bool> ts)
         {
-            Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole(o =>
-                        {
-                            o.IncludeScopes = false;
-                            o.UseUtcTimestamp = false;
-                            o.TimestampFormat = "hh:mm:ss:fff - ";
-                        }
-                    ).SetMinimumLevel(LogLevel.Information)
-                )
+            var followers = new List<Cluster>();
+
+            for (var i = 0; i < 4; i++)
+            {
+                var p = SpawnMember();
+                followers.Add(p);
+            }
+
+            _ = Task.Run(async () => {
+                    foreach (var t in followers)
+                    {
+                        await Task.Delay(20000);
+                        Console.WriteLine("Stopping node...");
+                        await t.ShutdownAsync(false);
+                    }
+
+                    ts.SetResult(true);
+                }
             );
-            var logger = Log.CreateLogger(nameof(Program));
-            return logger;
-        }
-
-        public static async Task Main(string[] args)
-        {
-            if (args.Length == 0)
-                await RunLeader();
-            else
-                await RunFollower();
         }
 
         private static async Task<Cluster> SpawnClient()
@@ -139,24 +160,18 @@ namespace ClusterExperiment1
                 .Setup("mycluster", clusterProvider, identityLookup);
             return (clusterConfig, remoteConfig);
         }
-
-        /// <summary>
-        /// </summary>
-        /// <returns></returns>
+        
         private static IClusterProvider ClusterProvider()
         {
             try
             {
-                Console.WriteLine("Running with InClusterConfig");
-
-                var kubernetesConfig =
-                    KubernetesClientConfiguration
-                        .InClusterConfig();
-                var kubernetes = new Kubernetes(kubernetesConfig);
+                var kubernetes = new Kubernetes(KubernetesClientConfiguration.InClusterConfig());
+                Console.WriteLine("Running with Kubernetes Provider");
                 return new KubernetesProvider(kubernetes);
             }
             catch
             {
+                Console.WriteLine("Running with Consul Provider");
                 return new ConsulProvider(new ConsulProviderConfig());
             }
         }
@@ -186,24 +201,19 @@ namespace ClusterExperiment1
 
     public class HelloActor : IActor
     {
-        //   private readonly ILogger _log = Log.CreateLogger<HelloActor>();
-
         public Task ReceiveAsync(IContext ctx)
         {
-            if (ctx.Message is Started)
+            switch (ctx.Message)
             {
-                //just to highlight when this happens
-                Console.Write("#");
-                //_log.LogInformation("I started " + ctx.Self);
+                case Started _:
+                    //just to highlight when this happens
+                    Console.Write("#");
+                    break;
+                case HelloRequest _: 
+                    ctx.Respond(new HelloResponse());
+                    break;
             }
 
-            if (ctx.Message is HelloRequest) ctx.Respond(new HelloResponse());
-
-            if (ctx.Message is Stopped)
-            {
-                //just to highlight when this happens
-                //    _log.LogWarning("I stopped" + ctx.Self);
-            }
 
             return Task.CompletedTask;
         }
