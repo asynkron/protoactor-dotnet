@@ -1,32 +1,29 @@
-// -----------------------------------------------------------------------
-// <copyright file="GrpcNetRemote.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-// </copyright>
-// -----------------------------------------------------------------------
 using System;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Grpc.Health.V1;
 using Grpc.HealthCheck;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote.GrpcNet
 {
     public class GrpcNetRemote : IRemote
     {
-        private readonly GrpcNetRemoteConfig _config;
         private readonly ILogger _logger = Log.CreateLogger<GrpcNetRemote>();
         private EndpointManager _endpointManager = null!;
         private EndpointReader _endpointReader = null!;
         private HealthServiceImpl _healthCheck = null!;
+        private readonly GrpcNetRemoteConfig _config;
         private IWebHost? _host;
-
+        public bool Started { get; private set; }
+        public RemoteConfigBase Config => _config;
+        public ActorSystem System { get; }
         public GrpcNetRemote(ActorSystem system, GrpcNetRemoteConfig config)
         {
             System = system;
@@ -34,11 +31,6 @@ namespace Proto.Remote.GrpcNet
             System.Extensions.Register(this);
             System.Extensions.Register(config.Serialization);
         }
-
-        public bool Started { get; private set; }
-        public RemoteConfigBase Config => _config;
-        public ActorSystem System { get; }
-
         public Task StartAsync()
         {
             lock (this)
@@ -59,41 +51,35 @@ namespace Proto.Remote.GrpcNet
                     .ConfigureKestrel(serverOptions =>
                         {
                             if (_config.ConfigureKestrel == null)
-                            {
                                 serverOptions.Listen(ipAddress, Config.Port,
                                     listenOptions => { listenOptions.Protocols = HttpProtocols.Http2; }
                                 );
-                            }
                             else
-                            {
                                 serverOptions.Listen(ipAddress, Config.Port,
                                     listenOptions => _config.ConfigureKestrel(listenOptions)
                                 );
-                            }
                         }
                     )
-                    .ConfigureServices(serviceCollection =>
+                    .ConfigureServices((serviceCollection) =>
                         {
-                            serviceCollection.AddSingleton(Log.GetLoggerFactory());
+                            serviceCollection.AddSingleton<ILoggerFactory>(Log.GetLoggerFactory());
                             serviceCollection.AddGrpc(options =>
-                                {
-                                    options.MaxReceiveMessageSize = null;
-                                    options.EnableDetailedErrors = true;
-                                }
-                            );
+                            {
+                                options.MaxReceiveMessageSize = null;
+                                options.EnableDetailedErrors = true;
+                            });
                             serviceCollection.AddSingleton<Remoting.RemotingBase>(_endpointReader);
-                            serviceCollection.AddSingleton<Health.HealthBase>(_healthCheck);
+                            serviceCollection.AddSingleton<Grpc.Health.V1.Health.HealthBase>(_healthCheck);
                             serviceCollection.AddSingleton<IRemote>(this);
                         }
                     ).Configure(app =>
                         {
                             app.UseRouting();
                             app.UseEndpoints(endpoints =>
-                                {
-                                    endpoints.MapGrpcService<Remoting.RemotingBase>();
-                                    endpoints.MapGrpcService<Health.HealthBase>();
-                                }
-                            );
+                            {
+                                endpoints.MapGrpcService<Remoting.RemotingBase>();
+                                endpoints.MapGrpcService<Grpc.Health.V1.Health.HealthBase>();
+                            });
 
                             serverAddressesFeature = app.ServerFeatures.Get<IServerAddressesFeature>();
                         }
@@ -102,50 +88,49 @@ namespace Proto.Remote.GrpcNet
                 var uri = serverAddressesFeature!.Addresses.Select(address => new Uri(address)).First();
                 var boundPort = uri.Port;
                 System.SetAddress(Config.AdvertisedHost ?? Config.Host,
-                    Config.AdvertisedPort ?? boundPort
-                );
+                        Config.AdvertisedPort ?? boundPort
+                    );
                 _endpointManager.Start();
-                _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host,
-                    Config.Port, System.Address
-                );
+                _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host, Config.Port, System.Address);
                 Started = true;
                 return Task.CompletedTask;
             }
         }
 
-        public async Task ShutdownAsync(bool graceful = true)
+        public Task ShutdownAsync(bool graceful = true)
         {
             lock (this)
             {
                 if (!Started)
-                    return;
-                Started = false;
-            }
-
-            try
-            {
-                using (_host)
+                    return Task.CompletedTask;
+                try
                 {
-                    if (graceful)
+                    using (_host)
                     {
-                        _endpointManager.Stop();
-                        if (_host is not null)
-                            await _host.StopAsync();
+                        if (graceful)
+                            _endpointManager.Stop();
                     }
+                    _logger.LogInformation(
+                            "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
+                            System.Address, graceful
+                        );
                 }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex, "Proto.Actor server stopped on {Address} with error: {Message}",
+                        System.Address, ex.Message
+                    );
+                }
+                Started = false;
+                return Task.CompletedTask;
+            }
+        }
 
-                _logger.LogInformation(
-                    "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
-                    System.Address, graceful
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex, "Proto.Actor server stopped on {Address} with error: {Message}",
-                    System.Address, ex.Message
-                );
-            }
+        // Only used in tests ?
+        public void SendMessage(PID pid, object msg, int serializerId)
+        {
+            _endpointManager.SendMessage(pid, msg, serializerId);
         }
     }
 }

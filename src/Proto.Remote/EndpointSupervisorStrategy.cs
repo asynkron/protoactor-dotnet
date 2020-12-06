@@ -1,8 +1,9 @@
 // -----------------------------------------------------------------------
-// <copyright file="EndpointSupervisorStrategy.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-// </copyright>
+//   <copyright file="EndpointSupervisorStrategy.cs" company="Asynkron AB">
+//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,15 +14,14 @@ namespace Proto.Remote
     public class EndpointSupervisorStrategy : ISupervisorStrategy
     {
         private static readonly ILogger Logger = Log.CreateLogger<EndpointSupervisorStrategy>();
-        private readonly string _address;
         private readonly TimeSpan _backoff;
-        private readonly CancellationTokenSource _cancelFutureRetries = new();
 
         private readonly int _maxNrOfRetries;
         private readonly Random _random = new();
         private readonly ActorSystem _system;
         private readonly TimeSpan? _withinTimeSpan;
-
+        private readonly string _address;
+        private readonly CancellationTokenSource _cancelFutureRetries = new();
         public EndpointSupervisorStrategy(string address, RemoteConfigBase remoteConfig, ActorSystem system)
         {
             _address = address;
@@ -30,11 +30,10 @@ namespace Proto.Remote
             _withinTimeSpan = remoteConfig.EndpointWriterOptions.RetryTimeSpan;
             _backoff = remoteConfig.EndpointWriterOptions.RetryBackOff;
         }
-
         public void HandleFailure(
-            ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
-            object? message
-        )
+                ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
+                object? message
+            )
         {
             if (ShouldStop(rs))
             {
@@ -43,12 +42,12 @@ namespace Proto.Remote
                     _address, reason.GetType().Name
                 );
                 _cancelFutureRetries.Cancel();
-                var terminated = new EndpointTerminatedEvent {Address = _address!};
+                var terminated = new EndpointTerminatedEvent { Address = _address! };
                 _system.EventStream.Publish(terminated);
             }
             else
             {
-                var backoff = rs.FailureCount * (int) _backoff.TotalMilliseconds;
+                var backoff = rs.FailureCount * (int)_backoff.TotalMilliseconds;
                 var noise = _random.Next(500);
                 var duration = TimeSpan.FromMilliseconds(backoff + noise);
 
@@ -68,7 +67,10 @@ namespace Proto.Remote
 
         private bool ShouldStop(RestartStatistics rs)
         {
-            if (_maxNrOfRetries == 0) return true;
+            if (_maxNrOfRetries == 0)
+            {
+                return true;
+            }
 
             rs.Fail();
 

@@ -1,8 +1,9 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="GrpcCoreRemote.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-// </copyright>
+//   <copyright file="GrpcCoreRemote.cs" company="Asynkron AB">
+//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,11 +19,11 @@ namespace Proto.Remote.GrpcCore
     public class GrpcCoreRemote : IRemote
     {
         private static readonly ILogger Logger = Log.CreateLogger<GrpcCoreRemote>();
-        private readonly GrpcCoreRemoteConfig _config;
         private EndpointManager _endpointManager = null!;
         private EndpointReader _endpointReader = null!;
         private HealthServiceImpl _healthCheck = null!;
         private Server _server = null!;
+        private readonly GrpcCoreRemoteConfig _config;
 
         public GrpcCoreRemote(ActorSystem system, GrpcCoreRemoteConfig config)
         {
@@ -31,7 +32,6 @@ namespace Proto.Remote.GrpcCore
             System.Extensions.Register(this);
             System.Extensions.Register(config.Serialization);
         }
-
         public bool Started { get; private set; }
         public ActorSystem System { get; }
         public RemoteConfigBase Config => _config;
@@ -53,7 +53,7 @@ namespace Proto.Remote.GrpcCore
                         Remoting.BindService(_endpointReader),
                         Health.BindService(_healthCheck)
                     },
-                    Ports = {new ServerPort(Config.Host, Config.Port, _config.ServerCredentials)}
+                    Ports = { new ServerPort(Config.Host, Config.Port, _config.ServerCredentials) }
                 };
                 _server.Start();
 
@@ -62,8 +62,7 @@ namespace Proto.Remote.GrpcCore
                 );
                 _endpointManager.Start();
 
-                Logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host,
-                    boundPort,
+                Logger.LogDebug("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host, boundPort,
                     System.Address
                 );
                 Started = true;
@@ -79,7 +78,6 @@ namespace Proto.Remote.GrpcCore
                     return;
                 Started = false;
             }
-
             try
             {
                 if (graceful)
@@ -88,9 +86,11 @@ namespace Proto.Remote.GrpcCore
                     await _server.KillAsync();
                 }
                 else
+                {
                     await _server.KillAsync();
+                }
 
-                Logger.LogInformation(
+                Logger.LogDebug(
                     "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
                     System.Address, graceful
                 );
@@ -103,6 +103,11 @@ namespace Proto.Remote.GrpcCore
                 );
                 await _server.KillAsync();
             }
+        }
+
+        public void SendMessage(PID pid, object msg, int serializerId)
+        {
+            _endpointManager.SendMessage(pid, msg, serializerId);
         }
     }
 }

@@ -1,8 +1,9 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="Serialization.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
-// </copyright>
+//   <copyright file="Serialization.cs" company="Asynkron AB">
+//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//   </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using Google.Protobuf;
@@ -29,7 +30,10 @@ namespace Proto.Remote
 
         public ByteString Serialize(object obj)
         {
-            if (obj is JsonMessage jsonMessage) return ByteString.CopyFromUtf8(jsonMessage.Json);
+            if (obj is JsonMessage jsonMessage)
+            {
+                return ByteString.CopyFromUtf8(jsonMessage.Json);
+            }
 
             var message = obj as IMessage;
             var json = JsonFormatter.Default.Format(message);
@@ -50,9 +54,9 @@ namespace Proto.Remote
             if (obj is JsonMessage jsonMessage)
                 return jsonMessage.TypeName;
 
-            if (obj is IMessage message)
+            if (obj is IMessage message) 
                 return message.Descriptor.File.Package + "." + message.Descriptor.Name;
-
+            
             throw new ArgumentException("obj must be of type IMessage", nameof(obj));
         }
     }
@@ -81,9 +85,9 @@ namespace Proto.Remote
 
         public string GetTypeName(object obj)
         {
-            if (obj is IMessage message)
+            if (obj is IMessage message) 
                 return $"{message.Descriptor.File.Package}.{message.Descriptor.Name}";
-
+            
             throw new ArgumentException("obj must be of type IMessage", nameof(obj));
         }
     }
@@ -101,12 +105,15 @@ namespace Proto.Remote
             RegisterSerializer(new JsonSerializer(this));
         }
 
-        public int DefaultSerializerId { get; set; }
+        public static int DefaultSerializerId { get; set; }
 
         public void RegisterSerializer(ISerializer serializer, bool makeDefault = false)
         {
             _serializers.Add(serializer);
-            if (makeDefault) DefaultSerializerId = _serializers.Count - 1;
+            if (makeDefault)
+            {
+                DefaultSerializerId = _serializers.Count - 1;
+            }
         }
 
         public void RegisterFileDescriptor(FileDescriptor fd)
