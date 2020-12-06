@@ -15,5 +15,9 @@ namespace Proto.Metrics
         public ICounter CreateCounter(string name, string description) => new Counter(name, description);
 
         public IGauge CreateGauge(string name, string description) => new Gauge(name, description);
+        
+        public ISummary CreateSummary(string name, string description) => new Summary(name, description);
+        
+        public IHistogram CreateHistogram(string name, string description) => new Histogram(name, description);
     }
 }
