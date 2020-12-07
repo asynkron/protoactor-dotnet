@@ -150,7 +150,24 @@
 
         private async Task<PidLookupEntity?> LookupKey(string key, CancellationToken ct)
         {
-            return await _pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct);
+
+            for (int i = 0; i < 10; i++)
+            {
+                try
+                {
+                    var res= await _pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct);
+                    return res;
+                }
+                catch(MongoConnectionException x)
+                {
+                    Logger.LogWarning(x,"Mongo connection failure, retrying");
+                }
+
+                // ReSharper disable once MethodSupportsCancellation
+                await Task.Delay(i * 1000);
+            }
+
+            throw new StorageFailure($"Failed to connect to MongoDB while looking up key {key}");
         }
 
         private string GetKey(ClusterIdentity clusterIdentity) => $"{_clusterName}/{clusterIdentity.ToShortString()}";
