@@ -12,12 +12,10 @@ namespace Proto.Metrics
     {
         public static ActorSystem WithMetrics(this ActorSystem system)
         {
+            system.Extensions.Register(new Metrics());
             return system; 
         }
 
-        public static Metrics Metrics(this ActorSystem system)
-        {
-            return system.Extensions.Get<Metrics>();
-        }
+        public static Metrics Metrics(this ActorSystem system) => system.Extensions.Get<Metrics>();
     }
 }
