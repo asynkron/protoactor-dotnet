@@ -23,7 +23,7 @@ namespace Proto.Remote
         private AsyncDuplexStreamingCall<MessageBatch, Unit>? _stream;
         private Remoting.RemotingClient? _client;
         private int _serializerId;
-        private readonly Dictionary<string, HashSet<PID>> _watchedActors = new Dictionary<string, HashSet<PID>>();
+        private readonly Dictionary<string, HashSet<PID>> _watchedActors = new();
         private readonly string _address;
         private readonly IChannelProvider _channelProvider;
         public EndpointActor(string address, EndpointManager endpointManager,

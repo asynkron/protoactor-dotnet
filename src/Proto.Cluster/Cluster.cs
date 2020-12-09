@@ -120,6 +120,9 @@ namespace Proto.Cluster
 
         public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) =>
             ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, ct);
+        
+        public Task<T> RequestAsync<T>(string identity, string kind, object message, ISenderContext context ,CancellationToken ct) =>
+            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct);
 
         public Props GetClusterKind(string kind)
         {

@@ -15,6 +15,7 @@ namespace Proto.Cluster
     public interface IClusterContext
     {
         Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, CancellationToken ct);
+        Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context,  CancellationToken ct);
     }
 
     public class DefaultClusterContext : IClusterContext
@@ -39,9 +40,9 @@ namespace Proto.Cluster
             );
         }
 
-        public async Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, CancellationToken ct)
+        public async Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
         {
-            _logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity.ToShortString(), message
+             _logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity.ToShortString(), message
             );
             var i = 0;
             while (!ct.IsCancellationRequested)
@@ -51,7 +52,7 @@ namespace Proto.Cluster
                     _logger.LogDebug("Requesting {Identity}-{Kind} Message {Message} - Got PID {Pid} from PidCache",
                         clusterIdentity.Identity, clusterIdentity.Kind, message, cachedPid
                     );
-                    var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, cachedPid, "PidCache");
+                    var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, cachedPid, "PidCache", context);
                     if (status == ResponseStatus.Ok) return res;
                 }
 
@@ -80,7 +81,7 @@ namespace Proto.Cluster
                         clusterIdentity.Identity, clusterIdentity.Kind, message, pid
                     );
 
-                    var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, pid, "IIdentityLookup");
+                    var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, pid, "IIdentityLookup", context);
                     switch (status)
                     {
                         case ResponseStatus.Ok:
@@ -103,13 +104,15 @@ namespace Proto.Cluster
             return default!;
         }
 
+        public  Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, CancellationToken ct) => RequestAsync<T>(clusterIdentity, message, _context, ct);
+
         private async Task<(ResponseStatus ok, T res)> TryRequestAsync<T>(ClusterIdentity clusterIdentity,
             object message,
-            PID cachedPid, string source)
+            PID cachedPid, string source, ISenderContext context)
         {
             try
             {
-                var res = await _context.RequestAsync<T>(cachedPid, message, TimeSpan.FromSeconds(5));
+                var res = await context.RequestAsync<T>(cachedPid, message, TimeSpan.FromSeconds(5));
 
                 if (res is not null) return (ResponseStatus.Ok, res);
             }
