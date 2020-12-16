@@ -33,15 +33,13 @@ namespace Proto.Cluster
         private readonly Cluster _cluster;
         private readonly RootContext _context;
         private readonly CancellationTokenSource _ct = new();
-        private readonly ActorSystem _system;
         private ILogger _logger = null!;
         private PID _pid = null!;
 
         public ClusterHeartBeat(Cluster cluster)
         {
             _cluster = cluster;
-            _system = _cluster.System;
-            _context = _system.Root;
+            _context = _cluster.System.Root;
         }
 
         public Task StartAsync()

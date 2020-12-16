@@ -29,4 +29,6 @@ namespace Proto.Cluster
         public string Kind => ClusterIdentity.Kind;
         public string Identity => ClusterIdentity.Identity;
     }
+    
+    public record Tick;
 }

@@ -15,8 +15,6 @@ namespace Proto.Cluster.Identity
     using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
 
-    public record Tick;
-    
     internal class IdentityStoragePlacementActor : IActor, IDisposable
     {
         private readonly Cluster _cluster;

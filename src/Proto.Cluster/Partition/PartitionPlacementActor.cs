@@ -6,12 +6,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Timers;
 
 namespace Proto.Cluster.Partition
 {
-    internal class PartitionPlacementActor : IActor
+    internal class PartitionPlacementActor : IActor, IDisposable
     {
         private readonly Cluster _cluster;
         private readonly ILogger _logger;
@@ -27,6 +29,7 @@ namespace Proto.Cluster.Partition
         //cluster wide eventId.
         //this is useful for knowing if we are in sync with, ahead of or behind other nodes requests
         private ulong _eventId;
+        private CancellationTokenSource? _ct;
 
         public PartitionPlacementActor(Cluster cluster)
         {
@@ -38,7 +41,7 @@ namespace Proto.Cluster.Partition
             context.Message switch
             {
                 Started _                   => Started(context),
-                ReceiveTimeout _            => ReceiveTimeout(context),
+                Tick _                      => Tick(context),
                 Terminated msg              => Terminated(context, msg),
                 ClusterTopology msg         => ClusterTopology(msg),
                 IdentityHandoverRequest msg => IdentityHandoverRequest(context, msg),
@@ -48,11 +51,11 @@ namespace Proto.Cluster.Partition
 
         private Task Started(IContext context)
         {
-            context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+            _ct = context.Scheduler().SendRepeatedly(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), context.Self!, new Tick());
             return Task.CompletedTask;
         }
 
-        private Task ReceiveTimeout(IContext context)
+        private Task Tick(IContext context)
         {
             context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
             var count = _myActors.Count;
@@ -173,5 +176,7 @@ namespace Proto.Cluster.Partition
 
             return Task.CompletedTask;
         }
+
+        public void Dispose() => _ct?.Dispose();
     }
 }
