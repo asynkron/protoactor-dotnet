@@ -1,0 +1,105 @@
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Proto.Timers
+{
+    public class Scheduler
+    {
+        private readonly ISenderContext _context;
+
+        public Scheduler(ISenderContext context) => _context = context;
+
+        public CancellationTokenSource SendOnce(TimeSpan delay, PID target, object message)
+        {
+            var cts = new CancellationTokenSource();
+            
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(delay, cts.Token);
+
+                _context.Send(target, message);
+            }, cts.Token);
+
+            return cts;
+        }
+
+        public CancellationTokenSource SendRepeatedly(TimeSpan interval, PID target, object message) => 
+            SendRepeatedly(interval, interval, target, message);
+
+        public CancellationTokenSource SendRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
+        {
+            var cts = new CancellationTokenSource();
+
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(delay, cts.Token);
+
+                async Task Trigger()
+                {
+                    while (true)
+                    {
+                        if (cts.IsCancellationRequested)
+                            return;
+
+                        _context.Send(target, message);
+
+                        await Task.Delay(interval, cts.Token);
+                    }
+                }
+
+                await Trigger();
+
+            }, cts.Token);
+
+            return cts;
+        }
+
+        public CancellationTokenSource RequestOnce(TimeSpan delay, PID sender, PID target, object message)
+        {
+            var cts = new CancellationTokenSource();
+            
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(delay, cts.Token);
+
+                //TODO: allow custom sender
+                _context.Request(target, message);
+            }, cts.Token
+            );
+
+            return cts;
+        }
+
+        public CancellationTokenSource RequestRepeatedly(TimeSpan interval, PID sender, PID target, object message
+        ) => RequestRepeatedly(interval, interval, target, message);
+
+        public CancellationTokenSource RequestRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
+        {
+            var cts = new CancellationTokenSource();
+
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(delay, cts.Token);
+
+                async Task Trigger()
+                {
+                    while (true)
+                    {
+                        if (cts.IsCancellationRequested)
+                            return;
+                        
+                        _context.Request(target, message);
+
+                        await Task.Delay(interval, cts.Token);
+                    }
+                }
+
+                await Trigger();
+
+            }, cts.Token);
+
+            return cts;
+        }
+    }
+}

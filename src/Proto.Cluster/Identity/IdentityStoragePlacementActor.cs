@@ -4,6 +4,8 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using Proto.Timers;
+
 namespace Proto.Cluster.Identity
 {
     using System;
@@ -13,7 +15,7 @@ namespace Proto.Cluster.Identity
     using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
 
-    internal class IdentityStoragePlacementActor : IActor
+    internal class IdentityStoragePlacementActor : IActor, IDisposable
     {
         private readonly Cluster _cluster;
         private readonly ILogger _logger;
@@ -24,6 +26,7 @@ namespace Proto.Cluster.Identity
         private readonly Dictionary<ClusterIdentity, PID> _myActors = new Dictionary<ClusterIdentity, PID>();
 
         private readonly IdentityStorageLookup _identityLookup;
+        private CancellationTokenSource? _ct;
 
         public IdentityStoragePlacementActor(Cluster cluster, IdentityStorageLookup identityLookup)
         {
@@ -32,27 +35,23 @@ namespace Proto.Cluster.Identity
             _logger = Log.CreateLogger($"{nameof(IdentityStoragePlacementActor)}-{cluster.LoggerId}");
         }
 
-        public Task ReceiveAsync(IContext context)
+        public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            return context.Message switch
-            {
-                Started _ => Started(context),
-                ReceiveTimeout _ => ReceiveTimeout(context),
-                Terminated msg => Terminated(msg),
-                ActivationRequest msg => ActivationRequest(context, msg),
-                _ => Task.CompletedTask
-            };
-        }
+            Started _             => Started(context),
+            Tick _                => Tick(context),
+            Terminated msg        => Terminated(msg),
+            ActivationRequest msg => ActivationRequest(context, msg),
+            _                     => Task.CompletedTask
+        };
 
-        private static Task Started(IContext context)
+        private Task Started(IContext context)
         {
-            context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+            _ct = context.Scheduler().SendRepeatedly(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), context.Self!, new Tick());
             return Task.CompletedTask;
         }
 
-        private Task ReceiveTimeout(IContext context)
+        private Task Tick(IContext context)
         {
-            context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
             var count = _myActors.Count;
             _logger.LogInformation("Statistics: Actor Count {ActorCount}", count);
             return Task.CompletedTask;
@@ -131,5 +130,7 @@ namespace Proto.Cluster.Identity
                 _logger.LogCritical(e, "No entry was updated {@SpawnLock}", spawnLock);
             }
         }
+
+        public void Dispose() => _ct?.Dispose();
     }
 }
