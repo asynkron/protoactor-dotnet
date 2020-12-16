@@ -17,7 +17,7 @@ namespace Proto
     }
 
     [PublicAPI]
-    public record RootContext : IRootContext
+    public sealed record RootContext : IRootContext
     {
         public RootContext(ActorSystem system)
         {
