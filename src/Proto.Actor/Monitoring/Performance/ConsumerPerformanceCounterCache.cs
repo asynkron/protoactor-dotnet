@@ -1,9 +1,8 @@
-﻿namespace MassTransit.Monitoring.Performance
+﻿using System;
+using System.Collections.Concurrent;
+
+namespace Proto.Monitoring.Performance
 {
-    using System;
-    using System.Collections.Concurrent;
-
-
     public class ConsumerPerformanceCounterCache
     {
         readonly ConcurrentDictionary<string, Lazy<ConsumerPerformanceCounter>> _types;

@@ -1,8 +1,7 @@
-﻿namespace MassTransit.Monitoring.Performance
+﻿using System;
+
+namespace Proto.Monitoring.Performance
 {
-    using System;
-
-
     /// <summary>
     /// Tracks the consumption and failure of a consumer processing messages. The message types
     /// in this case are not included in the counter, only the consumer itself.

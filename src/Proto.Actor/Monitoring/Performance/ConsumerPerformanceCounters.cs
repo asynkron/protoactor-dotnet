@@ -1,9 +1,8 @@
-﻿namespace MassTransit.Monitoring.Performance
+﻿using System;
+using System.Collections.Generic;
+
+namespace Proto.Monitoring.Performance
 {
-    using System;
-    using System.Collections.Generic;
-
-
     public class ConsumerPerformanceCounters :
         BasePerformanceCounters
     {

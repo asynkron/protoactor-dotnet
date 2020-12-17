@@ -1,10 +1,9 @@
-﻿namespace MassTransit.Monitoring.Performance.StatsD
+﻿using System.Net.Sockets;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Proto.Monitoring.Performance.StatsD
 {
-    using System.Net.Sockets;
-    using System.Text;
-    using System.Threading.Tasks;
-
-
     public class StatsDPerformanceCounter :
         IPerformanceCounter
     {

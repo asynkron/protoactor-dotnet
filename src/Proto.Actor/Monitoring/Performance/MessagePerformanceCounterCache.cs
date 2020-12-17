@@ -1,8 +1,7 @@
-﻿namespace MassTransit.Monitoring.Performance
+﻿using System;
+
+namespace Proto.Monitoring.Performance
 {
-    using System;
-
-
     public static class MessagePerformanceCounterCache<T>
     {
         static Lazy<MessagePerformanceCounter<T>> _cache;

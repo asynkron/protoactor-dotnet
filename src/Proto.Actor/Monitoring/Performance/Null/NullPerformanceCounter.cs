@@ -1,4 +1,4 @@
-namespace MassTransit.Monitoring.Performance.Null
+namespace Proto.Monitoring.Performance.Null
 {
     public class NullPerformanceCounter :
         IPerformanceCounter

@@ -1,4 +1,4 @@
-﻿namespace MassTransit.Monitoring.Performance
+﻿namespace Proto.Monitoring.Performance
 {
     public static class BuiltInCounters
     {

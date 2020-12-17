@@ -1,10 +1,9 @@
-namespace MassTransit.Monitoring.Performance
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Proto.Monitoring.Performance
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-
-
     public abstract class BasePerformanceCounters
     {
         readonly Lazy<CounterData[]> _counterCreationData;

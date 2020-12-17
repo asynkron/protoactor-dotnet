@@ -1,4 +1,4 @@
-﻿namespace MassTransit.Monitoring.Performance.StatsD
+﻿namespace Proto.Monitoring.Performance.StatsD
 {
     public class StatsDCounterFactory : ICounterFactory
     {
