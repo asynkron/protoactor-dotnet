@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
 using Proto.Cluster;
 
@@ -22,16 +21,9 @@ namespace ClusterExperiment1
     {
         private Cluster _cluster;
 
-        public async Task Start()
-        {
-            _cluster = await Configuration.SpawnMember();
+        public async Task Start() => _cluster = await Configuration.SpawnMember();
 
-        }
-
-        public async Task Kill()
-        {
-            await _cluster.ShutdownAsync(false);
-        }
+        public async Task Kill() => await _cluster.ShutdownAsync(false);
     }
 
     public class RunMemberExternalProc : IRunMember

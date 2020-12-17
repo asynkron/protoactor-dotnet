@@ -20,11 +20,10 @@ namespace ClusterExperiment1
                     //just to highlight when this happens
                     Console.Write("#");
                     break;
-                case HelloRequest _: 
+                case HelloRequest _:
                     ctx.Respond(new HelloResponse());
                     break;
             }
-
 
             return Task.CompletedTask;
         }

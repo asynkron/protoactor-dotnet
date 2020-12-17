@@ -9,64 +9,68 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
 using Microsoft.Extensions.Logging;
-using Proto.Cluster;
-using Serilog;
-using Serilog.Events;
-using Log = Proto.Log;
+using Proto;
 
 namespace ClusterExperiment1
 {
     public static class Program
     {
+        private static TaskCompletionSource<bool> _ts;
+
         public static async Task Main(string[] args)
         {
             Configuration.SetupLogger();
 
-           if (args.Length > 0)
-           {
-               var worker = await Configuration.SpawnMember();
-               Thread.Sleep(Timeout.Infinite);
-               return;
-           }
-           
-           
-           Console.WriteLine("1) Run single process");
-           Console.WriteLine("2) Run multi process");
-
-            var res = Console.ReadLine();
-
-            switch (res)
+            if (args.Length > 0)
             {
-                case "1": await RunSingleProcess();
+                var worker = await Configuration.SpawnMember();
+                Thread.Sleep(Timeout.Infinite);
+                return;
+            }
+
+            Console.WriteLine("1) Run single process");
+            Console.WriteLine("2) Run multi process");
+
+            var res1 = Console.ReadLine();
+
+            Console.WriteLine("1) Run single request client");
+            Console.WriteLine("2) Run batch requests client");
+            Console.WriteLine("3) Run fire and forget client");
+
+            var res2 = Console.ReadLine();
+
+            _ts = new TaskCompletionSource<bool>();
+
+            switch (res1)
+            {
+                case "1":
+                    RunWorkers(() => new RunMemberInProc());
                     break;
-                case "2": await RunMultiProcess();
+                case "2":
+                    RunWorkers(() => new RunMemberExternalProc());
                     break;
             }
-        }
 
-        private static async Task RunMultiProcess()
-        {
-            var ts = new TaskCompletionSource<bool>();
-            RunWorkers(ts, () => new RunMemberExternalProc());
-            RunClient();
-            
-            await ts.Task;
-        }
+            switch (res2)
+            {
+                case "1":
+                    RunClient();
+                    break;
+                case "2":
+                    RunBatchClient();
+                    break;
+                case "3":
+                    RunFireForgetClient();
+                    break;
+            }
 
-        private static async Task RunSingleProcess()
-        {
-            
-            var ts = new TaskCompletionSource<bool>();
-            RunWorkers(ts, () => new RunMemberInProc());
-            RunClient();
-            
-            await ts.Task;
+            await _ts.Task;
         }
-
-        private static void RunClient()
+        
+        private static void RunFireForgetClient()
         {
             var logger = Log.CreateLogger(nameof(Program));
-            
+
             _ = Task.Run(async () => {
                     await Task.Delay(5000);
 
@@ -75,7 +79,75 @@ namespace ClusterExperiment1
 
                     while (true)
                     {
-                        var id = "myactor" + rnd.Next(0, 1000);
+                        try
+                        {
+                            for (var i = 0; i < 1000; i++)
+                            {
+                                var id = "myactor" + rnd.Next(0, 10000);
+                                var request = cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+                                    new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
+                                ).ContinueWith(_ => Console.Write("."));
+                            }
+                        }
+                        catch (Exception x)
+                        {
+                            logger.LogError(x, "Error...");
+                        }
+                    }
+                }
+            );
+        }
+
+        private static void RunBatchClient()
+        {
+            var logger = Log.CreateLogger(nameof(Program));
+
+            _ = Task.Run(async () => {
+                    await Task.Delay(5000);
+
+                    var cluster = await Configuration.SpawnClient();
+                    var rnd = new Random();
+
+                    while (true)
+                    {
+                        var requests = new List<Task>();
+
+                        try
+                        {
+                            for (var i = 0; i < 1000; i++)
+                            {
+                                var id = "myactor" + rnd.Next(0, 10000);
+                                var request = cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+                                    new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
+                                ).ContinueWith(_ => Console.Write("."));
+
+                                requests.Add(request);
+                            }
+
+                            await Task.WhenAll(requests);
+                        }
+                        catch (Exception x)
+                        {
+                            logger.LogError(x, "Error...");
+                        }
+                    }
+                }
+            );
+        }
+
+        private static void RunClient()
+        {
+            var logger = Log.CreateLogger(nameof(Program));
+
+            _ = Task.Run(async () => {
+                    await Task.Delay(5000);
+
+                    var cluster = await Configuration.SpawnClient();
+                    var rnd = new Random();
+
+                    while (true)
+                    {
+                        var id = "myactor" + rnd.Next(0, 10000);
 
                         try
                         {
@@ -97,7 +169,7 @@ namespace ClusterExperiment1
             );
         }
 
-        private static void RunWorkers(TaskCompletionSource<bool> ts, Func<IRunMember> memberFactory)
+        private static void RunWorkers(Func<IRunMember> memberFactory)
         {
             var followers = new List<IRunMember>();
 
@@ -113,10 +185,10 @@ namespace ClusterExperiment1
                     {
                         await Task.Delay(20000);
                         Console.WriteLine("Stopping node...");
-                        t.Kill();
+                        _ = t.Kill();
                     }
 
-                    ts.SetResult(true);
+                    _ts.SetResult(true);
                 }
             );
         }

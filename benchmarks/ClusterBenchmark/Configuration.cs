@@ -20,14 +20,16 @@ using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using Serilog;
 using Serilog.Events;
-using Log = Proto.Log;
+using Log = Serilog.Log;
 
 namespace ClusterExperiment1
 {
     public static class Configuration
     {
-        private static (ClusterConfig, GrpcCoreRemoteConfig) GetClusterConfig(IClusterProvider clusterProvider,
-            IIdentityLookup identityLookup)
+        private static (ClusterConfig, GrpcCoreRemoteConfig) GetClusterConfig(
+            IClusterProvider clusterProvider,
+            IIdentityLookup identityLookup
+        )
         {
             var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfigBase.AnyFreePort}";
             var port = int.Parse(portStr);
@@ -43,7 +45,7 @@ namespace ClusterExperiment1
                 .Setup("mycluster", clusterProvider, identityLookup);
             return (clusterConfig, remoteConfig);
         }
-        
+
         private static IClusterProvider ClusterProvider()
         {
             try
@@ -80,7 +82,7 @@ namespace ClusterExperiment1
             var database = client.GetDatabase("ProtoMongo");
             return database;
         }
-        
+
         public static async Task<Cluster> SpawnMember()
         {
             var system = new ActorSystem();
@@ -95,7 +97,7 @@ namespace ClusterExperiment1
             await cluster.StartMemberAsync();
             return cluster;
         }
-        
+
         public static async Task<Cluster> SpawnClient()
         {
             var system = new ActorSystem();
@@ -110,20 +112,18 @@ namespace ClusterExperiment1
 
         public static void SetupLogger()
         {
-            Serilog.Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console(LogEventLevel.Information,outputTemplate:
-                    "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}")
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console(LogEventLevel.Information, "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}")
                 .MinimumLevel.Information()
                 // .Filter.ByExcluding(e => e.Exception != null && e.Level == LogEventLevel.Warning)
                 .CreateLogger();
-            
+
             var l = LoggerFactory.Create(l =>
                 l.AddSerilog()
                     .SetMinimumLevel(LogLevel.Error)
             );
-            
-            Log.SetLoggerFactory(l);
-            
+
+            Proto.Log.SetLoggerFactory(l);
         }
     }
 }
