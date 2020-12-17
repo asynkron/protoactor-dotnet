@@ -18,9 +18,11 @@
         private ActorSystem _system;
         private PID _router;
         private string _memberId;
+        private readonly int _poolSize;
 
-        public IdentityStorageLookup(IIdentityStorage storage)
+        public IdentityStorageLookup(IIdentityStorage storage, int poolSize = 50)
         {
+            _poolSize = poolSize;
             Storage = storage;
         }
 
@@ -43,7 +45,7 @@
             var workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
             //TODO: should pool size be configurable?
 
-            var routerProps = _system.Root.NewConsistentHashPool(workerProps, 50);
+            var routerProps = _system.Root.NewConsistentHashPool(workerProps, _poolSize);
 
             _router = _system.Root.Spawn(routerProps);
 

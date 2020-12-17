@@ -16,9 +16,7 @@ namespace Proto.Cluster.Identity
         private readonly IdentityStorageLookup _lookup;
         private readonly MemberList _memberList;
         private readonly IIdentityStorage _storage;
-
-        private readonly Dictionary<ClusterIdentity, Task<PID?>> _inProgress =
-            new Dictionary<ClusterIdentity, Task<PID?>>();
+        
 
         public IdentityStorageWorker(IdentityStorageLookup storageLookup)
         {
@@ -28,13 +26,14 @@ namespace Proto.Cluster.Identity
             _storage = storageLookup.Storage;
         }
 
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
-            if (context.Message is not GetPid msg) return Task.CompletedTask;
+            if (context.Message is not GetPid msg) return;
+
             if (context.Sender == null)
             {
                 _logger.LogCritical("No sender in GetPid request");
-                return Task.CompletedTask;
+                return;
             }
 
             if (_cluster.PidCache.TryGet(msg.ClusterIdentity, out var existing))
@@ -45,73 +44,18 @@ namespace Proto.Cluster.Identity
                         Pid = existing
                     }
                 );
-                return Task.CompletedTask;
+                return;
             }
 
             try
             {
-                if (_inProgress.TryGetValue(msg.ClusterIdentity, out Task<PID?> getPid) && getPid.IsCompleted)
-                {
-                    try
-                    {
-                        if (getPid.IsCompletedSuccessfully)
-                        {
-                            var pid = getPid.Result;
-                            if (pid != null)
-                            {
-                                _cluster.PidCache.TryAdd(msg.ClusterIdentity, pid);
-                            }
+                var pid = await GetWithGlobalLock(context.Sender!, msg.ClusterIdentity, context.CancellationToken);
 
-                            context.Respond(new PidResult
-                                {
-                                    Pid = pid
-                                }
-                            );
-                            return Task.CompletedTask;
-                        }
-                        else
-                        {
-                            _logger.LogWarning(getPid.Exception, "GetWithGlobalLock for {ClusterIdentity} failed", msg.ClusterIdentity.ToShortString());
-                        }
-                    }
-                    finally
+                context.Respond(new PidResult
                     {
-                        _inProgress.Remove(msg.ClusterIdentity);
-                    }
-                }
-
-                if (getPid == null)
-                {
-                    getPid = GetWithGlobalLock(context.Sender!, msg.ClusterIdentity, context.CancellationToken);
-                    _inProgress[msg.ClusterIdentity] = getPid;
-                }
-
-                context.ReenterAfter(getPid, task =>
-                    {
-                        try
-                        {
-                            context.Respond(new PidResult
-                                {
-                                    Pid = task.Result
-                                }
-                            );
-                            return Task.CompletedTask;
-                        }
-                        catch (Exception x)
-                        {
-                            _logger.LogError(x, "Identity worker crashed in reentrant context: {Id}",
-                                context.Self!.ToShortString()
-                            );
-                            throw;
-                        }
-                        finally
-                        {
-                            _inProgress.Remove(msg.ClusterIdentity);
-                        }
+                        Pid = pid
                     }
                 );
-
-                return Task.CompletedTask;
             }
             catch (Exception x)
             {
@@ -158,6 +102,7 @@ namespace Proto.Cluster.Identity
             }
             catch (Exception e)
             {
+                //IDLOOKUPLOG
                 _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity.ToShortString());
                 return null;
             }
