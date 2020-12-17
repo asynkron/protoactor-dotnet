@@ -85,7 +85,7 @@ namespace ClusterExperiment1
 
         public static async Task<Cluster> SpawnMember()
         {
-            var system = new ActorSystem();
+            var system = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3).WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1)));
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
             var helloProps = Props.FromProducer(() => new WorkerActor());
@@ -100,7 +100,7 @@ namespace ClusterExperiment1
 
         public static async Task<Cluster> SpawnClient()
         {
-            var system = new ActorSystem();
+            var system = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3).WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1)));
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
             var (clusterConfig, remoteConfig) = GetClusterConfig(clusterProvider, identity);
@@ -113,8 +113,7 @@ namespace ClusterExperiment1
         public static void SetupLogger()
         {
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console()
-          //      .WriteTo.Console(LogEventLevel.Information, "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}")
+                .WriteTo.Console(LogEventLevel.Information, "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}")
                 .MinimumLevel.Information()
                 // .Filter.ByExcluding(e => e.Exception != null && e.Level == LogEventLevel.Warning)
                 .CreateLogger();

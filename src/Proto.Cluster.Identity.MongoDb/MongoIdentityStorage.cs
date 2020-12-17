@@ -19,7 +19,7 @@ namespace Proto.Cluster.Identity.MongoDb
 
         public MongoIdentityStorage(string clusterName, IMongoCollection<PidLookupEntity> pids)
         {
-            _throttler = new Throttler(50);
+            _throttler = new Throttler(500);
             _clusterName = clusterName;
             _pids = pids;
         }
