@@ -8,22 +8,22 @@ using System.Threading.Tasks;
 
 namespace Proto.Interactive
 {
-    public class Throttler
+    public class AsyncSemaphore
     {
-        private SemaphoreSlim concurrencySemaphore;
+        private readonly SemaphoreSlim _semaphore;
 
-        public Throttler(int maxConcurrency)
+        public AsyncSemaphore(int maxConcurrency)
         {
-            concurrencySemaphore = new SemaphoreSlim(
+            _semaphore = new SemaphoreSlim(
                 maxConcurrency,
                 maxConcurrency
             );
         }
 
-        public async Task<T> AddRequest<T>(Task<T> task)
+        public async Task<T> WaitAsync<T>(Task<T> task)
         {
 
-            await concurrencySemaphore.WaitAsync();
+            await _semaphore.WaitAsync();
 
             try
             {
@@ -32,13 +32,13 @@ namespace Proto.Interactive
             }
             finally
             {
-                concurrencySemaphore.Release();
+                _semaphore.Release();
             }
         }
 
-        public async Task AddRequest(Task task)
+        public async Task WaitAsync(Task task)
         {
-            await concurrencySemaphore.WaitAsync();
+            await _semaphore.WaitAsync();
 
             try
             {
@@ -46,7 +46,7 @@ namespace Proto.Interactive
             }
             finally
             {
-                concurrencySemaphore.Release();
+                _semaphore.Release();
             }
         }
     }
