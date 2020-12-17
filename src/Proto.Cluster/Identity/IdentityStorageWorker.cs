@@ -1,3 +1,5 @@
+using Proto.Utils;
+
 namespace Proto.Cluster.Identity
 {
     using System;
@@ -20,8 +22,16 @@ namespace Proto.Cluster.Identity
         private readonly Dictionary<ClusterIdentity, Task<PID?>> _inProgress =
             new Dictionary<ClusterIdentity, Task<PID?>>();
 
+        private readonly ShouldThrottle _shouldThrottle;
+
         public IdentityStorageWorker(IdentityStorageLookup storageLookup)
         {
+            _shouldThrottle = Throttle.Create(
+                5,
+                TimeSpan.FromSeconds(5),
+                i => _logger.LogInformation("Throttled {LogCount} IdentityStorageWorker logs.", i)
+            );
+            
             _cluster = storageLookup.Cluster;
             _memberList = storageLookup.MemberList;
             _lookup = storageLookup;
@@ -71,7 +81,8 @@ namespace Proto.Cluster.Identity
                         }
                         else
                         {
-                            _logger.LogWarning(getPid.Exception, "GetWithGlobalLock for {ClusterIdentity} failed", msg.ClusterIdentity.ToShortString());
+                            if (_shouldThrottle().IsOpen())
+                                _logger.LogWarning(getPid.Exception, "GetWithGlobalLock for {ClusterIdentity} failed", msg.ClusterIdentity.ToShortString());
                         }
                     }
                     finally
@@ -99,9 +110,10 @@ namespace Proto.Cluster.Identity
                         }
                         catch (Exception x)
                         {
-                            _logger.LogError(x, "Identity worker crashed in reentrant context: {Id}",
-                                context.Self!.ToShortString()
-                            );
+                            if (_shouldThrottle().IsOpen())
+                                _logger.LogError(x, "Identity worker crashed in reentrant context: {Id}",
+                                    context.Self!.ToShortString()
+                                );
                             throw;
                         }
                         finally
@@ -158,7 +170,8 @@ namespace Proto.Cluster.Identity
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity.ToShortString());
+                if (_shouldThrottle().IsOpen())
+                    _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity.ToShortString());
                 return null;
             }
             
@@ -199,7 +212,8 @@ namespace Proto.Cluster.Identity
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error occured requesting remote PID {@Request}", req);
+                if (_shouldThrottle().IsOpen())
+                    _logger.LogError(e, "Error occured requesting remote PID {@Request}", req);
             }
 
             //Clean up our mess..

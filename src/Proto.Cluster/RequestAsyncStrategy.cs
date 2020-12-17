@@ -34,7 +34,7 @@ namespace Proto.Cluster
             _context = context;
             _logger = logger;
             _requestLogThrottle = Throttle.Create(
-                10,
+                5,
                 TimeSpan.FromSeconds(5),
                 i => _logger.LogInformation("Throttled {LogCount} TryRequestAsync logs.", i)
             );
@@ -96,7 +96,8 @@ namespace Proto.Cluster
                 }
                 catch
                 {
-                    _logger.LogWarning("Failed to get PID from IIdentityLookup");
+                    if (_requestLogThrottle().IsOpen())
+                        _logger.LogWarning("Failed to get PID from IIdentityLookup");
                     await Task.Delay(delay, CancellationToken.None);
                 }
             }
@@ -130,7 +131,8 @@ namespace Proto.Cluster
             }
             catch (Exception x)
             {
-                _logger.LogWarning(x, "TryRequestAsync failed with exception, PID from {Source}", source);
+                if (_requestLogThrottle().IsOpen())
+                    _logger.LogWarning(x, "TryRequestAsync failed with exception, PID from {Source}", source);
             }
 
             _pidCache.RemoveByVal(clusterIdentity, cachedPid);

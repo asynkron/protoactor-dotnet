@@ -1,4 +1,6 @@
-﻿namespace Proto.Cluster.Identity.MongoDb
+﻿using Proto.Interactive;
+
+namespace Proto.Cluster.Identity.MongoDb
 {
     using System;
     using System.Threading;
@@ -13,9 +15,11 @@
 
         private readonly string _clusterName;
         private readonly IMongoCollection<PidLookupEntity> _pids;
+        private readonly AsyncSemaphore _asyncSemaphore;
 
-        public MongoIdentityStorage(string clusterName, IMongoCollection<PidLookupEntity> pids)
+        public MongoIdentityStorage(string clusterName, IMongoCollection<PidLookupEntity> pids, int maxConcurrency=50)
         {
+            _asyncSemaphore = new AsyncSemaphore(maxConcurrency);
             _clusterName = clusterName;
             _pids = pids;
         }
@@ -65,13 +69,13 @@
         }
 
         public Task RemoveLock(SpawnLock spawnLock, CancellationToken ct)
-            => _pids.DeleteManyAsync(p => p.LockedBy == spawnLock.LockId, ct);
+            => _asyncSemaphore.WaitAsync(_pids.DeleteManyAsync(p => p.LockedBy == spawnLock.LockId, ct));
 
         public async Task StoreActivation(string memberId, SpawnLock spawnLock, PID pid, CancellationToken ct)
         {
             Logger.LogDebug("Storing activation: {@ActivatorId}, {@SpawnLock}, {@PID}", memberId, spawnLock, pid);
             var key = GetKey(spawnLock.ClusterIdentity);
-            var res = await _pids.UpdateOneAsync(
+            var res = await _asyncSemaphore.WaitAsync(_pids.UpdateOneAsync(
                 s => s.Key == key && s.LockedBy == spawnLock.LockId && s.Revision == 1,
                 Builders<PidLookupEntity>.Update
                     .Set(l => l.Address, pid.Address)
@@ -80,7 +84,7 @@
                     .Set(l => l.Revision, 2)
                     .Unset(l => l.LockedBy)
                 , new UpdateOptions(), ct
-            );
+            ));
             if (res.MatchedCount != 1)
             {
                 throw new StorageFailure($"Failed to store activation of {pid.ToShortString()}");
@@ -91,11 +95,11 @@
         {
             Logger.LogDebug("Removing activation: {@PID}", pid);
 
-            await _pids.DeleteManyAsync(p => p.UniqueIdentity == pid.Id, ct);
+            await _asyncSemaphore.WaitAsync(_pids.DeleteManyAsync(p => p.UniqueIdentity == pid.Id, ct));
         }
 
         public Task RemoveMemberIdAsync(string memberId, CancellationToken ct)
-            => _pids.DeleteManyAsync(p => p.MemberId == memberId, ct);
+            => _asyncSemaphore.WaitAsync(_pids.DeleteManyAsync(p => p.MemberId == memberId, ct));
 
         public async Task<StoredActivation?> TryGetExistingActivationAsync(ClusterIdentity clusterIdentity,
             CancellationToken ct)
@@ -127,19 +131,19 @@
             try
             {
                 //be 100% sure own the lock here
-                await _pids.InsertOneAsync(lockEntity, new InsertOneOptions(), ct);
+                await _asyncSemaphore.WaitAsync(_pids.InsertOneAsync(lockEntity, new InsertOneOptions(), ct));
                 Logger.LogDebug("Got lock on first try for {ClusterIdentity}", clusterIdentity);
                 return true;
             }
             catch (MongoWriteException)
             {
-                var l = await _pids.ReplaceOneAsync(x => x.Key == key && x.LockedBy == null && x.Revision == 0,
+                var l = await _asyncSemaphore.WaitAsync(_pids.ReplaceOneAsync(x => x.Key == key && x.LockedBy == null && x.Revision == 0,
                     lockEntity,
                     new ReplaceOptions
                     {
                         IsUpsert = false
                     }, ct
-                );
+                ));
 
                 //if l.MatchCount == 1, then one document was updated by us, and we should own the lock, no?
                 var gotLock =  l.IsAcknowledged && l.ModifiedCount == 1;
@@ -155,7 +159,7 @@
             {
                 try
                 {
-                    var res= await _pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct);
+                    var res= await _asyncSemaphore.WaitAsync(_pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct));
                     return res;
                 }
                 catch(MongoConnectionException x)

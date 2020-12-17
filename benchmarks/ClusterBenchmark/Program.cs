@@ -183,7 +183,7 @@ namespace ClusterExperiment1
             _ = Task.Run(async () => {
                     foreach (var t in followers)
                     {
-                        await Task.Delay(20000);
+                        await Task.Delay(60000);
                         Console.WriteLine("Stopping node...");
                         _ = t.Kill();
                     }
