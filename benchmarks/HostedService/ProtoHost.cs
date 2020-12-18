@@ -39,7 +39,7 @@ namespace HostedService
 
             while (!_appLifetime.ApplicationStopping.IsCancellationRequested)
             {
-                var id = rnd.Next(0, 1000);
+                var id = rnd.Next(0, 100000);
                 _ = _cluster.RequestAsync<int>($"abc{id}", "kind", 123, _appLifetime.ApplicationStopping);
             }
         }
