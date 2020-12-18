@@ -44,8 +44,8 @@ namespace HostedService
             var pids = mongoClient.GetDatabase("dummydb").GetCollection<PidLookupEntity>("pids");
 
             var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
-            var identityLookup = new IdentityStorageLookup(new MongoIdentityStorage("foo", pids));
-            var sys = new ActorSystem()
+            var identityLookup = new IdentityStorageLookup(new MongoIdentityStorage("foo", pids,10));
+            var sys = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3).WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1)))
                 .WithRemote(GrpcCoreRemoteConfig.BindToLocalhost(9090))
                 .WithCluster(ClusterConfig.Setup("test", clusterProvider, identityLookup)
                     .WithClusterKind("kind",Props.FromFunc(ctx => {
@@ -57,13 +57,29 @@ namespace HostedService
                     })));
             
             sys.Cluster().StartMemberAsync().Wait();
-            sys.Cluster().RequestAsync<int>("abc", "kind", 123, CancellationToken.None);
+
+
+            _ = RunRequestLoop(sys);
 
             services.AddSingleton(sys.Cluster());
             services.AddHostedService<ProtoHost>();
 
 
             services.AddControllers();
+        }
+
+        //flood the system, to see how it reacts upon shutdown.
+        private static async Task RunRequestLoop(ActorSystem sys)
+        {
+            await Task.Yield();
+            
+            var rnd = new Random();
+
+            while (true)
+            {
+                var id = rnd.Next(0, 1000);
+                _ = sys.Cluster().RequestAsync<int>($"abc{id}", "kind", 123, CancellationToken.None);
+            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
