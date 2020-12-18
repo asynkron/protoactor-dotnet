@@ -58,28 +58,11 @@ namespace HostedService
             
             sys.Cluster().StartMemberAsync().Wait();
 
-
-            _ = RunRequestLoop(sys);
-
             services.AddSingleton(sys.Cluster());
             services.AddHostedService<ProtoHost>();
 
 
             services.AddControllers();
-        }
-
-        //flood the system, to see how it reacts upon shutdown.
-        private static async Task RunRequestLoop(ActorSystem sys)
-        {
-            await Task.Yield();
-            
-            var rnd = new Random();
-
-            while (true)
-            {
-                var id = rnd.Next(0, 1000);
-                _ = sys.Cluster().RequestAsync<int>($"abc{id}", "kind", 123, CancellationToken.None);
-            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
