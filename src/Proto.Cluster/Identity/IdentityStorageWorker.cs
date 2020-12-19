@@ -173,6 +173,10 @@ namespace Proto.Cluster.Identity
             }
             catch (Exception e)
             {
+                if (_cluster.System.Token.IsCancellationRequested)
+                {
+                    return null;
+                }
                 if (_shouldThrottle().IsOpen())
                     _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity.ToShortString());
                 return null;

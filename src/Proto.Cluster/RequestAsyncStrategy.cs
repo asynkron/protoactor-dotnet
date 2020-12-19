@@ -119,7 +119,7 @@ namespace Proto.Cluster
                     }
                     
                     if (_requestLogThrottle().IsOpen())
-                        _logger.LogWarning("Failed to get PID from IIdentityLookup, {cancel}",context.System.Token.IsCancellationRequested);
+                        _logger.LogWarning("Failed to get PID from IIdentityLookup");
                     await Task.Delay(delay, CancellationToken.None);
                 }
             }
