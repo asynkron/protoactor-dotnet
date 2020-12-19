@@ -4,6 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Proto.Extensions;
 
@@ -16,6 +18,7 @@ namespace Proto
         internal const string NoHost = "nonhost";
         private string _host = NoHost;
         private int _port;
+        private CancellationTokenSource _cts = new();
 
         public ActorSystem() : this(new ActorSystemConfig())
         {
@@ -49,6 +52,14 @@ namespace Proto
         public EventStream EventStream { get; }
 
         public ActorSystemExtensions Extensions { get; }
+
+        public CancellationToken Toke => _cts.Token;
+
+        public Task ShutdownAsync()
+        {
+            _cts.Cancel();
+            return Task.CompletedTask;
+        }
 
         public void SetAddress(string host, int port)
         {
