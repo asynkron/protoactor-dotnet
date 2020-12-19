@@ -25,7 +25,7 @@ namespace HostedService
         {
             _logger.LogInformation("Starting cluster...");
             _appLifetime.ApplicationStarted.Register(() => Task.Run(() => RunRequestLoop(), _appLifetime.ApplicationStopping));
-          //  _appLifetime.ApplicationStopping.Register(OnStopping);
+            _appLifetime.ApplicationStopping.Register(OnStopping);
             return Task.CompletedTask;
 
         }
@@ -41,20 +41,25 @@ namespace HostedService
             {
                 var id = rnd.Next(0, 100000);
                 _ = _cluster.RequestAsync<int>($"abc{id}", "kind", 123, _appLifetime.ApplicationStopping);
-                await Task.Delay(10);
+                await Task.Delay(5);
             }
         }
 
-        public async Task StopAsync(CancellationToken cancellationToken)
+        private void OnStopping()
         {
             _logger.LogWarning("Shutting down cluster...");
             var shutdown = _cluster.ShutdownAsync(true);
             var timeout = Task.Delay(15000);
-            await Task.WhenAny(shutdown, timeout).GetAwaiter().GetResult();
+            Task.WhenAny(shutdown, timeout).GetAwaiter().GetResult();
             if (shutdown.IsCompleted)
                 _logger.LogWarning("Shut down cluster...");
             else
                 _logger.LogError("Shut down cluster timed out...");
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
         }
     }
 }
