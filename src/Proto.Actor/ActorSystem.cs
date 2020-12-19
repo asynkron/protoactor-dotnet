@@ -53,7 +53,7 @@ namespace Proto
 
         public ActorSystemExtensions Extensions { get; }
 
-        public CancellationToken Toke => _cts.Token;
+        public CancellationToken Token => _cts.Token;
 
         public Task ShutdownAsync()
         {

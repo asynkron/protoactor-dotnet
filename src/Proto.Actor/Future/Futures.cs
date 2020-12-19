@@ -30,6 +30,8 @@ namespace Proto.Future
 
         private FutureProcess(ActorSystem system, CancellationTokenSource? cts) : base(system)
         {
+            system.Token.ThrowIfCancellationRequested();
+            
             _tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
             _cts = cts;
 
