@@ -27,7 +27,7 @@ namespace Proto.Cluster.Identity
         public IdentityStorageWorker(IdentityStorageLookup storageLookup)
         {
             _shouldThrottle = Throttle.Create(
-                0,
+                10,
                 TimeSpan.FromSeconds(5),
                 i => _logger.LogInformation("Throttled {LogCount} IdentityStorageWorker logs.", i)
             );
@@ -48,7 +48,13 @@ namespace Proto.Cluster.Identity
             }
 
             var clusterIdentity = msg.ClusterIdentity;
-            var ct = msg.CancellationToken;
+        //    var ct = msg.CancellationToken;
+            //
+            // if (ct.IsCancellationRequested)
+            // {
+            //     _logger.LogError("CT already timed out....");
+            //     return Task.CompletedTask;
+            // }
             
             if (_cluster.PidCache.TryGet(clusterIdentity, out var existing))
             {
@@ -96,7 +102,7 @@ namespace Proto.Cluster.Identity
 
                 if (getPid == null)
                 {
-                    getPid = GetWithGlobalLock(context.Sender!, clusterIdentity, ct);
+                    getPid = GetWithGlobalLock(context.Sender!, clusterIdentity, CancellationToken.None);
                     _inProgress[clusterIdentity] = getPid;
                 }
 

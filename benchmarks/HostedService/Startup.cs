@@ -41,7 +41,7 @@ namespace HostedService
             
             var settings = MongoClientSettings.FromUrl(MongoUrl.Create("mongodb://127.0.0.1:27017"));
             settings.MinConnectionPoolSize = 10;
-            settings.MaxConnectionPoolSize = 20;
+            settings.MaxConnectionPoolSize = 1000;
             
             var mongoClient = new MongoClient(settings);
             var pids = mongoClient.GetDatabase("dummydb").GetCollection<PidLookupEntity>("pids");

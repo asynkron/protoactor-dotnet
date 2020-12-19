@@ -127,12 +127,13 @@ namespace ClusterExperiment1
                                 var id = "myactor" + rnd.Next(0, 10000);
                                 var request = cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                                     new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
-                                ).ContinueWith(_ => Console.Write("."));
+                                );
 
                                 requests.Add(request);
                             }
 
                             await Task.WhenAll(requests);
+                            Console.Write(".");
                         }
                         catch (Exception x)
                         {

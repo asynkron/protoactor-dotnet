@@ -113,8 +113,8 @@ namespace ClusterExperiment1
         public static void SetupLogger()
         {
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console()
-               // .WriteTo.Console(LogEventLevel.Information, "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}")
+               // .WriteTo.Console()
+                .WriteTo.Console(LogEventLevel.Information, "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}")
                 .MinimumLevel.Information()
                 // .Filter.ByExcluding(e => e.Exception != null && e.Level == LogEventLevel.Warning)
                 .CreateLogger();

@@ -34,8 +34,8 @@ namespace Proto.Cluster
             _context = context;
             _logger = logger;
             _requestLogThrottle = Throttle.Create(
-                0,
-                TimeSpan.FromSeconds(5),
+                3,
+                TimeSpan.FromSeconds(2),
                 i => _logger.LogInformation("Throttled {LogCount} TryRequestAsync logs.", i)
             );
         }

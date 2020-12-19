@@ -41,7 +41,7 @@ namespace HostedService
             {
                 var id = rnd.Next(0, 100000);
                 _ = _cluster.RequestAsync<int>($"abc{id}", "kind", 123, _appLifetime.ApplicationStopping);
-              //  await Task.Delay(2);
+             //   await Task.Delay(10);
             }
         }
 
