@@ -44,7 +44,7 @@ namespace HostedService
             var pids = mongoClient.GetDatabase("dummydb").GetCollection<PidLookupEntity>("pids");
 
             var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
-            var identityLookup = new IdentityStorageLookup(new MongoIdentityStorage("foo", pids,10));
+            var identityLookup = new IdentityStorageLookup(new MongoIdentityStorage("foo", pids,50));
             var sys = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3).WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1)))
                 .WithRemote(GrpcCoreRemoteConfig.BindToLocalhost(9090))
                 .WithCluster(ClusterConfig.Setup("test", clusterProvider, identityLookup)

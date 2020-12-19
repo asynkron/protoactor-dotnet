@@ -103,6 +103,7 @@ namespace Proto.Cluster
 
         public async Task ShutdownAsync(bool graceful = true)
         {
+            await System.ShutdownAsync();
             Logger.LogInformation("Stopping Cluster {Id}", Id);
 
             await _clusterHeartBeat.ShutdownAsync();

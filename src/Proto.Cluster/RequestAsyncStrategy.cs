@@ -42,11 +42,17 @@ namespace Proto.Cluster
 
         public async Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
         {
+            
              _logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity.ToShortString(), message
             );
             var i = 0;
             while (!ct.IsCancellationRequested)
             {
+                if (context.System.Token.IsCancellationRequested)
+                {
+                    return default;
+                }
+                
                 if (_pidCache.TryGet(clusterIdentity, out var cachedPid))
                 {
                     _logger.LogDebug("Requesting {Identity}-{Kind} Message {Message} - Got PID {Pid} from PidCache",
@@ -63,6 +69,12 @@ namespace Proto.Cluster
                 try
                 {
                     var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
+                    
+                    if (context.System.Token.IsCancellationRequested)
+                    {
+                        return default;
+                    }
+                    
                     if (pid is null)
                     {
                         _logger.LogDebug(
@@ -80,6 +92,11 @@ namespace Proto.Cluster
                         "Requesting {Identity}-{Kind} Message {Message} - Got PID {PID} from IdentityLookup",
                         clusterIdentity.Identity, clusterIdentity.Kind, message, pid
                     );
+                    
+                    if (context.System.Token.IsCancellationRequested)
+                    {
+                        return default;
+                    }
 
                     var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, pid, "IIdentityLookup", context);
                     switch (status)
@@ -96,8 +113,13 @@ namespace Proto.Cluster
                 }
                 catch
                 {
+                    if (context.System.Token.IsCancellationRequested)
+                    {
+                        return default;
+                    }
+                    
                     if (_requestLogThrottle().IsOpen())
-                        _logger.LogWarning("Failed to get PID from IIdentityLookup");
+                        _logger.LogWarning("Failed to get PID from IIdentityLookup, {cancel}",context.System.Token.IsCancellationRequested);
                     await Task.Delay(delay, CancellationToken.None);
                 }
             }

@@ -93,6 +93,7 @@ namespace Proto.Cluster.Identity.MongoDb
 
         public async Task RemoveActivation(PID pid, CancellationToken ct)
         {
+            
             Logger.LogDebug("Removing activation: {@PID}", pid);
             await _asyncSemaphore.WaitAsync(_pids.DeleteManyAsync(p => p.UniqueIdentity == pid.Id, ct));
         }

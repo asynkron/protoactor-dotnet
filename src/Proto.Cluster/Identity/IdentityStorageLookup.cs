@@ -43,7 +43,7 @@
             var workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
             //TODO: should pool size be configurable?
 
-            var routerProps = _system.Root.NewConsistentHashPool(workerProps, 50);
+            var routerProps = _system.Root.NewConsistentHashPool(workerProps, 1);
 
             _router = _system.Root.Spawn(routerProps);
 
@@ -66,7 +66,9 @@
 
         public async Task ShutdownAsync()
         {
-            if (!_isClient) await Cluster.System.Root.PoisonAsync(_placementActor);
+            
+            if (!_isClient) await Cluster.System.Root.StopAsync(_placementActor);
+            await Cluster.System.Root.StopAsync(_router);
 
             await RemoveMemberAsync(_memberId);
         }
@@ -78,11 +80,13 @@
 
         internal PID RemotePlacementActor(string address)
         {
+            _system.Token.ThrowIfCancellationRequested();
             return PID.FromAddress(address, PlacementActorName);
         }
 
         public Task RemovePidAsync(PID pid, CancellationToken ct)
         {
+            _system.Token.ThrowIfCancellationRequested();
             return Storage.RemoveActivation(pid, ct);
         }
 
