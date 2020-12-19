@@ -80,13 +80,15 @@
 
         internal PID RemotePlacementActor(string address)
         {
-            _system.Token.ThrowIfCancellationRequested();
             return PID.FromAddress(address, PlacementActorName);
         }
 
         public Task RemovePidAsync(PID pid, CancellationToken ct)
         {
-            _system.Token.ThrowIfCancellationRequested();
+            if (_system.Token.IsCancellationRequested)
+            {
+                return Task.CompletedTask;
+            }
             return Storage.RemoveActivation(pid, ct);
         }
 
