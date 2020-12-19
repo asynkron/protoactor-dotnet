@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -24,7 +25,7 @@ namespace HostedService
         public Task StartAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Starting cluster...");
-            _appLifetime.ApplicationStarted.Register(() => Task.Run(() => RunRequestLoop(), _appLifetime.ApplicationStopping));
+            _appLifetime.ApplicationStarted.Register(() => Task.Run(RunRequestLoop, _appLifetime.ApplicationStopping));
             _appLifetime.ApplicationStopping.Register(OnStopping);
             return Task.CompletedTask;
 
@@ -39,9 +40,16 @@ namespace HostedService
 
             while (!_appLifetime.ApplicationStopping.IsCancellationRequested)
             {
-                var id = rnd.Next(0, 100000);
-                _ = _cluster.RequestAsync<int>($"abc{id}", "kind", 123, _appLifetime.ApplicationStopping);
-             //   await Task.Delay(10);
+                var tasks = new List<Task>();
+
+                for (int i = 0; i < 1000; i++)
+                {
+                    var id = rnd.Next(0, 100000);
+                    var t = _cluster.RequestAsync<int>($"abc{id}", "kind", 123, new CancellationTokenSource(20000).Token);
+                    tasks.Add(t);
+                }
+
+                await Task.WhenAll(tasks);
             }
         }
 
