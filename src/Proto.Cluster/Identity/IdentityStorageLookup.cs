@@ -43,9 +43,9 @@
             var workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
             //TODO: should pool size be configurable?
 
-            var routerProps = _system.Root.NewConsistentHashPool(workerProps, 1);
+           
 
-            _router = _system.Root.Spawn(routerProps);
+            _router = _system.Root.Spawn(workerProps);
 
             //hook up events
             cluster.System.EventStream.Subscribe<ClusterTopology>(e =>

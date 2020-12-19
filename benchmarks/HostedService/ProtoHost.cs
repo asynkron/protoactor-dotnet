@@ -41,19 +41,16 @@ namespace HostedService
             {
                 var id = rnd.Next(0, 100000);
                 _ = _cluster.RequestAsync<int>($"abc{id}", "kind", 123, _appLifetime.ApplicationStopping);
-            //    await Task.Delay(5);
+              //  await Task.Delay(2);
             }
         }
 
         private void OnStopping()
         {
-            _logger.LogWarning("Shutting down cluster...");
             var shutdown = _cluster.ShutdownAsync(true);
             var timeout = Task.Delay(15000);
             Task.WhenAny(shutdown, timeout).GetAwaiter().GetResult();
-            if (shutdown.IsCompleted)
-                _logger.LogWarning("Shut down cluster...");
-            else
+            if (timeout.IsCompleted)
                 _logger.LogError("Shut down cluster timed out...");
         }
 

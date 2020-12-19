@@ -78,12 +78,20 @@ namespace Proto.Cluster
                         }
                         catch (TimeoutException)
                         {
+                            if (_cluster.System.Token.IsCancellationRequested)
+                            {
+                                return;
+                            }
                             _logger.LogWarning("Heartbeat request for member id {MemberId} Address {Address} timed out",
                                 member.Id, member.Address
                             );
                         }
                         catch (DeadLetterException)
                         {
+                            if (_cluster.System.Token.IsCancellationRequested)
+                            {
+                                return;
+                            }
                             _logger.LogWarning(
                                 "Heartbeat request for member id {MemberId} Address {Address} got dead letter response",
                                 member.Id, member.Address
