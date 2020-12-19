@@ -90,7 +90,7 @@ namespace Proto.Remote.GrpcCore
                     await _server.KillAsync();
                 }
 
-                Logger.LogDebug(
+                Logger.LogInformation(
                     "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
                     System.Address, graceful
                 );

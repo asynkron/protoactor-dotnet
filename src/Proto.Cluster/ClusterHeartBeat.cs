@@ -100,8 +100,10 @@ namespace Proto.Cluster
 
         public Task ShutdownAsync()
         {
+            _logger.LogInformation("Shutting down heartbeat");
             _context.Stop(_pid);
             _ct.Cancel();
+            _logger.LogInformation("Shut down heartbeat");
             return Task.CompletedTask;
         }
     }

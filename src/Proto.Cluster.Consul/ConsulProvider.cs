@@ -109,12 +109,18 @@ namespace Proto.Cluster.Consul
             _logger.LogInformation("Shutting down consul provider");
             //flag for shutdown. used in thread loops
             _shutdown = true;
-            if (!graceful) return;
+
+            if (!graceful)
+            {
+                _logger.LogInformation("Shut down consul provider");
+                return;
+            }
 
             //DeregisterService
             await DeregisterServiceAsync();
 
             _deregistered = true;
+            _logger.LogInformation("Shut down consul provider");
         }
 
         //TODO: this is never signalled to rest of cluster

@@ -105,7 +105,7 @@ namespace Proto.Cluster
         {
             await System.ShutdownAsync();
             Logger.LogInformation("Stopping Cluster {Id}", Id);
-
+            
             await _clusterHeartBeat.ShutdownAsync();
             if (graceful) await IdentityLookup!.ShutdownAsync();
             await Config!.ClusterProvider.ShutdownAsync(graceful);
