@@ -34,7 +34,7 @@ namespace Proto.Cluster
             _context = context;
             _logger = logger;
             _requestLogThrottle = Throttle.Create(
-                5,
+                0,
                 TimeSpan.FromSeconds(5),
                 i => _logger.LogInformation("Throttled {LogCount} TryRequestAsync logs.", i)
             );
@@ -141,19 +141,19 @@ namespace Proto.Cluster
             }
             catch (DeadLetterException)
             {
-                if (_requestLogThrottle().IsOpen())
+                if (!context.System.Token.IsCancellationRequested && _requestLogThrottle().IsOpen())
                     _logger.LogInformation("TryRequestAsync failed, dead PID from {Source}", source);
                 _pidCache.RemoveByVal(clusterIdentity, cachedPid);
                 return (ResponseStatus.DeadLetter, default)!;
             }
             catch (TimeoutException)
             {
-                if (_requestLogThrottle().IsOpen())
+                if (!context.System.Token.IsCancellationRequested && _requestLogThrottle().IsOpen())
                     _logger.LogWarning("TryRequestAsync timed out, PID from {Source}", source);
             }
             catch (Exception x)
             {
-                if (_requestLogThrottle().IsOpen())
+                if (!context.System.Token.IsCancellationRequested && _requestLogThrottle().IsOpen())
                     _logger.LogWarning(x, "TryRequestAsync failed with exception, PID from {Source}", source);
             }
 

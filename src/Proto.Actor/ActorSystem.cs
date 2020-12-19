@@ -31,7 +31,7 @@ namespace Proto
             Root = new RootContext(this);
             DeadLetter = new DeadLetterProcess(this);
             Guardians = new Guardians(this);
-            EventStream = new EventStream(config.DeadLetterThrottleInterval, config.DeadLetterThrottleCount);
+            EventStream = new EventStream(config.DeadLetterThrottleInterval, config.DeadLetterThrottleCount, Token);
             var eventStreamProcess = new EventStreamProcess(this);
             ProcessRegistry.TryAdd("eventstream", eventStreamProcess);
             Extensions = new ActorSystemExtensions(this);

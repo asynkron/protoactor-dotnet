@@ -27,7 +27,7 @@ namespace Proto.Cluster.Identity
         public IdentityStorageWorker(IdentityStorageLookup storageLookup)
         {
             _shouldThrottle = Throttle.Create(
-                5,
+                0,
                 TimeSpan.FromSeconds(5),
                 i => _logger.LogInformation("Throttled {LogCount} IdentityStorageWorker logs.", i)
             );
