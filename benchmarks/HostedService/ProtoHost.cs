@@ -47,7 +47,7 @@ namespace HostedService
         private void OnStopping()
         {
             _logger.LogWarning("Shutting down cluster...");
-            var shutdown = _cluster.ShutdownAsync(true);
+            var shutdown = _cluster.ShutdownAsync(false);
             var timeout = Task.Delay(15000);
             Task.WhenAny(shutdown, timeout).GetAwaiter().GetResult();
             if (shutdown.IsCompleted)
