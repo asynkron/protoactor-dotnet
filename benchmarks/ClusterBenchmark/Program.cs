@@ -16,6 +16,7 @@ namespace ClusterExperiment1
     public static class Program
     {
         private static TaskCompletionSource<bool> _ts;
+        private static int ActorCount;
 
         public static async Task Main(string[] args)
         {
@@ -28,8 +29,9 @@ namespace ClusterExperiment1
                 return;
             }
 
-            Console.WriteLine("1) Run single process");
-            Console.WriteLine("2) Run multi process");
+            Console.WriteLine("1) Run single process - graceful exit");
+            Console.WriteLine("2) Run single process");
+            Console.WriteLine("3) Run multi process");
 
             var res1 = Console.ReadLine();
 
@@ -38,15 +40,31 @@ namespace ClusterExperiment1
             Console.WriteLine("3) Run fire and forget client");
 
             var res2 = Console.ReadLine();
+            
+            Console.WriteLine("Number of virtual actors? default 10000");
+
+            var res3 = Console.ReadLine();
+
+            if (!int.TryParse(res3, out var actorCount))
+            {
+                actorCount = 10_000;
+            }
+            
+            Console.WriteLine($"Using {actorCount} actors");
+            ActorCount = actorCount;
+            
 
             _ts = new TaskCompletionSource<bool>();
 
             switch (res1)
             {
                 case "1":
-                    RunWorkers(() => new RunMemberInProc());
+                    RunWorkers(() => new RunMemberInProcGraceful());
                     break;
                 case "2":
+                    RunWorkers(() => new RunMemberInProc());
+                    break;
+                case "3":
                     RunWorkers(() => new RunMemberExternalProc());
                     break;
             }
@@ -87,7 +105,7 @@ namespace ClusterExperiment1
                         {
                             for (var i = 0; i < 1000; i++)
                             {
-                                var id = "myactor" + rnd.Next(0, 10000);
+                                var id = "myactor" + rnd.Next(0, ActorCount);
                                 var request = cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                                     new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
                                 ).ContinueWith(_ => Console.Write("."));
@@ -124,7 +142,7 @@ namespace ClusterExperiment1
                         {
                             for (var i = 0; i < 1000; i++)
                             {
-                                var id = "myactor" + rnd.Next(0, 10000);
+                                var id = "myactor" + rnd.Next(0, ActorCount);
                                 var request = cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                                     new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
                                 );
@@ -160,7 +178,7 @@ namespace ClusterExperiment1
 
                     while (true)
                     {
-                        var id = "myactor" + rnd.Next(0, 10000);
+                        var id = "myactor" + rnd.Next(0, ActorCount);
 
                         try
                         {
@@ -196,7 +214,7 @@ namespace ClusterExperiment1
             _ = Task.Run(async () => {
                     foreach (var t in followers)
                     {
-                        await Task.Delay(12000);
+                        await Task.Delay(20000);
                         Console.WriteLine("Stopping node...");
                         _ = t.Kill();
                     }
