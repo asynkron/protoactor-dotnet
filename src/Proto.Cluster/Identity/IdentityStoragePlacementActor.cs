@@ -67,7 +67,7 @@ namespace Proto.Cluster.Identity
         private Task Tick(IContext context)
         {
             var count = _myActors.Count;
-            _logger.LogInformation("Statistics: Actor Count {ActorCount}", count);
+            _logger.LogDebug("Statistics: Actor Count {ActorCount}", count);
             return Task.CompletedTask;
         }
 

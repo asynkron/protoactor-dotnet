@@ -226,7 +226,7 @@ namespace Proto.Cluster
             _members = _members.Remove(memberThatLeft.Id);
 
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
-            _logger.LogInformation("Published event {@EndpointTerminated}", endpointTerminated);
+            _logger.LogDebug("Published event {@EndpointTerminated}", endpointTerminated);
             _cluster.System.EventStream.Publish(endpointTerminated);
         }
 
@@ -254,10 +254,14 @@ namespace Proto.Cluster
         ///     broadcast a message to all members eventstream
         /// </summary>
         /// <param name="message"></param>
-        public void BroadcastEvent(object message)
+        public void BroadcastEvent(object message, bool includeSelf = true)
         {
             foreach (var m in _members.ToArray())
             {
+                if (!includeSelf && m.Key == _cluster.Id.ToString())
+                {
+                    continue;
+                }
                 var pid = PID.FromAddress(m.Value.Address, "eventstream");
                 try
                 {

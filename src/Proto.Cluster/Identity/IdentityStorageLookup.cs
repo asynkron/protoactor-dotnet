@@ -16,7 +16,7 @@
         internal MemberList MemberList;
         private PID _placementActor;
         private ActorSystem _system;
-        private PID _router;
+        private PID _worker;
         private string _memberId;
 
         public IdentityStorageLookup(IIdentityStorage storage)
@@ -28,7 +28,7 @@
         {
             var msg = new GetPid(clusterIdentity, ct);
 
-            var res = await _system.Root.RequestAsync<PidResult>(_router, msg, ct);
+            var res = await _system.Root.RequestAsync<PidResult>(_worker, msg, ct);
             return res?.Pid;
         }
 
@@ -45,7 +45,7 @@
 
            
 
-            _router = _system.Root.Spawn(workerProps);
+            _worker = _system.Root.Spawn(workerProps);
 
             //hook up events
             cluster.System.EventStream.Subscribe<ClusterTopology>(e =>
@@ -66,9 +66,8 @@
 
         public async Task ShutdownAsync()
         {
-            
+            await Cluster.System.Root.StopAsync(_worker);
             if (!_isClient) await Cluster.System.Root.StopAsync(_placementActor);
-            await Cluster.System.Root.StopAsync(_router);
 
             await RemoveMemberAsync(_memberId);
         }

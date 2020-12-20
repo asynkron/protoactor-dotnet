@@ -224,7 +224,7 @@ namespace Proto.Cluster.Identity
             }
             catch (Exception e)
             {
-                if (_shouldThrottle().IsOpen())
+                if (!_cluster.System.Shutdown.IsCancellationRequested && _shouldThrottle().IsOpen() && _memberList.ContainsMemberId(activator.Id))
                     _logger.LogError(e, "Error occured requesting remote PID {@Request}", req);
             }
 

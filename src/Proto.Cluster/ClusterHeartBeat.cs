@@ -32,7 +32,7 @@ namespace Proto.Cluster
         private const string ClusterHeartBeatName = "ClusterHeartBeat";
         private readonly Cluster _cluster;
         private readonly RootContext _context;
-        private readonly CancellationTokenSource _ct = new();
+
         private ILogger _logger = null!;
         private PID _pid = null!;
 
@@ -55,7 +55,7 @@ namespace Proto.Cluster
         private async Task HeartBeatLoop()
         {
             await Task.Yield();
-            while (!_ct.IsCancellationRequested)
+            while (!_cluster.System.Shutdown.IsCancellationRequested)
             {
                 try
                 {
@@ -110,7 +110,6 @@ namespace Proto.Cluster
         {
             _logger.LogInformation("Shutting down heartbeat");
             _context.Stop(_pid);
-            _ct.Cancel();
             _logger.LogInformation("Shut down heartbeat");
             return Task.CompletedTask;
         }
