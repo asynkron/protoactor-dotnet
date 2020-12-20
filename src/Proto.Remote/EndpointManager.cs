@@ -17,8 +17,8 @@ namespace Proto.Remote
     public class EndpointManager
     {
         private static readonly ILogger Logger = Log.CreateLogger<EndpointManager>();
-        private readonly ConcurrentDictionary<string, PID> _connections = new ConcurrentDictionary<string, PID>();
-        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private readonly ConcurrentDictionary<string, PID> _connections = new();
+        private readonly CancellationTokenSource _cancellationTokenSource = new();
         private readonly ActorSystem _system;
         private readonly EventStreamSubscription<object>? _endpointConnectedEvnSub;
         private readonly EventStreamSubscription<object>? _endpointTerminatedEvnSub;
@@ -85,7 +85,7 @@ namespace Proto.Remote
 
         private void OnEndpointTerminated(EndpointTerminatedEvent evt)
         {
-            Logger.LogDebug("[EndpointManager] Endpoint {Address} terminated removing from connections", evt.Address);
+            Logger.LogDebug("[EndpointManager] Endpoint {Address} terminated, removing from connections", evt.Address);
             lock (_synLock)
             {
                 if (_connections.TryRemove(evt.Address, out var endpoint))

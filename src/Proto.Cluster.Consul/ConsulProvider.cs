@@ -50,7 +50,7 @@ namespace Proto.Cluster.Consul
         private string _consulLeaderKey;
         private string _consulServiceInstanceId; //the specific instance id of this node in consul
         private string _consulServiceName; //name of the custer, in consul this means the name of the service
-        private string _consulSessionId;
+     //   private string _consulSessionId;
         private volatile bool _deregistered;
         private string _host;
 
@@ -91,7 +91,7 @@ namespace Proto.Cluster.Consul
             await RegisterMemberAsync();
             StartUpdateTtlLoop();
             StartMonitorMemberStatusChangesLoop();
-            StartLeaderElectionLoop();
+         //   StartLeaderElectionLoop();
         }
 
         public Task StartClientAsync(Cluster cluster)
@@ -109,27 +109,29 @@ namespace Proto.Cluster.Consul
             _logger.LogInformation("Shutting down consul provider");
             //flag for shutdown. used in thread loops
             _shutdown = true;
-            if (!graceful) return;
 
-            //DeregisterService
-            await DeregisterServiceAsync();
-
-            _deregistered = true;
+            if (graceful)
+            {
+                await DeregisterServiceAsync();
+                _deregistered = true;
+            }
+           
+            _logger.LogInformation("Shut down consul provider");
         }
 
         //TODO: this is never signalled to rest of cluster
         //it gets hidden until leader blocking wait ends
         public async Task UpdateClusterState(ClusterState state)
         {
-            var json = JsonConvert.SerializeObject(state.BannedMembers);
-            var kvp = new KVPair($"{_consulServiceName}/banned")
-            {
-                Value = Encoding.UTF8.GetBytes(json)
-            };
-
-            var updated = await _client.KV.Put(kvp);
-
-            if (!updated.Response) _logger.LogError("Failed to update cluster state");
+            // var json = JsonConvert.SerializeObject(state.BannedMembers);
+            // var kvp = new KVPair($"{_consulServiceName}/banned")
+            // {
+            //     Value = Encoding.UTF8.GetBytes(json)
+            // };
+            //
+            // var updated = await _client.KV.Put(kvp);
+            //
+            // if (!updated.Response) _logger.LogError("Failed to update cluster state");
         }
 
         private void SetState(Cluster cluster, string clusterName, string host, int port, string[] kinds,
@@ -150,14 +152,14 @@ namespace Proto.Cluster.Consul
             _ = Task.Run(async () =>
                 {
                     var waitIndex = 0ul;
-                    while (!_shutdown)
+                    while (!_shutdown && !_cluster.System.Shutdown.IsCancellationRequested)
                     {
                         var statuses = await _client.Health.Service(_consulServiceName, null, false, new QueryOptions
                             {
                                 WaitIndex = waitIndex,
                                 WaitTime = _blockingWaitTime
                             }
-                        );
+                        ,_cluster.System.Shutdown);
                         if (_deregistered) break;
 
                         _logger.LogDebug("Got status updates from Consul");
@@ -202,112 +204,115 @@ namespace Proto.Cluster.Consul
                     while (!_shutdown)
                     {
                         await _client.Agent.PassTTL("service:" + _consulServiceInstanceId, "");
-                        await Task.Delay(_refreshTtl);
+                        await Task.Delay(_refreshTtl, _cluster.System.Shutdown);
                     }
 
                     _logger.LogInformation("Exiting TTL loop");
                 }
             );
         }
-
-        private void StartLeaderElectionLoop()
-        {
-            _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        var leaderKey = $"{_consulServiceName}/leader";
-                        var se = new SessionEntry
-                        {
-                            Behavior = SessionBehavior.Delete,
-                            Name = leaderKey,
-                            TTL = TimeSpan.FromSeconds(10)
-                        };
-                        var sessionRes = await _client.Session.Create(se);
-                        var sessionId = sessionRes.Response;
-
-                        //this is used so that leader can update shared cluster state
-                        _consulSessionId = sessionId;
-                        _consulLeaderKey = leaderKey;
-
-                        var json = JsonConvert.SerializeObject(new ConsulLeader
-                            {
-                                Host = _host,
-                                Port = _port,
-                                MemberId = _cluster.Id
-                            }
-                        );
-                        var kvp = new KVPair(leaderKey)
-                        {
-                            Key = leaderKey,
-                            Session = sessionId,
-                            Value = Encoding.UTF8.GetBytes(json)
-                        };
-
-
-                        //don't await this, it will block forever
-                        _ = _client.Session.RenewPeriodic(TimeSpan.FromSeconds(1), sessionId, CancellationToken.None
-                        );
-
-                        var waitIndex = 0ul;
-                        while (!_shutdown)
-                        {
-                            try
-                            {
-                                var aquired = await _client.KV.Acquire(kvp);
-                                var isLeader = aquired.Response;
-
-                                var res = await _client.KV.Get(leaderKey, new QueryOptions
-                                    {
-                                        Consistency = ConsistencyMode.Default,
-                                        WaitIndex = waitIndex,
-                                        WaitTime = TimeSpan.FromSeconds(3)
-                                    }
-                                );
-
-
-                                if (res.Response?.Value is null)
-                                {
-                                    _logger.LogError("No leader info was found");
-                                    await Task.Delay(1000);
-                                    continue;
-                                }
-
-                                var value = res.Response.Value;
-                                var json2 = Encoding.UTF8.GetString(value);
-                                var leader = JsonConvert.DeserializeObject<ConsulLeader>(json2);
-                                waitIndex = res.LastIndex;
-
-                                var bannedMembers = Array.Empty<string>();
-                                var banned = await _client.KV.Get(_consulServiceName + "/banned");
-
-                                if (banned.Response?.Value is not null)
-                                {
-                                    var json3 = Encoding.UTF8.GetString(banned.Response.Value);
-                                    bannedMembers = JsonConvert.DeserializeObject<string[]>(json3);
-                                }
-
-                                _memberList.UpdateLeader(new LeaderInfo(leader.MemberId, leader.Host, leader.Port,
-                                        bannedMembers
-                                    )
-                                );
-                            }
-                            catch (Exception x)
-                            {
-                                _logger.LogError("Failed to read session data {x}", x);
-                            }
-                        }
-
-                        await _client.KV.Release(kvp);
-                        await _client.Session.Destroy(sessionId);
-                    }
-                    catch (Exception x)
-                    {
-                        _logger.LogCritical("Leader Election Failed {x}", x);
-                    }
-                }
-            );
-        }
+        //
+        // private void StartLeaderElectionLoop()
+        // {
+        //     _ = Task.Run(async () =>
+        //         {
+        //             try
+        //             {
+        //                 var leaderKey = $"{_consulServiceName}/leader";
+        //                 var se = new SessionEntry
+        //                 {
+        //                     Behavior = SessionBehavior.Delete,
+        //                     Name = leaderKey,
+        //                     TTL = TimeSpan.FromSeconds(20)
+        //                 };
+        //                 var sessionRes = await _client.Session.Create(se);
+        //                 var sessionId = sessionRes.Response;
+        //
+        //                 //this is used so that leader can update shared cluster state
+        //                 _consulSessionId = sessionId;
+        //                 _consulLeaderKey = leaderKey;
+        //
+        //                 var json = JsonConvert.SerializeObject(new ConsulLeader
+        //                     {
+        //                         Host = _host,
+        //                         Port = _port,
+        //                         MemberId = _cluster.Id
+        //                     }
+        //                 );
+        //                 var kvp = new KVPair(leaderKey)
+        //                 {
+        //                     Key = leaderKey,
+        //                     Session = sessionId,
+        //                     Value = Encoding.UTF8.GetBytes(json)
+        //                 };
+        //
+        //
+        //                 //don't await this, it will block forever
+        //                 _ = _client.Session.RenewPeriodic(TimeSpan.FromSeconds(1), sessionId, CancellationToken.None
+        //                 );
+        //
+        //                 var waitIndex = 0ul;
+        //                 while (!_shutdown && !_cluster.System.Shutdown.IsCancellationRequested)
+        //                 {
+        //                     try
+        //                     {
+        //                         var aquired = await _client.KV.Acquire(kvp,_cluster.System.Shutdown);
+        //                         var isLeader = aquired.Response;
+        //
+        //                         var res = await _client.KV.Get(leaderKey, new QueryOptions
+        //                             {
+        //                                 Consistency = ConsistencyMode.Default,
+        //                                 WaitIndex = waitIndex,
+        //                                 WaitTime = TimeSpan.FromSeconds(3)
+        //                             }
+        //                         ,_cluster.System.Shutdown);
+        //
+        //
+        //                         if (res.Response?.Value is null)
+        //                         {
+        //                             _logger.LogError("No leader info was found");
+        //                             await Task.Delay(1000);
+        //                             continue;
+        //                         }
+        //
+        //                         var value = res.Response.Value;
+        //                         var json2 = Encoding.UTF8.GetString(value);
+        //                         var leader = JsonConvert.DeserializeObject<ConsulLeader>(json2);
+        //                         waitIndex = res.LastIndex;
+        //
+        //                         var bannedMembers = Array.Empty<string>();
+        //                         var banned = await _client.KV.Get(_consulServiceName + "/banned");
+        //
+        //                         if (banned.Response?.Value is not null)
+        //                         {
+        //                             var json3 = Encoding.UTF8.GetString(banned.Response.Value);
+        //                             bannedMembers = JsonConvert.DeserializeObject<string[]>(json3);
+        //                         }
+        //
+        //                         _memberList.UpdateLeader(new LeaderInfo(leader.MemberId, leader.Host, leader.Port,
+        //                                 bannedMembers
+        //                             )
+        //                         );
+        //                     }
+        //                     catch (Exception x)
+        //                     {
+        //                         if (!_cluster.System.Shutdown.IsCancellationRequested)
+        //                         {
+        //                             _logger.LogError("Failed to read session data {x}", x);
+        //                         }
+        //                     }
+        //                 }
+        //
+        //               //  await _client.KV.Release(kvp);
+        //              //   await _client.Session.Destroy(sessionId);
+        //             }
+        //             catch (Exception x)
+        //             {
+        //                 _logger.LogCritical("Leader Election Failed {x}", x);
+        //             }
+        //         }
+        //     );
+        //}
 
         //register this cluster in consul.
         private async Task RegisterMemberAsync()

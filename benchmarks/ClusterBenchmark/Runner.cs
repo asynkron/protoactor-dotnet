@@ -17,6 +17,15 @@ namespace ClusterExperiment1
         Task Kill();
     }
 
+    public class RunMemberInProcGraceful : IRunMember
+    {
+        private Cluster _cluster;
+
+        public async Task Start() => _cluster = await Configuration.SpawnMember();
+
+        public async Task Kill() => await _cluster.ShutdownAsync(true);
+    }
+    
     public class RunMemberInProc : IRunMember
     {
         private Cluster _cluster;

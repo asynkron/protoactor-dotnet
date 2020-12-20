@@ -11,7 +11,7 @@ namespace Proto.Cluster.Identity
 
     internal class IdentityStorageWorker : IActor
     {
-        private static readonly ConcurrentSet<string> StaleMembers = new ConcurrentSet<string>();
+        private static readonly ConcurrentSet<string> StaleMembers = new();
 
         private readonly Cluster _cluster;
         private readonly ILogger _logger = Log.CreateLogger<IdentityStorageWorker>();
@@ -19,15 +19,14 @@ namespace Proto.Cluster.Identity
         private readonly MemberList _memberList;
         private readonly IIdentityStorage _storage;
 
-        private readonly Dictionary<ClusterIdentity, Task<PID?>> _inProgress =
-            new Dictionary<ClusterIdentity, Task<PID?>>();
+        private readonly Dictionary<ClusterIdentity, Task<PID?>> _inProgress = new();
 
         private readonly ShouldThrottle _shouldThrottle;
 
         public IdentityStorageWorker(IdentityStorageLookup storageLookup)
         {
             _shouldThrottle = Throttle.Create(
-                5,
+                10,
                 TimeSpan.FromSeconds(5),
                 i => _logger.LogInformation("Throttled {LogCount} IdentityStorageWorker logs.", i)
             );
@@ -47,9 +46,18 @@ namespace Proto.Cluster.Identity
                 return Task.CompletedTask;
             }
 
-            if (_cluster.PidCache.TryGet(msg.ClusterIdentity, out var existing))
+            var clusterIdentity = msg.ClusterIdentity;
+            var ct = msg.CancellationToken;
+            
+            if (ct.IsCancellationRequested)
             {
-                _logger.LogDebug("Found {ClusterIdentity} in pidcache", msg.ClusterIdentity.ToShortString());
+                //_logger.LogError("CT already timed out....");
+                return Task.CompletedTask;
+            }
+            
+            if (_cluster.PidCache.TryGet(clusterIdentity, out var existing))
+            {
+                _logger.LogDebug("Found {ClusterIdentity} in pidcache", clusterIdentity.ToShortString());
                 context.Respond(new PidResult
                     {
                         Pid = existing
@@ -60,7 +68,7 @@ namespace Proto.Cluster.Identity
 
             try
             {
-                if (_inProgress.TryGetValue(msg.ClusterIdentity, out Task<PID?> getPid) && getPid.IsCompleted)
+                if (_inProgress.TryGetValue(clusterIdentity, out Task<PID?> getPid) && getPid.IsCompleted)
                 {
                     try
                     {
@@ -69,7 +77,7 @@ namespace Proto.Cluster.Identity
                             var pid = getPid.Result;
                             if (pid != null)
                             {
-                                _cluster.PidCache.TryAdd(msg.ClusterIdentity, pid);
+                                _cluster.PidCache.TryAdd(clusterIdentity, pid);
                             }
 
                             context.Respond(new PidResult
@@ -82,19 +90,19 @@ namespace Proto.Cluster.Identity
                         else
                         {
                             if (_shouldThrottle().IsOpen())
-                                _logger.LogWarning(getPid.Exception, "GetWithGlobalLock for {ClusterIdentity} failed", msg.ClusterIdentity.ToShortString());
+                                _logger.LogWarning(getPid.Exception, "GetWithGlobalLock for {ClusterIdentity} failed", clusterIdentity.ToShortString());
                         }
                     }
                     finally
                     {
-                        _inProgress.Remove(msg.ClusterIdentity);
+                        _inProgress.Remove(clusterIdentity);
                     }
                 }
 
                 if (getPid == null)
                 {
-                    getPid = GetWithGlobalLock(context.Sender!, msg.ClusterIdentity, context.CancellationToken);
-                    _inProgress[msg.ClusterIdentity] = getPid;
+                    getPid = GetWithGlobalLock(context.Sender!, clusterIdentity, CancellationToken.None);
+                    _inProgress[clusterIdentity] = getPid;
                 }
 
                 context.ReenterAfter(getPid, task =>
@@ -118,7 +126,7 @@ namespace Proto.Cluster.Identity
                         }
                         finally
                         {
-                            _inProgress.Remove(msg.ClusterIdentity);
+                            _inProgress.Remove(clusterIdentity);
                         }
                     }
                 );
@@ -170,6 +178,10 @@ namespace Proto.Cluster.Identity
             }
             catch (Exception e)
             {
+                if (_cluster.System.Shutdown.IsCancellationRequested)
+                {
+                    return null;
+                }
                 if (_shouldThrottle().IsOpen())
                     _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity.ToShortString());
                 return null;
@@ -212,7 +224,7 @@ namespace Proto.Cluster.Identity
             }
             catch (Exception e)
             {
-                if (_shouldThrottle().IsOpen())
+                if (!_cluster.System.Shutdown.IsCancellationRequested && _shouldThrottle().IsOpen() && _memberList.ContainsMemberId(activator.Id))
                     _logger.LogError(e, "Error occured requesting remote PID {@Request}", req);
             }
 

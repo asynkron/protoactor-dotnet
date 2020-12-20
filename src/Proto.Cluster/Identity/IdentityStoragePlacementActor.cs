@@ -38,8 +38,10 @@ namespace Proto.Cluster.Identity
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
             Started _             => Started(context),
+            Stopping _            => Stopping(context),
+            Stopped _             => Stopped(context),
             Tick _                => Tick(context),
-            Terminated msg        => Terminated(msg),
+            Terminated msg        => Terminated(context, msg),
             ActivationRequest msg => ActivationRequest(context, msg),
             _                     => Task.CompletedTask
         };
@@ -49,16 +51,33 @@ namespace Proto.Cluster.Identity
             _ct = context.Scheduler().SendRepeatedly(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), context.Self!, new Tick());
             return Task.CompletedTask;
         }
+        
+        private Task Stopping(IContext context)
+        {
+            _logger.LogInformation("Stopping placement actor");
+            return Task.CompletedTask;
+        }
+        
+        private Task Stopped(IContext context)
+        {
+            _logger.LogInformation("Stopped placement actor");
+            return Task.CompletedTask;
+        }
 
         private Task Tick(IContext context)
         {
             var count = _myActors.Count;
-            _logger.LogInformation("Statistics: Actor Count {ActorCount}", count);
+            _logger.LogDebug("Statistics: Actor Count {ActorCount}", count);
             return Task.CompletedTask;
         }
 
-        private async Task Terminated(Terminated msg)
+        private async Task Terminated(IContext context, Terminated msg)
         {
+            if (context.System.Shutdown.IsCancellationRequested)
+            {
+                return;
+            }
+            
             //TODO: if this turns out to be perf intensive, lets look at optimizations for reverse lookups
             var (identity, pid) = _myActors.FirstOrDefault(kvp => kvp.Value.Equals(msg.Who));
             _myActors.Remove(identity);

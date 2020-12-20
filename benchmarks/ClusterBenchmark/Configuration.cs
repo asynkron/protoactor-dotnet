@@ -65,7 +65,7 @@ namespace ClusterExperiment1
         {
             var db = GetMongo();
             var identity = new IdentityStorageLookup(
-                new MongoIdentityStorage("mycluster", db.GetCollection<PidLookupEntity>("pids"))
+                new MongoIdentityStorage("mycluster", db.GetCollection<PidLookupEntity>("pids"),200)
             );
             return identity;
         }
@@ -76,8 +76,10 @@ namespace ClusterExperiment1
                 Environment.GetEnvironmentVariable("MONGO") ?? "mongodb://127.0.0.1:27017/ProtoMongo";
             var url = MongoUrl.Create(connectionString);
             var settings = MongoClientSettings.FromUrl(url);
-            settings.WriteConcern = WriteConcern.Acknowledged;
-            settings.ReadConcern = ReadConcern.Majority;
+            settings.WaitQueueSize = 10000;
+            settings.WaitQueueTimeout = TimeSpan.FromSeconds(10);
+            // settings.WriteConcern = WriteConcern.Acknowledged;
+            // settings.ReadConcern = ReadConcern.Majority;
             var client = new MongoClient(settings);
             var database = client.GetDatabase("ProtoMongo");
             return database;
@@ -113,15 +115,11 @@ namespace ClusterExperiment1
         public static void SetupLogger()
         {
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console()
-               // .WriteTo.Console(LogEventLevel.Information, "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}")
-                .MinimumLevel.Information()
-                // .Filter.ByExcluding(e => e.Exception != null && e.Level == LogEventLevel.Warning)
-                .CreateLogger();
+                .WriteTo.Console(LogEventLevel.Information, "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}")
+               .CreateLogger();
 
             var l = LoggerFactory.Create(l =>
                 l.AddSerilog()
-                    .SetMinimumLevel(LogLevel.Error)
             );
 
             Proto.Log.SetLoggerFactory(l);

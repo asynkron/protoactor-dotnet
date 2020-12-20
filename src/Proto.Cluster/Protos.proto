@@ -78,3 +78,7 @@ message HeartbeatRequest {
 message HeartbeatResponse {
     uint32 actor_count = 1;
 }
+
+message GracefulShutdown {
+  string member_id = 3;
+}

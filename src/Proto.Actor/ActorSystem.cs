@@ -4,6 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Proto.Extensions;
 
@@ -16,6 +18,7 @@ namespace Proto
         internal const string NoHost = "nonhost";
         private string _host = NoHost;
         private int _port;
+        private CancellationTokenSource _cts = new();
 
         public ActorSystem() : this(new ActorSystemConfig())
         {
@@ -28,7 +31,7 @@ namespace Proto
             Root = new RootContext(this);
             DeadLetter = new DeadLetterProcess(this);
             Guardians = new Guardians(this);
-            EventStream = new EventStream(config.DeadLetterThrottleInterval, config.DeadLetterThrottleCount);
+            EventStream = new EventStream(config.DeadLetterThrottleInterval, config.DeadLetterThrottleCount, Shutdown);
             var eventStreamProcess = new EventStreamProcess(this);
             ProcessRegistry.TryAdd("eventstream", eventStreamProcess);
             Extensions = new ActorSystemExtensions(this);
@@ -49,6 +52,14 @@ namespace Proto
         public EventStream EventStream { get; }
 
         public ActorSystemExtensions Extensions { get; }
+
+        public CancellationToken Shutdown => _cts.Token;
+
+        public Task ShutdownAsync()
+        {
+            _cts.Cancel();
+            return Task.CompletedTask;
+        }
 
         public void SetAddress(string host, int port)
         {

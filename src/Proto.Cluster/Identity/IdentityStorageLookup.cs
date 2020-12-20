@@ -16,7 +16,7 @@
         internal MemberList MemberList;
         private PID _placementActor;
         private ActorSystem _system;
-        private PID _router;
+        private PID _worker;
         private string _memberId;
 
         public IdentityStorageLookup(IIdentityStorage storage)
@@ -28,7 +28,7 @@
         {
             var msg = new GetPid(clusterIdentity, ct);
 
-            var res = await _system.Root.RequestAsync<PidResult>(_router, msg, ct);
+            var res = await _system.Root.RequestAsync<PidResult>(_worker, msg, ct);
             return res?.Pid;
         }
 
@@ -43,9 +43,9 @@
             var workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
             //TODO: should pool size be configurable?
 
-            var routerProps = _system.Root.NewConsistentHashPool(workerProps, 50);
+           
 
-            _router = _system.Root.Spawn(routerProps);
+            _worker = _system.Root.Spawn(workerProps);
 
             //hook up events
             cluster.System.EventStream.Subscribe<ClusterTopology>(e =>
@@ -66,7 +66,8 @@
 
         public async Task ShutdownAsync()
         {
-            if (!_isClient) await Cluster.System.Root.PoisonAsync(_placementActor);
+            await Cluster.System.Root.StopAsync(_worker);
+            if (!_isClient) await Cluster.System.Root.StopAsync(_placementActor);
 
             await RemoveMemberAsync(_memberId);
         }
@@ -83,6 +84,10 @@
 
         public Task RemovePidAsync(PID pid, CancellationToken ct)
         {
+            if (_system.Shutdown.IsCancellationRequested)
+            {
+                return Task.CompletedTask;
+            }
             return Storage.RemoveActivation(pid, ct);
         }
 

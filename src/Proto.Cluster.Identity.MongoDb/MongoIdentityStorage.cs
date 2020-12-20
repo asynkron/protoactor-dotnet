@@ -93,6 +93,7 @@ namespace Proto.Cluster.Identity.MongoDb
 
         public async Task RemoveActivation(PID pid, CancellationToken ct)
         {
+            
             Logger.LogDebug("Removing activation: {@PID}", pid);
             await _asyncSemaphore.WaitAsync(_pids.DeleteManyAsync(p => p.UniqueIdentity == pid.Id, ct));
         }
@@ -153,21 +154,14 @@ namespace Proto.Cluster.Identity.MongoDb
 
         private async Task<PidLookupEntity?> LookupKey(string key, CancellationToken ct)
         {
-
-            for (int i = 0; i < 10; i++)
+            try
             {
-                try
-                {
-                    var res= await _asyncSemaphore.WaitAsync(_pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct));
-                    return res;
-                }
-                catch(MongoConnectionException x)
-                {
-                    Logger.LogWarning(x,"Mongo connection failure, retrying");
-                }
-
-                // ReSharper disable once MethodSupportsCancellation
-                await Task.Delay(i * 1000);
+                var res = await _asyncSemaphore.WaitAsync(_pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct));
+                return res;
+            }
+            catch (MongoConnectionException x)
+            {
+                Logger.LogWarning(x, "Mongo connection failure, retrying");
             }
 
             throw new StorageFailure($"Failed to connect to MongoDB while looking up key {key}");

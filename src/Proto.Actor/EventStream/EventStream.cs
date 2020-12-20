@@ -7,6 +7,7 @@
 // ReSharper disable once CheckNamespace
 using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -20,11 +21,11 @@ namespace Proto
     {
         private readonly ILogger _logger = Log.CreateLogger<EventStream>();
 
-        internal EventStream() : this(TimeSpan.Zero, 0)
+        internal EventStream() : this(TimeSpan.Zero, 0, CancellationToken.None)
         {
         }
 
-        internal EventStream(TimeSpan throttleInterval, int throttleCount)
+        internal EventStream(TimeSpan throttleInterval, int throttleCount, CancellationToken ct)
         {
             var shouldThrottle = Throttle.Create(throttleCount, throttleInterval,
                 droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs.", droppedLogs)
@@ -32,7 +33,7 @@ namespace Proto
             Subscribe<DeadLetterEvent>(
                 dl =>
                 {
-                    if (shouldThrottle().IsOpen())
+                    if (!ct.IsCancellationRequested && shouldThrottle().IsOpen())
                     {
                         _logger.LogInformation(
                             "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",

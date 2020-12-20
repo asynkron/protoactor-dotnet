@@ -32,7 +32,7 @@ namespace Proto.Cluster
         private const string ClusterHeartBeatName = "ClusterHeartBeat";
         private readonly Cluster _cluster;
         private readonly RootContext _context;
-        private readonly CancellationTokenSource _ct = new();
+
         private ILogger _logger = null!;
         private PID _pid = null!;
 
@@ -55,7 +55,7 @@ namespace Proto.Cluster
         private async Task HeartBeatLoop()
         {
             await Task.Yield();
-            while (!_ct.IsCancellationRequested)
+            while (!_cluster.System.Shutdown.IsCancellationRequested)
             {
                 try
                 {
@@ -78,12 +78,20 @@ namespace Proto.Cluster
                         }
                         catch (TimeoutException)
                         {
+                            if (_cluster.System.Shutdown.IsCancellationRequested)
+                            {
+                                return;
+                            }
                             _logger.LogWarning("Heartbeat request for member id {MemberId} Address {Address} timed out",
                                 member.Id, member.Address
                             );
                         }
                         catch (DeadLetterException)
                         {
+                            if (_cluster.System.Shutdown.IsCancellationRequested)
+                            {
+                                return;
+                            }
                             _logger.LogWarning(
                                 "Heartbeat request for member id {MemberId} Address {Address} got dead letter response",
                                 member.Id, member.Address
@@ -100,8 +108,9 @@ namespace Proto.Cluster
 
         public Task ShutdownAsync()
         {
+            _logger.LogInformation("Shutting down heartbeat");
             _context.Stop(_pid);
-            _ct.Cancel();
+            _logger.LogInformation("Shut down heartbeat");
             return Task.CompletedTask;
         }
     }

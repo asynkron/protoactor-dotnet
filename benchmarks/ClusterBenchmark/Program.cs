@@ -16,6 +16,7 @@ namespace ClusterExperiment1
     public static class Program
     {
         private static TaskCompletionSource<bool> _ts;
+        private static int ActorCount;
 
         public static async Task Main(string[] args)
         {
@@ -28,8 +29,9 @@ namespace ClusterExperiment1
                 return;
             }
 
-            Console.WriteLine("1) Run single process");
-            Console.WriteLine("2) Run multi process");
+            Console.WriteLine("1) Run single process - graceful exit");
+            Console.WriteLine("2) Run single process");
+            Console.WriteLine("3) Run multi process");
 
             var res1 = Console.ReadLine();
 
@@ -39,14 +41,44 @@ namespace ClusterExperiment1
 
             var res2 = Console.ReadLine();
 
+            int batchSize = 0;
+            if (res2 == "2")
+            {
+                Console.WriteLine("Batch size? default is 50");
+                var res = Console.ReadLine();
+
+                if (!int.TryParse(res, out batchSize))
+                {
+                    batchSize = 50;
+                }
+            
+                Console.WriteLine($"Using batch size {batchSize}");
+            }
+            
+            Console.WriteLine("Number of virtual actors? default 10000");
+
+            var res3 = Console.ReadLine();
+
+            if (!int.TryParse(res3, out var actorCount))
+            {
+                actorCount = 10_000;
+            }
+            
+            Console.WriteLine($"Using {actorCount} actors");
+            ActorCount = actorCount;
+            
+
             _ts = new TaskCompletionSource<bool>();
 
             switch (res1)
             {
                 case "1":
-                    RunWorkers(() => new RunMemberInProc());
+                    RunWorkers(() => new RunMemberInProcGraceful());
                     break;
                 case "2":
+                    RunWorkers(() => new RunMemberInProc());
+                    break;
+                case "3":
                     RunWorkers(() => new RunMemberExternalProc());
                     break;
             }
@@ -57,7 +89,7 @@ namespace ClusterExperiment1
                     RunClient();
                     break;
                 case "2":
-                    RunBatchClient();
+                    RunBatchClient(batchSize);
                     break;
                 case "3":
                     RunFireForgetClient();
@@ -87,7 +119,7 @@ namespace ClusterExperiment1
                         {
                             for (var i = 0; i < 1000; i++)
                             {
-                                var id = "myactor" + rnd.Next(0, 10000);
+                                var id = "myactor" + rnd.Next(0, ActorCount);
                                 var request = cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                                     new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
                                 ).ContinueWith(_ => Console.Write("."));
@@ -102,7 +134,7 @@ namespace ClusterExperiment1
             );
         }
 
-        private static void RunBatchClient()
+        private static void RunBatchClient(int batchSize)
         {
             var logger = Log.CreateLogger(nameof(Program));
             ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(500), t => {
@@ -122,17 +154,18 @@ namespace ClusterExperiment1
 
                         try
                         {
-                            for (var i = 0; i < 1000; i++)
+                            for (var i = 0; i < batchSize; i++)
                             {
-                                var id = "myactor" + rnd.Next(0, 10000);
+                                var id = "myactor" + rnd.Next(0, ActorCount);
                                 var request = cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                    new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
-                                ).ContinueWith(_ => Console.Write("."));
+                                    new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token
+                                );
 
                                 requests.Add(request);
                             }
 
                             await Task.WhenAll(requests);
+                            Console.Write(".");
                         }
                         catch (Exception x)
                         {
@@ -159,12 +192,12 @@ namespace ClusterExperiment1
 
                     while (true)
                     {
-                        var id = "myactor" + rnd.Next(0, 10000);
+                        var id = "myactor" + rnd.Next(0, ActorCount);
 
                         try
                         {
                             var res = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
+                                new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token
                             );
 
                             if (res is null)
@@ -185,7 +218,7 @@ namespace ClusterExperiment1
         {
             var followers = new List<IRunMember>();
 
-            for (var i = 0; i < 4; i++)
+            for (var i = 0; i < 8; i++)
             {
                 var p = memberFactory();
                 p.Start();
@@ -195,7 +228,7 @@ namespace ClusterExperiment1
             _ = Task.Run(async () => {
                     foreach (var t in followers)
                     {
-                        await Task.Delay(60000);
+                        await Task.Delay(20000);
                         Console.WriteLine("Stopping node...");
                         _ = t.Kill();
                     }
