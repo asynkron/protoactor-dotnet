@@ -23,7 +23,7 @@ namespace ClusterExperiment1
 
         public async Task Start() => _cluster = await Configuration.SpawnMember();
 
-        public async Task Kill() => await _cluster.ShutdownAsync(false);
+        public async Task Kill() => await _cluster.ShutdownAsync(true);
     }
 
     public class RunMemberExternalProc : IRunMember
