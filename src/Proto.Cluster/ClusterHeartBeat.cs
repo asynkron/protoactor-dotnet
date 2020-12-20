@@ -78,7 +78,7 @@ namespace Proto.Cluster
                         }
                         catch (TimeoutException)
                         {
-                            if (_cluster.System.Token.IsCancellationRequested)
+                            if (_cluster.System.Shutdown.IsCancellationRequested)
                             {
                                 return;
                             }
@@ -88,7 +88,7 @@ namespace Proto.Cluster
                         }
                         catch (DeadLetterException)
                         {
-                            if (_cluster.System.Token.IsCancellationRequested)
+                            if (_cluster.System.Shutdown.IsCancellationRequested)
                             {
                                 return;
                             }

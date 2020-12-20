@@ -85,7 +85,7 @@
 
         public Task RemovePidAsync(PID pid, CancellationToken ct)
         {
-            if (_system.Token.IsCancellationRequested)
+            if (_system.Shutdown.IsCancellationRequested)
             {
                 return Task.CompletedTask;
             }

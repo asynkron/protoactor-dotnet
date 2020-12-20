@@ -48,7 +48,7 @@ namespace Proto.Cluster
             var i = 0;
             while (!ct.IsCancellationRequested)
             {
-                if (context.System.Token.IsCancellationRequested)
+                if (context.System.Shutdown.IsCancellationRequested)
                 {
                     return default;
                 }
@@ -70,7 +70,7 @@ namespace Proto.Cluster
                 {
                     var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
                     
-                    if (context.System.Token.IsCancellationRequested)
+                    if (context.System.Shutdown.IsCancellationRequested)
                     {
                         return default;
                     }
@@ -93,7 +93,7 @@ namespace Proto.Cluster
                         clusterIdentity.Identity, clusterIdentity.Kind, message, pid
                     );
                     
-                    if (context.System.Token.IsCancellationRequested)
+                    if (context.System.Shutdown.IsCancellationRequested)
                     {
                         return default;
                     }
@@ -113,7 +113,7 @@ namespace Proto.Cluster
                 }
                 catch
                 {
-                    if (context.System.Token.IsCancellationRequested)
+                    if (context.System.Shutdown.IsCancellationRequested)
                     {
                         return default;
                     }
@@ -141,19 +141,19 @@ namespace Proto.Cluster
             }
             catch (DeadLetterException)
             {
-                if (!context.System.Token.IsCancellationRequested && _requestLogThrottle().IsOpen())
+                if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
                     _logger.LogInformation("TryRequestAsync failed, dead PID from {Source}", source);
                 _pidCache.RemoveByVal(clusterIdentity, cachedPid);
                 return (ResponseStatus.DeadLetter, default)!;
             }
             catch (TimeoutException)
             {
-                if (!context.System.Token.IsCancellationRequested && _requestLogThrottle().IsOpen())
+                if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
                     _logger.LogWarning("TryRequestAsync timed out, PID from {Source}", source);
             }
             catch (Exception x)
             {
-                if (!context.System.Token.IsCancellationRequested && _requestLogThrottle().IsOpen())
+                if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
                     _logger.LogWarning(x, "TryRequestAsync failed with exception, PID from {Source}", source);
             }
 

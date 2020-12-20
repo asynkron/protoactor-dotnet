@@ -73,7 +73,7 @@ namespace Proto.Cluster.Identity
 
         private async Task Terminated(IContext context, Terminated msg)
         {
-            if (context.System.Token.IsCancellationRequested)
+            if (context.System.Shutdown.IsCancellationRequested)
             {
                 return;
             }

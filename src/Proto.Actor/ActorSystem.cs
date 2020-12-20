@@ -31,7 +31,7 @@ namespace Proto
             Root = new RootContext(this);
             DeadLetter = new DeadLetterProcess(this);
             Guardians = new Guardians(this);
-            EventStream = new EventStream(config.DeadLetterThrottleInterval, config.DeadLetterThrottleCount, Token);
+            EventStream = new EventStream(config.DeadLetterThrottleInterval, config.DeadLetterThrottleCount, Shutdown);
             var eventStreamProcess = new EventStreamProcess(this);
             ProcessRegistry.TryAdd("eventstream", eventStreamProcess);
             Extensions = new ActorSystemExtensions(this);
@@ -53,7 +53,7 @@ namespace Proto
 
         public ActorSystemExtensions Extensions { get; }
 
-        public CancellationToken Token => _cts.Token;
+        public CancellationToken Shutdown => _cts.Token;
 
         public Task ShutdownAsync()
         {

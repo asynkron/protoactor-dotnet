@@ -19,8 +19,7 @@ namespace Proto.Cluster.Identity
         private readonly MemberList _memberList;
         private readonly IIdentityStorage _storage;
 
-        private readonly Dictionary<ClusterIdentity, Task<PID?>> _inProgress =
-            new();
+        private readonly Dictionary<ClusterIdentity, Task<PID?>> _inProgress = new();
 
         private readonly ShouldThrottle _shouldThrottle;
 
@@ -48,13 +47,13 @@ namespace Proto.Cluster.Identity
             }
 
             var clusterIdentity = msg.ClusterIdentity;
-        //    var ct = msg.CancellationToken;
-            //
-            // if (ct.IsCancellationRequested)
-            // {
-            //     _logger.LogError("CT already timed out....");
-            //     return Task.CompletedTask;
-            // }
+            var ct = msg.CancellationToken;
+            
+            if (ct.IsCancellationRequested)
+            {
+                //_logger.LogError("CT already timed out....");
+                return Task.CompletedTask;
+            }
             
             if (_cluster.PidCache.TryGet(clusterIdentity, out var existing))
             {
@@ -179,7 +178,7 @@ namespace Proto.Cluster.Identity
             }
             catch (Exception e)
             {
-                if (_cluster.System.Token.IsCancellationRequested)
+                if (_cluster.System.Shutdown.IsCancellationRequested)
                 {
                     return null;
                 }
