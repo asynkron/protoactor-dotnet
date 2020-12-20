@@ -40,6 +40,20 @@ namespace ClusterExperiment1
             Console.WriteLine("3) Run fire and forget client");
 
             var res2 = Console.ReadLine();
+
+            int batchSize = 0;
+            if (res2 == "2")
+            {
+                Console.WriteLine("Batch size? default is 50");
+                var res = Console.ReadLine();
+
+                if (!int.TryParse(res, out batchSize))
+                {
+                    batchSize = 50;
+                }
+            
+                Console.WriteLine($"Using batch size {batchSize}");
+            }
             
             Console.WriteLine("Number of virtual actors? default 10000");
 
@@ -75,7 +89,7 @@ namespace ClusterExperiment1
                     RunClient();
                     break;
                 case "2":
-                    RunBatchClient();
+                    RunBatchClient(batchSize);
                     break;
                 case "3":
                     RunFireForgetClient();
@@ -120,7 +134,7 @@ namespace ClusterExperiment1
             );
         }
 
-        private static void RunBatchClient()
+        private static void RunBatchClient(int batchSize)
         {
             var logger = Log.CreateLogger(nameof(Program));
             ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(500), t => {
@@ -140,11 +154,11 @@ namespace ClusterExperiment1
 
                         try
                         {
-                            for (var i = 0; i < 1000; i++)
+                            for (var i = 0; i < batchSize; i++)
                             {
                                 var id = "myactor" + rnd.Next(0, ActorCount);
                                 var request = cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                    new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
+                                    new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token
                                 );
 
                                 requests.Add(request);
