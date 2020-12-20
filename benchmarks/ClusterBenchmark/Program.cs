@@ -165,7 +165,7 @@ namespace ClusterExperiment1
                         try
                         {
                             var res = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
+                                new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token
                             );
 
                             if (res is null)
@@ -186,7 +186,7 @@ namespace ClusterExperiment1
         {
             var followers = new List<IRunMember>();
 
-            for (var i = 0; i < 4; i++)
+            for (var i = 0; i < 8; i++)
             {
                 var p = memberFactory();
                 p.Start();
@@ -196,7 +196,7 @@ namespace ClusterExperiment1
             _ = Task.Run(async () => {
                     foreach (var t in followers)
                     {
-                        await Task.Delay(30000);
+                        await Task.Delay(12000);
                         Console.WriteLine("Stopping node...");
                         _ = t.Kill();
                     }
