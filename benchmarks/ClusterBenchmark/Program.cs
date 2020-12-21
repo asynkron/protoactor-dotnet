@@ -36,7 +36,8 @@ namespace ClusterExperiment1
 
             Console.WriteLine("1) Run single process - graceful exit");
             Console.WriteLine("2) Run single process");
-            Console.WriteLine("3) Run multi process");
+            Console.WriteLine("3) Run multi process - graceful exit");
+            Console.WriteLine("4) Run multi process");
 
             var res1 = Console.ReadLine();
 
@@ -84,6 +85,9 @@ namespace ClusterExperiment1
                     RunWorkers(() => new RunMemberInProc());
                     break;
                 case "3":
+                    RunWorkers(() => new RunMemberExternalProcGraceful());
+                    break;
+                case "4":
                     RunWorkers(() => new RunMemberExternalProc());
                     break;
             }
