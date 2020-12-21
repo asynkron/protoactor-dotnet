@@ -44,14 +44,17 @@ namespace ClusterExperiment1
         {
             Console.WriteLine("Starting external worker");
             var l = typeof(Program).Assembly.Location;
-            _process = Process.Start("dotnet", $"{l} worker");
+
+            _process = Process.Start(new ProcessStartInfo("dotnet", $"{l} worker"));
+            
             return Task.CompletedTask;
         }
 
         public Task Kill()
         {
             Console.WriteLine("Killing external worker");
-            _process.Kill(true);
+            Process.Start("kill", $"-s TERM {_process.Id}");
+            //_process.Kill(false);
             return Task.CompletedTask;
         }
     }

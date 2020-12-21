@@ -25,7 +25,11 @@ namespace ClusterExperiment1
 
             if (args.Length > 0)
             {
+                
                 var worker = await Configuration.SpawnMember();
+                AppDomain.CurrentDomain.ProcessExit += (sender, args) => {
+                    worker.ShutdownAsync(true).Wait();
+                };
                 Thread.Sleep(Timeout.Infinite);
                 return;
             }
