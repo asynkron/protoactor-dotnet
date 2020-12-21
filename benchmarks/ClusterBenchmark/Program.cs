@@ -21,6 +21,8 @@ namespace ClusterExperiment1
 
         public static async Task Main(string[] args)
         {
+            ThreadPool.SetMinThreads(500, 500);
+            
             Configuration.SetupLogger();
 
             if (args.Length > 0)
