@@ -103,7 +103,7 @@ namespace ClusterExperiment1
         private static void RunFireForgetClient()
         {
             var logger = Log.CreateLogger(nameof(Program));
-            ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(500), t => {
+            ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(200), t => {
                     logger.LogCritical("Threadpool is flooded");
                 }
             );
@@ -121,7 +121,7 @@ namespace ClusterExperiment1
                         semaphore.Wait(() => 
                             {
                                 return cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                    new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
+                                    new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token
                                 ).ContinueWith(_ => Console.Write("."));
                             }
                         );
