@@ -52,5 +52,25 @@ namespace Proto.Interactive
                 _semaphore.Release();
             }
         }
+        
+        public void Wait(Func<Task> producer)
+        {
+            //block caller
+            _semaphore.Wait();
+
+            Task.Run(async () => {
+                    try
+                    {
+                        var task = producer();
+                        await task;
+                    }
+                    finally
+                    {
+                        //release once the async flow is done
+                        _semaphore.Release();
+                    }
+                }
+            );
+        }
     }
 }

@@ -65,7 +65,7 @@ namespace ClusterExperiment1
         {
             var db = GetMongo();
             var identity = new IdentityStorageLookup(
-                new MongoIdentityStorage("mycluster", db.GetCollection<PidLookupEntity>("pids"),50)
+                new MongoIdentityStorage("mycluster", db.GetCollection<PidLookupEntity>("pids"),200)
             );
             return identity;
         }

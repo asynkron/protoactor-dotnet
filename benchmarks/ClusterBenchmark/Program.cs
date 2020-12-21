@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
+using Proto.Interactive;
 
 namespace ClusterExperiment1
 {
@@ -110,25 +111,20 @@ namespace ClusterExperiment1
             _ = Task.Run(async () => {
                     await Task.Delay(5000);
 
+                    var semaphore = new AsyncSemaphore(50);
                     var cluster = await Configuration.SpawnClient();
                     var rnd = new Random();
 
                     while (true)
                     {
-                        try
-                        {
-                            for (var i = 0; i < 1000; i++)
+                        var id = "myactor" + rnd.Next(0, ActorCount);
+                        semaphore.Wait(() => 
                             {
-                                var id = "myactor" + rnd.Next(0, ActorCount);
-                                var request = cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+                                return cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                                     new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token
                                 ).ContinueWith(_ => Console.Write("."));
                             }
-                        }
-                        catch (Exception x)
-                        {
-                            logger.LogError(x, "Error...");
-                        }
+                        );
                     }
                 }
             );
