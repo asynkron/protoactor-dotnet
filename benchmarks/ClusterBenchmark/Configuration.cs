@@ -78,6 +78,7 @@ namespace ClusterExperiment1
             var settings = MongoClientSettings.FromUrl(url);
             // settings.WaitQueueSize = 10000;
             // settings.WaitQueueTimeout = TimeSpan.FromSeconds(10);
+
             // settings.WriteConcern = WriteConcern.Acknowledged;
             // settings.ReadConcern = ReadConcern.Majority;
             var client = new MongoClient(settings);

@@ -156,6 +156,7 @@ namespace Proto.Cluster.Identity.MongoDb
         {
             try
             {
+
                 var res = await _asyncSemaphore.WaitAsync(() =>_pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct));
                 return res;
             }
