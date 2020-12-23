@@ -114,7 +114,7 @@ namespace Proto.Context
             {
                 _extras.InitReceiveTimeoutTimer(
                     new Timer(
-                        ReceiveTimeoutCallback, null, ReceiveTimeout,
+                        ReceiveTimeoutCallback, null!, ReceiveTimeout,
                         ReceiveTimeout
                     )
                 );
