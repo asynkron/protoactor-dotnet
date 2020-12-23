@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace Proto.Timers
 {
+    [PublicAPI]
     public class Scheduler
     {
         private readonly ISenderContext _context;
+
+        private bool IsCancelled => _context.System.Shutdown.IsCancellationRequested;
 
         public Scheduler(ISenderContext context) => _context = context;
 
@@ -37,7 +41,7 @@ namespace Proto.Timers
 
                 async Task Trigger()
                 {
-                    while (true)
+                    while (!IsCancelled)
                     {
                         if (cts.IsCancellationRequested)
                             return;
@@ -84,7 +88,7 @@ namespace Proto.Timers
 
                 async Task Trigger()
                 {
-                    while (true)
+                    while (!IsCancelled)
                     {
                         if (cts.IsCancellationRequested)
                             return;
