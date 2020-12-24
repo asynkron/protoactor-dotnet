@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------
-// <copyright file="RequestAsyncStrategy.cs" company="Asynkron AB">
+// <copyright file="DefaultClusterContext.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
@@ -12,26 +12,17 @@ using Proto.Utils;
 
 namespace Proto.Cluster
 {
-    public interface IClusterContext
-    {
-        Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, CancellationToken ct);
-        Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context,  CancellationToken ct);
-    }
-
     public class DefaultClusterContext : IClusterContext
     {
-        private readonly ISenderContext _context;
         private readonly IIdentityLookup _identityLookup;
         private readonly ILogger _logger;
         private readonly PidCache _pidCache;
         private readonly ShouldThrottle _requestLogThrottle;
 
-        public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ISenderContext context,
-            ILogger logger)
+        public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ILogger logger)
         {
             _identityLookup = identityLookup;
             _pidCache = pidCache;
-            _context = context;
             _logger = logger;
             _requestLogThrottle = Throttle.Create(
                 3,
@@ -40,11 +31,10 @@ namespace Proto.Cluster
             );
         }
 
-        public async Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
+        public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
         {
             
-             _logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity.ToShortString(), message
-            );
+            _logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity.ToShortString(), message);
             var i = 0;
             while (!ct.IsCancellationRequested)
             {
@@ -123,11 +113,10 @@ namespace Proto.Cluster
                     await Task.Delay(delay, CancellationToken.None);
                 }
             }
+            //TODO: we should log here instead;
 
             return default!;
         }
-
-        public  Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, CancellationToken ct) => RequestAsync<T>(clusterIdentity, message, _context, ct);
 
         private async Task<(ResponseStatus ok, T res)> TryRequestAsync<T>(ClusterIdentity clusterIdentity,
             object message,
