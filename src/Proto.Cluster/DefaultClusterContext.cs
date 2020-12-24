@@ -96,6 +96,8 @@ namespace Proto.Cluster
                         case ResponseStatus.TimedOutOrException:
                             await Task.Delay(delay, CancellationToken.None);
                             break;
+                        
+                        //TODO: this is already done in tryrequestasync, or?
                         case ResponseStatus.DeadLetter:
                             await _identityLookup.RemovePidAsync(pid, ct);
                             break;
@@ -128,6 +130,7 @@ namespace Proto.Cluster
 
                 if (res is not null) return (ResponseStatus.Ok, res);
             }
+            //TODO: all catch logging here should be Debug level, or?
             catch (DeadLetterException)
             {
                 if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
