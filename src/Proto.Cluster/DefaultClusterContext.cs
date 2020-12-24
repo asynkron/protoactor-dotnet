@@ -7,7 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Proto.Cluster.IdentityLookup;
+using Proto.Cluster.Identity;
 using Proto.Utils;
 
 namespace Proto.Cluster

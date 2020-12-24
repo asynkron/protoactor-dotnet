@@ -241,24 +241,22 @@ namespace Proto.Cluster.Identity
                 return null;
             }
 
+            //TODO: can  activation.MemberId == null ever happen?
             var memberExists = activation.MemberId == null || _memberList.ContainsMemberId(activation.MemberId);
-            if (!memberExists)
+            if (memberExists) return activation.Pid;
+
+            if (StaleMembers.TryAdd(activation.MemberId!))
             {
-                if (StaleMembers.TryAdd(activation.MemberId!))
-                {
-                    _logger.LogWarning(
-                        "Found placement lookup for {ClusterIdentity}, but Member {MemberId} is not part of cluster, dropping stale entries",
-                        clusterIdentity.ToShortString(), activation.MemberId
-                    );
-                }
-
-
-                //let all requests try to remove, but only log on the first occurrence
-                await _storage.RemoveMemberIdAsync(activation.MemberId!, CancellationToken.None);
-                return null;
+                _logger.LogWarning(
+                    "Found placement lookup for {ClusterIdentity}, but Member {MemberId} is not part of cluster, dropping stale entries",
+                    clusterIdentity.ToShortString(), activation.MemberId
+                );
             }
 
-            return activation.Pid;
+            //let all requests try to remove, but only log on the first occurrence
+            await _storage.RemoveMemberIdAsync(activation.MemberId!, CancellationToken.None);
+            return null;
+
         }
     }
 }

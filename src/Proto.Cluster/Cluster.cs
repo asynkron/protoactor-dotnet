@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Proto.Cluster.IdentityLookup;
+using Proto.Cluster.Identity;
 using Proto.Cluster.Partition;
 using Proto.Extensions;
 using Proto.Remote;

@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using JetBrains.Annotations;
-using Proto.Cluster.IdentityLookup;
+using Proto.Cluster.Identity;
 
 namespace Proto.Cluster
 {

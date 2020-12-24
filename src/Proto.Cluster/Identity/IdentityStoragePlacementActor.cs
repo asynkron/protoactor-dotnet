@@ -23,7 +23,7 @@ namespace Proto.Cluster.Identity
         //pid -> the actor that we have created here
         //kind -> the actor kind
         //eventId -> the cluster wide eventId when this actor was created
-        private readonly Dictionary<ClusterIdentity, PID> _myActors = new Dictionary<ClusterIdentity, PID>();
+        private readonly Dictionary<ClusterIdentity, PID> _myActors = new();
 
         private readonly IdentityStorageLookup _identityLookup;
         private CancellationTokenSource? _ct;

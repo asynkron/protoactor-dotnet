@@ -32,7 +32,8 @@
             ClusterIdentity = clusterIdentity;
         }
     }
-
+    
+    //TODO: what is this? its not used atm..
     public class LookupResult
     {
         public StoredActivation? StoredActivation { get; }
