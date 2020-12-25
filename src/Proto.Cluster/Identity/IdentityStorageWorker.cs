@@ -57,7 +57,7 @@ namespace Proto.Cluster.Identity
             
             if (_cluster.PidCache.TryGet(clusterIdentity, out var existing))
             {
-                _logger.LogDebug("Found {ClusterIdentity} in pidcache", clusterIdentity.ToShortString());
+                _logger.LogDebug("Found {ClusterIdentity} in pidcache", clusterIdentity);
                 context.Respond(new PidResult
                     {
                         Pid = existing
@@ -90,7 +90,7 @@ namespace Proto.Cluster.Identity
                         else
                         {
                             if (_shouldThrottle().IsOpen())
-                                _logger.LogWarning(getPid.Exception, "GetWithGlobalLock for {ClusterIdentity} failed", clusterIdentity.ToShortString());
+                                _logger.LogWarning(getPid.Exception, "GetWithGlobalLock for {ClusterIdentity} failed", clusterIdentity);
                         }
                     }
                     finally
@@ -183,7 +183,7 @@ namespace Proto.Cluster.Identity
                     return null;
                 }
                 if (_shouldThrottle().IsOpen())
-                    _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity.ToShortString());
+                    _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
                 return null;
             }
             
@@ -241,24 +241,22 @@ namespace Proto.Cluster.Identity
                 return null;
             }
 
+            //TODO: can  activation.MemberId == null ever happen?
             var memberExists = activation.MemberId == null || _memberList.ContainsMemberId(activation.MemberId);
-            if (!memberExists)
+            if (memberExists) return activation.Pid;
+
+            if (StaleMembers.TryAdd(activation.MemberId!))
             {
-                if (StaleMembers.TryAdd(activation.MemberId!))
-                {
-                    _logger.LogWarning(
-                        "Found placement lookup for {ClusterIdentity}, but Member {MemberId} is not part of cluster, dropping stale entries",
-                        clusterIdentity.ToShortString(), activation.MemberId
-                    );
-                }
-
-
-                //let all requests try to remove, but only log on the first occurrence
-                await _storage.RemoveMemberIdAsync(activation.MemberId!, CancellationToken.None);
-                return null;
+                _logger.LogWarning(
+                    "Found placement lookup for {ClusterIdentity}, but Member {MemberId} is not part of cluster, dropping stale entries",
+                    clusterIdentity, activation.MemberId
+                );
             }
 
-            return activation.Pid;
+            //let all requests try to remove, but only log on the first occurrence
+            await _storage.RemoveMemberIdAsync(activation.MemberId!, CancellationToken.None);
+            return null;
+
         }
     }
 }

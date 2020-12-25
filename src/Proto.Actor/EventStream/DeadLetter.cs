@@ -58,7 +58,7 @@ namespace Proto
 
     public class DeadLetterException : Exception
     {
-        public DeadLetterException(PID pid) : base($"{pid.ToShortString()} no longer exists")
+        public DeadLetterException(PID pid) : base($"{pid} no longer exists")
         {
         }
     }

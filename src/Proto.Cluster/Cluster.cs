@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Proto.Cluster.IdentityLookup;
+using Proto.Cluster.Identity;
 using Proto.Cluster.Partition;
 using Proto.Extensions;
 using Proto.Remote;
@@ -94,7 +94,7 @@ namespace Proto.Cluster
             Logger = Log.CreateLogger($"Cluster-{LoggerId}");
             Logger.LogInformation("Starting");
             MemberList = new MemberList(this);
-            ClusterContext = new DefaultClusterContext(IdentityLookup, PidCache, System.Root, Logger);
+            ClusterContext = Config.ClusterContextProducer(this);
 
             var kinds = GetClusterKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
@@ -120,7 +120,7 @@ namespace Proto.Cluster
             IdentityLookup!.GetAsync(new ClusterIdentity {Identity = identity, Kind = kind}, ct);
 
         public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) =>
-            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, ct);
+            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, System.Root, ct);
         
         public Task<T> RequestAsync<T>(string identity, string kind, object message, ISenderContext context ,CancellationToken ct) =>
             ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct);

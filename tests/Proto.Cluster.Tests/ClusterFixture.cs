@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using Microsoft.Extensions.Logging;
-using Proto.Cluster.IdentityLookup;
+using Proto.Cluster.Identity;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Testing;
 using Proto.Remote;

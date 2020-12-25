@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using JetBrains.Annotations;
-using Proto.Cluster.IdentityLookup;
+using Proto.Cluster.Identity;
 
 namespace Proto.Cluster
 {
@@ -38,6 +38,9 @@ namespace Proto.Cluster
 
         public IIdentityLookup? IdentityLookup { get; }
         public TimeSpan HeartBeatInterval { get; init; }
+
+        public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } =
+            c => new DefaultClusterContext(c.IdentityLookup, c.PidCache, c.Logger);
 
         public ClusterConfig WithTimeout(TimeSpan timeSpan) =>
             this with {TimeoutTimespan = timeSpan};

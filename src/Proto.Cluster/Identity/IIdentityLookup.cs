@@ -6,7 +6,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Proto.Cluster.IdentityLookup
+namespace Proto.Cluster.Identity
 {
     public interface IIdentityLookup
     {

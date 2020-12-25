@@ -3,7 +3,6 @@
     using System;
     using System.Threading;
     using System.Threading.Tasks;
-    using IdentityLookup;
     using Router;
 
     public class IdentityStorageLookup : IIdentityLookup

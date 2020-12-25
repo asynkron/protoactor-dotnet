@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
-using Proto.Cluster.IdentityLookup;
+using Proto.Cluster.Identity;
 using Xunit;
 
 namespace Proto.Cluster.Tests
@@ -43,9 +43,9 @@ namespace Proto.Cluster.Tests
             var logger = Log.CreateLogger("dummylog");
             var clusterIdentity = new ClusterIdentity {Identity = "identity", Kind = "kind"};
             pidCache.TryAdd(clusterIdentity, deadPid);
-            var requestAsyncStrategy = new DefaultClusterContext(dummyIdentityLookup, pidCache, system.Root, logger);
+            var requestAsyncStrategy = new DefaultClusterContext(dummyIdentityLookup, pidCache, logger);
 
-            var res = await requestAsyncStrategy.RequestAsync<Pong>(clusterIdentity, new Ping {Message = "msg"},
+            var res = await requestAsyncStrategy.RequestAsync<Pong>(clusterIdentity, new Ping {Message = "msg"}, system.Root,
                 new CancellationTokenSource(6000).Token
             );
 

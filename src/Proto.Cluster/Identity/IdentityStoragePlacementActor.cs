@@ -23,7 +23,7 @@ namespace Proto.Cluster.Identity
         //pid -> the actor that we have created here
         //kind -> the actor kind
         //eventId -> the cluster wide eventId when this actor was created
-        private readonly Dictionary<ClusterIdentity, PID> _myActors = new Dictionary<ClusterIdentity, PID>();
+        private readonly Dictionary<ClusterIdentity, PID> _myActors = new();
 
         private readonly IdentityStorageLookup _identityLookup;
         private CancellationTokenSource? _ct;
@@ -108,7 +108,7 @@ namespace Proto.Cluster.Identity
                     //we cannot get ProcessNameAlreadyExists exception here
 
                     var clusterProps = props.WithClusterInit(_cluster, msg.ClusterIdentity);
-                    var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.ToShortString());
+                    var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.ToString());
 
                     _myActors[msg.ClusterIdentity] = pid;
                     _cluster.PidCache.TryAdd(msg.ClusterIdentity, pid);
