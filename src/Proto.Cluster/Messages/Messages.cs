@@ -5,11 +5,16 @@
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
+using System;
+using Google.Protobuf;
+
 namespace Proto.Cluster
 {
-    public sealed partial class ClusterIdentity
+    public sealed partial class ClusterIdentity : ICustomDiagnosticMessage
     {
         public string ToShortString() => $"{Kind}/{Identity}";
+
+        public string ToDiagnosticString() => ToShortString();
     }
 
     public sealed partial class ActivationRequest

@@ -3,10 +3,13 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
+using Google.Protobuf;
+
 namespace Proto
 {
     // ReSharper disable once InconsistentNaming
-    public partial class PID
+    public partial class PID : ICustomDiagnosticMessage
     {
         private Process? _process;
 
@@ -51,5 +54,7 @@ namespace Proto
         }
 
         public string ToShortString() => $"{Address}/{Id}";
+
+        public string ToDiagnosticString() => ToShortString();
     }
 }
