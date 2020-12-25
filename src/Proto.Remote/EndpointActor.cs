@@ -83,7 +83,7 @@ namespace Proto.Remote
                     try
                     {
                         await _stream.ResponseStream.MoveNext();
-                        Logger.LogInformation("[EndpointActor] {Address} disconnected", _address);
+                        Logger.LogDebug("[EndpointActor] {Address} Disconnected", _address);
                         var terminated = new EndpointTerminatedEvent
                         {
                             Address = _address
@@ -111,7 +111,7 @@ namespace Proto.Remote
             };
             context.System.EventStream.Publish(connected);
 
-            Logger.LogInformation("[EndpointActor] Connected to address {Address}", _address);
+            Logger.LogDebug("[EndpointActor] Connected to address {Address}", _address);
             _behavior.Become(ConnectedAsync);
         }
         private async Task ShutDownChannel()
