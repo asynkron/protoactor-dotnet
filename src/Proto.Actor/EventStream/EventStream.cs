@@ -39,8 +39,8 @@ namespace Proto
                             "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",
                             dl.Message.GetType().Name,
                             dl.Message,
-                            dl.Pid.ToShortString(),
-                            dl.Sender?.ToShortString()
+                            dl.Pid,
+                            dl.Sender
                         );
                     }
                 }

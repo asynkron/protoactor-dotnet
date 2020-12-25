@@ -14,7 +14,7 @@
             CancellationToken = cancellationToken;
         }
 
-        public string HashBy() => ClusterIdentity.ToShortString();
+        public string HashBy() => ClusterIdentity.ToString();
     }
 
     internal class PidResult

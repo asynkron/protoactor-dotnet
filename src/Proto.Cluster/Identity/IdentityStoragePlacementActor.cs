@@ -108,7 +108,7 @@ namespace Proto.Cluster.Identity
                     //we cannot get ProcessNameAlreadyExists exception here
 
                     var clusterProps = props.WithClusterInit(_cluster, msg.ClusterIdentity);
-                    var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.ToShortString());
+                    var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.ToString());
 
                     _myActors[msg.ClusterIdentity] = pid;
                     _cluster.PidCache.TryAdd(msg.ClusterIdentity, pid);

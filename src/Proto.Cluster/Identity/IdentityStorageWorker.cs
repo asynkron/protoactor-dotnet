@@ -57,7 +57,7 @@ namespace Proto.Cluster.Identity
             
             if (_cluster.PidCache.TryGet(clusterIdentity, out var existing))
             {
-                _logger.LogDebug("Found {ClusterIdentity} in pidcache", clusterIdentity.ToShortString());
+                _logger.LogDebug("Found {ClusterIdentity} in pidcache", clusterIdentity);
                 context.Respond(new PidResult
                     {
                         Pid = existing
@@ -90,7 +90,7 @@ namespace Proto.Cluster.Identity
                         else
                         {
                             if (_shouldThrottle().IsOpen())
-                                _logger.LogWarning(getPid.Exception, "GetWithGlobalLock for {ClusterIdentity} failed", clusterIdentity.ToShortString());
+                                _logger.LogWarning(getPid.Exception, "GetWithGlobalLock for {ClusterIdentity} failed", clusterIdentity);
                         }
                     }
                     finally
@@ -183,7 +183,7 @@ namespace Proto.Cluster.Identity
                     return null;
                 }
                 if (_shouldThrottle().IsOpen())
-                    _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity.ToShortString());
+                    _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
                 return null;
             }
             
@@ -249,7 +249,7 @@ namespace Proto.Cluster.Identity
             {
                 _logger.LogWarning(
                     "Found placement lookup for {ClusterIdentity}, but Member {MemberId} is not part of cluster, dropping stale entries",
-                    clusterIdentity.ToShortString(), activation.MemberId
+                    clusterIdentity, activation.MemberId
                 );
             }
 

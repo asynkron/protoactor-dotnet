@@ -12,9 +12,12 @@ namespace Proto.Cluster
 {
     public sealed partial class ClusterIdentity : ICustomDiagnosticMessage
     {
+        [Obsolete("Do not use")]
         public string ToShortString() => $"{Kind}/{Identity}";
 
+#pragma warning disable 618
         public string ToDiagnosticString() => ToShortString();
+#pragma warning restore 618
     }
 
     public sealed partial class ActivationRequest
