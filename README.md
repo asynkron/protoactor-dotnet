@@ -1,6 +1,6 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/cmpnw19ur8j25xn4/branch/master?svg=true)](https://ci.appveyor.com/project/protoactor-ci/protoactor-dotnet/branch/master)
 
-[![Join the chat at https://gitter.im/AsynkronIT/protoactor](https://badges.gitter.im/AsynkronIT/protoactor.svg)](https://gitter.im/AsynkronIT/protoactor?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+### [Join or Slack channel](https://asynkron.slack.com/)
 
 # Proto.Actor
 Ultra-fast, distributed, cross-platform actors.
@@ -81,7 +81,3 @@ You should see the output `Hello Alex`.
 </a>
 
 Made with [contributors-img](https://contributors-img.firebaseapp.com).
-
-### Support
-
-Many thanks to [JetBrains](https://www.jetbrains.com) for support!
