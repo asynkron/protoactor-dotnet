@@ -256,13 +256,13 @@ namespace Proto.Cluster
         /// <param name="message"></param>
         public void BroadcastEvent(object message, bool includeSelf = true)
         {
-            foreach (var m in _members.ToArray())
+            foreach (var (id, member) in _members.ToArray())
             {
-                if (!includeSelf && m.Key == _cluster.System.Id.ToString())
+                if (!includeSelf && id == _cluster.System.Id)
                 {
                     continue;
                 }
-                var pid = PID.FromAddress(m.Value.Address, "eventstream");
+                var pid = PID.FromAddress(member.Address, "eventstream");
                 try
                 {
                     _system.Root.Send(pid, message);
