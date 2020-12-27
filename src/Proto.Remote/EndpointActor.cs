@@ -18,19 +18,16 @@ namespace Proto.Remote
         private readonly ILogger Logger = Log.CreateLogger<EndpointActor>();
         private readonly RemoteConfigBase _remoteConfig;
         private readonly Behavior _behavior;
-        private readonly EndpointManager _endpointManager;
         private ChannelBase? _channel;
         private AsyncDuplexStreamingCall<MessageBatch, Unit>? _stream;
         private Remoting.RemotingClient? _client;
         private int _serializerId;
-        private readonly Dictionary<string, HashSet<PID>> _watchedActors = new();
+        private readonly Dictionary<string, HashSet<PID>> _watchedActors = new Dictionary<string, HashSet<PID>>();
         private readonly string _address;
         private readonly IChannelProvider _channelProvider;
-        public EndpointActor(string address, EndpointManager endpointManager,
-            RemoteConfigBase remoteConfig, IChannelProvider channelProvider)
+        public EndpointActor(string address, RemoteConfigBase remoteConfig, IChannelProvider channelProvider)
         {
             _address = address;
-            _endpointManager = endpointManager;
             _remoteConfig = remoteConfig;
             _behavior = new Behavior(ConnectingAsync);
             _channelProvider = channelProvider;
@@ -50,8 +47,8 @@ namespace Proto.Remote
             {
                 RemoteTerminate msg => RemoteTerminate(context, msg),
                 EndpointErrorEvent msg => EndpointError(msg),
-                RemoteUnwatch msg => RemoteUnwatch(msg),
-                RemoteWatch msg => RemoteWatch(msg),
+                RemoteUnwatch msg => RemoteUnwatch(context, msg),
+                RemoteWatch msg => RemoteWatch(context, msg),
                 Restarting _ => EndpointTerminated(context),
                 Stopped _ => EndpointTerminated(context),
                 IEnumerable<RemoteDeliver> m => RemoteDeliver(m, context),
@@ -86,7 +83,7 @@ namespace Proto.Remote
                     try
                     {
                         await _stream.ResponseStream.MoveNext();
-                        Logger.LogDebug("[EndpointActor] {Address} disconnected", _address);
+                        Logger.LogDebug("[EndpointActor] {Address} Disconnected", _address);
                         var terminated = new EndpointTerminatedEvent
                         {
                             Address = _address
@@ -135,7 +132,6 @@ namespace Proto.Remote
         private Task EndpointTerminated(IContext context)
         {
             Logger.LogDebug("[EndpointActor] Handle terminated address {Address}", _address);
-
             foreach (var (id, pidSet) in _watchedActors)
             {
                 var watcherPid = PID.FromAddress(context.System.Address, id);
@@ -150,7 +146,7 @@ namespace Proto.Remote
                     pid => new Terminated
                     {
                         Who = pid,
-                        Why = TerminatedReason.AddressTerminated
+                        Why = TerminatedReason.AddressTerminated,
                     }
                 ))
                 {
@@ -180,7 +176,7 @@ namespace Proto.Remote
             msg.Watcher.SendSystemMessage(context.System, t);
             return Task.CompletedTask;
         }
-        private Task RemoteUnwatch(RemoteUnwatch msg)
+        private Task RemoteUnwatch(IContext context, RemoteUnwatch msg)
         {
             if (_watchedActors.TryGetValue(msg.Watcher.Id, out var pidSet))
             {
@@ -193,10 +189,10 @@ namespace Proto.Remote
             }
 
             var w = new Unwatch(msg.Watcher);
-            _endpointManager.SendMessage(msg.Watchee, w, -1);
+            RemoteDeliver(context, msg.Watchee, w);
             return Task.CompletedTask;
         }
-        private Task RemoteWatch(RemoteWatch msg)
+        private Task RemoteWatch(IContext context, RemoteWatch msg)
         {
             if (_watchedActors.TryGetValue(msg.Watcher.Id, out var pidSet))
             {
@@ -208,8 +204,15 @@ namespace Proto.Remote
             }
 
             var w = new Watch(msg.Watcher);
-            _endpointManager.SendMessage(msg.Watchee, w, -1);
+            RemoteDeliver(context, msg.Watchee, w);
             return Task.CompletedTask;
+        }
+
+        public void RemoteDeliver(IContext context, PID pid, object msg)
+        {
+            var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
+            var env = new RemoteDeliver(header!, message, pid, sender!, -1);
+            context.Send(context.Self!, env);
         }
         private Task RemoteDeliver(IEnumerable<RemoteDeliver> m, IContext context)
         {
@@ -266,7 +269,7 @@ namespace Proto.Remote
             batch.TypeNames.AddRange(typeNameList);
             batch.Envelopes.AddRange(envelopes);
 
-            Logger.LogDebug("[EndpointActor] Sending {Count} envelopes for {Address}", envelopes.Count, _address);
+            // Logger.LogDebug("[EndpointActor] Sending {Count} envelopes for {Address}", envelopes.Count, _address);
 
             return SendEnvelopesAsync(batch, context);
         }
@@ -282,7 +285,7 @@ namespace Proto.Remote
             }
             try
             {
-                Logger.LogDebug("[EndpointActor] Writing batch to {Address}", _address);
+                // Logger.LogDebug("[EndpointActor] Writing batch to {Address}", _address);
 
                 await _stream.RequestStream.WriteAsync(batch).ConfigureAwait(false);
             }

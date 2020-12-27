@@ -139,7 +139,7 @@ namespace Proto.Cluster.Identity
             var spawnLock = new SpawnLock(msg.RequestId, msg.ClusterIdentity);
             try
             {
-                _identityLookup.Storage.StoreActivation(_cluster.System.Id.ToString(), spawnLock, pid,
+                _identityLookup.Storage.StoreActivation(_cluster.System.Id, spawnLock, pid,
                     context.CancellationToken
                 );
             }

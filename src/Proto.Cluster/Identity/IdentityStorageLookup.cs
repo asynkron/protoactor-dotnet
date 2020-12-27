@@ -35,7 +35,7 @@
         {
             Cluster = cluster;
             _system = cluster.System;
-            _memberId = cluster.System.Id.ToString();
+            _memberId = cluster.System.Id;
             MemberList = cluster.MemberList;
             _isClient = isClient;
 
