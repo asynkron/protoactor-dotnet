@@ -60,7 +60,7 @@ namespace Proto.Cluster
         //TODO: actually use this to prevent banned members from rejoining
         private ConcurrentSet<string> _bannedMembers { get; init; }
 
-        public bool IsLeader => _cluster.Id.Equals(_leader?.MemberId);
+        public bool IsLeader => _cluster.System.Id.Equals(_leader?.MemberId);
 
         public Member? GetActivator(string kind, string requestSourceAddress)
         {
@@ -256,13 +256,13 @@ namespace Proto.Cluster
         /// <param name="message"></param>
         public void BroadcastEvent(object message, bool includeSelf = true)
         {
-            foreach (var m in _members.ToArray())
+            foreach (var (id, member) in _members.ToArray())
             {
-                if (!includeSelf && m.Key == _cluster.Id.ToString())
+                if (!includeSelf && id == _cluster.System.Id)
                 {
                     continue;
                 }
-                var pid = PID.FromAddress(m.Value.Address, "eventstream");
+                var pid = PID.FromAddress(member.Address, "eventstream");
                 try
                 {
                     _system.Root.Send(pid, message);

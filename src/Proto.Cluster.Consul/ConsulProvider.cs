@@ -138,7 +138,7 @@ namespace Proto.Cluster.Consul
             MemberList memberList)
         {
             _cluster = cluster;
-            _consulServiceInstanceId = $"{clusterName}-{_cluster.Id}@{host}:{port}";
+            _consulServiceInstanceId = $"{clusterName}-{_cluster.System.Id}@{host}:{port}";
             _consulServiceName = clusterName;
             _host = host;
             _port = port;
@@ -335,7 +335,7 @@ namespace Proto.Cluster.Consul
                     //if a node with host X and port Y, joins, then leaves, then joins again.
                     //we need a way to distinguish the new node from the old node.
                     //this is what this ID is for
-                    {"id", _cluster.Id.ToString()}
+                    {"id", _cluster.System.Id}
                 }
             };
             await _client.Agent.ServiceRegister(s);

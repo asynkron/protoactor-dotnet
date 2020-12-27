@@ -14,6 +14,7 @@ namespace Proto
     [PublicAPI]
     public class ActorSystem
     {
+        public string Id { get; } = Guid.NewGuid().ToString("N");
         //  public static readonly ActorSystem Default = new ActorSystem();
         internal const string NoHost = "nonhost";
         private string _host = NoHost;
