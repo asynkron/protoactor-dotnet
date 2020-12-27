@@ -11,7 +11,7 @@ namespace Proto.Cluster.Testing
 {
     public class AgentServiceStatus
     {
-        public Guid ID { get; set; }
+        public string ID { get; set; }
         public DateTimeOffset TTL { get; set; }
         public bool Alive => DateTimeOffset.Now - TTL <= TimeSpan.FromSeconds(5);
 
@@ -24,7 +24,7 @@ namespace Proto.Cluster.Testing
 
     public sealed class InMemAgent
     {
-        private readonly ConcurrentDictionary<Guid, AgentServiceStatus> _services = new();
+        private readonly ConcurrentDictionary<string, AgentServiceStatus> _services = new();
 
         public event EventHandler StatusUpdate;
 
@@ -46,13 +46,13 @@ namespace Proto.Cluster.Testing
             OnStatusUpdate(EventArgs.Empty);
         }
 
-        public void DeregisterService(Guid id)
+        public void DeregisterService(string id)
         {
             _services.TryRemove(id, out _);
             OnStatusUpdate(EventArgs.Empty);
         }
 
-        public void RefreshServiceTTL(Guid id)
+        public void RefreshServiceTTL(string id)
         {
             //TODO: this is racy, but yolo for now
             if (_services.TryGetValue(id, out var service)) service.TTL = DateTimeOffset.Now;

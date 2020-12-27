@@ -20,7 +20,7 @@ namespace Proto.Cluster.Testing
         private string _clusterName;
 
         private ulong _eventId;
-        private Guid _id;
+        private string _id;
         private MemberList _memberList;
         private ActorSystem _system;
         private Timer _ttlReportTimer;
@@ -37,7 +37,7 @@ namespace Proto.Cluster.Testing
             var clusterName = cluster.Config.ClusterName;
             var (host, port) = cluster.System.GetAddress();
             var kinds = cluster.GetClusterKinds();
-            _id = cluster.Id;
+            _id = cluster.System.Id;
             _clusterName = clusterName;
             _system = cluster.System;
             _memberList = memberList;
@@ -61,7 +61,7 @@ namespace Proto.Cluster.Testing
             var memberList = cluster.MemberList;
             var clusterName = cluster.Config.ClusterName;
 
-            _id = cluster.Id;
+            _id = cluster.System.Id;
             _clusterName = clusterName;
             _system = cluster.System;
             _memberList = memberList;

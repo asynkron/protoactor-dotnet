@@ -40,8 +40,6 @@ namespace Proto.Cluster
             );
         }
 
-        public Guid Id => System.Id;
-
         public ILogger Logger { get; private set; } = null!;
         public IClusterContext ClusterContext { get; private set; } = null!;
 
