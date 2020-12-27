@@ -106,7 +106,7 @@ namespace Proto.Cluster.Kubernetes
             {
                 [LabelCluster] = _clusterName,
                 [LabelPort] = _port.ToString(),
-                [LabelMemberId] = _cluster.Id.ToString()
+                [LabelMemberId] = _cluster.System.Id.ToString()
             };
 
             foreach (var kind in _kinds)
@@ -149,7 +149,7 @@ namespace Proto.Cluster.Kubernetes
                     Address = _address,
                     Port = _port,
                     Kinds = _kinds,
-                    MemberId = _cluster.Id.ToString()
+                    MemberId = _cluster.System.Id.ToString()
                 }
             );
         }

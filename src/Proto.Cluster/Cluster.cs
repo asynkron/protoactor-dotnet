@@ -24,8 +24,6 @@ namespace Proto.Cluster
         public Cluster(ActorSystem system, ClusterConfig config)
         {
             system.Extensions.Register(this);
-
-            Id = Guid.NewGuid();
             PidCache = new PidCache();
             System = system;
             Config = config;
@@ -42,10 +40,10 @@ namespace Proto.Cluster
             );
         }
 
+        public Guid Id => System.Id;
+
         public ILogger Logger { get; private set; } = null!;
         public IClusterContext ClusterContext { get; private set; } = null!;
-
-        public Guid Id { get; }
 
         public ClusterConfig Config { get; }
 
@@ -104,14 +102,14 @@ namespace Proto.Cluster
         public async Task ShutdownAsync(bool graceful = true)
         {
             await System.ShutdownAsync();
-            Logger.LogInformation("Stopping Cluster {Id}", Id);
+            Logger.LogInformation("Stopping Cluster {Id}", System.Id);
             
             await _clusterHeartBeat.ShutdownAsync();
             if (graceful) await IdentityLookup!.ShutdownAsync();
             await Config!.ClusterProvider.ShutdownAsync(graceful);
             await Remote.ShutdownAsync(graceful);
 
-            Logger.LogInformation("Stopped Cluster {Id}", Id);
+            Logger.LogInformation("Stopped Cluster {Id}", System.Id);
         }
 
         public Task<PID?> GetAsync(string identity, string kind) => GetAsync(identity, kind, CancellationToken.None);
