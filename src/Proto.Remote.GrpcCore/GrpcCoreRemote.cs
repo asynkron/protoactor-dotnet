@@ -62,7 +62,7 @@ namespace Proto.Remote.GrpcCore
                 );
                 _endpointManager.Start();
 
-                Logger.LogDebug("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host, boundPort,
+                Logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host, boundPort,
                     System.Address
                 );
                 Started = true;
@@ -103,11 +103,6 @@ namespace Proto.Remote.GrpcCore
                 );
                 await _server.KillAsync();
             }
-        }
-
-        public void SendMessage(PID pid, object msg, int serializerId)
-        {
-            _endpointManager.SendMessage(pid, msg, serializerId);
         }
     }
 }

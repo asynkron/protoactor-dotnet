@@ -105,7 +105,7 @@ namespace Proto.Remote
             RegisterSerializer(new JsonSerializer(this));
         }
 
-        public static int DefaultSerializerId { get; set; }
+        public int DefaultSerializerId { get; set; }
 
         public void RegisterSerializer(ISerializer serializer, bool makeDefault = false)
         {

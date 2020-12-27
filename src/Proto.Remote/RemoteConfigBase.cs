@@ -3,6 +3,7 @@
 //       Copyright (C) 2015-2020 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Collections.Immutable;
 using Grpc.Core;
 using JetBrains.Annotations;
@@ -60,5 +61,7 @@ namespace Proto.Remote
         public EndpointWriterOptions EndpointWriterOptions { get; init; } = new();
 
         public Serialization Serialization { get; init; } = new();
+
+        public TimeSpan? WaitAfterEndpointTerminationTimeSpan { get; init; } = TimeSpan.FromSeconds(3);
     }
 }
