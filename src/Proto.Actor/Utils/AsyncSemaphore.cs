@@ -7,7 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Proto.Interactive
+namespace Proto.Utils
 {
     public class AsyncSemaphore
     {
@@ -58,7 +58,7 @@ namespace Proto.Interactive
             //block caller
             _semaphore.Wait();
 
-            Task.Run(async () => {
+            _ = Task.Run(async () => {
                     try
                     {
                         var task = producer();

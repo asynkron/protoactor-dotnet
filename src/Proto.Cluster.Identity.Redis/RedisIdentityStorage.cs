@@ -171,7 +171,7 @@
             );
         }
 
-        private RedisKey IdKey(ClusterIdentity clusterIdentity) => IdKey(clusterIdentity.ToShortString());
+        private RedisKey IdKey(ClusterIdentity clusterIdentity) => IdKey(clusterIdentity.ToString());
 
         private RedisKey IdKeyFromPidId(string pidId) =>
             IdentityStorageLookup.TryGetClusterIdentityShortString(pidId, out var clusterId)

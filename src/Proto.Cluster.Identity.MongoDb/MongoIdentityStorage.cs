@@ -1,4 +1,5 @@
 ﻿using Proto.Interactive;
+using Proto.Utils;
 
 namespace Proto.Cluster.Identity.MongoDb
 {
@@ -87,7 +88,7 @@ namespace Proto.Cluster.Identity.MongoDb
             ));
             if (res.MatchedCount != 1)
             {
-                throw new StorageFailure($"Failed to store activation of {pid.ToShortString()}");
+                throw new StorageFailure($"Failed to store activation of {pid}");
             }
         }
 
@@ -168,7 +169,7 @@ namespace Proto.Cluster.Identity.MongoDb
             throw new StorageFailure($"Failed to connect to MongoDB while looking up key {key}");
         }
 
-        private string GetKey(ClusterIdentity clusterIdentity) => $"{_clusterName}/{clusterIdentity.ToShortString()}";
+        private string GetKey(ClusterIdentity clusterIdentity) => $"{_clusterName}/{clusterIdentity}";
         public void Dispose()
         {
         }

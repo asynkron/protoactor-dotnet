@@ -56,7 +56,7 @@ namespace Proto.Remote
                         await Task.Delay(duration);
                         Logger.LogWarning(reason,
                             "Restarting {Actor} after {Duration} because of {Reason}",
-                            child.ToShortString(), duration, reason.GetType().Name
+                            child, duration, reason.GetType().Name
                         );
                         supervisor.RestartChildren(reason, child);
                     }

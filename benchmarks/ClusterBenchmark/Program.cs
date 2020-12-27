@@ -11,6 +11,7 @@ using ClusterExperiment1.Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Interactive;
+using Proto.Utils;
 
 namespace ClusterExperiment1
 {

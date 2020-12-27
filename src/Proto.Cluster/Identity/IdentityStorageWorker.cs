@@ -119,9 +119,7 @@ namespace Proto.Cluster.Identity
                         catch (Exception x)
                         {
                             if (_shouldThrottle().IsOpen())
-                                _logger.LogError(x, "Identity worker crashed in reentrant context: {Id}",
-                                    context.Self!.ToShortString()
-                                );
+                                _logger.LogError(x, "Identity worker crashed in reentrant context: {Id}", context.Self);
                             throw;
                         }
                         finally
@@ -135,7 +133,7 @@ namespace Proto.Cluster.Identity
             }
             catch (Exception x)
             {
-                _logger.LogError(x, "Identity worker crashed {Id}", context.Self!.ToShortString());
+                _logger.LogError(x, "Identity worker crashed {Id}", context.Self);
                 throw;
             }
         }

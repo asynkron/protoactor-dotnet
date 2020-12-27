@@ -97,10 +97,10 @@ namespace Proto.Cluster
                             await Task.Delay(delay, CancellationToken.None);
                             break;
                         
-                        //TODO: this is already done in tryrequestasync, or?
-                        case ResponseStatus.DeadLetter:
-                            await _identityLookup.RemovePidAsync(pid, ct);
-                            break;
+                        // //TODO: this is already done in tryrequestasync, or?
+                        // case ResponseStatus.DeadLetter:
+                        //     await _identityLookup.RemovePidAsync(pid, ct);
+                        //     break;
                     }
                 }
                 catch
@@ -116,6 +116,8 @@ namespace Proto.Cluster
                 }
             }
             //TODO: we should log here instead;
+            if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
+                _logger.LogWarning("RequestAsync retried but failed for ClusterIdentity {ClusterIdentity}", clusterIdentity);
 
             return default!;
         }
@@ -133,20 +135,20 @@ namespace Proto.Cluster
             //TODO: all catch logging here should be Debug level, or?
             catch (DeadLetterException)
             {
-                if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
-                    _logger.LogInformation("TryRequestAsync failed, dead PID from {Source}", source);
+                if (!context.System.Shutdown.IsCancellationRequested)
+                    _logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
                 _pidCache.RemoveByVal(clusterIdentity, cachedPid);
                 return (ResponseStatus.DeadLetter, default)!;
             }
             catch (TimeoutException)
             {
-                if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
-                    _logger.LogWarning("TryRequestAsync timed out, PID from {Source}", source);
+                if (!context.System.Shutdown.IsCancellationRequested)
+                    _logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
             }
             catch (Exception x)
             {
                 if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
-                    _logger.LogWarning(x, "TryRequestAsync failed with exception, PID from {Source}", source);
+                    _logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
             }
 
             _pidCache.RemoveByVal(clusterIdentity, cachedPid);

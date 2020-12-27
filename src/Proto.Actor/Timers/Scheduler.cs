@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace Proto.Timers
 {
+    [PublicAPI]
     public class Scheduler
     {
         private readonly ISenderContext _context;

@@ -12,8 +12,8 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Data;
 using Proto.Cluster.Events;
-using Proto.Cluster.Utils;
 using Proto.Remote;
+using Proto.Utils;
 
 namespace Proto.Cluster
 {

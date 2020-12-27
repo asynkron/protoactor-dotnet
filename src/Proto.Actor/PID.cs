@@ -52,12 +52,7 @@ namespace Proto
             var reff = Ref(system) ?? system.ProcessRegistry.Get(this);
             reff.SendSystemMessage(this, sys);
         }
-
-        [Obsolete("Do not use")]
-        public string ToShortString() => $"{Address}/{Id}";
-
-#pragma warning disable 618
-        public string ToDiagnosticString() => ToShortString();
-#pragma warning restore 618
+        
+        public string ToDiagnosticString() => $"{Address}/{Id}";
     }
 }

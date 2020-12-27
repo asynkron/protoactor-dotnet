@@ -5,9 +5,11 @@
 // -----------------------------------------------------------------------
 using System.Collections.Concurrent;
 using System.Linq;
+using JetBrains.Annotations;
 
-namespace Proto.Cluster.Utils
+namespace Proto.Utils
 {
+    [PublicAPI]
     public class ConcurrentSet<T>
     {
         private readonly ConcurrentDictionary<T, byte> _inner = new();
