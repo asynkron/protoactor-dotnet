@@ -8,19 +8,19 @@ using System;
 
 namespace Proto.Remote
 {
-    public sealed class EndpointTerminatedEvent
+    public sealed record EndpointTerminatedEvent
     {
         public string Address { get; set; } = null!;
 
         public override string ToString() => $"EndpointTerminatedEvent: {Address}";
     }
 
-    public sealed class EndpointConnectedEvent
+    public sealed record EndpointConnectedEvent
     {
         public string Address { get; set; } = null!;
     }
 
-    public sealed class EndpointErrorEvent
+    public sealed record EndpointErrorEvent
     {
         public string Address { get; set; } = null!;
         public Exception Exception { get; set; } = null!;
