@@ -66,10 +66,7 @@ namespace Proto.Cluster
             return false;
         }
 
-        public void RemoveByMember(Member member)
-        {
-            RemoveByPredicate(pair => member.Address.Equals(pair.Value.Address));
-        }
+        public void RemoveByMember(Member member) => RemoveByPredicate(pair => member.Address.Equals(pair.Value.Address));
 
         private void RemoveByPredicate(Func<KeyValuePair<ClusterIdentity, PID>, bool> predicate)
         {
