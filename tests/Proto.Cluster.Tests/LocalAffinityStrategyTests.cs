@@ -1,9 +1,13 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
+using Proto.Cluster.Cache;
+using Proto.Remote;
+using Proto.Remote.GrpcCore;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -64,21 +68,18 @@ namespace Proto.Cluster.Tests
             secondNodeTimings.ElapsedMilliseconds.Should()
                 .BeLessThan(3000, "We expect dead letter responses instead of timeouts");
 
-            async Task PingAll(Cluster cluster)
-            {
-                await Task.WhenAll(
-                    Enumerable.Range(0, 1000).Select(async i =>
+            Task PingAll(Cluster cluster) => Task.WhenAll(
+                Enumerable.Range(0, 1000).Select(async i =>
+                    {
+                        Pong pong = null;
+                        while (pong is null)
                         {
-                            Pong pong = null;
-                            while (pong is null)
-                            {
-                                timeout.ThrowIfCancellationRequested();
-                                pong = await cluster.Ping(i.ToString(), "hello", timeout);
-                            }
+                            timeout.ThrowIfCancellationRequested();
+                            pong = await cluster.Ping(i.ToString(), "hello", timeout);
                         }
-                    )
-                );
-            }
+                    }
+                )
+            );
         }
 
         // ReSharper disable once ClassNeverInstantiated.Global
@@ -95,7 +96,31 @@ namespace Proto.Cluster.Tests
             }
 
             protected override (string, Props)[] ClusterKinds { get; } =
-                {(EchoActor.Kind, EchoActor.Props.WithPoisonOnRemoteTraffic(.5f))};
+                {(EchoActor.Kind, EchoActor.Props.WithPoisonOnRemoteTraffic(.5f).WithPidCacheInvalidation())};
+            
+            protected override async Task<Cluster> SpawnClusterMember(
+                Func<ClusterConfig, ClusterConfig> configure,
+                string clusterName
+            )
+            {
+                var config = ClusterConfig.Setup(
+                        clusterName,
+                        GetClusterProvider(),
+                        GetIdentityLookup(clusterName)
+                    )
+                    .WithClusterKinds(ClusterKinds);
+
+                config = configure?.Invoke(config) ?? config;
+                var system = new ActorSystem();
+
+                var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
+                var _ = new GrpcCoreRemote(system, remoteConfig);
+
+                var cluster = new Cluster(system, config);
+                cluster.EnablePidCacheInvalidation();
+                await cluster.StartMemberAsync();
+                return cluster;
+            }
         }
     }
 }
