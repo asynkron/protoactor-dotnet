@@ -65,7 +65,7 @@ namespace Proto.Cluster.Cache
                 Pid = activation
             };
             var remotesToInvalidate = AddressRefs
-                .Where(pair => activeRemotes[pair.Value])
+                .Where(pair => activeRemotes.Length > pair.Value && activeRemotes[pair.Value])
                 .Select(pair => pair.Key);
 
             foreach (var address in remotesToInvalidate)
