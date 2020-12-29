@@ -78,7 +78,7 @@ namespace Proto.Cluster.Cache
         {
             if (AddressRefs.TryGetValue(sender.Address, out var index))
             {
-                if (index > activeRemotes.Length)
+                if (index >= activeRemotes.Length)
                 {
                     activeRemotes.Length = index + 1;
                 }
