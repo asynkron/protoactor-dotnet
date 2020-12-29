@@ -29,7 +29,7 @@ namespace Proto
 
         private Partition GetPartition(string key)
         {
-            var hash = key.GetHashCode() & 0x7FFFFFFF % HashSize;
+            var hash = (key.GetHashCode() & 0x7FFFFFFF) % HashSize;
             var p = _partitions[hash];
             return p;
         }
