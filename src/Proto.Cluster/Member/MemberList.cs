@@ -201,6 +201,15 @@ namespace Proto.Cluster
 
                 _logger.LogDebug("Published ClusterTopology event {ClusterTopology}", topology);
 
+                if (topology.Joined.Count > 0)
+                {
+                    _logger.LogInformation("Cluster members joined {MembersJoined}", topology.Joined);
+                }
+                if (topology.Left.Count > 0)
+                {
+                    _logger.LogInformation("Cluster members left {MembersJoined}", topology.Joined);
+                }
+
                 _eventStream.Publish(topology);
             }
             finally

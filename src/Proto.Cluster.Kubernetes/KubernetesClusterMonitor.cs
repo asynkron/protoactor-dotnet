@@ -81,7 +81,7 @@ namespace Proto.Cluster.Kubernetes
         private Task StartWatchingCluster(string clusterName, ISenderContext context)
         {
             var selector = $"{LabelCluster}={clusterName}";
-            Logger.LogInformation("[Cluster] Starting to watch pods with {Selector}", selector);
+            Logger.LogDebug("[Cluster] Starting to watch pods with {Selector}", selector);
 
             _watcherTask = _kubernetes.ListNamespacedPodWithHttpMessagesAsync(
                 KubernetesExtensions.GetKubeNamespace(),
@@ -107,7 +107,7 @@ namespace Proto.Cluster.Kubernetes
                 // If we are already in stopping state, just ignore it
                 if (_stopping) return;
 
-                Logger.LogInformation("[Cluster] Watcher has closed, restarting");
+                Logger.LogDebug("[Cluster] Watcher has closed, restarting");
                 Restart();
             }
 
@@ -152,7 +152,7 @@ namespace Proto.Cluster.Kubernetes
                 .Where(x => x.IsCandidate)
                 .Select(x => x.Status)
                 .ToList();
-            Logger.LogInformation("Cluster members updated {@Members}", memberStatuses);
+            
             _cluster.MemberList.UpdateClusterTopology(memberStatuses, 0ul);
             var topology = new ClusterTopologyEvent(memberStatuses);
             _cluster.System.EventStream.Publish(topology);
