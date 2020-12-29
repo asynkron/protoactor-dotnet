@@ -117,7 +117,7 @@ namespace Proto.Cluster.Tests
                 var _ = new GrpcCoreRemote(system, remoteConfig);
 
                 var cluster = new Cluster(system, config);
-                cluster.EnablePidCacheInvalidation();
+                cluster.WithPidCacheInvalidation();
                 await cluster.StartMemberAsync();
                 return cluster;
             }

@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster.Cache
 {
-    static class CacheInvalidationExtensions
+    public static class CacheInvalidationExtensions
     {
         private static readonly ILogger Logger = Log.CreateLogger(nameof(CacheInvalidationExtensions));
 
@@ -117,7 +117,7 @@ namespace Proto.Cluster.Cache
             public void ReenterAfter(Task target, Action action) => _context.ReenterAfter(target, action);
         }
 
-        public static Cluster EnablePidCacheInvalidation(this Cluster cluster)
+        public static Cluster WithPidCacheInvalidation(this Cluster cluster)
         {
             _ = new ClusterCacheInvalidation(cluster);
             return cluster;
