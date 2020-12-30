@@ -8,15 +8,16 @@ namespace Proto.Remote.GrpcNet
 {
     public class HostedGrpcNetRemote : IRemote
     {
-        private readonly ILogger _logger;
-        private readonly EndpointManager _endpointManager;
         private readonly GrpcNetRemoteConfig _config;
+        private readonly EndpointManager _endpointManager;
+        private readonly ILogger _logger;
 
-        public IServerAddressesFeature? ServerAddressesFeature { get; set; }
-        public RemoteConfigBase Config => _config;
-        public ActorSystem System { get; }
-
-        public HostedGrpcNetRemote(ActorSystem system, GrpcNetRemoteConfig config, EndpointManager endpointManager, ILogger<HostedGrpcNetRemote> logger)
+        public HostedGrpcNetRemote(
+            ActorSystem system,
+            GrpcNetRemoteConfig config,
+            EndpointManager endpointManager,
+            ILogger<HostedGrpcNetRemote> logger
+        )
         {
             System = system;
             _config = config;
@@ -25,19 +26,25 @@ namespace Proto.Remote.GrpcNet
             System.Extensions.Register(this);
             System.Extensions.Register(config.Serialization);
         }
+
+        public IServerAddressesFeature? ServerAddressesFeature { get; set; }
+        public RemoteConfigBase Config => _config;
+        public ActorSystem System { get; }
         public bool Started { get; private set; }
+
         public Task StartAsync()
         {
             lock (this)
             {
                 if (Started)
                     return Task.CompletedTask;
+
                 var uri = ServerAddressesFeature?.Addresses.Select(address => new Uri(address)).FirstOrDefault();
                 var boundPort = uri?.Port ?? Config.Port;
                 var host = uri?.Host ?? Config.Host;
                 System.SetAddress(Config.AdvertisedHost ?? host,
-                        Config.AdvertisedPort ?? boundPort
-                    );
+                    Config.AdvertisedPort ?? boundPort
+                );
                 _endpointManager.Start();
                 _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", host, boundPort, System.Address);
                 Started = true;
@@ -51,6 +58,7 @@ namespace Proto.Remote.GrpcNet
             {
                 if (!Started)
                     return Task.CompletedTask;
+
                 try
                 {
                     _endpointManager.Stop();
@@ -67,6 +75,7 @@ namespace Proto.Remote.GrpcNet
                     );
                     throw;
                 }
+
                 Started = false;
                 return Task.CompletedTask;
             }

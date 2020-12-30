@@ -6,8 +6,9 @@ using Xunit;
 
 namespace Proto.Remote.Tests
 {
-    public class GrpcNetClientWithGrpcCoreServerTests : RemoteTests,
-        IClassFixture<GrpcNetClientWithGrpcCoreServerTests.Fixture>
+    public class GrpcNetClientWithGrpcCoreServerTests
+        : RemoteTests,
+            IClassFixture<GrpcNetClientWithGrpcCoreServerTests.Fixture>
     {
         public GrpcNetClientWithGrpcCoreServerTests(Fixture fixture) : base(fixture)
         {

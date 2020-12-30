@@ -9,13 +9,13 @@ using Proto;
 
 namespace EscalateSupervision
 {
-    internal class Program
+    class Program
     {
         private static void Main(string[] args)
         {
-            var childProps = Props.FromFunc(context =>
-                {
+            var childProps = Props.FromFunc(context => {
                     Console.WriteLine($"{context.Self.Id}: MSG: {context.Message.GetType()}");
+
                     switch (context.Message)
                     {
                         case Started _:
@@ -26,9 +26,9 @@ namespace EscalateSupervision
                 }
             );
 
-            var rootProps = Props.FromFunc(context =>
-                    {
+            var rootProps = Props.FromFunc(context => {
                         Console.WriteLine($"{context.Self.Id}: MSG: {context.Message.GetType()}");
+
                         switch (context.Message)
                         {
                             case Started _:

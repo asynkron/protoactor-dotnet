@@ -58,6 +58,7 @@ namespace Proto.Router
             if (context.Message is RouterBroadcastMessage broadcastMessage)
             {
                 var sender = context.Sender;
+
                 foreach (var routee in _routerState.GetRoutees())
                 {
                     context.Request(routee, broadcastMessage.Message, sender);

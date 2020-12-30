@@ -16,7 +16,7 @@ namespace Proto.Remote
         public const string AllInterfaces = "0.0.0.0";
         public const string Localhost = "127.0.0.1";
         public const int AnyFreePort = 0;
-        
+
         protected RemoteConfigBase(string host, int port)
         {
             Host = host;

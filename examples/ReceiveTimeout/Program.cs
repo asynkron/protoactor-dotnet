@@ -8,14 +8,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Proto;
 
-internal class Program
+class Program
 {
     private static void Main(string[] args)
     {
         var rootContext = new RootContext(new ActorSystem());
         var c = 0;
-        var props = Props.FromFunc(context =>
-            {
+        var props = Props.FromFunc(context => {
                 switch (context.Message)
                 {
                     case Started _:
@@ -38,6 +37,7 @@ internal class Program
             }
         );
         var pid = rootContext.Spawn(props);
+
         for (var i = 0; i < 6; i++)
         {
             rootContext.Send(pid, "hello");
@@ -63,6 +63,6 @@ internal class Program
     }
 }
 
-internal class NoInfluence : INotInfluenceReceiveTimeout
+class NoInfluence : INotInfluenceReceiveTimeout
 {
 }

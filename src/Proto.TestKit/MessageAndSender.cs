@@ -5,7 +5,7 @@
 // -----------------------------------------------------------------------
 namespace Proto.TestKit
 {
-    internal class MessageAndSender
+    class MessageAndSender
     {
         public MessageAndSender(ISenderContext context) : this(context.Sender, context.Message)
         {

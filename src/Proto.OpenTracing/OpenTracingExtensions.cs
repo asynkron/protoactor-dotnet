@@ -1,24 +1,21 @@
-﻿using OpenTracing;
-using OpenTracing.Propagation;
-using OpenTracing.Tag;
-using OpenTracing.Util;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.Text;
 using System.Threading.Tasks;
+using OpenTracing;
+using OpenTracing.Propagation;
+using OpenTracing.Util;
 
 namespace Proto.OpenTracing
 {
     public delegate void SpanSetup(ISpan span, object message);
 
     /// <summary>
-    /// Good documentation/tutorials here : https://github.com/yurishkuro/opentracing-tutorial/tree/master/csharp
+    ///     Good documentation/tutorials here : https://github.com/yurishkuro/opentracing-tutorial/tree/master/csharp
     /// </summary>
     public static class OpenTracingExtensions
     {
         /// <summary>
-        /// Setup open tracing send middleware & decorator.
+        ///     Setup open tracing send middleware & decorator.
         /// </summary>
         /// <param name="props">props.</param>
         /// <param name="sendSpanSetup">provide a way inject send span constumisation according to the message.</param>
@@ -26,7 +23,10 @@ namespace Proto.OpenTracing
         /// <param name="tracer">OpenTracing, if nul : GlobalTracer.Instance will be used.</param>
         /// <returns>props</returns>
         public static Props WithOpenTracing(
-            this Props props, SpanSetup sendSpanSetup = null, SpanSetup receiveSpanSetup = null, ITracer tracer = null
+            this Props props,
+            SpanSetup sendSpanSetup = null,
+            SpanSetup receiveSpanSetup = null,
+            ITracer tracer = null
         )
             => props
                 .WithContextDecorator(ctx => ctx.WithOpenTracing(sendSpanSetup, receiveSpanSetup, tracer))
@@ -36,21 +36,17 @@ namespace Proto.OpenTracing
             => props.WithSenderMiddleware(OpenTracingSenderMiddleware(tracer));
 
         /// <summary>
-        /// Only responsible to tweak the envelop in order to send SpanContext informations.
+        ///     Only responsible to tweak the envelop in order to send SpanContext informations.
         /// </summary>
         public static Func<Sender, Sender> OpenTracingSenderMiddleware(ITracer tracer = null)
-            => next => async (context, target, envelope) =>
-            {
+            => next => async (context, target, envelope) => {
                 tracer ??= GlobalTracer.Instance;
 
                 var span = tracer.ActiveSpan;
 
                 Task SimpleNext() => next(context, target, envelope); // to forget nothing
 
-                if (span == null)
-                {
-                    await SimpleNext().ConfigureAwait(false);
-                }
+                if (span == null) await SimpleNext().ConfigureAwait(false);
                 else
                 {
                     var dictionary = new Dictionary<string, string>();
@@ -62,7 +58,10 @@ namespace Proto.OpenTracing
             };
 
         internal static IContext WithOpenTracing(
-            this IContext context, SpanSetup sendSpanSetup = null, SpanSetup receiveSpanSetup = null, ITracer tracer = null
+            this IContext context,
+            SpanSetup sendSpanSetup = null,
+            SpanSetup receiveSpanSetup = null,
+            ITracer tracer = null
         )
         {
             sendSpanSetup ??= OpenTracingHelpers.DefaultSetupSpan;
@@ -73,8 +72,9 @@ namespace Proto.OpenTracing
         }
 
         /// <summary>
-        /// Setup open tracing send decorator around RootContext.
-        /// DO NOT FORGET to create the RootContext passing OpenTracingExtensions.OpenTracingSenderMiddleware to the constructor.
+        ///     Setup open tracing send decorator around RootContext.
+        ///     DO NOT FORGET to create the RootContext passing OpenTracingExtensions.OpenTracingSenderMiddleware to the
+        ///     constructor.
         /// </summary>
         /// <param name="props">props.</param>
         /// <param name="sendSpanSetup">provide a way inject send span constumisation according to the message.</param>

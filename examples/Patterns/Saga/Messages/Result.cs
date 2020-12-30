@@ -7,12 +7,9 @@ using Proto;
 
 namespace Saga.Messages
 {
-    internal class Result
+    class Result
     {
-        public Result(PID pid)
-        {
-            Pid = pid;
-        }
+        public Result(PID pid) => Pid = pid;
 
         public PID Pid { get; }
     }

@@ -6,7 +6,8 @@ namespace Proto.Remote
     public static class IRemoteExtensions
     {
         public static IRemote Remote(this ActorSystem system) => system.Extensions.Get<IRemote>();
-        public static IRemote Remote(this IContext context)=> context.System.Remote();
+
+        public static IRemote Remote(this IContext context) => context.System.Remote();
 
         /// <summary>
         ///     Spawn a remote actor with auto-generated name

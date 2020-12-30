@@ -12,10 +12,7 @@ namespace Proto.DependencyInjection
     {
         private readonly IServiceProvider _services;
 
-        public DependencyResolver(IServiceProvider services)
-        {
-            _services = services;
-        }
+        public DependencyResolver(IServiceProvider services) => _services = services;
 
         public Props PropsFor<TActor>() where TActor : IActor =>
             Props.FromProducer(() => _services.GetService<TActor>()!);

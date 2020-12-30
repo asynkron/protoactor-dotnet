@@ -46,26 +46,17 @@ namespace Proto
 
     public sealed partial class Watch : SystemMessage
     {
-        public Watch(PID watcher)
-        {
-            Watcher = watcher;
-        }
+        public Watch(PID watcher) => Watcher = watcher;
     }
 
     public sealed partial class Unwatch : SystemMessage
     {
-        public Unwatch(PID watcher)
-        {
-            Watcher = watcher;
-        }
+        public Unwatch(PID watcher) => Watcher = watcher;
     }
 
     public sealed class Restart : SystemMessage
     {
-        public Restart(Exception reason)
-        {
-            Reason = reason;
-        }
+        public Restart(Exception reason) => Reason = reason;
 
         public Exception Reason { get; }
     }

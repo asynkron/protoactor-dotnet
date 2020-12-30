@@ -49,10 +49,8 @@ namespace Proto.TestKit
         public PID? Sender { get; private set; }
 
         /// <inheritdoc />
-        public IContext Context
-        {
-            get
-            {
+        public IContext Context {
+            get {
                 if (_context is null) throw new InvalidOperationException("Probe context is null");
 
                 return _context;
@@ -64,6 +62,7 @@ namespace Proto.TestKit
         public void ExpectNoMessage(TimeSpan? timeAllowed = null)
         {
             var time = timeAllowed ?? TimeSpan.FromSeconds(1);
+
             if (_messageQueue.TryTake(out var o, time))
             {
                 throw new TestKitException($"Waited {time.Seconds} seconds and received a message of type {o.GetType()}"

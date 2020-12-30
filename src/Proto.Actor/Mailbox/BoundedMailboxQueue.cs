@@ -13,10 +13,7 @@ namespace Proto.Mailbox
         private readonly Channel<object> _messages;
         private volatile bool _hasMessages;
 
-        public BoundedMailboxQueue(int size)
-        {
-            _messages = Channel.CreateBounded<object>(size);
-        }
+        public BoundedMailboxQueue(int size) => _messages = Channel.CreateBounded<object>(size);
 
         public void Push(object message)
         {

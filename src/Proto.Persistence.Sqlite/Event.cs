@@ -2,7 +2,9 @@
 {
     public class Event
     {
-        public Event() { }
+        public Event()
+        {
+        }
 
         public Event(string actorName, long eventIndex, string eventData)
         {

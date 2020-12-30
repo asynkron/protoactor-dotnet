@@ -30,8 +30,15 @@ namespace Saga
         private int _successResults;
         private int _unknownResults;
 
-        public Runner(int numberOfIterations, int intervalBetweenConsoleUpdates, double uptime,
-            double refusalProbability, double busyProbability, int retryAttempts, bool verbose)
+        public Runner(
+            int numberOfIterations,
+            int intervalBetweenConsoleUpdates,
+            double uptime,
+            double refusalProbability,
+            double busyProbability,
+            int retryAttempts,
+            bool verbose
+        )
         {
             _numberOfIterations = numberOfIterations;
             _intervalBetweenConsoleUpdates = intervalBetweenConsoleUpdates;
@@ -67,8 +74,7 @@ namespace Saga
                     _inMemoryProvider = new InMemoryProvider();
                     new ForWithProgress(_numberOfIterations, _intervalBetweenConsoleUpdates, true, false).EveryNth(
                         i => Console.WriteLine($"Started {i}/{_numberOfIterations} processes"),
-                        (i, nth) =>
-                        {
+                        (i, nth) => {
                             var j = i;
                             var fromAccount = CreateAccount(context, $"FromAccount{j}", random);
                             var toAccount = CreateAccount(context, $"ToAccount{j}", random);
@@ -102,9 +108,11 @@ namespace Saga
             _transfers.Remove(pid);
 
             var remaining = _transfers.Count;
+
             if (_numberOfIterations >= _intervalBetweenConsoleUpdates)
             {
                 Console.Write(".");
+
                 if (remaining % (_numberOfIterations / _intervalBetweenConsoleUpdates) == 0)
                 {
                     Console.WriteLine();
@@ -140,6 +148,7 @@ namespace Saga
                     {
                         Console.WriteLine();
                         Console.WriteLine($"Event log for {stream.Key}");
+
                         foreach (var @event in stream.Value)
                         {
                             Console.WriteLine(@event.Value);

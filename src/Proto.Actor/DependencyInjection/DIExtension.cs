@@ -12,10 +12,7 @@ namespace Proto.DependencyInjection
     [PublicAPI]
     public class DIExtension : IActorSystemExtension<DIExtension>
     {
-        public DIExtension(IDependencyResolver resolver)
-        {
-            Resolver = resolver;
-        }
+        public DIExtension(IDependencyResolver resolver) => Resolver = resolver;
 
         public IDependencyResolver Resolver { get; }
     }

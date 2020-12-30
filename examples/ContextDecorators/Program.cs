@@ -28,10 +28,7 @@ namespace ContextDecorators
     {
         private readonly string _loggerName;
 
-        public LoggingDecorator(IContext context, string loggerName) : base(context)
-        {
-            _loggerName = loggerName;
-        }
+        public LoggingDecorator(IContext context, string loggerName) : base(context) => _loggerName = loggerName;
 
         //we are just logging this single method
         public override void Respond(object message)
@@ -42,13 +39,12 @@ namespace ContextDecorators
         }
     }
 
-    internal class Program
+    class Program
     {
         private static void Main(string[] args)
         {
             var context = new LoggingRootDecorator(new RootContext(new ActorSystem()));
-            var props = Props.FromFunc(ctx =>
-                        {
+            var props = Props.FromFunc(ctx => {
                             if (ctx.Message is string str)
                             {
                                 Console.WriteLine("Inside Actor: " + str);

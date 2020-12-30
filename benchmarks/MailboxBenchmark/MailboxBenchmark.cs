@@ -8,8 +8,7 @@ using BenchmarkDotNet.Attributes;
 using Proto;
 using Proto.Mailbox;
 
-[SimpleJob(1, 3, 5, 100, "QuickJob")]
-[ShortRunJob]
+[SimpleJob(1, 3, 5, 100, "QuickJob"), ShortRunJob]
 public class MailboxBenchmark
 {
     [Benchmark]
@@ -22,8 +21,7 @@ public class MailboxBenchmark
     {
         var context = new RootContext(new ActorSystem());
         const int n = 10 * 1000;
-        var props = Props.FromFunc(c =>
-                {
+        var props = Props.FromFunc(c => {
                     switch (c.Message)
                     {
                         case string s:
@@ -36,6 +34,7 @@ public class MailboxBenchmark
             )
             .WithMailbox(mailbox);
         var pid = context.Spawn(props);
+
         for (var i = 1; i <= n; i++)
         {
             context.Send(pid, i);

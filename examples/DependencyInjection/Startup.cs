@@ -17,10 +17,7 @@ namespace DependencyInjection
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
+        public Startup(IConfiguration configuration) => Configuration = configuration;
 
         public IConfiguration Configuration { get; }
 
@@ -30,10 +27,7 @@ namespace DependencyInjection
             services.AddSingleton(serviceProvider => new ActorSystem().WithServiceProvider(serviceProvider));
             services.AddTransient<DependencyInjectedActor>();
             services.AddControllers();
-            services.AddSwaggerGen(c =>
-                {
-                    c.SwaggerDoc("v1", new OpenApiInfo {Title = "DependencyInjection", Version = "v1"});
-                }
+            services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo {Title = "DependencyInjection", Version = "v1"}); }
             );
         }
 

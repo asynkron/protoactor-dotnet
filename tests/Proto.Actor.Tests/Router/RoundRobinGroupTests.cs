@@ -118,8 +118,7 @@ namespace Proto.Router.Tests
             Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));
         }
 
-        private (PID router, PID routee1, PID routee2, PID routee3) CreateRoundRobinRouterWith3Routees(
-            ActorSystem system)
+        private (PID router, PID routee1, PID routee2, PID routee3) CreateRoundRobinRouterWith3Routees(ActorSystem system)
         {
             var routee1 = system.Root.Spawn(MyActorProps);
             var routee2 = system.Root.Spawn(MyActorProps);

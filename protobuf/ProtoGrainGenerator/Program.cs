@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ProtoGrainGenerator
 {
-    internal class Program
+    class Program
     {
         private static Task Main(string[] args) => Commands.CreateCommands().InvokeAsync(args);
     }

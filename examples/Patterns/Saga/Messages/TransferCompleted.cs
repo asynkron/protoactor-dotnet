@@ -7,7 +7,7 @@ using Proto;
 
 namespace Saga.Messages
 {
-    internal class TransferCompleted
+    class TransferCompleted
     {
         public TransferCompleted(PID from, decimal fromBalance, PID to, decimal toBalance)
         {

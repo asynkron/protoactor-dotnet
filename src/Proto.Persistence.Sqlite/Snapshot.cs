@@ -2,7 +2,9 @@
 {
     public class Snapshot
     {
-        public Snapshot() { }
+        public Snapshot()
+        {
+        }
 
         public Snapshot(string actorName, long snapshotIndex, string snapshotData)
         {

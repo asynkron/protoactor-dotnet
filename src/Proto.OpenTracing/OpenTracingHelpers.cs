@@ -1,14 +1,16 @@
-﻿using OpenTracing;
-using OpenTracing.Tag;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using OpenTracing;
+using OpenTracing.Tag;
 
 namespace Proto.OpenTracing
 {
     static class OpenTracingHelpers
     {
-        public static void DefaultSetupSpan(ISpan span, object message) { }
+        public static void DefaultSetupSpan(ISpan span, object message)
+        {
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IScope BuildStartedScope(this ITracer tracer, ISpanContext parentSpan, string verb, object message, SpanSetup spanSetup)
@@ -18,7 +20,7 @@ namespace Proto.OpenTracing
             var scope = tracer
                 .BuildSpan($"{verb} {messageType}") // <= perhaps is not good to have the operation name mentioning the message type
                 .AsChildOf(parentSpan)
-                .StartActive(finishSpanOnDispose: true);
+                .StartActive(true);
 
             ProtoTags.MessageType.Set(scope.Span, messageType);
 
@@ -35,11 +37,13 @@ namespace Proto.OpenTracing
             Tags.Error.Set(span, true);
             var baseEx = exception.GetBaseException();
             span.Log(
-                new Dictionary<string, object> {
-                    { "exception", baseEx.GetType().Name },
-                    { "message", baseEx.Message },
-                    { "stackTrace", exception.StackTrace },
-                });
+                new Dictionary<string, object>
+                {
+                    {"exception", baseEx.GetType().Name},
+                    {"message", baseEx.Message},
+                    {"stackTrace", exception.StackTrace}
+                }
+            );
         }
     }
 }

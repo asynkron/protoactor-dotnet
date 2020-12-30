@@ -10,7 +10,7 @@ using Proto.Router;
 
 namespace RouterExample
 {
-    internal class Message : IHashable
+    class Message : IHashable
     {
         public string Text;
 
@@ -19,7 +19,7 @@ namespace RouterExample
         public override string ToString() => Text;
     }
 
-    internal class MyActor : IActor
+    class MyActor : IActor
     {
         public Task ReceiveAsync(IContext context)
         {
@@ -28,7 +28,7 @@ namespace RouterExample
         }
     }
 
-    internal class Program
+    class Program
     {
         private static readonly Props MyActorProps = Props.FromProducer(() => new MyActor());
 
@@ -59,6 +59,7 @@ namespace RouterExample
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps)
             );
+
             for (var i = 0; i < 10; i++)
             {
                 var pid = context.Spawn(props);
@@ -72,6 +73,7 @@ namespace RouterExample
             var context = new RootContext(system);
             var props = context.NewBroadcastPool(MyActorProps, 5);
             var pid = context.Spawn(props);
+
             for (var i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
@@ -89,6 +91,7 @@ namespace RouterExample
                 context.Spawn(MyActorProps)
             );
             var pid = context.Spawn(props);
+
             for (var i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
@@ -101,6 +104,7 @@ namespace RouterExample
             var context = new RootContext(system);
             var props = context.NewConsistentHashPool(MyActorProps, 5);
             var pid = context.Spawn(props);
+
             for (var i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
@@ -118,6 +122,7 @@ namespace RouterExample
                 context.Spawn(MyActorProps)
             );
             var pid = context.Spawn(props);
+
             for (var i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
@@ -130,6 +135,7 @@ namespace RouterExample
             var context = new RootContext(system);
             var props = context.NewRoundRobinPool(MyActorProps, 5);
             var pid = context.Spawn(props);
+
             for (var i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
@@ -147,6 +153,7 @@ namespace RouterExample
                 context.Spawn(MyActorProps)
             );
             var pid = context.Spawn(props);
+
             for (var i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
@@ -159,6 +166,7 @@ namespace RouterExample
             var context = new RootContext(system);
             var props = context.NewRandomPool(MyActorProps, 5);
             var pid = context.Spawn(props);
+
             for (var i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});

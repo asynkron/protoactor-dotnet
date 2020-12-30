@@ -7,7 +7,7 @@ using Proto;
 
 namespace Saga.Messages
 {
-    internal class FailedButConsistentResult : Result
+    class FailedButConsistentResult : Result
     {
         public FailedButConsistentResult(PID pid) : base(pid)
         {

@@ -49,17 +49,22 @@ namespace Proto.Cluster
             this with {MemberStrategyBuilder = builder};
 
         public ClusterConfig WithClusterKind(string kind, Props prop) =>
-            this with { ClusterKinds = ClusterKinds.Add(kind, prop)};
+            this with {ClusterKinds = ClusterKinds.Add(kind, prop)};
 
         public ClusterConfig WithClusterKinds(params (string kind, Props prop)[] knownKinds) =>
-            this with {
+            this with
+            {
                 ClusterKinds = ClusterKinds
                     .AddRange(knownKinds
                         .Select(kk => new KeyValuePair<string, Props>(kk.kind, kk.prop))
-                    )};
+                    )
+            };
 
-        public static ClusterConfig Setup(string clusterName, IClusterProvider clusterProvider,
-            IIdentityLookup identityLookup) =>
+        public static ClusterConfig Setup(
+            string clusterName,
+            IClusterProvider clusterProvider,
+            IIdentityLookup identityLookup
+        ) =>
             new(clusterName, clusterProvider, identityLookup);
     }
 }

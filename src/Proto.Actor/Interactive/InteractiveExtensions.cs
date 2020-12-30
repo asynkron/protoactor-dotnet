@@ -16,8 +16,11 @@ namespace Proto.Interactive
     [PublicAPI]
     public static class InteractiveExtensions
     {
-        public static async Task ParallelForEach<T>(this IEnumerable<T> self, Func<T, Task> body,
-            int concurrencyLevel = 10)
+        public static async Task ParallelForEach<T>(
+            this IEnumerable<T> self,
+            Func<T, Task> body,
+            int concurrencyLevel = 10
+        )
         {
             var (s, routees, router) = Start(body, concurrencyLevel);
 
@@ -29,8 +32,11 @@ namespace Proto.Interactive
             await Shutdown(routees, s, router);
         }
 
-        public static async Task ParallelForEach<T>(this IAsyncEnumerable<T> self, Func<T, Task> body,
-            int concurrencyLevel = 10)
+        public static async Task ParallelForEach<T>(
+            this IAsyncEnumerable<T> self,
+            Func<T, Task> body,
+            int concurrencyLevel = 10
+        )
         {
             var (s, routees, router) = Start(body, concurrencyLevel);
 
@@ -42,10 +48,12 @@ namespace Proto.Interactive
             await Shutdown(routees, s, router);
         }
 
-        public static Task ParallelForEach<T>(this IEnumerable<T> self, Action<T> body,
-            int concurrencyLevel = 10) =>
-            self.ParallelForEach(x =>
-                {
+        public static Task ParallelForEach<T>(
+            this IEnumerable<T> self,
+            Action<T> body,
+            int concurrencyLevel = 10
+        ) =>
+            self.ParallelForEach(x => {
                     body(x);
                     return Task.CompletedTask;
                 }, concurrencyLevel
@@ -64,8 +72,7 @@ namespace Proto.Interactive
         private static (ActorSystem, PID[], PID) Start<T>(Func<T, Task> body, int concurrencyLevel)
         {
             var s = new ActorSystem();
-            var props = Props.FromFunc(async ctx =>
-                {
+            var props = Props.FromFunc(async ctx => {
                     if (ctx.Message is T msg) await body(msg);
                 }
             ).WithMailbox(() => new DefaultMailbox(new UnboundedMailboxQueue(), new BoundedMailboxQueue(10)));

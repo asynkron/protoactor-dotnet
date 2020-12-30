@@ -5,15 +5,12 @@
 // -----------------------------------------------------------------------
 namespace Proto.Router.Routers
 {
-    internal record RoundRobinPoolRouterConfig : PoolRouterConfig
+    record RoundRobinPoolRouterConfig : PoolRouterConfig
     {
         private readonly ISenderContext _senderContext;
 
         public RoundRobinPoolRouterConfig(ISenderContext senderContext, int poolSize, Props routeeProps)
-            : base(poolSize, routeeProps)
-        {
-            _senderContext = senderContext;
-        }
+            : base(poolSize, routeeProps) => _senderContext = senderContext;
 
         protected override RouterState CreateRouterState() => new RoundRobinRouterState(_senderContext);
     }

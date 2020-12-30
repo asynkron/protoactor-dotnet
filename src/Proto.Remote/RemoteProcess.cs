@@ -26,30 +26,36 @@ namespace Proto.Remote
         {
             object message;
             _endpoint ??= _endpointManager.GetEndpoint(_pid.Address);
+
             switch (msg)
             {
                 case Watch w:
                     if (_endpoint is null)
                     {
-                        System.Root.Send(w.Watcher, new Terminated { Why = TerminatedReason.AddressTerminated, Who = _pid });
+                        System.Root.Send(w.Watcher, new Terminated {Why = TerminatedReason.AddressTerminated, Who = _pid});
                         return;
                     }
+
                     message = new RemoteWatch(w.Watcher, _pid);
                     break;
                 case Unwatch uw:
                     if (_endpoint is null) return;
+
                     message = new RemoteUnwatch(uw.Watcher, _pid);
                     break;
                 default:
                     var (m, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
+
                     if (_endpoint is null)
                     {
                         System.EventStream.Publish(new DeadLetterEvent(_pid, m, sender));
                         return;
                     }
+
                     message = new RemoteDeliver(header!, m, _pid, sender!, -1);
                     break;
             }
+
             System.Root.Send(_endpoint, message);
         }
     }

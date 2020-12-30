@@ -6,7 +6,6 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Proto.Context;
 
 namespace Proto.Cluster.Cache
 {
@@ -31,35 +30,27 @@ namespace Proto.Cluster.Cache
                 }
             );
 
+        public static Cluster WithPidCacheInvalidation(this Cluster cluster)
+        {
+            _ = new ClusterCacheInvalidation(cluster);
+            return cluster;
+        }
+
         private class CacheInvalidationContext : ActorContextDecorator
         {
             private readonly ClusterCacheInvalidation _plugin;
             private Action<MessageEnvelope>? _callBack;
 
             public CacheInvalidationContext(IContext context, ClusterCacheInvalidation cacheInvalidation) : base(context)
-            {
-                _plugin = cacheInvalidation;
-            }
+                => _plugin = cacheInvalidation;
 
             public override async Task Receive(MessageEnvelope envelope)
             {
                 await base.Receive(envelope);
 
-                if (envelope.Message is ClusterInit init)
-                {
-                    _callBack = _plugin.ForActor(init.ClusterIdentity, Self!);
-                }
-                else
-                {
-                    _callBack?.Invoke(envelope);
-                }
+                if (envelope.Message is ClusterInit init) _callBack = _plugin.ForActor(init.ClusterIdentity, Self!);
+                else _callBack?.Invoke(envelope);
             }
-        }
-
-        public static Cluster WithPidCacheInvalidation(this Cluster cluster)
-        {
-            _ = new ClusterCacheInvalidation(cluster);
-            return cluster;
         }
     }
 }

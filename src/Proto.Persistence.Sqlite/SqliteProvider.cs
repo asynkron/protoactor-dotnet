@@ -1,19 +1,17 @@
 ﻿using System;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Microsoft.Data.Sqlite;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
+using Newtonsoft.Json;
 
 namespace Proto.Persistence.Sqlite
 {
     public class SqliteProvider : IProvider
     {
-        private readonly SqliteConnectionStringBuilder _connectionStringBuilder;
-        private string ConnectionString => $"{_connectionStringBuilder}";
-
         private static readonly JsonSerializerSettings AutoTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Auto};
         private static readonly JsonSerializerSettings AllTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};
+        private readonly SqliteConnectionStringBuilder _connectionStringBuilder;
 
         public SqliteProvider(SqliteConnectionStringBuilder connectionStringBuilder)
         {
@@ -24,7 +22,7 @@ namespace Proto.Persistence.Sqlite
             connection.Open();
 
             using var initEventsCommand = connection.CreateCommand();
-            
+
             initEventsCommand.CommandText = "CREATE TABLE IF NOT EXISTS Events (Id TEXT, ActorName TEXT, EventIndex REAL, EventData TEXT)";
             initEventsCommand.ExecuteNonQuery();
 
@@ -34,6 +32,8 @@ namespace Proto.Persistence.Sqlite
                 "CREATE TABLE IF NOT EXISTS Snapshots (Id TEXT, ActorName TEXT, SnapshotIndex REAL, SnapshotData TEXT)";
             initSnapshotsCommand.ExecuteNonQuery();
         }
+
+        private string ConnectionString => $"{_connectionStringBuilder}";
 
         public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
         {

@@ -15,16 +15,12 @@ namespace Proto.Remote.Tests
     {
         private readonly IRemoteFixture _fixture;
 
-        public RemoteTests(IRemoteFixture fixture)
-        {
-            _fixture = fixture;
-        }
+        public RemoteTests(IRemoteFixture fixture) => _fixture = fixture;
 
         private ActorSystem System => _fixture.ActorSystem;
         private IRemote Remote => _fixture.Remote;
 
-        [Fact]
-        [DisplayTestMethodName]
+        [Fact, DisplayTestMethodName]
         public async Task CanSendAndReceiveToExistingRemote()
         {
             var remoteActor = PID.FromAddress(_fixture.RemoteAddress, "EchoActorInstance");
@@ -36,15 +32,13 @@ namespace Proto.Remote.Tests
             Assert.Equal($"{_fixture.RemoteAddress} Hello", pong.Message);
         }
 
-        [Fact]
-        [DisplayTestMethodName]
+        [Fact, DisplayTestMethodName]
         public async Task WhenRemoteActorNotFound_DeadLetterException()
         {
             var unknownRemoteActor = PID.FromAddress(_fixture.RemoteAddress, "doesn't exist");
 
             await Assert.ThrowsAsync<DeadLetterException>(
-                async () =>
-                {
+                async () => {
                     await System.Root.RequestAsync<Pong>(unknownRemoteActor, new Ping {Message = "Hello"},
                         TimeSpan.FromMilliseconds(2000)
                     );
@@ -52,8 +46,7 @@ namespace Proto.Remote.Tests
             );
         }
 
-        [Fact]
-        [DisplayTestMethodName]
+        [Fact, DisplayTestMethodName]
         public async Task CanSpawnRemoteActor()
         {
             var remoteActorName = Guid.NewGuid().ToString();
@@ -68,8 +61,7 @@ namespace Proto.Remote.Tests
             Assert.Equal($"{_fixture.RemoteAddress} Hello", pong.Message);
         }
 
-        [Fact]
-        [DisplayTestMethodName]
+        [Fact, DisplayTestMethodName]
         public async Task CanWatchRemoteActor()
         {
             var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
@@ -89,8 +81,7 @@ namespace Proto.Remote.Tests
             );
         }
 
-        [Fact]
-        [DisplayTestMethodName]
+        [Fact, DisplayTestMethodName]
         public async Task CanWatchMultipleRemoteActors()
         {
             var remoteActor1 = await SpawnRemoteActor(_fixture.RemoteAddress);
@@ -123,8 +114,7 @@ namespace Proto.Remote.Tests
             );
         }
 
-        [Fact]
-        [DisplayTestMethodName]
+        [Fact, DisplayTestMethodName]
         public async Task MultipleLocalActorsCanWatchRemoteActor()
         {
             var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
@@ -156,8 +146,7 @@ namespace Proto.Remote.Tests
             );
         }
 
-        [Fact]
-        [DisplayTestMethodName]
+        [Fact, DisplayTestMethodName]
         public async Task CanUnwatchRemoteActor()
         {
             var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
@@ -189,8 +178,7 @@ namespace Proto.Remote.Tests
             );
         }
 
-        [Fact]
-        [DisplayTestMethodName]
+        [Fact, DisplayTestMethodName]
         public async Task WhenRemoteTerminated_LocalWatcherReceivesNotification()
         {
             var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
@@ -283,10 +271,7 @@ namespace Proto.Remote.Tests
         private readonly List<PID> _remoteActors = new();
         private readonly List<Terminated> _terminatedMessages = new();
 
-        public LocalActor(params PID[] remoteActors)
-        {
-            _remoteActors.AddRange(remoteActors);
-        }
+        public LocalActor(params PID[] remoteActors) => _remoteActors.AddRange(remoteActors);
 
         public Task ReceiveAsync(IContext context)
         {
@@ -312,10 +297,7 @@ namespace Proto.Remote.Tests
             return Task.CompletedTask;
         }
 
-        private void HandleCountOfMessagesReceived(IContext context)
-        {
-            context.Respond(_terminatedMessages.Count);
-        }
+        private void HandleCountOfMessagesReceived(IContext context) => context.Respond(_terminatedMessages.Count);
 
         private void HandleTerminatedMessageReceived(IContext context, TerminatedMessageReceived msg)
         {

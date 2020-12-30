@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
-using Proto.Interactive;
 using Proto.Utils;
 
 namespace ClusterExperiment1
@@ -23,16 +22,13 @@ namespace ClusterExperiment1
         public static async Task Main(string[] args)
         {
             ThreadPool.SetMinThreads(500, 500);
-            
+
             Configuration.SetupLogger();
 
             if (args.Length > 0)
             {
-                
                 var worker = await Configuration.SpawnMember();
-                AppDomain.CurrentDomain.ProcessExit += (sender, args) => {
-                    worker.ShutdownAsync(true).Wait();
-                };
+                AppDomain.CurrentDomain.ProcessExit += (sender, args) => { worker.ShutdownAsync().Wait(); };
                 Thread.Sleep(Timeout.Infinite);
                 return;
             }
@@ -50,32 +46,26 @@ namespace ClusterExperiment1
 
             var res2 = Console.ReadLine();
 
-            int batchSize = 0;
+            var batchSize = 0;
+
             if (res2 == "2")
             {
                 Console.WriteLine("Batch size? default is 50");
                 var res = Console.ReadLine();
 
-                if (!int.TryParse(res, out batchSize))
-                {
-                    batchSize = 50;
-                }
-            
+                if (!int.TryParse(res, out batchSize)) batchSize = 50;
+
                 Console.WriteLine($"Using batch size {batchSize}");
             }
-            
+
             Console.WriteLine("Number of virtual actors? default 10000");
 
             var res3 = Console.ReadLine();
 
-            if (!int.TryParse(res3, out var actorCount))
-            {
-                actorCount = 10_000;
-            }
-            
+            if (!int.TryParse(res3, out var actorCount)) actorCount = 10_000;
+
             Console.WriteLine($"Using {actorCount} actors");
             ActorCount = actorCount;
-            
 
             _ts = new TaskCompletionSource<bool>();
 
@@ -110,13 +100,11 @@ namespace ClusterExperiment1
 
             await _ts.Task;
         }
-        
+
         private static void RunFireForgetClient()
         {
             var logger = Log.CreateLogger(nameof(Program));
-            ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(200), t => {
-                    logger.LogCritical("Threadpool is flooded");
-                }
+            ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(200), t => { logger.LogCritical("Threadpool is flooded"); }
             );
 
             _ = Task.Run(async () => {
@@ -129,8 +117,7 @@ namespace ClusterExperiment1
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, ActorCount);
-                        semaphore.Wait(() => 
-                            {
+                        semaphore.Wait(() => {
                                 return cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                                     new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token
                                 ).ContinueWith(_ => Console.Write("."));
@@ -144,9 +131,7 @@ namespace ClusterExperiment1
         private static void RunBatchClient(int batchSize)
         {
             var logger = Log.CreateLogger(nameof(Program));
-            ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(500), t => {
-                    logger.LogCritical("Threadpool is flooded");
-                }
+            ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(500), t => { logger.LogCritical("Threadpool is flooded"); }
             );
 
             _ = Task.Run(async () => {
@@ -186,9 +171,7 @@ namespace ClusterExperiment1
         private static void RunClient()
         {
             var logger = Log.CreateLogger(nameof(Program));
-            ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(500), t => {
-                    logger.LogCritical("Threadpool is flooded");
-                }
+            ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(500), t => { logger.LogCritical("Threadpool is flooded"); }
             );
 
             _ = Task.Run(async () => {

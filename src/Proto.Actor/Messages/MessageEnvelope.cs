@@ -27,13 +27,13 @@ namespace Proto
             message is MessageEnvelope env ? env : new MessageEnvelope(message, null);
 
         public MessageEnvelope WithSender(PID sender) =>
-            this with { Sender = sender};
+            this with {Sender = sender};
 
         public MessageEnvelope WithMessage(object message) =>
             this with {Message = message};
 
         public MessageEnvelope WithHeader(MessageHeader header) =>
-            this with { Header = header};
+            this with {Header = header};
 
         public MessageEnvelope WithHeader(string key, string value)
         {

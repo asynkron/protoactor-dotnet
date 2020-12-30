@@ -14,10 +14,7 @@ namespace Messages
 {
     public class Grains
     {
-        public Grains(Cluster cluster)
-        {
-            Cluster = cluster;
-        }
+        public Grains(Cluster cluster) => Cluster = cluster;
 
         private Cluster Cluster { get; }
 
@@ -60,14 +57,14 @@ namespace Messages
                 var res = await _cluster.RequestAsync<object>(_id, "HelloGrain", gr, ct);
 
                 return res switch
-                       {
-                           // normal response
-                           GrainResponse grainResponse => HelloResponse.Parser.ParseFrom(grainResponse.MessageData),
-                           // error response
-                           GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
-                           // unsupported response
-                           _ => throw new NotSupportedException()
-                       };
+                {
+                    // normal response
+                    GrainResponse grainResponse => HelloResponse.Parser.ParseFrom(grainResponse.MessageData),
+                    // error response
+                    GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                    // unsupported response
+                    _ => throw new NotSupportedException()
+                };
             }
 
             return await Inner();
@@ -79,10 +76,7 @@ namespace Messages
         private readonly Grains _grains;
         private IHelloGrain _inner;
 
-        public HelloGrainActor(Grains grains)
-        {
-            _grains = grains;
-        }
+        public HelloGrainActor(Grains grains) => _grains = grains;
 
         protected string Identity { get; private set; }
 
@@ -92,26 +86,23 @@ namespace Messages
         {
             switch (context.Message)
             {
-                case ClusterInit msg:
-                {
+                case ClusterInit msg: {
                     _inner = _grains.GetHelloGrain();
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
                     Identity = msg.Identity;
                     Kind = msg.Kind;
                     break;
                 }
-                case ReceiveTimeout _:
-                {
+                case ReceiveTimeout _: {
                     context.Stop(context.Self!);
                     break;
                 }
-                case GrainRequest request:
-                {
+                case GrainRequest request: {
                     switch (request.MethodIndex)
                     {
-                        case 0:
-                        {
+                        case 0: {
                             var r = HelloRequest.Parser.ParseFrom(request.MessageData);
+
                             try
                             {
                                 var res = await _inner.SayHello(r);

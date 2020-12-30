@@ -1,30 +1,26 @@
-﻿namespace Proto.Cluster.Identity.Redis
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Identity;
-    using Microsoft.Extensions.Logging;
-    using StackExchange.Redis;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using StackExchange.Redis;
 
+namespace Proto.Cluster.Identity.Redis
+{
     public class RedisIdentityStorage : IIdentityStorage
     {
         private static readonly ILogger Logger = Log.CreateLogger<RedisIdentityStorage>();
-
-        private readonly RedisKey _clusterIdentityKey;
-        private readonly RedisKey _memberKey;
-        private static readonly RedisKey NoKey = new RedisKey();
-
+        private static readonly RedisKey NoKey = new();
 
         private static readonly RedisValue UniqueIdentity = "pid";
         private static readonly RedisValue Address = "adr";
         private static readonly RedisValue MemberId = "mid";
         private static readonly RedisValue LockId = "lid";
 
-        private readonly IConnectionMultiplexer _connections;
+        private readonly RedisKey _clusterIdentityKey;
 
-        private IDatabase GetDb() => _connections.GetDatabase();
+        private readonly IConnectionMultiplexer _connections;
+        private readonly RedisKey _memberKey;
 
         public RedisIdentityStorage(string clusterName, IConnectionMultiplexer connections)
         {
@@ -33,7 +29,6 @@
             _memberKey = baseKey.Append("mb:");
             _connections = connections;
         }
-
 
         public async Task<SpawnLock?> TryAcquireLockAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
         {
@@ -46,13 +41,16 @@
             return hasLock ? new SpawnLock(requestId, clusterIdentity) : null;
         }
 
-        public async Task<StoredActivation?> WaitForActivationAsync(ClusterIdentity clusterIdentity,
-            CancellationToken ct)
+        public async Task<StoredActivation?> WaitForActivationAsync(
+            ClusterIdentity clusterIdentity,
+            CancellationToken ct
+        )
         {
             var key = IdKey(clusterIdentity);
             var db = GetDb();
             var activation = await LookupKey(db, key);
             var i = 1;
+
             while (activation == null && !ct.IsCancellationRequested)
             {
                 await Task.Delay(20 * i++, ct);
@@ -78,8 +76,12 @@
             return Task.CompletedTask;
         }
 
-        public async Task StoreActivation(string memberId, SpawnLock spawnLock, PID pid,
-            CancellationToken ct)
+        public async Task StoreActivation(
+            string memberId,
+            SpawnLock spawnLock,
+            PID pid,
+            CancellationToken ct
+        )
         {
             Logger.LogDebug("Storing activation {@Activation} for {@ClusterIdentity} on member {MemberId}", pid,
                 spawnLock.ClusterIdentity, memberId
@@ -94,7 +96,7 @@
                 new HashEntry(UniqueIdentity, pid.Id),
                 new HashEntry(Address, pid.Address),
                 new HashEntry(MemberId, memberId),
-                new HashEntry(LockId, RedisValue.EmptyString),
+                new HashEntry(LockId, RedisValue.EmptyString)
             };
 
             await Task.WhenAll(
@@ -111,6 +113,7 @@
 
             var db = GetDb();
             var activation = await LookupKey(db, key);
+
             if (activation?.Pid.Equals(pid) == true)
             {
                 var memberKey = MemberKey(activation.MemberId);
@@ -132,11 +135,12 @@
             var pidIds = db.SetScanAsync(key);
 
             var transactionsFinished = new List<Task>();
+
             await foreach (var pidId in pidIds.WithCancellation(ct))
             {
                 var pidKey = IdKeyFromPidId(pidId);
                 if (pidKey == NoKey) continue;
-                
+
                 var transaction = db.CreateTransaction();
                 transaction.AddCondition(Condition.HashEqual(pidKey, UniqueIdentity, pidId));
                 _ = transaction.KeyDeleteAsync(pidKey);
@@ -146,13 +150,19 @@
             await Task.WhenAll(transactionsFinished);
         }
 
+        public Task<StoredActivation?> TryGetExistingActivationAsync(
+            ClusterIdentity clusterIdentity,
+            CancellationToken ct
+        ) => LookupKey(GetDb(), IdKey(clusterIdentity));
 
-        public Task<StoredActivation?> TryGetExistingActivationAsync(ClusterIdentity clusterIdentity,
-            CancellationToken ct) => LookupKey(GetDb(), IdKey(clusterIdentity));
+        public void Dispose() => _connections.Dispose();
+
+        private IDatabase GetDb() => _connections.GetDatabase();
 
         private async Task<bool> TryAcquireLockAsync(
             ClusterIdentity clusterIdentity,
-            string requestId)
+            string requestId
+        )
         {
             var key = IdKey(clusterIdentity);
 
@@ -179,11 +189,7 @@
                 : NoKey;
 
         private RedisKey IdKey(string clusterIdentity) => _clusterIdentityKey.Append(clusterIdentity);
-        private RedisKey MemberKey(string memberId) => _memberKey.Append(memberId);
 
-        public void Dispose()
-        {
-            _connections.Dispose();
-        }
+        private RedisKey MemberKey(string memberId) => _memberKey.Append(memberId);
     }
 }

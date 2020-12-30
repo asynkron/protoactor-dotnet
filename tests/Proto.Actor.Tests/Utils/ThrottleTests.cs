@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Proto.Utils;
@@ -15,6 +14,7 @@ namespace Proto.Tests.Utils
             const int maxEvents = 2;
             var triggered = 0;
             var shouldThrottle = Throttle.Create(maxEvents, TimeSpan.FromSeconds(1));
+
             for (var i = 0; i < 10000; i++)
             {
                 if (shouldThrottle().IsOpen()) triggered++;
@@ -29,6 +29,7 @@ namespace Proto.Tests.Utils
             const int maxEvents = 2;
             var triggered = 0;
             var shouldThrottle = Throttle.Create(maxEvents, TimeSpan.FromMilliseconds(50));
+
             for (var i = 0; i < 100; i++)
             {
                 if (shouldThrottle().IsOpen()) triggered++;
@@ -37,6 +38,7 @@ namespace Proto.Tests.Utils
             triggered.Should().Be(maxEvents);
 
             await Task.Delay(1000);
+
             for (var i = 0; i < 100; i++)
             {
                 if (shouldThrottle().IsOpen()) triggered++;

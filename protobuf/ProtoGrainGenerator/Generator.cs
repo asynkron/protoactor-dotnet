@@ -59,8 +59,7 @@ namespace ProtoGrainGenerator
             var gen = new GrainGen();
             var res = gen.Generate(set).ToList();
 
-            return Task.WhenAll(res.Select(x =>
-                    {
+            return Task.WhenAll(res.Select(x => {
                         Console.WriteLine($"Writing generated file: {x.Name}");
                         return File.WriteAllTextAsync(x.Name, x.Text);
                     }

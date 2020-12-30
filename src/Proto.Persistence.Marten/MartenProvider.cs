@@ -25,7 +25,7 @@ namespace Proto.Persistence.Marten
             {
                 callback(@event.Data);
             }
-                
+
             return events.LastOrDefault()?.Index ?? -1;
         }
 
@@ -67,7 +67,8 @@ namespace Proto.Persistence.Marten
 
             session.DeleteWhere<Event>(x =>
                 x.ActorName == actorName &&
-                x.Index <= inclusiveToIndex);
+                x.Index <= inclusiveToIndex
+            );
 
             await session.SaveChangesAsync();
         }
@@ -78,7 +79,8 @@ namespace Proto.Persistence.Marten
 
             session.DeleteWhere<Snapshot>(x =>
                 x.ActorName == actorName &&
-                x.Index <= inclusiveToIndex);
+                x.Index <= inclusiveToIndex
+            );
 
             await session.SaveChangesAsync();
         }

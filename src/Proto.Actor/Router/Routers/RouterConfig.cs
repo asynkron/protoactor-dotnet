@@ -11,6 +11,7 @@ namespace Proto.Router.Routers
     public abstract record RouterConfig
     {
         public abstract void OnStarted(IContext context, RouterState router);
+
         protected abstract RouterState CreateRouterState();
 
         public Props Props() => new Props().WithSpawner(SpawnRouterProcess);

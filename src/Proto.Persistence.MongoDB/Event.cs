@@ -20,7 +20,7 @@ namespace Proto.Persistence.MongoDB
 
         [BsonElement]
         public string ActorName { get; set; }
-        
+
         [BsonElement]
         public long EventIndex { get; set; }
 

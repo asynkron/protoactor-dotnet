@@ -10,7 +10,7 @@ using Saga.Messages;
 
 namespace Saga
 {
-    internal class AccountProxy : IActor
+    class AccountProxy : IActor
     {
         private readonly Func<PID, object> _createMessage;
         private readonly PID _target;

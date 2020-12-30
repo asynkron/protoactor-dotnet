@@ -11,13 +11,13 @@ namespace Proto.Tests
     {
         private static readonly ActorSystem System = new();
         private static readonly RootContext Context = System.Root;
+
         public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
 
         [Fact]
         public async Task RequestActorAsync()
         {
-            var pid = SpawnActorFromFunc(ctx =>
-                {
+            var pid = SpawnActorFromFunc(ctx => {
                     if (ctx.Message is string) ctx.Respond("hey");
                     return Task.CompletedTask;
                 }
@@ -33,10 +33,8 @@ namespace Proto.Tests
         {
             var pid = SpawnActorFromFunc(EmptyReceive);
 
-            var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(() =>
-                {
-                    return Context.RequestAsync<object>(pid, "", TimeSpan.FromMilliseconds(20));
-                }
+            var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(
+                () => { return Context.RequestAsync<object>(pid, "", TimeSpan.FromMilliseconds(20)); }
             );
             Assert.Equal("Request didn't receive any Response within the expected time.", timeoutEx.Message);
         }
@@ -44,8 +42,7 @@ namespace Proto.Tests
         [Fact]
         public async Task RequestActorAsync_should_not_raise_TimeoutException_when_result_is_first()
         {
-            var pid = SpawnActorFromFunc(ctx =>
-                {
+            var pid = SpawnActorFromFunc(ctx => {
                     if (ctx.Message is string) ctx.Respond("hey");
                     return Task.CompletedTask;
                 }
@@ -62,8 +59,7 @@ namespace Proto.Tests
             var messages = new Queue<object>();
 
             var pid = Context.Spawn(
-                Props.FromFunc(ctx =>
-                        {
+                Props.FromFunc(ctx => {
                             messages.Enqueue(ctx.Message);
                             return Task.CompletedTask;
                         }
@@ -126,15 +122,13 @@ namespace Proto.Tests
         [Fact]
         public async Task ForwardActorAsync()
         {
-            var pid = SpawnActorFromFunc(ctx =>
-                {
+            var pid = SpawnActorFromFunc(ctx => {
                     if (ctx.Message is string) ctx.Respond("hey");
                     return Task.CompletedTask;
                 }
             );
 
-            var forwarder = SpawnForwarderFromFunc(ctx =>
-                {
+            var forwarder = SpawnForwarderFromFunc(ctx => {
                     if (ctx.Message is string) ctx.Forward(pid);
                     return Task.CompletedTask;
                 }

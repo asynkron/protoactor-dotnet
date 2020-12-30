@@ -4,16 +4,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Proto;
 using Proto.Cluster;
 
 namespace HostedService
 {
     public class ProtoHost : IHostedService
     {
-        private Cluster _cluster;
-        private ILogger<ProtoHost> _logger;
         private readonly IHostApplicationLifetime _appLifetime;
+        private readonly Cluster _cluster;
+        private readonly ILogger<ProtoHost> _logger;
 
         public ProtoHost(Cluster cluster, ILogger<ProtoHost> logger, IHostApplicationLifetime appLifetime)
         {
@@ -28,8 +27,9 @@ namespace HostedService
             _appLifetime.ApplicationStarted.Register(() => Task.Run(RunRequestLoop, _appLifetime.ApplicationStopping));
             _appLifetime.ApplicationStopping.Register(OnStopping);
             return Task.CompletedTask;
-
         }
+
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
         //flood the system, to see how it reacts upon shutdown.
         private async Task RunRequestLoop()
@@ -42,7 +42,7 @@ namespace HostedService
             {
                 var tasks = new List<Task>();
 
-                for (int i = 0; i < 1000; i++)
+                for (var i = 0; i < 1000; i++)
                 {
                     var id = rnd.Next(0, 100000);
                     var t = _cluster.RequestAsync<int>($"abc{id}", "kind", 123, new CancellationTokenSource(20000).Token);
@@ -55,16 +55,11 @@ namespace HostedService
 
         private void OnStopping()
         {
-            var shutdown = _cluster.ShutdownAsync(true);
+            var shutdown = _cluster.ShutdownAsync();
             var timeout = Task.Delay(15000);
             Task.WhenAny(shutdown, timeout).GetAwaiter().GetResult();
             if (timeout.IsCompleted)
                 _logger.LogError("Shut down cluster timed out...");
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
         }
     }
 }

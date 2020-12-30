@@ -17,10 +17,6 @@ namespace Proto.Cluster.Cache
     {
         private const string ActorName = "$invalidator";
 
-        private ConcurrentDictionary<string, int> AddressRefs { get; } = new();
-        private ActorSystem ActorSystem { get; }
-        private int NextId { get; set; }
-
         public ClusterCacheInvalidation(Cluster cluster)
         {
             ActorSystem = cluster.System;
@@ -44,9 +40,7 @@ namespace Proto.Cluster.Cache
             ActorSystem.Root.SpawnNamed(
                 Props.FromFunc(context => {
                         if (context.Message is ActivationTerminated terminated)
-                        {
                             cluster.PidCache.RemoveByVal(terminated.ClusterIdentity, terminated.Pid);
-                        }
 
                         return Task.CompletedTask;
                     }
@@ -54,6 +48,10 @@ namespace Proto.Cluster.Cache
                 ActorName
             );
         }
+
+        private ConcurrentDictionary<string, int> AddressRefs { get; } = new();
+        private ActorSystem ActorSystem { get; }
+        private int NextId { get; set; }
 
         private bool IsRemote(PID? sender) => sender?.Address != null && !sender.Address.Equals(ActorSystem.Address);
 
@@ -78,10 +76,7 @@ namespace Proto.Cluster.Cache
         {
             if (AddressRefs.TryGetValue(sender.Address, out var index))
             {
-                if (index >= activeRemotes.Length)
-                {
-                    activeRemotes.Length = index + 1;
-                }
+                if (index >= activeRemotes.Length) activeRemotes.Length = index + 1;
 
                 activeRemotes[index] = true;
             }
@@ -91,14 +86,8 @@ namespace Proto.Cluster.Cache
         {
             var activeRemotes = new BitArray(NextId);
             return envelope => {
-                if (envelope.Message is Stopped)
-                {
-                    Invalidate(identity, activation, activeRemotes);
-                }
-                else if (IsRemote(envelope.Sender))
-                {
-                    AddRemote(envelope.Sender!, activeRemotes);
-                }
+                if (envelope.Message is Stopped) Invalidate(identity, activation, activeRemotes);
+                else if (IsRemote(envelope.Sender)) AddRemote(envelope.Sender!, activeRemotes);
             };
         }
     }

@@ -28,15 +28,17 @@ namespace Proto.Utils
         /// <param name="period"></param>
         /// <param name="throttledCallBack">This will be called with the number of events what was throttled after the period</param>
         /// <returns></returns>
-        public static ShouldThrottle Create(int maxEventsInPeriod, TimeSpan period,
-            Action<int>? throttledCallBack = null)
+        public static ShouldThrottle Create(
+            int maxEventsInPeriod,
+            TimeSpan period,
+            Action<int>? throttledCallBack = null
+        )
         {
             if (period == TimeSpan.Zero || maxEventsInPeriod < 1 || maxEventsInPeriod == int.MaxValue)
                 return () => Valve.Open;
 
             var currentEvents = 0;
-            return () =>
-            {
+            return () => {
                 var tries = Interlocked.Increment(ref currentEvents);
                 if (tries == 1) StartTimer(throttledCallBack);
 
@@ -45,16 +47,12 @@ namespace Proto.Utils
                 return tries > maxEventsInPeriod ? Valve.Closed : Valve.Open;
             };
 
-            void StartTimer(Action<int>? callBack)
-            {
-                _ = Task.Run(async () =>
-                    {
-                        await Task.Delay(period);
-                        var timesCalled = Interlocked.Exchange(ref currentEvents, 0);
-                        if (timesCalled > maxEventsInPeriod) callBack?.Invoke(timesCalled - maxEventsInPeriod);
-                    }
-                );
-            }
+            void StartTimer(Action<int>? callBack) => _ = Task.Run(async () => {
+                    await Task.Delay(period);
+                    var timesCalled = Interlocked.Exchange(ref currentEvents, 0);
+                    if (timesCalled > maxEventsInPeriod) callBack?.Invoke(timesCalled - maxEventsInPeriod);
+                }
+            );
         }
 
         public static bool IsOpen(this Valve valve) => valve != Valve.Closed;

@@ -5,12 +5,9 @@
 // -----------------------------------------------------------------------
 namespace Saga.Messages
 {
-    internal class TransferFailed
+    class TransferFailed
     {
-        public TransferFailed(string reason)
-        {
-            Reason = reason;
-        }
+        public TransferFailed(string reason) => Reason = reason;
 
         public string Reason { get; }
 

@@ -7,7 +7,7 @@ using Proto;
 
 namespace Saga.Messages
 {
-    internal abstract class ChangeBalance
+    abstract class ChangeBalance
     {
         protected ChangeBalance(decimal amount, PID replyTo)
         {

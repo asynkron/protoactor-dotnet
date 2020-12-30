@@ -6,14 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Consul;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using Proto.Cluster.Data;
 using Proto.Cluster.Events;
 
@@ -49,8 +46,10 @@ namespace Proto.Cluster.Consul
         private Cluster _cluster;
         private string _consulLeaderKey;
         private string _consulServiceInstanceId; //the specific instance id of this node in consul
+
         private string _consulServiceName; //name of the custer, in consul this means the name of the service
-     //   private string _consulSessionId;
+
+        //   private string _consulSessionId;
         private volatile bool _deregistered;
         private string _host;
 
@@ -77,8 +76,10 @@ namespace Proto.Cluster.Consul
         {
         }
 
-        public ConsulProvider(IOptions<ConsulProviderConfig> options,
-            Action<ConsulClientConfiguration> clientConfiguration) :
+        public ConsulProvider(
+            IOptions<ConsulProviderConfig> options,
+            Action<ConsulClientConfiguration> clientConfiguration
+        ) :
             this(options.Value, clientConfiguration)
         {
         }
@@ -91,7 +92,7 @@ namespace Proto.Cluster.Consul
             await RegisterMemberAsync();
             StartUpdateTtlLoop();
             StartMonitorMemberStatusChangesLoop();
-         //   StartLeaderElectionLoop();
+            //   StartLeaderElectionLoop();
         }
 
         public Task StartClientAsync(Cluster cluster)
@@ -115,7 +116,7 @@ namespace Proto.Cluster.Consul
                 await DeregisterServiceAsync();
                 _deregistered = true;
             }
-           
+
             _logger.LogInformation("Shut down consul provider");
         }
 
@@ -134,8 +135,14 @@ namespace Proto.Cluster.Consul
             // if (!updated.Response) _logger.LogError("Failed to update cluster state");
         }
 
-        private void SetState(Cluster cluster, string clusterName, string host, int port, string[] kinds,
-            MemberList memberList)
+        private void SetState(
+            Cluster cluster,
+            string clusterName,
+            string host,
+            int port,
+            string[] kinds,
+            MemberList memberList
+        )
         {
             _cluster = cluster;
             _consulServiceInstanceId = $"{clusterName}-{_cluster.System.Id}@{host}:{port}";
@@ -149,9 +156,9 @@ namespace Proto.Cluster.Consul
 
         private void StartMonitorMemberStatusChangesLoop()
         {
-            _ = Task.Run(async () =>
-                {
+            _ = Task.Run(async () => {
                     var waitIndex = 0ul;
+
                     while (!_shutdown && !_cluster.System.Shutdown.IsCancellationRequested)
                     {
                         var statuses = await _client.Health.Service(_consulServiceName, null, false, new QueryOptions
@@ -159,7 +166,8 @@ namespace Proto.Cluster.Consul
                                 WaitIndex = waitIndex,
                                 WaitTime = _blockingWaitTime
                             }
-                        ,_cluster.System.Shutdown);
+                            , _cluster.System.Shutdown
+                        );
                         if (_deregistered) break;
 
                         _logger.LogDebug("Got status updates from Consul");
@@ -197,20 +205,16 @@ namespace Proto.Cluster.Consul
             }
         }
 
-        private void StartUpdateTtlLoop()
-        {
-            _ = Task.Run(async () =>
+        private void StartUpdateTtlLoop() => _ = Task.Run(async () => {
+                while (!_shutdown)
                 {
-                    while (!_shutdown)
-                    {
-                        await _client.Agent.PassTTL("service:" + _consulServiceInstanceId, "");
-                        await Task.Delay(_refreshTtl, _cluster.System.Shutdown);
-                    }
-
-                    _logger.LogInformation("Exiting TTL loop");
+                    await _client.Agent.PassTTL("service:" + _consulServiceInstanceId, "");
+                    await Task.Delay(_refreshTtl, _cluster.System.Shutdown);
                 }
-            );
-        }
+
+                _logger.LogInformation("Exiting TTL loop");
+            }
+        );
         //
         // private void StartLeaderElectionLoop()
         // {

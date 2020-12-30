@@ -15,8 +15,7 @@ namespace Proto.Tests
         public async Task MultipleStopsTriggerSingleTerminated()
         {
             var counter = 0;
-            var childProps = Props.FromFunc(context =>
-                {
+            var childProps = Props.FromFunc(context => {
                     switch (context.Message)
                     {
                         case Started _:
@@ -29,8 +28,7 @@ namespace Proto.Tests
                 }
             );
 
-            Context.Spawn(Props.FromFunc(context =>
-                    {
+            Context.Spawn(Props.FromFunc(context => {
                         switch (context.Message)
                         {
                             case Started _:
@@ -70,10 +68,7 @@ namespace Proto.Tests
             private readonly PID _watchee;
             private bool _terminateReceived;
 
-            public LocalActor(PID watchee)
-            {
-                _watchee = watchee;
-            }
+            public LocalActor(PID watchee) => _watchee = watchee;
 
             public Task ReceiveAsync(IContext context)
             {

@@ -13,16 +13,12 @@ namespace Proto.Tests
 
         private readonly ITestOutputHelper output;
 
-        public ReenterTests(ITestOutputHelper output)
-        {
-            this.output = output;
-        }
+        public ReenterTests(ITestOutputHelper output) => this.output = output;
 
         [Fact]
         public async Task ReenterAfterCompletedTask()
         {
-            var props = Props.FromFunc(ctx =>
-                {
+            var props = Props.FromFunc(ctx => {
                     if (ctx.Message is string str && str == "reenter")
                     {
                         var delay = Task.Delay(500);
@@ -45,16 +41,14 @@ namespace Proto.Tests
             var activeCount = 0;
             var correct = true;
             var counter = 0;
-            var props = Props.FromFunc(ctx =>
-                {
+            var props = Props.FromFunc(ctx => {
                     if (ctx.Message is string msg && msg == "reenter")
                     {
                         //use ++ on purpose, any race condition would make the counter go out of sync
                         counter++;
 
                         var task = Task.Delay(0);
-                        ctx.ReenterAfter(task, () =>
-                            {
+                        ctx.ReenterAfter(task, () => {
                                 var res = Interlocked.Increment(ref activeCount);
                                 if (res != 1) correct = false;
 

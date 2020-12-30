@@ -8,7 +8,7 @@ using Proto;
 
 namespace Saga
 {
-    internal class Program
+    class Program
     {
         private static readonly RootContext Context = new ActorSystem().Root;
 

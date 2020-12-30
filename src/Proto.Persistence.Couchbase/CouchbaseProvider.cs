@@ -7,12 +7,10 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Couchbase;
 using Couchbase.Core;
 using Couchbase.N1QL;
 
-
- namespace Proto.Persistence.Couchbase
+namespace Proto.Persistence.Couchbase
 {
     public class CouchbaseProvider : IProvider
     {
@@ -25,33 +23,6 @@ using Couchbase.N1QL;
             var query = GenerateGetEventsQuery(actorName, indexStart, indexEnd);
 
             return ExecuteGetEventsQueryAsync(query, callback);
-        }
-
-        private string GenerateGetEventsQuery(string actorName, long indexStart, long indexEnd)
-            => $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName = '{actorName}' " +
-                "AND b.type = 'event' " +
-                $"AND b.eventIndex >= {indexStart} " +
-                $"AND b.eventIndex <= {indexEnd} " +
-                "ORDER BY b.eventIndex ASC";
-
-        private async Task<long> ExecuteGetEventsQueryAsync(string query, Action<object> callback)
-        {
-            var req = QueryRequest.Create(query);
-
-            req.ScanConsistency(ScanConsistency.RequestPlus);
-
-            var res = await _bucket.QueryAsync<Event>(req);
-
-            ThrowOnError(res);
-
-            var events = res.Rows;
-
-            foreach (var @event in events)
-            {
-                callback(@event.Data);
-            }
-
-            return  events.LastOrDefault()?.EventIndex ?? -1;
         }
 
         public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
@@ -90,7 +61,8 @@ using Couchbase.N1QL;
 
         public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
         {
-            var query = $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.type = 'event' AND b.eventIndex <= {inclusiveToIndex}";
+            var query =
+                $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.type = 'event' AND b.eventIndex <= {inclusiveToIndex}";
 
             var req = QueryRequest.Create(query);
 
@@ -123,12 +95,36 @@ using Couchbase.N1QL;
             await Task.WhenAll(envelopes.Select(x => _bucket.RemoveAsync(x.Key)));
         }
 
+        private string GenerateGetEventsQuery(string actorName, long indexStart, long indexEnd)
+            => $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName = '{actorName}' " +
+               "AND b.type = 'event' " +
+               $"AND b.eventIndex >= {indexStart} " +
+               $"AND b.eventIndex <= {indexEnd} " +
+               "ORDER BY b.eventIndex ASC";
+
+        private async Task<long> ExecuteGetEventsQueryAsync(string query, Action<object> callback)
+        {
+            var req = QueryRequest.Create(query);
+
+            req.ScanConsistency(ScanConsistency.RequestPlus);
+
+            var res = await _bucket.QueryAsync<Event>(req);
+
+            ThrowOnError(res);
+
+            var events = res.Rows;
+
+            foreach (var @event in events)
+            {
+                callback(@event.Data);
+            }
+
+            return events.LastOrDefault()?.EventIndex ?? -1;
+        }
+
         private static void ThrowOnError<T>(IQueryResult<T> res)
         {
-            if (!res.Success)
-            {
-                throw new Exception($"Couchbase query failed: {res}");
-            }
+            if (!res.Success) throw new Exception($"Couchbase query failed: {res}");
         }
     }
 }

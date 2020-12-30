@@ -18,8 +18,7 @@ namespace Proto.Cluster.Tests
         {
         }
 
-        [Theory]
-        [InlineData(1000, 10, 8000)]
+        [Theory, InlineData(1000, 10, 8000)]
         public async Task OrderedDeliveryFromActors(int sendingActors, int messagesSentPerCall, int timeoutMs)
         {
             var aggregatorId = CreateIdentity("agg-1");
@@ -70,6 +69,7 @@ namespace Proto.Cluster.Tests
                     case SendToRequest sendTo:
 
                         var key = Guid.NewGuid().ToString("N");
+
                         for (var i = 0; i < sendTo.Count; i++)
                         {
                             await _cluster.RequestAsync<Ack>(sendTo.Id, VerifyOrderActor.Kind,
@@ -140,10 +140,8 @@ namespace Proto.Cluster.Tests
             {
             }
 
-            protected override (string, Props)[] ClusterKinds
-            {
-                get
-                {
+            protected override (string, Props)[] ClusterKinds {
+                get {
                     var senderProps = Props.FromProducer(() => new SenderActor());
                     var aggProps = Props.FromProducer(() => new VerifyOrderActor());
                     return base.ClusterKinds.Concat(new[]

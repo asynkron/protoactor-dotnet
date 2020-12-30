@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Proto.Mailbox
 {
-    internal static class MailboxStatus
+    static class MailboxStatus
     {
         public const int Idle = 0;
         public const int Busy = 1;
@@ -18,8 +18,11 @@ namespace Proto.Mailbox
     public interface IMailbox
     {
         void PostUserMessage(object msg);
+
         void PostSystemMessage(object msg);
+
         void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher);
+
         void Start();
     }
 
@@ -47,8 +50,11 @@ namespace Proto.Mailbox
         private bool _suspended;
         private long _systemMessageCount;
 
-        public DefaultMailbox(IMailboxQueue systemMessages, IMailboxQueue userMailbox,
-            params IMailboxStatistics[] stats)
+        public DefaultMailbox(
+            IMailboxQueue systemMessages,
+            IMailboxQueue userMailbox,
+            params IMailboxStatistics[] stats
+        )
         {
             _systemMessages = systemMessages;
             _userMailbox = userMailbox;
@@ -63,6 +69,7 @@ namespace Proto.Mailbox
         public void PostUserMessage(object msg)
         {
             _userMailbox.Push(msg);
+
             foreach (var t in _stats)
             {
                 t.MessagePosted(msg);
@@ -77,6 +84,7 @@ namespace Proto.Mailbox
             if (msg is Stop)
                 _invoker?.CancellationTokenSource?.Cancel();
             Interlocked.Increment(ref _systemMessageCount);
+
             foreach (var t in _stats)
             {
                 t.MessagePosted(msg);
@@ -125,6 +133,7 @@ namespace Proto.Mailbox
         private bool ProcessMessages()
         {
             object? msg = null;
+
             try
             {
                 for (var i = 0; i < _dispatcher.Throughput; i++)
@@ -134,12 +143,13 @@ namespace Proto.Mailbox
                         Interlocked.Decrement(ref _systemMessageCount);
 
                         _suspended = msg switch
-                                     {
-                                         SuspendMailbox _ => true,
-                                         ResumeMailbox _  => false,
-                                         _                => _suspended
-                                     };
+                        {
+                            SuspendMailbox _ => true,
+                            ResumeMailbox _  => false,
+                            _                => _suspended
+                        };
                         var t = _invoker.InvokeSystemMessageAsync(msg);
+
                         if (t.IsFaulted)
                         {
                             _invoker.EscalateFailure(t.Exception, msg);
@@ -172,6 +182,7 @@ namespace Proto.Mailbox
                     if ((msg = _userMailbox.Pop()) is not null)
                     {
                         var t = _invoker.InvokeUserMessageAsync(msg);
+
                         if (t.IsFaulted)
                         {
                             _invoker.EscalateFailure(t.Exception, msg);

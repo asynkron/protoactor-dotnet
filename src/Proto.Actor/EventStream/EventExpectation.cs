@@ -11,17 +11,14 @@ using JetBrains.Annotations;
 namespace Proto
 {
     [PublicAPI]
-    internal class EventExpectation<T>
+    class EventExpectation<T>
     {
         private readonly Func<T, bool> _predicate;
 
         private readonly TaskCompletionSource<T> _source =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public EventExpectation(Func<T, bool> predicate)
-        {
-            _predicate = predicate;
-        }
+        public EventExpectation(Func<T, bool> predicate) => _predicate = predicate;
 
         public Task<T> Task => _source.Task;
 

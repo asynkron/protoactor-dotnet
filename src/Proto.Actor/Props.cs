@@ -68,12 +68,13 @@ namespace Proto
             this with {Dispatcher = dispatcher};
 
         public Props WithMailbox(MailboxProducer mailboxProducer) =>
-            this with { MailboxProducer = mailboxProducer};
+            this with {MailboxProducer = mailboxProducer};
 
         public Props WithContextDecorator(params Func<IContext, IContext>[] contextDecorator)
         {
             var x = ContextDecorator.AddRange(contextDecorator);
-            return this with {
+            return this with
+            {
                 ContextDecorator = x,
                 ContextDecoratorChain = x
                     .AsEnumerable()
@@ -82,7 +83,7 @@ namespace Proto
                         (Func<IContext, IContext>) DefaultContextDecorator,
                         (inner, outer) => ctx => outer(inner(ctx))
                     )
-                };
+            };
         }
 
         public Props WithGuardianSupervisorStrategy(ISupervisorStrategy guardianStrategy) =>
@@ -94,29 +95,34 @@ namespace Proto
         public Props WithReceiverMiddleware(params Func<Receiver, Receiver>[] middleware)
         {
             var x = ReceiverMiddleware.AddRange(middleware);
-            return this with {
+            return this with
+            {
                 ReceiverMiddleware = x,
                 ReceiverMiddlewareChain = x.AsEnumerable().Reverse()
                     .Aggregate((Receiver) Middleware.Receive, (inner, outer) => outer(inner))
-                };
+            };
         }
 
         public Props WithSenderMiddleware(params Func<Sender, Sender>[] middleware)
         {
             var x = SenderMiddleware.AddRange(middleware);
-            return this with {
+            return this with
+            {
                 SenderMiddleware = x,
                 SenderMiddlewareChain = x.AsEnumerable().Reverse()
                     .Aggregate((Sender) Middleware.Sender, (inner, outer) => outer(inner))
-                };
+            };
         }
 
         public Props WithSpawner(Spawner spawner) =>
             this with {Spawner = spawner};
 
         internal PID Spawn(ActorSystem system, string name, PID? parent) => Spawner(system, name, this, parent);
+
         public static Props FromProducer(Producer producer) => Empty.WithProducer(s => producer());
+
         public static Props FromProducer(ProducerWithSystem producer) => Empty.WithProducer(producer);
+
         public static Props FromFunc(Receive receive) => FromProducer(() => new FunctionActor(receive));
     }
 }

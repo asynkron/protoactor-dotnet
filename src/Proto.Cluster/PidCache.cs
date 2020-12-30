@@ -25,7 +25,6 @@ namespace Proto.Cluster
         {
             if (clusterIdentity is null) throw new ArgumentNullException(nameof(clusterIdentity));
 
-
             return _cacheDict.TryGetValue(clusterIdentity, out pid);
         }
 
@@ -72,6 +71,7 @@ namespace Proto.Cluster
         {
             var toBeRemoved = _cacheDict.Where(predicate).ToList();
             if (toBeRemoved.Count == 0) return;
+
             foreach (var item in toBeRemoved)
             {
                 _cacheCollection.Remove(item);

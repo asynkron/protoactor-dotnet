@@ -50,6 +50,7 @@ namespace Proto.Mailbox
                 var pos = _enqueuePos;
                 var index = pos & _bufferMask;
                 var cell = buffer[index];
+
                 if (cell.Sequence == pos && Interlocked.CompareExchange(ref _enqueuePos, pos + 1, pos) == pos)
                 {
                     buffer[index].Element = item;
@@ -81,6 +82,7 @@ namespace Proto.Mailbox
                 var pos = _dequeuePos;
                 var index = pos & bufferMask;
                 var cell = buffer[index];
+
                 if (cell.Sequence == pos + 1 && Interlocked.CompareExchange(ref _dequeuePos, pos + 1, pos) == pos)
                 {
                     result = cell.Element;

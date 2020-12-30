@@ -16,7 +16,7 @@ namespace Proto.Cluster.Partition
     //TLDR; this is a partition/bucket in the distributed hash table which makes up the identity lookup
     //
     //for spawning/activating cluster actors see PartitionActivator.cs
-    internal class PartitionIdentityActor : IActor
+    class PartitionIdentityActor : IActor
     {
         //for how long do we wait before sending a ReceiveTimeout message?  (useful for liveliness checks on the actor, log it to show the actor is alive)
         private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(5);
@@ -92,24 +92,21 @@ namespace Proto.Cluster.Partition
                 _mode = ProcessingMode.Working;
         }
 
-        private Action ConsiderResumeProcessing(IContext context, TaskCompletionSource<bool> resume)
-        {
-            return () =>
+        private Action ConsiderResumeProcessing(IContext context, TaskCompletionSource<bool> resume) => () => {
+            var delay = StartWorkingIn;
+
+            if (delay > TimeSpan.FromMilliseconds(1))
             {
-                var delay = StartWorkingIn;
-                if (delay > TimeSpan.FromMilliseconds(1))
-                {
-                    _logger.LogDebug("Delaying activations with {Timespan}", delay);
-                    context.ReenterAfter(Task.Delay(delay), ConsiderResumeProcessing(context, resume));
-                }
-                else
-                {
-                    _logger.LogDebug("Starting activations");
-                    _mode = ProcessingMode.Working;
-                    resume.SetResult(true);
-                }
-            };
-        }
+                _logger.LogDebug("Delaying activations with {Timespan}", delay);
+                context.ReenterAfter(Task.Delay(delay), ConsiderResumeProcessing(context, resume));
+            }
+            else
+            {
+                _logger.LogDebug("Starting activations");
+                _mode = ProcessingMode.Working;
+                resume.SetResult(true);
+            }
+        };
 
         private Task ReceiveTimeout(IContext context)
         {
@@ -178,7 +175,6 @@ namespace Proto.Cluster.Partition
                 _logger.LogError(x, "Failed to get identities");
             }
 
-
             //always do this when a member leaves, we need to redistribute the distributed-hash-table
             //no ifs or else, just always
             //ClearInvalidOwnership(context);
@@ -197,6 +193,7 @@ namespace Proto.Cluster.Partition
         private Task ActivationTerminated(ActivationTerminated msg, IContext context)
         {
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
+
             if (ownerAddress != _myAddress)
             {
                 var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
@@ -232,8 +229,8 @@ namespace Proto.Cluster.Partition
                 return Task.CompletedTask;
             }
 
-
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
+
             if (ownerAddress != _myAddress)
             {
                 var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
@@ -292,12 +289,10 @@ namespace Proto.Cluster.Partition
             //Await SpawningProcess
             context.ReenterAfter(
                 res,
-                rst =>
-                {
+                rst => {
                     var response = res.Result;
                     //TODO: as this is async, there might come in multiple ActivationRequests asking for this
                     //Identity, causing multiple activations
-
 
                     //Check if exist in current partition dictionary
                     //This is necessary to avoid race condition during partition map transfer.
@@ -313,7 +308,6 @@ namespace Proto.Cluster.Partition
                         context.Respond(response);
                         return Task.CompletedTask;
                     }
-
 
                     _partitionLookup[msg.ClusterIdentity] = (response.Pid, msg.Kind);
 
@@ -352,8 +346,11 @@ namespace Proto.Cluster.Partition
         }
 
         //identical to Remote.SpawnNamedAsync, just using the special partition-activator for spawning
-        private async Task<ActivationResponse> ActivateAsync(string address, ActivationRequest req,
-            TimeSpan timeout)
+        private async Task<ActivationResponse> ActivateAsync(
+            string address,
+            ActivationRequest req,
+            TimeSpan timeout
+        )
         {
             var activator = PartitionManager.RemotePartitionPlacementActor(address);
 

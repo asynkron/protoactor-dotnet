@@ -37,7 +37,7 @@ namespace Node2
         }
     }
 
-    internal class Program
+    class Program
     {
         private static async Task Main(string[] args)
         {
@@ -62,6 +62,7 @@ namespace Node2
             var system = new ActorSystem(actorSystemConfig);
             var context = new RootContext(system);
             IRemote remote;
+
             if (provider == 0)
             {
                 var remoteConfig = GrpcCoreRemoteConfig

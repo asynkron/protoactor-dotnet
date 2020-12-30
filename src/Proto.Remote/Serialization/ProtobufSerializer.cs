@@ -12,10 +12,7 @@ namespace Proto.Remote
     {
         private readonly Serialization _serialization;
 
-        public ProtobufSerializer(Serialization serialization)
-        {
-            _serialization = serialization;
-        }
+        public ProtobufSerializer(Serialization serialization) => _serialization = serialization;
 
         public ByteString Serialize(object obj)
         {
@@ -32,9 +29,9 @@ namespace Proto.Remote
 
         public string GetTypeName(object obj)
         {
-            if (obj is IMessage message) 
+            if (obj is IMessage message)
                 return $"{message.Descriptor.File.Package}.{message.Descriptor.Name}";
-            
+
             throw new ArgumentException("obj must be of type IMessage", nameof(obj));
         }
     }

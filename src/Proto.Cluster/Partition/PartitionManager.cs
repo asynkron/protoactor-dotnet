@@ -8,7 +8,7 @@ using System.Linq;
 namespace Proto.Cluster.Partition
 {
     //helper to interact with partition actors on this and other members
-    internal class PartitionManager
+    class PartitionManager
     {
         private const string PartitionIdentityActorName = "partition-identity";
         private const string PartitionPlacementActorName = "partition-activator";
@@ -35,8 +35,7 @@ namespace Proto.Cluster.Partition
             {
                 var eventId = 0ul;
                 //make sure selector is updated first
-                _system.EventStream.Subscribe<ClusterTopology>(e =>
-                    {
+                _system.EventStream.Subscribe<ClusterTopology>(e => {
                         if (e.EventId > eventId)
                         {
                             eventId = e.EventId;
@@ -60,8 +59,7 @@ namespace Proto.Cluster.Partition
 
                 var eventId = 0ul;
                 //make sure selector is updated first
-                _system.EventStream.Subscribe<ClusterTopology>(e =>
-                    {
+                _system.EventStream.Subscribe<ClusterTopology>(e => {
                         if (e.EventId > eventId)
                         {
                             eventId = e.EventId;

@@ -201,14 +201,9 @@ namespace Proto.Cluster
 
                 _logger.LogDebug("Published ClusterTopology event {ClusterTopology}", topology);
 
-                if (topology.Joined.Count > 0)
-                {
-                    _logger.LogInformation("Cluster members joined {MembersJoined}", topology.Joined);
-                }
-                if (topology.Left.Count > 0)
-                {
-                    _logger.LogInformation("Cluster members left {MembersJoined}", topology.Joined);
-                }
+                if (topology.Joined.Count > 0) _logger.LogInformation("Cluster members joined {MembersJoined}", topology.Joined);
+
+                if (topology.Left.Count > 0) _logger.LogInformation("Cluster members left {MembersJoined}", topology.Joined);
 
                 _eventStream.Publish(topology);
             }
@@ -267,11 +262,10 @@ namespace Proto.Cluster
         {
             foreach (var (id, member) in _members.ToArray())
             {
-                if (!includeSelf && id == _cluster.System.Id)
-                {
-                    continue;
-                }
+                if (!includeSelf && id == _cluster.System.Id) continue;
+
                 var pid = PID.FromAddress(member.Address, "eventstream");
+
                 try
                 {
                     _system.Root.Send(pid, message);

@@ -14,7 +14,7 @@ using static Proto.Remote.GrpcCore.GrpcCoreRemoteConfig;
 
 namespace Server
 {
-    internal class Program
+    class Program
     {
         private static void Main()
         {
@@ -32,8 +32,7 @@ namespace Server
             var clients = new HashSet<PID>();
 
             var props = Props.FromFunc(
-                ctx =>
-                {
+                ctx => {
                     switch (ctx.Message)
                     {
                         case Connect connect:

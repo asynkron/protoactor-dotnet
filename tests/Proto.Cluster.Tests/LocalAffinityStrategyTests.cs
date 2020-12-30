@@ -13,14 +13,14 @@ using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests
 {
-    public class LocalAffinityStrategyTests : ClusterTestBase,
-        IClassFixture<LocalAffinityStrategyTests.LocalAffinityClusterFixture>
+    public class LocalAffinityStrategyTests
+        : ClusterTestBase,
+            IClassFixture<LocalAffinityStrategyTests.LocalAffinityClusterFixture>
     {
-        public LocalAffinityStrategyTests(ITestOutputHelper testOutputHelper,
-            LocalAffinityClusterFixture clusterFixture) : base(clusterFixture)
-        {
-            TestOutputHelper = testOutputHelper;
-        }
+        public LocalAffinityStrategyTests(
+            ITestOutputHelper testOutputHelper,
+            LocalAffinityClusterFixture clusterFixture
+        ) : base(clusterFixture) => TestOutputHelper = testOutputHelper;
 
         private ITestOutputHelper TestOutputHelper { get; }
 
@@ -51,7 +51,6 @@ namespace Proto.Cluster.Tests
             await PingAll(secondNode);
             secondNodeTimings.Stop();
 
-
             TestOutputHelper.WriteLine("After traffic is shifted to second node:");
             TestOutputHelper.WriteLine(
                 $"Actors: first node: {firstNode.System.ProcessRegistry.ProcessCount}, second node: {secondNode.System.ProcessRegistry.ProcessCount}"
@@ -69,9 +68,9 @@ namespace Proto.Cluster.Tests
                 .BeLessThan(3000, "We expect dead letter responses instead of timeouts");
 
             Task PingAll(Cluster cluster) => Task.WhenAll(
-                Enumerable.Range(0, 1000).Select(async i =>
-                    {
+                Enumerable.Range(0, 1000).Select(async i => {
                         Pong pong = null;
+
                         while (pong is null)
                         {
                             timeout.ThrowIfCancellationRequested();
@@ -86,8 +85,7 @@ namespace Proto.Cluster.Tests
         public class LocalAffinityClusterFixture : BaseInMemoryClusterFixture
         {
             public LocalAffinityClusterFixture() : base(3,
-                config =>
-                {
+                config => {
                     return config.WithMemberStrategyBuilder((cluster, kind) => new LocalAffinityStrategy(cluster, 1100)
                     );
                 }
@@ -97,7 +95,7 @@ namespace Proto.Cluster.Tests
 
             protected override (string, Props)[] ClusterKinds { get; } =
                 {(EchoActor.Kind, EchoActor.Props.WithPoisonOnRemoteTraffic(.5f).WithPidCacheInvalidation())};
-            
+
             protected override async Task<Cluster> SpawnClusterMember(
                 Func<ClusterConfig, ClusterConfig> configure,
                 string clusterName

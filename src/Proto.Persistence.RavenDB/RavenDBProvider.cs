@@ -18,15 +18,7 @@ namespace Proto.Persistence.RavenDB
             SetupIndexes();
         }
 
-        private void SetupIndexes()
-        {
-            IndexCreation.CreateIndexes(typeof(DeleteEventIndex).Assembly, _store);
-            IndexCreation.CreateIndexes(typeof(DeleteSnapshotIndex).Assembly, _store);
-        }
-
-        public async Task<long> GetEventsAsync(
-            string actorName, long indexStart, long indexEnd, Action<object> callback
-        )
+        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
             using var session = _store.OpenAsyncSession();
 
@@ -89,5 +81,11 @@ namespace Proto.Persistence.RavenDB
                     x => x.ActorName == actorName && x.Index <= inclusiveToIndex
                 )
             );
+
+        private void SetupIndexes()
+        {
+            IndexCreation.CreateIndexes(typeof(DeleteEventIndex).Assembly, _store);
+            IndexCreation.CreateIndexes(typeof(DeleteSnapshotIndex).Assembly, _store);
+        }
     }
 }

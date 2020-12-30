@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenTracing;
 using OpenTracing.Propagation;
-using OpenTracing.Tag;
 
 namespace Proto.OpenTracing
 {
@@ -18,8 +14,7 @@ namespace Proto.OpenTracing
 
         public OpenTracingRootContextDecorator(IRootContext context, SpanSetup sendSpanSetup, ITracer tracer) : base(context)
         {
-            _sendSpanSetup = (span, message) =>
-            {
+            _sendSpanSetup = (span, message) => {
                 ProtoTags.ActorType.Set(span, "<None>");
                 sendSpanSetup(span, message);
             };
@@ -37,28 +32,30 @@ namespace Proto.OpenTracing
             => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message));
 
         public override Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message, timeout));
+            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer,
+                () => base.RequestAsync<T>(target, message, timeout)
+            );
 
         public override Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message, cancellationToken));
+            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer,
+                () => base.RequestAsync<T>(target, message, cancellationToken)
+            );
     }
 
     class OpenTracingActorContextDecorator : ActorContextDecorator
     {
-        private readonly SpanSetup _sendSpanSetup;
         private readonly SpanSetup _receiveSpanSetup;
+        private readonly SpanSetup _sendSpanSetup;
         private readonly ITracer _tracer;
 
         public OpenTracingActorContextDecorator(IContext context, SpanSetup sendSpanSetup, SpanSetup receiveSpanSetup, ITracer tracer) : base(context)
         {
-            _sendSpanSetup = (span, message) =>
-            {
+            _sendSpanSetup = (span, message) => {
                 ProtoTags.ActorType.Set(span, context.Actor.GetType().Name);
                 ProtoTags.SenderPID.Set(span, context.Self.ToShortString());
                 sendSpanSetup(span, message);
             };
-            _receiveSpanSetup = (span, message) =>
-            {
+            _receiveSpanSetup = (span, message) => {
                 ProtoTags.ActorType.Set(span, context.Actor.GetType().Name);
                 ProtoTags.TargetPID.Set(span, context.Self.ToShortString());
                 receiveSpanSetup(span, message);
@@ -77,10 +74,14 @@ namespace Proto.OpenTracing
             => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message));
 
         public override Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message, timeout));
+            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer,
+                () => base.RequestAsync<T>(target, message, timeout)
+            );
 
         public override Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message, cancellationToken));
+            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer,
+                () => base.RequestAsync<T>(target, message, cancellationToken)
+            );
 
         public override void Forward(PID target)
             => OpenTracingMethodsDecorators.Forward(target, base.Message, _sendSpanSetup, _tracer, () => base.Forward(target));
@@ -165,8 +166,8 @@ namespace Proto.OpenTracing
             var message = envelope.Message;
 
             var parentSpanCtx = envelope.Header != null
-              ? tracer.Extract(BuiltinFormats.TextMap, new TextMapExtractAdapter(envelope.Header.ToDictionary()))
-              : null;
+                ? tracer.Extract(BuiltinFormats.TextMap, new TextMapExtractAdapter(envelope.Header.ToDictionary()))
+                : null;
 
             using var scope = tracer.BuildStartedScope(parentSpanCtx, nameof(Receive), message, receiveSpanSetup);
 

@@ -15,7 +15,7 @@ using Proto.Remote.GrpcCore;
 using Proto.Remote.GrpcNet;
 using ProtosReflection = Messages.ProtosReflection;
 
-internal class Program
+class Program
 {
     private static async Task Main(string[] args)
     {
@@ -42,6 +42,7 @@ internal class Program
         var context = new RootContext(system);
 
         IRemote remote;
+
         if (provider == 0)
         {
             var remoteConfig = GrpcCoreRemoteConfig
@@ -61,18 +62,19 @@ internal class Program
 
         var messageCount = 1000000;
         var cancellationTokenSource = new CancellationTokenSource();
-        _ = Task.Run(async () =>
-            {
+        _ = Task.Run(async () => {
                 while (!cancellationTokenSource.IsCancellationRequested)
                 {
                     var semaphore = new SemaphoreSlim(0);
                     var props = Props.FromProducer(() => new LocalActor(0, messageCount, semaphore));
 
                     var pid = context.Spawn(props);
+
                     try
                     {
                         var actorPidResponse =
                             await remote.SpawnAsync("127.0.0.1:12000", "echo", TimeSpan.FromSeconds(1));
+
                         if (actorPidResponse.StatusCode == (int) ResponseStatusCode.OK)
                         {
                             var remotePid = actorPidResponse.Pid;
@@ -83,6 +85,7 @@ internal class Program
                             stopWatch.Start();
                             Console.WriteLine("Starting to send");
                             var msg = new Ping();
+
                             for (var i = 0; i < messageCount; i++)
                             {
                                 context.Send(remotePid, msg);

@@ -91,20 +91,14 @@ namespace ProtoActorBenchmarks
 
     public class Start
     {
-        public Start(PID sender)
-        {
-            Sender = sender;
-        }
+        public Start(PID sender) => Sender = sender;
 
         public PID Sender { get; }
     }
 
     public class Msg
     {
-        public Msg(PID sender)
-        {
-            Sender = sender;
-        }
+        public Msg(PID sender) => Sender = sender;
 
         public PID Sender { get; }
     }

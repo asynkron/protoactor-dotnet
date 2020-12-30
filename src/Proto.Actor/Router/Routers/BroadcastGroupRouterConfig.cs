@@ -5,7 +5,7 @@
 // -----------------------------------------------------------------------
 namespace Proto.Router.Routers
 {
-    internal record BroadcastGroupRouterConfig : GroupRouterConfig
+    record BroadcastGroupRouterConfig : GroupRouterConfig
     {
         public BroadcastGroupRouterConfig(ISenderContext senderContext, params PID[] routees) : base(senderContext,
             routees

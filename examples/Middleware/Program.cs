@@ -10,7 +10,7 @@ using Proto;
 
 namespace Middleware
 {
-    internal class Program
+    class Program
     {
         private static void Main(string[] args)
         {
@@ -26,8 +26,7 @@ namespace Middleware
             var root = new RootContext(
                 system,
                 headers,
-                next => async (c, target, envelope) =>
-                {
+                next => async (c, target, envelope) => {
                     var newEnvelope = envelope
                         .WithHeader("TraceID", c.Headers.GetOrDefault("TraceID"))
                         .WithHeader("SpanID", Guid.NewGuid().ToString())
@@ -48,8 +47,7 @@ namespace Middleware
             );
 
             var actor = Props.FromFunc(
-                    c =>
-                    {
+                    c => {
                         if (c.Message is string)
                         {
                             Console.WriteLine("   3 Enter Actor");
@@ -64,8 +62,7 @@ namespace Middleware
                         return Task.CompletedTask;
                     }
                 )
-                .WithReceiverMiddleware(next => async (context, envelope) =>
-                    {
+                .WithReceiverMiddleware(next => async (context, envelope) => {
                         if (envelope.Message is string)
                         {
                             var newEnvelope = envelope
@@ -83,8 +80,7 @@ namespace Middleware
                         else
                             await next(context, envelope);
                     }
-                ).WithSenderMiddleware(next => async (context, target, envelope) =>
-                    {
+                ).WithSenderMiddleware(next => async (context, target, envelope) => {
                         var newEnvelope = envelope
                             .WithHeader("TraceID", context.Headers.GetOrDefault("TraceID"))
                             .WithHeader("SpanID", Guid.NewGuid().ToString())

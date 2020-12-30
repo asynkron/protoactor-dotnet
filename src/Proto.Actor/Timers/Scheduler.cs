@@ -15,44 +15,43 @@ namespace Proto.Timers
         public CancellationTokenSource SendOnce(TimeSpan delay, PID target, object message)
         {
             var cts = new CancellationTokenSource();
-            
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(delay, cts.Token);
 
-                _context.Send(target, message);
-            }, cts.Token);
+            _ = Task.Run(async () => {
+                    await Task.Delay(delay, cts.Token);
+
+                    _context.Send(target, message);
+                }, cts.Token
+            );
 
             return cts;
         }
 
-        public CancellationTokenSource SendRepeatedly(TimeSpan interval, PID target, object message) => 
+        public CancellationTokenSource SendRepeatedly(TimeSpan interval, PID target, object message) =>
             SendRepeatedly(interval, interval, target, message);
 
         public CancellationTokenSource SendRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
         {
             var cts = new CancellationTokenSource();
 
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(delay, cts.Token);
+            _ = Task.Run(async () => {
+                    await Task.Delay(delay, cts.Token);
 
-                async Task Trigger()
-                {
-                    while (true)
+                    async Task Trigger()
                     {
-                        if (cts.IsCancellationRequested)
-                            return;
+                        while (true)
+                        {
+                            if (cts.IsCancellationRequested)
+                                return;
 
-                        _context.Send(target, message);
+                            _context.Send(target, message);
 
-                        await Task.Delay(interval, cts.Token);
+                            await Task.Delay(interval, cts.Token);
+                        }
                     }
-                }
 
-                await Trigger();
-
-            }, cts.Token);
+                    await Trigger();
+                }, cts.Token
+            );
 
             return cts;
         }
@@ -60,46 +59,44 @@ namespace Proto.Timers
         public CancellationTokenSource RequestOnce(TimeSpan delay, PID sender, PID target, object message)
         {
             var cts = new CancellationTokenSource();
-            
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(delay, cts.Token);
 
-                //TODO: allow custom sender
-                _context.Request(target, message);
-            }, cts.Token
+            _ = Task.Run(async () => {
+                    await Task.Delay(delay, cts.Token);
+
+                    //TODO: allow custom sender
+                    _context.Request(target, message);
+                }, cts.Token
             );
 
             return cts;
         }
 
-        public CancellationTokenSource RequestRepeatedly(TimeSpan interval, PID sender, PID target, object message
-        ) => RequestRepeatedly(interval, interval, target, message);
+        public CancellationTokenSource RequestRepeatedly(TimeSpan interval, PID sender, PID target, object message)
+            => RequestRepeatedly(interval, interval, target, message);
 
         public CancellationTokenSource RequestRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
         {
             var cts = new CancellationTokenSource();
 
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(delay, cts.Token);
+            _ = Task.Run(async () => {
+                    await Task.Delay(delay, cts.Token);
 
-                async Task Trigger()
-                {
-                    while (true)
+                    async Task Trigger()
                     {
-                        if (cts.IsCancellationRequested)
-                            return;
-                        
-                        _context.Request(target, message);
+                        while (true)
+                        {
+                            if (cts.IsCancellationRequested)
+                                return;
 
-                        await Task.Delay(interval, cts.Token);
+                            _context.Request(target, message);
+
+                            await Task.Delay(interval, cts.Token);
+                        }
                     }
-                }
 
-                await Trigger();
-
-            }, cts.Token);
+                    await Trigger();
+                }, cts.Token
+            );
 
             return cts;
         }

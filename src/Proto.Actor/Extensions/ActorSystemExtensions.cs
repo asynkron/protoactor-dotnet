@@ -13,10 +13,7 @@ namespace Proto.Extensions
         private readonly object _lockObject = new();
         private IActorSystemExtension[] _extensions = new IActorSystemExtension[10];
 
-        public ActorSystemExtensions(ActorSystem actorSystem)
-        {
-            _actorSystem = actorSystem;
-        }
+        public ActorSystemExtensions(ActorSystem actorSystem) => _actorSystem = actorSystem;
 
         public T? Get<T>() where T : IActorSystemExtension
         {
@@ -29,6 +26,7 @@ namespace Proto.Extensions
             lock (_lockObject)
             {
                 var id = IActorSystemExtension<T>.Id;
+
                 if (id >= _extensions.Length)
                 {
                     var newSize = id * 2; //double size when growing

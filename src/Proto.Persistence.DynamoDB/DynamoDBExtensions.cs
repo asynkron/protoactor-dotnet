@@ -16,13 +16,21 @@ namespace Proto.Persistence.DynamoDB
     public static class DynamoDBExtensions
     {
         /// <summary>
-        /// Checks if table for events with given names exists. If not it creates it.
+        ///     Checks if table for events with given names exists. If not it creates it.
         /// </summary>
-        /// <exception cref="System.InvalidOperationException">Thrown when DynamoDB table already exists, but with different properties OR when table is being deleted.</exception>
-        /// <exception cref="Amazon.DynamoDBv2.AmazonDynamoDBException">Thrown when timeout occurs when getting table status from AWS.</exception>
+        /// <exception cref="System.InvalidOperationException">
+        ///     Thrown when DynamoDB table already exists, but with different
+        ///     properties OR when table is being deleted.
+        /// </exception>
+        /// <exception cref="Amazon.DynamoDBv2.AmazonDynamoDBException">
+        ///     Thrown when timeout occurs when getting table status from
+        ///     AWS.
+        /// </exception>
         public static Task CheckCreateEventsTable(
-            this IAmazonDynamoDB dynamoDB, DynamoDBProviderOptions options,
-            int initialReadCapacityUnits, int initialWriteCapacityUnits
+            this IAmazonDynamoDB dynamoDB,
+            DynamoDBProviderOptions options,
+            int initialReadCapacityUnits,
+            int initialWriteCapacityUnits
         )
             => dynamoDB.CheckCreateTable(
                 options.EventsTableName, options.EventsTableHashKey, options.EventsTableSortKey,
@@ -30,13 +38,21 @@ namespace Proto.Persistence.DynamoDB
             );
 
         /// <summary>
-        /// Checks if table for snapshots with given names exists. If not it creates it.
+        ///     Checks if table for snapshots with given names exists. If not it creates it.
         /// </summary>
-        /// <exception cref="System.InvalidOperationException">Thrown when DynamoDB table already exists, but with different properties OR when table is being deleted.</exception>
-        /// <exception cref="Amazon.DynamoDBv2.AmazonDynamoDBException">Thrown when timeout occurs when getting table status from AWS.</exception>
+        /// <exception cref="System.InvalidOperationException">
+        ///     Thrown when DynamoDB table already exists, but with different
+        ///     properties OR when table is being deleted.
+        /// </exception>
+        /// <exception cref="Amazon.DynamoDBv2.AmazonDynamoDBException">
+        ///     Thrown when timeout occurs when getting table status from
+        ///     AWS.
+        /// </exception>
         public static Task CheckCreateSnapshotsTable(
-            this IAmazonDynamoDB dynamoDB, DynamoDBProviderOptions options,
-            int initialReadCapacityUnits, int initialWriteCapacityUnits
+            this IAmazonDynamoDB dynamoDB,
+            DynamoDBProviderOptions options,
+            int initialReadCapacityUnits,
+            int initialWriteCapacityUnits
         )
             => dynamoDB.CheckCreateTable(
                 options.SnapshotsTableName, options.SnapshotsTableHashKey, options.SnapshotsTableSortKey,
@@ -45,15 +61,16 @@ namespace Proto.Persistence.DynamoDB
 
         private static async Task CheckCreateTable(
             this IAmazonDynamoDB dynamoDB,
-            string tableName, string partitionKey, string sortKey, int readCapacityUnits, int writeCapacityUnits
+            string tableName,
+            string partitionKey,
+            string sortKey,
+            int readCapacityUnits,
+            int writeCapacityUnits
         )
         {
             var existingTable = await dynamoDB.IsTableCreated(tableName, true);
 
-            if (existingTable.Created)
-            {
-                CheckTableKeys(existingTable.TableDesc, partitionKey, sortKey);
-            }
+            if (existingTable.Created) CheckTableKeys(existingTable.TableDesc, partitionKey, sortKey);
             else
             {
                 var res = await dynamoDB.CreateTable(tableName, partitionKey, sortKey, readCapacityUnits, writeCapacityUnits);
@@ -67,7 +84,9 @@ namespace Proto.Persistence.DynamoDB
         }
 
         private static async Task<(bool Created, TableDescription TableDesc)> IsTableCreated(
-            this IAmazonDynamoDB dynamoDB, string tableName, bool falseAccepted
+            this IAmazonDynamoDB dynamoDB,
+            string tableName,
+            bool falseAccepted
         )
         {
             var retry = 10;
@@ -102,10 +121,7 @@ namespace Proto.Persistence.DynamoDB
                 }
                 catch (ResourceNotFoundException)
                 {
-                    if (falseAccepted)
-                    {
-                        return (false, null, false);
-                    }
+                    if (falseAccepted) return (false, null, false);
                 }
 
                 return (false, null, true);
@@ -114,7 +130,11 @@ namespace Proto.Persistence.DynamoDB
 
         private static async Task<TableDescription> CreateTable(
             this IAmazonDynamoDB dynamoDB,
-            string tableName, string partitionKey, string sortKey, int readCapacityUnits, int writeCapacityUnits
+            string tableName,
+            string partitionKey,
+            string sortKey,
+            int readCapacityUnits,
+            int writeCapacityUnits
         )
         {
             var request = new CreateTableRequest

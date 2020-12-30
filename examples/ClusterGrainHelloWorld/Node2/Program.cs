@@ -26,7 +26,7 @@ namespace Node2
             );
     }
 
-    internal class Program
+    class Program
     {
         private static async Task Main(string[] args)
         {
@@ -52,8 +52,7 @@ namespace Node2
             var grains = new Grains(system.Cluster());
             grains.HelloGrainFactory(() => new HelloGrain());
 
-            Console.CancelKeyPress += async (e, y) =>
-            {
+            Console.CancelKeyPress += async (e, y) => {
                 Console.WriteLine("Shutting Down...");
                 await system
                     .Cluster()

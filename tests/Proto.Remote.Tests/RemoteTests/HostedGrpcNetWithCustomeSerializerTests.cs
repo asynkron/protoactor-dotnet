@@ -8,8 +8,9 @@ using Xunit;
 
 namespace Proto.Remote.Tests
 {
-    public class HostedGrpcNetWithCustomSerializerTests : RemoteTests,
-        IClassFixture<HostedGrpcNetWithCustomSerializerTests.Fixture>
+    public class HostedGrpcNetWithCustomSerializerTests
+        : RemoteTests,
+            IClassFixture<HostedGrpcNetWithCustomSerializerTests.Fixture>
     {
         public HostedGrpcNetWithCustomSerializerTests(Fixture fixture) : base(fixture)
         {

@@ -7,7 +7,7 @@ using System;
 
 namespace Proto.Cluster.Testing
 {
-    internal class DeadMember : IEquatable<DeadMember>
+    class DeadMember : IEquatable<DeadMember>
     {
         public DeadMember(string memberId, DateTimeOffset foundDeadAt, TimeSpan deregisterInterval)
         {

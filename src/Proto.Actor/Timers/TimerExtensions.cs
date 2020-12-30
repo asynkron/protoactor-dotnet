@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-
 namespace Proto.Timers
 {
     public static class TimerExtensions

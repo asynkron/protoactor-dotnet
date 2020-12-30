@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Threading.Tasks;
-using System.Data.SqlClient;
-using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using static System.Data.SqlDbType;
 
@@ -10,13 +9,9 @@ namespace Proto.Persistence.SqlServer
 {
     public class SqlServerProvider : IProvider
     {
-        private readonly string _connectionString;
-        private readonly string _tableSnapshots;
-        private readonly string _tableEvents;
-        private readonly string _tableSchema;
-
         private static readonly JsonSerializerSettings AutoTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Auto};
         private static readonly JsonSerializerSettings AllTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};
+        private readonly string _connectionString;
 
         private readonly string _sqlDeleteEvents;
         private readonly string _sqlDeleteSnapshots;
@@ -24,9 +19,15 @@ namespace Proto.Persistence.SqlServer
         private readonly string _sqlReadSnapshot;
         private readonly string _sqlSaveEvents;
         private readonly string _sqlSaveSnapshot;
+        private readonly string _tableEvents;
+        private readonly string _tableSchema;
+        private readonly string _tableSnapshots;
 
         public SqlServerProvider(
-            string connectionString, bool autoCreateTables = false, string useTablesWithPrefix = "", string useTablesWithSchema = "dbo"
+            string connectionString,
+            bool autoCreateTables = false,
+            string useTablesWithPrefix = "",
+            string useTablesWithSchema = "dbo"
         )
         {
             _connectionString = connectionString;
@@ -42,7 +43,8 @@ namespace Proto.Persistence.SqlServer
 
             // execute string interpolation once
             _sqlDeleteEvents = $@"DELETE FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex <= @EventIndex";
-            _sqlDeleteSnapshots = $@"DELETE FROM [{_tableSchema}].[{_tableSnapshots}] WHERE ActorName = @ActorName AND SnapshotIndex <= @SnapshotIndex";
+            _sqlDeleteSnapshots =
+                $@"DELETE FROM [{_tableSchema}].[{_tableSnapshots}] WHERE ActorName = @ActorName AND SnapshotIndex <= @SnapshotIndex";
 
             _sqlReadEvents =
                 $@"SELECT EventIndex, EventData FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex >= @IndexStart AND EventIndex <= @IndexEnd ORDER BY EventIndex ASC";
@@ -219,10 +221,7 @@ namespace Proto.Persistence.SqlServer
 
             command.Transaction = tx;
 
-            if (parameters.Length > 0)
-            {
-                command.Parameters.AddRange(parameters);
-            }
+            if (parameters.Length > 0) command.Parameters.AddRange(parameters);
 
             await command.ExecuteNonQueryAsync();
 

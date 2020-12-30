@@ -8,17 +8,16 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
-using DynamoDBContext = Amazon.DynamoDBv2.DataModel.DynamoDBContext;
-using DynamoDBContextConfig = Amazon.DynamoDBv2.DataModel.DynamoDBContextConfig;
 
 namespace Proto.Persistence.DynamoDB
 {
     public class DynamoDBProvider : IProvider, IDisposable
     {
-        private readonly DynamoDBProviderOptions _options;
         private readonly DynamoDBContext _dynamoDBContext;
         private readonly Table _eventsTable;
+        private readonly DynamoDBProviderOptions _options;
         private readonly Table _snapshotsTable;
 
         public DynamoDBProvider(IAmazonDynamoDB dynamoDBClient, DynamoDBProviderOptions options)
@@ -53,10 +52,7 @@ namespace Proto.Persistence.DynamoDB
                     lastIndex++;
                 }
 
-                if (query.IsDone)
-                {
-                    break;
-                }
+                if (query.IsDone) break;
             }
 
             return lastIndex;
@@ -79,10 +75,7 @@ namespace Proto.Persistence.DynamoDB
             var results = await query.GetNextSetAsync();
             var doc = results.FirstOrDefault();
 
-            if (doc == null)
-            {
-                return (null, 0);
-            }
+            if (doc == null) return (null, 0);
 
             var snapshotIndexE = doc.GetValueOrThrow(_options.SnapshotsTableSortKey);
             var dataTypeE = doc.GetValueOrThrow(_options.SnapshotsTableDataTypeKey);
@@ -108,7 +101,7 @@ namespace Proto.Persistence.DynamoDB
             };
 
             await _eventsTable.PutItemAsync(doc);
-            
+
             return index++;
         }
 
@@ -145,10 +138,7 @@ namespace Proto.Persistence.DynamoDB
                 }
             }
 
-            if (writeCount > 0)
-            {
-                await write.ExecuteAsync();
-            }
+            if (writeCount > 0) await write.ExecuteAsync();
         }
 
         public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
@@ -178,16 +168,10 @@ namespace Proto.Persistence.DynamoDB
                     }
                 }
 
-                if (query.IsDone)
-                {
-                    break;
-                }
+                if (query.IsDone) break;
             }
 
-            if (writeCount > 0)
-            {
-                await write.ExecuteAsync();
-            }
+            if (writeCount > 0) await write.ExecuteAsync();
         }
 
         #region IDisposable Support
@@ -198,10 +182,7 @@ namespace Proto.Persistence.DynamoDB
         {
             if (_disposedValue) return;
 
-            if (disposing)
-            {
-                _dynamoDBContext?.Dispose();
-            }
+            if (disposing) _dynamoDBContext?.Dispose();
 
             _disposedValue = true;
         }

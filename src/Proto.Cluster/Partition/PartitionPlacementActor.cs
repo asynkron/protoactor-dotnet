@@ -13,7 +13,7 @@ using Proto.Timers;
 
 namespace Proto.Cluster.Partition
 {
-    internal class PartitionPlacementActor : IActor, IDisposable
+    class PartitionPlacementActor : IActor, IDisposable
     {
         private readonly Cluster _cluster;
         private readonly ILogger _logger;
@@ -25,11 +25,11 @@ namespace Proto.Cluster.Partition
             new();
 
         private readonly Rendezvous _rdv = new();
+        private CancellationTokenSource? _ct;
 
         //cluster wide eventId.
         //this is useful for knowing if we are in sync with, ahead of or behind other nodes requests
         private ulong _eventId;
-        private CancellationTokenSource? _ct;
 
         public PartitionPlacementActor(Cluster cluster)
         {
@@ -48,6 +48,8 @@ namespace Proto.Cluster.Partition
                 ActivationRequest msg       => ActivationRequest(context, msg),
                 _                           => Task.CompletedTask
             };
+
+        public void Dispose() => _ct?.Dispose();
 
         private Task Started(IContext context)
         {
@@ -124,7 +126,6 @@ namespace Proto.Cluster.Partition
                 count++;
             }
 
-
             //always respond, this is request response msg
             context.Respond(response);
 
@@ -135,6 +136,7 @@ namespace Proto.Cluster.Partition
         private Task ActivationRequest(IContext context, ActivationRequest msg)
         {
             var props = _cluster.GetClusterKind(msg.ClusterIdentity.Kind);
+
             try
             {
                 if (_myActors.TryGetValue(msg.ClusterIdentity, out var existing))
@@ -176,7 +178,5 @@ namespace Proto.Cluster.Partition
 
             return Task.CompletedTask;
         }
-
-        public void Dispose() => _ct?.Dispose();
     }
 }

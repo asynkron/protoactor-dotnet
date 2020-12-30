@@ -9,13 +9,12 @@ using Proto;
 
 namespace Futures
 {
-    internal class Program
+    class Program
     {
         private static async Task Main(string[] args)
         {
             var context = new RootContext(new ActorSystem());
-            var props = Props.FromFunc(ctx =>
-                {
+            var props = Props.FromFunc(ctx => {
                     if (ctx.Message is string) ctx.Respond("hey");
                     return Task.CompletedTask;
                 }

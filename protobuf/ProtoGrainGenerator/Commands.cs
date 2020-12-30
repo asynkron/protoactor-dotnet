@@ -45,11 +45,12 @@ namespace ProtoGrainGenerator
         }
     }
 
-    internal class Empty : IEnumerable<DirectoryInfo>
+    class Empty : IEnumerable<DirectoryInfo>
     {
         public IEnumerator<DirectoryInfo> GetEnumerator() => Enumerable.Empty<DirectoryInfo>().GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
         public override string ToString() => "<none>";
     }
 }

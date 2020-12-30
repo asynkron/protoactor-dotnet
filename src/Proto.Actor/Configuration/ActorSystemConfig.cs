@@ -20,10 +20,11 @@ namespace Proto
     {
         public TimeSpan DeadLetterThrottleInterval { get; init; }
         public int DeadLetterThrottleCount { get; init; }
+
         public static ActorSystemConfig Setup() => new();
 
         public ActorSystemConfig WithDeadLetterThrottleInterval(TimeSpan deadLetterThrottleInterval) =>
-            this with { DeadLetterThrottleInterval = deadLetterThrottleInterval};
+            this with {DeadLetterThrottleInterval = deadLetterThrottleInterval};
 
         public ActorSystemConfig WithDeadLetterThrottleCount(int deadLetterThrottleCount) =>
             this with {DeadLetterThrottleCount = deadLetterThrottleCount};

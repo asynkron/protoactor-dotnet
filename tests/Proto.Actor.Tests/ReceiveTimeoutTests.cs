@@ -17,8 +17,7 @@ namespace Proto.Tests
             var timeoutReceived = false;
             var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Props.FromFunc(context =>
-                {
+            var props = Props.FromFunc(context => {
                     switch (context.Message)
                     {
                         case Started _:
@@ -45,8 +44,7 @@ namespace Proto.Tests
             var timeoutReceived = false;
             var actorStartedWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Props.FromFunc(context =>
-                {
+            var props = Props.FromFunc(context => {
                     switch (context.Message)
                     {
                         case Started _:
@@ -74,8 +72,7 @@ namespace Proto.Tests
             var endingTimeout = TimeSpan.MaxValue;
             var autoExpiringWaiter = GetExpiringTaskCompletionSource(1500);
 
-            var props = Props.FromFunc(context =>
-                {
+            var props = Props.FromFunc(context => {
                     switch (context.Message)
                     {
                         case Started _:
@@ -108,8 +105,7 @@ namespace Proto.Tests
             var timeoutReceived = false;
             var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Props.FromFunc(context =>
-                {
+            var props = Props.FromFunc(context => {
                     switch (context.Message)
                     {
                         case Started _:
@@ -141,11 +137,8 @@ namespace Proto.Tests
             return tcs;
         }
 
-        private ConfiguredTaskAwaitable<Task<int>> GetSafeAwaitableTask(TaskCompletionSource<int> tcs)
-        {
-            return tcs.Task
-                .ContinueWith(t => t) // suppress any TaskCanceledException
-                .ConfigureAwait(false);
-        }
+        private ConfiguredTaskAwaitable<Task<int>> GetSafeAwaitableTask(TaskCompletionSource<int> tcs) => tcs.Task
+            .ContinueWith(t => t) // suppress any TaskCanceledException
+            .ConfigureAwait(false);
     }
 }

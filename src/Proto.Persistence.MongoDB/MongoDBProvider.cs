@@ -21,24 +21,9 @@ namespace Proto.Persistence.MongoDB
             SetupIndexes();
         }
 
-        private void SetupIndexes()
-        {
-            EventCollection.Indexes.CreateOne(
-                new CreateIndexModel<Event>(
-                    Builders<Event>.IndexKeys
-                        .Ascending(_ => _.ActorName)
-                        .Ascending(_ => _.EventIndex)
-                )
-            );
+        private IMongoCollection<Event> EventCollection => _mongoDB.GetCollection<Event>("events");
 
-            SnapshotCollection.Indexes.CreateOne(
-                new CreateIndexModel<Snapshot>(
-                    Builders<Snapshot>.IndexKeys
-                        .Ascending(_ => _.ActorName)
-                        .Descending(_ => _.SnapshotIndex)
-                )
-            );
-        }
+        private IMongoCollection<Snapshot> SnapshotCollection => _mongoDB.GetCollection<Snapshot>("snapshots");
 
         public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
@@ -84,8 +69,23 @@ namespace Proto.Persistence.MongoDB
         public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
             => SnapshotCollection.DeleteManyAsync(s => s.ActorName == actorName && s.SnapshotIndex <= inclusiveToIndex);
 
-        private IMongoCollection<Event> EventCollection => _mongoDB.GetCollection<Event>("events");
+        private void SetupIndexes()
+        {
+            EventCollection.Indexes.CreateOne(
+                new CreateIndexModel<Event>(
+                    Builders<Event>.IndexKeys
+                        .Ascending(_ => _.ActorName)
+                        .Ascending(_ => _.EventIndex)
+                )
+            );
 
-        private IMongoCollection<Snapshot> SnapshotCollection => _mongoDB.GetCollection<Snapshot>("snapshots");
+            SnapshotCollection.Indexes.CreateOne(
+                new CreateIndexModel<Snapshot>(
+                    Builders<Snapshot>.IndexKeys
+                        .Ascending(_ => _.ActorName)
+                        .Descending(_ => _.SnapshotIndex)
+                )
+            );
+        }
     }
 }
