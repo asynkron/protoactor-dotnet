@@ -31,7 +31,7 @@ namespace Proto.Cluster.Cache
                 }
             );
 
-        private class CacheInvalidationContext : DecoratorContext
+        private class CacheInvalidationContext : ActorContextDecorator
         {
             private readonly ClusterCacheInvalidation _plugin;
             private Action<MessageEnvelope>? _callBack;
@@ -43,7 +43,7 @@ namespace Proto.Cluster.Cache
 
             public override async Task Receive(MessageEnvelope envelope)
             {
-                await InnerContext.Receive(envelope);
+                await base.Receive(envelope);
 
                 if (envelope.Message is ClusterInit init)
                 {

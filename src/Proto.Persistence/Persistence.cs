@@ -21,8 +21,12 @@ namespace Proto.Persistence
         private readonly ISnapshotStrategy? _snapshotStrategy;
 
         private Persistence(
-            IEventStore eventStore, ISnapshotStore snapshotStore, string actorId, Action<Event>? applyEvent = null,
-            Action<Snapshot>? applySnapshot = null, ISnapshotStrategy? snapshotStrategy = null,
+            IEventStore eventStore,
+            ISnapshotStore snapshotStore,
+            string actorId,
+            Action<Event>? applyEvent = null,
+            Action<Snapshot>? applySnapshot = null,
+            ISnapshotStrategy? snapshotStrategy = null,
             Func<object>? getState = null
         )
         {
@@ -48,8 +52,11 @@ namespace Proto.Persistence
             return new Persistence(eventStore, new NoSnapshotStore(), actorId, applyEvent);
         }
 
-        public static Persistence WithSnapshotting(ISnapshotStore snapshotStore, string actorId,
-            Action<Snapshot> applySnapshot)
+        public static Persistence WithSnapshotting(
+            ISnapshotStore snapshotStore,
+            string actorId,
+            Action<Snapshot> applySnapshot
+        )
         {
             if (snapshotStore is null) throw new ArgumentNullException(nameof(snapshotStore));
 
@@ -59,7 +66,10 @@ namespace Proto.Persistence
         }
 
         public static Persistence WithEventSourcingAndSnapshotting(
-            IEventStore eventStore, ISnapshotStore snapshotStore, string actorId, Action<Event> applyEvent,
+            IEventStore eventStore,
+            ISnapshotStore snapshotStore,
+            string actorId,
+            Action<Event> applyEvent,
             Action<Snapshot> applySnapshot
         )
         {
@@ -75,8 +85,13 @@ namespace Proto.Persistence
         }
 
         public static Persistence WithEventSourcingAndSnapshotting(
-            IEventStore eventStore, ISnapshotStore snapshotStore, string actorId, Action<Event> applyEvent,
-            Action<Snapshot> applySnapshot, ISnapshotStrategy snapshotStrategy, Func<object> getState
+            IEventStore eventStore,
+            ISnapshotStore snapshotStore,
+            string actorId,
+            Action<Event> applyEvent,
+            Action<Snapshot> applySnapshot,
+            ISnapshotStrategy snapshotStrategy,
+            Func<object> getState
         )
         {
             if (eventStore is null) throw new ArgumentNullException(nameof(eventStore));
@@ -116,8 +131,7 @@ namespace Proto.Persistence
                 _actorId,
                 fromEventIndex,
                 long.MaxValue,
-                @event =>
-                {
+                @event => {
                     Index++;
                     _applyEvent?.Invoke(new RecoverEvent(@event, Index));
                 }
@@ -139,8 +153,7 @@ namespace Proto.Persistence
                 _actorId,
                 fromIndex,
                 toIndex,
-                @event =>
-                {
+                @event => {
                     _applyEvent?.Invoke(new ReplayEvent(@event, Index));
                     Index++;
                 }
