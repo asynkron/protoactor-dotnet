@@ -1,0 +1,13 @@
+﻿syntax = "proto3";
+package messages;
+option csharp_namespace = "Messages";
+
+message RenameCommand {
+    string name = 1;
+}
+message RenameEvent {
+    string name = 1;
+}
+message State {
+	string Name = 1;
+}
