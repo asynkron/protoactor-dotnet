@@ -99,7 +99,7 @@ namespace Proto.Remote
                     var target = targets[envelope.Target];
                     var typeName = typeNames[envelope.TypeId];
                     var message =
-                        _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
+                        _serialization.Deserialize(typeName, envelope.MessageData.Span, envelope.SerializerId);
 
                     switch (message)
                     {

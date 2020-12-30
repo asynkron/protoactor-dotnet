@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Text;
 using Google.Protobuf;
 
 namespace Proto.Remote
@@ -17,21 +18,21 @@ namespace Proto.Remote
             _serialization = serialization;
         }
 
-        public ByteString Serialize(object obj)
+        public ReadOnlySpan<byte> Serialize(object obj)
         {
             if (obj is JsonMessage jsonMessage)
             {
-                return ByteString.CopyFromUtf8(jsonMessage.Json);
+                return Encoding.UTF8.GetBytes(jsonMessage.Json);
             }
 
             var message = obj as IMessage;
             var json = JsonFormatter.Default.Format(message);
-            return ByteString.CopyFromUtf8(json);
+            return Encoding.UTF8.GetBytes(json);
         }
 
-        public object Deserialize(ByteString bytes, string typeName)
+        public object Deserialize(ReadOnlySpan<byte> bytes, string typeName)
         {
-            var json = bytes.ToStringUtf8();
+            var json = Encoding.UTF8.GetString(bytes);
             var parser = _serialization.TypeLookup[typeName];
 
             var o = parser.ParseJson(json);

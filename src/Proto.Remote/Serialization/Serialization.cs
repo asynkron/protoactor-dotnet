@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
@@ -44,11 +45,11 @@ namespace Proto.Remote
             }
         }
 
-        public ByteString Serialize(object message, int serializerId) => _serializers[serializerId].Serialize(message);
+        public ReadOnlySpan<byte> Serialize(object message, int serializerId) => _serializers[serializerId].Serialize(message);
 
         public string GetTypeName(object message, int serializerId) => _serializers[serializerId].GetTypeName(message);
 
-        public object Deserialize(string typeName, ByteString bytes, int serializerId) =>
+        public object Deserialize(string typeName, ReadOnlySpan<byte> bytes, int serializerId) =>
             _serializers[serializerId].Deserialize(bytes, typeName);
     }
 }

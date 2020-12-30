@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using System.Linq;
+using Google.Protobuf;
 
 namespace Proto.Remote
 {
@@ -253,7 +254,7 @@ namespace Proto.Remote
 
                 var envelope = new MessageEnvelope
                 {
-                    MessageData = bytes,
+                    MessageData = ByteString.CopyFrom(bytes),
                     Sender = rd.Sender,
                     Target = targetId,
                     TypeId = typeId,
