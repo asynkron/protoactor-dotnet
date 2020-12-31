@@ -24,6 +24,7 @@ namespace Proto.Mailbox.Tests
             var overflowActionCallCount = 0;
             var mailbox = new NonBlockingBoundedMailbox(1, msg => overflowActionCallCount++, TimeSpan.FromSeconds(1));
             mailbox.Push("first message"); // does not call overflow
+
             for (var i = 0; i < 10; i++)
             {
                 mailbox.Push(i);

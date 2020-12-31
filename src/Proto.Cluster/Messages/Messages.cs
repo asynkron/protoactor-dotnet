@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
-using System;
 using Google.Protobuf;
 
 namespace Proto.Cluster
@@ -32,6 +31,6 @@ namespace Proto.Cluster
         public string Kind => ClusterIdentity.Kind;
         public string Identity => ClusterIdentity.Identity;
     }
-    
+
     public record Tick;
 }

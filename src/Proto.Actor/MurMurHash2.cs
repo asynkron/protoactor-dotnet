@@ -21,8 +21,10 @@ namespace Proto
             var length = data.Length;
             if (length == 0)
                 return 0;
+
             var h = seed ^ (uint) length;
             var currentIndex = 0;
+
             while (length >= 4)
             {
                 var k = (uint) (data[currentIndex++] | (data[currentIndex++] << 8) | (data[currentIndex++] << 16) |

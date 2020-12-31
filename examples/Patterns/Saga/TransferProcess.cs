@@ -11,7 +11,7 @@ using Saga.Messages;
 
 namespace Saga
 {
-    internal class TransferProcess : IActor
+    class TransferProcess : IActor
     {
         private readonly decimal _amount;
         private readonly double _availability;
@@ -25,8 +25,15 @@ namespace Saga
         private bool _restarting;
         private bool _stopping;
 
-        public TransferProcess(PID from, PID to, decimal amount, IProvider provider, string persistenceId,
-            Random random, double availability)
+        public TransferProcess(
+            PID from,
+            PID to,
+            decimal amount,
+            IProvider provider,
+            string persistenceId,
+            Random random,
+            double availability
+        )
         {
             _from = from;
             _to = to;
@@ -41,6 +48,7 @@ namespace Saga
         {
             var message = context.Message;
             Console.WriteLine($"[{_persistenceId}] Recieiving :{message}");
+
             switch (message)
             {
                 case Started msg:
@@ -72,6 +80,7 @@ namespace Saga
                 default:
                     // simulate failures of the transfer process itself
                     if (Fail()) throw new Exception();
+
                     break;
             }
 
@@ -89,6 +98,7 @@ namespace Saga
         private void ApplyEvent(Event @event)
         {
             Console.WriteLine($"Applying event: {@event.Data}");
+
             switch (@event.Data)
             {
                 case TransferStarted msg:

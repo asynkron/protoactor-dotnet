@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Proto.Future
 {
-    internal class FutureProcess : Process
+    class FutureProcess : Process
     {
         private readonly CancellationTokenSource? _cts;
         private readonly TaskCompletionSource<object> _tcs;
@@ -41,8 +41,7 @@ namespace Proto.Future
             Pid = pid;
 
             _cts?.Token.Register(
-                () =>
-                {
+                () => {
                     if (_tcs.Task.IsCompleted) return;
 
                     _tcs.TrySetException(

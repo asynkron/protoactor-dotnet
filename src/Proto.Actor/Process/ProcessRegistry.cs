@@ -13,15 +13,12 @@ namespace Proto
 {
     public class ProcessRegistry
     {
-        private readonly List<Func<PID, Process>> _hostResolvers = new();
         private readonly List<Func<PID, Process>> _clientResolvers = new();
+        private readonly List<Func<PID, Process>> _hostResolvers = new();
         private readonly HashedConcurrentDictionary _localProcesses = new();
         private int _sequenceId;
 
-        public ProcessRegistry(ActorSystem system)
-        {
-            System = system;
-        }
+        public ProcessRegistry(ActorSystem system) => System = system;
 
         private ActorSystem System { get; }
 
@@ -36,18 +33,13 @@ namespace Proto
             if (pid.Address == ActorSystem.NoHost || pid.Address == System.Address)
 
             {
-                if(_localProcesses.TryGetValue(pid.Id, out var process)){
-                    return process;
-                }
+                if (_localProcesses.TryGetValue(pid.Id, out var process)) return process;
 
                 var client = _clientResolvers.Select(x => x(pid)).FirstOrDefault();
-                if(client is null){
-                    return System.DeadLetter;
-                }
+                if (client is null) return System.DeadLetter;
+
                 return client;
-
             }
-
 
             var reff = _hostResolvers.Select(x => x(pid)).FirstOrDefault();
 

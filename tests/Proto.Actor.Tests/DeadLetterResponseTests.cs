@@ -9,8 +9,7 @@ namespace Proto.Tests
         private static readonly ActorSystem System = new();
         private static readonly RootContext Context = System.Root;
 
-        private static readonly Props EchoProps = Props.FromFunc(context =>
-            {
+        private static readonly Props EchoProps = Props.FromFunc(context => {
                 if (context.Message is string s) context.Respond(s);
 
                 return Task.CompletedTask;
@@ -58,8 +57,7 @@ namespace Proto.Tests
                         await context.PoisonAsync(_deadLetterTarget);
                         context.Request(_deadLetterTarget, "One dead letter please");
                         break;
-                    case DeadLetterResponse response:
-                    {
+                    case DeadLetterResponse response: {
                         response.Target.Should().Be(_deadLetterTarget);
                         context.Send(_sender, "Validated");
                         break;

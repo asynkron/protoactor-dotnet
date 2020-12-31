@@ -25,28 +25,29 @@ namespace Proto.Cluster
         /// <param name="hasLocalAffinity">Predicate on message envelope, to have local affinity only on partitioned messages</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public static Props WithPoisonOnRemoteTraffic(this Props props,
+        public static Props WithPoisonOnRemoteTraffic(
+            this Props props,
             float relocationFactor = DefaultRelocationFactor,
             ShouldThrottle? throttle = null,
-            Predicate<MessageEnvelope>? hasLocalAffinity = null)
+            Predicate<MessageEnvelope>? hasLocalAffinity = null
+        )
         {
             if (relocationFactor <= 0) throw new ArgumentException("RelocationFactor must be positive");
 
             hasLocalAffinity ??= _ => true;
             var shouldRelocate = CreateShouldRelocate(relocationFactor);
 
-            return props.WithReceiverMiddleware(receiver => (context, envelope) =>
-                {
+            return props.WithReceiverMiddleware(receiver => (context, envelope) => {
                     //Sender is removed from context after call
                     var sender = context.Sender;
 
                     var task = receiver(context, envelope);
 
                     if (!(envelope.Message is PoisonPill && envelope.Message is not SystemMessage)
-                        && sender.IsRemote(context)
-                        && hasLocalAffinity(envelope)
-                        && shouldRelocate()
-                        && throttle?.Invoke() != Throttle.Valve.Closed
+                     && sender.IsRemote(context)
+                     && hasLocalAffinity(envelope)
+                     && shouldRelocate()
+                     && throttle?.Invoke() != Throttle.Valve.Closed
                     )
                     {
                         Logger.LogDebug("Poisoning {ActorPid}, because of {MessageType} from {Sender}", context.Self,

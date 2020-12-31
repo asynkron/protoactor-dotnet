@@ -117,7 +117,6 @@ namespace Proto.Tests
             Context.Send(parent, "3rd restart");
             Context.Send(parent, "4th restart");
 
-
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(Stop.Instance, childMailboxStats.Posted);
             Assert.Contains(Stop.Instance, childMailboxStats.Received);
@@ -177,6 +176,7 @@ namespace Proto.Tests
             // Default directive allows 10 restarts so we expect 11 Failure messages before the child is stopped
             Assert.Equal(11, parentMailboxStats.Received.OfType<Failure>().Count());
             var failures = parentMailboxStats.Received.OfType<Failure>();
+
             // subsequent failures are wrapped in AggregateException
             foreach (var failure in failures)
             {
@@ -246,10 +246,7 @@ namespace Proto.Tests
         {
             private readonly Props _childProps;
 
-            public ParentActor(Props childProps)
-            {
-                _childProps = childProps;
-            }
+            public ParentActor(Props childProps) => _childProps = childProps;
 
             public PID Child { get; set; }
 

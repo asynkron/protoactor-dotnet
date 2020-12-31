@@ -23,9 +23,9 @@ namespace ClusterExperiment1
 
         public async Task Start() => _cluster = await Configuration.SpawnMember();
 
-        public async Task Kill() => await _cluster.ShutdownAsync(true);
+        public async Task Kill() => await _cluster.ShutdownAsync();
     }
-    
+
     public class RunMemberInProc : IRunMember
     {
         private Cluster _cluster;
@@ -46,7 +46,7 @@ namespace ClusterExperiment1
             var l = typeof(Program).Assembly.Location;
 
             _process = Process.Start(new ProcessStartInfo("dotnet", $"{l} worker"));
-            
+
             return Task.CompletedTask;
         }
 
@@ -58,7 +58,7 @@ namespace ClusterExperiment1
             return Task.CompletedTask;
         }
     }
-    
+
     public class RunMemberExternalProc : IRunMember
     {
         public static readonly string SelfPath = typeof(Program).Assembly.Location;
@@ -70,7 +70,7 @@ namespace ClusterExperiment1
             var l = typeof(Program).Assembly.Location;
 
             _process = Process.Start(new ProcessStartInfo("dotnet", $"{l} worker"));
-            
+
             return Task.CompletedTask;
         }
 

@@ -10,7 +10,7 @@ using Proto;
 
 namespace DeadLetterThrottling
 {
-    internal class Program
+    class Program
     {
         private static async Task Main(string[] args)
         {

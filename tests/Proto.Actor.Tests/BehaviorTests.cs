@@ -44,12 +44,10 @@ namespace Proto.Tests
         public async Task pop_behavior_should_restore_pushed_behavior()
         {
             var behavior = new Behavior();
-            behavior.Become(ctx =>
-                {
+            behavior.Become(ctx => {
                     if (ctx.Message is string)
                     {
-                        behavior.BecomeStacked(ctx2 =>
-                            {
+                        behavior.BecomeStacked(ctx2 => {
                                 ctx2.Respond(42);
                                 behavior.UnbecomeStacked();
                                 return Task.CompletedTask;

@@ -16,10 +16,7 @@ namespace Proto
     {
         public static readonly MessageHeader Empty = new(ImmutableDictionary<string, string>.Empty);
 
-        public MessageHeader(IDictionary<string, string> headers)
-        {
-            Inner = headers.ToImmutableDictionary();
-        }
+        public MessageHeader(IDictionary<string, string> headers) => Inner = headers.ToImmutableDictionary();
 
         private ImmutableDictionary<string, string> Inner { get; init; }
 
@@ -47,9 +44,9 @@ namespace Proto
             TryGetValue(key, out var value) ? value : @default;
 
         public MessageHeader With(string key, string value) =>
-            this with { Inner = Inner.SetItem(key, value)};
+            this with {Inner = Inner.SetItem(key, value)};
 
         public MessageHeader With(IEnumerable<KeyValuePair<string, string>> items) =>
-            this with { Inner = Inner.SetItems(items)};
+            this with {Inner = Inner.SetItems(items)};
     }
 }

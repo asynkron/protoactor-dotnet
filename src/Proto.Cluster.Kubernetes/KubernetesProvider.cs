@@ -150,7 +150,6 @@ namespace Proto.Cluster.Kubernetes
                     Port = _port,
                     Kinds = _kinds,
                     MemberId = _cluster.System.Id
-
                 }
             );
         }
@@ -183,9 +182,6 @@ namespace Proto.Cluster.Kubernetes
             cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
         }
 
-        public void MonitorMemberStatusChanges()
-        {
-            _cluster.System.Root.Send(_clusterMonitor, new StartWatchingCluster(_clusterName));
-        }
+        public void MonitorMemberStatusChanges() => _cluster.System.Root.Send(_clusterMonitor, new StartWatchingCluster(_clusterName));
     }
 }

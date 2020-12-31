@@ -5,12 +5,9 @@
 // -----------------------------------------------------------------------
 namespace Saga.Messages
 {
-    internal class EscalateTransfer
+    class EscalateTransfer
     {
-        public EscalateTransfer(string message)
-        {
-            Message = message;
-        }
+        public EscalateTransfer(string message) => Message = message;
 
         public string Message { get; }
 

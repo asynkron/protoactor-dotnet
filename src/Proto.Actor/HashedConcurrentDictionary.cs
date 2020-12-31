@@ -3,13 +3,12 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Collections.Generic;
 using System.Threading;
 
 namespace Proto
 {
-    internal class HashedConcurrentDictionary
+    class HashedConcurrentDictionary
     {
         private const int HashSize = 1024;
         private readonly Partition[] _partitions = new Partition[HashSize];
@@ -29,7 +28,8 @@ namespace Proto
 
         private Partition GetPartition(string key)
         {
-            var hash = (key.GetHashCode() & 0x7FFFFFFF) % HashSize;
+            var hash = key.GetHashCode() & (0x7FFFFFFF % HashSize);
+
             var p = _partitions[hash];
             return p;
         }
@@ -37,6 +37,7 @@ namespace Proto
         public bool TryAdd(string key, Process reff)
         {
             var p = GetPartition(key);
+
             lock (p)
             {
                 if (p.ContainsKey(key)) return false;
@@ -50,18 +51,17 @@ namespace Proto
         public bool TryGetValue(string key, out Process aref)
         {
             var p = GetPartition(key);
-            lock (p)
-            {
-                return p.TryGetValue(key, out aref);
-            }
+            lock (p) return p.TryGetValue(key, out aref);
         }
 
         public void Remove(string key)
         {
             var p = GetPartition(key);
+
             lock (p)
             {
-                if (p.Remove(key)) Interlocked.Decrement(ref _count);
+                if (p.Remove(key))
+                    Interlocked.Decrement(ref _count);
             }
         }
 

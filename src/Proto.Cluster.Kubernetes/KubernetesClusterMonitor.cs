@@ -17,7 +17,7 @@ using static Proto.Cluster.Kubernetes.ProtoLabels;
 
 namespace Proto.Cluster.Kubernetes
 {
-    internal class KubernetesClusterMonitor : IActor
+    class KubernetesClusterMonitor : IActor
     {
         private static readonly ILogger Logger = Log.CreateLogger<KubernetesClusterMonitor>();
         private readonly Cluster _cluster;
@@ -41,17 +41,14 @@ namespace Proto.Cluster.Kubernetes
             _kubernetes = kubernetes;
         }
 
-        public Task ReceiveAsync(IContext context)
+        public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            return context.Message switch
-                   {
-                       RegisterMember cmd       => Register(cmd),
-                       StartWatchingCluster cmd => StartWatchingCluster(cmd.ClusterName, context),
-                       DeregisterMember _       => StopWatchingCluster(),
-                       Stopping _               => StopWatchingCluster(),
-                       _                        => Task.CompletedTask
-                   };
-        }
+            RegisterMember cmd       => Register(cmd),
+            StartWatchingCluster cmd => StartWatchingCluster(cmd.ClusterName, context),
+            DeregisterMember _       => StopWatchingCluster(),
+            Stopping _               => StopWatchingCluster(),
+            _                        => Task.CompletedTask
+        };
 
         private Task Register(RegisterMember cmd)
         {
@@ -152,7 +149,7 @@ namespace Proto.Cluster.Kubernetes
                 .Where(x => x.IsCandidate)
                 .Select(x => x.Status)
                 .ToList();
-            
+
             _cluster.MemberList.UpdateClusterTopology(memberStatuses, 0ul);
             var topology = new ClusterTopologyEvent(memberStatuses);
             _cluster.System.EventStream.Publish(topology);

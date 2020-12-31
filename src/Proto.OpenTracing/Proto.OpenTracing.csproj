@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="OpenTracing" Version="0.12.1" />
+        <PackageReference Include="Proto.Actor" Version="0.9.1-alpha.0.71" />
+    </ItemGroup>
+</Project>

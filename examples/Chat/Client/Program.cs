@@ -13,7 +13,7 @@ using static Proto.Remote.GrpcCore.GrpcCoreRemoteConfig;
 
 namespace Client
 {
-    internal static class Program
+    static class Program
     {
         private static void Main()
         {
@@ -32,8 +32,7 @@ namespace Client
             var context = system.Root;
 
             var props = Props.FromFunc(
-                ctx =>
-                {
+                ctx => {
                     switch (ctx.Message)
                     {
                         case Connected connected:

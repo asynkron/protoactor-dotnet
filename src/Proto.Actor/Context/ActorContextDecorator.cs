@@ -15,10 +15,7 @@ namespace Proto
     {
         private readonly IContext _context;
 
-        protected ActorContextDecorator(IContext context)
-        {
-            _context = context;
-        }
+        protected ActorContextDecorator(IContext context) => _context = context;
 
         public virtual void Send(PID target, object message) => _context.Send(target, message);
 

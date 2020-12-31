@@ -15,11 +15,9 @@ namespace DependencyInjection.Controllers
     {
         private readonly ILogger<DependencyInjectedActor> _logger;
 
-        public DependencyInjectedActor(ILogger<DependencyInjectedActor> logger)
-        {
+        public DependencyInjectedActor(ILogger<DependencyInjectedActor> logger) =>
             //dependency injected arguments here
             _logger = logger;
-        }
 
         public Task ReceiveAsync(IContext context) =>
             context.Message switch
@@ -42,16 +40,12 @@ namespace DependencyInjection.Controllers
 
     public record HelloResponse(string Greeting);
 
-    [ApiController]
-    [Route("[controller]")]
+    [ApiController, Route("[controller]")]
     public class ActorController : ControllerBase
     {
         private readonly ActorSystem _actorSystem;
 
-        public ActorController(ActorSystem actorSystem)
-        {
-            _actorSystem = actorSystem;
-        }
+        public ActorController(ActorSystem actorSystem) => _actorSystem = actorSystem;
 
         [HttpGet]
         public async Task<string> Get()

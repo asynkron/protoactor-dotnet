@@ -1,27 +1,24 @@
-﻿namespace Proto.Cluster.Identity
-{
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Router;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 
+namespace Proto.Cluster.Identity
+{
     public class IdentityStorageLookup : IIdentityLookup
     {
-        internal IIdentityStorage Storage { get; }
         private const string PlacementActorName = "placement-activator";
         private static readonly int PidClusterIdentityStartIndex = PlacementActorName.Length + 1;
-        internal Cluster Cluster;
         private bool _isClient;
-        internal MemberList MemberList;
+        private string _memberId;
         private PID _placementActor;
         private ActorSystem _system;
         private PID _worker;
-        private string _memberId;
+        internal Cluster Cluster;
+        internal MemberList MemberList;
 
-        public IdentityStorageLookup(IIdentityStorage storage)
-        {
-            Storage = storage;
-        }
+        public IdentityStorageLookup(IIdentityStorage storage) => Storage = storage;
+
+        internal IIdentityStorage Storage { get; }
 
         public async Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
         {
@@ -42,21 +39,21 @@
             var workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
             //TODO: should pool size be configurable?
 
-           
-
             _worker = _system.Root.Spawn(workerProps);
 
             //hook up events
-            cluster.System.EventStream.Subscribe<ClusterTopology>(e =>
-                {
+            cluster.System.EventStream.Subscribe<ClusterTopology>(e => {
                     //delete all members that have left from the lookup
                     foreach (var left in e.Left)
                         //YOLO. event stream is not async
+                    {
                         _ = RemoveMemberAsync(left.Id);
+                    }
                 }
             );
 
             if (isClient) return Task.CompletedTask;
+
             var props = Props.FromProducer(() => new IdentityStoragePlacementActor(Cluster, this));
             _placementActor = _system.Root.SpawnNamed(props, PlacementActorName);
 
@@ -71,28 +68,21 @@
             await RemoveMemberAsync(_memberId);
         }
 
-        internal Task RemoveMemberAsync(string memberId)
-        {
-            return Storage.RemoveMemberIdAsync(memberId, CancellationToken.None);
-        }
-
-        internal PID RemotePlacementActor(string address)
-        {
-            return PID.FromAddress(address, PlacementActorName);
-        }
-
         public Task RemovePidAsync(PID pid, CancellationToken ct)
         {
-            if (_system.Shutdown.IsCancellationRequested)
-            {
-                return Task.CompletedTask;
-            }
+            if (_system.Shutdown.IsCancellationRequested) return Task.CompletedTask;
+
             return Storage.RemoveActivation(pid, ct);
         }
+
+        internal Task RemoveMemberAsync(string memberId) => Storage.RemoveMemberIdAsync(memberId, CancellationToken.None);
+
+        internal PID RemotePlacementActor(string address) => PID.FromAddress(address, PlacementActorName);
 
         public static bool TryGetClusterIdentityShortString(string pidId, out string? clusterIdentity)
         {
             var idIndex = pidId.LastIndexOf("$", StringComparison.Ordinal);
+
             if (idIndex > PidClusterIdentityStartIndex)
             {
                 clusterIdentity = pidId.Substring(PidClusterIdentityStartIndex,

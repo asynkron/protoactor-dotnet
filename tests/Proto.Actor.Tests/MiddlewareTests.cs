@@ -12,14 +12,11 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    internal class TestContextDecorator : ActorContextDecorator
+    class TestContextDecorator : ActorContextDecorator
     {
         private readonly List<string> _logs;
 
-        public TestContextDecorator(IContext context, List<string> logs) : base(context)
-        {
-            _logs = logs;
-        }
+        public TestContextDecorator(IContext context, List<string> logs) : base(context) => _logs = logs;
 
         public override Task Receive(MessageEnvelope envelope)
         {
@@ -47,8 +44,7 @@ namespace Proto.Tests
             var logs3 = new List<string>();
 
             var testMailbox = new TestMailbox();
-            var props = Props.FromFunc(c =>
-                    {
+            var props = Props.FromFunc(c => {
                         switch (c.Message)
                         {
                             //only inspect "decorator" message
@@ -84,8 +80,7 @@ namespace Proto.Tests
         {
             var logs = new List<string>();
             var testMailbox = new TestMailbox();
-            var props = Props.FromFunc(c =>
-                    {
+            var props = Props.FromFunc(c => {
                         switch (c.Message)
                         {
                             //only inspect "decorator" message
@@ -98,8 +93,7 @@ namespace Proto.Tests
                     }
                 )
                 .WithReceiverMiddleware(
-                    next => async (c, env) =>
-                    {
+                    next => async (c, env) => {
                         //only inspect "start" message
                         if (env.Message is string str && str == "start")
                         {
@@ -130,22 +124,19 @@ namespace Proto.Tests
         {
             var logs = new List<string>();
             var testMailbox = new TestMailbox();
-            var props = Props.FromFunc(c =>
-                    {
+            var props = Props.FromFunc(c => {
                         if (c.Message is string)
                             logs.Add("actor");
                         return Task.CompletedTask;
                     }
                 )
                 .WithReceiverMiddleware(
-                    next => async (c, env) =>
-                    {
+                    next => async (c, env) => {
                         if (env.Message is string)
                             logs.Add("middleware 1");
                         await next(c, env);
                     },
-                    next => async (c, env) =>
-                    {
+                    next => async (c, env) => {
                         if (env.Message is string)
                             logs.Add("middleware 2");
                         await next(c, env);
@@ -167,22 +158,19 @@ namespace Proto.Tests
         {
             var logs = new List<string>();
             var pid1 = Context.Spawn(Props.FromProducer(() => new DoNothingActor()));
-            var props = Props.FromFunc(c =>
-                    {
+            var props = Props.FromFunc(c => {
                         if (c.Message is string)
                             c.Send(pid1, "hey");
                         return Task.CompletedTask;
                     }
                 )
                 .WithSenderMiddleware(
-                    next => (c, t, e) =>
-                    {
+                    next => (c, t, e) => {
                         if (c.Message is string)
                             logs.Add("middleware 1");
                         return next(c, t, e);
                     },
-                    next => (c, t, e) =>
-                    {
+                    next => (c, t, e) => {
                         if (c.Message is string)
                             logs.Add("middleware 2");
                         return next(c, t, e);

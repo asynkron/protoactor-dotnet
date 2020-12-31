@@ -10,14 +10,15 @@ using Microsoft.Extensions.Hosting;
 
 namespace Proto.Remote.GrpcNet
 {
-    internal class RemoteHostedService : IHostedService
+    class RemoteHostedService : IHostedService
     {
         private readonly IHostApplicationLifetime _appLifetime;
         private readonly IRemote _remote;
 
         public RemoteHostedService(
             IHostApplicationLifetime appLifetime,
-            IRemote remote)
+            IRemote remote
+        )
         {
             _appLifetime = appLifetime;
             _remote = remote;
@@ -30,19 +31,10 @@ namespace Proto.Remote.GrpcNet
             return Task.CompletedTask;
         }
 
-        private void OnStarted()
-        {
-            _remote.StartAsync().GetAwaiter().GetResult();
-        }
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
+        private void OnStarted() => _remote.StartAsync().GetAwaiter().GetResult();
 
-        private void OnStopping()
-        {
-            _remote.ShutdownAsync().GetAwaiter().GetResult();
-        }
+        private void OnStopping() => _remote.ShutdownAsync().GetAwaiter().GetResult();
     }
 }

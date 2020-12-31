@@ -7,15 +7,12 @@ using System.Threading;
 
 namespace Proto.Router.Routers
 {
-    internal class RoundRobinRouterState : RouterState
+    class RoundRobinRouterState : RouterState
     {
         private readonly ISenderContext _senderContext;
         private int _currentIndex;
 
-        internal RoundRobinRouterState(ISenderContext senderContext)
-        {
-            _senderContext = senderContext;
-        }
+        internal RoundRobinRouterState(ISenderContext senderContext) => _senderContext = senderContext;
 
         public override void RouteMessage(object message)
         {

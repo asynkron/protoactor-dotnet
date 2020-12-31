@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace Proto.Router.Routers
 {
-    internal class ConsistentHashRouterState : RouterState
+    class ConsistentHashRouterState : RouterState
     {
         private readonly Func<string, uint> _hash;
         private readonly Func<object, string>? _messageHasher;
@@ -18,8 +18,12 @@ namespace Proto.Router.Routers
         private readonly ISenderContext _senderContext;
         private HashRing? _hashRing;
 
-        public ConsistentHashRouterState(ISenderContext senderContext, Func<string, uint> hash, int replicaCount,
-            Func<object, string>? messageHasher)
+        public ConsistentHashRouterState(
+            ISenderContext senderContext,
+            Func<string, uint> hash,
+            int replicaCount,
+            Func<object, string>? messageHasher
+        )
         {
             _senderContext = senderContext;
             _hash = hash;

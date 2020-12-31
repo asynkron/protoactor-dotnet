@@ -12,8 +12,7 @@ using Proto.Mailbox;
 
 namespace ProtoActorBenchmarks
 {
-    [MemoryDiagnoser]
-    [InProcess]
+    [MemoryDiagnoser, InProcess]
     public class LongBenchmark
     {
         private RootContext _context;
@@ -21,9 +20,11 @@ namespace ProtoActorBenchmarks
         [Params(300, 400, 500, 600, 700, 800, 900)]
         public int Tps { get; set; }
 
-        [Params(1000000)] public int MessageCount { get; set; }
+        [Params(1000000)]
+        public int MessageCount { get; set; }
 
-        [Params(100)] public int BatchSize { get; set; }
+        [Params(100)]
+        public int BatchSize { get; set; }
 
         [GlobalSetup]
         public void Setup() => _context = new RootContext(new ActorSystem());

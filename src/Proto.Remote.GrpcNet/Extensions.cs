@@ -23,8 +23,10 @@ namespace Proto.Remote.GrpcNet
             return services;
         }
 
-        public static IServiceCollection AddRemote(this IServiceCollection services,
-            GrpcNetRemoteConfig config)
+        public static IServiceCollection AddRemote(
+            this IServiceCollection services,
+            GrpcNetRemoteConfig config
+        )
         {
             services.AddSingleton(config);
             AddAllServices(services);
@@ -40,7 +42,7 @@ namespace Proto.Remote.GrpcNet
             services.AddSingleton<EndpointManager>();
             services.AddSingleton<RemoteConfigBase, GrpcNetRemoteConfig>(sp => sp.GetRequiredService<GrpcNetRemoteConfig>());
             services.AddSingleton<EndpointReader, EndpointReader>();
-            services.AddSingleton<Serialization>(sp => sp.GetRequiredService<GrpcNetRemoteConfig>().Serialization);
+            services.AddSingleton(sp => sp.GetRequiredService<GrpcNetRemoteConfig>().Serialization);
             services.AddSingleton<Remoting.RemotingBase, EndpointReader>(sp => sp.GetRequiredService<EndpointReader>());
             services.AddSingleton<IChannelProvider, GrpcNetChannelProvider>();
         }

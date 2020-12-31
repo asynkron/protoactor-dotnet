@@ -19,8 +19,7 @@ namespace Proto.TestFixtures
         public void Schedule(Func<Task> runner)
         {
             var waitingTaskExists = _taskCompletionQueue.TryDequeue(out var onScheduleCompleted);
-            runner().ContinueWith(t =>
-                {
+            runner().ContinueWith(t => {
                     if (waitingTaskExists) onScheduleCompleted.SetResult(0);
                 }
             );
@@ -30,10 +29,7 @@ namespace Proto.TestFixtures
 
         public Task InvokeUserMessageAsync(object msg) => ((TestMessage) msg).TaskCompletionSource.Task;
 
-        public void EscalateFailure(Exception reason, object message)
-        {
-            EscalatedFailures.Add(reason);
-        }
+        public void EscalateFailure(Exception reason, object message) => EscalatedFailures.Add(reason);
 
         public CancellationTokenSource CancellationTokenSource { get; } = new();
 

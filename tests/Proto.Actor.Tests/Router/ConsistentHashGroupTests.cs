@@ -147,8 +147,10 @@ namespace Proto.Router.Tests
             Assert.Equal(1, await ActorSystem.Root.RequestAsync<int>(routee3, "received?", _timeout));
         }
 
-        private static (PID router, PID routee1, PID routee2, PID routee3) CreateRouterWith3Routees(ActorSystem system,
-            Func<object, string>? messageHasher = null)
+        private static (PID router, PID routee1, PID routee2, PID routee3) CreateRouterWith3Routees(
+            ActorSystem system,
+            Func<object, string>? messageHasher = null
+        )
         {
             // assign unique names for when tests run in parallel
             var routee1 = system.Root.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee1");
@@ -184,10 +186,7 @@ namespace Proto.Router.Tests
         {
             private readonly string _value;
 
-            public Message(string value)
-            {
-                _value = value;
-            }
+            public Message(string value) => _value = value;
 
             public string HashBy() => _value;
 

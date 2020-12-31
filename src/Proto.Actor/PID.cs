@@ -3,7 +3,6 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using Google.Protobuf;
 
 namespace Proto
@@ -19,10 +18,9 @@ namespace Proto
             Id = id;
         }
 
-        internal PID(string address, string id, Process process) : this(address, id)
-        {
-            _process = process;
-        }
+        internal PID(string address, string id, Process process) : this(address, id) => _process = process;
+
+        public string ToDiagnosticString() => $"{Address}/{Id}";
 
         public static PID FromAddress(string address, string id) => new(address, id);
 
@@ -52,7 +50,5 @@ namespace Proto
             var reff = Ref(system) ?? system.ProcessRegistry.Get(this);
             reff.SendSystemMessage(this, sys);
         }
-        
-        public string ToDiagnosticString() => $"{Address}/{Id}";
     }
 }

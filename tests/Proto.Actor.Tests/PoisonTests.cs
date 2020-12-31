@@ -15,10 +15,7 @@ namespace Proto.Tests
         private static readonly RootContext Context = System.Root;
 
         private static readonly Props EchoProps = Props.FromFunc(ctx => {
-                if (ctx.Sender != null)
-                {
-                    ctx.Respond(ctx.Message!);
-                }
+                if (ctx.Sender != null) ctx.Respond(ctx.Message!);
 
                 return Task.CompletedTask;
             }

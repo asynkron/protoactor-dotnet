@@ -29,10 +29,7 @@ namespace Proto.TestFixtures
             _invoker?.InvokeSystemMessageAsync(msg).Wait();
         }
 
-        public void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher)
-        {
-            _invoker = invoker;
-        }
+        public void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher) => _invoker = invoker;
 
         public void Start()
         {

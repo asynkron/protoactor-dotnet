@@ -12,10 +12,7 @@ namespace Proto.Cluster.Tests
     {
         private readonly PID _pid;
 
-        public DummyIdentityLookup(PID pid)
-        {
-            _pid = pid;
-        }
+        public DummyIdentityLookup(PID pid) => _pid = pid;
 
         public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct) => Task.FromResult(_pid)!;
 

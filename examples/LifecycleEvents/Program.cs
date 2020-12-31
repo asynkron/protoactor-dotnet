@@ -9,7 +9,7 @@ using Proto;
 
 namespace LifecycleEvents
 {
-    internal static class Program
+    static class Program
     {
         private static async Task Main()
         {

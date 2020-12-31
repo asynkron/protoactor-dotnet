@@ -12,17 +12,11 @@ namespace Proto.Remote
     {
         private readonly Serialization _serialization;
 
-        public JsonSerializer(Serialization serialization)
-        {
-            _serialization = serialization;
-        }
+        public JsonSerializer(Serialization serialization) => _serialization = serialization;
 
         public ByteString Serialize(object obj)
         {
-            if (obj is JsonMessage jsonMessage)
-            {
-                return ByteString.CopyFromUtf8(jsonMessage.Json);
-            }
+            if (obj is JsonMessage jsonMessage) return ByteString.CopyFromUtf8(jsonMessage.Json);
 
             var message = obj as IMessage;
             var json = JsonFormatter.Default.Format(message);
@@ -43,9 +37,9 @@ namespace Proto.Remote
             if (obj is JsonMessage jsonMessage)
                 return jsonMessage.TypeName;
 
-            if (obj is IMessage message) 
+            if (obj is IMessage message)
                 return message.Descriptor.File.Package + "." + message.Descriptor.Name;
-            
+
             throw new ArgumentException("obj must be of type IMessage", nameof(obj));
         }
     }

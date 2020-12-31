@@ -9,7 +9,7 @@ using Proto.Persistence;
 
 namespace Saga.Factories
 {
-    internal class TransferFactory
+    class TransferFactory
     {
         private readonly double _availability;
         private readonly IContext _context;
@@ -17,8 +17,13 @@ namespace Saga.Factories
         private readonly Random _random;
         private readonly int _retryAttempts;
 
-        internal TransferFactory(IContext context, IProvider provider, Random random, double availability,
-            int retryAttempts)
+        internal TransferFactory(
+            IContext context,
+            IProvider provider,
+            Random random,
+            double availability,
+            int retryAttempts
+        )
         {
             _random = random;
             _availability = availability;
@@ -27,8 +32,13 @@ namespace Saga.Factories
             _provider = provider;
         }
 
-        internal PID CreateTransfer(string actorName, PID fromAccount, PID toAccount, decimal amount,
-            string persistenceId)
+        internal PID CreateTransfer(
+            string actorName,
+            PID fromAccount,
+            PID toAccount,
+            decimal amount,
+            string persistenceId
+        )
         {
             var transferProps = Props.FromProducer(() =>
                     new TransferProcess(fromAccount, toAccount, amount, _provider, persistenceId, _random, _availability

@@ -4,7 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -55,6 +54,7 @@ namespace Proto.Cluster
         private async Task HeartBeatLoop()
         {
             await Task.Yield();
+
             while (!_cluster.System.Shutdown.IsCancellationRequested)
             {
                 try
@@ -78,20 +78,16 @@ namespace Proto.Cluster
                         }
                         catch (TimeoutException)
                         {
-                            if (_cluster.System.Shutdown.IsCancellationRequested)
-                            {
-                                return;
-                            }
+                            if (_cluster.System.Shutdown.IsCancellationRequested) return;
+
                             _logger.LogWarning("Heartbeat request for member id {MemberId} Address {Address} timed out",
                                 member.Id, member.Address
                             );
                         }
                         catch (DeadLetterException)
                         {
-                            if (_cluster.System.Shutdown.IsCancellationRequested)
-                            {
-                                return;
-                            }
+                            if (_cluster.System.Shutdown.IsCancellationRequested) return;
+
                             _logger.LogWarning(
                                 "Heartbeat request for member id {MemberId} Address {Address} got dead letter response",
                                 member.Id, member.Address

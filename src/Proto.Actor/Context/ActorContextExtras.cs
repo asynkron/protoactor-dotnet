@@ -19,10 +19,7 @@ namespace Proto
     //therefore we only use this extra state when needed, to keep actors as lightweight as possible
     public class ActorContextExtras
     {
-        public ActorContextExtras(IContext context)
-        {
-            Context = context;
-        }
+        public ActorContextExtras(IContext context) => Context = context;
 
         public ImmutableHashSet<PID> Children { get; private set; } = ImmutableHashSet<PID>.Empty;
         public Timer? ReceiveTimeoutTimer { get; private set; }

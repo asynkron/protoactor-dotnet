@@ -12,7 +12,7 @@ using Saga.Messages;
 
 namespace Saga
 {
-    internal class Account : IActor
+    class Account : IActor
     {
         private readonly double _busyProbability;
         private readonly string _name;
@@ -22,8 +22,13 @@ namespace Saga
         private readonly double _serviceUptime;
         private decimal _balance = 10;
 
-        public Account(string name, double serviceUptime, double refusalProbability, double busyProbability,
-            Random random)
+        public Account(
+            string name,
+            double serviceUptime,
+            double refusalProbability,
+            double busyProbability,
+            Random random
+        )
         {
             _name = name;
             _serviceUptime = serviceUptime;

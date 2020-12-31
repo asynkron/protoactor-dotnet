@@ -143,10 +143,7 @@ namespace Proto.Tests
 
         public class ActorWithSystem : IActor
         {
-            public ActorWithSystem(ActorSystem system)
-            {
-                System = system;
-            }
+            public ActorWithSystem(ActorSystem system) => System = system;
 
             public ActorSystem System { get; }
 

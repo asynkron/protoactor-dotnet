@@ -6,10 +6,8 @@ namespace Proto.Remote.GrpcNet
     public class GrpcNetChannelProvider : IChannelProvider
     {
         private readonly GrpcNetRemoteConfig _remoteConfig;
-        public GrpcNetChannelProvider(GrpcNetRemoteConfig remoteConfig)
-        {
-            _remoteConfig = remoteConfig;
-        }
+
+        public GrpcNetChannelProvider(GrpcNetRemoteConfig remoteConfig) => _remoteConfig = remoteConfig;
 
         public ChannelBase GetChannel(string address)
         {

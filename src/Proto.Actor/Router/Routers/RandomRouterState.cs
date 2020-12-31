@@ -7,7 +7,7 @@ using System;
 
 namespace Proto.Router.Routers
 {
-    internal class RandomRouterState : RouterState
+    class RandomRouterState : RouterState
     {
         private readonly Random _random;
         private readonly ISenderContext _senderContext;

@@ -5,7 +5,7 @@
 // -----------------------------------------------------------------------
 namespace Saga.Messages
 {
-    internal class CreditRefused
+    class CreditRefused
     {
     }
 }

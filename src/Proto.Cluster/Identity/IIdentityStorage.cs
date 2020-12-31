@@ -1,15 +1,15 @@
-﻿namespace Proto.Cluster.Identity
-{
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 
-    public interface IIdentityStorage: IDisposable
+namespace Proto.Cluster.Identity
+{
+    public interface IIdentityStorage : IDisposable
     {
         public Task<StoredActivation?> TryGetExistingActivationAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
 
         public Task<SpawnLock?> TryAcquireLockAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
-        
+
         public Task<StoredActivation?> WaitForActivationAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
 
         public Task RemoveLock(SpawnLock spawnLock, CancellationToken ct);
@@ -23,35 +23,31 @@
 
     public class SpawnLock
     {
-        public string LockId { get; }
-        public ClusterIdentity ClusterIdentity { get; }
-
         public SpawnLock(string lockId, ClusterIdentity clusterIdentity)
         {
             LockId = lockId;
             ClusterIdentity = clusterIdentity;
         }
+
+        public string LockId { get; }
+        public ClusterIdentity ClusterIdentity { get; }
     }
-    
+
     //TODO: what is this? its not used atm..
     public class LookupResult
     {
+        public LookupResult(StoredActivation storedActivation) => StoredActivation = storedActivation;
+
+        public LookupResult(SpawnLock spawnLock) => SpawnLock = spawnLock;
+
         public StoredActivation? StoredActivation { get; }
         public SpawnLock? SpawnLock { get; }
-
-        public LookupResult(StoredActivation storedActivation)
-        {
-            StoredActivation = storedActivation;
-        }
-
-        public LookupResult(SpawnLock spawnLock)
-        {
-            SpawnLock = spawnLock;
-        }
     }
 
     public class StoredActivation
     {
+        public string MemberId;
+
         public StoredActivation(string memberId, PID pid)
         {
             MemberId = memberId;
@@ -59,7 +55,6 @@
         }
 
         public PID Pid { get; }
-        public string MemberId;
     }
 
     public class StorageFailure : Exception

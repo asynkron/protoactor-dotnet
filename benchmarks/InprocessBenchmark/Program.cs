@@ -24,6 +24,7 @@ public class Program
 
         Console.WriteLine("Dispatcher\t\tElapsed\t\tMsg/sec");
         var tps = new[] {50, 100, 200, 300, 400, 500, 600, 700, 800, 900};
+
         foreach (var t in tps)
         {
             var d = new ThreadPoolDispatcher {Throughput = t};
@@ -51,6 +52,7 @@ public class Program
 
             var tasks = completions.Select(tsc => tsc.Task).ToArray();
             var sw = Stopwatch.StartNew();
+
             for (var i = 0; i < clientCount; i++)
             {
                 var client = clients[i];
@@ -77,20 +79,14 @@ public class Program
 
 public class Msg
 {
-    public Msg(PID pingActor)
-    {
-        PingActor = pingActor;
-    }
+    public Msg(PID pingActor) => PingActor = pingActor;
 
     public PID PingActor { get; }
 }
 
 public class Start
 {
-    public Start(PID sender)
-    {
-        Sender = sender;
-    }
+    public Start(PID sender) => Sender = sender;
 
     public PID Sender { get; }
 }

@@ -36,10 +36,7 @@ namespace Proto.Cluster.Tests
             (EchoActor.Kind2, EchoActor.Props)
         };
 
-        public async Task InitializeAsync()
-        {
-            Members = await SpawnClusterNodes(_clusterSize, _configure);
-        }
+        public async Task InitializeAsync() => Members = await SpawnClusterNodes(_clusterSize, _configure);
 
         public async Task DisposeAsync()
         {

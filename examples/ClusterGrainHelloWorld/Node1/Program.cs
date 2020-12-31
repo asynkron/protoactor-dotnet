@@ -14,7 +14,7 @@ using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using ProtosReflection = Messages.ProtosReflection;
 
-internal class Program
+class Program
 {
     private static async Task Main(string[] args)
     {
@@ -47,8 +47,7 @@ internal class Program
 
         res = await client.SayHello(new HelloRequest());
         Console.WriteLine(res.Message);
-        Console.CancelKeyPress += async (e, y) =>
-        {
+        Console.CancelKeyPress += async (e, y) => {
             Console.WriteLine("Shutting Down...");
             await system.Cluster().ShutdownAsync();
         };

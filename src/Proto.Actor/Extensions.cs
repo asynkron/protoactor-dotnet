@@ -36,7 +36,8 @@ namespace Proto
         public static void Deconstruct<TKey, TValue>(
             //DONT TOUCH THIS, it tries to deconstruct the deconstruct method...
             // ReSharper disable once UseDeconstructionOnParameter
-            this KeyValuePair<TKey, TValue> self, out TKey key,
+            this KeyValuePair<TKey, TValue> self,
+            out TKey key,
             out TValue value
         )
         {

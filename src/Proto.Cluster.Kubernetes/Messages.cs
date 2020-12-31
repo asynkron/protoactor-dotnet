@@ -7,7 +7,7 @@ using System;
 
 namespace Proto.Cluster.Kubernetes
 {
-    internal static class Messages
+    static class Messages
     {
         public class RegisterMember
         {
@@ -24,10 +24,7 @@ namespace Proto.Cluster.Kubernetes
 
         public class StartWatchingCluster
         {
-            public StartWatchingCluster(string clusterName)
-            {
-                ClusterName = clusterName ?? throw new ArgumentNullException(nameof(clusterName));
-            }
+            public StartWatchingCluster(string clusterName) => ClusterName = clusterName ?? throw new ArgumentNullException(nameof(clusterName));
 
             public string ClusterName { get; }
         }

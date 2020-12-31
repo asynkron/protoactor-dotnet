@@ -29,10 +29,7 @@ namespace Proto.Remote
         public void RegisterSerializer(ISerializer serializer, bool makeDefault = false)
         {
             _serializers.Add(serializer);
-            if (makeDefault)
-            {
-                DefaultSerializerId = _serializers.Count - 1;
-            }
+            if (makeDefault) DefaultSerializerId = _serializers.Count - 1;
         }
 
         public void RegisterFileDescriptor(FileDescriptor fd)

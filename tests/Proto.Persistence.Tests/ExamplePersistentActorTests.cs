@@ -17,8 +17,7 @@ namespace Proto.Persistence.Tests
             var (pid, _, actorId, providerState) = CreateTestActor();
             Context.Send(pid, new Multiply {Amount = 2});
             await providerState
-                .GetEventsAsync(actorId, 0, long.MaxValue, o =>
-                    {
+                .GetEventsAsync(actorId, 0, long.MaxValue, o => {
                         Assert.IsType<Multiplied>(o);
                         Assert.Equal(2, ((Multiplied) o).Amount);
                     }
@@ -245,44 +244,42 @@ namespace Proto.Persistence.Tests
         }
     }
 
-    internal class State
+    class State
     {
         public int Value { get; set; }
     }
 
-    internal class GetState
+    class GetState
     {
     }
 
-    internal class GetIndex
+    class GetIndex
     {
     }
 
-    internal class Multiply
-    {
-        public int Amount { get; set; }
-    }
-
-    internal class Multiplied
+    class Multiply
     {
         public int Amount { get; set; }
     }
 
-    internal class RequestSnapshot
+    class Multiplied
+    {
+        public int Amount { get; set; }
+    }
+
+    class RequestSnapshot
     {
     }
 
-    internal class ExamplePersistentActor : IActor
+    class ExamplePersistentActor : IActor
     {
         private readonly Persistence _persistence;
         private State _state = new() {Value = 1};
 
-        public ExamplePersistentActor(IEventStore eventStore, ISnapshotStore snapshotStore, string persistenceId)
-        {
-            _persistence = Persistence.WithEventSourcingAndSnapshotting(eventStore, snapshotStore, persistenceId,
+        public ExamplePersistentActor(IEventStore eventStore, ISnapshotStore snapshotStore, string persistenceId) => _persistence =
+            Persistence.WithEventSourcingAndSnapshotting(eventStore, snapshotStore, persistenceId,
                 ApplyEvent, ApplySnapshot
             );
-        }
 
         public async Task ReceiveAsync(IContext context)
         {

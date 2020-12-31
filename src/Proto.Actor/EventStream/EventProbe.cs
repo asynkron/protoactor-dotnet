@@ -27,18 +27,14 @@ namespace Proto
         private readonly ILogger _logger = Log.CreateLogger<EventProbe<T>>();
         private EventExpectation<T>? _currentExpectation;
 
-        public EventProbe(EventStream<T> eventStream)
-        {
-            _eventStreamSubscription = eventStream.Subscribe(e =>
+        public EventProbe(EventStream<T> eventStream) => _eventStreamSubscription = eventStream.Subscribe(e => {
+                lock (_lock)
                 {
-                    lock (_lock)
-                    {
-                        _events.Enqueue(e);
-                        NotifyChanges();
-                    }
+                    _events.Enqueue(e);
+                    NotifyChanges();
                 }
-            );
-        }
+            }
+        );
 
         public Task Expect<TE>() where TE : T
         {
@@ -55,13 +51,12 @@ namespace Proto
         {
             lock (_lock)
             {
-                var expectation = new EventExpectation<T>(@event =>
-                    {
+                var expectation = new EventExpectation<T>(@event => {
                         return @event switch
-                               {
-                                   TE e when predicate(e) => true,
-                                   _                      => false
-                               };
+                        {
+                            TE e when predicate(e) => true,
+                            _                      => false
+                        };
                     }
                 );
                 _logger.LogDebug("Setting expectation");

@@ -12,10 +12,7 @@ namespace Proto.Tests.Interactive
     {
         private readonly ITestOutputHelper _testOutputHelper;
 
-        public InteractiveTests(ITestOutputHelper testOutputHelper)
-        {
-            _testOutputHelper = testOutputHelper;
-        }
+        public InteractiveTests(ITestOutputHelper testOutputHelper) => _testOutputHelper = testOutputHelper;
 
         [Fact]
         public async Task CanBatchProcessIEnumerable()
@@ -24,8 +21,7 @@ namespace Proto.Tests.Interactive
             var threads = new ConcurrentDictionary<Thread, bool>();
             var numbers = new ConcurrentDictionary<int, bool>();
 
-            await ints.ParallelForEach(i =>
-                {
+            await ints.ParallelForEach(i => {
                     threads.TryAdd(Thread.CurrentThread, true);
                     numbers.TryAdd(i, true);
                 }

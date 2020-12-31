@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto;
 
-internal class Program
+class Program
 {
     private static void Main()
     {
@@ -43,11 +43,11 @@ internal class Program
     {
         public static SupervisorDirective Decide(PID pid, Exception reason)
             => reason switch
-               {
-                   RecoverableException _ => SupervisorDirective.Restart,
-                   FatalException _       => SupervisorDirective.Stop,
-                   _                      => SupervisorDirective.Escalate
-               };
+            {
+                RecoverableException _ => SupervisorDirective.Restart,
+                FatalException _       => SupervisorDirective.Stop,
+                _                      => SupervisorDirective.Escalate
+            };
     }
 
     private class ParentActor : IActor

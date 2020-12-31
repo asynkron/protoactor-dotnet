@@ -31,8 +31,7 @@ namespace Proto
                 droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs.", droppedLogs)
             );
             Subscribe<DeadLetterEvent>(
-                dl =>
-                {
+                dl => {
                     if (!ct.IsCancellationRequested && shouldThrottle().IsOpen())
                     {
                         _logger.LogInformation(
@@ -74,8 +73,7 @@ namespace Proto
             var sub = new EventStreamSubscription<T>(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
-                x =>
-                {
+                x => {
                     action(x);
                     return Task.CompletedTask;
                 }
@@ -109,8 +107,7 @@ namespace Proto
             var sub = new EventStreamSubscription<T>(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
-                msg =>
-                {
+                msg => {
                     if (msg is TMsg typed) action(typed);
 
                     return Task.CompletedTask;
@@ -128,14 +125,16 @@ namespace Proto
         /// <param name="action">Synchronous message handler</param>
         /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
         /// <returns>A new subscription that can be used to unsubscribe</returns>
-        public EventStreamSubscription<T> Subscribe<TMsg>(Func<TMsg, bool> predicate, Action<TMsg> action,
-            IDispatcher? dispatcher = null) where TMsg : T
+        public EventStreamSubscription<T> Subscribe<TMsg>(
+            Func<TMsg, bool> predicate,
+            Action<TMsg> action,
+            IDispatcher? dispatcher = null
+        ) where TMsg : T
         {
             var sub = new EventStreamSubscription<T>(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
-                msg =>
-                {
+                msg => {
                     if (msg is TMsg typed && predicate(typed)) action(typed);
 
                     return Task.CompletedTask;
@@ -157,8 +156,7 @@ namespace Proto
             var sub = new EventStreamSubscription<T>(
                 this,
                 Dispatchers.SynchronousDispatcher,
-                msg =>
-                {
+                msg => {
                     if (msg is TMsg)
                     {
                         foreach (var pid in pids)
@@ -203,8 +201,7 @@ namespace Proto
             foreach (var sub in _subscriptions.Values)
             {
                 sub.Dispatcher.Schedule(
-                    () =>
-                    {
+                    () => {
                         try
                         {
                             sub.Action(msg);

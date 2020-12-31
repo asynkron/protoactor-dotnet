@@ -30,8 +30,13 @@ namespace Proto
             _withinTimeSpan = withinTimeSpan;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
-            object? message)
+        public void HandleFailure(
+            ISupervisor supervisor,
+            PID child,
+            RestartStatistics rs,
+            Exception reason,
+            object? message
+        )
         {
             var directive = _decider(child, reason);
 

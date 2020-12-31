@@ -5,14 +5,11 @@
 // -----------------------------------------------------------------------
 namespace Proto.Router.Routers
 {
-    internal class BroadcastRouterState : RouterState
+    class BroadcastRouterState : RouterState
     {
         private readonly ISenderContext _senderContext;
 
-        internal BroadcastRouterState(ISenderContext senderContext)
-        {
-            _senderContext = senderContext;
-        }
+        internal BroadcastRouterState(ISenderContext senderContext) => _senderContext = senderContext;
 
         public override void RouteMessage(object message)
         {

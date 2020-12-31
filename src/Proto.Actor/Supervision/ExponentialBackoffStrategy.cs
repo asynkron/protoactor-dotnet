@@ -21,8 +21,13 @@ namespace Proto
             _initialBackoff = initialBackoff;
         }
 
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception reason,
-            object? message)
+        public void HandleFailure(
+            ISupervisor supervisor,
+            PID child,
+            RestartStatistics rs,
+            Exception reason,
+            object? message
+        )
         {
             if (rs.NumberOfFailures(_backoffWindow) == 0) rs.Reset();
 

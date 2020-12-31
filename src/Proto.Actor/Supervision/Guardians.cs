@@ -15,10 +15,7 @@ namespace Proto
     {
         private readonly ConcurrentDictionary<ISupervisorStrategy, GuardianProcess> _guardianStrategies = new();
 
-        public Guardians(ActorSystem system)
-        {
-            System = system;
-        }
+        public Guardians(ActorSystem system) => System = system;
 
         private ActorSystem System { get; }
 
@@ -31,7 +28,7 @@ namespace Proto
         }
     }
 
-    internal class GuardianProcess : Process, ISupervisor
+    class GuardianProcess : Process, ISupervisor
     {
         private readonly ISupervisorStrategy _supervisorStrategy;
 

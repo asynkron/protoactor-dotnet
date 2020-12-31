@@ -5,7 +5,7 @@
 // -----------------------------------------------------------------------
 namespace Proto.Cluster.Testing
 {
-    internal static class Messages
+    static class Messages
     {
         public class RegisterMember
         {

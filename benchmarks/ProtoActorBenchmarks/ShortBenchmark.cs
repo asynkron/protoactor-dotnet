@@ -11,8 +11,7 @@ using Proto.Mailbox;
 
 namespace ProtoActorBenchmarks
 {
-    [MemoryDiagnoser]
-    [InProcess]
+    [MemoryDiagnoser, InProcess]
     public class ShortBenchmark
     {
         private RootContext _context;

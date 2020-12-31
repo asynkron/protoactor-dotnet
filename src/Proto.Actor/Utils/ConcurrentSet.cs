@@ -16,17 +16,11 @@ namespace Proto.Utils
 
         public bool Contains(T key) => _inner.ContainsKey(key);
 
-        public void Add(T key)
-        {
-            _inner.TryAdd(key, 1);
-        }
+        public void Add(T key) => _inner.TryAdd(key, 1);
 
         public bool TryAdd(T key) => _inner.TryAdd(key, 1);
 
-        public void Remove(T key)
-        {
-            _inner.TryRemove(key, out _);
-        }
+        public void Remove(T key) => _inner.TryRemove(key, out _);
 
         public T[] ToArray() => _inner.Keys.ToArray();
     }

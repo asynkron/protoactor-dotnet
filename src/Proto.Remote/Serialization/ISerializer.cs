@@ -10,7 +10,9 @@ namespace Proto.Remote
     public interface ISerializer
     {
         ByteString Serialize(object obj);
+
         object Deserialize(ByteString bytes, string typeName);
+
         string GetTypeName(object message);
     }
 }

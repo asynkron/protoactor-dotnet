@@ -11,38 +11,36 @@ using Proto;
 
 namespace SpawnBenchmark
 {
-    internal class Request
+    class Request
     {
         public long Div;
         public long Num;
         public long Size;
     }
 
-    internal class MyActor : IActor
+    class MyActor : IActor
     {
         private readonly ActorSystem _system;
         private long _replies;
         private PID _replyTo;
         private long _sum;
 
-        private MyActor(ActorSystem system)
-        {
-            _system = system;
-        }
+        private MyActor(ActorSystem system) => _system = system;
 
         public Task ReceiveAsync(IContext context)
         {
             var msg = context.Message;
+
             switch (msg)
             {
                 case Request {Size: 1} r:
                     context.Respond(r.Num);
                     context.Stop(context.Self);
                     return Task.CompletedTask;
-                case Request r:
-                {
+                case Request r: {
                     _replies = r.Div;
                     _replyTo = context.Sender;
+
                     for (var i = 0; i < r.Div; i++)
                     {
                         var child = _system.Root.Spawn(Props(_system));
@@ -57,8 +55,7 @@ namespace SpawnBenchmark
 
                     return Task.CompletedTask;
                 }
-                case long res:
-                {
+                case long res: {
                     _sum += res;
                     _replies--;
                     if (_replies == 0) context.Send(_replyTo, _sum);
@@ -70,15 +67,17 @@ namespace SpawnBenchmark
         }
 
         private static MyActor ProduceActor(ActorSystem system) => new(system);
+
         public static Props Props(ActorSystem system) => Proto.Props.FromProducer(() => ProduceActor(system));
     }
 
-    internal class Program
+    class Program
     {
         private static void Main()
         {
             var system = new ActorSystem();
             var context = new RootContext(system);
+
             while (true)
             {
                 Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");

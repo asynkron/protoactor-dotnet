@@ -80,10 +80,7 @@ namespace Proto.Cluster.Testing
 
         public Task UpdateClusterState(ClusterState state) => throw new NotImplementedException();
 
-        private void AgentOnStatusUpdate(object sender, EventArgs e)
-        {
-            NotifyStatuses();
-        }
+        private void AgentOnStatusUpdate(object sender, EventArgs e) => NotifyStatuses();
 
         private void NotifyStatuses()
         {
@@ -93,8 +90,7 @@ namespace Proto.Cluster.Testing
 
             var memberStatuses =
                 statuses.Select(
-                        x =>
-                        {
+                        x => {
                             var member = new Member
                             {
                                 Id = x.ID.ToString(),
@@ -119,9 +115,6 @@ namespace Proto.Cluster.Testing
             _ttlReportTimer.Start();
         }
 
-        private void RefreshTTL()
-        {
-            _agent.RefreshServiceTTL(_id);
-        }
+        private void RefreshTTL() => _agent.RefreshServiceTTL(_id);
     }
 }

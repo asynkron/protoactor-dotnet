@@ -134,10 +134,7 @@ namespace Proto.Tests
             private readonly Props _childProps;
             private PID _childPid;
 
-            public SupervisingActor(Props childProps)
-            {
-                _childProps = childProps;
-            }
+            public SupervisingActor(Props childProps) => _childProps = childProps;
 
             public Task ReceiveAsync(IContext context)
             {
@@ -153,10 +150,7 @@ namespace Proto.Tests
         {
             private readonly Action _onDispose;
 
-            public AsyncDisposableActor(Action onDispose)
-            {
-                _onDispose = onDispose;
-            }
+            public AsyncDisposableActor(Action onDispose) => _onDispose = onDispose;
 
             public Task ReceiveAsync(IContext context)
             {
@@ -180,10 +174,7 @@ namespace Proto.Tests
         {
             private readonly Action _onDispose;
 
-            public DisposableActor(Action onDispose)
-            {
-                _onDispose = onDispose;
-            }
+            public DisposableActor(Action onDispose) => _onDispose = onDispose;
 
             public Task ReceiveAsync(IContext context)
             {
@@ -196,10 +187,7 @@ namespace Proto.Tests
                 return Task.CompletedTask;
             }
 
-            public void Dispose()
-            {
-                _onDispose();
-            }
+            public void Dispose() => _onDispose();
         }
 
         private class ParentWithMultipleChildrenActor : IActor

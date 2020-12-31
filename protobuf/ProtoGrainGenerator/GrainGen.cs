@@ -69,46 +69,31 @@ namespace GrainGenerator
 
         #region UnusedMethods
 
-        protected override void WriteNamespaceHeader(GeneratorContext ctx, string @namespace)
-        {
-            throw new NotImplementedException();
-        }
+        protected override void WriteNamespaceHeader(GeneratorContext ctx, string @namespace) => throw new NotImplementedException();
 
-        protected override void WriteNamespaceFooter(GeneratorContext ctx, string @namespace)
-        {
-            throw new NotImplementedException();
-        }
+        protected override void WriteNamespaceFooter(GeneratorContext ctx, string @namespace) => throw new NotImplementedException();
 
-        protected override void WriteField(GeneratorContext ctx, FieldDescriptorProto obj, ref object state,
-            OneOfStub[] oneOfs)
-        {
-            throw new NotImplementedException();
-        }
+        protected override void WriteField(
+            GeneratorContext ctx,
+            FieldDescriptorProto obj,
+            ref object state,
+            OneOfStub[] oneOfs
+        ) => throw new NotImplementedException();
 
         protected override void WriteMessageFooter(GeneratorContext ctx, DescriptorProto obj, ref object state)
-        {
-            throw new NotImplementedException();
-        }
+            => throw new NotImplementedException();
 
         protected override void WriteMessageHeader(GeneratorContext ctx, DescriptorProto obj, ref object state)
-        {
-            throw new NotImplementedException();
-        }
+            => throw new NotImplementedException();
 
         protected override void WriteEnumHeader(GeneratorContext ctx, EnumDescriptorProto obj, ref object state)
-        {
-            throw new NotImplementedException();
-        }
+            => throw new NotImplementedException();
 
         protected override void WriteEnumValue(GeneratorContext ctx, EnumValueDescriptorProto obj, ref object state)
-        {
-            throw new NotImplementedException();
-        }
+            => throw new NotImplementedException();
 
         protected override void WriteEnumFooter(GeneratorContext ctx, EnumDescriptorProto obj, ref object state)
-        {
-            throw new NotImplementedException();
-        }
+            => throw new NotImplementedException();
 
         #endregion
     }

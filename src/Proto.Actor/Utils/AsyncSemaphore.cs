@@ -13,17 +13,13 @@ namespace Proto.Utils
     {
         private readonly SemaphoreSlim _semaphore;
 
-        public AsyncSemaphore(int maxConcurrency)
-        {
-            _semaphore = new SemaphoreSlim(
-                maxConcurrency,
-                maxConcurrency
-            );
-        }
+        public AsyncSemaphore(int maxConcurrency) => _semaphore = new SemaphoreSlim(
+            maxConcurrency,
+            maxConcurrency
+        );
 
         public async Task<T> WaitAsync<T>(Func<Task<T>> producer)
         {
-
             await _semaphore.WaitAsync();
 
             try
@@ -52,7 +48,7 @@ namespace Proto.Utils
                 _semaphore.Release();
             }
         }
-        
+
         public void Wait(Func<Task> producer)
         {
             //block caller

@@ -14,11 +14,10 @@ namespace Proto
     [PublicAPI]
     public class ActorSystem
     {
-        public string Id { get; } = Guid.NewGuid().ToString("N");
         internal const string NoHost = "nonhost";
+        private CancellationTokenSource _cts = new();
         private string _host = NoHost;
         private int _port;
-        private CancellationTokenSource _cts = new();
 
         public ActorSystem() : this(new ActorSystemConfig())
         {
@@ -36,6 +35,8 @@ namespace Proto
             ProcessRegistry.TryAdd("eventstream", eventStreamProcess);
             Extensions = new ActorSystemExtensions(this);
         }
+
+        public string Id { get; } = Guid.NewGuid().ToString("N");
 
         public string Address { get; private set; } = NoHost;
 

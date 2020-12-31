@@ -12,6 +12,7 @@ namespace Proto.Cluster
     public interface IMemberStrategy
     {
         ImmutableList<Member> GetAllMembers();
+
         void AddMember(Member member);
 
         void RemoveMember(Member member);
@@ -19,7 +20,7 @@ namespace Proto.Cluster
         Member? GetActivator(string senderAddress);
     }
 
-    internal class SimpleMemberStrategy : IMemberStrategy
+    class SimpleMemberStrategy : IMemberStrategy
     {
         private readonly Rendezvous _rdv;
         private readonly RoundRobinMemberSelector _rr;

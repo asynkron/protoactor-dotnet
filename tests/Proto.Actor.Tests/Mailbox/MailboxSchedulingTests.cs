@@ -25,8 +25,7 @@ namespace Proto.Mailbox.Tests
                 "Mailbox should not have processed msg2 because processing of msg1 is not completed."
             );
 
-            Action resumeMailboxTrigger = () =>
-            {
+            Action resumeMailboxTrigger = () => {
                 // mailbox is waiting on msg1 to be completed before continuing
                 // setting msg2 first guarantees that both messages will be processed
                 msg2.TaskCompletionSource.SetResult(0);
@@ -130,6 +129,7 @@ namespace Proto.Mailbox.Tests
             mailbox.PostUserMessage(msg1);
 
             void ResumeMailboxTrigger() => msg1.TaskCompletionSource.SetResult(0);
+
             await mailboxHandler.ResumeMailboxProcessingAndWaitAsync(ResumeMailboxTrigger)
                 .ConfigureAwait(false);
 

@@ -33,16 +33,13 @@ namespace Proto.Cluster
 
         public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
         {
-            
             _logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
             var i = 0;
+
             while (!ct.IsCancellationRequested)
             {
-                if (context.System.Shutdown.IsCancellationRequested)
-                {
-                    return default;
-                }
-                
+                if (context.System.Shutdown.IsCancellationRequested) return default;
+
                 if (_pidCache.TryGet(clusterIdentity, out var cachedPid))
                 {
                     _logger.LogDebug("Requesting {Identity}-{Kind} Message {Message} - Got PID {Pid} from PidCache",
@@ -59,12 +56,9 @@ namespace Proto.Cluster
                 try
                 {
                     var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
-                    
-                    if (context.System.Shutdown.IsCancellationRequested)
-                    {
-                        return default;
-                    }
-                    
+
+                    if (context.System.Shutdown.IsCancellationRequested) return default;
+
                     if (pid is null)
                     {
                         _logger.LogDebug(
@@ -82,13 +76,11 @@ namespace Proto.Cluster
                         "Requesting {Identity}-{Kind} Message {Message} - Got PID {PID} from IdentityLookup",
                         clusterIdentity.Identity, clusterIdentity.Kind, message, pid
                     );
-                    
-                    if (context.System.Shutdown.IsCancellationRequested)
-                    {
-                        return default;
-                    }
+
+                    if (context.System.Shutdown.IsCancellationRequested) return default;
 
                     var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, pid, "IIdentityLookup", context);
+
                     switch (status)
                     {
                         case ResponseStatus.Ok:
@@ -96,7 +88,7 @@ namespace Proto.Cluster
                         case ResponseStatus.TimedOutOrException:
                             await Task.Delay(delay, CancellationToken.None);
                             break;
-                        
+
                         // //TODO: this is already done in tryrequestasync, or?
                         // case ResponseStatus.DeadLetter:
                         //     await _identityLookup.RemovePidAsync(pid, ct);
@@ -105,26 +97,29 @@ namespace Proto.Cluster
                 }
                 catch
                 {
-                    if (context.System.Shutdown.IsCancellationRequested)
-                    {
-                        return default;
-                    }
-                    
+                    if (context.System.Shutdown.IsCancellationRequested) return default;
+
                     if (_requestLogThrottle().IsOpen())
                         _logger.LogWarning("Failed to get PID from IIdentityLookup");
                     await Task.Delay(delay, CancellationToken.None);
                 }
             }
+
             //TODO: we should log here instead;
             if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
                 _logger.LogWarning("RequestAsync retried but failed for ClusterIdentity {ClusterIdentity}", clusterIdentity);
 
             return default!;
         }
-        
+
         //TODO should this really log at all? these are transient issues. we could probably only fail when the method above gives up and returns 
-        private async Task<(ResponseStatus ok, T res)> TryRequestAsync<T>(ClusterIdentity clusterIdentity,
-            object message, PID cachedPid, string source, ISenderContext context)
+        private async Task<(ResponseStatus ok, T res)> TryRequestAsync<T>(
+            ClusterIdentity clusterIdentity,
+            object message,
+            PID cachedPid,
+            string source,
+            ISenderContext context
+        )
         {
             try
             {

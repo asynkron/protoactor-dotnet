@@ -16,10 +16,7 @@ namespace Proto
         {
         }
 
-        public Behavior(Receive receive)
-        {
-            Become(receive);
-        }
+        public Behavior(Receive receive) => Become(receive);
 
         public void Become(Receive receive)
         {

@@ -9,7 +9,7 @@ using Proto;
 
 namespace HelloWorld
 {
-    internal class Program
+    class Program
     {
         private static void Main(string[] args)
         {
@@ -23,10 +23,7 @@ namespace HelloWorld
         //Messages should be immutable to prevent race conditions between multiple actors
         private class Hello
         {
-            public Hello(string who)
-            {
-                Who = who;
-            }
+            public Hello(string who) => Who = who;
 
             public string Who { get; }
         }

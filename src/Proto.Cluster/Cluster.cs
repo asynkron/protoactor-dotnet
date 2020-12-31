@@ -30,8 +30,7 @@ namespace Proto.Cluster
             system.Serialization().RegisterFileDescriptor(ProtosReflection.Descriptor);
 
             _clusterHeartBeat = new ClusterHeartBeat(this);
-            system.EventStream.Subscribe<ClusterTopology>(e =>
-                {
+            system.EventStream.Subscribe<ClusterTopology>(e => {
                     foreach (var member in e.Left)
                     {
                         PidCache.RemoveByMember(member);
@@ -101,7 +100,7 @@ namespace Proto.Cluster
         {
             await System.ShutdownAsync();
             Logger.LogInformation("Stopping Cluster {Id}", System.Id);
-            
+
             await _clusterHeartBeat.ShutdownAsync();
             if (graceful) await IdentityLookup!.ShutdownAsync();
             await Config!.ClusterProvider.ShutdownAsync(graceful);
@@ -117,8 +116,8 @@ namespace Proto.Cluster
 
         public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) =>
             ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, System.Root, ct);
-        
-        public Task<T> RequestAsync<T>(string identity, string kind, object message, ISenderContext context ,CancellationToken ct) =>
+
+        public Task<T> RequestAsync<T>(string identity, string kind, object message, ISenderContext context, CancellationToken ct) =>
             ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct);
 
         public Props GetClusterKind(string kind)

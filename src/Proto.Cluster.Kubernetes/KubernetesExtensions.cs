@@ -17,7 +17,7 @@ using static Proto.Cluster.Kubernetes.ProtoLabels;
 
 namespace Proto.Cluster.Kubernetes
 {
-    internal static class KubernetesExtensions
+    static class KubernetesExtensions
     {
         private static string cachedNamespace;
 
@@ -28,9 +28,7 @@ namespace Proto.Cluster.Kubernetes
         /// <param name="port">Port to find in container ports</param>
         /// <returns></returns>
         internal static V1ContainerPort FindPort(this V1Pod pod, int port)
-        {
-            return pod.Spec.Containers[0].Ports.FirstOrDefault(x => x.ContainerPort == port);
-        }
+            => pod.Spec.Containers[0].Ports.FirstOrDefault(x => x.ContainerPort == port);
 
         /// <summary>
         ///     Replace pod labels
@@ -41,7 +39,10 @@ namespace Proto.Cluster.Kubernetes
         /// <param name="labels">Labels collection. All labels will be replaced by the new labels.</param>
         /// <returns></returns>
         internal static Task<V1Pod> ReplacePodLabels(
-            this IKubernetes kubernetes, string podName, string podNamespace, IDictionary<string, string> labels
+            this IKubernetes kubernetes,
+            string podName,
+            string podNamespace,
+            IDictionary<string, string> labels
         )
         {
             var patch = new JsonPatchDocument<V1Pod>();

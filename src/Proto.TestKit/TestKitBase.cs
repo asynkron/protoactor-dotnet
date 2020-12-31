@@ -23,10 +23,8 @@ namespace Proto.TestKit
         /// <summary>
         ///     the underlying test probe
         /// </summary>
-        public TestProbe Probe
-        {
-            get
-            {
+        public TestProbe Probe {
+            get {
                 if (_probe is null) throw new TestKitException("Probe hasn't been set up");
 
                 return _probe;

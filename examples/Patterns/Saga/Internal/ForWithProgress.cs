@@ -28,6 +28,7 @@ namespace Saga.Internal
             {
                 if (current == 0 && _runOnStart) return true;
                 if (current == 0) return false;
+
                 return current % _everyNth == 0;
             }
 
@@ -36,6 +37,7 @@ namespace Saga.Internal
                 var must = mustRunNth(i);
                 if (must) everyNthAction(i);
                 if (must && !_runBothOnEvery) continue;
+
                 everyAction(i, must);
             }
         }

@@ -5,16 +5,13 @@
 // -----------------------------------------------------------------------
 namespace Proto.Router.Routers
 {
-    internal record RandomGroupRouterConfig : GroupRouterConfig
+    record RandomGroupRouterConfig : GroupRouterConfig
     {
         private readonly int _seed;
 
         public RandomGroupRouterConfig(ISenderContext senderContext, int seed, params PID[] routees) : base(
             senderContext, routees
-        )
-        {
-            _seed = seed;
-        }
+        ) => _seed = seed;
 
         public RandomGroupRouterConfig(ISenderContext senderContext, params PID[] routees) : base(senderContext, routees
         )

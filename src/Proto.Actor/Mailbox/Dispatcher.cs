@@ -12,14 +12,18 @@ namespace Proto.Mailbox
     public interface IMessageInvoker
     {
         CancellationTokenSource? CancellationTokenSource { get; }
+
         Task InvokeSystemMessageAsync(object msg);
+
         Task InvokeUserMessageAsync(object msg);
+
         void EscalateFailure(Exception reason, object? message);
     }
 
     public interface IDispatcher
     {
         int Throughput { get; }
+
         void Schedule(Func<Task> runner);
     }
 
@@ -33,10 +37,7 @@ namespace Proto.Mailbox
     {
         private const int DefaultThroughput = 300;
 
-        public SynchronousDispatcher(int throughput = DefaultThroughput)
-        {
-            Throughput = throughput;
-        }
+        public SynchronousDispatcher(int throughput = DefaultThroughput) => Throughput = throughput;
 
         public int Throughput { get; }
 
@@ -47,10 +48,7 @@ namespace Proto.Mailbox
     {
         private const int DefaultThroughput = 300;
 
-        public ThreadPoolDispatcher(int throughput = DefaultThroughput)
-        {
-            Throughput = throughput;
-        }
+        public ThreadPoolDispatcher(int throughput = DefaultThroughput) => Throughput = throughput;
 
         public void Schedule(Func<Task> runner) => Task.Factory.StartNew(runner, TaskCreationOptions.None);
 
@@ -78,14 +76,15 @@ namespace Proto.Mailbox
         public int Throughput { get; }
     }
 
-    internal class NoopDispatcher : IDispatcher
+    class NoopDispatcher : IDispatcher
     {
         internal static readonly IDispatcher Instance = new NoopDispatcher();
         public int Throughput => 0;
+
         public void Schedule(Func<Task> runner) => throw new NotImplementedException();
     }
 
-    internal class NoopInvoker : IMessageInvoker
+    class NoopInvoker : IMessageInvoker
     {
         internal static readonly IMessageInvoker Instance = new NoopInvoker();
 

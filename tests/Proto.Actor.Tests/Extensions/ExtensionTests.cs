@@ -16,10 +16,7 @@ namespace Proto.Tests.Extensions
     public class ExtensionTests
     {
         [Fact]
-        public void ExtensionsGetOwnId()
-        {
-            Assert.NotEqual(IActorSystemExtension<ExtensionA>.Id, IActorSystemExtension<ExtensionB>.Id);
-        }
+        public void ExtensionsGetOwnId() => Assert.NotEqual(IActorSystemExtension<ExtensionA>.Id, IActorSystemExtension<ExtensionB>.Id);
 
         [Fact]
         public void CanGetExtension()

@@ -5,15 +5,12 @@
 // -----------------------------------------------------------------------
 namespace Proto.Router.Routers
 {
-    internal record BroadcastPoolRouterConfig : PoolRouterConfig
+    record BroadcastPoolRouterConfig : PoolRouterConfig
     {
         private readonly ISenderContext _senderContext;
 
         public BroadcastPoolRouterConfig(ISenderContext senderContext, int poolSize, Props routeeProps)
-            : base(poolSize, routeeProps)
-        {
-            _senderContext = senderContext;
-        }
+            : base(poolSize, routeeProps) => _senderContext = senderContext;
 
         protected override RouterState CreateRouterState() => new BroadcastRouterState(_senderContext);
     }

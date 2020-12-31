@@ -1,27 +1,25 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Proto.Utils;
 
 namespace Proto.Cluster.Identity
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.Logging;
-    using Utils;
-
-    internal class IdentityStorageWorker : IActor
+    class IdentityStorageWorker : IActor
     {
         private static readonly ConcurrentSet<string> StaleMembers = new();
 
         private readonly Cluster _cluster;
+
+        private readonly Dictionary<ClusterIdentity, Task<PID?>> _inProgress = new();
         private readonly ILogger _logger = Log.CreateLogger<IdentityStorageWorker>();
         private readonly IdentityStorageLookup _lookup;
         private readonly MemberList _memberList;
-        private readonly IIdentityStorage _storage;
-
-        private readonly Dictionary<ClusterIdentity, Task<PID?>> _inProgress = new();
 
         private readonly ShouldThrottle _shouldThrottle;
+        private readonly IIdentityStorage _storage;
 
         public IdentityStorageWorker(IdentityStorageLookup storageLookup)
         {
@@ -30,7 +28,7 @@ namespace Proto.Cluster.Identity
                 TimeSpan.FromSeconds(5),
                 i => _logger.LogInformation("Throttled {LogCount} IdentityStorageWorker logs.", i)
             );
-            
+
             _cluster = storageLookup.Cluster;
             _memberList = storageLookup.MemberList;
             _lookup = storageLookup;
@@ -40,6 +38,7 @@ namespace Proto.Cluster.Identity
         public Task ReceiveAsync(IContext context)
         {
             if (context.Message is not GetPid msg) return Task.CompletedTask;
+
             if (context.Sender == null)
             {
                 _logger.LogCritical("No sender in GetPid request");
@@ -48,13 +47,13 @@ namespace Proto.Cluster.Identity
 
             var clusterIdentity = msg.ClusterIdentity;
             var ct = msg.CancellationToken;
-            
+
             if (ct.IsCancellationRequested)
             {
                 //_logger.LogError("CT already timed out....");
                 return Task.CompletedTask;
             }
-            
+
             if (_cluster.PidCache.TryGet(clusterIdentity, out var existing))
             {
                 _logger.LogDebug("Found {ClusterIdentity} in pidcache", clusterIdentity);
@@ -75,10 +74,7 @@ namespace Proto.Cluster.Identity
                         if (getPid.IsCompletedSuccessfully)
                         {
                             var pid = getPid.Result;
-                            if (pid != null)
-                            {
-                                _cluster.PidCache.TryAdd(clusterIdentity, pid);
-                            }
+                            if (pid != null) _cluster.PidCache.TryAdd(clusterIdentity, pid);
 
                             context.Respond(new PidResult
                                 {
@@ -105,8 +101,7 @@ namespace Proto.Cluster.Identity
                     _inProgress[clusterIdentity] = getPid;
                 }
 
-                context.ReenterAfter(getPid, task =>
-                    {
+                context.ReenterAfter(getPid, task => {
                         try
                         {
                             context.Respond(new PidResult
@@ -143,14 +138,12 @@ namespace Proto.Cluster.Identity
             try
             {
                 var activation = await _storage.TryGetExistingActivationAsync(clusterIdentity, ct);
+
                 //we got an existing activation, use this
                 if (activation != null)
                 {
                     var existingPid = await ValidateAndMapToPid(clusterIdentity, activation);
-                    if (existingPid != null)
-                    {
-                        return existingPid;
-                    }
+                    if (existingPid != null) return existingPid;
                 }
 
                 //are there any members that can spawn this kind?
@@ -161,13 +154,14 @@ namespace Proto.Cluster.Identity
                 //try to acquire global lock
                 var spawnLock = await _storage.TryAcquireLockAsync(clusterIdentity, ct);
 
-
                 //we didn't get the lock, wait for activation to complete
                 if (spawnLock == null)
+                {
                     return await ValidateAndMapToPid(
                         clusterIdentity,
                         await _storage.WaitForActivationAsync(clusterIdentity, ct)
                     );
+                }
 
                 //we have the lock, spawn and return
                 var pid = await SpawnActivationAsync(activator, spawnLock, ct);
@@ -176,15 +170,12 @@ namespace Proto.Cluster.Identity
             }
             catch (Exception e)
             {
-                if (_cluster.System.Shutdown.IsCancellationRequested)
-                {
-                    return null;
-                }
+                if (_cluster.System.Shutdown.IsCancellationRequested) return null;
+
                 if (_shouldThrottle().IsOpen())
                     _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
                 return null;
             }
-            
         }
 
         private async Task<PID?> SpawnActivationAsync(Member activator, SpawnLock spawnLock, CancellationToken ct)
@@ -231,13 +222,9 @@ namespace Proto.Cluster.Identity
             return null;
         }
 
-
         private async Task<PID?> ValidateAndMapToPid(ClusterIdentity clusterIdentity, StoredActivation? activation)
         {
-            if (activation?.Pid == null)
-            {
-                return null;
-            }
+            if (activation?.Pid == null) return null;
 
             //TODO: can  activation.MemberId == null ever happen?
             var memberExists = activation.MemberId == null || _memberList.ContainsMemberId(activation.MemberId);
@@ -254,7 +241,6 @@ namespace Proto.Cluster.Identity
             //let all requests try to remove, but only log on the first occurrence
             await _storage.RemoveMemberIdAsync(activation.MemberId!, CancellationToken.None);
             return null;
-
         }
     }
 }

@@ -41,8 +41,7 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine("Respawned virtual actor in {0}", timer.Elapsed);
         }
 
-        [Theory]
-        [InlineData(100, 10000)]
+        [Theory, InlineData(100, 10000)]
         public async Task CanSpawnVirtualActorsSequentially(int actorCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -59,9 +58,8 @@ namespace Proto.Cluster.Tests
             timer.Stop();
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
-        
-        [Theory]
-        [InlineData(100, 10000)]
+
+        [Theory, InlineData(100, 10000)]
         public async Task ConcurrentActivationsOnSameIdWorks(int clientCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -77,8 +75,7 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine($"Spawned 1 actor from {clientCount} clients in {timer.Elapsed}");
         }
 
-        [Theory]
-        [InlineData(100, 10000)]
+        [Theory, InlineData(100, 10000)]
         public async Task CanSpawnVirtualActorsConcurrently(int actorCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -91,8 +88,7 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
 
-        [Theory]
-        [InlineData(100, 10000)]
+        [Theory, InlineData(100, 10000)]
         public async Task CanSpawnMultipleKindsWithSameIdentityConcurrently(int actorCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -113,8 +109,7 @@ namespace Proto.Cluster.Tests
             );
         }
 
-        [Theory]
-        [InlineData(100, 10000)]
+        [Theory, InlineData(100, 10000)]
         public async Task CanSpawnVirtualActorsConcurrentlyOnAllNodes(int actorCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -128,8 +123,7 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
 
-        [Theory]
-        [InlineData(100, 10000)]
+        [Theory, InlineData(100, 10000)]
         public async Task CanRespawnVirtualActors(int actorCount, int timeoutMs)
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
