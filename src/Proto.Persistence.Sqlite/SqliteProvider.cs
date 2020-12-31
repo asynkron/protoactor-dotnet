@@ -83,7 +83,7 @@ namespace Proto.Persistence.Sqlite
 
             var indexes = new List<long>();
 
-            using var reader = await selectCommand.ExecuteReaderAsync();
+            await using var reader = await selectCommand.ExecuteReaderAsync();
 
             while (await reader.ReadAsync())
             {
@@ -104,7 +104,7 @@ namespace Proto.Persistence.Sqlite
 
             await connection.OpenAsync();
 
-            using var selectCommand = CreateCommand(
+            await using var selectCommand = CreateCommand(
                 connection,
                 "SELECT SnapshotIndex, SnapshotData FROM Snapshots WHERE ActorName = $ActorName ORDER BY SnapshotIndex DESC LIMIT 1",
                 ("$ActorName", actorName)

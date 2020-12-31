@@ -4,10 +4,18 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto.Persistence
 {
+    public interface IKeyValueStore
+    {
+        Task<T> GetAsync<T>(string key, CancellationToken ct = default);
+
+        Task SetAsync<T>(string key, T value, CancellationToken ct = default);
+    }
+    
     public interface ISnapshotStore
     {
         Task<(object? Snapshot, long Index)> GetSnapshotAsync(string actorName);
