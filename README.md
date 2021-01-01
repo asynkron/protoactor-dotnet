@@ -1,6 +1,6 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/cmpnw19ur8j25xn4/branch/master?svg=true)](https://ci.appveyor.com/project/protoactor-ci/protoactor-dotnet/branch/master)
 
-### [Join our Slack channel](https://asynkron.slack.com/)
+### [Join our Slack channel](https://join.slack.com/t/asynkron/shared_invite/zt-ko824601-yGN1d3GHF9jzZX2VtONodQ)
 
 # Proto.Actor
 Ultra-fast, distributed, cross-platform actors.
