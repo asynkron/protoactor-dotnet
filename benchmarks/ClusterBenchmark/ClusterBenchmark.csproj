@@ -29,4 +29,31 @@
         <Protobuf Include="messages.proto" GrpcServices="Server" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="storage.bson" />
+      <None Remove="sizeStorer.wt" />
+      <None Remove="mongod.lock" />
+      <None Remove="journal\WiredTigerPreplog.0000000002" />
+      <None Remove="journal\WiredTigerPreplog.0000000001" />
+      <None Remove="index-6--4490564912954053049.wt" />
+      <None Remove="index-5--4490564912954053049.wt" />
+      <None Remove="index-3--4490564912954053049.wt" />
+      <None Remove="index-1--4490564912954053049.wt" />
+      <None Remove="diagnostic.data\metrics.interim" />
+      <None Remove="collection-4--4490564912954053049.wt" />
+      <None Remove="collection-2--4490564912954053049.wt" />
+      <None Remove="collection-0--4490564912954053049.wt" />
+      <None Remove="_mdb_catalog.wt" />
+      <None Remove="WiredTigerHS.wt" />
+      <None Remove="WiredTiger.wt" />
+      <None Remove="WiredTiger.turtle" />
+      <None Remove="WiredTiger.lock" />
+      <None Remove="WiredTiger" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="diagnostic.data" />
+      <Folder Include="journal" />
+    </ItemGroup>
+
 </Project>

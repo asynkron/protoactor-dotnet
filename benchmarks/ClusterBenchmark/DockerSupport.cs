@@ -32,8 +32,7 @@ namespace ClusterExperiment1
                 .WithCleanUp(true)
                 .WithName("consul")
                 .WithPortBinding("8500", "8500")
-                .WithPortBinding("8600", "8600/udp")
-                .WithWaitStrategy(Wait.ForUnixContainer().UntilCommandIsCompleted("agent -dev -bootstrap -ui"));
+                .WithPortBinding("8600", "8600/udp");
 
             await using var consul = consulBuilder.Build();
 
