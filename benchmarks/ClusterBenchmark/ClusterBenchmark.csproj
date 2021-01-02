@@ -49,6 +49,15 @@
       <None Remove="WiredTiger.turtle" />
       <None Remove="WiredTiger.lock" />
       <None Remove="WiredTiger" />
+      <None Remove="index-66--6826860001100435848.wt" />
+      <None Remove="index-6--6826860001100435848.wt" />
+      <None Remove="index-5--6826860001100435848.wt" />
+      <None Remove="index-3--6826860001100435848.wt" />
+      <None Remove="index-1--6826860001100435848.wt" />
+      <None Remove="collection-41--6826860001100435848.wt" />
+      <None Remove="collection-4--6826860001100435848.wt" />
+      <None Remove="collection-2--6826860001100435848.wt" />
+      <None Remove="collection-0--6826860001100435848.wt" />
     </ItemGroup>
 
     <ItemGroup>

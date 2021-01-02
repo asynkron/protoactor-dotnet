@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using DotNet.Testcontainers.Containers.Builders;
 using DotNet.Testcontainers.Containers.Modules;
@@ -15,12 +16,12 @@ namespace ClusterExperiment1
     {
         public static async Task Run(Task done)
         {
+            Directory.CreateDirectory("_data/db");
             var mongoBuilder = new TestcontainersBuilder<TestcontainersContainer>()
                 .WithImage("mongo")
                 .WithCleanUp(true)
                 .WithName("mongo")
-                .WithPortBinding("27017", "27017")
-                .WithMount(".", "/data/db");
+                .WithPortBinding("27017", "27017");
 
             await using var mongo = mongoBuilder.Build();
             await mongo.StartAsync();
