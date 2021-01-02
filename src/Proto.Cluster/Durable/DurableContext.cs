@@ -13,6 +13,7 @@ namespace Proto.Cluster.Durable
         private readonly Cluster _cluster;
         private readonly ClusterIdentity _identity;
         public object Message { get; set; }
+        internal int Counter { get; set; }
 
         public DurableContext(Cluster cluster, ClusterIdentity identity)
         {
@@ -20,16 +21,10 @@ namespace Proto.Cluster.Durable
             _identity = identity;
         }
 
-        public Task<T> WaitForExternalEvent<T>()
-        {
-            return null;
-        }
+        public Task<T> WaitForExternalEvent<T>() => null;
 
-        public Task CreateTimer()
-        {
-            return null;
-        }
-        
+        public Task CreateTimer() => null;
+
         public async Task<T> RequestAsync<T>(string identity, string kind, object message)
         {
             //send request to local orchestrator
@@ -42,9 +37,13 @@ namespace Proto.Cluster.Durable
                 Kind = kind,
             };
 
-            var request = new DurableRequest(_identity, target, message);
+            Counter++;
 
-            var response = await _cluster.DurableRequestAsync(request);
+            var request = new DurableRequest(_identity, target, message, Counter);
+
+            var durablePlugin = _cluster.System.Extensions.Get<DurablePlugin>();
+            var response1 = await durablePlugin.DurableRequestAsync(request);
+            var response = response1;
             var m = response.Message;
             return (T) m;
         }

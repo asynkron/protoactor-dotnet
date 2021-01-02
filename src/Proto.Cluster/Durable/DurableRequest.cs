@@ -5,5 +5,5 @@
 // -----------------------------------------------------------------------
 namespace Proto.Cluster.Durable
 {
-    public record DurableRequest(ClusterIdentity Sender, ClusterIdentity Target, object Message);
+    public record DurableRequest(ClusterIdentity Sender, ClusterIdentity Target, object Message, int Id);
 }

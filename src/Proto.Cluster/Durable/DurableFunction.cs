@@ -30,6 +30,7 @@ namespace Proto.Cluster.Durable
                 context.Respond(123); //this should be a real message like "FunctionStarted" or something
                 
                 _durableContext.Message = context.Message!; //use the saved message here
+                _durableContext.Counter = 0;
                 await Run(_durableContext);
             }
         }

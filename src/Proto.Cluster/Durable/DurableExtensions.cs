@@ -9,13 +9,6 @@ namespace Proto.Cluster.Durable
 {
     public static class DurableExtensions
     {
-        public static async Task<DurableResponse> DurableRequestAsync(this Cluster self, DurableRequest message)
-        {
-            var d = self.System.Extensions.Get<DurablePlugin>();
-            var response = await d.DurableRequestAsync(message);
-            return response;
-        }
-
         public static ActorSystem WithDurableFunctions(this ActorSystem system)
         {
             var p = new DurablePlugin(system.Cluster());
