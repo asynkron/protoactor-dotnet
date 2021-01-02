@@ -69,6 +69,8 @@ namespace ClusterExperiment1
 
             _ts = new TaskCompletionSource<bool>();
 
+            _ = DockerSupport.Run(_ts.Task);
+
             switch (res1)
             {
                 case "1":
