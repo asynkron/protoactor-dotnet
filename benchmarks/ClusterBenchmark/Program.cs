@@ -32,6 +32,10 @@ namespace ClusterExperiment1
                 Thread.Sleep(Timeout.Infinite);
                 return;
             }
+            
+            _ts = new TaskCompletionSource<bool>();
+
+            _ = DockerSupport.Run(_ts.Task);
 
             Console.WriteLine("1) Run single process - graceful exit");
             Console.WriteLine("2) Run single process");
@@ -67,9 +71,7 @@ namespace ClusterExperiment1
             Console.WriteLine($"Using {actorCount} actors");
             ActorCount = actorCount;
 
-            _ts = new TaskCompletionSource<bool>();
 
-            _ = DockerSupport.Run(_ts.Task);
 
             switch (res1)
             {

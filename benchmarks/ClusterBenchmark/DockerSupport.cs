@@ -4,10 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using DotNet.Testcontainers.Containers.Builders;
 using DotNet.Testcontainers.Containers.Modules;
+using DotNet.Testcontainers.Containers.WaitStrategies;
 
 namespace ClusterExperiment1
 {
@@ -15,30 +15,34 @@ namespace ClusterExperiment1
     {
         public static async Task Run(Task done)
         {
-            var consulBuilder = new TestcontainersBuilder<TestcontainersContainer>()
-                .WithImage("consul:latest")
-                .WithName("consul")
-                .WithPortBinding("8500", "8500")
-                .WithPortBinding("8600", "8600/udp")
-                .WithCommand("agent -server -bootstrap -ui -client=0.0.0.0");
-            
-            await using var consul = consulBuilder.Build();
-            await consul.StartAsync();
-            
-            Console.WriteLine("started consul");
-            
             var mongoBuilder = new TestcontainersBuilder<TestcontainersContainer>()
                 .WithImage("mongo")
+                .WithCleanUp(true)
                 .WithName("mongo")
                 .WithPortBinding("27017", "27017")
                 .WithMount(".", "/data/db");
-            
+
             await using var mongo = mongoBuilder.Build();
             await mongo.StartAsync();
-            
+
             Console.WriteLine("started mongo");
 
+            var consulBuilder = new TestcontainersBuilder<TestcontainersContainer>()
+                .WithImage("consul:latest")
+                .WithCleanUp(true)
+                .WithName("consul")
+                .WithPortBinding("8500", "8500")
+                .WithPortBinding("8600", "8600/udp")
+                .WithWaitStrategy(Wait.ForUnixContainer().UntilCommandIsCompleted("agent -dev -bootstrap -ui"));
+
+            await using var consul = consulBuilder.Build();
+
+            await consul.StartAsync();
+
+            Console.WriteLine("started consul");
+
             await done;
+            Console.WriteLine("Exited.......");
         }
     }
 }
