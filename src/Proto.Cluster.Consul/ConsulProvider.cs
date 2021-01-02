@@ -16,13 +16,6 @@ using Proto.Cluster.Events;
 
 namespace Proto.Cluster.Consul
 {
-    public class ConsulLeader
-    {
-        public string Host { get; set; }
-        public int Port { get; set; }
-        public Guid MemberId { get; set; }
-    }
-
     //TLDR;
     //this class has a very simple responsibility, poll consul for status updates.
     //then transform these statuses to MemberStatus messages and pass on to the 
