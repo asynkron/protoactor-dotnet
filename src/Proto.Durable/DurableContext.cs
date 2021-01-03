@@ -55,7 +55,7 @@ namespace Proto.Cluster.Durable
             Message = context.Message!;
             
             //save activation
-            await _durable.PersistFunctionAsync(_identity, Message);
+            await _durable.PersistFunctionStartAsync(_identity, Message);
 
             //ack back to sender
             context.Respond(new DurableFunctionStarted()); //this should be a real message like "FunctionStarted" or something

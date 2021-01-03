@@ -91,8 +91,8 @@ namespace DurableFunctions
 
             var x = message.X;
             var y = message.Y;
-            var a = await context.RequestAsync<int>("foo", "SomeActor", 222) * x;
-            var b = await context.RequestAsync<int>("foo", "SomeActor", 333) * y;
+            var a = await context.RequestAsync<int>("foo", "SomeActor", new OtherArgs { Z = 222}) * x;
+            var b = await context.RequestAsync<int>("foo", "SomeActor", new OtherArgs { Z = 666}) * y;
             Console.WriteLine($"result {a * b}");
         }
     }
@@ -101,10 +101,10 @@ namespace DurableFunctions
     {
         public Task ReceiveAsync(IContext context)
         {
-            if (context.Message is int i)
+            if (context.Message is OtherArgs args)
             {
-                Console.WriteLine($"got call for {i}");
-                context.Respond(i*2);
+                Console.WriteLine($"got call for {args}");
+                context.Respond(args.Z*2);
             }
 
             return Task.CompletedTask;

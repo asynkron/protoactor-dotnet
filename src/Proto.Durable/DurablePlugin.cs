@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
@@ -21,6 +22,13 @@ namespace Proto.Cluster.Durable
         public DurablePlugin(Cluster cluster)
         {
             _cluster = cluster;
+
+            var files = Directory.GetFiles(".", "*.dur").OrderBy(f => f);
+
+            foreach (var f in files)
+            {
+                Console.WriteLine(f);
+            }
         }
 
         public Task<DurableFunctionStarted> StartAsync(string kind, object arguments)
@@ -34,18 +42,24 @@ namespace Proto.Cluster.Durable
         {
             if (_cache.TryGetValue(request, out var response)) return response;
 
-            var file = $"{request.Id}-{request.Sender.Identity}-{request.Sender.Kind}";
-            var data = (request.Message as IMessage).ToByteArray();
-            await File.WriteAllBytesAsync(file,data);
+            
 
             var responseMessage = await _cluster.RequestAsync<object>(request.Target.Identity, request.Target.Kind, request.Message, CancellationToken.None);
             response = new DurableResponse(responseMessage);
             _cache.TryAdd(request, response);
+            await PersistRequestAsync(request, responseMessage);
 
             return response;
         }
 
-        internal async Task PersistFunctionAsync(ClusterIdentity identity, object message)
+        private static async Task PersistRequestAsync(DurableRequest request, object responseMessage)
+        {
+            var file = $"{request.Id}-{request.Sender.Identity}-{request.Sender.Kind}.dur";
+            var data = (responseMessage as IMessage).ToByteArray();
+            await File.WriteAllBytesAsync(file, data);
+        }
+
+        internal async Task PersistFunctionStartAsync(ClusterIdentity identity, object message)
         {
             
         }
