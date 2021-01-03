@@ -9,6 +9,10 @@ namespace Proto.Cluster.Durable
 {
     public static class DurableExtensions
     {
+        public static DurablePlugin DurableFunctions(this IContext self) => self.System.Extensions.Get<DurablePlugin>();
+        
+        public static DurablePlugin DurableFunctions(this Cluster self) => self.System.Extensions.Get<DurablePlugin>();
+
         public static ActorSystem WithDurableFunctions(this ActorSystem system)
         {
             var p = new DurablePlugin(system.Cluster());

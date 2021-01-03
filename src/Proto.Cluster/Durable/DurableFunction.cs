@@ -15,24 +15,35 @@ namespace Proto.Cluster.Durable
         private ClusterIdentity? _identity;
         private DurableContext? _durableContext;
 
-        async Task IActor.ReceiveAsync(IContext context)
+        Task IActor.ReceiveAsync(IContext context)
         {
             if (context.Message is ClusterInit init)
             {
-                _identity = init.ClusterIdentity;
-                _durableContext = new DurableContext(init.Cluster, _identity);
+                return OnStarted(context, init);
             }
-
+            
             if (_durableContext != null && context.Sender != null)
             {
-                //if workflow not exists, save new workflow, also save message
-                
-                context.Respond(123); //this should be a real message like "FunctionStarted" or something
-                
-                _durableContext.Message = context.Message!; //use the saved message here
-                _durableContext.Counter = 0;
-                await Run(_durableContext);
+                return OnCall(context);
             }
+
+            return Task.CompletedTask;
+        }
+
+        private async Task OnCall(IContext context)
+        {
+            //if workflow not exists, save new workflow, also save message
+
+            await _durableContext.PersistFunctionAsync(context);
+
+            await Run(_durableContext);
+        }
+
+        private Task OnStarted(IContext context, ClusterInit init)
+        {
+            _identity = init.ClusterIdentity;
+            _durableContext = new DurableContext(init.Cluster, _identity, context.DurableFunctions());
+            return Task.CompletedTask;
         }
 
         protected abstract Task Run(DurableContext context);

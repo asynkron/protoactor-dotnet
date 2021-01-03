@@ -12,13 +12,17 @@ namespace Proto.Cluster.Durable
     {
         private readonly Cluster _cluster;
         private readonly ClusterIdentity _identity;
+        private readonly DurablePlugin _durable;
         public object Message { get; set; }
-        internal int Counter { get; set; }
+        private int _counter;
 
-        public DurableContext(Cluster cluster, ClusterIdentity identity)
+        public T MessageAs<T>() => (T) Message;
+
+        public DurableContext(Cluster cluster, ClusterIdentity identity, DurablePlugin durable)
         {
             _cluster = cluster;
             _identity = identity;
+            _durable = durable;
         }
 
         public Task<T> WaitForExternalEvent<T>() => null;
@@ -37,15 +41,25 @@ namespace Proto.Cluster.Durable
                 Kind = kind,
             };
 
-            Counter++;
+            _counter++;
 
-            var request = new DurableRequest(_identity, target, message, Counter);
-
-            var durablePlugin = _cluster.System.Extensions.Get<DurablePlugin>();
-            var response1 = await durablePlugin.DurableRequestAsync(request);
-            var response = response1;
+            var request = new DurableRequest(_identity, target, message, _counter);
+            var response = await _durable.RequestAsync(request);
             var m = response.Message;
             return (T) m;
+        }
+
+        public async Task PersistFunctionAsync(IContext context)
+        {
+            _counter = 0;
+            Message = context.Message!;
+            
+            //save activation
+            await _durable.PersistFunctionAsync(_identity, Message);
+
+            //ack back to sender
+            context.Respond(new DurableFunctionStarted()); //this should be a real message like "FunctionStarted" or something
+            
         }
     }
 }

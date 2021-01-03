@@ -9,6 +9,7 @@ using Proto.Cluster.Consul;
 using Proto.Cluster.Durable;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
+using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using Serilog;
 using Serilog.Events;
@@ -31,12 +32,13 @@ namespace DurableFunctions
                 .WithRemote(
                     GrpcCoreRemoteConfig
                         .BindToLocalhost()
+                        .WithProtoMessages(MessagesReflection.Descriptor)
                 )
                 .WithCluster(
                     ClusterConfig
-                        .Setup("mycluster",provider,identity)
+                        .Setup("mycluster", provider, identity)
                         .WithClusterKind("MyFunc", Props.FromProducer(() => new MyFunction()))
-                        .WithClusterKind("SomeActor",Props.FromProducer(() => new SomeActor()))
+                        .WithClusterKind("SomeActor", Props.FromProducer(() => new SomeActor()))
                 )
                 .WithDurableFunctions();
 
@@ -44,7 +46,15 @@ namespace DurableFunctions
                 .Cluster()
                 .StartMemberAsync();
 
-            await system.Cluster().RequestAsync<int>("foo", "MyFunc", 123, CancellationToken.None);
+            await system
+                .Cluster()
+                .DurableFunctions()
+                .StartAsync("MyFunc", new MyFunctionArgs
+                    {
+                        X = 123,
+                        Y = 222,
+                    }
+                );
 
             Console.ReadLine();
         }
@@ -77,9 +87,13 @@ namespace DurableFunctions
     {
         protected override async Task Run(DurableContext context)
         {
-            var x = await context.RequestAsync<int>("foo", "SomeActor", 222);
-            var y = await context.RequestAsync<int>("foo", "SomeActor", 333);
-            Console.WriteLine($"result {x * y}");
+            var message = context.MessageAs<MyFunctionArgs>();
+
+            var x = message.X;
+            var y = message.Y;
+            var a = await context.RequestAsync<int>("foo", "SomeActor", 222) * x;
+            var b = await context.RequestAsync<int>("foo", "SomeActor", 333) * y;
+            Console.WriteLine($"result {a * b}");
         }
     }
 

@@ -1,0 +1,10 @@
+syntax = "proto3";
+package cluster;
+option csharp_namespace = "DurableFunctions";
+
+//import "Proto.Actor/Protos.proto";
+
+message MyFunctionArgs {
+  int32 x = 1;
+  int32 y = 2;
+}
