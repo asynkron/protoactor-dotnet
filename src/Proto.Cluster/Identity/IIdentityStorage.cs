@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="IIdentityStorage.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -6,11 +11,18 @@ namespace Proto.Cluster.Identity
 {
     public interface IIdentityStorage : IDisposable
     {
-        public Task<StoredActivation?> TryGetExistingActivationAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
+        public Task<StoredActivation?> TryGetExistingActivation(ClusterIdentity clusterIdentity,
+            CancellationToken ct);
 
-        public Task<SpawnLock?> TryAcquireLockAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
+        public Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity, CancellationToken ct);
 
-        public Task<StoredActivation?> WaitForActivationAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
+        /// <summary>
+        ///     Wait on lock, return activation when present. Responsible for deleting stale locks
+        /// </summary>
+        /// <param name="clusterIdentity"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public Task<StoredActivation?> WaitForActivation(ClusterIdentity clusterIdentity, CancellationToken ct);
 
         public Task RemoveLock(SpawnLock spawnLock, CancellationToken ct);
 
@@ -18,7 +30,9 @@ namespace Proto.Cluster.Identity
 
         public Task RemoveActivation(PID pid, CancellationToken ct);
 
-        public Task RemoveMemberIdAsync(string memberId, CancellationToken ct);
+        public Task RemoveMember(string memberId, CancellationToken ct);
+
+        public Task Init();
     }
 
     public class SpawnLock
@@ -33,21 +47,8 @@ namespace Proto.Cluster.Identity
         public ClusterIdentity ClusterIdentity { get; }
     }
 
-    //TODO: what is this? its not used atm..
-    public class LookupResult
-    {
-        public LookupResult(StoredActivation storedActivation) => StoredActivation = storedActivation;
-
-        public LookupResult(SpawnLock spawnLock) => SpawnLock = spawnLock;
-
-        public StoredActivation? StoredActivation { get; }
-        public SpawnLock? SpawnLock { get; }
-    }
-
     public class StoredActivation
     {
-        public string MemberId;
-
         public StoredActivation(string memberId, PID pid)
         {
             MemberId = memberId;
@@ -55,6 +56,7 @@ namespace Proto.Cluster.Identity
         }
 
         public PID Pid { get; }
+        public string MemberId { get; }
     }
 
     public class StorageFailure : Exception
@@ -64,6 +66,13 @@ namespace Proto.Cluster.Identity
         }
 
         public StorageFailure(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+    }
+
+    public class LockNotFoundException : StorageFailure
+    {
+        public LockNotFoundException(string message) : base(message)
         {
         }
     }

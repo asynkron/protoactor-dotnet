@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------
+// <copyright file="IdentityStorageWorker.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -9,11 +14,14 @@ namespace Proto.Cluster.Identity
 {
     class IdentityStorageWorker : IActor
     {
+        private const int MaxSpawnRetries = 3;
+        
         private static readonly ConcurrentSet<string> StaleMembers = new();
 
         private readonly Cluster _cluster;
 
-        private readonly Dictionary<ClusterIdentity, Task<PID?>> _inProgress = new();
+        private readonly HashSet<ClusterIdentity> _inProgress = new();
+        private readonly Dictionary<ClusterIdentity, List<PID>> _waitingRequests = new();
         private readonly ILogger _logger = Log.CreateLogger<IdentityStorageWorker>();
         private readonly IdentityStorageLookup _lookup;
         private readonly MemberList _memberList;
@@ -46,76 +54,24 @@ namespace Proto.Cluster.Identity
             }
 
             var clusterIdentity = msg.ClusterIdentity;
-            var ct = msg.CancellationToken;
-
-            if (ct.IsCancellationRequested)
-            {
-                //_logger.LogError("CT already timed out....");
-                return Task.CompletedTask;
-            }
 
             if (_cluster.PidCache.TryGet(clusterIdentity, out var existing))
             {
-                _logger.LogDebug("Found {ClusterIdentity} in pidcache", clusterIdentity);
-                context.Respond(new PidResult
-                    {
-                        Pid = existing
-                    }
-                );
+                context.Respond(new PidResult(existing));
                 return Task.CompletedTask;
             }
 
-            try
+            if (!_inProgress.Contains(clusterIdentity))
             {
-                if (_inProgress.TryGetValue(clusterIdentity, out Task<PID?> getPid) && getPid.IsCompleted)
-                {
-                    try
-                    {
-                        if (getPid.IsCompletedSuccessfully)
-                        {
-                            var pid = getPid.Result;
-                            if (pid != null) _cluster.PidCache.TryAdd(clusterIdentity, pid);
-
-                            context.Respond(new PidResult
-                                {
-                                    Pid = pid
-                                }
-                            );
-                            return Task.CompletedTask;
-                        }
-                        else
-                        {
-                            if (_shouldThrottle().IsOpen())
-                                _logger.LogWarning(getPid.Exception, "GetWithGlobalLock for {ClusterIdentity} failed", clusterIdentity);
-                        }
-                    }
-                    finally
-                    {
-                        _inProgress.Remove(clusterIdentity);
-                    }
-                }
-
-                if (getPid == null)
-                {
-                    getPid = GetWithGlobalLock(context.Sender!, clusterIdentity, CancellationToken.None);
-                    _inProgress[clusterIdentity] = getPid;
-                }
-
-                context.ReenterAfter(getPid, task => {
+                _inProgress.Add(clusterIdentity);
+                context.ReenterAfter(GetWithGlobalLock(context.Sender!, clusterIdentity, msg.CancellationToken), task => {
                         try
                         {
-                            context.Respond(new PidResult
-                                {
-                                    Pid = task.Result
-                                }
-                            );
+                            var response = new PidResult(task.Result);
+                            context.Respond(response);
+                            RespondToWaitingRequests(context, clusterIdentity, response);
+                            
                             return Task.CompletedTask;
-                        }
-                        catch (Exception x)
-                        {
-                            if (_shouldThrottle().IsOpen())
-                                _logger.LogError(x, "Identity worker crashed in reentrant context: {Id}", context.Self);
-                            throw;
                         }
                         finally
                         {
@@ -123,59 +79,91 @@ namespace Proto.Cluster.Identity
                         }
                     }
                 );
-
-                return Task.CompletedTask;
             }
-            catch (Exception x)
+            else
             {
-                _logger.LogError(x, "Identity worker crashed {Id}", context.Self);
-                throw;
+                if (_waitingRequests.TryGetValue(clusterIdentity, out var senders))
+                {
+                    senders.Add(context.Sender);
+                }
+                else
+                {
+                    _waitingRequests[clusterIdentity] = new List<PID> {context.Sender};
+                }
+            }
+
+            return Task.CompletedTask;
+
+
+        }
+
+        private void RespondToWaitingRequests(IContext context, ClusterIdentity clusterIdentity, PidResult response)
+        {
+            if (!_waitingRequests.Remove(clusterIdentity, out var senders)) return;
+
+            foreach (var sender in senders)
+            {
+                context.Send(sender, response);
             }
         }
 
         private async Task<PID?> GetWithGlobalLock(PID sender, ClusterIdentity clusterIdentity, CancellationToken ct)
         {
-            try
+            var tries = 0;
+            PID? result = null;
+            while (result == null && !ct.IsCancellationRequested && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
             {
-                var activation = await _storage.TryGetExistingActivationAsync(clusterIdentity, ct);
-
-                //we got an existing activation, use this
-                if (activation != null)
+                try
                 {
-                    var existingPid = await ValidateAndMapToPid(clusterIdentity, activation);
-                    if (existingPid != null) return existingPid;
+                    var activation = await _storage.TryGetExistingActivation(clusterIdentity, ct);
+
+                    //we got an existing activation, use this
+                    if (activation != null)
+                    {
+                        var existingPid = await ValidateAndMapToPid(clusterIdentity, activation);
+                        if (existingPid != null) return existingPid;
+                    }
+
+                    //are there any members that can spawn this kind?
+                    //if not, just bail out
+                    var activator = _memberList.GetActivator(clusterIdentity.Kind, sender.Address);
+                    if (activator == null || ct.IsCancellationRequested) return null;
+
+                    //try to acquire global lock
+                    var spawnLock = await _storage.TryAcquireLock(clusterIdentity, ct);
+
+                    //we didn't get the lock, wait for activation to complete
+                    if (spawnLock == null)
+                    {
+                        result = await WaitForActivation(clusterIdentity, ct);
+                    }
+                    else
+                    {
+                        //we have the lock, spawn and return
+                        result = await SpawnActivationAsync(activator, spawnLock, ct);
+                    }
                 }
-
-                //are there any members that can spawn this kind?
-                //if not, just bail out
-                var activator = _memberList.GetActivator(clusterIdentity.Kind, sender.Address);
-                if (activator == null) return null;
-
-                //try to acquire global lock
-                var spawnLock = await _storage.TryAcquireLockAsync(clusterIdentity, ct);
-
-                //we didn't get the lock, wait for activation to complete
-                if (spawnLock == null)
+                catch (Exception e)
                 {
-                    return await ValidateAndMapToPid(
-                        clusterIdentity,
-                        await _storage.WaitForActivationAsync(clusterIdentity, ct)
-                    );
+                    if (_cluster.System.Shutdown.IsCancellationRequested) return null;
+
+                    if (_shouldThrottle().IsOpen())
+                        _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
+
+                    await Task.Delay(tries * 20, ct);
                 }
-
-                //we have the lock, spawn and return
-                var pid = await SpawnActivationAsync(activator, spawnLock, ct);
-
-                return pid;
             }
-            catch (Exception e)
-            {
-                if (_cluster.System.Shutdown.IsCancellationRequested) return null;
+            return result;
+        }
 
-                if (_shouldThrottle().IsOpen())
-                    _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
-                return null;
-            }
+        private async Task<PID?> WaitForActivation(ClusterIdentity clusterIdentity, CancellationToken ct)
+        {
+            var activation = _storage.WaitForActivation(clusterIdentity, ct);
+
+            return await ValidateAndMapToPid(
+                clusterIdentity,
+                await activation
+            );
         }
 
         private async Task<PID?> SpawnActivationAsync(Member activator, SpawnLock spawnLock, CancellationToken ct)
@@ -226,7 +214,6 @@ namespace Proto.Cluster.Identity
         {
             if (activation?.Pid == null) return null;
 
-            //TODO: can  activation.MemberId == null ever happen?
             var memberExists = activation.MemberId == null || _memberList.ContainsMemberId(activation.MemberId);
             if (memberExists) return activation.Pid;
 
@@ -239,7 +226,7 @@ namespace Proto.Cluster.Identity
             }
 
             //let all requests try to remove, but only log on the first occurrence
-            await _storage.RemoveMemberIdAsync(activation.MemberId!, CancellationToken.None);
+            await _storage.RemoveMember(activation.MemberId!, CancellationToken.None);
             return null;
         }
     }

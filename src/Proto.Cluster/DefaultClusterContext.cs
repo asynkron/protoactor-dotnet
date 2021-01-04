@@ -89,10 +89,9 @@ namespace Proto.Cluster
                             await Task.Delay(delay, CancellationToken.None);
                             break;
 
-                        // //TODO: this is already done in tryrequestasync, or?
-                        // case ResponseStatus.DeadLetter:
-                        //     await _identityLookup.RemovePidAsync(pid, ct);
-                        //     break;
+                        case ResponseStatus.DeadLetter:
+                            await _identityLookup.RemovePidAsync(pid, ct);
+                            break;
                     }
                 }
                 catch

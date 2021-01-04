@@ -97,14 +97,13 @@ namespace Proto.Cluster.Tests
                 {(EchoActor.Kind, EchoActor.Props.WithPoisonOnRemoteTraffic(.5f).WithPidCacheInvalidation())};
 
             protected override async Task<Cluster> SpawnClusterMember(
-                Func<ClusterConfig, ClusterConfig> configure,
-                string clusterName
+                Func<ClusterConfig, ClusterConfig> configure
             )
             {
                 var config = ClusterConfig.Setup(
-                        clusterName,
+                        _clusterName,
                         GetClusterProvider(),
-                        GetIdentityLookup(clusterName)
+                        GetIdentityLookup(_clusterName)
                     )
                     .WithClusterKinds(ClusterKinds);
 
