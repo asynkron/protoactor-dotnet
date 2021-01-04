@@ -12,7 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Divergic.Logging.Xunit" Version="3.5.1" />
-    <PackageReference Include="Grpc.Tools" Version="2.33.1" PrivateAssets="All" />
+    <PackageReference Include="Grpc.Tools" Version="2.34.0" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="*.proto" />
