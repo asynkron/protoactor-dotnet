@@ -14,6 +14,8 @@ namespace Proto.Cluster.Identity
 {
     class IdentityStorageWorker : IActor
     {
+        private const int MaxSpawnRetries = 3;
+        
         private static readonly ConcurrentSet<string> StaleMembers = new();
 
         private readonly Cluster _cluster;
@@ -107,40 +109,51 @@ namespace Proto.Cluster.Identity
 
         private async Task<PID?> GetWithGlobalLock(PID sender, ClusterIdentity clusterIdentity, CancellationToken ct)
         {
-            try
+            var tries = 0;
+            PID? result = null;
+            while (result == null && !ct.IsCancellationRequested && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
             {
-                var activation = await _storage.TryGetExistingActivation(clusterIdentity, ct);
-
-                //we got an existing activation, use this
-                if (activation != null)
+                try
                 {
-                    var existingPid = await ValidateAndMapToPid(clusterIdentity, activation);
-                    if (existingPid != null) return existingPid;
+                    var activation = await _storage.TryGetExistingActivation(clusterIdentity, ct);
+
+                    //we got an existing activation, use this
+                    if (activation != null)
+                    {
+                        var existingPid = await ValidateAndMapToPid(clusterIdentity, activation);
+                        if (existingPid != null) return existingPid;
+                    }
+
+                    //are there any members that can spawn this kind?
+                    //if not, just bail out
+                    var activator = _memberList.GetActivator(clusterIdentity.Kind, sender.Address);
+                    if (activator == null || ct.IsCancellationRequested) return null;
+
+                    //try to acquire global lock
+                    var spawnLock = await _storage.TryAcquireLock(clusterIdentity, ct);
+
+                    //we didn't get the lock, wait for activation to complete
+                    if (spawnLock == null)
+                    {
+                        result = await WaitForActivation(clusterIdentity, ct);
+                    }
+                    else
+                    {
+                        //we have the lock, spawn and return
+                        result = await SpawnActivationAsync(activator, spawnLock, ct);
+                    }
                 }
+                catch (Exception e)
+                {
+                    if (_cluster.System.Shutdown.IsCancellationRequested) return null;
 
-                //are there any members that can spawn this kind?
-                //if not, just bail out
-                var activator = _memberList.GetActivator(clusterIdentity.Kind, sender.Address);
-                if (activator == null || ct.IsCancellationRequested) return null;
+                    if (_shouldThrottle().IsOpen())
+                        _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
 
-                //try to acquire global lock
-                var spawnLock = await _storage.TryAcquireLock(clusterIdentity, ct);
-
-                //we didn't get the lock, wait for activation to complete
-                if (spawnLock == null) return await WaitForActivation(clusterIdentity, ct);
-
-                //we have the lock, spawn and return
-                var pid = await SpawnActivationAsync(activator, spawnLock, ct);
-                return pid;
+                    await Task.Delay(tries * 20, ct);
+                }
             }
-            catch (Exception e)
-            {
-                if (_cluster.System.Shutdown.IsCancellationRequested) return null;
-
-                if (_shouldThrottle().IsOpen())
-                    _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
-                return null;
-            }
+            return result;
         }
 
         private async Task<PID?> WaitForActivation(ClusterIdentity clusterIdentity, CancellationToken ct)

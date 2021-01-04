@@ -73,7 +73,7 @@ namespace Proto.Cluster.Tests
             var worker = Task.Run(async () => {
                     while (!cts.IsCancellationRequested)
                     {
-                        await CanGetResponseFromAllIdsOnAllNodes(ids, ingressNodes, 5000);
+                        await CanGetResponseFromAllIdsOnAllNodes(ids, ingressNodes, 10000);
                     }
                 }
             );

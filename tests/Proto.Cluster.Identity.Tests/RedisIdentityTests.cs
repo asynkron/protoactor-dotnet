@@ -44,7 +44,7 @@ namespace Proto.Cluster.Identity.Tests
         protected override IIdentityLookup GetIdentityLookup(string clusterName)
         {
             var identity = new IdentityStorageLookup(
-                new FailureInjectionStorage(new RedisIdentityStorage(clusterName, RedisFixture.Multiplexer))
+                new FailureInjectionStorage(new RedisIdentityStorage(clusterName, RedisFixture.Multiplexer, TimeSpan.FromSeconds(10)))
             );
             return identity;
         }
