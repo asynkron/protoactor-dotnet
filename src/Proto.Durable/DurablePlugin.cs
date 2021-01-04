@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Proto.Extensions;
+using Proto.Remote;
 
 namespace Proto.Cluster.Durable
 {
@@ -52,11 +53,11 @@ namespace Proto.Cluster.Durable
             return response;
         }
 
-        private static async Task PersistRequestAsync(DurableRequest request, object responseMessage)
+        private  async Task PersistRequestAsync(DurableRequest request, object responseMessage)
         {
             var file = $"{request.Id}-{request.Sender.Identity}-{request.Sender.Kind}.dur";
-            var data = (responseMessage as IMessage).ToByteArray();
-            await File.WriteAllBytesAsync(file, data);
+            var data = _cluster.System.Serialization().Serialize(responseMessage, _cluster.System.Serialization().DefaultSerializerId);
+            await File.WriteAllBytesAsync(file, data.ToByteArray());
         }
 
         internal async Task PersistFunctionStartAsync(ClusterIdentity identity, object message)
