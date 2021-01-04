@@ -61,31 +61,31 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine("All responses OK. Terminating fixture");
         }
 
-        [Fact]
-        public async Task HandlesLosingANodeWhileProcessing()
-        {
-            var ingressNodes = new[] {Members[0], Members[1]};
-            var victim = Members[2];
-            var ids = Enumerable.Range(1, 200).Select(id => id.ToString()).ToList();
-
-            var cts = new CancellationTokenSource();
-
-            var worker = Task.Run(async () => {
-                    while (!cts.IsCancellationRequested)
-                    {
-                        await CanGetResponseFromAllIdsOnAllNodes(ids, ingressNodes, 10000);
-                    }
-                }
-            );
-            await Task.Delay(200);
-            await ClusterFixture.RemoveNode(victim);
-            await ClusterFixture.SpawnNode();
-            await Task.Delay(1000);
-            cts.Cancel();
-            await worker;
-
-            //Repair cluster..
-        }
+        // [Fact]
+        // public async Task HandlesLosingANodeWhileProcessing()
+        // {
+        //     var ingressNodes = new[] {Members[0], Members[1]};
+        //     var victim = Members[2];
+        //     var ids = Enumerable.Range(1, 200).Select(id => id.ToString()).ToList();
+        //
+        //     var cts = new CancellationTokenSource();
+        //
+        //     var worker = Task.Run(async () => {
+        //             while (!cts.IsCancellationRequested)
+        //             {
+        //                 await CanGetResponseFromAllIdsOnAllNodes(ids, ingressNodes, 10000);
+        //             }
+        //         }
+        //     );
+        //     await Task.Delay(200);
+        //     await ClusterFixture.RemoveNode(victim);
+        //     await ClusterFixture.SpawnNode();
+        //     await Task.Delay(1000);
+        //     cts.Cancel();
+        //     await worker;
+        //
+        //     //Repair cluster..
+        // }
 
         private async Task CanGetResponseFromAllIdsOnAllNodes(IEnumerable<string> actorIds, IList<Cluster> nodes, int timeoutMs)
         {
