@@ -203,7 +203,7 @@ namespace Proto.Cluster
 
                 if (topology.Joined.Count > 0) _logger.LogInformation("Cluster members joined {MembersJoined}", topology.Joined);
 
-                if (topology.Left.Count > 0) _logger.LogInformation("Cluster members left {MembersJoined}", topology.Joined);
+                if (topology.Left.Count > 0) _logger.LogInformation("Cluster members left {MembersJoined}", topology.Left);
 
                 _eventStream.Publish(topology);
             }
