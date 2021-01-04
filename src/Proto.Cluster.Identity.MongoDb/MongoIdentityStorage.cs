@@ -22,7 +22,7 @@ namespace Proto.Cluster.Identity.MongoDb
             _pids = pids;
         }
 
-        public async Task<SpawnLock?> TryAcquireLockAsync(
+        public async Task<SpawnLock?> TryAcquireLock(
             ClusterIdentity clusterIdentity,
             CancellationToken ct
         )
@@ -32,7 +32,7 @@ namespace Proto.Cluster.Identity.MongoDb
             return hasLock ? new SpawnLock(requestId, clusterIdentity) : null;
         }
 
-        public async Task<StoredActivation?> WaitForActivationAsync(
+        public async Task<StoredActivation?> WaitForActivation(
             ClusterIdentity clusterIdentity,
             CancellationToken ct
         )
@@ -87,7 +87,9 @@ namespace Proto.Cluster.Identity.MongoDb
                     , new UpdateOptions(), ct
                 )
             );
-            if (res.MatchedCount != 1) throw new StorageFailure($"Failed to store activation of {pid}");
+            if (res.MatchedCount != 1)
+                throw new LockNotFoundException($"Failed to store activation of {pid}");
+
         }
 
         public async Task RemoveActivation(PID pid, CancellationToken ct)
@@ -96,10 +98,10 @@ namespace Proto.Cluster.Identity.MongoDb
             await _asyncSemaphore.WaitAsync(() => _pids.DeleteManyAsync(p => p.UniqueIdentity == pid.Id, ct));
         }
 
-        public Task RemoveMemberIdAsync(string memberId, CancellationToken ct)
+        public Task RemoveMember(string memberId, CancellationToken ct)
             => _asyncSemaphore.WaitAsync(() => _pids.DeleteManyAsync(p => p.MemberId == memberId, ct));
 
-        public async Task<StoredActivation?> TryGetExistingActivationAsync(
+        public async Task<StoredActivation?> TryGetExistingActivation(
             ClusterIdentity clusterIdentity,
             CancellationToken ct
         )
@@ -116,6 +118,8 @@ namespace Proto.Cluster.Identity.MongoDb
         {
         }
 
+        public Task Init() => _pids.Indexes.CreateOneAsync(new CreateIndexModel<PidLookupEntity>("{ MemberId: 1 }"));
+        
         private async Task<bool> TryAcquireLockAsync(
             ClusterIdentity clusterIdentity,
             string requestId,

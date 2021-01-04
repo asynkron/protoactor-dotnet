@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,7 +16,11 @@ namespace Proto.Cluster.Tests
 {
     public interface IClusterFixture
     {
-        ImmutableList<Cluster> Members { get; }
+        IList<Cluster> Members { get; }
+
+        public Task<Cluster> SpawnNode();
+
+        Task RemoveNode(Cluster member, bool graceful = true);
     }
 
     public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture
@@ -23,11 +28,14 @@ namespace Proto.Cluster.Tests
         private readonly int _clusterSize;
         private readonly Func<ClusterConfig, ClusterConfig> _configure;
         private readonly ILogger _logger = Log.CreateLogger(nameof(GetType));
+        protected readonly string _clusterName;
 
         protected ClusterFixture(int clusterSize, Func<ClusterConfig, ClusterConfig> configure = null)
         {
             _clusterSize = clusterSize;
             _configure = configure;
+            _clusterName = $"test-cluster-{Guid.NewGuid().ToString().Substring(0, 6)}";
+
         }
 
         protected virtual (string, Props)[] ClusterKinds => new[]
@@ -36,13 +44,13 @@ namespace Proto.Cluster.Tests
             (EchoActor.Kind2, EchoActor.Props)
         };
 
-        public async Task InitializeAsync() => Members = await SpawnClusterNodes(_clusterSize, _configure);
+        public async Task InitializeAsync() => Members = await SpawnClusterNodes(_clusterSize, _configure).ConfigureAwait(false);
 
         public async Task DisposeAsync()
         {
             try
             {
-                await Task.WhenAll(Members?.Select(cluster => cluster.ShutdownAsync()) ?? new[] {Task.CompletedTask});
+                await Task.WhenAll(Members?.Select(cluster => cluster.ShutdownAsync()) ?? new[] {Task.CompletedTask}).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -51,30 +59,48 @@ namespace Proto.Cluster.Tests
             }
         }
 
-        public ImmutableList<Cluster> Members { get; private set; }
+        public async Task RemoveNode(Cluster member, bool graceful = true)
+        {
+            if (Members.Contains(member))
+            {
+                Members.Remove(member);
+                await member.ShutdownAsync(graceful).ConfigureAwait(false);
+            }
+            else throw new ArgumentException("No such member");
+        }
+        
+        /// <summary>
+        /// Spawns a node, adds it to the cluster and member list
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public async Task<Cluster> SpawnNode()
+        {
+            var newMember = await SpawnClusterMember(_configure);
+            Members.Add(newMember);
+            return newMember;
+        }
+        
 
-        private async Task<ImmutableList<Cluster>> SpawnClusterNodes(
+
+        public IList<Cluster> Members { get; private set; }
+
+        private async Task<IList<Cluster>> SpawnClusterNodes(
             int count,
             Func<ClusterConfig, ClusterConfig> configure = null
-        )
-        {
-            var clusterName = $"test-cluster-{count}";
-
-            return (await Task.WhenAll(
-                Enumerable.Range(0, count)
-                    .Select(_ => SpawnClusterMember(configure, clusterName))
-            )).ToImmutableList();
-        }
+        ) => (await Task.WhenAll(
+            Enumerable.Range(0, count)
+                .Select(_ => SpawnClusterMember(configure))
+        )).ToList();
 
         protected virtual async Task<Cluster> SpawnClusterMember(
-            Func<ClusterConfig, ClusterConfig> configure,
-            string clusterName
+            Func<ClusterConfig, ClusterConfig> configure
         )
         {
             var config = ClusterConfig.Setup(
-                    clusterName,
+                    _clusterName,
                     GetClusterProvider(),
-                    GetIdentityLookup(clusterName)
+                    GetIdentityLookup(_clusterName)
                 )
                 .WithClusterKinds(ClusterKinds);
 

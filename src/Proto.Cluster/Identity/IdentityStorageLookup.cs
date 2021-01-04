@@ -37,8 +37,6 @@ namespace Proto.Cluster.Identity
             _isClient = isClient;
 
             var workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
-            //TODO: should pool size be configurable?
-
             _worker = _system.Root.Spawn(workerProps);
 
             //hook up events
@@ -75,7 +73,7 @@ namespace Proto.Cluster.Identity
             return Storage.RemoveActivation(pid, ct);
         }
 
-        internal Task RemoveMemberAsync(string memberId) => Storage.RemoveMemberIdAsync(memberId, CancellationToken.None);
+        internal Task RemoveMemberAsync(string memberId) => Storage.RemoveMember(memberId, CancellationToken.None);
 
         internal PID RemotePlacementActor(string address) => PID.FromAddress(address, PlacementActorName);
 

@@ -14,11 +14,13 @@ using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
+using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.Kubernetes;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using Serilog;
 using Serilog.Events;
+using StackExchange.Redis;
 using Log = Serilog.Log;
 
 namespace ClusterExperiment1
@@ -60,7 +62,17 @@ namespace ClusterExperiment1
             }
         }
 
-        private static IIdentityLookup GetIdentityLookup()
+        public static IIdentityLookup GetIdentityLookup() => GetRedisIdentityLookup();
+
+        private static IIdentityLookup GetRedisIdentityLookup()
+        {
+            var multiplexer = ConnectionMultiplexer.Connect("localhost:6379");
+            var redisIdentityStorage = new RedisIdentityStorage("mycluster", multiplexer);
+
+            return new IdentityStorageLookup(redisIdentityStorage);
+        }
+
+        private static IIdentityLookup GetMongoIdentityLookup()
         {
             var db = GetMongo();
             var identity = new IdentityStorageLookup(

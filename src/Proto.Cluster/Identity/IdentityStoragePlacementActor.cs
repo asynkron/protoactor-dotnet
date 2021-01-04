@@ -16,6 +16,7 @@ namespace Proto.Cluster.Identity
 {
     class IdentityStoragePlacementActor : IActor, IDisposable
     {
+        private const int PersistenceRetries = 3;
         private readonly Cluster _cluster;
 
         private readonly IdentityStorageLookup _identityLookup;
@@ -76,27 +77,35 @@ namespace Proto.Cluster.Identity
         {
             if (context.System.Shutdown.IsCancellationRequested) return;
 
-            //TODO: if this turns out to be perf intensive, lets look at optimizations for reverse lookups
             var (identity, pid) = _myActors.FirstOrDefault(kvp => kvp.Value.Equals(msg.Who));
-            _myActors.Remove(identity);
-            _cluster.PidCache.RemoveByVal(identity, pid);
-            await _identityLookup.RemovePidAsync(msg.Who, CancellationToken.None);
+            if (identity != null && pid != null)
+            {
+                _myActors.Remove(identity);
+                _cluster.PidCache.RemoveByVal(identity, pid);
+
+                try
+                {
+                    await _identityLookup.RemovePidAsync(msg.Who, CancellationToken.None);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Failed to remove {Activation} from storage", pid);
+                }
+            }
+
+
         }
 
         private Task ActivationRequest(IContext context, ActivationRequest msg)
         {
             var props = _cluster.GetClusterKind(msg.Kind);
-
+            
             try
             {
                 if (_myActors.TryGetValue(msg.ClusterIdentity, out var existing))
                 {
                     //this identity already exists
-                    var response = new ActivationResponse
-                    {
-                        Pid = existing
-                    };
-                    context.Respond(response);
+                    Respond(existing);
                 }
                 else
                 {
@@ -105,48 +114,85 @@ namespace Proto.Cluster.Identity
                     //spawn and remember this actor
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
-
                     var clusterProps = props.WithClusterInit(_cluster, msg.ClusterIdentity);
                     var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.ToString());
 
-                    _myActors[msg.ClusterIdentity] = pid;
-                    _cluster.PidCache.TryAdd(msg.ClusterIdentity, pid);
+                    //Do not expose the PID externally before we have persisted the activation
+                    var completionCallback = new TaskCompletionSource<PID?>();
 
-                    var response = new ActivationResponse
-                    {
-                        Pid = pid
-                    };
-                    context.Respond(response);
+                    context.ReenterAfter(Task.Run(() => PersistActivation(context, msg, pid)), persistResult =>
+                        {
+                            var wasPersistedCorrectly = persistResult.Result;
 
-                    PersistActivation(context, msg, pid);
+                            if (wasPersistedCorrectly)
+                            {
+                                _myActors[msg.ClusterIdentity] = pid;
+                                _cluster.PidCache.TryAdd(msg.ClusterIdentity, pid);
+                                completionCallback.SetResult(pid);
+                                Respond(pid);
+                            }
+                            else // Not stored, kill it and retry later?
+                            {
+                                Respond(null);
+                                context.Poison(pid);
+                                completionCallback.SetResult(null);
+                            }
+
+                            return Task.CompletedTask;
+                        }
+                    );
                 }
-            }
-            catch
-            {
-                var response = new ActivationResponse
-                {
-                    Pid = null
-                };
-                context.Respond(response);
-            }
-
-            return Task.CompletedTask;
-        }
-
-        private void PersistActivation(IContext context, ActivationRequest msg, PID pid)
-        {
-            var spawnLock = new SpawnLock(msg.RequestId, msg.ClusterIdentity);
-
-            try
-            {
-                _identityLookup.Storage.StoreActivation(_cluster.System.Id, spawnLock, pid,
-                    context.CancellationToken
-                );
             }
             catch (Exception e)
             {
-                //meaning, we spawned an actor but its placement is not stored anywhere
-                _logger.LogCritical(e, "No entry was updated {@SpawnLock}", spawnLock);
+                _logger.LogError(e, "Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
+                Respond(null);
+            }
+
+            return Task.CompletedTask;
+
+            void Respond(PID? result)
+            {
+                var response = new ActivationResponse
+                {
+                    Pid = result
+                };
+                context.Respond(response);
+            }
+        }
+
+
+        private async Task<bool> PersistActivation(IContext context, ActivationRequest msg, PID pid)
+        {
+            var attempts = 0;
+            var spawnLock = new SpawnLock(msg.RequestId, msg.ClusterIdentity);
+            while (true)
+            {
+                try
+                {
+                    await _identityLookup.Storage.StoreActivation(_cluster.System.Id, spawnLock, pid,
+                        context.CancellationToken
+                    );
+                    return true;
+                }
+                catch (LockNotFoundException)
+                {
+                    _logger.LogError("We no longer own the lock {@SpawnLock}", spawnLock);
+                    return false;
+                }
+                catch (Exception e)
+                {
+                    if (++attempts < PersistenceRetries)
+                    {
+                        _logger.LogWarning(e, "No entry was updated {@SpawnLock}. Retrying.", spawnLock);
+                        await Task.Delay(50);
+                    }
+                    else
+                    {
+                        _logger.LogError(e, "Failed to persist activation: {@SpawnLock}", spawnLock);
+                        return false;
+                    }
+                }
             }
         }
     }

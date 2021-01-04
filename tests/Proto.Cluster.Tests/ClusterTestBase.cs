@@ -9,16 +9,16 @@ namespace Proto.Cluster.Tests
     [Collection("ClusterTests")]
     public abstract class ClusterTestBase
     {
-        private readonly IClusterFixture _clusterFixture;
+        protected readonly IClusterFixture ClusterFixture;
         private readonly string _runId;
 
         protected ClusterTestBase(IClusterFixture clusterFixture)
         {
-            _clusterFixture = clusterFixture;
+            ClusterFixture = clusterFixture;
             _runId = Guid.NewGuid().ToString("N").Substring(0, 6);
         }
 
-        protected ImmutableList<Cluster> Members => _clusterFixture.Members;
+        protected IList<Cluster> Members => ClusterFixture.Members;
 
         /// <summary>
         ///     To be able to re-use the fixture across tests, we can make sure the other test identities do not collide

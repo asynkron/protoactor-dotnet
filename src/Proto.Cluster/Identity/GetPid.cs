@@ -19,6 +19,8 @@ namespace Proto.Cluster.Identity
 
     class PidResult
     {
-        public PID? Pid { get; set; }
+        public PID? Pid { get; }
+
+        public PidResult(PID? pid) => Pid = pid;
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,6 +40,59 @@ namespace Proto.Cluster.Tests
             timer.Stop();
 
             _testOutputHelper.WriteLine("Respawned virtual actor in {0}", timer.Elapsed);
+        }
+
+        [Fact]
+        public async Task HandlesLosingANode()
+        {
+            var ids = Enumerable.Range(1, 200).Select(id => id.ToString()).ToList();
+
+            await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 5000);
+
+            var toBeRemoved = Members.Last();
+            _testOutputHelper.WriteLine("Removing node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
+            await ClusterFixture.RemoveNode(toBeRemoved);
+            _testOutputHelper.WriteLine("Removed node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
+            await ClusterFixture.SpawnNode();
+
+            await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 5000);
+
+
+            _testOutputHelper.WriteLine("All responses OK. Terminating fixture");
+        }
+
+        [Fact]
+        public async Task HandlesLosingANodeWhileProcessing()
+        {
+            var ingressNodes = new[] {Members[0], Members[1]};
+            var victim = Members[2];
+            var ids = Enumerable.Range(1, 200).Select(id => id.ToString()).ToList();
+
+            var cts = new CancellationTokenSource();
+
+            var worker = Task.Run(async () => {
+                    while (!cts.IsCancellationRequested)
+                    {
+                        await CanGetResponseFromAllIdsOnAllNodes(ids, ingressNodes, 5000);
+                    }
+                }
+            );
+            await Task.Delay(200);
+            await ClusterFixture.RemoveNode(victim);
+            await ClusterFixture.SpawnNode();
+            await Task.Delay(1000);
+            cts.Cancel();
+            await worker;
+
+            //Repair cluster..
+        }
+
+        private async Task CanGetResponseFromAllIdsOnAllNodes(IEnumerable<string> actorIds, IList<Cluster> nodes, int timeoutMs)
+        {
+            var timer = Stopwatch.StartNew();
+            var timeout = new CancellationTokenSource(timeoutMs).Token;
+            await Task.WhenAll(nodes.SelectMany(entryNode => actorIds.Select(id => PingPong(entryNode, id, timeout))));
+            _testOutputHelper.WriteLine("Got response from {0} nodes in {1}", nodes.Count(), timer.Elapsed);
         }
 
         [Theory, InlineData(100, 10000)]
@@ -91,7 +145,8 @@ namespace Proto.Cluster.Tests
         [Theory, InlineData(100, 10000)]
         public async Task CanSpawnMultipleKindsWithSameIdentityConcurrently(int actorCount, int timeoutMs)
         {
-            var timeout = new CancellationTokenSource(timeoutMs).Token;
+            using var cts = new CancellationTokenSource(timeoutMs);
+            var timeout = cts.Token;
 
             var entryNode = Members.First();
 
@@ -123,10 +178,11 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
 
-        [Theory, InlineData(100, 10000)]
+        [Theory, InlineData(100, 20000)]
         public async Task CanRespawnVirtualActors(int actorCount, int timeoutMs)
         {
-            var timeout = new CancellationTokenSource(timeoutMs).Token;
+            using var cts = new CancellationTokenSource(timeoutMs);
+            var timeout = cts.Token;
 
             var entryNode = Members.First();
 

@@ -124,7 +124,8 @@ namespace ClusterExperiment1
                         semaphore.Wait(() => {
                                 return cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                                     new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token
-                                ).ContinueWith(_ => Console.Write("."));
+                                ).ContinueWith(task => { Console.Write(task.Result is null ? "X" : "."); }
+                                );
                             }
                         );
                     }

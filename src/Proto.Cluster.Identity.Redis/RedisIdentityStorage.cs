@@ -1,8 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// -----------------------------------------------------------------------
+// <copyright file="RedisIdentityStorage.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+// </copyright>
+// -----------------------------------------------------------------------
+using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Utils;
 using StackExchange.Redis;
 
 namespace Proto.Cluster.Identity.Redis
@@ -20,60 +27,84 @@ namespace Proto.Cluster.Identity.Redis
         private readonly RedisKey _clusterIdentityKey;
 
         private readonly IConnectionMultiplexer _connections;
+        private readonly TimeSpan _maxLockTime;
         private readonly RedisKey _memberKey;
+        private readonly AsyncSemaphore _asyncSemaphore;
 
-        public RedisIdentityStorage(string clusterName, IConnectionMultiplexer connections)
+        public RedisIdentityStorage(
+            string clusterName,
+            IConnectionMultiplexer connections,
+            TimeSpan? maxWaitBeforeStaleLock = null,
+            int maxConcurrency = 200
+        )
         {
             RedisKey baseKey = clusterName + ":";
             _clusterIdentityKey = baseKey.Append("ci:");
             _memberKey = baseKey.Append("mb:");
             _connections = connections;
+            _maxLockTime = maxWaitBeforeStaleLock ?? TimeSpan.FromSeconds(5);
+            _asyncSemaphore = new AsyncSemaphore(maxConcurrency);
         }
 
-        public async Task<SpawnLock?> TryAcquireLockAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
+        public async Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity, CancellationToken ct)
         {
-            var requestId = Guid.NewGuid().ToString();
-            var hasLock = await TryAcquireLockAsync(clusterIdentity, requestId);
-            Logger.LogDebug(
-                hasLock ? "Took lock on {@ClusterIdentity}" : "Did not get lock on {@ClusterIdentity}", clusterIdentity
-            );
+            var requestId = Guid.NewGuid().ToString("N");
+            var hasLock = await _asyncSemaphore.WaitAsync(() => TryAcquireLockAsync(clusterIdentity, requestId)).ConfigureAwait(false);
 
             return hasLock ? new SpawnLock(requestId, clusterIdentity) : null;
         }
 
-        public async Task<StoredActivation?> WaitForActivationAsync(
+        public async Task<StoredActivation?> WaitForActivation(
             ClusterIdentity clusterIdentity,
             CancellationToken ct
         )
         {
+            var timer = Stopwatch.StartNew();
             var key = IdKey(clusterIdentity);
             var db = GetDb();
-            var activation = await LookupKey(db, key);
-            var i = 1;
 
-            while (activation == null && !ct.IsCancellationRequested)
+            var activationStatus = await LookupKey(db, key).ConfigureAwait(false);
+            var lockId = activationStatus?.ActiveLockId;
+
+            if (lockId != null)
             {
-                await Task.Delay(20 * i++, ct);
-                activation = await LookupKey(db, key);
+                //There is an active lock on the pid, spin wait
+                var i = 1;
+
+                do
+                {
+                    await Task.Delay(20 * i++, ct);
+                } while (!ct.IsCancellationRequested
+                      && _maxLockTime > timer.Elapsed
+                      && (activationStatus = await LookupKey(db, key).ConfigureAwait(false))?.ActiveLockId == lockId
+                );
             }
 
-            Logger.LogDebug("After waiting {Iteration} times, got {@Activation} for {@ClusterIdentity}", i,
-                activation, clusterIdentity
-            );
-            return activation;
+            //the lookup entity was lost, stale lock maybe?
+            if (activationStatus == null) return null;
+
+            //lookup was unlocked, return this pid
+            if (activationStatus.Activation != null)
+                return activationStatus.Activation;
+
+            //Still locked but not by the same request that originally locked it, so not stale
+            if (activationStatus.ActiveLockId != lockId) return null;
+
+            //Stale lock. just delete it and let cluster retry
+            await RemoveLock(new SpawnLock(lockId!, clusterIdentity), CancellationToken.None).ConfigureAwait(false);
+
+            return null;
         }
 
         public Task RemoveLock(SpawnLock spawnLock, CancellationToken ct)
         {
-            Logger.LogDebug("Deleting spawn lock {@SpawnLock}", spawnLock.ClusterIdentity);
             var db = GetDb();
 
             var key = IdKey(spawnLock.ClusterIdentity);
             var transaction = db.CreateTransaction();
             transaction.AddCondition(Condition.HashEqual(key, LockId, spawnLock.LockId));
-            transaction.HashDeleteAsync(key, LockId);
-            transaction.Execute(CommandFlags.FireAndForget);
-            return Task.CompletedTask;
+            _ = transaction.HashDeleteAsync(key, LockId);
+            return transaction.ExecuteAsync();
         }
 
         public async Task StoreActivation(
@@ -83,13 +114,7 @@ namespace Proto.Cluster.Identity.Redis
             CancellationToken ct
         )
         {
-            Logger.LogDebug("Storing activation {@Activation} for {@ClusterIdentity} on member {MemberId}", pid,
-                spawnLock.ClusterIdentity, memberId
-            );
-
             var key = IdKey(spawnLock.ClusterIdentity);
-
-            var db = GetDb();
 
             var values = new[]
             {
@@ -99,10 +124,19 @@ namespace Proto.Cluster.Identity.Redis
                 new HashEntry(LockId, RedisValue.EmptyString)
             };
 
-            await Task.WhenAll(
-                db.HashSetAsync(key, values, CommandFlags.DemandMaster),
-                db.SetAddAsync(MemberKey(memberId), pid.Id, CommandFlags.DemandMaster)
-            );
+            var executed = await _asyncSemaphore.WaitAsync(() => {
+                    var db = GetDb();
+
+                    var transaction = db.CreateTransaction();
+                    transaction.AddCondition(Condition.HashEqual(key, LockId, spawnLock.LockId));
+                    _ = transaction.HashSetAsync(key, values, CommandFlags.DemandMaster);
+                    _ = transaction.SetAddAsync(MemberKey(memberId), key.ToString());
+                    _ = transaction.KeyPersistAsync(key);
+                    return transaction.ExecuteAsync();
+                }
+            ).ConfigureAwait(false);
+
+            if (!executed) throw new LockNotFoundException($"Failed to store activation of {pid}");
         }
 
         public async Task RemoveActivation(PID pid, CancellationToken ct)
@@ -112,84 +146,118 @@ namespace Proto.Cluster.Identity.Redis
             if (key == NoKey) return;
 
             var db = GetDb();
-            var activation = await LookupKey(db, key);
+            var activationStatus = await LookupKey(db, key).ConfigureAwait(false);
 
-            if (activation?.Pid.Equals(pid) == true)
-            {
-                var memberKey = MemberKey(activation.MemberId);
-                var transaction = db.CreateTransaction();
+            if (activationStatus?.Activation?.Pid.Equals(pid) != true) return;
 
-                transaction.AddCondition(Condition.HashEqual(key, UniqueIdentity, pid.Id));
-                _ = transaction.KeyDeleteAsync(key);
-                _ = transaction.SetRemoveAsync(memberKey, pid.Id);
-                await transaction.ExecuteAsync();
-            }
+            var memberKey = MemberKey(activationStatus.Activation.MemberId);
+            await _asyncSemaphore.WaitAsync(() => {
+                    var transaction = db.CreateTransaction();
+
+                    transaction.AddCondition(Condition.HashEqual(key, UniqueIdentity, pid.Id));
+                    _ = transaction.KeyDeleteAsync(key);
+                    _ = transaction.SetRemoveAsync(memberKey, key.ToString());
+                    return transaction.ExecuteAsync();
+                }
+            ).ConfigureAwait(false);
         }
 
-        public async Task RemoveMemberIdAsync(string memberId, CancellationToken ct)
+        public Task RemoveMember(string memberId, CancellationToken ct)
         {
-            var key = MemberKey(memberId);
+            var memberKey = MemberKey(memberId);
+            RedisValue mVal = memberKey.ToString();
 
-            var db = GetDb();
-            //TODO: Consider rewriting as serverside script.
-            var pidIds = db.SetScanAsync(key);
+            const string removeMember = "local cursor = 0\n" +
+                                        "repeat\n" +
+                                        " local rep = redis.call('SSCAN', ARGV[1], cursor)\n" +
+                                        " if rep[2][1] == nil then break end" +
+                                        " cursor = rep[1]\n" +
+                                        " redis.call('DEL', unpack(rep[2]))\n" +
+                                        "until cursor == '0'\n" +
+                                        "redis.call('DEL', KEYS[1]);";
 
-            var transactionsFinished = new List<Task>();
-
-            await foreach (var pidId in pidIds.WithCancellation(ct))
-            {
-                var pidKey = IdKeyFromPidId(pidId);
-                if (pidKey == NoKey) continue;
-
-                var transaction = db.CreateTransaction();
-                transaction.AddCondition(Condition.HashEqual(pidKey, UniqueIdentity, pidId));
-                _ = transaction.KeyDeleteAsync(pidKey);
-                transactionsFinished.Add(transaction.ExecuteAsync());
-            }
-
-            await Task.WhenAll(transactionsFinished);
+            return _asyncSemaphore.WaitAsync(() => GetDb().ScriptEvaluateAsync(removeMember, new[] {memberKey}, new[] {mVal}));
         }
 
-        public Task<StoredActivation?> TryGetExistingActivationAsync(
+        public async Task<StoredActivation?> TryGetExistingActivation(
             ClusterIdentity clusterIdentity,
             CancellationToken ct
-        ) => LookupKey(GetDb(), IdKey(clusterIdentity));
+        )
+        {
+            var activationStatus = await LookupKey(GetDb(), IdKey(clusterIdentity)).ConfigureAwait(false);
+            return activationStatus?.Activation;
+        }
 
-        public void Dispose() => _connections.Dispose();
+        public void Dispose()
+        {
+        }
+
+        public Task Init() => Task.CompletedTask;
 
         private IDatabase GetDb() => _connections.GetDatabase();
 
-        private async Task<bool> TryAcquireLockAsync(
+        private Task<bool> TryAcquireLockAsync(
             ClusterIdentity clusterIdentity,
             string requestId
         )
         {
             var key = IdKey(clusterIdentity);
 
-            return await GetDb().HashSetAsync(key, LockId, requestId, When.NotExists, CommandFlags.DemandMaster);
+            var db = GetDb();
+            var transaction = db.CreateTransaction();
+
+            transaction.AddCondition(Condition.KeyNotExists(key));
+            transaction.HashSetAsync(key, LockId, requestId);
+            transaction.KeyExpireAsync(key, _maxLockTime);
+
+            return transaction.ExecuteAsync();
         }
 
-        private static async Task<StoredActivation?> LookupKey(IDatabaseAsync db, RedisKey key)
+        private async Task<ActivationStatus?> LookupKey(IDatabaseAsync db, RedisKey key)
         {
-            var result = await db.HashGetAllAsync(key);
-            if (!(result?.Length > 2)) return null;
+            var result = await _asyncSemaphore.WaitAsync(() => db.HashGetAllAsync(key)).ConfigureAwait(false);
 
-            var values = result.ToDictionary();
-            return new StoredActivation(
-                values[MemberId],
-                PID.FromAddress(values[Address], values[UniqueIdentity])
-            );
+            switch (result?.Length)
+            {
+                case 1:
+                    return new ActivationStatus(result.First(entry => entry.Name == LockId).Value);
+                case 4:
+                    var values = result.ToDictionary();
+                    return new ActivationStatus
+                    (values[UniqueIdentity],
+                        values[Address],
+                        values[MemberId]
+                    );
+                default:
+                    return null;
+            }
         }
 
         private RedisKey IdKey(ClusterIdentity clusterIdentity) => IdKey(clusterIdentity.ToString());
 
-        private RedisKey IdKeyFromPidId(string pidId) =>
-            IdentityStorageLookup.TryGetClusterIdentityShortString(pidId, out var clusterId)
+        private RedisKey IdKeyFromPidId(string pidId)
+            => IdentityStorageLookup.TryGetClusterIdentityShortString(pidId, out var clusterId)
                 ? IdKey(clusterId!)
                 : NoKey;
 
         private RedisKey IdKey(string clusterIdentity) => _clusterIdentityKey.Append(clusterIdentity);
 
         private RedisKey MemberKey(string memberId) => _memberKey.Append(memberId);
+
+        private class ActivationStatus
+        {
+            public ActivationStatus(string? uniqueIdentity, string? address, string? memberId)
+            {
+                if (uniqueIdentity == null || address == null || memberId == null) throw new ArgumentException();
+
+                Activation = new StoredActivation(memberId!, PID.FromAddress(address!, uniqueIdentity!));
+            }
+
+            public ActivationStatus(string? lockId) => ActiveLockId = lockId;
+
+            public StoredActivation? Activation { get; }
+
+            public string? ActiveLockId { get; }
+        }
     }
 }
