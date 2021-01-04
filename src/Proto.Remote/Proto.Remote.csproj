@@ -8,7 +8,7 @@
   <ItemGroup>
     <PackageReference Include="Grpc.Core" Version="2.33.1" />
     <PackageReference Include="Grpc.HealthCheck" Version="2.34.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.33.1" PrivateAssets="All" />
+    <PackageReference Include="Grpc.Tools" Version="2.34.0" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
