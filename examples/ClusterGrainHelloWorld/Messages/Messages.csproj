@@ -8,7 +8,7 @@
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.13.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.32.0" PrivateAssets="All" />
+    <PackageReference Include="Grpc.Tools" Version="2.34.0" PrivateAssets="All" />
     <PackageReference Include="Proto.Cluster" Version="0.9.0" />
   </ItemGroup>
   <ItemGroup>
