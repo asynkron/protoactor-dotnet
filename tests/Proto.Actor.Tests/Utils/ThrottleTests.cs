@@ -37,7 +37,7 @@ namespace Proto.Tests.Utils
 
             triggered.Should().Be(maxEvents);
 
-            await Task.Delay(1000);
+            await Task.Delay(2000);
 
             for (var i = 0; i < 100; i++)
             {
