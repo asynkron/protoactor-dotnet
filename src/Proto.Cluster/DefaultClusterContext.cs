@@ -89,7 +89,6 @@ namespace Proto.Cluster
                             await Task.Delay(delay, CancellationToken.None);
                             break;
                         case ResponseStatus.DeadLetter:
-                        //    Console.WriteLine("DEADLETTER RESPONSE...");
                             continue;
                     }
                 }
@@ -128,20 +127,9 @@ namespace Proto.Cluster
                 if (!context.System.Shutdown.IsCancellationRequested)
                     _logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
 
-                // while (true)
-                // {
-                    await _identityLookup.RemovePidAsync(cachedPid, CancellationToken.None);
-                    _pidCache.RemoveByVal(clusterIdentity, cachedPid);
-                    if (_pidCache.TryGet(clusterIdentity, out var x) && cachedPid.Equals(x))
-                    {
-                        Console.WriteLine("PID CACHE DID NOT CLEAR....");
-                    }
-                    
-                //     var tmp = await _identityLookup.GetAsync(clusterIdentity, CancellationToken.None);
-                //
-                //     if (!cachedPid.Equals(tmp)) break;
-                // }
-
+                await _identityLookup.RemovePidAsync(cachedPid, CancellationToken.None);
+                _pidCache.RemoveByVal(clusterIdentity, cachedPid);
+                
                 return (ResponseStatus.DeadLetter, default)!;
             }
             catch (TimeoutException)

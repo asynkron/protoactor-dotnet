@@ -50,7 +50,7 @@ class Program
             };
     }
 
-    private class ParentActor : IActor, ISupervisorStrategy
+    private class ParentActor : IActor
     {
         public Task ReceiveAsync(IContext context)
         {
@@ -77,11 +77,6 @@ class Program
             }
 
             return Task.CompletedTask;
-        }
-
-        public void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause, object? message)
-        {
-            
         }
     }
 
