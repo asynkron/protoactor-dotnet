@@ -89,7 +89,7 @@ namespace Proto.Cluster
                             await Task.Delay(delay, CancellationToken.None);
                             break;
                         case ResponseStatus.DeadLetter:
-                            Console.WriteLine("DEADLETTER RESPONSE...");
+                        //    Console.WriteLine("DEADLETTER RESPONSE...");
                             continue;
                     }
                 }
@@ -127,28 +127,20 @@ namespace Proto.Cluster
             {
                 if (!context.System.Shutdown.IsCancellationRequested)
                     _logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
-                _pidCache.RemoveByVal(clusterIdentity, cachedPid);
-                
-                if (_pidCache.TryGet(clusterIdentity, out var x) && cachedPid.Equals(x))
-                {
-                    Console.WriteLine("PID CACHE DID NOT CLEAR....");
-                }
 
-                while (true)
-                {
+                // while (true)
+                // {
                     await _identityLookup.RemovePidAsync(cachedPid, CancellationToken.None);
-
-                    var tmp = await _identityLookup.GetAsync(clusterIdentity, CancellationToken.None);
-
-                    if (tmp != null && cachedPid.Equals(tmp))
+                    _pidCache.RemoveByVal(clusterIdentity, cachedPid);
+                    if (_pidCache.TryGet(clusterIdentity, out var x) && cachedPid.Equals(x))
                     {
-                        await Task.Delay(500);
-                        Console.WriteLine("IDENTITY LOOKUP DID NOT CLEAR...." + cachedPid + "...." + clusterIdentity);
-                        continue;
+                        Console.WriteLine("PID CACHE DID NOT CLEAR....");
                     }
-
-                    break;
-                }
+                    
+                //     var tmp = await _identityLookup.GetAsync(clusterIdentity, CancellationToken.None);
+                //
+                //     if (!cachedPid.Equals(tmp)) break;
+                // }
 
                 return (ResponseStatus.DeadLetter, default)!;
             }

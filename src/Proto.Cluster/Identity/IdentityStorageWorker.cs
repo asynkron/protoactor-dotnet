@@ -57,7 +57,7 @@ namespace Proto.Cluster.Identity
 
             if (_cluster.PidCache.TryGet(clusterIdentity, out var existing))
             {
-                Console.Write(" USING CACHED PID! " + clusterIdentity);
+             //   Console.Write(" USING CACHED PID! " + clusterIdentity);
                 context.Respond(new PidResult(existing));
                 return Task.CompletedTask;
             }

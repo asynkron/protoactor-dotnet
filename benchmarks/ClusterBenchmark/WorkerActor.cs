@@ -26,7 +26,7 @@ namespace ClusterExperiment1
                     break;
             }
 
-            if (_rnd.Next(0, 100) == 0)
+            if (_rnd.Next(0, 1000) == 0)
             {
                 Console.Write("+");
                 ctx.Stop(ctx.Self);
