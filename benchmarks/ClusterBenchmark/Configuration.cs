@@ -62,7 +62,7 @@ namespace ClusterExperiment1
             }
         }
 
-        public static IIdentityLookup GetIdentityLookup() => GetMongoIdentityLookup();
+        public static IIdentityLookup GetIdentityLookup() => GetRedisIdentityLookup();
 
         private static IIdentityLookup GetRedisIdentityLookup()
         {
