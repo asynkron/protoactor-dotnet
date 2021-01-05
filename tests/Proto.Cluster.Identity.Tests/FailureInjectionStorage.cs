@@ -54,7 +54,7 @@ namespace Proto.Cluster.Identity.Tests
 
         public Task RemoveActivation(PID pid, CancellationToken ct)
         {
-            MaybeFail();
+           // MaybeFail();
             return _identityStorageImplementation.RemoveActivation(pid, ct);
         }
 

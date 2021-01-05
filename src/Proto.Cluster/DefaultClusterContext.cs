@@ -88,9 +88,7 @@ namespace Proto.Cluster
                         case ResponseStatus.TimedOutOrException:
                             await Task.Delay(delay, CancellationToken.None);
                             break;
-
                         case ResponseStatus.DeadLetter:
-                            await _identityLookup.RemovePidAsync(pid, ct);
                             break;
                     }
                 }
@@ -103,15 +101,13 @@ namespace Proto.Cluster
                     await Task.Delay(delay, CancellationToken.None);
                 }
             }
-
-            //TODO: we should log here instead;
+            
             if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
                 _logger.LogWarning("RequestAsync retried but failed for ClusterIdentity {ClusterIdentity}", clusterIdentity);
 
             return default!;
         }
-
-        //TODO should this really log at all? these are transient issues. we could probably only fail when the method above gives up and returns 
+        
         private async Task<(ResponseStatus ok, T res)> TryRequestAsync<T>(
             ClusterIdentity clusterIdentity,
             object message,
@@ -126,12 +122,14 @@ namespace Proto.Cluster
 
                 if (res is not null) return (ResponseStatus.Ok, res);
             }
-            //TODO: all catch logging here should be Debug level, or?
             catch (DeadLetterException)
             {
                 if (!context.System.Shutdown.IsCancellationRequested)
                     _logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
+
+                await _identityLookup.RemovePidAsync(cachedPid, CancellationToken.None);
                 _pidCache.RemoveByVal(clusterIdentity, cachedPid);
+                
                 return (ResponseStatus.DeadLetter, default)!;
             }
             catch (TimeoutException)
