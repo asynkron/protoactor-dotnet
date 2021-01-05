@@ -62,7 +62,7 @@ namespace ClusterExperiment1
             }
         }
 
-        public static IIdentityLookup GetIdentityLookup() => GetRedisIdentityLookup();
+        public static IIdentityLookup GetIdentityLookup() => GetMongoIdentityLookup();
 
         private static IIdentityLookup GetRedisIdentityLookup()
         {
@@ -90,8 +90,8 @@ namespace ClusterExperiment1
             // settings.WaitQueueSize = 10000;
             // settings.WaitQueueTimeout = TimeSpan.FromSeconds(10);
 
-            // settings.WriteConcern = WriteConcern.Acknowledged;
-            // settings.ReadConcern = ReadConcern.Majority;
+            settings.WriteConcern = WriteConcern.WMajority;
+            settings.ReadConcern = ReadConcern.Majority;
             var client = new MongoClient(settings);
             var database = client.GetDatabase("ProtoMongo");
             return database;

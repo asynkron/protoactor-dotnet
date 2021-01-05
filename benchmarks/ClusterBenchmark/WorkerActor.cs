@@ -12,6 +12,7 @@ namespace ClusterExperiment1
 {
     public class WorkerActor : IActor
     {
+        private Random _rnd = new Random();
         public Task ReceiveAsync(IContext ctx)
         {
             switch (ctx.Message)
@@ -23,6 +24,12 @@ namespace ClusterExperiment1
                 case HelloRequest _:
                     ctx.Respond(new HelloResponse());
                     break;
+            }
+
+            if (_rnd.Next(0, 100) == 0)
+            {
+                Console.Write("+");
+                ctx.Stop(ctx.Self);
             }
 
             return Task.CompletedTask;
