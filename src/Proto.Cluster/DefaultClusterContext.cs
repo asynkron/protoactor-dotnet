@@ -89,7 +89,7 @@ namespace Proto.Cluster
                             await Task.Delay(delay, CancellationToken.None);
                             break;
                         case ResponseStatus.DeadLetter:
-                            continue;
+                            break;
                     }
                 }
                 catch
