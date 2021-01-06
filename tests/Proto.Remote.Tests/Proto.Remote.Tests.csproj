@@ -4,7 +4,7 @@
     <TargetFrameworks>net5.0;netcoreapp3.1</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Divergic.Logging.Xunit" Version="3.1.0" />
+    <PackageReference Include="Divergic.Logging.Xunit" Version="3.6.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
