@@ -139,27 +139,19 @@ namespace Proto.Cluster.Identity.Redis
             if (!executed) throw new LockNotFoundException($"Failed to store activation of {pid}");
         }
 
-        public async Task RemoveActivation(PID pid, CancellationToken ct)
+        public Task RemoveActivation(PID pid, CancellationToken ct)
         {
             Logger.LogDebug("Removing activation: {@PID}", pid);
             var key = IdKeyFromPidId(pid.Id);
-            if (key == NoKey) return;
+            if (key == NoKey) return Task.CompletedTask;
 
-            var db = GetDb();
-            var activationStatus = await LookupKey(db, key).ConfigureAwait(false);
+            const string removePid = "local pidEntry = redis.call('HMGET', KEYS[1], 'pid', 'adr', 'mid');\n" +
+                            "if pidEntry[1]~=ARGV[1] or pidEntry[2]~=ARGV[2] then return 0 end;\n" + // id / address matches
+                            "local memberKey = ARGV[3] .. pidEntry[3];\n" +
+                            "redis.call('SREM', memberKey, KEYS[1] .. '');" +
+                            "return redis.call('DEL', KEYS[1]);";
 
-            if (activationStatus?.Activation?.Pid.Equals(pid) != true) return;
-
-            var memberKey = MemberKey(activationStatus.Activation.MemberId);
-            await _asyncSemaphore.WaitAsync(() => {
-                    var transaction = db.CreateTransaction();
-
-                    transaction.AddCondition(Condition.HashEqual(key, UniqueIdentity, pid.Id));
-                    _ = transaction.KeyDeleteAsync(key);
-                    _ = transaction.SetRemoveAsync(memberKey, key.ToString());
-                    return transaction.ExecuteAsync();
-                }
-            ).ConfigureAwait(false);
+            return _asyncSemaphore.WaitAsync(() => GetDb().ScriptEvaluateAsync(removePid, new[] {key}, new RedisValue[] {pid.Id, pid.Address, _memberKey.ToString()}));
         }
 
         public Task RemoveMember(string memberId, CancellationToken ct)
