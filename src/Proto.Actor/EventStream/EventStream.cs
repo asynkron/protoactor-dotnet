@@ -32,7 +32,7 @@ namespace Proto
             );
             Subscribe<DeadLetterEvent>(
                 dl => {
-                    if (!ct.IsCancellationRequested && shouldThrottle().IsOpen())
+                    if (!ct.IsCancellationRequested && shouldThrottle().IsOpen() && dl.Message is not IIgnoreDeadLetterLogging)
                     {
                         _logger.LogInformation(
                             "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",

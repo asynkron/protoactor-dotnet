@@ -10,6 +10,9 @@ using Proto.Mailbox;
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
+    //messages with this marker interface should not be deadletter logged
+    public interface IIgnoreDeadLetterLogging {}
+    
     public sealed partial class Terminated : SystemMessage
     {
     }
@@ -23,7 +26,7 @@ namespace Proto
         }
     }
 
-    public sealed partial class PoisonPill
+    public sealed partial class PoisonPill:IIgnoreDeadLetterLogging
     {
         public static readonly PoisonPill Instance = new();
     }
@@ -61,7 +64,7 @@ namespace Proto
         public Exception Reason { get; }
     }
 
-    public partial class Stop : SystemMessage
+    public partial class Stop : SystemMessage, IIgnoreDeadLetterLogging
     {
         public static readonly Stop Instance = new();
     }
