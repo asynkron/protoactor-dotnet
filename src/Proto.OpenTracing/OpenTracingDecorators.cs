@@ -52,12 +52,12 @@ namespace Proto.OpenTracing
         {
             _sendSpanSetup = (span, message) => {
                 ProtoTags.ActorType.Set(span, context.Actor.GetType().Name);
-                ProtoTags.SenderPID.Set(span, context.Self.ToShortString());
+                ProtoTags.SenderPID.Set(span, context.Self.ToString());
                 sendSpanSetup(span, message);
             };
             _receiveSpanSetup = (span, message) => {
                 ProtoTags.ActorType.Set(span, context.Actor.GetType().Name);
-                ProtoTags.TargetPID.Set(span, context.Self.ToShortString());
+                ProtoTags.TargetPID.Set(span, context.Self.ToString());
                 receiveSpanSetup(span, message);
             };
 
@@ -99,7 +99,7 @@ namespace Proto.OpenTracing
 
             try
             {
-                ProtoTags.TargetPID.Set(scope.Span, target.ToShortString());
+                ProtoTags.TargetPID.Set(scope.Span, target.ToString());
                 send();
             }
             catch (Exception ex)
@@ -116,7 +116,7 @@ namespace Proto.OpenTracing
 
             try
             {
-                ProtoTags.TargetPID.Set(scope.Span, target.ToShortString());
+                ProtoTags.TargetPID.Set(scope.Span, target.ToString());
                 request();
             }
             catch (Exception ex)
@@ -133,7 +133,7 @@ namespace Proto.OpenTracing
 
             try
             {
-                ProtoTags.TargetPID.Set(scope.Span, target.ToShortString());
+                ProtoTags.TargetPID.Set(scope.Span, target.ToString());
                 return await requestAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -150,7 +150,7 @@ namespace Proto.OpenTracing
 
             try
             {
-                ProtoTags.TargetPID.Set(scope.Span, target.ToShortString());
+                ProtoTags.TargetPID.Set(scope.Span, target.ToString());
                 forward();
             }
             catch (Exception ex)
@@ -175,7 +175,7 @@ namespace Proto.OpenTracing
             {
                 var span = scope.Span;
 
-                if (envelope.Sender != null) ProtoTags.SenderPID.Set(span, envelope.Sender.ToShortString());
+                if (envelope.Sender != null) ProtoTags.SenderPID.Set(span, envelope.Sender.ToString());
 
                 receiveSpanSetup?.Invoke(span, message);
 
