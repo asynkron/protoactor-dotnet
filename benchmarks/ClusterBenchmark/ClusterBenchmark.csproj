@@ -22,7 +22,7 @@
         <PackageReference Include="MongoDB.Driver" Version="2.12.0-beta1" />
         <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
         <PackageReference Include="Serilog" Version="2.10.1-dev-01265" />
-        <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.2-dev-10281" />
+        <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.2-dev-10284" />
         <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />
     </ItemGroup>
 
