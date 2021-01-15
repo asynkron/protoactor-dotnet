@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using Microsoft.Extensions.Logging;
 using Proto.Remote;
 
 namespace Proto.Cluster.Durable.FileSystem
@@ -16,6 +17,12 @@ namespace Proto.Cluster.Durable.FileSystem
         : IDurablePersistence
     {
         private Cluster _cluster;
+        private ILogger _logger;
+
+        public DurableFilePersistence()
+        {
+            _logger = Log.CreateLogger<DurableFilePersistence>();
+        }
 
         public async Task StartAsync(Cluster cluster) => _cluster = cluster;
 
@@ -37,6 +44,7 @@ namespace Proto.Cluster.Durable.FileSystem
                 MessageData = ser.Serialize(responseMessage, ser.DefaultSerializerId)
             };
             await File.WriteAllBytesAsync(file, persistedRequest.ToByteArray());
+            _logger.LogInformation("Wrote file {File}",file);
         }
 
         public async Task PersistFunctionStartAsync(ClusterIdentity identity, object requestMessage)
@@ -55,6 +63,7 @@ namespace Proto.Cluster.Durable.FileSystem
             };
 
             await File.WriteAllBytesAsync(file, persistedRequest.ToByteArray());
+            _logger.LogInformation("Wrote file {File}",file);
         }
 
         public async Task<object> GetStartedFunctions()
