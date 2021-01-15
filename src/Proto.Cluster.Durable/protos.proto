@@ -13,10 +13,9 @@ message PersistedRequest {
   bytes message_data = 7; 
 }
 
-message OtherArgs {
-  int32 z = 1;
-}
-
-message SomeResult {
-  int32 res = 1;
+message PersistedFunction {
+  string identity = 1;
+  string kind = 2;
+  string message_type = 3;
+  bytes message_data = 4;
 }

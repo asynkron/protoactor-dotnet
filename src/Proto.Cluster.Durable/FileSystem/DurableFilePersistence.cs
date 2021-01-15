@@ -75,10 +75,18 @@ namespace Proto.Cluster.Durable.FileSystem
                 throw new NotSupportedException("Message must be Protobuf message");
             }
             
-            var file = $"{request.Id}-{request.Sender.Identity}-{request.Sender.Kind}.dur2";
-            var data = _cluster.System.Serialization().Serialize(responseMessage, _cluster.System.Serialization().DefaultSerializerId);
-            await File.WriteAllBytesAsync(file, data.ToByteArray());
+            var ser = _cluster.System.Serialization();
             
+            var file = $"{identity.Identity}-{identity.Kind}.dur1";
+            var persistedRequest = new PersistedFunction()
+            {
+              Identity = identity.Identity,
+              Kind = identity.Kind,
+                MessageType = ser.GetTypeName(requestMessage, ser.DefaultSerializerId),
+                MessageData = ser.Serialize(requestMessage, ser.DefaultSerializerId),
+            };
+            
+            await File.WriteAllBytesAsync(file, persistedRequest.ToByteArray());           
         }
     }
 }
