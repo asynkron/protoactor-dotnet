@@ -7,6 +7,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.Durable\Proto.Cluster.Durable.csproj" />
         <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
         <ProjectReference Include="..\..\src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj" />
     </ItemGroup>

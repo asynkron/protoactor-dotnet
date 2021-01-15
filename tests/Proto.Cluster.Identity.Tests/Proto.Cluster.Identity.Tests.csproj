@@ -8,7 +8,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj" />
     <ProjectReference Include="..\..\src\Proto.Cluster.Identity.Redis\Proto.Cluster.Identity.Redis.csproj" />
-    <ProjectReference Include="..\..\src\Proto.Cluster.Identity\Proto.Cluster.Identity.csproj" />
     <ProjectReference Include="..\Proto.Cluster.Tests\Proto.Cluster.Tests.csproj" />
     <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
   </ItemGroup>
