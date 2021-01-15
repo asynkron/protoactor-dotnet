@@ -5,14 +5,10 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Google.Protobuf;
 using Proto.Cluster.Durable.FileSystem;
 using Proto.Extensions;
-using Proto.Remote;
 
 namespace Proto.Cluster.Durable
 {
@@ -40,17 +36,16 @@ namespace Proto.Cluster.Durable
         {
             if (_cache.TryGetValue(request, out var response)) return response;
 
-            var responseMessage = await _cluster.RequestAsync<object>(request.Target.Identity, request.Target.Kind, request.Message, CancellationToken.None);
+            var responseMessage =
+                await _cluster.RequestAsync<object>(request.Target.Identity, request.Target.Kind, request.Message, CancellationToken.None);
             response = new DurableResponse(responseMessage);
 
-            if (_cache.TryAdd(request, response))
-            {
-                await _durablePersistence.PersistRequestAsync(request, responseMessage);
-            }
+            if (_cache.TryAdd(request, response)) await _durablePersistence.PersistRequestAsync(request, responseMessage);
 
             return response;
         }
 
-        internal Task PersistFunctionStartAsync(ClusterIdentity identity, object message) => _durablePersistence.PersistFunctionStartAsync(identity, message);
+        internal Task PersistFunctionStartAsync(ClusterIdentity identity, object message)
+            => _durablePersistence.PersistFunctionStartAsync(identity, message);
     }
 }

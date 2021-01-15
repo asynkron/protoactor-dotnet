@@ -10,7 +10,7 @@ namespace Proto.Cluster.Durable.FileSystem
     public interface IDurablePersistence
     {
         Task StartAsync(Cluster cluster);
-        
+
         Task PersistRequestAsync(DurableRequest request, object responseMessage);
 
         Task PersistFunctionStartAsync(ClusterIdentity identity, object requestMessage);

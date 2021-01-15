@@ -3,25 +3,25 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Threading.Tasks;
 
 namespace Proto.Cluster.Durable
 {
     public class DurableContext
     {
-        private readonly ClusterIdentity _identity;
         private readonly DurablePlugin _durable;
-        public object Message { get; set; }
+        private readonly ClusterIdentity _identity;
         private int _counter;
-
-        public T MessageAs<T>() => (T) Message;
 
         public DurableContext(ClusterIdentity identity, DurablePlugin durable)
         {
             _identity = identity;
             _durable = durable;
         }
+
+        public object Message { get; set; }
+
+        public T MessageAs<T>() => (T) Message;
 
         public Task<T> WaitForExternalEvent<T>() => null;
 
@@ -31,12 +31,12 @@ namespace Proto.Cluster.Durable
         {
             //send request to local orchestrator
             //orchestrator saves request to DB
-            
+
             //await response from orchestrator
             var target = new ClusterIdentity
             {
                 Identity = identity,
-                Kind = kind,
+                Kind = kind
             };
 
             _counter++;
@@ -51,13 +51,12 @@ namespace Proto.Cluster.Durable
         {
             _counter = 0;
             Message = context.Message!;
-            
+
             //save activation
             await _durable.PersistFunctionStartAsync(_identity, Message);
 
             //ack back to sender
             context.Respond(new DurableFunctionStarted()); //this should be a real message like "FunctionStarted" or something
-            
         }
     }
 }

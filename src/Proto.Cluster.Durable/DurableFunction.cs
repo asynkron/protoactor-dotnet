@@ -3,7 +3,6 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
@@ -12,20 +11,14 @@ namespace Proto.Cluster.Durable
     [PublicAPI]
     public abstract class DurableFunction : IActor
     {
-        private ClusterIdentity? _identity;
         private DurableContext? _durableContext;
+        private ClusterIdentity? _identity;
 
         Task IActor.ReceiveAsync(IContext context)
         {
-            if (context.Message is ClusterInit init)
-            {
-                return OnStarted(context, init);
-            }
-            
-            if (_durableContext != null && context.Sender != null)
-            {
-                return OnCall(context);
-            }
+            if (context.Message is ClusterInit init) return OnStarted(context, init);
+
+            if (_durableContext != null && context.Sender != null) return OnCall(context);
 
             return Task.CompletedTask;
         }
