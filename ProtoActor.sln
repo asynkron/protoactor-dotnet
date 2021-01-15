@@ -190,7 +190,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DurableFunctions", "example
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DurableFunctions", "DurableFunctions", "{4048353F-9C6A-4051-BB7D-3D5BFBFF92FB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Durable", "src\Proto.Durable\Proto.Durable.csproj", "{5E666647-5775-4A1F-AD75-A24E7BF32D4C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.Durable", "src\Proto.Cluster.Durable\Proto.Cluster.Durable.csproj", "{5E666647-5775-4A1F-AD75-A24E7BF32D4C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

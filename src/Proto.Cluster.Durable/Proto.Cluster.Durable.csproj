@@ -3,6 +3,8 @@
     <PropertyGroup>
         <TargetFrameworks>net5.0;netstandard2.1</TargetFrameworks>
         <LangVersion>9</LangVersion>
+        <AssemblyName>Proto.Cluster.Durable</AssemblyName>
+        <RootNamespace>Proto.Cluster.Durable</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

@@ -12,3 +12,7 @@ message MyFunctionArgs {
 message OtherArgs {
   int32 z = 1;
 }
+
+message SomeResult {
+  int32 res = 1;
+}
