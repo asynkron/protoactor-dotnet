@@ -7,6 +7,7 @@ using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Durable;
+using Proto.Cluster.Durable.FileSystem;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
 using Proto.Remote;
@@ -40,7 +41,7 @@ namespace DurableFunctions
                         .WithClusterKind("MyFunc", Props.FromProducer(() => new MyFunction()))
                         .WithClusterKind("SomeActor", Props.FromProducer(() => new SomeActor()))
                 )
-                .WithDurableFunctions();
+                .WithDurableFunctions(new DurableFilePersistence());
 
             await system
                 .Cluster()

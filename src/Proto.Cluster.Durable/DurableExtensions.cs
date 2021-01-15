@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Threading.Tasks;
+using Proto.Cluster.Durable.FileSystem;
 
 namespace Proto.Cluster.Durable
 {
@@ -13,9 +14,9 @@ namespace Proto.Cluster.Durable
         
         public static DurablePlugin DurableFunctions(this Cluster self) => self.System.Extensions.Get<DurablePlugin>();
 
-        public static ActorSystem WithDurableFunctions(this ActorSystem system)
+        public static ActorSystem WithDurableFunctions(this ActorSystem system, IDurablePersistence durablePersistence)
         {
-            var p = new DurablePlugin(system.Cluster());
+            var p = new DurablePlugin(system.Cluster(),durablePersistence);
             system.Extensions.Register(p);
             return system;
         }

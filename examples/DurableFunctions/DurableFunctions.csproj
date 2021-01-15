@@ -24,7 +24,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="messages.proto" />
       <Protobuf Include="messages.proto" />
     </ItemGroup>
 

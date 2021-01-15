@@ -42,7 +42,7 @@ namespace Proto.Cluster.Durable
         private Task OnStarted(IContext context, ClusterInit init)
         {
             _identity = init.ClusterIdentity;
-            _durableContext = new DurableContext(init.Cluster, _identity, context.DurableFunctions());
+            _durableContext = new DurableContext(_identity, context.DurableFunctions());
             return Task.CompletedTask;
         }
 

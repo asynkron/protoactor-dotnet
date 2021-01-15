@@ -1,0 +1,22 @@
+syntax = "proto3";
+package cluster;
+option csharp_namespace = "Proto.Cluster.Durable";
+
+
+message PersistedRequest {
+  string sender_identity = 1;
+  string sender_kind = 2;
+  string target_identity = 3;
+  string target_kind = 4;
+  int32 request_id = 5;
+  string message_type = 6;
+  bytes message_data = 7; 
+}
+
+message OtherArgs {
+  int32 z = 1;
+}
+
+message SomeResult {
+  int32 res = 1;
+}

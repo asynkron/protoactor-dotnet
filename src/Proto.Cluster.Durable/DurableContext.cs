@@ -10,7 +10,6 @@ namespace Proto.Cluster.Durable
 {
     public class DurableContext
     {
-        private readonly Cluster _cluster;
         private readonly ClusterIdentity _identity;
         private readonly DurablePlugin _durable;
         public object Message { get; set; }
@@ -18,9 +17,8 @@ namespace Proto.Cluster.Durable
 
         public T MessageAs<T>() => (T) Message;
 
-        public DurableContext(Cluster cluster, ClusterIdentity identity, DurablePlugin durable)
+        public DurableContext(ClusterIdentity identity, DurablePlugin durable)
         {
-            _cluster = cluster;
             _identity = identity;
             _durable = durable;
         }
