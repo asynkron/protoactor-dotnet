@@ -16,9 +16,9 @@ namespace Proto.Cluster
             return system;
         }
 
-        public static Cluster Cluster(this ActorSystem system) => system.Extensions.Get<Cluster>();
+        public static Cluster Cluster(this ActorSystem system) => system.Extensions.Get<Cluster>()!;
 
-        public static Cluster Cluster(this IContext context) => context.System.Extensions.Get<Cluster>();
+        public static Cluster Cluster(this IContext context) => context.System.Extensions.Get<Cluster>()!;
 
         public static Task<T> ClusterRequestAsync<T>(this IContext context, string identity, string kind, object message, CancellationToken ct)
         {
