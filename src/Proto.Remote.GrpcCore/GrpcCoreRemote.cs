@@ -12,6 +12,7 @@ using Grpc.Health.V1;
 using Grpc.HealthCheck;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Extensions;
 
 namespace Proto.Remote.GrpcCore
 {
@@ -37,12 +38,13 @@ namespace Proto.Remote.GrpcCore
         public ActorSystem System { get; }
         public RemoteConfigBase Config => _config;
 
-        public Task StartAsync()
+        public async Task StartAsync()
         {
+            await System.Extensions.Get<RemoteExtension>()!.DependenciesStarted;
             lock (this)
             {
                 if (Started)
-                    return Task.CompletedTask;
+                    return;
 
                 var channelProvider = new GrpcCoreChannelProvider(_config);
                 _endpointManager = new EndpointManager(System, Config, channelProvider);
@@ -68,7 +70,7 @@ namespace Proto.Remote.GrpcCore
                     System.Address
                 );
                 Started = true;
-                return Task.CompletedTask;
+                System.Extensions.Get<RemoteExtension>()!.Start();
             }
         }
 

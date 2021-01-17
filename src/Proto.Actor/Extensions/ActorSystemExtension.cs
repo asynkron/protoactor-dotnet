@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace Proto.Extensions
 {
@@ -15,6 +16,8 @@ namespace Proto.Extensions
         private static int nextId;
 
         IReadOnlyCollection<Type> GetDependencies();
+        
+        
 
         internal static int GetNextId() => Interlocked.Increment(ref nextId);
     }
@@ -23,7 +26,7 @@ namespace Proto.Extensions
     public abstract class ActorSystemExtension<T> : IActorSystemExtension where T : IActorSystemExtension
     {
         public static int Id = IActorSystemExtension.GetNextId();
-
+        
         private readonly List<Type> _dependencies = new();
         public ActorSystem System { get; }
 
@@ -33,12 +36,27 @@ namespace Proto.Extensions
         {
             System = system;
         }
+        
+        public virtual Task Started => Task.CompletedTask;
 
         protected void AddDependency<TDep>() => _dependencies.Add(typeof(TDep));
+    }
 
-        public async Task Start()
+    public abstract class StartableActorSystemExtension<T> : ActorSystemExtension<T> where T : IActorSystemExtension
+    {
+        private TaskCompletionSource<object> Source { get; } = new();
+
+        public Task DependenciesStarted { get; } = Task.CompletedTask;
+        
+        protected StartableActorSystemExtension([NotNull] ActorSystem system) : base(system)
         {
-            
+        }
+
+        public override Task Started => Source.Task;
+        
+        public void Start()
+        {
+            Source.SetResult(new object());
         }
     }
 }

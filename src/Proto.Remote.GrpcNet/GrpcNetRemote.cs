@@ -34,12 +34,13 @@ namespace Proto.Remote.GrpcNet
         public RemoteConfigBase Config => _config;
         public ActorSystem System { get; }
 
-        public Task StartAsync()
+        public async Task StartAsync()
         {
+            await System.Extensions.Get<RemoteExtension>()!.DependenciesStarted;
             lock (this)
             {
                 if (Started)
-                    return Task.CompletedTask;
+                    return;
 
                 var channelProvider = new GrpcNetChannelProvider(_config);
                 _endpointManager = new EndpointManager(System, Config, channelProvider);
@@ -98,10 +99,9 @@ namespace Proto.Remote.GrpcNet
                 _endpointManager.Start();
                 _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host, Config.Port, System.Address);
 
+                System.Extensions.Get<RemoteExtension>()!.Start();
                 Started = true;
             }
-            
-            return Task.CompletedTask;
         }
 
         public async Task ShutdownAsync(bool graceful = true)

@@ -32,12 +32,13 @@ namespace Proto.Remote.GrpcNet
         public ActorSystem System { get; }
         public bool Started { get; private set; }
 
-        public Task StartAsync()
+        public async Task StartAsync()
         {
+            await System.Extensions.Get<RemoteExtension>()!.DependenciesStarted;
             lock (this)
             {
                 if (Started)
-                    return Task.CompletedTask;
+                    return;
 
                 var uri = ServerAddressesFeature?.Addresses.Select(address => new Uri(address)).FirstOrDefault();
                 var boundPort = uri?.Port ?? Config.Port;
@@ -47,8 +48,8 @@ namespace Proto.Remote.GrpcNet
                 );
                 _endpointManager.Start();
                 _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", host, boundPort, System.Address);
+                System.Extensions.Get<RemoteExtension>()!.Start();
                 Started = true;
-                return Task.CompletedTask;
             }
         }
 

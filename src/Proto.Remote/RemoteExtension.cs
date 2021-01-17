@@ -7,7 +7,7 @@ using Proto.Extensions;
 
 namespace Proto.Remote
 {
-    public class RemoteExtension : ActorSystemExtension<RemoteExtension>
+    public class RemoteExtension : StartableActorSystemExtension<RemoteExtension>
     {
         public IRemote Remote { get; }
         public RemoteExtension(ActorSystem system, IRemote remote) : base(system)

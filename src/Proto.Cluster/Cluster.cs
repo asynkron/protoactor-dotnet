@@ -83,6 +83,8 @@ namespace Proto.Cluster
             IdentityLookup = Config.IdentityLookup ?? new PartitionIdentityLookup();
             Remote = System.Remote();
             await Remote.StartAsync();
+            await System.Extensions.Get<ClusterExtension>()!.DependenciesStarted;
+            
             //created here as Address is set after remote is started
             Logger = Log.CreateLogger($"Cluster-{System.Address}");
             Logger.LogInformation("Starting");
@@ -92,6 +94,7 @@ namespace Proto.Cluster
             var kinds = GetClusterKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
             await _clusterHeartBeat.StartAsync();
+            System.Extensions.Get<ClusterExtension>()!.Start();
         }
 
         public async Task ShutdownAsync(bool graceful = true)
