@@ -17,15 +17,15 @@ namespace Proto.Extensions
 
         public T? Get<T>() where T : IActorSystemExtension
         {
-            var id = IActorSystemExtension<T>.Id;
+            var id = ActorSystemExtension<T>.Id;
             return (T) _extensions[id];
         }
 
-        public void Register<T>(IActorSystemExtension<T> extension) where T : IActorSystemExtension
+        public void Register<T>(ActorSystemExtension<T> extension) where T : IActorSystemExtension
         {
             lock (_lockObject)
             {
-                var id = IActorSystemExtension<T>.Id;
+                var id = ActorSystemExtension<T>.Id;
 
                 if (id >= _extensions.Length)
                 {

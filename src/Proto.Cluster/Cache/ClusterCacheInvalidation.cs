@@ -13,12 +13,13 @@ using Proto.Extensions;
 
 namespace Proto.Cluster.Cache
 {
-    public class ClusterCacheInvalidation : IActorSystemExtension<ClusterCacheInvalidation>
+    public class ClusterCacheInvalidation : ActorSystemExtension<ClusterCacheInvalidation>
     {
         private const string ActorName = "$invalidator";
 
         public ClusterCacheInvalidation(Cluster cluster)
         {
+            AddDependency<ClusterExtension>();
             ActorSystem = cluster.System;
             ActorSystem.Extensions.Register(this);
 

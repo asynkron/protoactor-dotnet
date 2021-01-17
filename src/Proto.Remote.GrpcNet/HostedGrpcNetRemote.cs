@@ -24,7 +24,7 @@ namespace Proto.Remote.GrpcNet
             _endpointManager = endpointManager;
             _logger = logger;
             System.Extensions.Register(new RemoteExtension(this));
-            System.Extensions.Register(config.Serialization);
+            System.Extensions.Register(new SerializationExtension(config.Serialization));
         }
 
         public IServerAddressesFeature? ServerAddressesFeature { get; set; }

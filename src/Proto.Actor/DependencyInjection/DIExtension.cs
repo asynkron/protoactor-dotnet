@@ -10,7 +10,7 @@ using Proto.Extensions;
 namespace Proto.DependencyInjection
 {
     [PublicAPI]
-    public class DIExtension : IActorSystemExtension<DIExtension>
+    public class DIExtension : ActorSystemExtension<DIExtension>
     {
         public DIExtension(IDependencyResolver resolver) => Resolver = resolver;
 

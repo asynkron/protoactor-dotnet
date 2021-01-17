@@ -3,12 +3,12 @@ using Xunit;
 
 namespace Proto.Tests.Extensions
 {
-    public class ExtensionA : IActorSystemExtension<ExtensionA>
+    public class ExtensionA : ActorSystemExtension<ExtensionA>
     {
         public int A { get; set; }
     }
 
-    public class ExtensionB : IActorSystemExtension<ExtensionB>
+    public class ExtensionB : ActorSystemExtension<ExtensionB>
     {
         public string B { get; set; }
     }
@@ -16,7 +16,7 @@ namespace Proto.Tests.Extensions
     public class ExtensionTests
     {
         [Fact]
-        public void ExtensionsGetOwnId() => Assert.NotEqual(IActorSystemExtension<ExtensionA>.Id, IActorSystemExtension<ExtensionB>.Id);
+        public void ExtensionsGetOwnId() => Assert.NotEqual(ActorSystemExtension<ExtensionA>.Id, ActorSystemExtension<ExtensionB>.Id);
 
         [Fact]
         public void CanGetExtension()

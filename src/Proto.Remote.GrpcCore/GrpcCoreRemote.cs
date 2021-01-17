@@ -30,7 +30,7 @@ namespace Proto.Remote.GrpcCore
             System = system;
             _config = config;
             System.Extensions.Register(new RemoteExtension(this));
-            System.Extensions.Register(config.Serialization);
+            System.Extensions.Register(new SerializationExtension(config.Serialization));
         }
 
         public bool Started { get; private set; }

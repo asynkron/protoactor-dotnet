@@ -7,11 +7,10 @@
 using System.Collections.Generic;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
-using Proto.Extensions;
 
 namespace Proto.Remote
 {
-    public class Serialization : IActorSystemExtension<Serialization>
+    public class Serialization
     {
         private readonly List<ISerializer> _serializers = new();
         internal readonly Dictionary<string, MessageParser> TypeLookup = new();

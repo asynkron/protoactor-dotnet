@@ -7,11 +7,12 @@ using Proto.Extensions;
 
 namespace Proto.Remote
 {
-    public class RemoteExtension : IActorSystemExtension<RemoteExtension>
+    public class RemoteExtension : ActorSystemExtension<RemoteExtension>
     {
         public IRemote Remote { get; }
         public RemoteExtension(IRemote remote)
         {
+            AddDependency<SerializationExtension>();
             Remote = remote;
         }
     }
