@@ -185,7 +185,7 @@ namespace Proto.Mailbox
 
                         if (t.IsFaulted)
                         {
-                            _invoker.EscalateFailure(t.Exception, msg);
+                            _invoker.EscalateFailure(t.Exception!, msg);
                             continue;
                         }
 
