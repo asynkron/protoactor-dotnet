@@ -29,7 +29,7 @@ namespace Proto.Remote.GrpcCore
         {
             System = system;
             _config = config;
-            System.Extensions.Register(this);
+            System.Extensions.Register(new RemoteExtension(this));
             System.Extensions.Register(config.Serialization);
         }
 

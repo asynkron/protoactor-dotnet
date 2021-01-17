@@ -17,13 +17,13 @@ using Proto.Remote;
 namespace Proto.Cluster
 {
     [PublicAPI]
-    public class Cluster : IActorSystemExtension<Cluster>
+    public class Cluster 
     {
         private ClusterHeartBeat _clusterHeartBeat;
 
         public Cluster(ActorSystem system, ClusterConfig config)
         {
-            system.Extensions.Register(this);
+            system.Extensions.Register(new ClusterExtension(this));
             PidCache = new PidCache();
             System = system;
             Config = config;
@@ -84,7 +84,7 @@ namespace Proto.Cluster
         {
             //default to partition identity lookup
             IdentityLookup = Config.IdentityLookup ?? new PartitionIdentityLookup();
-            Remote = System.Extensions.Get<IRemote>();
+            Remote = System.Remote();
             await Remote.StartAsync();
             Logger = Log.CreateLogger($"Cluster-{LoggerId}");
             Logger.LogInformation("Starting");

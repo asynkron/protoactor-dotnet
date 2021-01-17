@@ -23,7 +23,7 @@ namespace Proto.Remote.GrpcNet
             _config = config;
             _endpointManager = endpointManager;
             _logger = logger;
-            System.Extensions.Register(this);
+            System.Extensions.Register(new RemoteExtension(this));
             System.Extensions.Register(config.Serialization);
         }
 
