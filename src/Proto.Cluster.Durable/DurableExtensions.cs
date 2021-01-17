@@ -16,6 +16,7 @@ namespace Proto.Cluster.Durable
         public static ActorSystem WithDurableFunctions(this ActorSystem system, IDurablePersistence durablePersistence)
         {
             var p = new DurablePlugin(system.Cluster(), durablePersistence);
+            p.AddDependency<Cluster>();
             system.Extensions.Register(p);
             return system;
         }

@@ -12,7 +12,7 @@ using Proto.Extensions;
 
 namespace Proto.Cluster.Durable
 {
-    public class DurablePlugin : IActorSystemExtension<DurablePlugin>
+    public class DurablePlugin : ActorSystemExtension<DurablePlugin>
     {
         private readonly Dictionary<DurableRequest, DurableResponse> _cache = new();
         private readonly Cluster _cluster;

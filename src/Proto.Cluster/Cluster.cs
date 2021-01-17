@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Cluster.Events;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Partition;
 using Proto.Extensions;
@@ -17,12 +18,13 @@ using Proto.Remote;
 namespace Proto.Cluster
 {
     [PublicAPI]
-    public class Cluster : IActorSystemExtension<Cluster>
+    public class Cluster : ActorSystemExtension<Cluster>
     {
         private ClusterHeartBeat _clusterHeartBeat;
 
         public Cluster(ActorSystem system, ClusterConfig config)
         {
+            AddDependency<IRemote>();
             system.Extensions.Register(this);
             PidCache = new PidCache();
             System = system;
@@ -93,6 +95,8 @@ namespace Proto.Cluster
             var kinds = GetClusterKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
             await _clusterHeartBeat.StartAsync();
+            
+            System.EventStream.Publish(new ClusterStartedEvent());
         }
 
         public async Task ShutdownAsync(bool graceful = true)
@@ -106,6 +110,8 @@ namespace Proto.Cluster
             await Remote.ShutdownAsync(graceful);
 
             Logger.LogInformation("Stopped Cluster {Id}", System.Id);
+            
+            System.EventStream.Publish(new ClusterShutdownEvent());
         }
 
         public Task<PID?> GetAsync(string identity, string kind) => GetAsync(identity, kind, CancellationToken.None);
