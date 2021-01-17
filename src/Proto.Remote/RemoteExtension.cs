@@ -12,7 +12,6 @@ namespace Proto.Remote
         public IRemote Remote { get; }
         public RemoteExtension(ActorSystem system, IRemote remote) : base(system)
         {
-            AddDependency<SerializationExtension>();
             Remote = remote;
         }
     }

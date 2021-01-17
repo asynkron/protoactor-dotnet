@@ -40,7 +40,7 @@ namespace Proto.Remote.GrpcCore
 
         public async Task StartAsync()
         {
-            await System.Extensions.Get<RemoteExtension>()!.DependenciesStarted;
+            await System.Extensions.Get<RemoteExtension>()!.DependenciesStarted();
             lock (this)
             {
                 if (Started)

@@ -11,7 +11,6 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Partition;
-using Proto.Extensions;
 using Proto.Remote;
 
 namespace Proto.Cluster
@@ -83,7 +82,7 @@ namespace Proto.Cluster
             IdentityLookup = Config.IdentityLookup ?? new PartitionIdentityLookup();
             Remote = System.Remote();
             await Remote.StartAsync();
-            await System.Extensions.Get<ClusterExtension>()!.DependenciesStarted;
+            await System.Extensions.Get<ClusterExtension>()!.DependenciesStarted();
             
             //created here as Address is set after remote is started
             Logger = Log.CreateLogger($"Cluster-{System.Address}");
@@ -116,10 +115,10 @@ namespace Proto.Cluster
             IdentityLookup!.GetAsync(new ClusterIdentity {Identity = identity, Kind = kind}, ct);
 
         public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) =>
-            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, System.Root, ct);
+            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, System.Root, ct)!;
 
         public Task<T> RequestAsync<T>(string identity, string kind, object message, ISenderContext context, CancellationToken ct) =>
-            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct);
+            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct)!;
 
         public Props GetClusterKind(string kind)
         {

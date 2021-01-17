@@ -16,8 +16,12 @@ namespace Proto.Cluster
 
         public ClusterExtension(ActorSystem system, Cluster cluster) :base(system)
         {
-            AddDependency<RemoteExtension>();
             Cluster = cluster;
+        }
+
+        public override async Task DependenciesStarted()
+        {
+            await System.Extensions.Get<RemoteExtension>()!.Started;
         }
     }
 }

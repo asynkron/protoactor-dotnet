@@ -19,7 +19,6 @@ namespace Proto.Cluster.Cache
 
         public ClusterCacheInvalidation(ActorSystem system, Cluster cluster) :base(system)
         {
-            AddDependency<ClusterExtension>();
             ActorSystem = cluster.System;
             ActorSystem.Extensions.Register(this);
 
