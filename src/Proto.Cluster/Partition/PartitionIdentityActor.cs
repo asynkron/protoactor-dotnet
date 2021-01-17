@@ -50,7 +50,7 @@ namespace Proto.Cluster.Partition
 
         public PartitionIdentityActor(Cluster cluster)
         {
-            _logger = Log.CreateLogger($"{nameof(PartitionIdentityActor)}-{cluster.LoggerId}");
+            _logger = Log.CreateLogger($"{nameof(PartitionIdentityActor)}-{cluster.System.Address}");
             _cluster = cluster;
             _myAddress = cluster.System.Address;
         }

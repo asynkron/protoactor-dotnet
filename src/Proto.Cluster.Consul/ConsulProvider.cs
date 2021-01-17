@@ -144,7 +144,7 @@ namespace Proto.Cluster.Consul
             _port = port;
             _kinds = kinds;
             _memberList = memberList;
-            _logger = Log.CreateLogger($"ConsulProvider-{_cluster.LoggerId}");
+            _logger = Log.CreateLogger($"ConsulProvider-{_cluster.System.Address}");
         }
 
         private void StartMonitorMemberStatusChangesLoop()

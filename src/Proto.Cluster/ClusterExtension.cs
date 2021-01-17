@@ -12,7 +12,7 @@ namespace Proto.Cluster
     {
         public Cluster Cluster { get; }
 
-        public ClusterExtension(Cluster cluster)
+        public ClusterExtension(ActorSystem system, Cluster cluster) :base(system)
         {
             AddDependency<RemoteExtension>();
             Cluster = cluster;

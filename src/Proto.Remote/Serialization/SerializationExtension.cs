@@ -10,7 +10,7 @@ namespace Proto.Remote
     public class SerializationExtension : ActorSystemExtension<SerializationExtension>
     {
         public Serialization Serialization { get; }
-        public SerializationExtension(Serialization serialization)
+        public SerializationExtension(ActorSystem system, Serialization serialization) : base(system)
         {
             Serialization = serialization;
         }

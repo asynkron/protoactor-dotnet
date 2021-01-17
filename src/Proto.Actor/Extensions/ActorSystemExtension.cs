@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Proto.Extensions
 {
@@ -24,9 +25,20 @@ namespace Proto.Extensions
         public static int Id = IActorSystemExtension.GetNextId();
 
         private readonly List<Type> _dependencies = new();
+        public ActorSystem System { get; }
 
         public IReadOnlyCollection<Type> GetDependencies() => _dependencies;
 
+        protected ActorSystemExtension(ActorSystem system)
+        {
+            System = system;
+        }
+
         protected void AddDependency<TDep>() => _dependencies.Add(typeof(TDep));
+
+        public async Task Start()
+        {
+            
+        }
     }
 }

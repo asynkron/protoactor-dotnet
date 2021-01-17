@@ -23,7 +23,7 @@ namespace Proto.Cluster
 
         public Cluster(ActorSystem system, ClusterConfig config)
         {
-            system.Extensions.Register(new ClusterExtension(this));
+            system.Extensions.Register(new ClusterExtension(system,this));
             PidCache = new PidCache();
             System = system;
             Config = config;
@@ -54,8 +54,6 @@ namespace Proto.Cluster
 
         internal IClusterProvider Provider { get; set; } = null!;
 
-        public string LoggerId => System.Address;
-
         public PidCache PidCache { get; }
 
         public string[] GetClusterKinds() => Config.ClusterKinds.Keys.ToArray();
@@ -64,7 +62,6 @@ namespace Proto.Cluster
         {
             await BeginStartAsync(false);
             Provider = Config.ClusterProvider;
-            var kinds = GetClusterKinds();
             await Provider.StartMemberAsync(this);
 
             Logger.LogInformation("Started as cluster member");
@@ -86,7 +83,8 @@ namespace Proto.Cluster
             IdentityLookup = Config.IdentityLookup ?? new PartitionIdentityLookup();
             Remote = System.Remote();
             await Remote.StartAsync();
-            Logger = Log.CreateLogger($"Cluster-{LoggerId}");
+            //created here as Address is set after remote is started
+            Logger = Log.CreateLogger($"Cluster-{System.Address}");
             Logger.LogInformation("Starting");
             MemberList = new MemberList(this);
             ClusterContext = Config.ClusterContextProducer(this);

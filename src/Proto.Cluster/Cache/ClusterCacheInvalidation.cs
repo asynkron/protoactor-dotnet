@@ -17,7 +17,7 @@ namespace Proto.Cluster.Cache
     {
         private const string ActorName = "$invalidator";
 
-        public ClusterCacheInvalidation(Cluster cluster)
+        public ClusterCacheInvalidation(ActorSystem system, Cluster cluster) :base(system)
         {
             AddDependency<ClusterExtension>();
             ActorSystem = cluster.System;

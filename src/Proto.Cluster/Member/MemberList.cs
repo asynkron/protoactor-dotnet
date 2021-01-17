@@ -52,7 +52,7 @@ namespace Proto.Cluster
             _root = _system.Root;
             _eventStream = _system.EventStream;
 
-            _logger = Log.CreateLogger($"MemberList-{_cluster.LoggerId}");
+            _logger = Log.CreateLogger($"MemberList-{_cluster.System.Address}");
 
             _bannedMembers = new ConcurrentSet<string>();
         }

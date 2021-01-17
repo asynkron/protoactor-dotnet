@@ -45,7 +45,7 @@ namespace Proto.Cluster
         {
             var props = Props.FromProducer(() => new ClusterHeartBeatActor());
             _pid = _context.SpawnNamed(props, ClusterHeartBeatName);
-            _logger = Log.CreateLogger("ClusterHeartBeat-" + _cluster.LoggerId);
+            _logger = Log.CreateLogger("ClusterHeartBeat-" + _cluster.System.Address);
             _logger.LogInformation("Started Cluster Heartbeats");
             _ = Task.Run(HeartBeatLoop);
             return Task.CompletedTask;

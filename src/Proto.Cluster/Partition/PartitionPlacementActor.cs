@@ -34,7 +34,7 @@ namespace Proto.Cluster.Partition
         public PartitionPlacementActor(Cluster cluster)
         {
             _cluster = cluster;
-            _logger = Log.CreateLogger($"{nameof(PartitionPlacementActor)}-{cluster.LoggerId}");
+            _logger = Log.CreateLogger($"{nameof(PartitionPlacementActor)}-{cluster.System.Address}");
         }
 
         public Task ReceiveAsync(IContext context) =>

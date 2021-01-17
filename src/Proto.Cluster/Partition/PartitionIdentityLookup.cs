@@ -63,7 +63,7 @@ namespace Proto.Cluster.Partition
         {
             _cluster = cluster;
             _partitionManager = new PartitionManager(cluster, isClient);
-            _logger = Log.CreateLogger(nameof(PartitionIdentityLookup) + "-" + _cluster.LoggerId);
+            _logger = Log.CreateLogger(nameof(PartitionIdentityLookup) + "-" + _cluster.System.Address);
             _partitionManager.Setup();
             return Task.CompletedTask;
         }

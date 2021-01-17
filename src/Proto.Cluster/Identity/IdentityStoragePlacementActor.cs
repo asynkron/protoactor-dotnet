@@ -32,7 +32,7 @@ namespace Proto.Cluster.Identity
         {
             _cluster = cluster;
             _identityLookup = identityLookup;
-            _logger = Log.CreateLogger($"{nameof(IdentityStoragePlacementActor)}-{cluster.LoggerId}");
+            _logger = Log.CreateLogger($"{nameof(IdentityStoragePlacementActor)}-{cluster.System.Address}");
         }
 
         public Task ReceiveAsync(IContext context) => context.Message switch

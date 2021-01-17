@@ -12,7 +12,10 @@ namespace Proto.DependencyInjection
     [PublicAPI]
     public class DIExtension : ActorSystemExtension<DIExtension>
     {
-        public DIExtension(IDependencyResolver resolver) => Resolver = resolver;
+        public DIExtension(ActorSystem system, IDependencyResolver resolver) : base(system)
+        {
+            Resolver = resolver;
+        }
 
         public IDependencyResolver Resolver { get; }
     }
@@ -22,7 +25,7 @@ namespace Proto.DependencyInjection
         public static ActorSystem WithServiceProvider(this ActorSystem actorSystem, IServiceProvider serviceProvider)
         {
             var dependencyResolver = new DependencyResolver(serviceProvider);
-            var diExtension = new DIExtension(dependencyResolver);
+            var diExtension = new DIExtension(actorSystem, dependencyResolver);
             actorSystem.Extensions.Register(diExtension);
             return actorSystem;
         }

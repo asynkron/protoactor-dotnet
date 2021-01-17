@@ -26,8 +26,8 @@ namespace Proto.Remote.GrpcNet
         {
             System = system;
             _config = config;
-            System.Extensions.Register(new RemoteExtension(this));
-            System.Extensions.Register(new SerializationExtension(config.Serialization));
+            System.Extensions.Register(new RemoteExtension(System,this));
+            System.Extensions.Register(new SerializationExtension(System, config.Serialization));
         }
 
         public bool Started { get; private set; }
@@ -97,9 +97,11 @@ namespace Proto.Remote.GrpcNet
                 );
                 _endpointManager.Start();
                 _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host, Config.Port, System.Address);
+
                 Started = true;
-                return Task.CompletedTask;
             }
+            
+            return Task.CompletedTask;
         }
 
         public async Task ShutdownAsync(bool graceful = true)

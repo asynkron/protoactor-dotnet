@@ -32,7 +32,7 @@ namespace Proto.Cluster.Cache
 
         public static Cluster WithPidCacheInvalidation(this Cluster cluster)
         {
-            _ = new ClusterCacheInvalidation(cluster);
+            _ = new ClusterCacheInvalidation(cluster.System, cluster);
             return cluster;
         }
 
