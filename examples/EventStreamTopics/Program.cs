@@ -39,6 +39,8 @@ namespace EventStreamTopics
 
     public static class Extensions
     {
+        //use regex or whatever fits your needs for subscription to topic matching
+        //here we use the built in Like operator from VB.NET for this. just as an example
         public static EventStreamSubscription<object> SubscribeToTopic<T>(this EventStream self, string topic, Action<T> body) where T:ITopicMessage => self.Subscribe<T>(x => {
                 if (!LikeOperator.LikeString(x.Topic,topic,CompareMethod.Binary)) 
                     return;
