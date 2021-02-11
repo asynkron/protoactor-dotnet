@@ -19,12 +19,14 @@ namespace Proto.Remote
         private readonly EndpointManager _endpointManager;
         private readonly Serialization _serialization;
         private readonly ActorSystem _system;
+        private readonly LogLevel _deserializationErrorLogLevel;
 
         public EndpointReader(ActorSystem system, EndpointManager endpointManager, Serialization serialization)
         {
             _system = system;
             _endpointManager = endpointManager;
             _serialization = serialization;
+            _deserializationErrorLogLevel = _system.Remote().Config.DeserializationErrorLogLevel;
         }
 
         public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
@@ -98,8 +100,17 @@ namespace Proto.Remote
                 {
                     var target = targets[envelope.Target];
                     var typeName = typeNames[envelope.TypeId];
-                    var message =
+                    object message;
+                    try
+                    {
+                        message =
                         _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
+                    }
+                    catch (Exception)
+                    {
+                        Logger.Log(_deserializationErrorLogLevel, "[EndpointReader] Unable to deserialize message with {Type} from {Remote}", typeName, context.Peer);
+                        continue;
+                    }
 
                     switch (message)
                     {

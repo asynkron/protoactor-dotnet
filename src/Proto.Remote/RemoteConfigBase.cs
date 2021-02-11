@@ -7,6 +7,7 @@ using System;
 using System.Collections.Immutable;
 using Grpc.Core;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
@@ -57,6 +58,12 @@ namespace Proto.Remote
         ///     the external port in order for other systems to be able to connect to it.
         /// </summary>
         public int? AdvertisedPort { get; init; }
+
+        /// <summary>
+        ///     Gets or sets logging level for deserialization errors
+        ///     Defaults to Error.
+        /// </summary>
+        public LogLevel DeserializationErrorLogLevel { get; init; } = LogLevel.Error;
 
         public EndpointWriterOptions EndpointWriterOptions { get; init; } = new();
 

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf.Reflection;
 using Grpc.Core;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
@@ -104,5 +105,10 @@ namespace Proto.Remote
             remoteConfig.Serialization.RegisterSerializer(serializer, makeDefault);
             return remoteConfig;
         }
+
+        public static TRemoteConfig WithLogLevelForDeserializationErrors<TRemoteConfig>(this TRemoteConfig remoteConfig, LogLevel level)
+            where TRemoteConfig : RemoteConfigBase =>
+            remoteConfig with { DeserializationErrorLogLevel = level };
+
     }
 }
