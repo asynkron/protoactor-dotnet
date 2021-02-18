@@ -36,8 +36,9 @@ namespace Client
                 BindToLocalhost()
                     .WithProtoMessages(ChatReflection.Descriptor);
 
-            var system = new ActorSystem()
-                .WithRemote(config);
+            var system =
+                new ActorSystem()
+                    .WithRemote(config);
 
             system
                 .Remote()
