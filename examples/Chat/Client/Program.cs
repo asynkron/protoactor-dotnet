@@ -15,49 +15,74 @@ namespace Client
 {
     static class Program
     {
+        private static RootContext context;
+
+        private static PID client;
+
+        private static PID server;
+
         private static void Main()
+        {
+            InitializeActorSystem();
+            SpawnClient();
+            ObtainServerPid();
+            ConnectToServer();
+            EvaluateCommands();
+        }
+
+        private static void InitializeActorSystem()
         {
             var config =
                 BindToLocalhost()
                     .WithProtoMessages(ChatReflection.Descriptor);
 
-            var system = new ActorSystem()
-                .WithRemote(config);
+            var system =
+                new ActorSystem()
+                    .WithRemote(config);
 
             system
                 .Remote()
                 .StartAsync();
 
-            var server = PID.FromAddress("127.0.0.1:8000", "chatserver");
-            var context = system.Root;
+            context = system.Root;
+        }
 
-            var props = Props.FromFunc(
-                ctx => {
-                    switch (ctx.Message)
-                    {
-                        case Connected connected:
-                            Console.WriteLine(connected.Message);
-                            break;
-                        case SayResponse sayResponse:
-                            Console.WriteLine($"{sayResponse.UserName} {sayResponse.Message}");
-                            break;
-                        case NickResponse nickResponse:
-                            Console.WriteLine($"{nickResponse.OldUserName} is now {nickResponse.NewUserName}");
-                            break;
+        private static void SpawnClient() =>
+            client = context.Spawn(
+                Props.FromFunc(
+                    ctx => {
+                        switch (ctx.Message)
+                        {
+                            case Connected connected:
+                                Console.WriteLine(connected.Message);
+                                break;
+                            case SayResponse sayResponse:
+                                Console.WriteLine($"{sayResponse.UserName} {sayResponse.Message}");
+                                break;
+                            case NickResponse nickResponse:
+                                Console.WriteLine($"{nickResponse.OldUserName} is now {nickResponse.NewUserName}");
+                                break;
+                        }
+
+                        return Task.CompletedTask;
                     }
-
-                    return Task.CompletedTask;
-                }
+                )
             );
 
-            var client = context.Spawn(props);
+        private static void ObtainServerPid() =>
+            server = PID.FromAddress("127.0.0.1:8000", "chatserver");
 
+        private static void ConnectToServer() =>
             context.Send(
-                server, new Connect
+                server,
+                new Connect
                 {
                     Sender = client
                 }
             );
+
+        private static void EvaluateCommands()
+        {
             var nick = "Alex";
 
             while (true)
@@ -75,24 +100,27 @@ namespace Client
                     var t = text.Split(' ')[1];
 
                     context.Send(
-                        server, new NickRequest
+                        server,
+                        new NickRequest
                         {
                             OldUserName = nick,
                             NewUserName = t
                         }
                     );
+
                     nick = t;
+
+                    continue;
                 }
-                else
-                {
-                    context.Send(
-                        server, new SayRequest
-                        {
-                            UserName = nick,
-                            Message = text
-                        }
-                    );
-                }
+
+                context.Send(
+                    server,
+                    new SayRequest
+                    {
+                        UserName = nick,
+                        Message = text
+                    }
+                );
             }
         }
     }

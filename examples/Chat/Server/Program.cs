@@ -14,66 +14,92 @@ using static Proto.Remote.GrpcCore.GrpcCoreRemoteConfig;
 
 namespace Server
 {
-    class Program
+    static class Program
     {
+        private static RootContext context;
+
         private static void Main()
+        {
+            InitializeActorSystem();
+            SpawnServer();
+
+            Console.ReadLine();
+        }
+
+        private static void InitializeActorSystem()
         {
             var config =
                 BindToLocalhost(8000)
                     .WithProtoMessages(ChatReflection.Descriptor);
 
-            var system = new ActorSystem()
-                .WithRemote(config);
+            var system
+                = new ActorSystem()
+                    .WithRemote(config);
 
-            system.Remote().StartAsync();
+            system
+                .Remote()
+                .StartAsync();
 
-            var context = new RootContext(system);
+            context = system.Root;
+        }
 
+        private static void SpawnServer()
+        {
             var clients = new HashSet<PID>();
 
-            var props = Props.FromFunc(
-                ctx => {
-                    switch (ctx.Message)
-                    {
-                        case Connect connect:
-                            Console.WriteLine($"Client {connect.Sender} connected");
-                            clients.Add(connect.Sender);
-                            ctx.Send(connect.Sender, new Connected {Message = "Welcome!"});
-                            break;
-                        case SayRequest sayRequest:
-                            foreach (var client in clients)
-                            {
+            context.SpawnNamed(
+                Props.FromFunc(
+                    ctx => {
+                        switch (ctx.Message)
+                        {
+                            case Connect connect:
+                                Console.WriteLine($"Client {connect.Sender} connected");
+                                
+                                clients.Add(connect.Sender);
+                                
                                 ctx.Send(
-                                    client, new SayResponse
+                                    connect.Sender,
+                                    new Connected
                                     {
-                                        UserName = sayRequest.UserName,
-                                        Message = sayRequest.Message
+                                        Message = "Welcome!"
                                     }
                                 );
-                            }
+                                break;
+                            case SayRequest sayRequest:
+                                foreach (var client in clients)
+                                {
+                                    ctx.Send(
+                                        client,
+                                        new SayResponse
+                                        {
+                                            UserName = sayRequest.UserName,
+                                            Message = sayRequest.Message
+                                        }
+                                    );
+                                }
 
-                            break;
-                        case NickRequest nickRequest:
-                            foreach (var client in clients)
-                            {
-                                ctx.Send(
-                                    client, new NickResponse
-                                    {
-                                        OldUserName = nickRequest.OldUserName,
-                                        NewUserName = nickRequest.NewUserName
-                                    }
-                                );
-                            }
+                                break;
+                            case NickRequest nickRequest:
+                                foreach (var client in clients)
+                                {
+                                    ctx.Send(
+                                        client,
+                                        new NickResponse
+                                        {
+                                            OldUserName = nickRequest.OldUserName,
+                                            NewUserName = nickRequest.NewUserName
+                                        }
+                                    );
+                                }
 
-                            break;
+                                break;
+                        }
+
+                        return Task.CompletedTask;
                     }
-
-                    return Task.CompletedTask;
-                }
+                ),
+                "chatserver"
             );
-
-            context.SpawnNamed(props, "chatserver");
-            Console.ReadLine();
         }
     }
 }
