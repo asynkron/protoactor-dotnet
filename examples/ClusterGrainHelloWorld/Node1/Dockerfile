@@ -1,10 +1,10 @@
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1.0-alpine3.10
+FROM mcr.microsoft.com/dotnet/sdk:5.0 AS base
+COPY . .
+WORKDIR ./examples/ClusterGrainHelloWorld/Node1
+RUN dotnet publish -c Release -r linux-x64 Node1.csproj
 
-RUN echo 'http://dl-cdn.alpinelinux.org/alpine/v3.8/main' >> /etc/apk/repositories && \
-    apk update --no-cache && \
-    apk add --no-cache bash libc6-compat=1.1.19-r11
-
-ADD ./bin/Release/netcoreapp3.1/publish/ /app
+FROM mcr.microsoft.com/dotnet/runtime:5.0 as publish
+COPY --from=base ./examples/ClusterGrainHelloWorld/Node1/bin/Release/net5.0/linux-x64/publish /app
 
 WORKDIR /app
 EXPOSE 12001
