@@ -4,10 +4,6 @@ WORKDIR ./examples/ClusterGrainHelloWorld/Node2
 RUN dotnet publish -c Release -r linux-x64 Node2.csproj
 
 FROM mcr.microsoft.com/dotnet/runtime:5.0 as publish
-#RUN echo 'http://dl-cdn.alpinelinux.org/alpine/v3.8/main' >> /etc/apk/repositories && \
-#    apk update --no-cache && \
-#    apk add --no-cache bash libc6-compat=1.1.19-r11
-
 COPY --from=base ./examples/ClusterGrainHelloWorld/Node2/bin/Release/net5.0/linux-x64/publish /app
 
 WORKDIR /app
