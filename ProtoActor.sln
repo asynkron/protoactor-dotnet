@@ -1019,4 +1019,10 @@ Global
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD0D1E44-8118-4682-8793-6B20ABFA824C}
 	EndGlobalSection
+	GlobalSection(RiderSharedRunConfigurations) = postSolution
+		File = ..\..\abax\sensor-processor\.run\MapBackend.run.xml
+		File = ..\..\abax\sensor-processor\.run\serve.run.xml
+		File = ..\..\abax\sensor-processor\.run\all.run.xml
+		File = ..\..\abax\sensor-processor\.run\sensor-processor-forwarder.run.xml
+	EndGlobalSection
 EndGlobal

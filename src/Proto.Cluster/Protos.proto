@@ -22,6 +22,13 @@ message ClusterIdentity{
     string kind = 2;
 }
 
+message AnyIdentity {
+  oneof Identity {
+    actor.PID pid = 1;
+    ClusterIdentity cluster_identity = 2;
+  }
+}
+
 message Activation {
     actor.PID pid = 1;
     ClusterIdentity cluster_identity = 2;
