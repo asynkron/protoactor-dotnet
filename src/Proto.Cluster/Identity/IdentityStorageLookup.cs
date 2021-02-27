@@ -9,12 +9,12 @@ namespace Proto.Cluster.Identity
         private const string PlacementActorName = "placement-activator";
         private static readonly int PidClusterIdentityStartIndex = PlacementActorName.Length + 1;
         private bool _isClient;
-        private string _memberId;
-        private PID _placementActor;
-        private ActorSystem _system;
-        private PID _worker;
-        internal Cluster Cluster;
-        internal MemberList MemberList;
+        private string _memberId = string.Empty;
+        private PID _placementActor = null!;
+        private ActorSystem _system = null!;
+        private PID _worker = null!;
+        internal Cluster Cluster = null!;
+        internal MemberList MemberList = null!;
 
         public IdentityStorageLookup(IIdentityStorage storage) => Storage = storage;
 
