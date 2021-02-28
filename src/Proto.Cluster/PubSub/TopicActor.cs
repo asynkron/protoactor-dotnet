@@ -12,23 +12,41 @@ namespace Proto.Cluster.PubSub
     public class TopicActor : IActor
     {
         private ImmutableHashSet<SubscriberIdentity> _subscribers = ImmutableHashSet<SubscriberIdentity>.Empty;
+        private string _topic;
+
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
+            ClusterInit ci    => OnClusterInit(context,ci),
             Subscribe sub     => OnSubscribe(context, sub),
             Unsubscribe unsub => OnUnsubscribe(context, unsub),
             _                 => Task.CompletedTask,
         };
 
-        private Task OnUnsubscribe(IContext context, Unsubscribe unsub)
+        private async Task OnClusterInit(IContext context, ClusterInit ci)
         {
-            _subscribers = _subscribers.Remove(unsub.Subscriber);
-            return Task.CompletedTask;
+            _topic = ci.Identity;
+            var subs = await LoadSubscriptions(_topic);
+            _subscribers = ImmutableHashSet.CreateRange(subs.Subscribers_);
         }
 
-        private Task OnSubscribe(IContext context, Subscribe sub)
+        protected virtual Task<Subscribers> LoadSubscriptions(string topic) =>  Task.FromResult(new Subscribers());
+
+        protected virtual Task SaveSubscriptions(string topic, Subscribers subs)
+        {
+            return Task.CompletedTask;
+        }
+        
+        private async Task OnUnsubscribe(IContext context, Unsubscribe unsub)
+        {
+            _subscribers = _subscribers.Remove(unsub.Subscriber);
+            await SaveSubscriptions(_topic, new Subscribers() {Subscribers_ = {_subscribers}});
+
+        }
+
+        private async Task OnSubscribe(IContext context, Subscribe sub)
         {
             _subscribers = _subscribers.Add(sub.Subscriber);
-            return Task.CompletedTask;
+            await SaveSubscriptions(_topic, new Subscribers() {Subscribers_ = {_subscribers}});
         }
     }
 }

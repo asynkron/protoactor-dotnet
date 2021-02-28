@@ -29,6 +29,10 @@ message SubscriberIdentity {
   }
 }
 
+message Subscribers {
+  repeated SubscriberIdentity subscribers = 1;
+}
+
 message Subscribe {
   SubscriberIdentity subscriber = 1;
 }
