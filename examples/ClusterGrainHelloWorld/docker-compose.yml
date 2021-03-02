@@ -2,12 +2,16 @@ version: "3.7"
 
 services:
   node1:
-    build: ./Node1
+    build:
+      context: ../../
+      dockerfile: examples/ClusterGrainHelloWorld/Node1/Dockerfile
     ports:
       - 12001:12001
   
   node2:
-    build: ./Node2
+    build: 
+      context: ../../
+      dockerfile: examples/ClusterGrainHelloWorld/Node2/Dockerfile
     ports:
       - 12000:12000
 
