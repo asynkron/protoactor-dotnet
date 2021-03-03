@@ -21,6 +21,7 @@ namespace Proto.Cluster
             ClusterProvider = clusterProvider ?? throw new ArgumentNullException(nameof(clusterProvider));
             TimeoutTimespan = TimeSpan.FromSeconds(5);
             ActorRequestTimeout = TimeSpan.FromSeconds(5);
+            MaxNumberOfEventsInRequestLogThrottlePeriod = 3;
             RequestLogThrottlePeriod = TimeSpan.FromSeconds(2);
             HeartBeatInterval = TimeSpan.FromSeconds(30);
             MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
