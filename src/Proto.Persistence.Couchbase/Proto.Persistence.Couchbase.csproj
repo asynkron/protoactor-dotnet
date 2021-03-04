@@ -3,7 +3,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-   <PackageReference Include="CouchbaseNetClient" Version="2.7.22" />
+   <PackageReference Include="CouchbaseNetClient" Version="3.1.3" />
   </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Proto.Persistence\Proto.Persistence.csproj" />
