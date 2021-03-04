@@ -16,17 +16,19 @@ namespace Proto.Cluster
     {
         private readonly IIdentityLookup _identityLookup;
         private readonly ILogger _logger;
+        private readonly ClusterContextConfig _config;
         private readonly PidCache _pidCache;
         private readonly ShouldThrottle _requestLogThrottle;
 
-        public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ILogger logger)
+        public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ILogger logger, ClusterContextConfig config)
         {
             _identityLookup = identityLookup;
             _pidCache = pidCache;
             _logger = logger;
+            _config = config;
             _requestLogThrottle = Throttle.Create(
-                3,
-                TimeSpan.FromSeconds(2),
+                _config.MaxNumberOfEventsInRequestLogThrottlePeriod,
+                _config.RequestLogThrottlePeriod,
                 i => _logger.LogInformation("Throttled {LogCount} TryRequestAsync logs.", i)
             );
         }
@@ -118,7 +120,7 @@ namespace Proto.Cluster
         {
             try
             {
-                var res = await context.RequestAsync<T>(cachedPid, message, TimeSpan.FromSeconds(5));
+                var res = await context.RequestAsync<T>(cachedPid, message, _config.ActorRequestTimeout);
 
                 if (res is not null) return (ResponseStatus.Ok, res);
             }
