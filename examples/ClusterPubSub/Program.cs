@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Proto;
 using Proto.Cluster;
@@ -36,7 +37,7 @@ namespace ClusterPubSub
             var pid = system.Root.Spawn(Props.FromFunc(ctx => {
                         if (ctx.Message is string s)
                         {
-                            Console.WriteLine(s);
+                          //  Console.Write(".");
                             ctx.Respond(new PublishResponse());
                         }
 
@@ -46,11 +47,27 @@ namespace ClusterPubSub
             );
 
             await system.Cluster().Subscribe("my-topic", pid);
+            await system.Cluster().Publish("my-topic", "hello");
+            
+            var p = system.Cluster().Publisher("my-topic");
+            
 
-            for (int i = 0; i < 10000; i++)
+            var sw = Stopwatch.StartNew();
+            for (int i = 0; i < 20000; i++)
             {
-                 await system.Cluster().Publish("my-topic", i.ToString());    
+                 p.Publish( i.ToString());    
             }
+
+            await p.WhenAllPublished();
+            Console.WriteLine(sw.Elapsed.TotalMilliseconds);
+            sw.Restart();
+            for (int i = 0; i < 20000; i++)
+            {
+                p.Publish( i.ToString());    
+            }
+
+            await p.WhenAllPublished();
+            Console.WriteLine(sw.Elapsed.TotalMilliseconds);
 
             Console.ReadLine();
         }
