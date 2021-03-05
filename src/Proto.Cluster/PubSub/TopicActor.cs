@@ -45,6 +45,7 @@ namespace Proto.Cluster.PubSub
 
         private async Task OnSubscribe(IContext context, SubscribeRequest sub)
         {
+            Console.WriteLine($"{_topic} - Subscriber attached {sub.Subscriber}");
             _subscribers = _subscribers.Add(sub.Subscriber);
             await SaveSubscriptions(_topic, new Subscribers() {Subscribers_ = {_subscribers}});
             context.Respond(new SubscribeResponse());

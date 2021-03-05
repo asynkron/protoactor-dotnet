@@ -16,16 +16,16 @@ namespace ClusterPubSub
         static async Task Main(string[] args)
         {
             var remoteConfig = GrpcCoreRemoteConfig
-                .BindToLocalhost()
-                .WithProtoMessages(ProtosReflection.Descriptor);
+                .BindToLocalhost();
+            //  .WithProtoMessages(ProtosReflection.Descriptor);
 
             var consulProvider =
-                new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://consul:8500/"));
+                new ConsulProvider(new ConsulProviderConfig());
 
             var clusterConfig =
                 ClusterConfig
                     .Setup("MyCluster", consulProvider, new PartitionIdentityLookup())
-                    .WithClusterKind("topic",  Props.FromProducer(() => new TopicActor()));
+                    .WithClusterKind("topic", Props.FromProducer(() => new TopicActor()));
 
             var system = new ActorSystem()
                 .WithRemote(remoteConfig)
@@ -36,17 +36,20 @@ namespace ClusterPubSub
                 .StartMemberAsync();
 
             var pid = system.Root.Spawn(Props.FromFunc(ctx => {
-                    if (ctx.Message is string)
-                    {
-                        Console.WriteLine(ctx.Message);
+                        if (ctx.Message is string)
+                        {
+                            Console.WriteLine(ctx.Message);
+                        }
+
+                        return Task.CompletedTask;
                     }
-            
-                    return Task.CompletedTask;
-                }
-            ));
+                )
+            );
 
 
             await system.Cluster().Subscribe("my-topic", pid);
+            
+            
 
         }
     }

@@ -172,8 +172,7 @@ namespace Proto.Cluster.Identity.Tests
         {
             var timeout = new CancellationTokenSource(1000).Token;
             var (activator, identity, pid) = await GetActivatedClusterIdentity(timeout);
-
-
+            
             var differentPid = Activate(activator, identity);
 
             var activation = await _storage.TryGetExistingActivation(identity, timeout);
