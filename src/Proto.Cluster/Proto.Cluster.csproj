@@ -13,5 +13,6 @@
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="Protos.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
+    <Protobuf Include="pubsub.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
   </ItemGroup>
 </Project>

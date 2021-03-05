@@ -22,40 +22,6 @@ message ClusterIdentity{
     string kind = 2;
 }
 
-message SubscriberIdentity {
-  oneof Identity {
-    actor.PID pid = 1;
-    ClusterIdentity cluster_identity = 2;
-  }
-}
-
-message Subscribers {
-  repeated SubscriberIdentity subscribers = 1;
-}
-
-message SubscribeRequest {
-  SubscriberIdentity subscriber = 1;
-}
-
-message SubscribeResponse {
-  
-}
-
-message UnsubscribeRequest {
-  SubscriberIdentity subscriber = 1;
-}
-
-message UnsubscribeResponse {
-
-}
-
-message PublishRequest {
-  bytes data = 1;
-}
-
-message PublishResponse {}
-
-
 message Activation {
     actor.PID pid = 1;
     ClusterIdentity cluster_identity = 2;
