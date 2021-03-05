@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto.Mailbox;
@@ -27,25 +28,23 @@ namespace Proto.Cluster.PubSub
 
         private async Task OnPublishRequest(IContext context, object pub)
         {
-            foreach (var s in _subscribers)
-            {
-                switch (s.IdentityCase)
-                {
-                    case SubscriberIdentity.IdentityOneofCase.None:   
-                        //pass;
-                        break;
-                    case SubscriberIdentity.IdentityOneofCase.Pid:
-                        await context.RequestAsync<PublishResponse>(s.Pid, pub);
-                        break;
-                    case SubscriberIdentity.IdentityOneofCase.ClusterIdentity:
-                        await context.ClusterRequestAsync<PublishResponse>(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, pub,
-                            CancellationToken.None
-                        );
-                        break;
-                }
-            }
+            var tasks =_subscribers.Select(s => DeliverMessage(context, pub, s)).ToList();
+            await Task.WhenAll(tasks);
             context.Respond(new PublishResponse());
         }
+
+        private static Task DeliverMessage(IContext context, object pub, SubscriberIdentity s) => s.IdentityCase switch
+        {
+            SubscriberIdentity.IdentityOneofCase.Pid             => DeliverToPid(context, pub, s),
+            SubscriberIdentity.IdentityOneofCase.ClusterIdentity => DeliverToClusterIdentity(context, pub, s),
+            _                                                    => Task.CompletedTask
+        };
+
+        private static async Task DeliverToClusterIdentity(IContext context, object pub, SubscriberIdentity s) => await context.ClusterRequestAsync<PublishResponse>(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, pub,
+            CancellationToken.None
+        );
+
+        private static async Task DeliverToPid(IContext context, object pub, SubscriberIdentity s) => await context.RequestAsync<PublishResponse>(s.Pid, pub);
 
         private async Task OnClusterInit(IContext context, ClusterInit ci)
         {
