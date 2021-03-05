@@ -33,14 +33,21 @@ message Subscribers {
   repeated SubscriberIdentity subscribers = 1;
 }
 
-message Subscribe {
+message SubscribeRequest {
   SubscriberIdentity subscriber = 1;
 }
 
-message Unsubscribe {
+message SubscribeResponse {
+  
+}
+
+message UnsubscribeRequest {
   SubscriberIdentity subscriber = 1;
 }
 
+message UnsubscribeResponse {
+
+}
 
 message Activation {
     actor.PID pid = 1;
