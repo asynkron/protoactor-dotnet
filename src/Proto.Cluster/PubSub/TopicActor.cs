@@ -23,12 +23,12 @@ namespace Proto.Cluster.PubSub
             SubscribeRequest sub     => OnSubscribe(context, sub),
             UnsubscribeRequest unsub => OnUnsubscribe(context, unsub),
             SystemMessage            => Task.CompletedTask,
-            { } pub                  => OnPublishRequest(context,pub),
+            _                        => OnPublishRequest(context, context.Message!),
         };
 
         private async Task OnPublishRequest(IContext context, object pub)
         {
-            var tasks =_subscribers.Select(s => DeliverMessage(context, pub, s)).ToList();
+            var tasks = _subscribers.Select(s => DeliverMessage(context, pub, s)).ToList();
             await Task.WhenAll(tasks);
             context.Respond(new PublishResponse());
         }
@@ -40,11 +40,13 @@ namespace Proto.Cluster.PubSub
             _                                                    => Task.CompletedTask
         };
 
-        private static async Task DeliverToClusterIdentity(IContext context, object pub, SubscriberIdentity s) => await context.ClusterRequestAsync<PublishResponse>(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, pub,
-            CancellationToken.None
-        );
+        private static async Task DeliverToClusterIdentity(IContext context, object pub, SubscriberIdentity s)
+            => await context.ClusterRequestAsync<PublishResponse>(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, pub,
+                CancellationToken.None
+            );
 
-        private static async Task DeliverToPid(IContext context, object pub, SubscriberIdentity s) => await context.RequestAsync<PublishResponse>(s.Pid, pub);
+        private static async Task DeliverToPid(IContext context, object pub, SubscriberIdentity s)
+            => await context.RequestAsync<PublishResponse>(s.Pid, pub);
 
         private async Task OnClusterInit(IContext context, ClusterInit ci)
         {
@@ -55,10 +57,7 @@ namespace Proto.Cluster.PubSub
 
         protected virtual Task<Subscribers> LoadSubscriptions(string topic) => Task.FromResult(new Subscribers());
 
-        protected virtual Task SaveSubscriptions(string topic, Subscribers subs)
-        {
-            return Task.CompletedTask;
-        }
+        protected virtual Task SaveSubscriptions(string topic, Subscribers subs) => Task.CompletedTask;
 
         private async Task OnUnsubscribe(IContext context, UnsubscribeRequest unsub)
         {
