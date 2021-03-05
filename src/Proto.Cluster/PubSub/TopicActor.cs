@@ -7,6 +7,7 @@ using System;
 using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Mailbox;
 
 namespace Proto.Cluster.PubSub
 {
@@ -20,11 +21,11 @@ namespace Proto.Cluster.PubSub
             ClusterInit ci           => OnClusterInit(context, ci),
             SubscribeRequest sub     => OnSubscribe(context, sub),
             UnsubscribeRequest unsub => OnUnsubscribe(context, unsub),
-            PublishRequest pub => OnPublishRequest(context,pub),
-            _                        => Task.CompletedTask,
+            SystemMessage            => Task.CompletedTask,
+            { } pub                  => OnPublishRequest(context,pub),
         };
 
-        private async Task OnPublishRequest(IContext context, PublishRequest pub)
+        private async Task OnPublishRequest(IContext context, object pub)
         {
             foreach (var s in _subscribers)
             {

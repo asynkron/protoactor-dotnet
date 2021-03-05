@@ -12,7 +12,7 @@ namespace Proto.Cluster.PubSub
     {
         public static async Task Publish(this Cluster cluster, string topic, object message)
         {
-            _ = await cluster.RequestAsync<PublishResponse>(topic, "topic", new PublishRequest(), CancellationToken.None);
+            _ = await cluster.RequestAsync<PublishResponse>(topic, "topic", message, CancellationToken.None);
         }
         public static async Task Subscribe(this Cluster cluster,  string topic, string subscriberIdentity, string subscriberKind)
         {

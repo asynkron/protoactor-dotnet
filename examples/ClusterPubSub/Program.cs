@@ -34,9 +34,9 @@ namespace ClusterPubSub
                 .StartMemberAsync();
 
             var pid = system.Root.Spawn(Props.FromFunc(ctx => {
-                        if (ctx.Message is PublishRequest)
+                        if (ctx.Message is string s)
                         {
-                            Console.WriteLine(ctx.Message);
+                            Console.WriteLine(s);
                             ctx.Respond(new PublishResponse());
                         }
 
@@ -45,12 +45,11 @@ namespace ClusterPubSub
                 )
             );
 
-
             await system.Cluster().Subscribe("my-topic", pid);
 
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 10000; i++)
             {
-                 await system.Cluster().Publish("my-topic", "hello");    
+                 await system.Cluster().Publish("my-topic", i.ToString());    
             }
 
             Console.ReadLine();

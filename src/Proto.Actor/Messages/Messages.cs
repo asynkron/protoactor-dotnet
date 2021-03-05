@@ -17,7 +17,7 @@ namespace Proto
     {
     }
 
-    public sealed class Restarting
+    public sealed class Restarting : SystemMessage
     {
         public static readonly Restarting Instance = new();
 
