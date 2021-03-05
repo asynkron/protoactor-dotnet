@@ -10,6 +10,10 @@ namespace Proto.Cluster.PubSub
 {
     public static class Extensions
     {
+        public static async Task Publish(this Cluster cluster, string topic, object message)
+        {
+            _ = await cluster.RequestAsync<PublishResponse>(topic, "topic", new PublishRequest(), CancellationToken.None);
+        }
         public static async Task Subscribe(this Cluster cluster,  string topic, string subscriberIdentity, string subscriberKind)
         {
             _ = await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest()

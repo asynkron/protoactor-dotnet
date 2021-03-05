@@ -49,6 +49,13 @@ message UnsubscribeResponse {
 
 }
 
+message PublishRequest {
+  bytes data = 1;
+}
+
+message PublishResponse {}
+
+
 message Activation {
     actor.PID pid = 1;
     ClusterIdentity cluster_identity = 2;

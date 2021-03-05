@@ -37,3 +37,7 @@ enum TerminatedReason {
 
 message Stop {
 }
+
+//built in messages to see if an actor is alive
+message PingRequest {}
+message PingResponse {}

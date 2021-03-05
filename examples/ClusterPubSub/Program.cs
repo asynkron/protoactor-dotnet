@@ -5,9 +5,7 @@ using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
 using Proto.Cluster.PubSub;
-using Proto.Remote;
 using Proto.Remote.GrpcCore;
-using ProtosReflection = Proto.Remote.ProtosReflection;
 
 namespace ClusterPubSub
 {
@@ -36,9 +34,10 @@ namespace ClusterPubSub
                 .StartMemberAsync();
 
             var pid = system.Root.Spawn(Props.FromFunc(ctx => {
-                        if (ctx.Message is string)
+                        if (ctx.Message is PublishRequest)
                         {
                             Console.WriteLine(ctx.Message);
+                            ctx.Respond(new PublishResponse());
                         }
 
                         return Task.CompletedTask;
@@ -48,9 +47,13 @@ namespace ClusterPubSub
 
 
             await system.Cluster().Subscribe("my-topic", pid);
-            
-            
 
+            for (int i = 0; i < 100; i++)
+            {
+                 await system.Cluster().Publish("my-topic", "hello");    
+            }
+
+            Console.ReadLine();
         }
     }
 }

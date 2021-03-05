@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Immutable;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto.Cluster.PubSub
@@ -19,8 +20,31 @@ namespace Proto.Cluster.PubSub
             ClusterInit ci           => OnClusterInit(context, ci),
             SubscribeRequest sub     => OnSubscribe(context, sub),
             UnsubscribeRequest unsub => OnUnsubscribe(context, unsub),
+            PublishRequest pub => OnPublishRequest(context,pub),
             _                        => Task.CompletedTask,
         };
+
+        private async Task OnPublishRequest(IContext context, PublishRequest pub)
+        {
+            foreach (var s in _subscribers)
+            {
+                switch (s.IdentityCase)
+                {
+                    case SubscriberIdentity.IdentityOneofCase.None:   
+                        //pass;
+                        break;
+                    case SubscriberIdentity.IdentityOneofCase.Pid:
+                        await context.RequestAsync<PublishResponse>(s.Pid, pub);
+                        break;
+                    case SubscriberIdentity.IdentityOneofCase.ClusterIdentity:
+                        await context.ClusterRequestAsync<PublishResponse>(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, pub,
+                            CancellationToken.None
+                        );
+                        break;
+                }
+            }
+            context.Respond(new PublishResponse());
+        }
 
         private async Task OnClusterInit(IContext context, ClusterInit ci)
         {
