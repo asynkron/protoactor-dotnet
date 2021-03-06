@@ -14,37 +14,26 @@ namespace Proto.Cluster.PubSub
     {
         public static Producer Producer(this Cluster cluster) => new(cluster);
 
-        // public static async Task Publish(this Cluster cluster, string topic, object message)
-        // {
-        //     _ = await cluster.RequestAsync<PublishResponse>(topic, "topic", message, CancellationToken.None);
-        // }
-        public static async Task Subscribe(this Cluster cluster,  string topic, string subscriberIdentity, string subscriberKind)
-        {
-            _ = await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest()
+        public static async Task Subscribe(this Cluster cluster,  string topic, string subscriberIdentity, string subscriberKind) => _ = await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest()
+            {
+                Subscriber = new SubscriberIdentity
                 {
-                    Subscriber = new SubscriberIdentity
+                    ClusterIdentity = new ClusterIdentity
                     {
-                        ClusterIdentity = new ClusterIdentity
-                        {
-                            Identity = subscriberIdentity,
-                            Kind = subscriberKind
-                        }
+                        Identity = subscriberIdentity,
+                        Kind = subscriberKind
                     }
-                }, CancellationToken.None
-            );
-        }
-        
-        public static async Task Subscribe(this Cluster cluster,  string topic, PID subscriber)
-        {
-            _ = await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
+                }
+            }, CancellationToken.None
+        );
+
+        public static async Task Subscribe(this Cluster cluster,  string topic, PID subscriber) => _ = await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
+            {
+                Subscriber = new SubscriberIdentity
                 {
-                    Subscriber = new SubscriberIdentity
-                    {
-                        Pid = subscriber
-                    }
-                }, CancellationToken.None
-            );
-        }
-        
+                    Pid = subscriber
+                }
+            }, CancellationToken.None
+        );
     }
 }

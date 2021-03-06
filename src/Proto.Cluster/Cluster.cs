@@ -11,6 +11,7 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Partition;
+using Proto.Cluster.PubSub;
 using Proto.Extensions;
 using Proto.Remote;
 
@@ -28,6 +29,7 @@ namespace Proto.Cluster
             System = system;
             Config = config;
             system.Serialization().RegisterFileDescriptor(ProtosReflection.Descriptor);
+      //      system.Serialization().RegisterFileDescriptor(PubsubReflection.Descriptor);
 
             _clusterHeartBeat = new ClusterHeartBeat(this);
             system.EventStream.Subscribe<ClusterTopology>(e => {
