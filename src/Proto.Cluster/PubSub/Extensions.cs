@@ -12,7 +12,7 @@ namespace Proto.Cluster.PubSub
 {
     public static class Extensions
     {
-        public static Producer Producer(this Cluster cluster) => new(cluster);
+        public static Producer Producer(this Cluster cluster,string topic) => new(cluster,topic);
 
         public static async Task Subscribe(this Cluster cluster,  string topic, string subscriberIdentity, string subscriberKind) => _ = await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest()
             {

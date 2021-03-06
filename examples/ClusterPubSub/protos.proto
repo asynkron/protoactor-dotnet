@@ -1,0 +1,7 @@
+syntax = "proto3";
+package clusterpubsub;
+option csharp_namespace = "ClusterPubSub";
+
+message SomeMessage {
+  int32 value =1;
+}

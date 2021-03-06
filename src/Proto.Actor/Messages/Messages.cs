@@ -12,6 +12,10 @@ namespace Proto
 {
     //messages with this marker interface should not be deadletter logged
     public interface IIgnoreDeadLetterLogging {}
+
+    public sealed partial class PingRequest
+    {
+    }
     
     public sealed partial class Terminated : SystemMessage
     {

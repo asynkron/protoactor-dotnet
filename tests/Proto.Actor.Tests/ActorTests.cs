@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Proto.TestFixtures;
 using Xunit;
@@ -26,6 +27,14 @@ namespace Proto.Tests
             var reply = await Context.RequestAsync<object>(pid, "hello");
 
             Assert.Equal("hey", reply);
+        }
+        
+        
+        [Fact]
+        public async Task RequestPingActorAsync()
+        {
+            var pid = SpawnActorFromFunc(ctx => Task.CompletedTask);
+            var reply = await Context.RequestAsync<PingResponse>(pid, new PingRequest(), new CancellationTokenSource(5000).Token);
         }
 
         [Fact]

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto.Mailbox;
+using Proto.Remote;
 
 namespace Proto.Cluster.PubSub
 {
@@ -22,14 +23,26 @@ namespace Proto.Cluster.PubSub
             ClusterInit ci           => OnClusterInit(context, ci),
             SubscribeRequest sub     => OnSubscribe(context, sub),
             UnsubscribeRequest unsub => OnUnsubscribe(context, unsub),
-            SystemMessage            => Task.CompletedTask,
-            _                        => OnPublishRequest(context, context.Message!),
+            ProducerBatch batch      => OnProducerBatch(context, batch),
+            _                        => Task.CompletedTask,
         };
 
-        private async Task OnPublishRequest(IContext context, object pub)
+        private async Task OnProducerBatch(IContext context, ProducerBatch batch)
         {
-            var tasks = _subscribers.Select(s => DeliverMessage(context, pub, s)).ToList();
+            Console.WriteLine("Got batch");
+            var s = context.System.Serialization();
+            var messages = batch.Envelopes.Select(e => s.Deserialize(batch.TypeNames[e.TypeId], e.MessageData, s.DefaultSerializerId)).ToList();
+
+
+
+            Console.WriteLine(messages.Count);
+            var tasks =
+                (from sub in _subscribers
+                 from message in messages
+                 select DeliverMessage(context, message, sub)).ToList();
+                        
             await Task.WhenAll(tasks);
+            Console.WriteLine("all done");
             context.Respond(new PublishResponse());
         }
 

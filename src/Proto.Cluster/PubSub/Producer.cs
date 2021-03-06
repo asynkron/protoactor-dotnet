@@ -6,36 +6,50 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Remote;
 
 namespace Proto.Cluster.PubSub
 {
     public class Producer
     {
         private readonly Cluster _cluster;
-        private readonly List<Task> _tasks = new();
+        private ProducerBatch _batch;
+        private string _topic;
 
-        public Producer(Cluster cluster)
+        public Producer(Cluster cluster, string topic)
         {
             _cluster = cluster;
+            _topic = topic;
+            _batch = new ProducerBatch();
         }
-        
-        public Task ProduceAsync(string topic, object message)
+
+        public void Produce(object message)
         {
-            var t = _cluster.RequestAsync<PublishResponse>(topic, "topic", message, CancellationToken.None);
-            _tasks.Add(t);
-            return t;
-        }
-        
-        public void Produce(string topic, object message)
-        {
-            var t = _cluster.RequestAsync<PublishResponse>(topic, "topic", message, CancellationToken.None);
-            _tasks.Add(t);
+            var s = _cluster.System.Serialization();
+            
+            var typeName = s.GetTypeName(message,s.DefaultSerializerId);
+            var messageData = s.Serialize(message,s.DefaultSerializerId);
+            var typeIndex = _batch.TypeNames.IndexOf(typeName);
+
+            if (typeIndex == -1)
+            {
+                _batch.TypeNames.Add(typeName);
+                typeIndex = _batch.TypeNames.Count - 1;
+            }
+
+            var producerMessage = new ProducerEnvelope
+            {
+                MessageData = messageData,
+                TypeId = typeIndex,
+            };
+            
+            _batch.Envelopes.Add(producerMessage);
         }
 
         public async Task WhenAllPublished()
         {
-            await Task.WhenAll(_tasks);
-            _tasks.Clear();
+            await _cluster.RequestAsync<PublishResponse>(_topic, "topic", _batch, CancellationToken.None);
+            _batch = new ProducerBatch();
         }
     }
 }

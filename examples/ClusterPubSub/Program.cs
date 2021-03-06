@@ -6,6 +6,7 @@ using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
 using Proto.Cluster.PubSub;
+using Proto.Remote;
 using Proto.Remote.GrpcCore;
 
 namespace ClusterPubSub
@@ -15,8 +16,8 @@ namespace ClusterPubSub
         static async Task Main(string[] args)
         {
             var remoteConfig = GrpcCoreRemoteConfig
-                .BindToLocalhost();
-            //  .WithProtoMessages(ProtosReflection.Descriptor);
+                .BindToLocalhost()
+              .WithProtoMessages(ClusterPubSub.ProtosReflection.Descriptor);
 
             var consulProvider =
                 new ConsulProvider(new ConsulProviderConfig());
@@ -37,7 +38,7 @@ namespace ClusterPubSub
             Console.WriteLine("123");
 
             var pid = system.Root.Spawn(Props.FromFunc(ctx => {
-                        if (ctx.Message is string s)
+                        if (ctx.Message is SomeMessage s)
                         {
                           //  Console.Write(".");
                             ctx.Respond(new PublishResponse());
@@ -49,14 +50,17 @@ namespace ClusterPubSub
             );
 
             await system.Cluster().Subscribe("my-topic", pid);
-            var p = system.Cluster().Producer();
+            var p = system.Cluster().Producer("my-topic");
             
             Console.WriteLine("starting");
 
             var sw = Stopwatch.StartNew();
             for (int i = 0; i < 20000; i++)
             {
-                 p.Produce("my-topic", i.ToString());    
+                 p.Produce(new SomeMessage()
+                 {
+                     Value = i,
+                 });    
             }
 
             await p.WhenAllPublished();
@@ -64,7 +68,10 @@ namespace ClusterPubSub
             sw.Restart();
             for (int i = 0; i < 20000; i++)
             {
-                p.Produce("my-topic", i.ToString());    
+                p.Produce(new SomeMessage()
+                {
+                    Value = i,
+                });    
             }
 
             await p.WhenAllPublished();

@@ -117,3 +117,16 @@ message PublishRequest {
 }
 
 message PublishResponse {}
+
+
+message ProducerBatch {
+  repeated string type_names = 1;
+  repeated ProducerEnvelope envelopes = 2;
+}
+
+message ProducerEnvelope {
+  int32 type_id = 1;
+  bytes message_data = 2;
+  int32 serializer_id = 3;
+}
+

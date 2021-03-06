@@ -340,12 +340,19 @@ namespace Proto.Context
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Task DefaultReceive() =>
-            Message switch
+        private async Task DefaultReceive() =>
+            await (Message switch
             {
-                PoisonPill => HandlePoisonPill(),
-                _          => Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this)
-            };
+                PoisonPill  => HandlePoisonPill(),
+                PingRequest => HandlePingRequest(),
+                _           => Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this)
+            });
+
+        private Task HandlePingRequest()
+        {
+            Respond(new PingResponse());
+            return Task.CompletedTask;
+        }
 
         private Task HandlePoisonPill()
         {
