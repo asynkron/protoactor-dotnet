@@ -33,6 +33,8 @@ namespace ClusterPubSub
             await system
                 .Cluster()
                 .StartMemberAsync();
+            
+            Console.WriteLine("123");
 
             var pid = system.Root.Spawn(Props.FromFunc(ctx => {
                         if (ctx.Message is string s)
@@ -47,15 +49,14 @@ namespace ClusterPubSub
             );
 
             await system.Cluster().Subscribe("my-topic", pid);
-            await system.Cluster().Publish("my-topic", "hello");
+            var p = system.Cluster().Producer();
             
-            var p = system.Cluster().Publisher("my-topic");
-            
+            Console.WriteLine("starting");
 
             var sw = Stopwatch.StartNew();
             for (int i = 0; i < 20000; i++)
             {
-                 p.Publish( i.ToString());    
+                 p.Produce("my-topic", i.ToString());    
             }
 
             await p.WhenAllPublished();
@@ -63,7 +64,7 @@ namespace ClusterPubSub
             sw.Restart();
             for (int i = 0; i < 20000; i++)
             {
-                p.Publish( i.ToString());    
+                p.Produce("my-topic", i.ToString());    
             }
 
             await p.WhenAllPublished();
