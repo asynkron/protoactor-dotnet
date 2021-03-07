@@ -29,20 +29,14 @@ namespace Proto.Cluster.PubSub
 
         private async Task OnProducerBatch(IContext context, ProducerBatch batch)
         {
-            Console.WriteLine("Got batch");
             var s = context.System.Serialization();
             var messages = batch.Envelopes.Select(e => s.Deserialize(batch.TypeNames[e.TypeId], e.MessageData, s.DefaultSerializerId)).ToList();
-
-
-
-            Console.WriteLine(messages.Count);
             var tasks =
                 (from sub in _subscribers
                  from message in messages
                  select DeliverMessage(context, message, sub)).ToList();
                         
             await Task.WhenAll(tasks);
-            Console.WriteLine("all done");
             context.Respond(new PublishResponse());
         }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Proto;
@@ -35,7 +36,6 @@ namespace ClusterPubSub
                 .Cluster()
                 .StartMemberAsync();
             
-            Console.WriteLine("123");
 
             var pid = system.Root.Spawn(Props.FromFunc(ctx => {
                         if (ctx.Message is SomeMessage s)
@@ -55,26 +55,33 @@ namespace ClusterPubSub
             Console.WriteLine("starting");
 
             var sw = Stopwatch.StartNew();
-            for (int i = 0; i < 20000; i++)
+            var tasks = new List<Task>();
+            for (int i = 0; i < 100; i++)
             {
-                 p.Produce(new SomeMessage()
+                 var t = p.ProduceAsync(new SomeMessage()
                  {
                      Value = i,
-                 });    
+                 }); 
+                 tasks.Add(t);
             }
 
-            await p.WhenAllPublished();
+            Console.WriteLine("waiting...");
+            await Task.WhenAll(tasks);
+            tasks.Clear();
+            ;
             Console.WriteLine(sw.Elapsed.TotalMilliseconds);
             sw.Restart();
-            for (int i = 0; i < 20000; i++)
+            for (int i = 0; i < 200000; i++)
             {
-                p.Produce(new SomeMessage()
+                var t = p.ProduceAsync(new SomeMessage()
                 {
                     Value = i,
-                });    
+                }); 
+                tasks.Add(t);
             }
 
-            await p.WhenAllPublished();
+            await Task.WhenAll(tasks);
+            tasks.Clear();
             Console.WriteLine(sw.Elapsed.TotalMilliseconds);
 
             Console.ReadLine();
