@@ -64,7 +64,7 @@ namespace Proto.Cluster.Identity
             if (!_inProgress.Contains(clusterIdentity))
             {
                 _inProgress.Add(clusterIdentity);
-                context.ReenterAfter(GetWithGlobalLock(context.Sender!, clusterIdentity, msg.CancellationToken), task => {
+                context.ReenterAfter(GetWithGlobalLock(context.Sender!, clusterIdentity), task => {
                         try
                         {
                             var response = new PidResult(task.Result);
@@ -107,15 +107,16 @@ namespace Proto.Cluster.Identity
             }
         }
 
-        private async Task<PID?> GetWithGlobalLock(PID sender, ClusterIdentity clusterIdentity, CancellationToken ct)
+        private async Task<PID?> GetWithGlobalLock(PID sender, ClusterIdentity clusterIdentity)
         {
+            
             var tries = 0;
             PID? result = null;
-            while (result == null && !ct.IsCancellationRequested && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
+            while (result == null && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
             {
                 try
                 {
-                    var activation = await _storage.TryGetExistingActivation(clusterIdentity, ct);
+                    var activation = await _storage.TryGetExistingActivation(clusterIdentity, CancellationTokens.WithTimeout(5000));
 
                     //we got an existing activation, use this
                     if (activation != null)
@@ -127,20 +128,20 @@ namespace Proto.Cluster.Identity
                     //are there any members that can spawn this kind?
                     //if not, just bail out
                     var activator = _memberList.GetActivator(clusterIdentity.Kind, sender.Address);
-                    if (activator == null || ct.IsCancellationRequested) return null;
+                    if (activator == null) return null;
 
                     //try to acquire global lock
-                    var spawnLock = await _storage.TryAcquireLock(clusterIdentity, ct);
+                    var spawnLock = await _storage.TryAcquireLock(clusterIdentity, CancellationTokens.WithTimeout(5000));
 
                     //we didn't get the lock, wait for activation to complete
                     if (spawnLock == null)
                     {
-                        result = await WaitForActivation(clusterIdentity, ct);
+                        result = await WaitForActivation(clusterIdentity, CancellationTokens.WithTimeout(5000));
                     }
                     else
                     {
                         //we have the lock, spawn and return
-                        result = await SpawnActivationAsync(activator, spawnLock, ct);
+                        result = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.WithTimeout(5000));
                     }
                 }
                 catch (Exception e)
@@ -150,7 +151,7 @@ namespace Proto.Cluster.Identity
                     if (_shouldThrottle().IsOpen())
                         _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
 
-                    await Task.Delay(tries * 20, ct);
+                    await Task.Delay(tries * 20);
                 }
             }
             return result;
@@ -182,11 +183,7 @@ namespace Proto.Cluster.Identity
 
             try
             {
-                var resp = ct == CancellationToken.None
-                    ? await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req,
-                        _cluster.Config!.TimeoutTimespan
-                    )
-                    : await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
+                var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
 
                 if (resp.Pid != null)
                 {
@@ -197,12 +194,12 @@ namespace Proto.Cluster.Identity
             //TODO: decide if we throw or return null
             catch (TimeoutException)
             {
-                _logger.LogDebug("Remote PID request timeout {@Request}", req);
+                _logger.LogDebug("[SpawnActivationAsync] Remote PID request timeout {@Request}", req);
             }
             catch (Exception e)
             {
                 if (!_cluster.System.Shutdown.IsCancellationRequested && _shouldThrottle().IsOpen() && _memberList.ContainsMemberId(activator.Id))
-                    _logger.LogError(e, "Error occured requesting remote PID {@Request}", req);
+                    _logger.LogError(e, "[SpawnActivationAsync] Error occured requesting remote PID {@Request}", req);
             }
 
             //Clean up our mess..
