@@ -200,6 +200,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "EventStreamTopicsCluster", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClusterPubSub", "examples\ClusterPubSub\ClusterPubSub.csproj", "{F0A0E0A3-EF22-4C64-9CE9-92EAD74538DE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KubernetesEvents", "benchmarks\KubernetesEvents\KubernetesEvents.csproj", "{98489513-F004-4473-A2ED-3E6962525589}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -940,6 +942,18 @@ Global
 		{F0A0E0A3-EF22-4C64-9CE9-92EAD74538DE}.Release|x64.Build.0 = Release|Any CPU
 		{F0A0E0A3-EF22-4C64-9CE9-92EAD74538DE}.Release|x86.ActiveCfg = Release|Any CPU
 		{F0A0E0A3-EF22-4C64-9CE9-92EAD74538DE}.Release|x86.Build.0 = Release|Any CPU
+		{98489513-F004-4473-A2ED-3E6962525589}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98489513-F004-4473-A2ED-3E6962525589}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98489513-F004-4473-A2ED-3E6962525589}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{98489513-F004-4473-A2ED-3E6962525589}.Debug|x64.Build.0 = Debug|Any CPU
+		{98489513-F004-4473-A2ED-3E6962525589}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{98489513-F004-4473-A2ED-3E6962525589}.Debug|x86.Build.0 = Debug|Any CPU
+		{98489513-F004-4473-A2ED-3E6962525589}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98489513-F004-4473-A2ED-3E6962525589}.Release|Any CPU.Build.0 = Release|Any CPU
+		{98489513-F004-4473-A2ED-3E6962525589}.Release|x64.ActiveCfg = Release|Any CPU
+		{98489513-F004-4473-A2ED-3E6962525589}.Release|x64.Build.0 = Release|Any CPU
+		{98489513-F004-4473-A2ED-3E6962525589}.Release|x86.ActiveCfg = Release|Any CPU
+		{98489513-F004-4473-A2ED-3E6962525589}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1030,6 +1044,7 @@ Global
 		{1A2E42A8-313F-475C-8172-7D572399D138} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
 		{48C792A0-D32D-48B7-AA18-A961074DC490} = {1A2E42A8-313F-475C-8172-7D572399D138}
 		{F0A0E0A3-EF22-4C64-9CE9-92EAD74538DE} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
+		{98489513-F004-4473-A2ED-3E6962525589} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD0D1E44-8118-4682-8793-6B20ABFA824C}

@@ -73,11 +73,10 @@ namespace ClusterPubSub
             sw.Restart();
             for (int i = 0; i < 200000; i++)
             {
-                var t = p.ProduceAsync(new SomeMessage()
+                tasks.Add(p.ProduceAsync(new SomeMessage
                 {
                     Value = i,
-                }); 
-                tasks.Add(t);
+                }));
             }
 
             await Task.WhenAll(tasks);

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Consul;
 using JetBrains.Annotations;
@@ -314,28 +315,36 @@ namespace Proto.Cluster.Consul
         //register this cluster in consul.
         private async Task RegisterMemberAsync()
         {
-            var s = new AgentServiceRegistration
+            try
             {
-                ID = _consulServiceInstanceId,
-                Name = _consulServiceName,
-                Tags = _kinds.ToArray(),
-                Address = _host,
-                Port = _port,
-                Check = new AgentServiceCheck
+                var s = new AgentServiceRegistration
                 {
-                    DeregisterCriticalServiceAfter = _deregisterCritical,
-                    TTL = _serviceTtl
-                },
-                Meta = new Dictionary<string, string>
-                {
-                    //register a unique ID for the current process
-                    //if a node with host X and port Y, joins, then leaves, then joins again.
-                    //we need a way to distinguish the new node from the old node.
-                    //this is what this ID is for
-                    {"id", _cluster.System.Id}
-                }
-            };
-            await _client.Agent.ServiceRegister(s);
+                    ID = _consulServiceInstanceId,
+                    Name = _consulServiceName,
+                    Tags = _kinds.ToArray(),
+                    Address = _host,
+                    Port = _port,
+                    Check = new AgentServiceCheck
+                    {
+                        DeregisterCriticalServiceAfter = _deregisterCritical,
+                        TTL = _serviceTtl
+                    },
+                    Meta = new Dictionary<string, string>
+                    {
+                        //register a unique ID for the current process
+                        //if a node with host X and port Y, joins, then leaves, then joins again.
+                        //we need a way to distinguish the new node from the old node.
+                        //this is what this ID is for
+                        {"id", _cluster.System.Id}
+                    }
+                };
+
+                await _client.Agent.ServiceRegister(s, new CancellationTokenSource(5000).Token);
+            }
+            catch(Exception x)
+            {
+                _logger.LogCritical(x,"ConsulProvider failed to register service");
+            }
         }
 
         //unregister this cluster from consul

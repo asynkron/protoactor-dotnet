@@ -8,7 +8,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Proto.Mailbox;
 using Proto.Remote;
 
 namespace Proto.Cluster.PubSub
@@ -31,10 +30,12 @@ namespace Proto.Cluster.PubSub
         {
             var s = context.System.Serialization();
             var messages = batch.Envelopes.Select(e => s.Deserialize(batch.TypeNames[e.TypeId], e.MessageData, s.DefaultSerializerId)).ToList();
+            
             var tasks =
                 (from sub in _subscribers
                  from message in messages
-                 select DeliverMessage(context, message, sub)).ToList();
+                 select DeliverMessage(context, message, sub))
+                .ToList();
                         
             await Task.WhenAll(tasks);
             context.Respond(new PublishResponse());
