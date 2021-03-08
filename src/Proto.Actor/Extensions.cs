@@ -4,10 +4,20 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Collections.Generic;
+using System.Threading;
 using Proto.Mailbox;
 
 namespace Proto
 {
+    public static class CancellationTokens
+    {
+        public static CancellationToken WithTimeout(int ms)
+        {
+            return new CancellationTokenSource(ms).Token;
+        }
+
+    }
+
     public static class UtilExtensions
     {
         /// <summary>

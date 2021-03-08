@@ -61,9 +61,4 @@
       <None Remove="collection-0--6826860001100435848.wt" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="diagnostic.data" />
-      <Folder Include="journal" />
-    </ItemGroup>
-
 </Project>
