@@ -11,6 +11,8 @@ namespace Proto.Metrics
         {
             const string prefix = "proto_actor_";
 
+            DeadletterCount = metrics.CreateCount(prefix + nameof(DeadletterCount), new string[] { });
+            
             ActorSpawnCount = metrics.CreateCount(prefix + nameof(ActorSpawnCount), new string[] { });
             ActorStoppedCount = metrics.CreateCount(prefix + nameof(ActorStoppedCount), new string[] { });
             ActorRestartedCount = metrics.CreateCount(prefix + nameof(ActorRestartedCount), new string[] { });
@@ -21,6 +23,9 @@ namespace Proto.Metrics
             FuturesCompletedCount = metrics.CreateCount(prefix + nameof(FuturesCompletedCount), new string[] { });
         }
 
+        //Deadletters
+        public readonly ICountMetric DeadletterCount; //done
+        
         //Actors
         public readonly ICountMetric ActorSpawnCount;     //done
         public readonly ICountMetric ActorStoppedCount;   //done
