@@ -26,7 +26,7 @@ namespace Proto.Interactive
 
             foreach (var msg in self)
             {
-                s.Root.Send(router, msg);
+                s.Root.Send(router, msg!);
             }
 
             await Shutdown(routees, s, router);
@@ -42,7 +42,7 @@ namespace Proto.Interactive
 
             await foreach (var msg in self)
             {
-                s.Root.Send(router, msg);
+                s.Root.Send(router, msg!);
             }
 
             await Shutdown(routees, s, router);

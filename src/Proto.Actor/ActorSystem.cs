@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Proto.Extensions;
+using Proto.Metrics;
 
 namespace Proto
 {
@@ -31,6 +32,7 @@ namespace Proto
             DeadLetter = new DeadLetterProcess(this);
             Guardians = new Guardians(this);
             EventStream = new EventStream(config.DeadLetterThrottleInterval, config.DeadLetterThrottleCount, Shutdown);
+            Metrics = new ProtoMetrics(config.MetricsProviders);
             var eventStreamProcess = new EventStreamProcess(this);
             ProcessRegistry.TryAdd("eventstream", eventStreamProcess);
             Extensions = new ActorSystemExtensions(this);
@@ -51,6 +53,8 @@ namespace Proto
         public DeadLetterProcess DeadLetter { get; }
 
         public EventStream EventStream { get; }
+        
+        public ProtoMetrics Metrics { get; }
 
         public ActorSystemExtensions Extensions { get; }
 

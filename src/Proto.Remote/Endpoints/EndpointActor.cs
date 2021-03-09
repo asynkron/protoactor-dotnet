@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using Proto.Remote.Metrics;
 
 namespace Proto.Remote
 {
@@ -213,9 +214,10 @@ namespace Proto.Remote
             var targetNames = new Dictionary<string, int>();
             var typeNameList = new List<string>();
             var targetNameList = new List<string>();
-
+            var counter = context.System.Metrics.Get<RemoteMetrics>().RemoteSerializedMessageCount;
             foreach (var rd in m)
             {
+                 
                 var targetName = rd.Target.Id;
                 var serializerId = rd.SerializerId == -1 ? _serializerId : rd.SerializerId;
 
@@ -227,6 +229,8 @@ namespace Proto.Remote
 
                 var typeName = _remoteConfig.Serialization.GetTypeName(rd.Message, serializerId);
 
+                counter.Inc(1, typeName);
+                
                 if (!typeNames.TryGetValue(typeName, out var typeId))
                 {
                     typeId = typeNames[typeName] = typeNames.Count;

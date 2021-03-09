@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Identity;
+using Proto.Cluster.Metrics;
 using Proto.Cluster.Partition;
 using Proto.Extensions;
 using Proto.Remote;
@@ -24,6 +25,7 @@ namespace Proto.Cluster
         public Cluster(ActorSystem system, ClusterConfig config)
         {
             system.Extensions.Register(this);
+            system.Metrics.RegisterKnownMetrics(new ClusterMetrics(system.Metrics));
             PidCache = new PidCache();
             System = system;
             Config = config;
@@ -84,7 +86,9 @@ namespace Proto.Cluster
         {
             //default to partition identity lookup
             IdentityLookup = Config.IdentityLookup ?? new PartitionIdentityLookup();
-            Remote = System.Extensions.Get<IRemote>();
+
+            Remote = System.Extensions.Get<IRemote>() ?? throw new NotSupportedException("Remote module must be configured when using cluster");
+            
             await Remote.StartAsync();
             Logger = Log.CreateLogger($"Cluster-{LoggerId}");
             Logger.LogInformation("Starting");

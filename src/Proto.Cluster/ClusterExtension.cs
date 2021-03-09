@@ -3,8 +3,10 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Cluster.Metrics;
 
 namespace Proto.Cluster
 {
@@ -16,9 +18,11 @@ namespace Proto.Cluster
             return system;
         }
 
-        public static Cluster Cluster(this ActorSystem system) => system.Extensions.Get<Cluster>();
+        public static Cluster Cluster(this ActorSystem system)
+            => system.Extensions.Get<Cluster>() ?? throw new NotSupportedException("Cluster has not been configured");
 
-        public static Cluster Cluster(this IContext context) => context.System.Extensions.Get<Cluster>();
+        public static Cluster Cluster(this IContext context)
+            => context.System.Extensions.Get<Cluster>() ?? throw new NotSupportedException("Cluster has not been configured");
 
         public static Task<T> ClusterRequestAsync<T>(this IContext context, string identity, string kind, object message, CancellationToken ct)
         {
@@ -27,26 +31,46 @@ namespace Proto.Cluster
             return cluster.RequestAsync<T>(identity, kind, message, context, ct);
         }
 
-        public static Props WithClusterInit(this Props props, Cluster cluster, ClusterIdentity clusterIdentity) => props.WithReceiverMiddleware(
-            baseReceive =>
-                (ctx, env) =>
-                    env.Message is Started
-                        ? HandleStart(cluster, clusterIdentity, baseReceive, ctx, env)
-                        : baseReceive(ctx, env)
-        );
-
-        private static async Task HandleStart(
-            Cluster cluster,
-            ClusterIdentity clusterIdentity,
-            Receiver baseReceive,
-            IReceiverContext ctx,
-            MessageEnvelope startEnvelope
-        )
+        public static Props WithClusterInit(this Props props, Cluster cluster, ClusterIdentity clusterIdentity)
         {
-            await baseReceive(ctx, startEnvelope);
-            var grainInit = new ClusterInit(clusterIdentity, cluster);
-            var grainInitEnvelope = new MessageEnvelope(grainInit, null);
-            await baseReceive(ctx, grainInitEnvelope);
+            return props.WithReceiverMiddleware(
+                baseReceive =>
+                    (ctx, env) => {
+                        return env.Message switch
+                        {
+                            Started => HandleStart(cluster, clusterIdentity, baseReceive, ctx, env),
+                            Stopped => HandleStopped(cluster, clusterIdentity, baseReceive, ctx, env),
+                            _       => baseReceive(ctx, env)
+                        };
+                    }
+            );
+
+            static async Task HandleStart(
+                Cluster cluster,
+                ClusterIdentity clusterIdentity,
+                Receiver baseReceive,
+                IReceiverContext ctx,
+                MessageEnvelope startEnvelope
+            )
+            {
+                await baseReceive(ctx, startEnvelope);
+                var grainInit = new ClusterInit(clusterIdentity, cluster);
+                var grainInitEnvelope = new MessageEnvelope(grainInit, null);
+                cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorCount.Inc(1, clusterIdentity.Kind);
+                await baseReceive(ctx, grainInitEnvelope);
+            }
+
+            static async Task HandleStopped(
+                Cluster cluster,
+                ClusterIdentity clusterIdentity,
+                Receiver baseReceive,
+                IReceiverContext ctx,
+                MessageEnvelope startEnvelope
+            )
+            {
+                cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorCount.Inc(-1, clusterIdentity.Kind);
+                await baseReceive(ctx, startEnvelope);
+            }
         }
     }
 }
