@@ -20,13 +20,13 @@ namespace Proto.Remote.Metrics
             RemoteEndpointDisconnectedCount = metrics.CreateCount(prefix + nameof(RemoteEndpointDisconnectedCount), new string[] { });
         }
 
-        public readonly ICountMetric RemoteSerializedMessageCount;
-        public readonly ICountMetric RemoteDeserializedMessageCount;
-        
+        public readonly ICountMetric RemoteSerializedMessageCount;   //done
+        public readonly ICountMetric RemoteDeserializedMessageCount; //done
+
         public readonly ICountMetric RemoteKindCount;
-        public readonly ICountMetric RemoteActorSpawnCount;
-        
-        public readonly ICountMetric RemoteEndpointConnectedCount;
-        public readonly ICountMetric RemoteEndpointDisconnectedCount;
+        public readonly ICountMetric RemoteActorSpawnCount; //done
+
+        public readonly ICountMetric RemoteEndpointConnectedCount;    //done
+        public readonly ICountMetric RemoteEndpointDisconnectedCount; //done
     }
 }

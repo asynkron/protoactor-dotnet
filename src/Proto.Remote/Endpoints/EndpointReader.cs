@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
+using Proto.Remote.Metrics;
 
 namespace Proto.Remote
 {
@@ -37,6 +38,7 @@ namespace Proto.Remote
 
                 throw new RpcException(Status.DefaultCancelled, "Suspended");
             }
+            _system.Metrics.Get<RemoteMetrics>().RemoteEndpointConnectedCount.Inc();
 
             Logger.LogDebug("[EndpointReader] Accepted connection request from {Remote} to {Local}", context.Peer,
                 context.Host
@@ -96,6 +98,7 @@ namespace Proto.Remote
 
                 var typeNames = batch.TypeNames.ToArray();
 
+                _system.Metrics.Get<RemoteMetrics>().RemoteDeserializedMessageCount.Inc(batch.Envelopes.Count);
                 foreach (var envelope in batch.Envelopes)
                 {
                     var target = targets[envelope.Target];
@@ -127,6 +130,7 @@ namespace Proto.Remote
                 }
             }
 
+            _system.Metrics.Get<RemoteMetrics>().RemoteEndpointDisconnectedCount.Inc();
             Logger.LogDebug("[EndpointReader] Stream closed by {Remote}", context.Peer);
         }
 
