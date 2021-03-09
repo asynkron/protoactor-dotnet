@@ -32,7 +32,7 @@ namespace Proto
             DeadLetter = new DeadLetterProcess(this);
             Guardians = new Guardians(this);
             EventStream = new EventStream(config.DeadLetterThrottleInterval, config.DeadLetterThrottleCount, Shutdown);
-            Metrics = new ProtoMetrics(config.MetricsConfigurations);
+            Metrics = new ProtoMetrics(config.MetricsProviders);
             var eventStreamProcess = new EventStreamProcess(this);
             ProcessRegistry.TryAdd("eventstream", eventStreamProcess);
             Extensions = new ActorSystemExtensions(this);

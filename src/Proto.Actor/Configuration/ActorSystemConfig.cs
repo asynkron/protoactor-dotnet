@@ -22,7 +22,7 @@ namespace Proto
     {
         public TimeSpan DeadLetterThrottleInterval { get; init; }
 
-        public IMetricsProvider[] MetricsConfigurations { get; init; } = {new NoMetricsProvider()};
+        public IMetricsProvider[] MetricsProviders { get; init; } = {new NoMetricsProvider()};
         public int DeadLetterThrottleCount { get; init; }
 
         public static ActorSystemConfig Setup() => new();
@@ -33,6 +33,6 @@ namespace Proto
         public ActorSystemConfig WithDeadLetterThrottleCount(int deadLetterThrottleCount) =>
             this with {DeadLetterThrottleCount = deadLetterThrottleCount};
 
-        public ActorSystemConfig WithMetricsConfigurations(params IMetricsProvider[] configurators) => this with {MetricsConfigurations = configurators};
+        public ActorSystemConfig WithMetricsProviders(params IMetricsProvider[] providers) => this with {MetricsProviders = providers};
     }
 }
