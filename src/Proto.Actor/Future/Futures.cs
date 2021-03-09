@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Metrics;
 
 namespace Proto.Future
 {
@@ -13,6 +14,7 @@ namespace Proto.Future
     {
         private readonly CancellationTokenSource? _cts;
         private readonly TaskCompletionSource<object> _tcs;
+        private ActorMetrics _metrics;
 
         internal FutureProcess(ActorSystem system, TimeSpan timeout) : this(system, new CancellationTokenSource(timeout)
         )
@@ -30,6 +32,8 @@ namespace Proto.Future
 
         private FutureProcess(ActorSystem system, CancellationTokenSource? cts) : base(system)
         {
+            _metrics = system.Metrics.Get<ActorMetrics>();
+            _metrics.FuturesStartedCount.Inc();
             _tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
             _cts = cts;
 
@@ -47,7 +51,8 @@ namespace Proto.Future
                     _tcs.TrySetException(
                         new TimeoutException("Request didn't receive any Response within the expected time.")
                     );
-
+                    
+                    _metrics.FuturesTimedOutCount.Inc();
                     Stop(pid);
                 }
             );
@@ -65,6 +70,7 @@ namespace Proto.Future
             }
             finally
             {
+                _metrics.FuturesCompletedCount.Inc();
                 Stop(Pid);
             }
         }
@@ -80,6 +86,7 @@ namespace Proto.Future
 
             if (_cts is null || !_cts.IsCancellationRequested) _tcs.TrySetResult(default!);
 
+            _metrics.FuturesCompletedCount.Inc();
             Stop(pid);
         }
     }

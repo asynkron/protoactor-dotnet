@@ -9,10 +9,27 @@ namespace Proto.Metrics
     {
         public ActorMetrics(Metrics metrics)
         {
-            SpawnCount = metrics.CreateCount(nameof(SpawnCount), new string[] { });
+            const string prefix = "proto_actor_";
+
+            ActorSpawnCount = metrics.CreateCount(prefix + nameof(ActorSpawnCount), new string[] { });
+            ActorStoppedCount = metrics.CreateCount(prefix + nameof(ActorStoppedCount), new string[] { });
+            ActorRestartedCount = metrics.CreateCount(prefix + nameof(ActorRestartedCount), new string[] { });
+            ActorFailureCount = metrics.CreateCount(prefix + nameof(ActorFailureCount), new string[] { });
+
+            FuturesStartedCount = metrics.CreateCount(prefix + nameof(FuturesStartedCount), new string[] { });
+            FuturesTimedOutCount = metrics.CreateCount(prefix + nameof(FuturesTimedOutCount), new string[] { });
+            FuturesCompletedCount = metrics.CreateCount(prefix + nameof(FuturesCompletedCount), new string[] { });
         }
 
-        public readonly ICountMetric SpawnCount;
+        //Actors
+        public readonly ICountMetric ActorSpawnCount;     //done
+        public readonly ICountMetric ActorStoppedCount;   //done
+        public readonly ICountMetric ActorRestartedCount; //done
+        public readonly ICountMetric ActorFailureCount;   //done
 
+        //Futures
+        public readonly ICountMetric FuturesStartedCount;   //done
+        public readonly ICountMetric FuturesTimedOutCount;  //done
+        public readonly ICountMetric FuturesCompletedCount; //done
     }
 }

@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Future;
 using Proto.Mailbox;
+using Proto.Metrics;
 
 namespace Proto.Context
 {
@@ -202,6 +203,7 @@ namespace Proto.Context
 
         public void Stop(PID pid)
         {
+            System.Metrics.Get<ActorMetrics>().ActorStoppedCount.Inc();
             var reff = System.ProcessRegistry.Get(pid);
             reff.Stop(pid);
         }
@@ -224,6 +226,7 @@ namespace Proto.Context
 
         public void EscalateFailure(Exception reason, object? message)
         {
+            System.Metrics.Get<ActorMetrics>().ActorFailureCount.Inc();
             var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
             Self.SendSystemMessage(System, SuspendMailbox.Instance);
 
@@ -415,6 +418,7 @@ namespace Proto.Context
             CancelReceiveTimeout();
             await InvokeUserMessageAsync(Restarting.Instance);
             await StopAllChildren();
+            System.Metrics.Get<ActorMetrics>().ActorRestartedCount.Inc();
         }
 
         private Task HandleUnwatch(Unwatch uw)
