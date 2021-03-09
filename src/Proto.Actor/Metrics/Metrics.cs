@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Proto.Utils;
 
 namespace Proto.Metrics
 {
@@ -11,17 +12,16 @@ namespace Proto.Metrics
     {
         private IConfigureMetrics[] _configurators;
 
-
+        internal TypeDictionary<object> KnownMetrics { get; }
+        
         public Metrics(IConfigureMetrics[] configurators)
         {
             _configurators = configurators;
+            KnownMetrics = new TypeDictionary<object>();
+            KnownMetrics.Add<ActorMetrics>(new ActorMetrics(this));
         }
-        // public static Metrics CreateUsing(params IConfigureMetrics[] configurators)
-        // {
-        //     Instance._configurators = configurators;
-        //
-        //     return Instance;
-        // }
+
+        public T Get<T>() => (T)KnownMetrics.Get<T>()!;
 
         public ICountMetric CreateCount(string name, string[] labelNames) => new CombinedCount(_configurators.Select(x => x.CreateCount(name, labelNames)).ToList());
 
