@@ -12,6 +12,7 @@ using Grpc.Health.V1;
 using Grpc.HealthCheck;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Remote.Metrics;
 
 namespace Proto.Remote.GrpcCore
 {
@@ -29,6 +30,7 @@ namespace Proto.Remote.GrpcCore
         {
             System = system;
             _config = config;
+            system.Metrics.RegisterKnownMetrics(new RemoteMetrics(system.Metrics));
             System.Extensions.Register(this);
             System.Extensions.Register(config.Serialization);
         }

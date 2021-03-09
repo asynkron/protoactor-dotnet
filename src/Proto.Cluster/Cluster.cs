@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Identity;
+using Proto.Cluster.Metrics;
 using Proto.Cluster.Partition;
 using Proto.Extensions;
 using Proto.Remote;
@@ -24,6 +25,7 @@ namespace Proto.Cluster
         public Cluster(ActorSystem system, ClusterConfig config)
         {
             system.Extensions.Register(this);
+            system.Metrics.RegisterKnownMetrics(new ClusterMetrics(system.Metrics));
             PidCache = new PidCache();
             System = system;
             Config = config;
