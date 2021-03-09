@@ -104,7 +104,7 @@ namespace Proto.Remote
                 {
                     var target = targets[envelope.Target];
                     var typeName = typeNames[envelope.TypeId];
-                    m.Inc(batch.Envelopes.Count,new LabelValue(typeName));
+                    m.Inc(batch.Envelopes.Count,typeName);
                     object message;
                     try
                     {
