@@ -15,6 +15,7 @@
     <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
     <PackageReference Include="System.Threading.Channels" Version="5.0.0" />
+    <PackageReference Include="Ubiquitous.Metrics" Version="0.1.1" />
   </ItemGroup>
 
   <ItemGroup>

@@ -6,6 +6,7 @@
 using System;
 using JetBrains.Annotations;
 using Proto.Metrics;
+using Ubiquitous.Metrics;
 
 // -----------------------------------------------------------------------
 //   <copyright file="ActorContext.cs" company="Asynkron AB">
@@ -21,7 +22,7 @@ namespace Proto
     {
         public TimeSpan DeadLetterThrottleInterval { get; init; }
 
-        public IConfigureMetrics[] MetricsConfigurations { get; init; } = Array.Empty<IConfigureMetrics>();
+        public IMetricsProvider[] MetricsConfigurations { get; init; } = Array.Empty<IMetricsProvider>();
         public int DeadLetterThrottleCount { get; init; }
 
         public static ActorSystemConfig Setup() => new();
@@ -32,6 +33,6 @@ namespace Proto
         public ActorSystemConfig WithDeadLetterThrottleCount(int deadLetterThrottleCount) =>
             this with {DeadLetterThrottleCount = deadLetterThrottleCount};
 
-        public ActorSystemConfig WithMetricsConfigurations(params IConfigureMetrics[] configurators) => this with {MetricsConfigurations = configurators};
+        public ActorSystemConfig WithMetricsConfigurations(params IMetricsProvider[] configurators) => this with {MetricsConfigurations = configurators};
     }
 }
