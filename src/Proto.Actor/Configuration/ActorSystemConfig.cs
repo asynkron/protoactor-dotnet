@@ -22,7 +22,7 @@ namespace Proto
     {
         public TimeSpan DeadLetterThrottleInterval { get; init; }
 
-        public IMetricsProvider[] MetricsConfigurations { get; init; } = Array.Empty<IMetricsProvider>();
+        public IMetricsProvider[] MetricsConfigurations { get; init; } = {new NoMetricsProvider()};
         public int DeadLetterThrottleCount { get; init; }
 
         public static ActorSystemConfig Setup() => new();

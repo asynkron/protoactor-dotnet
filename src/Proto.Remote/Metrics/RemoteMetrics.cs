@@ -10,7 +10,7 @@ namespace Proto.Remote.Metrics
 {
     public class RemoteMetrics
     {
-        public RemoteMetrics(Proto.Metrics.Metrics metrics)
+        public RemoteMetrics(ProtoMetrics metrics)
         {
             const string prefix = "proto_remote_";
             RemoteSerializedMessageCount = metrics.CreateCount(prefix + nameof(RemoteSerializedMessageCount), "");

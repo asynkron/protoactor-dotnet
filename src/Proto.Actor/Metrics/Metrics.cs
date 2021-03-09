@@ -10,15 +10,15 @@ using Ubiquitous.Metrics.Combined;
 namespace Proto.Metrics
 {
     [PublicAPI]
-    public class Metrics : Ubiquitous.Metrics.Metrics
+    public class ProtoMetrics
     {
-        
-
         private TypeDictionary<object> _knownMetrics = new();
         private IMetricsProvider[] _configurators;
+        private Ubiquitous.Metrics.Metrics _metrics;
 
-        public Metrics(IMetricsProvider[] configurators)
+        public ProtoMetrics(IMetricsProvider[] configurators)
         {
+            _metrics = Ubiquitous.Metrics.Metrics.CreateUsing(configurators);
             _configurators = configurators;
             RegisterKnownMetrics(new ActorMetrics(this));
         }
@@ -26,5 +26,7 @@ namespace Proto.Metrics
         public void RegisterKnownMetrics<T>(T instance) => _knownMetrics.Add<T>(instance!);
 
         public T Get<T>() => (T)_knownMetrics.Get<T>()!;
+
+        public ICountMetric CreateCount(string name, string description) => _metrics.CreateCount(name, description);
     }
 }

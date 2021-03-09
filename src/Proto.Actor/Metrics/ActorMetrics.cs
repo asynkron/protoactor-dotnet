@@ -9,7 +9,7 @@ namespace Proto.Metrics
 {
     public class ActorMetrics
     {
-        public ActorMetrics(Metrics metrics)
+        public ActorMetrics(ProtoMetrics metrics)
         {
             const string prefix = "proto_actor_";
 
