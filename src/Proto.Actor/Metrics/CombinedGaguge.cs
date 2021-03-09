@@ -4,7 +4,7 @@ namespace Proto.Metrics
 {
     public class CombinedGauge : IGaugeMetric
     {
-        readonly IEnumerable<IGaugeMetric> _inner;
+        private readonly IEnumerable<IGaugeMetric> _inner;
 
         internal CombinedGauge(ICollection<IGaugeMetric> inner) => _inner = inner;
 

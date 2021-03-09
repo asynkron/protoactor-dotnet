@@ -8,12 +8,17 @@ using System.Collections.Generic;
 
 namespace Proto.Metrics
 {
-    internal static class Extensions
+    static class Extensions
     {
         public static IEnumerable<T> EmptyIfNull<T>(this IEnumerable<T>? self) => self ?? Array.Empty<T>();
-        
+
         public static void ForEach<T>(this IEnumerable<T>? self, Action<T> action)
         {
+            if (self == null)
+            {
+                return;
+            }
+            
             foreach (var item in self)
             {
                 action(item);

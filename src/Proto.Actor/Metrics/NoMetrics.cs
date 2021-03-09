@@ -16,42 +16,53 @@ namespace Proto.Metrics
         public IGaugeMetric CreateGauge(string name, string[] labelNames)
             => new NoGauge(name, labelNames);
 
-        class NoMetric
+        private class NoMetric
         {
-            readonly string[] _labelNames;
-            readonly string   _name;
+            private readonly string[] _labelNames;
+            private readonly string _name;
 
-            protected NoMetric(string name, string[] labelNames) {
-                _name       = name;
+            protected NoMetric(string name, string[] labelNames)
+            {
+                _name = name;
                 _labelNames = labelNames;
             }
         }
 
-        class NoCount : NoMetric, ICountMetric
+        private class NoCount : NoMetric, ICountMetric
         {
-            int _count;
+            private int _count;
 
-            protected internal NoCount(string name, string[] labelNames) : base(name, labelNames) { }
+            protected internal NoCount(string name, string[] labelNames) : base(name, labelNames)
+            {
+            }
 
             public void Inc(int count = 1, params string[]? labels) => _count += count;
         }
 
-        class NoHistogram : NoMetric, IHistogramMetric
+        private class NoHistogram : NoMetric, IHistogramMetric
         {
-            protected internal NoHistogram(string name, string[] labelNames) : base(name, labelNames) { }
+            protected internal NoHistogram(string name, string[] labelNames) : base(name, labelNames)
+            {
+            }
 
             public void Observe(Stopwatch stopwatch, string[]? labels = null, int count = 1) => Observe(stopwatch.ElapsedMilliseconds * 1000, labels);
 
             public void Observe(DateTimeOffset when, string[]? labels = null) => Observe((DateTimeOffset.Now - when).Seconds, labels);
 
-            void Observe(double seconds, string[]? labels) { }
+            private void Observe(double seconds, string[]? labels)
+            {
+            }
         }
 
-        class NoGauge : NoMetric, IGaugeMetric
+        private class NoGauge : NoMetric, IGaugeMetric
         {
-            protected internal NoGauge(string name, string[] labelNames) : base(name, labelNames) { }
+            protected internal NoGauge(string name, string[] labelNames) : base(name, labelNames)
+            {
+            }
 
-            public void Set(double value, params string[]? labels) { }
+            public void Set(double value, params string[]? labels)
+            {
+            }
         }
     }
 }

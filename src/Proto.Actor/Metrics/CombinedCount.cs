@@ -4,7 +4,7 @@ namespace Proto.Metrics
 {
     public class CombinedCount : ICountMetric
     {
-        readonly ICollection<ICountMetric> _inner;
+        private readonly ICollection<ICountMetric> _inner;
 
         internal CombinedCount(ICollection<ICountMetric> inner) => _inner = inner;
 

@@ -6,12 +6,13 @@ namespace Proto.Metrics
 {
     public class DefaultLabel
     {
-        public DefaultLabel(string labelName, string labelValue) {
-            LabelName  = labelName;
+        public DefaultLabel(string labelName, string labelValue)
+        {
+            LabelName = labelName;
             LabelValue = labelValue;
         }
 
-        public string LabelName  { get; }
+        public string LabelName { get; }
         public string LabelValue { get; }
     }
 

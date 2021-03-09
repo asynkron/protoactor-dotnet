@@ -6,7 +6,7 @@ namespace Proto.Metrics
 {
     public class CombinedHistogram : IHistogramMetric
     {
-        readonly ICollection<IHistogramMetric> _inner;
+        private readonly ICollection<IHistogramMetric> _inner;
 
         internal CombinedHistogram(ICollection<IHistogramMetric> inner) => _inner = inner;
 
