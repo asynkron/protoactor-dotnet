@@ -12,16 +12,17 @@ namespace Proto.Metrics
     {
         private IConfigureMetrics[] _configurators;
 
-        internal TypeDictionary<object> KnownMetrics { get; }
+        private TypeDictionary<object> _knownMetrics = new();
         
         public Metrics(IConfigureMetrics[] configurators)
         {
             _configurators = configurators;
-            KnownMetrics = new TypeDictionary<object>();
-            KnownMetrics.Add<ActorMetrics>(new ActorMetrics(this));
+            RegisterKnownMetrics(new ActorMetrics(this));
         }
 
-        public T Get<T>() => (T)KnownMetrics.Get<T>()!;
+        public void RegisterKnownMetrics<T>(T instance) => _knownMetrics.Add<T>(instance!);
+
+        public T Get<T>() => (T)_knownMetrics.Get<T>()!;
 
         public ICountMetric CreateCount(string name, string[] labelNames) => new CombinedCount(_configurators.Select(x => x.CreateCount(name, labelNames)).ToList());
 
