@@ -6,11 +6,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Cluster.Metrics;
 using Proto.Timers;
+using Ubiquitous.Metrics.Labels;
 
 namespace Proto.Cluster.Identity
 {
@@ -115,8 +118,11 @@ namespace Proto.Cluster.Identity
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
                     var clusterProps = props.WithClusterInit(_cluster, msg.ClusterIdentity);
-                    
+
+                    var sw = Stopwatch.StartNew();
                     var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.ToString());
+                    context.System.Metrics.Get<ClusterMetrics>().ClusterActorSpawnHistogram.Observe(sw, new []{ new LabelValue(msg.Kind)});
+                    sw.Stop();
 
                     //Do not expose the PID externally before we have persisted the activation
                     var completionCallback = new TaskCompletionSource<PID?>();

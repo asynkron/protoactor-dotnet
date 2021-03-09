@@ -32,5 +32,6 @@ namespace Proto.Metrics
 
         public IGaugeMetric CreateGauge(string name, string description, params LabelName[] labelNames) => _metrics.CreateGauge(name, description, labelNames);
 
+        public IHistogramMetric CreateHistogram(string name, string description, params LabelName[] labelNames) => _metrics.CreateHistogram(name, description, labelNames);
     }
 }
