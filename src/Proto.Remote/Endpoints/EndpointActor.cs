@@ -217,7 +217,7 @@ namespace Proto.Remote
             var counter = context.System.Metrics.Get<RemoteMetrics>().RemoteSerializedMessageCount;
             foreach (var rd in m)
             {
-                counter.Inc(); //TODO: why do we have IEnumerable here?
+                 
                 var targetName = rd.Target.Id;
                 var serializerId = rd.SerializerId == -1 ? _serializerId : rd.SerializerId;
 
@@ -229,6 +229,8 @@ namespace Proto.Remote
 
                 var typeName = _remoteConfig.Serialization.GetTypeName(rd.Message, serializerId);
 
+                counter.Inc(1, typeName);
+                
                 if (!typeNames.TryGetValue(typeName, out var typeId))
                 {
                     typeId = typeNames[typeName] = typeNames.Count;

@@ -6,6 +6,7 @@ using JetBrains.Annotations;
 using Proto.Utils;
 using Ubiquitous.Metrics;
 using Ubiquitous.Metrics.Combined;
+using Ubiquitous.Metrics.Labels;
 
 namespace Proto.Metrics
 {
@@ -27,6 +28,9 @@ namespace Proto.Metrics
 
         public T Get<T>() => (T)_knownMetrics.Get<T>()!;
 
-        public ICountMetric CreateCount(string name, string description) => _metrics.CreateCount(name, description);
+        public ICountMetric CreateCount(string name, string description, params LabelName[] labelNames) => _metrics.CreateCount(name, description,labelNames);
+
+        public IGaugeMetric CreateGauge(string name, string description, params LabelName[] labelNames) => _metrics.CreateGauge(name, description, labelNames);
+
     }
 }

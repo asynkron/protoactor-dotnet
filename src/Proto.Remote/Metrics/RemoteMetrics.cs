@@ -6,6 +6,8 @@
 using Proto.Metrics;
 using ICountMetric = Ubiquitous.Metrics.ICountMetric;
 using Ubiquitous.Metrics;
+using Ubiquitous.Metrics.Labels;
+
 namespace Proto.Remote.Metrics
 {
     public class RemoteMetrics
@@ -13,12 +15,12 @@ namespace Proto.Remote.Metrics
         public RemoteMetrics(ProtoMetrics metrics)
         {
             const string prefix = "proto_remote_";
-            RemoteSerializedMessageCount = metrics.CreateCount(prefix + nameof(RemoteSerializedMessageCount), "");
-            RemoteDeserializedMessageCount = metrics.CreateCount(prefix + nameof(RemoteDeserializedMessageCount), "");
+            RemoteSerializedMessageCount = metrics.CreateCount(prefix + nameof(RemoteSerializedMessageCount), "", "message-type");
+            RemoteDeserializedMessageCount = metrics.CreateCount(prefix + nameof(RemoteDeserializedMessageCount), "", "message-type");
             RemoteKindCount = metrics.CreateCount(prefix + nameof(RemoteKindCount), "");
             RemoteActorSpawnCount = metrics.CreateCount(prefix + nameof(RemoteActorSpawnCount), "");
-            RemoteEndpointConnectedCount = metrics.CreateCount(prefix + nameof(RemoteEndpointConnectedCount), "");
-            RemoteEndpointDisconnectedCount = metrics.CreateCount(prefix + nameof(RemoteEndpointDisconnectedCount), "");
+            RemoteEndpointConnectedCount = metrics.CreateCount(prefix + nameof(RemoteEndpointConnectedCount), "", "address");
+            RemoteEndpointDisconnectedCount = metrics.CreateCount(prefix + nameof(RemoteEndpointDisconnectedCount), "", "address");
         }
 
         public readonly ICountMetric RemoteSerializedMessageCount;   //done

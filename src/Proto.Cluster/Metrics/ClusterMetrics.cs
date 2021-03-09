@@ -4,6 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Proto.Metrics;
+using Ubiquitous.Metrics;
+using Ubiquitous.Metrics.Labels;
 
 namespace Proto.Cluster.Metrics
 {
@@ -11,7 +13,10 @@ namespace Proto.Cluster.Metrics
     {
         public ClusterMetrics(ProtoMetrics metrics)
         {
-            
+            const string prefix = "proto_cluster_";
+            ClusterActorCount = metrics.CreateCount(prefix + nameof(ClusterActorCount), "", "cluster-kind");
         }
+
+        public readonly ICountMetric ClusterActorCount;
     }
 }
