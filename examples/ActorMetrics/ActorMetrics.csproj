@@ -10,6 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="prometheus-net" Version="4.1.1" />
       <PackageReference Include="Ubiquitous.Metrics.Prometheus" Version="0.1.2" />
     </ItemGroup>
 
