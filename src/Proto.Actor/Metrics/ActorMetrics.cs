@@ -11,19 +11,15 @@ namespace Proto.Metrics
     {
         public ActorMetrics(ProtoMetrics metrics)
         {
-            const string prefix = "proto_actor_";
-
-            DeadletterCount = metrics.CreateCount(prefix + nameof(DeadletterCount), "", "messagetype");
-            
-            ActorSpawnCount = metrics.CreateCount(prefix + nameof(ActorSpawnCount), "", "actortype");
-            ActorStoppedCount = metrics.CreateCount(prefix + nameof(ActorStoppedCount), "", "actortype");
-            ActorRestartedCount = metrics.CreateCount(prefix + nameof(ActorRestartedCount), "", "actortype");
-            ActorFailureCount = metrics.CreateCount(prefix + nameof(ActorFailureCount), "", "actortype");
-            ActorMessageReceiveHistogram = metrics.CreateHistogram(prefix + nameof(ActorMessageReceiveHistogram), "", "actortype","messagetype");
-
-            FuturesStartedCount = metrics.CreateCount(prefix + nameof(FuturesStartedCount), "");
-            FuturesTimedOutCount = metrics.CreateCount(prefix + nameof(FuturesTimedOutCount), "");
-            FuturesCompletedCount = metrics.CreateCount(prefix + nameof(FuturesCompletedCount), "");
+            DeadletterCount = metrics.CreateCount("protoactor_deadletter_count", "", "messagetype");
+            ActorSpawnCount = metrics.CreateCount("protoactor_actor_spawn_count", "", "actortype");
+            ActorStoppedCount = metrics.CreateCount("protoactor_actor_stopped_count", "", "actortype");
+            ActorRestartedCount = metrics.CreateCount("protoactor_actor_restarted_count", "", "actortype");
+            ActorFailureCount = metrics.CreateCount("protoactor_actor_failure_count", "", "actortype");
+            ActorMessageReceiveHistogram = metrics.CreateHistogram("protoactor_actor_messagereceive_duration_seconds", "", "actortype","messagetype");
+            FuturesStartedCount = metrics.CreateCount("protoactor_future_started_count","");
+            FuturesTimedOutCount = metrics.CreateCount("protoactor_future_timedout_count", "");
+            FuturesCompletedCount = metrics.CreateCount("protoactor_future_completed_count", "");
         }
 
         //Deadletters
