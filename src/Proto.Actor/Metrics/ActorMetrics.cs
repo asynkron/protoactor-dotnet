@@ -19,6 +19,7 @@ namespace Proto.Metrics
             ActorStoppedCount = metrics.CreateCount(prefix + nameof(ActorStoppedCount), "", "actor-type");
             ActorRestartedCount = metrics.CreateCount(prefix + nameof(ActorRestartedCount), "", "actor-type");
             ActorFailureCount = metrics.CreateCount(prefix + nameof(ActorFailureCount), "", "actor-type");
+            ActorMessageReceiveHistogram = metrics.CreateHistogram(prefix + nameof(ActorMessageReceiveHistogram), "", "actor-type");
 
             FuturesStartedCount = metrics.CreateCount(prefix + nameof(FuturesStartedCount), "");
             FuturesTimedOutCount = metrics.CreateCount(prefix + nameof(FuturesTimedOutCount), "");
@@ -33,6 +34,7 @@ namespace Proto.Metrics
         public readonly ICountMetric ActorStoppedCount;   //done
         public readonly ICountMetric ActorRestartedCount; //done
         public readonly ICountMetric ActorFailureCount;   //done
+        public readonly IHistogramMetric ActorMessageReceiveHistogram;   //done
 
         //Futures
         public readonly ICountMetric FuturesStartedCount;   //done

@@ -203,7 +203,7 @@ namespace Proto.Context
 
         public void Stop(PID pid)
         {
-            System.Metrics.Get<ActorMetrics>().ActorStoppedCount.Inc(1,Actor!.GetType().Name);
+            System.Metrics.InternalActorMetrics.ActorStoppedCount.Inc(1,Actor!.GetType().Name);
             var reff = System.ProcessRegistry.Get(pid);
             reff.Stop(pid);
         }
@@ -226,7 +226,7 @@ namespace Proto.Context
 
         public void EscalateFailure(Exception reason, object? message)
         {
-            System.Metrics.Get<ActorMetrics>().ActorFailureCount.Inc(1,Actor!.GetType().Name);
+            System.Metrics.InternalActorMetrics.ActorFailureCount.Inc(1,Actor!.GetType().Name);
             var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
             Self.SendSystemMessage(System, SuspendMailbox.Instance);
 
@@ -262,7 +262,12 @@ namespace Proto.Context
             }
         }
 
-        public Task InvokeUserMessageAsync(object msg)
+        public Task InvokeUserMessageAsync(object msg) => System.Metrics.IsNoop ? 
+            InternalInvokeUserMessageAsync(msg) : 
+            System.Metrics.Measure(() => InternalInvokeUserMessageAsync(msg));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private Task InternalInvokeUserMessageAsync(object msg)
         {
             if (_state == ContextState.Stopped)
             {
@@ -270,6 +275,8 @@ namespace Proto.Context
                 System.DeadLetter.SendUserMessage(Self, msg);
                 return Task.CompletedTask;
             }
+            
+          //  System.Metrics.InternalActorMetrics.ActorMessageReceiveCount.Inc(msg.GetType().Name);
 
             var influenceTimeout = true;
 
@@ -410,7 +417,7 @@ namespace Proto.Context
         {
             _state = ContextState.Alive;
             var actor = _props.Producer(System);
-            System.Metrics.Get<ActorMetrics>().ActorSpawnCount.Inc(1,actor.GetType().Name);
+            System.Metrics.InternalActorMetrics.ActorSpawnCount.Inc(1,actor.GetType().Name);
             return actor;
         }
 
@@ -420,7 +427,7 @@ namespace Proto.Context
             CancelReceiveTimeout();
             await InvokeUserMessageAsync(Restarting.Instance);
             await StopAllChildren();
-            System.Metrics.Get<ActorMetrics>().ActorRestartedCount.Inc(1,Actor!.GetType().Name);
+            System.Metrics.InternalActorMetrics.ActorRestartedCount.Inc(1,Actor!.GetType().Name);
         }
 
         private Task HandleUnwatch(Unwatch uw)

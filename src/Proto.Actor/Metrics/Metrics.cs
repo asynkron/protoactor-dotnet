@@ -16,12 +16,20 @@ namespace Proto.Metrics
         private TypeDictionary<object> _knownMetrics = new();
         private IMetricsProvider[] _configurators;
         private Ubiquitous.Metrics.Metrics _metrics;
+        internal readonly ActorMetrics InternalActorMetrics;
+        public readonly bool IsNoop;
 
         public ProtoMetrics(IMetricsProvider[] configurators)
         {
+            if (configurators.FirstOrDefault() is NoMetricsProvider)
+            {
+                IsNoop = true;
+            }
+            
             _metrics = Ubiquitous.Metrics.Metrics.CreateUsing(configurators);
             _configurators = configurators;
-            RegisterKnownMetrics(new ActorMetrics(this));
+            InternalActorMetrics = new ActorMetrics(this);
+            RegisterKnownMetrics(InternalActorMetrics);
         }
 
         public void RegisterKnownMetrics<T>(T instance) => _knownMetrics.Add<T>(instance!);
@@ -33,5 +41,7 @@ namespace Proto.Metrics
         public IGaugeMetric CreateGauge(string name, string description, params LabelName[] labelNames) => _metrics.CreateGauge(name, description, labelNames);
 
         public IHistogramMetric CreateHistogram(string name, string description, params LabelName[] labelNames) => _metrics.CreateHistogram(name, description, labelNames);
+
+        public Task Measure(Func<Task> fun) => fun();
     }
 }
