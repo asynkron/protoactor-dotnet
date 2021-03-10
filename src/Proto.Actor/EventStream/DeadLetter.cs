@@ -43,7 +43,7 @@ namespace Proto
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
-            System.Metrics.Get<ActorMetrics>().DeadletterCount.Inc(1, message.GetType().Name);
+            System.Metrics.Get<ActorMetrics>().DeadletterCount.Inc( message.GetType().Name);
             var (msg, sender, header) = MessageEnvelope.Unwrap(message);
             System.EventStream.Publish(new DeadLetterEvent(pid, msg, sender, header));
             if (sender is null) return;
@@ -56,7 +56,7 @@ namespace Proto
 
         protected internal override void SendSystemMessage(PID pid, object message)
         {
-            System.Metrics.Get<ActorMetrics>().DeadletterCount.Inc(1, message.GetType().Name);
+            System.Metrics.Get<ActorMetrics>().DeadletterCount.Inc( message.GetType().Name);
             System.EventStream.Publish(new DeadLetterEvent(pid, message, null, null));
         }
     }

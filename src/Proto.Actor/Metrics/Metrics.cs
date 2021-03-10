@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 using Proto.Utils;
 using Ubiquitous.Metrics;
 using Ubiquitous.Metrics.Labels;
+using Ubiquitous.Metrics.NoMetrics;
 
 namespace Proto.Metrics
 {

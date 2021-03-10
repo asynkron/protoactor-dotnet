@@ -1,41 +1,17 @@
-﻿using System;
-using System.Threading.Tasks;
-using Prometheus;
-using Proto;
-using Ubiquitous.Metrics.Prometheus;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 
-namespace ActorMetrics
+namespace WebApplication1
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
-            var server = new MetricServer("localhost", 1234);
-            server.Start();
-            
-            var config = ActorSystemConfig.Setup().WithMetricsProviders(new PrometheusConfigurator());
-            var system = new ActorSystem(config);
-            var props = Props.FromProducer(() => new MyActor());
-
-            var pid = system.Root.Spawn(props);
-            system.Root.Send(pid,new MyMessage("Asynkron"));
-
-            Console.ReadLine();
+            CreateHostBuilder(args).Build().Run();
         }
-    }
-    
-    public record MyMessage(string Name);
 
-    public class MyActor : IActor
-    {
-        public Task ReceiveAsync(IContext context)
-        {
-            if (context.Message is MyMessage m)
-            {
-                Console.WriteLine(m.Name);
-            }
-
-            return Task.CompletedTask;
-        }
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
     }
 }

@@ -8,4 +8,4 @@ scrape_configs:
   - job_name: 'actors'
     scrape_interval: 5s
     static_configs:
-      - targets: ['localhost:1234']
+      - targets: ['host.docker.internal:5000']

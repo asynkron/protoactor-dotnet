@@ -229,7 +229,7 @@ namespace Proto.Remote
 
                 var typeName = _remoteConfig.Serialization.GetTypeName(rd.Message, serializerId);
 
-                counter.Inc(1, typeName);
+                counter.Inc( typeName);
                 
                 if (!typeNames.TryGetValue(typeName, out var typeId))
                 {

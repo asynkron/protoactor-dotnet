@@ -33,7 +33,7 @@ namespace Proto.Future
         private FutureProcess(ActorSystem system, CancellationTokenSource? cts) : base(system)
         {
             _metrics = system.Metrics.Get<ActorMetrics>();
-            _metrics.FuturesStartedCount.Inc();
+            _metrics.FuturesStartedCount.Inc(Array.Empty<string>());
             _tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
             _cts = cts;
 
@@ -52,7 +52,7 @@ namespace Proto.Future
                         new TimeoutException("Request didn't receive any Response within the expected time.")
                     );
                     
-                    _metrics.FuturesTimedOutCount.Inc();
+                    _metrics.FuturesTimedOutCount.Inc(Array.Empty<string>());
                     Stop(pid);
                 }
             );
@@ -70,7 +70,7 @@ namespace Proto.Future
             }
             finally
             {
-                _metrics.FuturesCompletedCount.Inc();
+                _metrics.FuturesCompletedCount.Inc(Array.Empty<string>());
                 Stop(Pid);
             }
         }
@@ -86,7 +86,7 @@ namespace Proto.Future
 
             if (_cts is null || !_cts.IsCancellationRequested) _tcs.TrySetResult(default!);
 
-            _metrics.FuturesCompletedCount.Inc();
+            _metrics.FuturesCompletedCount.Inc(Array.Empty<string>());
             Stop(pid);
         }
     }

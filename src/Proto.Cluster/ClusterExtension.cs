@@ -56,7 +56,7 @@ namespace Proto.Cluster
                 await baseReceive(ctx, startEnvelope);
                 var grainInit = new ClusterInit(clusterIdentity, cluster);
                 var grainInitEnvelope = new MessageEnvelope(grainInit, null);
-                cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorCount.Inc(1, clusterIdentity.Kind);
+                cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorCount.Inc( clusterIdentity.Kind);
                 await baseReceive(ctx, grainInitEnvelope);
             }
 
@@ -68,7 +68,7 @@ namespace Proto.Cluster
                 MessageEnvelope startEnvelope
             )
             {
-                cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorCount.Inc(-1, clusterIdentity.Kind);
+                cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorCount.Inc(clusterIdentity.Kind,-1);
                 await baseReceive(ctx, startEnvelope);
             }
         }

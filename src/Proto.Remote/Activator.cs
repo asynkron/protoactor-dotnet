@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Threading.Tasks;
 using Proto.Remote.Metrics;
 
@@ -32,7 +33,7 @@ namespace Proto.Remote
                     try
                     {
                         var pid = _system.Root.SpawnNamed(props, name);
-                        context.System.Metrics.Get<RemoteMetrics>().RemoteActorSpawnCount.Inc();
+                        context.System.Metrics.Get<RemoteMetrics>().RemoteActorSpawnCount.Inc(Array.Empty<string>());
                         var response = new ActorPidResponse {Pid = pid};
                         context.Respond(response);
                     }

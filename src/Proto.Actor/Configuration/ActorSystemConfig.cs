@@ -7,6 +7,7 @@ using System;
 using JetBrains.Annotations;
 using Proto.Metrics;
 using Ubiquitous.Metrics;
+using Ubiquitous.Metrics.NoMetrics;
 
 // -----------------------------------------------------------------------
 //   <copyright file="ActorContext.cs" company="Asynkron AB">
