@@ -16,10 +16,14 @@ namespace Proto.Cluster.Metrics
             ClusterActorCount = metrics.CreateCount("protocluster_virtualactor_count", "", "clusterkind");
             
             ClusterActorSpawnHistogram= metrics.CreateHistogram("protocluster_virtualactor_spawn_duration_seconds" , "", "clusterkind");
+            
+            ClusterRequestHistogram= metrics.CreateHistogram("protocluster_virtualactor_spawn_duration_seconds" , "", "clusterkind","messagetype");
         }
 
         public readonly ICountMetric ClusterActorCount;
 
         public readonly IHistogramMetric ClusterActorSpawnHistogram;
+        
+        public readonly IHistogramMetric ClusterRequestHistogram;
     }
 }

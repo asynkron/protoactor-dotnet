@@ -118,12 +118,16 @@ namespace Proto.Cluster
         public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct) =>
             IdentityLookup!.GetAsync(new ClusterIdentity {Identity = identity, Kind = kind}, ct);
 
-        public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) =>
-            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, System.Root, ct);
+        public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) => Ubiquitous.Metrics.Metrics.Measure(
+            () => ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, System.Root, ct),
+            System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram,null,new[]{ kind, message.GetType().Name}
+        )!;
 
-        public Task<T> RequestAsync<T>(string identity, string kind, object message, ISenderContext context, CancellationToken ct) =>
-            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct);
-
+        public Task<T> RequestAsync<T>(string identity, string kind, object message, ISenderContext context, CancellationToken ct) => Ubiquitous.Metrics.Metrics.Measure(
+            () => ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct),
+            System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram,null,new[]{ kind, message.GetType().Name}
+        )!;
+        
         public Props GetClusterKind(string kind)
         {
             if (!Config.ClusterKinds.TryGetValue(kind, out var props))
