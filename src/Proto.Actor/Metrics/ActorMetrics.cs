@@ -13,12 +13,12 @@ namespace Proto.Metrics
         {
             const string prefix = "proto_actor_";
 
-            DeadletterCount = metrics.CreateCount(prefix + nameof(DeadletterCount), "");
+            DeadletterCount = metrics.CreateCount(prefix + nameof(DeadletterCount), "", "message-type");
             
-            ActorSpawnCount = metrics.CreateCount(prefix + nameof(ActorSpawnCount), "");
-            ActorStoppedCount = metrics.CreateCount(prefix + nameof(ActorStoppedCount), "");
-            ActorRestartedCount = metrics.CreateCount(prefix + nameof(ActorRestartedCount), "");
-            ActorFailureCount = metrics.CreateCount(prefix + nameof(ActorFailureCount), "");
+            ActorSpawnCount = metrics.CreateCount(prefix + nameof(ActorSpawnCount), "", "actor-type");
+            ActorStoppedCount = metrics.CreateCount(prefix + nameof(ActorStoppedCount), "", "actor-type");
+            ActorRestartedCount = metrics.CreateCount(prefix + nameof(ActorRestartedCount), "", "actor-type");
+            ActorFailureCount = metrics.CreateCount(prefix + nameof(ActorFailureCount), "", "actor-type");
 
             FuturesStartedCount = metrics.CreateCount(prefix + nameof(FuturesStartedCount), "");
             FuturesTimedOutCount = metrics.CreateCount(prefix + nameof(FuturesTimedOutCount), "");

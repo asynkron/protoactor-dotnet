@@ -120,7 +120,6 @@ namespace Proto
 
         internal PID Spawn(ActorSystem system, string name, PID? parent)
         {
-            system.Metrics.Get<ActorMetrics>().ActorSpawnCount.Inc();
             return Spawner(system, name, this, parent);
         }
 
