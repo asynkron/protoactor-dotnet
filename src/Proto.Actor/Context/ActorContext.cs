@@ -268,6 +268,7 @@ namespace Proto.Context
             _ => Measure(() => InternalInvokeUserMessageAsync(msg), System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram,
                 labels: new[]
                 {
+                    Actor!.GetType().Name,
                     msg.GetType().Name
                 }
             )
