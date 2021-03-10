@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Future;
 using Proto.Mailbox;
-using Proto.Metrics;
+using static Ubiquitous.Metrics.Metrics;
 
 namespace Proto.Context
 {
@@ -115,7 +115,7 @@ namespace Proto.Context
             {
                 _extras.InitReceiveTimeoutTimer(
                     new Timer(
-                        ReceiveTimeoutCallback, null!, ReceiveTimeout,
+                        ReceiveTimeoutCallback!, null!, ReceiveTimeout,
                         ReceiveTimeout
                     )
                 );
@@ -262,9 +262,16 @@ namespace Proto.Context
             }
         }
 
-        public Task InvokeUserMessageAsync(object msg) => System.Metrics.IsNoop ? 
-            InternalInvokeUserMessageAsync(msg) : 
-            System.Metrics.Measure(() => InternalInvokeUserMessageAsync(msg));
+        public Task InvokeUserMessageAsync(object msg) => System.Metrics.IsNoop switch
+        {
+            true => InternalInvokeUserMessageAsync(msg),
+            _ => Measure(() => InternalInvokeUserMessageAsync(msg), System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram,
+                labels: new[]
+                {
+                    msg.GetType().Name
+                }
+            )
+        };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Task InternalInvokeUserMessageAsync(object msg)
@@ -275,8 +282,6 @@ namespace Proto.Context
                 System.DeadLetter.SendUserMessage(Self, msg);
                 return Task.CompletedTask;
             }
-            
-          //  System.Metrics.InternalActorMetrics.ActorMessageReceiveCount.Inc(msg.GetType().Name);
 
             var influenceTimeout = true;
 

@@ -1,11 +1,9 @@
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Proto.Utils;
 using Ubiquitous.Metrics;
-using Ubiquitous.Metrics.Combined;
 using Ubiquitous.Metrics.Labels;
 
 namespace Proto.Metrics
@@ -41,7 +39,5 @@ namespace Proto.Metrics
         public IGaugeMetric CreateGauge(string name, string description, params LabelName[] labelNames) => _metrics.CreateGauge(name, description, labelNames);
 
         public IHistogramMetric CreateHistogram(string name, string description, params LabelName[] labelNames) => _metrics.CreateHistogram(name, description, labelNames);
-
-        public Task Measure(Func<Task> fun) => fun();
     }
 }
