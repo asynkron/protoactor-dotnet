@@ -19,6 +19,5 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/rabbitmq.yaml
       - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/prometheus.yaml
       - ./grafana/dashboards:/dashboards

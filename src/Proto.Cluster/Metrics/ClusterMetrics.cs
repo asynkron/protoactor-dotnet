@@ -14,9 +14,9 @@ namespace Proto.Cluster.Metrics
         public ClusterMetrics(ProtoMetrics metrics)
         {
             const string prefix = "proto_cluster_";
-            ClusterActorCount = metrics.CreateCount(prefix + nameof(ClusterActorCount), "", "cluster-kind");
+            ClusterActorCount = metrics.CreateCount(prefix + nameof(ClusterActorCount), "", "clusterkind");
             
-            ClusterActorSpawnHistogram= metrics.CreateHistogram(prefix + nameof(ClusterActorSpawnHistogram), "", "cluster-kind");
+            ClusterActorSpawnHistogram= metrics.CreateHistogram(prefix + nameof(ClusterActorSpawnHistogram), "", "clusterkind");
         }
 
         public readonly ICountMetric ClusterActorCount;
