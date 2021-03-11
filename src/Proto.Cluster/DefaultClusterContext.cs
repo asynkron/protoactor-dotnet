@@ -94,18 +94,18 @@ namespace Proto.Cluster
                             break;
                     }
                 }
-                catch
+                catch(Exception e)
                 {
                     if (context.System.Shutdown.IsCancellationRequested) return default;
 
                     if (_requestLogThrottle().IsOpen())
-                        _logger.LogWarning("Failed to get PID from IIdentityLookup");
+                        _logger.LogWarning(e, "Failed to get PID from IIdentityLookup for {ClusterIdentity}",clusterIdentity);
                     await Task.Delay(delay, CancellationToken.None);
                 }
             }
             
             if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
-                _logger.LogWarning("RequestAsync retried but failed for ClusterIdentity {ClusterIdentity}", clusterIdentity);
+                _logger.LogWarning("RequestAsync retried but failed for {ClusterIdentity}", clusterIdentity);
 
             return default!;
         }
