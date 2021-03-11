@@ -22,7 +22,7 @@ namespace Proto.Remote.Tests
 
     public abstract class RemoteFixture : IRemoteFixture
     {
-        private static readonly Props EchoActorProps = Props.FromProducer(() => new EchoActor());
+        private Props EchoActorProps => Props.FromProducer(() => new EchoActor(ActorSystem));
         public string RemoteAddress => ServerRemote.System.Address;
 
         public IRemote Remote { get; protected set; }
@@ -43,7 +43,7 @@ namespace Proto.Remote.Tests
             await ServerRemote.ShutdownAsync();
         }
 
-        protected static TRemoteConfig ConfigureServerRemoteConfig<TRemoteConfig>(TRemoteConfig serverRemoteConfig)
+        protected  TRemoteConfig ConfigureServerRemoteConfig<TRemoteConfig>(TRemoteConfig serverRemoteConfig)
             where TRemoteConfig : RemoteConfigBase =>
             serverRemoteConfig
                 .WithProtoMessages(Messages.ProtosReflection.Descriptor)

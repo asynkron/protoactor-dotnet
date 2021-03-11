@@ -10,13 +10,14 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Mailbox;
 
 namespace Proto.Remote
 {
     public class EndpointManager
     {
-        private static readonly ILogger Logger = Log.CreateLogger<EndpointManager>();
+        private readonly ILogger _logger;
         private readonly CancellationTokenSource _cancellationTokenSource = new();
         private readonly IChannelProvider _channelProvider;
         private readonly ConcurrentDictionary<string, PID> _connections = new();
@@ -32,6 +33,7 @@ namespace Proto.Remote
         public EndpointManager(ActorSystem system, RemoteConfigBase remoteConfig, IChannelProvider channelProvider)
         {
             _system = system;
+            _logger = system.LoggerFactory().CreateLogger<EndpointManager>();
             _system.ProcessRegistry.RegisterHostResolver(pid => new RemoteProcess(_system, this, pid));
             _remoteConfig = remoteConfig;
             _channelProvider = channelProvider;
@@ -72,7 +74,7 @@ namespace Proto.Remote
             {
                 if (CancellationToken.IsCancellationRequested) return;
 
-                Logger.LogDebug("[EndpointManager] Stopping");
+                _logger.LogDebug("[EndpointManager] Stopping");
 
                 _system.EventStream.Unsubscribe(_endpointTerminatedEvnSub);
                 _system.EventStream.Unsubscribe(_endpointConnectedEvnSub);
@@ -94,7 +96,7 @@ namespace Proto.Remote
 
                 StopActivator();
 
-                Logger.LogDebug("[EndpointManager] Stopped");
+                _logger.LogDebug("[EndpointManager] Stopped");
             }
         }
 
@@ -106,7 +108,7 @@ namespace Proto.Remote
 
         private void OnEndpointTerminated(EndpointTerminatedEvent evt)
         {
-            Logger.LogDebug("[EndpointManager] Endpoint {Address} terminated removing from connections", evt.Address);
+            _logger.LogDebug("[EndpointManager] Endpoint {Address} terminated removing from connections", evt.Address);
 
             lock (_synLock)
             {
@@ -144,13 +146,13 @@ namespace Proto.Remote
                 if (_terminatedConnections.ContainsKey(address) || _cancellationTokenSource.IsCancellationRequested) return null;
 
                 return _connections.GetOrAdd(address, v => {
-                        Logger.LogDebug("[EndpointManager] Requesting new endpoint for {Address}", v);
+                        _logger.LogDebug("[EndpointManager] Requesting new endpoint for {Address}", v);
                         var props = Props
-                            .FromProducer(() => new EndpointActor(v, _remoteConfig, _channelProvider))
+                            .FromProducer(() => new EndpointActor(_system, v, _remoteConfig, _channelProvider))
                             .WithMailbox(() => new EndpointWriterMailbox(_system, _remoteConfig.EndpointWriterOptions.EndpointWriterBatchSize, v))
                             .WithGuardianSupervisorStrategy(new EndpointSupervisorStrategy(v, _remoteConfig, _system));
                         var endpointActorPid = _system.Root.SpawnNamed(props, $"endpoint-{v}");
-                        Logger.LogDebug("[EndpointManager] Created new endpoint for {Address}", v);
+                        _logger.LogDebug("[EndpointManager] Created new endpoint for {Address}", v);
                         return endpointActorPid;
                     }
                 );
@@ -160,7 +162,7 @@ namespace Proto.Remote
         private void SpawnActivator()
         {
             var props = Props.FromProducer(() => new Activator(_remoteConfig, _system))
-                .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+                .WithGuardianSupervisorStrategy(_system.Supervision.AlwaysRestartStrategy);
             ActivatorPid = _system.Root.SpawnNamed(props, "activator");
         }
 

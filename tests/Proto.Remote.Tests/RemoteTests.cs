@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Remote.Tests.Messages;
 using Xunit;
 
@@ -212,12 +213,12 @@ namespace Proto.Remote.Tests
 
         private async Task<PID> SpawnLocalActorAndWatch(params PID[] remoteActors)
         {
-            var props = Props.FromProducer(() => new LocalActor(remoteActors));
+            var props = Props.FromProducer(() => new LocalActor(System, remoteActors));
             var actor = System.Root.Spawn(props);
 
             // The local actor watches the remote one - we wait here for the RemoteWatch 
             // message to propagate to the remote actor
-            var logger = Log.CreateLogger(nameof(SpawnLocalActorAndWatch));
+            var logger = System.LoggerFactory().CreateLogger(nameof(SpawnLocalActorAndWatch));
             logger.LogInformation("Waiting for RemoteWatch to propagate...");
             await Task.Delay(20);
             return actor;
@@ -228,7 +229,7 @@ namespace Proto.Remote.Tests
 
         private async Task<bool> PollUntilTrue(Func<Task<bool>> predicate, int attempts, TimeSpan interval)
         {
-            var logger = Log.CreateLogger(nameof(PollUntilTrue));
+            var logger = System.LoggerFactory().CreateLogger(nameof(PollUntilTrue));
             var attempt = 1;
 
             while (attempt <= attempts)
@@ -267,11 +268,15 @@ namespace Proto.Remote.Tests
 
     public class LocalActor : IActor
     {
-        private readonly ILogger _logger = Log.CreateLogger<LocalActor>();
+        private readonly ILogger _logger;
         private readonly List<PID> _remoteActors = new();
         private readonly List<Terminated> _terminatedMessages = new();
 
-        public LocalActor(params PID[] remoteActors) => _remoteActors.AddRange(remoteActors);
+        public LocalActor(ActorSystem system, params PID[] remoteActors)
+        {
+            _logger = system.LoggerFactory().CreateLogger<LocalActor>();
+            _remoteActors.AddRange(remoteActors);
+        }
 
         public Task ReceiveAsync(IContext context)
         {

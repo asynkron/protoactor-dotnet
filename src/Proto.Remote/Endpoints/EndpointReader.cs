@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Mailbox;
 using Proto.Remote.Metrics;
 using Ubiquitous.Metrics.Labels;
@@ -17,7 +18,7 @@ namespace Proto.Remote
 {
     public class EndpointReader : Remoting.RemotingBase
     {
-        private static readonly ILogger Logger = Log.CreateLogger<EndpointReader>();
+        private readonly ILogger _logger;
         private readonly EndpointManager _endpointManager;
         private readonly Serialization _serialization;
         private readonly ActorSystem _system;
@@ -26,6 +27,7 @@ namespace Proto.Remote
         public EndpointReader(ActorSystem system, EndpointManager endpointManager, Serialization serialization)
         {
             _system = system;
+            _logger = system.LoggerFactory().CreateLogger<EndpointReader>();
             _endpointManager = endpointManager;
             _serialization = serialization;
             _deserializationErrorLogLevel = _system.Remote().Config.DeserializationErrorLogLevel;
@@ -35,13 +37,13 @@ namespace Proto.Remote
         {
             if (_endpointManager.CancellationToken.IsCancellationRequested)
             {
-                Logger.LogWarning("[EndpointReader] Attempt to connect to the suspended reader has been rejected");
+                _logger.LogWarning("[EndpointReader] Attempt to connect to the suspended reader has been rejected");
 
                 throw new RpcException(Status.DefaultCancelled, "Suspended");
             }
             _system.Metrics.Get<RemoteMetrics>().RemoteEndpointConnectedCount.Inc(context.Peer);
 
-            Logger.LogDebug("[EndpointReader] Accepted connection request from {Remote} to {Local}", context.Peer,
+            _logger.LogDebug("[EndpointReader] Accepted connection request from {Remote} to {Local}", context.Peer,
                 context.Host
             );
 
@@ -60,7 +62,7 @@ namespace Proto.Remote
         )
         {
             using var cancellationTokenRegistration = _endpointManager.CancellationToken.Register(() => {
-                    Logger.LogDebug("[EndpointReader] Telling to {Address} to stop", context.Peer);
+                    _logger.LogDebug("[EndpointReader] Telling to {Address} to stop", context.Peer);
 
                     try
                     {
@@ -68,7 +70,7 @@ namespace Proto.Remote
                     }
                     catch (Exception e)
                     {
-                        Logger.LogError(e, "[EndpointReader] Didn't tell to {Address} to stop", context.Peer);
+                        _logger.LogError(e, "[EndpointReader] Didn't tell to {Address} to stop", context.Peer);
                     }
                 }
             );
@@ -85,7 +87,7 @@ namespace Proto.Remote
 
                 var batch = requestStream.Current;
 
-                Logger.LogDebug("[EndpointReader] Received a batch of {Count} messages from {Remote}",
+                _logger.LogDebug("[EndpointReader] Received a batch of {Count} messages from {Remote}",
                     batch.TargetNames.Count, context.Peer
                 );
 
@@ -113,7 +115,7 @@ namespace Proto.Remote
                     }
                     catch (Exception)
                     {
-                        Logger.Log(_deserializationErrorLogLevel, "[EndpointReader] Unable to deserialize message with {Type} from {Remote}", typeName, context.Peer);
+                        _logger.Log(_deserializationErrorLogLevel, "[EndpointReader] Unable to deserialize message with {Type} from {Remote}", typeName, context.Peer);
                         continue;
                     }
 
@@ -133,7 +135,7 @@ namespace Proto.Remote
             }
 
             _system.Metrics.Get<RemoteMetrics>().RemoteEndpointDisconnectedCount.Inc(context.Peer);
-            Logger.LogDebug("[EndpointReader] Stream closed by {Remote}", context.Peer);
+            _logger.LogDebug("[EndpointReader] Stream closed by {Remote}", context.Peer);
         }
 
         private void ReceiveMessages(MessageEnvelope envelope, object message, PID target)

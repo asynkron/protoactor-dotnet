@@ -12,6 +12,7 @@ using Grpc.Health.V1;
 using Grpc.HealthCheck;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Remote.Metrics;
 
 namespace Proto.Remote.GrpcCore
@@ -19,7 +20,7 @@ namespace Proto.Remote.GrpcCore
     [PublicAPI]
     public class GrpcCoreRemote : IRemote
     {
-        private static readonly ILogger Logger = Log.CreateLogger<GrpcCoreRemote>();
+        private readonly ILogger _logger;
         private readonly GrpcCoreRemoteConfig _config;
         private EndpointManager _endpointManager = null!;
         private EndpointReader _endpointReader = null!;
@@ -29,6 +30,7 @@ namespace Proto.Remote.GrpcCore
         public GrpcCoreRemote(ActorSystem system, GrpcCoreRemoteConfig config)
         {
             System = system;
+            _logger = system.LoggerFactory().CreateLogger<GrpcCoreRemote>();
             _config = config;
             system.Metrics.RegisterKnownMetrics(new RemoteMetrics(system.Metrics));
             System.Extensions.Register(this);
@@ -66,7 +68,7 @@ namespace Proto.Remote.GrpcCore
                 );
                 _endpointManager.Start();
 
-                Logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host, boundPort,
+                _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host, boundPort,
                     System.Address
                 );
                 Started = true;
@@ -93,14 +95,14 @@ namespace Proto.Remote.GrpcCore
                 }
                 else await _server.KillAsync();
 
-                Logger.LogInformation(
+                _logger.LogInformation(
                     "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
                     System.Address, graceful
                 );
             }
             catch (Exception ex)
             {
-                Logger.LogError(
+                _logger.LogError(
                     ex, "Proto.Actor server stopped on {Address} with error: {Message}",
                     System.Address, ex.Message
                 );

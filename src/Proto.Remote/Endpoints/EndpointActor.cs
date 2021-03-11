@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Remote.Metrics;
 
 namespace Proto.Remote
@@ -21,14 +22,15 @@ namespace Proto.Remote
         private readonly IChannelProvider _channelProvider;
         private readonly RemoteConfigBase _remoteConfig;
         private readonly Dictionary<string, HashSet<PID>> _watchedActors = new();
-        private readonly ILogger Logger = Log.CreateLogger<EndpointActor>();
+        private readonly ILogger _logger;
         private ChannelBase? _channel;
         private Remoting.RemotingClient? _client;
         private int _serializerId;
         private AsyncDuplexStreamingCall<MessageBatch, Unit>? _stream;
 
-        public EndpointActor(string address, RemoteConfigBase remoteConfig, IChannelProvider channelProvider)
+        public EndpointActor(ActorSystem system, string address, RemoteConfigBase remoteConfig, IChannelProvider channelProvider)
         {
+            _logger = system.LoggerFactory().CreateLogger<EndpointActor>();
             _address = address;
             _remoteConfig = remoteConfig;
             _behavior = new Behavior(ConnectingAsync);
@@ -63,7 +65,7 @@ namespace Proto.Remote
 
         private async Task ConnectAsync(IContext context)
         {
-            Logger.LogDebug("[EndpointActor] Connecting to address {Address}", _address);
+            _logger.LogDebug("[EndpointActor] Connecting to address {Address}", _address);
 
             try
             {
@@ -71,26 +73,26 @@ namespace Proto.Remote
             }
             catch (Exception e)
             {
-                Logger.LogError(e, "[EndpointActor] Error connecting to {_address}.", _address);
+                _logger.LogError(e, "[EndpointActor] Error connecting to {_address}.", _address);
                 throw;
             }
 
             _client = new Remoting.RemotingClient(_channel);
 
-            Logger.LogDebug("[EndpointActor] Created channel and client for address {Address}", _address);
+            _logger.LogDebug("[EndpointActor] Created channel and client for address {Address}", _address);
 
             var res = await _client.ConnectAsync(new ConnectRequest());
             _serializerId = res.DefaultSerializerId;
             _stream = _client.Receive(_remoteConfig.CallOptions);
 
-            Logger.LogDebug("[EndpointActor] Connected client for address {Address}", _address);
+            _logger.LogDebug("[EndpointActor] Connected client for address {Address}", _address);
 
             _ = Task.Run(
                 async () => {
                     try
                     {
                         await _stream.ResponseStream.MoveNext();
-                        Logger.LogDebug("[EndpointActor] {Address} Disconnected", _address);
+                        _logger.LogDebug("[EndpointActor] {Address} Disconnected", _address);
                         var terminated = new EndpointTerminatedEvent
                         {
                             Address = _address
@@ -99,7 +101,7 @@ namespace Proto.Remote
                     }
                     catch (Exception x)
                     {
-                        Logger.LogError(x, "[EndpointActor] Lost connection to address {Address}", _address);
+                        _logger.LogError(x, "[EndpointActor] Lost connection to address {Address}", _address);
                         var endpointError = new EndpointErrorEvent
                         {
                             Address = _address,
@@ -110,7 +112,7 @@ namespace Proto.Remote
                 }
             );
 
-            Logger.LogDebug("[EndpointActor] Created reader for address {Address}", _address);
+            _logger.LogDebug("[EndpointActor] Created reader for address {Address}", _address);
 
             var connected = new EndpointConnectedEvent
             {
@@ -118,7 +120,7 @@ namespace Proto.Remote
             };
             context.System.EventStream.Publish(connected);
 
-            Logger.LogDebug("[EndpointActor] Connected to address {Address}", _address);
+            _logger.LogDebug("[EndpointActor] Connected to address {Address}", _address);
             _behavior.Become(ConnectedAsync);
         }
 
@@ -133,7 +135,7 @@ namespace Proto.Remote
 
         private Task EndpointTerminated(IContext context)
         {
-            Logger.LogDebug("[EndpointActor] Handle terminated address {Address}", _address);
+            _logger.LogDebug("[EndpointActor] Handle terminated address {Address}", _address);
 
             foreach (var (id, pidSet) in _watchedActors)
             {
@@ -274,7 +276,7 @@ namespace Proto.Remote
         {
             if (_stream == null || _stream.RequestStream == null)
             {
-                Logger.LogError(
+                _logger.LogError(
                     "[EndpointActor] gRPC Failed to send to address {Address}, reason No Connection available"
                     , _address
                 );
@@ -289,7 +291,7 @@ namespace Proto.Remote
             }
             catch (Exception x)
             {
-                Logger.LogError(x, "[EndpointActor] gRPC Failed to send to address {Address}, reason {Message}", _address,
+                _logger.LogError(x, "[EndpointActor] gRPC Failed to send to address {Address}, reason {Message}", _address,
                     x.Message
                 );
                 context.Stash();

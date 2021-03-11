@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Remote.Metrics;
 
 namespace Proto.Remote.GrpcNet
@@ -17,7 +18,7 @@ namespace Proto.Remote.GrpcNet
     public class GrpcNetRemote : IRemote
     {
         private readonly GrpcNetRemoteConfig _config;
-        private readonly ILogger _logger = Log.CreateLogger<GrpcNetRemote>();
+        private readonly ILogger _logger;
         private EndpointManager _endpointManager = null!;
         private EndpointReader _endpointReader = null!;
         private HealthServiceImpl _healthCheck = null!;
@@ -26,6 +27,7 @@ namespace Proto.Remote.GrpcNet
         public GrpcNetRemote(ActorSystem system, GrpcNetRemoteConfig config)
         {
             System = system;
+            _logger = system.LoggerFactory().CreateLogger<GrpcNetRemote>();
             _config = config;
             system.Metrics.RegisterKnownMetrics(new RemoteMetrics(system.Metrics));
             System.Extensions.Register(this);

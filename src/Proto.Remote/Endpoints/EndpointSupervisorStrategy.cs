@@ -8,12 +8,13 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 
 namespace Proto.Remote
 {
     public class EndpointSupervisorStrategy : ISupervisorStrategy
     {
-        private static readonly ILogger Logger = Log.CreateLogger<EndpointSupervisorStrategy>();
+        private readonly ILogger _logger;
         private readonly string _address;
         private readonly TimeSpan _backoff;
         private readonly CancellationTokenSource _cancelFutureRetries = new();
@@ -23,8 +24,9 @@ namespace Proto.Remote
         private readonly ActorSystem _system;
         private readonly TimeSpan? _withinTimeSpan;
 
-        public EndpointSupervisorStrategy(string address, RemoteConfigBase remoteConfig, ActorSystem system)
+        public EndpointSupervisorStrategy( string address, RemoteConfigBase remoteConfig, ActorSystem system)
         {
+            _logger = system.LoggerFactory().CreateLogger<EndpointSupervisorStrategy>();
             _address = address;
             _system = system;
             _maxNrOfRetries = remoteConfig.EndpointWriterOptions.MaxRetries;
@@ -42,7 +44,7 @@ namespace Proto.Remote
         {
             if (ShouldStop(rs))
             {
-                Logger.LogError(reason,
+                _logger.LogError(reason,
                     "Stopping connection to address {Address} after retries expired because of {Reason}",
                     _address, reason.GetType().Name
                 );
@@ -58,7 +60,7 @@ namespace Proto.Remote
 
                 _ = Task.Run(async () => {
                         await Task.Delay(duration);
-                        Logger.LogWarning(reason,
+                        _logger.LogWarning(reason,
                             "Restarting {Actor} after {Duration} because of {Reason}",
                             child, duration, reason.GetType().Name
                         );

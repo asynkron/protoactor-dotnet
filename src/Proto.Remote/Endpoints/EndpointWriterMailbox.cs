@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Mailbox;
 
 namespace Proto.Remote
@@ -21,7 +22,7 @@ namespace Proto.Remote
 
     public class EndpointWriterMailbox : IMailbox
     {
-        private static readonly ILogger Logger = Log.CreateLogger<EndpointWriterMailbox>();
+        private readonly ILogger _logger;
         private readonly string _address;
 
         private readonly int _batchSize;
@@ -37,6 +38,7 @@ namespace Proto.Remote
         public EndpointWriterMailbox(ActorSystem system, int batchSize, string address)
         {
             _system = system;
+            _logger = system.LoggerFactory().CreateLogger<EndpointWriterMailbox>();
             _batchSize = batchSize;
             _address = address;
         }
@@ -45,7 +47,7 @@ namespace Proto.Remote
         {
             _userMessages.Push(msg);
 
-            Logger.LogDebug("[EndpointWriterMailbox] received User Message {@Message}", msg);
+            _logger.LogDebug("[EndpointWriterMailbox] received User Message {@Message}", msg);
             Schedule();
         }
 
@@ -53,7 +55,7 @@ namespace Proto.Remote
         {
             _systemMessages.Push(msg);
 
-            Logger.LogDebug("[EndpointWriterMailbox] received System Message {@Message}", msg);
+            _logger.LogDebug("[EndpointWriterMailbox] received System Message {@Message}", msg);
             Schedule();
         }
 
@@ -73,7 +75,7 @@ namespace Proto.Remote
 
             try
             {
-                Logger.LogDebug(
+                _logger.LogDebug(
                     "[EndpointWriterMailbox] Running Mailbox Loop HasSystemMessages: {HasSystemMessages} HasUserMessages: {HasUserMessages} Suspended: {Suspended}",
                     _systemMessages.HasMessages, _userMessages.HasMessages, _suspended
                 );
@@ -83,7 +85,7 @@ namespace Proto.Remote
 
                 if (sys is not null)
                 {
-                    Logger.LogDebug("[EndpointWriterMailbox] Processing System Message {@Message}", sys);
+                    _logger.LogDebug("[EndpointWriterMailbox] Processing System Message {@Message}", sys);
 
                     _suspended = sys switch
                     {
@@ -137,14 +139,14 @@ namespace Proto.Remote
 
                         if (droppedRemoteDeliverCount > 0)
                         {
-                            Logger.LogInformation("[EndpointWriterMailbox] Dropped {count} user Messages for {Address}", droppedRemoteDeliverCount,
+                            _logger.LogInformation("[EndpointWriterMailbox] Dropped {count} user Messages for {Address}", droppedRemoteDeliverCount,
                                 _address
                             );
                         }
 
                         if (remoteTerminateCount > 0)
                         {
-                            Logger.LogInformation("[EndpointWriterMailbox] Sent {Count} remote terminations for {Address}", remoteTerminateCount,
+                            _logger.LogInformation("[EndpointWriterMailbox] Sent {Count} remote terminations for {Address}", remoteTerminateCount,
                                 _address
                             );
                         }
@@ -158,7 +160,7 @@ namespace Proto.Remote
 
                     while ((msg = _userMessages.Pop()) is not null)
                     {
-                        Logger.LogDebug("[EndpointWriterMailbox] Processing User Message {@Message}", msg);
+                        _logger.LogDebug("[EndpointWriterMailbox] Processing User Message {@Message}", msg);
 
                         switch (msg)
                         {
@@ -177,7 +179,7 @@ namespace Proto.Remote
                     if (batch.Count > 0)
                     {
                         m = batch;
-                        Logger.LogDebug("[EndpointWriterMailbox] Calling message invoker");
+                        _logger.LogDebug("[EndpointWriterMailbox] Calling message invoker");
                         await _invoker!.InvokeUserMessageAsync(batch);
                     }
                 }

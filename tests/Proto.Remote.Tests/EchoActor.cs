@@ -1,30 +1,36 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Remote.Tests.Messages;
 
 namespace Proto.Remote.Tests
 {
     public class EchoActor : IActor
     {
-        private static readonly ILogger Logger = Log.CreateLogger<EchoActor>();
+        private readonly ILogger _logger;
+
+        public EchoActor(ActorSystem system)
+        {
+            _logger = system.LoggerFactory().CreateLogger<EchoActor>();
+        }
 
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
                 case Started _:
-                    Logger.LogDebug($"{context.Self}");
+                    _logger.LogDebug($"{context.Self}");
                     break;
                 case Ping ping:
-                    Logger.LogDebug("Received Ping, replying Pong");
+                    _logger.LogDebug("Received Ping, replying Pong");
                     context.Respond(new Pong {Message = $"{context.System.Address} {ping.Message}"});
                     break;
                 case Die _:
-                    Logger.LogDebug("Received termination request, stopping");
+                    _logger.LogDebug("Received termination request, stopping");
                     context.Stop(context.Self);
                     break;
                 default:
-                    Logger.LogDebug(context.Message.GetType().Name);
+                    _logger.LogDebug(context.Message.GetType().Name);
                     break;
             }
 
