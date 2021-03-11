@@ -14,11 +14,12 @@ class Program
 {
     private static void Main()
     {
-        var context = new RootContext(new ActorSystem());
+        var system = new ActorSystem();
+        var context = new RootContext(system);
         Log.SetLoggerFactory(LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Debug)));
 
         var props = Props.FromProducer(() => new ParentActor())
-            .WithChildSupervisorStrategy(new OneForOneStrategy(Decider.Decide, 1, null));
+            .WithChildSupervisorStrategy(new OneForOneStrategy(system, Decider.Decide, 1, null));
 
         var actor = context.Spawn(props);
 

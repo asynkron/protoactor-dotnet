@@ -48,7 +48,7 @@ namespace Proto.Cluster.Partition
             {
                 var partitionActorProps = Props
                     .FromProducer(() => new PartitionIdentityActor(_cluster))
-                    .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+                    .WithGuardianSupervisorStrategy(_system.Supervision.AlwaysRestartStrategy);
                 _partitionActor = _context.SpawnNamed(partitionActorProps, PartitionIdentityActorName);
 
                 var partitionActivatorProps =

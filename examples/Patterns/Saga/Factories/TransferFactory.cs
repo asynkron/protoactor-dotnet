@@ -33,6 +33,7 @@ namespace Saga.Factories
         }
 
         internal PID CreateTransfer(
+            ActorSystem system,
             string actorName,
             PID fromAccount,
             PID toAccount,
@@ -45,7 +46,7 @@ namespace Saga.Factories
                     )
                 )
                 .WithChildSupervisorStrategy(
-                    new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, _retryAttempts, null)
+                    new OneForOneStrategy(system,(pid, reason) => SupervisorDirective.Restart, _retryAttempts, null)
                 );
             var transfer = _context.SpawnNamed(transferProps, actorName);
             return transfer;

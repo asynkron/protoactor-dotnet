@@ -13,6 +13,8 @@ namespace EscalateSupervision
     {
         private static void Main(string[] args)
         {
+            var system = new ActorSystem();
+            
             var childProps = Props.FromFunc(context => {
                     Console.WriteLine($"{context.Self.Id}: MSG: {context.Message.GetType()}");
 
@@ -42,12 +44,12 @@ namespace EscalateSupervision
                         return Task.CompletedTask;
                     }
                 )
-                .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 0,
+                .WithChildSupervisorStrategy(new OneForOneStrategy(system,(pid, reason) => SupervisorDirective.Escalate, 0,
                         null
                     )
                 );
 
-            var rootContext = new RootContext(new ActorSystem());
+            var rootContext = new RootContext(system);
             rootContext.SpawnNamed(rootProps, "root");
 
             Console.ReadLine();

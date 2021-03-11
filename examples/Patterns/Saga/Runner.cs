@@ -83,7 +83,7 @@ namespace Saga
                             var factory = new TransferFactory(context, _inMemoryProvider, random, _uptime,
                                 _retryAttempts
                             );
-                            var transfer = factory.CreateTransfer(actorName, fromAccount, toAccount, 10, persistanceID);
+                            var transfer = factory.CreateTransfer(context.System, actorName, fromAccount, toAccount, 10, persistanceID);
                             _transfers.Add(transfer);
                             if (i == _numberOfIterations && !nth)
                                 Console.WriteLine($"Started {j}/{_numberOfIterations} proesses");

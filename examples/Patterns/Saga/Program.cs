@@ -10,10 +10,13 @@ namespace Saga
 {
     class Program
     {
-        private static readonly RootContext Context = new ActorSystem().Root;
+        
 
         public static void Main(string[] args)
         {
+            var system = new ActorSystem();
+            var context = system.Root;
+            
             Console.WriteLine("Starting");
             var random = new Random();
             var numberOfTransfers = 5;
@@ -28,13 +31,13 @@ namespace Saga
                         refusalProbability, busyProbability, retryAttempts, verbose
                     )
                 )
-                .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart,
+                .WithChildSupervisorStrategy(new OneForOneStrategy(system,(pid, reason) => SupervisorDirective.Restart,
                         retryAttempts, null
                     )
                 );
 
             Console.WriteLine("Spawning runner");
-            var runner = Context.SpawnNamed(props, "runner");
+            var runner = context.SpawnNamed(props, "runner");
 
             Console.ReadLine();
         }

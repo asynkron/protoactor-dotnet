@@ -56,7 +56,7 @@ namespace Proto.Cluster.Kubernetes
             _port = port;
             _kinds = kinds;
             _address = host + ":" + port;
-            StartClusterMonitor();
+            StartClusterMonitor(cluster.System);
             await RegisterMemberAsync();
             MonitorMemberStatusChanges();
         }
@@ -72,7 +72,7 @@ namespace Proto.Cluster.Kubernetes
             _host = host;
             _port = port;
             _kinds = Array.Empty<string>();
-            StartClusterMonitor();
+            StartClusterMonitor(cluster.System);
             MonitorMemberStatusChanges();
             return Task.CompletedTask;
         }
@@ -132,11 +132,11 @@ namespace Proto.Cluster.Kubernetes
             }
         }
 
-        private void StartClusterMonitor()
+        private void StartClusterMonitor(ActorSystem system)
         {
             var props = Props
                 .FromProducer(() => new KubernetesClusterMonitor(_cluster, _kubernetes))
-                .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
+                .WithGuardianSupervisorStrategy( system.Supervision.AlwaysRestartStrategy)
                 .WithDispatcher(Dispatchers.SynchronousDispatcher);
             _clusterMonitor = _cluster.System.Root.SpawnNamed(props, "ClusterMonitor");
             _podName = KubernetesExtensions.GetPodName();
