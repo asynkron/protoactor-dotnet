@@ -24,6 +24,8 @@ namespace Proto.Mailbox
             _timeout = timeout;
         }
 
+        public int Length => _messages.Count;
+
         public void Push(object message)
         {
             if (SpinWait.SpinUntil(() => _messages.Count < _maxSize, _timeout))

@@ -25,16 +25,19 @@ namespace Proto.Context
         private ActorContextExtras? _extras;
         private object? _messageOrEnvelope;
         private ContextState _state;
+        private IMailbox _mailbox;
 
-        public ActorContext(ActorSystem system, Props props, PID? parent, PID self)
+        public ActorContext(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox)
         {
             System = system;
             _props = props;
+            _mailbox = mailbox;
 
             //Parents are implicitly watching the child
             //The parent is not part of the Watchers set
             Parent = parent;
             Self = self;
+            
             Actor = IncarnateActor();
         }
 
@@ -262,17 +265,25 @@ namespace Proto.Context
             }
         }
 
-        public Task InvokeUserMessageAsync(object msg) => System.Metrics.IsNoop switch
+        public Task InvokeUserMessageAsync(object msg)
         {
-            true => InternalInvokeUserMessageAsync(msg),
-            _ => Measure(() => InternalInvokeUserMessageAsync(msg), System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram,
-                labels: new[]
-                {
-                    Actor!.GetType().Name,
-                    msg.GetType().Name
-                }
-            )
-        };
+            if (!System.Metrics.IsNoop)
+            {
+                System.Metrics.InternalActorMetrics.ActorMailboxLength.Set(_mailbox.UserMessageCount, Actor!.GetType().Name);
+            }
+
+            return System.Metrics.IsNoop switch
+            {
+                true => InternalInvokeUserMessageAsync(msg),
+                _ => Measure(() => InternalInvokeUserMessageAsync(msg), System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram,
+                    labels: new[]
+                    {
+                        Actor!.GetType().Name,
+                        msg.GetType().Name
+                    }
+                )
+            };
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Task InternalInvokeUserMessageAsync(object msg)
@@ -322,8 +333,8 @@ namespace Proto.Context
 
         public void ResumeChildren(params PID[] pids) => pids.SendSystemMessage(ResumeMailbox.Instance, System);
 
-        public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self) =>
-            new(system, props, parent, self);
+        public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox) =>
+            new(system, props, parent, self, mailbox);
 
         private void ScheduleContinuation(Task target, Continuation cont) =>
             _ = Task.Run(async () => {

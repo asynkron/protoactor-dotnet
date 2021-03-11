@@ -41,6 +41,8 @@ namespace Proto.Remote
             _address = address;
         }
 
+        public int UserMessageCount => _userMessages.Length;
+
         public void PostUserMessage(object msg)
         {
             _userMessages.Push(msg);

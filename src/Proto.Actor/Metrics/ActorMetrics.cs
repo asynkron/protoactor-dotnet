@@ -16,6 +16,9 @@ namespace Proto.Metrics
             ActorStoppedCount = metrics.CreateCount("protoactor_actor_stopped_count", "", "actortype");
             ActorRestartedCount = metrics.CreateCount("protoactor_actor_restarted_count", "", "actortype");
             ActorFailureCount = metrics.CreateCount("protoactor_actor_failure_count", "", "actortype");
+
+            ActorMailboxLength = metrics.CreateGauge("protoactor_actor_mailbox_length", "", "actortype");
+            
             ActorMessageReceiveHistogram = metrics.CreateHistogram("protoactor_actor_messagereceive_duration_seconds", "", "actortype","messagetype");
             FuturesStartedCount = metrics.CreateCount("protoactor_future_started_count","");
             FuturesTimedOutCount = metrics.CreateCount("protoactor_future_timedout_count", "");
@@ -31,6 +34,7 @@ namespace Proto.Metrics
         public readonly ICountMetric ActorRestartedCount; //done
         public readonly ICountMetric ActorFailureCount;   //done
         public readonly IHistogramMetric ActorMessageReceiveHistogram;   //done
+        public readonly IGaugeMetric ActorMailboxLength;
 
         //Futures
         public readonly ICountMetric FuturesStartedCount;   //done

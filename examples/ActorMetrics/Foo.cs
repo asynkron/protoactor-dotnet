@@ -27,7 +27,7 @@ namespace ActorMetrics
                     var r = new Random();
                     while (true)
                     {
-                        await Task.Delay(r.Next(5,5000));
+                        await Task.Delay(r.Next(5,900));
                         system.Root.Send(pid, new MyMessage("Asynkron"));
 
 
@@ -43,14 +43,14 @@ namespace ActorMetrics
 
     public class MyActor : IActor
     {
-        public Task ReceiveAsync(IContext context)
+        private Random r = new();
+        public async Task ReceiveAsync(IContext context)
         {
             if (context.Message is MyMessage m)
             {
+                await Task.Delay(r.Next(0, 1000));
                 Console.WriteLine(m.Name);
             }
-
-            return Task.CompletedTask;
         }
     }
 }

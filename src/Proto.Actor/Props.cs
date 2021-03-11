@@ -51,7 +51,7 @@ namespace Proto
 
             if (!absent) throw new ProcessNameExistException(name, self);
 
-            var ctx = ActorContext.Setup(system, props, parent, self);
+            var ctx = ActorContext.Setup(system, props, parent, self, mailbox);
             mailbox.RegisterHandlers(ctx, dispatcher);
             mailbox.PostSystemMessage(Started.Instance);
             mailbox.Start();

@@ -15,6 +15,8 @@ namespace Proto.TestFixtures
         public List<object> UserMessages { get; } = new();
         public List<object> SystemMessages { get; } = new();
 
+        public int UserMessageCount => UserMessages.Count;
+
         public void PostUserMessage(object msg)
         {
             UserMessages.Add(msg);

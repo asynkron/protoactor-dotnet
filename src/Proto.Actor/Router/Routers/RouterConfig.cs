@@ -29,7 +29,7 @@ namespace Proto.Router.Routers
 
             if (!absent) throw new ProcessNameExistException(name, self);
 
-            var ctx = ActorContext.Setup(system, p, parent, self);
+            var ctx = ActorContext.Setup(system, p, parent, self, mailbox);
             mailbox.RegisterHandlers(ctx, dispatcher);
             mailbox.PostSystemMessage(Started.Instance);
             mailbox.Start();
