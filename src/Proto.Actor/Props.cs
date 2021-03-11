@@ -21,7 +21,7 @@ namespace Proto
         public ProducerWithSystem Producer { get; init; } = _ => null!;
         public MailboxProducer MailboxProducer { get; init; } = () => UnboundedMailbox.Create();
         public ISupervisorStrategy? GuardianStrategy { get; init; }
-        public ISupervisorStrategy SupervisorStrategy { get; init; } = Supervision.DefaultStrategy;
+        public ISupervisorStrategy? SupervisorStrategy { get; init; } 
         public IDispatcher Dispatcher { get; init; } = Dispatchers.DefaultDispatcher;
 
         public ImmutableList<Func<Receiver, Receiver>> ReceiverMiddleware { get; init; } =

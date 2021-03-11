@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Proto
@@ -24,17 +25,21 @@ namespace Proto
         private readonly ConcurrentQueue<T> _events = new();
         private readonly EventStreamSubscription<T> _eventStreamSubscription;
         private readonly object _lock = new();
-        private readonly ILogger _logger = Log.CreateLogger<EventProbe<T>>();
+        private readonly ILogger _logger;
         private EventExpectation<T>? _currentExpectation;
 
-        public EventProbe(EventStream<T> eventStream) => _eventStreamSubscription = eventStream.Subscribe(e => {
-                lock (_lock)
-                {
-                    _events.Enqueue(e);
-                    NotifyChanges();
+        public EventProbe(EventStream<T> eventStream)
+        {
+            _logger = eventStream.System.LoggerFactory().CreateLogger<EventProbe<T>>();
+            _eventStreamSubscription = eventStream.Subscribe(e => {
+                    lock (_lock)
+                    {
+                        _events.Enqueue(e);
+                        NotifyChanges();
+                    }
                 }
-            }
-        );
+            );
+        }
 
         public Task Expect<TE>() where TE : T
         {

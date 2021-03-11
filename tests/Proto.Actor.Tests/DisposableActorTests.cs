@@ -14,9 +14,10 @@ namespace Proto.Tests
         [Fact]
         public void WhenActorRestarted_DisposeIsCalled()
         {
+            
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
-            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
+            var strategy = new OneForOneStrategy(System,(pid, reason) => SupervisorDirective.Restart, 0, null);
             var childProps = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
                 .WithChildSupervisorStrategy(strategy);
@@ -34,7 +35,7 @@ namespace Proto.Tests
         {
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
-            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
+            var strategy = new OneForOneStrategy(System,(pid, reason) => SupervisorDirective.Restart, 0, null);
             var childProps = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
                 .WithChildSupervisorStrategy(strategy);
@@ -52,7 +53,7 @@ namespace Proto.Tests
         {
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
-            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
+            var strategy = new OneForOneStrategy(System,(pid, reason) => SupervisorDirective.Resume, 0, null);
             var childProps = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
                 .WithChildSupervisorStrategy(strategy);
@@ -70,7 +71,7 @@ namespace Proto.Tests
         {
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
-            var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
+            var strategy = new OneForOneStrategy(System,(pid, reason) => SupervisorDirective.Resume, 0, null);
             var childProps = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
                 .WithChildSupervisorStrategy(strategy);
@@ -112,7 +113,7 @@ namespace Proto.Tests
             var child2Disposed = false;
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-            var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
+            var strategy = new AllForOneStrategy(System,(pid, reason) => SupervisorDirective.Stop, 1, null);
             var child1Props = Props.FromProducer(() => new DisposableActor(() => child1Disposed = true))
                 .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
             var child2Props = Props.FromProducer(() => new DisposableActor(() => child2Disposed = true))

@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Proto.Extensions;
+using Proto.Logging;
 using Proto.Metrics;
 
 namespace Proto
@@ -26,16 +27,24 @@ namespace Proto
 
         public ActorSystem(ActorSystemConfig config)
         {
+            
             Config = config ?? throw new ArgumentNullException(nameof(config));
+            Extensions = new ActorSystemExtensions(this);
+            Extensions.Register(new LogExtension(config.LoggerFactory));
+            Supervision = new Supervision(this);
+            
             ProcessRegistry = new ProcessRegistry(this);
             Root = new RootContext(this);
             DeadLetter = new DeadLetterProcess(this);
             Guardians = new Guardians(this);
-            EventStream = new EventStream(config.DeadLetterThrottleInterval, config.DeadLetterThrottleCount, Shutdown);
+            EventStream = new EventStream(this, config.DeadLetterThrottleInterval, config.DeadLetterThrottleCount, Shutdown);
             Metrics = new ProtoMetrics(config.MetricsProviders);
             var eventStreamProcess = new EventStreamProcess(this);
             ProcessRegistry.TryAdd("eventstream", eventStreamProcess);
-            Extensions = new ActorSystemExtensions(this);
+            
+            
+            
+            
         }
 
         public string Id { get; } = Guid.NewGuid().ToString("N");
@@ -43,6 +52,8 @@ namespace Proto
         public string Address { get; private set; } = NoHost;
 
         public ActorSystemConfig Config { get; }
+        
+        public Supervision Supervision { get; }
 
         public ProcessRegistry ProcessRegistry { get; }
 

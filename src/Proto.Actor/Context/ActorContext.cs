@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Future;
+using Proto.Logging;
 using Proto.Mailbox;
 using static Ubiquitous.Metrics.Metrics;
 
@@ -30,6 +31,7 @@ namespace Proto.Context
         {
             System = system;
             _props = props;
+          
 
             //Parents are implicitly watching the child
             //The parent is not part of the Watchers set
@@ -37,8 +39,6 @@ namespace Proto.Context
             Self = self;
             Actor = IncarnateActor();
         }
-
-        private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
 
         public ActorSystem System { get; }
         public CancellationToken CancellationToken => EnsureExtras().CancellationTokenSource.Token;
@@ -60,6 +60,8 @@ namespace Proto.Context
         {
             if (_messageOrEnvelope is not null) EnsureExtras().Stash.Push(_messageOrEnvelope);
         }
+
+        private ILogger Logger => System.Extensions.Get<LogExtension>()!.ActorContextLogger;
 
         public void Respond(object message)
         {
@@ -333,7 +335,7 @@ namespace Proto.Context
                 , CancellationToken.None
             );
 
-        private static Task HandleUnknownSystemMessage(object msg)
+        private Task HandleUnknownSystemMessage(object msg)
         {
             Logger.LogDebug("Unknown system message {Message}", msg);
             return Task.CompletedTask;
@@ -460,7 +462,8 @@ namespace Proto.Context
                     supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason, msg.Message);
                     break;
                 default:
-                    _props.SupervisorStrategy.HandleFailure(
+                    var strategy = _props.SupervisorStrategy ?? System.Supervision.DefaultStrategy;
+                    strategy.HandleFailure(
                         this, msg.Who, msg.RestartStatistics, msg.Reason,
                         msg.Message
                     );
@@ -479,7 +482,7 @@ namespace Proto.Context
         }
 
         private void HandleRootFailure(Failure failure)
-            => Supervision.DefaultStrategy.HandleFailure(
+            => System.Supervision.DefaultStrategy.HandleFailure(
                 this, failure.Who, failure.RestartStatistics, failure.Reason,
                 failure.Message
             );

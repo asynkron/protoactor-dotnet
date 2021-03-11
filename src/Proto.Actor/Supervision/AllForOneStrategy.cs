@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Proto
@@ -18,13 +19,15 @@ namespace Proto
     /// </summary>
     public class AllForOneStrategy : ISupervisorStrategy
     {
-        private static readonly ILogger Logger = Log.CreateLogger<AllForOneStrategy>();
+        
         private readonly Decider _decider;
         private readonly int _maxNrOfRetries;
         private readonly TimeSpan? _withinTimeSpan;
+        private ILogger _logger;
 
-        public AllForOneStrategy(Decider decider, int maxNrOfRetries, TimeSpan? withinTimeSpan)
+        public AllForOneStrategy(ActorSystem system, Decider decider, int maxNrOfRetries, TimeSpan? withinTimeSpan)
         {
+            _logger = system.LoggerFactory().CreateLogger<OneForOneStrategy>();
             _decider = decider;
             _maxNrOfRetries = maxNrOfRetries;
             _withinTimeSpan = withinTimeSpan;
@@ -70,7 +73,7 @@ namespace Proto
                     throw new ArgumentOutOfRangeException();
             }
 
-            void LogInfo(string action) => Logger.LogInformation("{Action} {Actor} because of {Reason}", action,
+            void LogInfo(string action) => _logger.LogInformation("{Action} {Actor} because of {Reason}", action,
                 child, reason
             );
         }

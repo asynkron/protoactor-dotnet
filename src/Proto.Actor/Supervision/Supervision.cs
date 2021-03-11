@@ -8,12 +8,20 @@ using System;
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
-    public static class Supervision
+    public class Supervision
     {
-        public static ISupervisorStrategy DefaultStrategy { get; } =
-            new OneForOneStrategy((who, reason) => SupervisorDirective.Restart, 10, TimeSpan.FromSeconds(10));
+        private ActorSystem _system;
 
-        public static ISupervisorStrategy AlwaysRestartStrategy { get; } = new AlwaysRestartStrategy();
+        public Supervision(ActorSystem system)
+        {
+            _system = system;
+            DefaultStrategy = new OneForOneStrategy(_system,(who, reason) => SupervisorDirective.Restart, 10, TimeSpan.FromSeconds(10));
+            AlwaysRestartStrategy = new AlwaysRestartStrategy();
+        }
+        public ISupervisorStrategy DefaultStrategy { get; } 
+            
+
+        public ISupervisorStrategy AlwaysRestartStrategy { get; } 
     }
 
     public delegate SupervisorDirective Decider(PID pid, Exception reason);

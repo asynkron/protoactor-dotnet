@@ -5,6 +5,8 @@
 // -----------------------------------------------------------------------
 using System;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Metrics;
 using Ubiquitous.Metrics;
 using Ubiquitous.Metrics.NoMetrics;
@@ -21,6 +23,7 @@ namespace Proto
     [PublicAPI]
     public record ActorSystemConfig
     {
+        public ILoggerFactory LoggerFactory { get; init; } = new NullLoggerFactory();
         public TimeSpan DeadLetterThrottleInterval { get; init; }
 
         public IMetricsProvider[] MetricsProviders { get; init; } = {new NoMetricsProvider()};
@@ -33,6 +36,9 @@ namespace Proto
 
         public ActorSystemConfig WithDeadLetterThrottleCount(int deadLetterThrottleCount) =>
             this with {DeadLetterThrottleCount = deadLetterThrottleCount};
+        
+        public ActorSystemConfig WithLoggerFactory(ILoggerFactory loggerFactory) =>
+            this with {LoggerFactory = loggerFactory};
 
         public ActorSystemConfig WithMetricsProviders(params IMetricsProvider[] providers) => this with {MetricsProviders = providers};
     }

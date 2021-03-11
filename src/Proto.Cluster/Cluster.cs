@@ -13,6 +13,7 @@ using Proto.Cluster.Identity;
 using Proto.Cluster.Metrics;
 using Proto.Cluster.Partition;
 using Proto.Extensions;
+using Proto.Logging;
 using Proto.Remote;
 
 namespace Proto.Cluster
@@ -90,7 +91,7 @@ namespace Proto.Cluster
             Remote = System.Extensions.Get<IRemote>() ?? throw new NotSupportedException("Remote module must be configured when using cluster");
             
             await Remote.StartAsync();
-            Logger = Log.CreateLogger($"Cluster-{LoggerId}");
+            Logger = System.LoggerFactory().CreateLogger($"Cluster-{LoggerId}");
             Logger.LogInformation("Starting");
             MemberList = new MemberList(this);
             ClusterContext = Config.ClusterContextProducer(this);

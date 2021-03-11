@@ -18,7 +18,7 @@ namespace Proto.Tests
         {
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
             var child2MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
-            var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Resume, 1, null);
+            var strategy = new AllForOneStrategy(System,(pid, reason) => SupervisorDirective.Resume, 1, null);
             var child1Props = Props.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
             var child2Props = Props.FromProducer(() => new ChildActor())
@@ -41,7 +41,7 @@ namespace Proto.Tests
         {
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-            var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
+            var strategy = new AllForOneStrategy(System,(pid, reason) => SupervisorDirective.Stop, 1, null);
             var child1Props = Props.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
             var child2Props = Props.FromProducer(() => new ChildActor())
@@ -65,7 +65,7 @@ namespace Proto.Tests
         {
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-            var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
+            var strategy = new AllForOneStrategy(System,(pid, reason) => SupervisorDirective.Restart, 1, null);
             var child1Props = Props.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
             var child2Props = Props.FromProducer(() => new ChildActor())
@@ -89,7 +89,7 @@ namespace Proto.Tests
         {
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-            var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
+            var strategy = new AllForOneStrategy(System,(pid, reason) => SupervisorDirective.Restart, 1, null);
             var child1Props = Props.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
             var child2Props = Props.FromProducer(() => new ChildActor())
@@ -112,7 +112,7 @@ namespace Proto.Tests
         public void AllForOneStrategy_Should_EscalateFailureToParent()
         {
             var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-            var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
+            var strategy = new AllForOneStrategy(System,(pid, reason) => SupervisorDirective.Escalate, 1, null);
             var childProps = Props.FromProducer(() => new ChildActor());
             var parentProps = Props.FromProducer(() => new ParentActor(childProps, childProps))
                 .WithChildSupervisorStrategy(strategy)

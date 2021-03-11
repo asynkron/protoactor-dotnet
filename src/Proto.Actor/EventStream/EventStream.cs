@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Mailbox;
 using Proto.Utils;
 
@@ -19,22 +20,21 @@ namespace Proto
     [PublicAPI]
     public class EventStream : EventStream<object>
     {
-        private readonly ILogger _logger = Log.CreateLogger<EventStream>();
 
-        internal EventStream() : this(TimeSpan.Zero, 0, CancellationToken.None)
+        internal EventStream(ActorSystem system) : this(system, TimeSpan.Zero, 0, CancellationToken.None)
         {
         }
 
-        internal EventStream(TimeSpan throttleInterval, int throttleCount, CancellationToken ct)
+        internal EventStream(ActorSystem system, TimeSpan throttleInterval, int throttleCount, CancellationToken ct) : base(system)
         {
             var shouldThrottle = Throttle.Create(throttleCount, throttleInterval,
-                droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs.", droppedLogs)
+                droppedLogs => Logger.LogInformation("[DeadLetter] Throttled {LogCount} logs.", droppedLogs)
             );
             Subscribe<DeadLetterEvent>(
                 dl => {
                     if (!ct.IsCancellationRequested && shouldThrottle().IsOpen() && dl.Message is not IIgnoreDeadLetterLogging)
                     {
-                        _logger.LogInformation(
+                        Logger.LogInformation(
                             "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",
                             dl.Message.GetType().Name,
                             dl.Message,
@@ -54,13 +54,17 @@ namespace Proto
     [PublicAPI]
     public class EventStream<T>
     {
-        private readonly ILogger _logger = Log.CreateLogger<EventStream<T>>();
+        protected ILogger Logger { get; }
 
         private readonly ConcurrentDictionary<Guid, EventStreamSubscription<T>> _subscriptions = new();
 
-        internal EventStream()
+        internal EventStream(ActorSystem system)
         {
+            System = system;
+            Logger = system.LoggerFactory().CreateLogger("EventStream");
         }
+        
+        public ActorSystem System { get; }
 
         /// <summary>
         ///     Subscribe to the specified message type
@@ -208,7 +212,7 @@ namespace Proto
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogWarning(0, ex, "Exception has occurred when publishing a message.");
+                            Logger.LogWarning(0, ex, "Exception has occurred when publishing a message.");
                         }
 
                         return Task.CompletedTask;
