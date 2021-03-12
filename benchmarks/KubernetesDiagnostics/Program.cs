@@ -12,9 +12,9 @@ using Proto.Remote.GrpcCore;
 
 namespace KubernetesDiagnostics
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
