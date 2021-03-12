@@ -33,6 +33,8 @@ spec:
         ports:
         - containerPort: 8080   
         env:
+          - name: "MONGO"
+            value: "mongodb://mongo"
           - name: PROTOPORT
             value: "8080"
           - name: PROTOHOST
