@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using k8s;
@@ -19,7 +20,7 @@ namespace KubernetesDiagnostics
     {
         public static async Task Main(string[] args)
         {
-            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Warning));
+            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Error));
             Log.SetLoggerFactory(l);
             var log = Log.CreateLogger("main");
 
@@ -47,21 +48,23 @@ namespace KubernetesDiagnostics
                     .WithClusterKind("empty",Props.Empty)
                 );
 
-            system.EventStream.Subscribe<ClusterTopology>(x =>Console.WriteLine("Topology Event " + x));
+           // system.EventStream.Subscribe<ClusterTopology>(x =>Console.WriteLine("Topology Event " + x));
             
             await system
                 .Cluster()
                 .StartMemberAsync();
-            
-            log.LogInformation("Running....");
 
             while (true)
             {
                 await Task.Delay(1000);
                 var members = system.Cluster().MemberList.GetAllMembers();
-                Console.WriteLine("My members:");
+                var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
+                var key = string.Join("",x);
+                var hash = MurmurHash2.Hash(key);
+                
+                Console.WriteLine("My members " + hash);
 
-                foreach (var member in members)
+                foreach (var member in members.OrderBy(m=>m.Id))
                 {
                     Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds );
                 }
