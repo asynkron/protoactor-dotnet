@@ -20,6 +20,16 @@ namespace KubernetesDiagnostics
     {
         public static async Task Main(string[] args)
         {
+            /*
+             *  docker build . -t rogeralsing/kubdiagg   
+             *  kubectl apply --filename service.yaml    
+             *  kubectl get pods -l app=kubdiag
+             *  kubectl logs -l app=kubdiag --all-containers
+             * 
+             */
+            
+            
+            
             var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Error));
             Log.SetLoggerFactory(l);
             var log = Log.CreateLogger("main");
