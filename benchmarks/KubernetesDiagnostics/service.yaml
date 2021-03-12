@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: clusterbenchmark
+  labels:
+    app: protodemo
+spec:
+  ports:
+  - port: 8080
+    name: protoactor
+  selector:
+    app: protodemo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clusterreader
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: protodemo
+  template:
+    metadata:
+      labels:
+        app: protodemo
+        version: v1
+    spec:
+      containers:
+      - name: protodemo
+        image: rogeralsing/clusterreader
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080   
+        env:
+          - name: PROTOPORT
+            value: "8080"
+          - name: PROTOHOST
+            value: "0.0.0.0"
+          - name: "MONGO"
+            value: "mongodb://mongo"
+          - name: "PROTOHOSTPUBLIC"
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP            
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clustersender
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: protodemo
+  template:
+    metadata:
+      labels:
+        app: protodemo
+        version: v1
+    spec:
+      containers:
+      - name: protodemo
+        image: rogeralsing/clustersender
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+          - name: PROTOPORT
+            value: "8080"
+          - name: PROTOHOST
+            value: "0.0.0.0"
+          - name: "MONGO"
+            value: "mongodb://mongo"
+          - name: "PROTOHOSTPUBLIC"
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
