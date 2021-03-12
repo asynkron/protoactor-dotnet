@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using k8s;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
@@ -10,15 +11,15 @@ using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
 using Proto.Cluster.Kubernetes;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
+using Proto.Remote.GrpcNet;
 
 namespace KubernetesDiagnostics
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Debug));
+            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Warning));
             Log.SetLoggerFactory(l);
             var log = Log.CreateLogger("main");
 
@@ -28,24 +29,43 @@ namespace KubernetesDiagnostics
             var kubernetes = new Kubernetes(KubernetesClientConfiguration.InClusterConfig());
             var clusterprovider = new KubernetesProvider(kubernetes);
 
-            var port = int.Parse(Environment.GetEnvironmentVariable("PROTOPORT"));
+            var port = int.Parse(Environment.GetEnvironmentVariable("PROTOPORT")!);
             var host = Environment.GetEnvironmentVariable("PROTOHOST");
             var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
 
-            var system = new ActorSystem()
-                .WithRemote(GrpcCoreRemoteConfig
-                    .BindTo(host, port)
-                    .WithAdvertisedHost(advertisedHost))
-                .WithCluster(ClusterConfig
-                    .Setup("mycluster", clusterprovider, identity));
-
-            system.EventStream.Subscribe<ClusterTopologyEvent>(x => log.LogInformation("Topology {Topology}",x));
+            log.LogInformation("Host {host}",host);
+            log.LogInformation("Port {port}",port);
+            log.LogInformation("Advertised Host {advertisedHost}",advertisedHost);
             
-            system
+            var system = new ActorSystem()
+                .WithRemote(GrpcNetRemoteConfig
+                    .BindTo(host, port)
+                    .WithAdvertisedHost(advertisedHost)
+                )
+                .WithCluster(ClusterConfig
+                    .Setup("mycluster", clusterprovider, identity)
+                    .WithClusterKind("empty",Props.Empty)
+                );
+
+            system.EventStream.Subscribe<ClusterTopology>(x =>Console.WriteLine("Topology Event " + x));
+            
+            await system
                 .Cluster()
                 .StartMemberAsync();
             
             log.LogInformation("Running....");
+
+            while (true)
+            {
+                await Task.Delay(1000);
+                var members = system.Cluster().MemberList.GetAllMembers();
+                Console.WriteLine("My members:");
+
+                foreach (var member in members)
+                {
+                    Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds );
+                }
+            }
             
             Thread.Sleep(Timeout.Infinite);
         }

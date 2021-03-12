@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: kubdiag
-        image: rogeralsing/kubdiag
+        image: rogeralsing/kubdiagg
         imagePullPolicy: Never
         ports:
         - containerPort: 8080   
