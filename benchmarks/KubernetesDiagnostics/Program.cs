@@ -58,28 +58,25 @@ namespace KubernetesDiagnostics
                     .WithClusterKind("empty",Props.Empty)
                 );
 
-           // system.EventStream.Subscribe<ClusterTopology>(x =>Console.WriteLine("Topology Event " + x));
+           system.EventStream.Subscribe<ClusterTopology>(e => {
+                   var members = e.Members;
+                   var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
+                   var key = string.Join("",x);
+                   var hash = MurmurHash2.Hash(key);
+                
+                   Console.WriteLine("My members " + hash);
+
+                   foreach (var member in members.OrderBy(m=>m.Id))
+                   {
+                       Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds );
+                   }
+               }
+           );
             
             await system
                 .Cluster()
                 .StartMemberAsync();
 
-            while (true)
-            {
-                await Task.Delay(1000);
-                var members = system.Cluster().MemberList.GetAllMembers();
-                var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
-                var key = string.Join("",x);
-                var hash = MurmurHash2.Hash(key);
-                
-                Console.WriteLine("My members " + hash);
-
-                foreach (var member in members.OrderBy(m=>m.Id))
-                {
-                    Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds );
-                }
-            }
-            
             Thread.Sleep(Timeout.Infinite);
         }
 
