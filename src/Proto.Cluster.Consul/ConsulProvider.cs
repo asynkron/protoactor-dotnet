@@ -149,7 +149,7 @@ namespace Proto.Cluster.Consul
 
         private void StartMonitorMemberStatusChangesLoop()
         {
-            _ = Task.Run(async () => {
+            _ = SafeTask.Run(async () => {
                     var waitIndex = 0ul;
 
                     while (!_shutdown && !_cluster.System.Shutdown.IsCancellationRequested)
@@ -198,7 +198,7 @@ namespace Proto.Cluster.Consul
             }
         }
 
-        private void StartUpdateTtlLoop() => _ = Task.Run(async () => {
+        private void StartUpdateTtlLoop() => _ = SafeTask.Run(async () => {
                 while (!_shutdown)
                 {
                     await _client.Agent.PassTTL("service:" + _consulServiceInstanceId, "");

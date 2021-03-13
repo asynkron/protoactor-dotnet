@@ -116,7 +116,7 @@ namespace Proto.Remote
 
                     if (_remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue && _terminatedConnections.TryAdd(evt.Address, endpoint))
                     {
-                        _ = Task.Run(async () => {
+                        _ = SafeTask.Run(async () => {
                                 await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value);
                                 _terminatedConnections.TryRemove(evt.Address, out var _);
                             }

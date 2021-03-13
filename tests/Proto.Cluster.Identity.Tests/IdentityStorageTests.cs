@@ -274,7 +274,7 @@ namespace Proto.Cluster.Identity.Tests
             var spawnLock = await _storage.TryAcquireLock(identity, timeout);
             var pid = Activate(activator, identity);
 
-            _ = Task.Run(async () =>
+            _ = SafeTask.Run(async () =>
                 {
                     await Task.Delay(500, timeout);
                     await _storage.StoreActivation(activator.Id, spawnLock!, pid, timeout);

@@ -85,7 +85,7 @@ namespace Proto.Remote
 
             Logger.LogDebug("[EndpointActor] Connected client for address {Address}", _address);
 
-            _ = Task.Run(
+            _ = SafeTask.Run(
                 async () => {
                     try
                     {

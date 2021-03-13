@@ -1,14 +1,14 @@
 // -----------------------------------------------------------------------
 // <copyright file="ThreadPoolStats.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
 using System.Threading.Tasks;
 
-namespace ClusterExperiment1
+namespace Proto.Utils
 {
-    public class ThreadPoolStats
+    public static class ThreadPoolStats
     {
         public static async Task Run(TimeSpan interval, TimeSpan limit, Action<TimeSpan> callback)
         {

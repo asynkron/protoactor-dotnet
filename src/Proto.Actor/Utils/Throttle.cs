@@ -47,7 +47,7 @@ namespace Proto.Utils
                 return tries > maxEventsInPeriod ? Valve.Closed : Valve.Open;
             };
 
-            void StartTimer(Action<int>? callBack) => _ = Task.Run(async () => {
+            void StartTimer(Action<int>? callBack) => _ = SafeTask.Run(async () => {
                     await Task.Delay(period);
                     var timesCalled = Interlocked.Exchange(ref currentEvents, 0);
                     if (timesCalled > maxEventsInPeriod) callBack?.Invoke(timesCalled - maxEventsInPeriod);
