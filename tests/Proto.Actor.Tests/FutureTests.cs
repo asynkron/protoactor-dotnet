@@ -69,7 +69,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void TestInATask() => Task.Run(async () => {
+        public void TestInATask() => SafeTask.Run(async () => {
                 var pid = Context.Spawn(Props.FromFunc(ctx => {
                             if (ctx.Message is string msg)
                             {

@@ -111,7 +111,7 @@ namespace ClusterExperiment1
             ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(200), t => { logger.LogCritical("Threadpool is flooded"); }
             );
 
-            _ = Task.Run(async () => {
+            _ = SafeTask.Run(async () => {
                     await Task.Delay(5000);
 
                     var semaphore = new AsyncSemaphore(50);
@@ -139,7 +139,7 @@ namespace ClusterExperiment1
             ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(500), t => { logger.LogCritical("Threadpool is flooded"); }
             );
 
-            _ = Task.Run(async () => {
+            _ = SafeTask.Run(async () => {
                     await Task.Delay(5000);
 
                     var cluster = await Configuration.SpawnClient();
@@ -179,7 +179,7 @@ namespace ClusterExperiment1
             ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(500), t => { logger.LogCritical("Threadpool is flooded"); }
             );
 
-            _ = Task.Run(async () => {
+            _ = SafeTask.Run(async () => {
                     await Task.Delay(5000);
 
                     var cluster = await Configuration.SpawnClient();
@@ -220,7 +220,7 @@ namespace ClusterExperiment1
                 followers.Add(p);
             }
 
-            _ = Task.Run(async () => {
+            _ = SafeTask.Run(async () => {
                     foreach (var t in followers)
                     {
                         await Task.Delay(20000);

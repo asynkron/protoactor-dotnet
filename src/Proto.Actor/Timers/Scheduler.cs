@@ -16,7 +16,7 @@ namespace Proto.Timers
         {
             var cts = new CancellationTokenSource();
 
-            _ = Task.Run(async () => {
+            _ = SafeTask.Run( async () => {
                     await Task.Delay(delay, cts.Token);
 
                     _context.Send(target, message);
@@ -33,7 +33,7 @@ namespace Proto.Timers
         {
             var cts = new CancellationTokenSource();
 
-            _ = Task.Run(async () => {
+            _ = SafeTask.Run(async () => {
                     await Task.Delay(delay, cts.Token);
 
                     async Task Trigger()
@@ -60,7 +60,7 @@ namespace Proto.Timers
         {
             var cts = new CancellationTokenSource();
 
-            _ = Task.Run(async () => {
+            _ = SafeTask.Run(async () => {
                     await Task.Delay(delay, cts.Token);
 
                     //TODO: allow custom sender
@@ -78,7 +78,7 @@ namespace Proto.Timers
         {
             var cts = new CancellationTokenSource();
 
-            _ = Task.Run(async () => {
+            _ = SafeTask.Run(async () => {
                     await Task.Delay(delay, cts.Token);
 
                     async Task Trigger()

@@ -164,7 +164,7 @@ class Program
                     break;
                 case LoopParentMessage _:
 
-                    Task.Run(async () => {
+                    _ = SafeTask.Run(async () => {
                             context.Send(context.Parent, new RenameCommand {Name = GeneratePronounceableName(5)});
 
                             await Task.Delay(TimeSpan.FromMilliseconds(500));

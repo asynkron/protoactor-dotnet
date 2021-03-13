@@ -22,7 +22,7 @@ namespace ActorMetrics
             system.Root.Send(pid, new MyMessage("Asynkron"));
           //  system.Root.Poison(pid);
 
-            _ = Task.Run(async () => {
+            _ = SafeTask.Run(async () => {
 
                     var r = new Random();
                     while (true)

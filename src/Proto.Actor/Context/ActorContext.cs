@@ -337,7 +337,7 @@ namespace Proto.Context
             new(system, props, parent, self, mailbox);
 
         private void ScheduleContinuation(Task target, Continuation cont) =>
-            _ = Task.Run(async () => {
+            _ = SafeTask.Run(async () => {
                     await target;
                     Self.SendSystemMessage(System, cont);
                 }

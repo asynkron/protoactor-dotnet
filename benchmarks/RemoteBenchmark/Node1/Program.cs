@@ -62,7 +62,7 @@ class Program
 
         var messageCount = 1000000;
         var cancellationTokenSource = new CancellationTokenSource();
-        _ = Task.Run(async () => {
+        _ = SafeTask.Run(async () => {
                 while (!cancellationTokenSource.IsCancellationRequested)
                 {
                     var semaphore = new SemaphoreSlim(0);

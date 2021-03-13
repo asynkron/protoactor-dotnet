@@ -54,7 +54,7 @@ namespace Proto.Utils
             //block caller
             _semaphore.Wait();
 
-            _ = Task.Run(async () => {
+            _ = SafeTask.Run(async () => {
                     try
                     {
                         var task = producer();

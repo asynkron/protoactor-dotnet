@@ -56,7 +56,7 @@ namespace Proto.Remote
                 var noise = _random.Next(500);
                 var duration = TimeSpan.FromMilliseconds(backoff + noise);
 
-                _ = Task.Run(async () => {
+                _ = SafeTask.Run(async () => {
                         await Task.Delay(duration);
                         Logger.LogWarning(reason,
                             "Restarting {Actor} after {Duration} because of {Reason}",
