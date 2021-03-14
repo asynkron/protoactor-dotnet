@@ -108,8 +108,6 @@ namespace ClusterExperiment1
         private static void RunFireForgetClient()
         {
             var logger = Log.CreateLogger(nameof(Program));
-            ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(200), t => { logger.LogCritical("Threadpool is flooded"); }
-            );
 
             _ = SafeTask.Run(async () => {
                     await Task.Delay(5000);
@@ -136,8 +134,7 @@ namespace ClusterExperiment1
         private static void RunBatchClient(int batchSize)
         {
             var logger = Log.CreateLogger(nameof(Program));
-            ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(500), t => { logger.LogCritical("Threadpool is flooded"); }
-            );
+
 
             _ = SafeTask.Run(async () => {
                     await Task.Delay(5000);
@@ -176,8 +173,6 @@ namespace ClusterExperiment1
         private static void RunClient()
         {
             var logger = Log.CreateLogger(nameof(Program));
-            ThreadPoolStats.Run(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(500), t => { logger.LogCritical("Threadpool is flooded"); }
-            );
 
             _ = SafeTask.Run(async () => {
                     await Task.Delay(5000);
