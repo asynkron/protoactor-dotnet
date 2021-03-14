@@ -11,6 +11,7 @@ namespace Proto.Metrics
     {
         public ActorMetrics(ProtoMetrics metrics)
         {
+            ThreadPoolLatencyHistogram = metrics.CreateHistogram("protoactor_threadpool_latency_duration_seconds", "");
             DeadletterCount = metrics.CreateCount("protoactor_deadletter_count", "", "messagetype");
             ActorSpawnCount = metrics.CreateCount("protoactor_actor_spawn_count", "", "actortype");
             ActorStoppedCount = metrics.CreateCount("protoactor_actor_stopped_count", "", "actortype");
@@ -25,6 +26,9 @@ namespace Proto.Metrics
             FuturesCompletedCount = metrics.CreateCount("protoactor_future_completed_count", "");
         }
 
+        //Threadpool
+        public readonly IHistogramMetric ThreadPoolLatencyHistogram; //done
+        
         //Deadletters
         public readonly ICountMetric DeadletterCount; //done
         

@@ -7,8 +7,10 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 using Proto.Extensions;
 using Proto.Metrics;
+using Proto.Utils;
 
 namespace Proto
 {
@@ -33,9 +35,28 @@ namespace Proto
             Guardians = new Guardians(this);
             EventStream = new EventStream(config.DeadLetterThrottleInterval, config.DeadLetterThrottleCount, Shutdown);
             Metrics = new ProtoMetrics(config.MetricsProviders);
-            var eventStreamProcess = new EventStreamProcess(this);
-            ProcessRegistry.TryAdd("eventstream", eventStreamProcess);
+            ProcessRegistry.TryAdd("eventstream", new EventStreamProcess(this));
             Extensions = new ActorSystemExtensions(this);
+
+            RunThreadPoolStats();
+        }
+
+        private void RunThreadPoolStats()
+        {
+            var logger = Log.CreateLogger(nameof(ThreadPoolStats));
+            _ = ThreadPoolStats.Run(TimeSpan.FromSeconds(5),
+                t => {
+                    
+                    //collect the latency metrics
+                    Metrics.InternalActorMetrics.ThreadPoolLatencyHistogram.Observe(t, Array.Empty<string>());
+                    
+                    //does it take longer than 1 sec for a task to start executing?
+                    if (t > TimeSpan.FromSeconds(1))
+                    {
+                        logger.LogWarning("ThreadPool is running hot, Threadpool latency {ThreadPoolLatency}", t);
+                    }
+                }, _cts.Token
+            );
         }
 
         public string Id { get; } = Guid.NewGuid().ToString("N");
