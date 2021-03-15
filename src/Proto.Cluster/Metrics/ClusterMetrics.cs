@@ -19,7 +19,7 @@ namespace Proto.Cluster.Metrics
             
             ClusterRequestHistogram= metrics.CreateHistogram("protocluster_virtualactor_requestasync_duration_seconds" , "", "clusterkind","messagetype");
 
-            ClusterRequestRetryCount = metrics.CreateCount("protocluster_virtualactor_requestasync_retry_count", "","clusterkind","messagetype");
+            ClusterRequestRetryCount = metrics.CreateCount("protocluster_virtualactor_requestasync_retry_count", "","clusterkind","messagetype","source");
             
             ClusterTopologyEventCount = metrics.CreateCount("protocluster_topologyevent_count", "");
         }

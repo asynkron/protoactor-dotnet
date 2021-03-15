@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -49,6 +50,7 @@ namespace Proto.Cluster
                         clusterIdentity.Identity, clusterIdentity.Kind, message, cachedPid
                     );
                     var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, cachedPid, "PidCache", context);
+
                     if (status == ResponseStatus.Ok) return res;
                 }
 
@@ -123,8 +125,10 @@ namespace Proto.Cluster
         {
             try
             {
+                var sw = Stopwatch.StartNew();
                 var res = await context.RequestAsync<T>(cachedPid, message, _config.ActorRequestTimeout);
-
+                context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram.Observe(sw,new []{clusterIdentity.Kind,message.GetType().Name,source});
+                
                 if (res is not null) return (ResponseStatus.Ok, res);
             }
             catch (DeadLetterException)
