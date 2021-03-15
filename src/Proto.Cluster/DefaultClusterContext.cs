@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Identity;
+using Proto.Cluster.Metrics;
 using Proto.Utils;
 
 namespace Proto.Cluster
@@ -93,6 +94,8 @@ namespace Proto.Cluster
                         case ResponseStatus.DeadLetter:
                             break;
                     }
+                    
+                    context.System.Metrics.Get<ClusterMetrics>().ClusterRequestRetryCount.Inc( new[]{clusterIdentity.Kind, message.GetType().Name});
                 }
                 catch(Exception e)
                 {

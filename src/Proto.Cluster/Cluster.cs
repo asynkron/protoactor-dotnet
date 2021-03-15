@@ -35,6 +35,7 @@ namespace Proto.Cluster
             system.EventStream.Subscribe<ClusterTopology>(e => {
                     foreach (var member in e.Left)
                     {
+                        system.Metrics.Get<ClusterMetrics>().ClusterTopologyEventCount.Inc(Array.Empty<string>());
                         PidCache.RemoveByMember(member);
                     }
                 }
