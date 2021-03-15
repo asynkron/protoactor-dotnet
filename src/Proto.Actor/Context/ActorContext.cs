@@ -279,7 +279,7 @@ namespace Proto.Context
                     labels: new[]
                     {
                         Actor!.GetType().Name,
-                        msg.GetType().Name
+                        MessageEnvelope.UnwrapMessage(msg)!.GetType().Name
                     }
                 )
             };

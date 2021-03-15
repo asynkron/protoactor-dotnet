@@ -33,9 +33,9 @@ namespace Proto.Cluster
 
             _clusterHeartBeat = new ClusterHeartBeat(this);
             system.EventStream.Subscribe<ClusterTopology>(e => {
+                    system.Metrics.Get<ClusterMetrics>().ClusterTopologyEventGauge.Set(e.Members.Count,Array.Empty<string>());
                     foreach (var member in e.Left)
                     {
-                        system.Metrics.Get<ClusterMetrics>().ClusterTopologyEventCount.Inc(Array.Empty<string>());
                         PidCache.RemoveByMember(member);
                     }
                 }

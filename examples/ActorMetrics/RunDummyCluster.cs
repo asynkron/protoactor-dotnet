@@ -15,7 +15,7 @@ using Ubiquitous.Metrics.Prometheus;
 
 namespace ActorMetrics
 {
-    public class Foo
+    public class RunDummyCluster
     {
         public static void Run()
         {
@@ -28,13 +28,32 @@ namespace ActorMetrics
 
             var clusterConfig =
                 ClusterConfig
-                    .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://consul:8500/")), new PartitionIdentityLookup());
+                    .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://127.0.0.1:8500/")), new PartitionIdentityLookup());
 
             var system = new ActorSystem(config)
                 .WithRemote(remoteConfig)
                 .WithCluster(clusterConfig);
 
             system
+                .Cluster()
+                .StartMemberAsync();
+
+            
+            var config2 = ActorSystemConfig.Setup().WithMetricsProviders(new PrometheusConfigurator());
+
+            var remoteConfig2 = GrpcCoreRemoteConfig
+                .BindToLocalhost();
+
+            var clusterConfig2 =
+                ClusterConfig
+                    .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://127.0.0.1:8500/")), new PartitionIdentityLookup());
+
+            
+            var system2 = new ActorSystem(config2)
+                .WithRemote(remoteConfig2)
+                .WithCluster(clusterConfig2);
+            
+            system2
                 .Cluster()
                 .StartMemberAsync();
             

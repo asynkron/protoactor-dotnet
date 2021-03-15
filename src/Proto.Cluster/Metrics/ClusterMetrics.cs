@@ -21,13 +21,13 @@ namespace Proto.Cluster.Metrics
 
             ClusterRequestRetryCount = metrics.CreateCount("protocluster_virtualactor_requestasync_retry_count", "","clusterkind","messagetype","source");
             
-            ClusterTopologyEventCount = metrics.CreateCount("protocluster_topologyevent_count", "");
+            ClusterTopologyEventGauge = metrics.CreateGauge("protocluster_topology_events", "");
         }
 
         public readonly ICountMetric ClusterActorCount;
         public readonly IHistogramMetric ClusterActorSpawnHistogram;
         public readonly IHistogramMetric ClusterRequestHistogram;
         public readonly ICountMetric ClusterRequestRetryCount;
-        public readonly ICountMetric ClusterTopologyEventCount;
+        public readonly IGaugeMetric ClusterTopologyEventGauge;
     }
 }

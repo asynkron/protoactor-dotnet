@@ -59,7 +59,6 @@ namespace Proto.Cluster.Partition
 
         private Task Tick(IContext context)
         {
-            context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
             var count = _myActors.Count;
             _logger.LogDebug("Statistics: Actor Count {ActorCount}", count);
             return Task.CompletedTask;
