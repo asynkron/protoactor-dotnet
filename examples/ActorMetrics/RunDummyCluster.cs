@@ -56,7 +56,7 @@ namespace ActorMetrics
             system2
                 .Cluster()
                 .StartMemberAsync();
-            
+
             var props = Props.FromProducer(() => new MyActor());
 
             var pid = system.Root.Spawn(props);

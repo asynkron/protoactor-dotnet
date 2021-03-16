@@ -48,7 +48,7 @@ namespace Proto
                 t => {
                     
                     //collect the latency metrics
-                    Metrics.InternalActorMetrics.ThreadPoolLatencyHistogram.Observe(t, Array.Empty<string>());
+                    Metrics.InternalActorMetrics.ThreadPoolLatencyHistogram.Observe(t, new []{Id,Address});
                     
                     //does it take longer than 1 sec for a task to start executing?
                     if (t > TimeSpan.FromSeconds(1))

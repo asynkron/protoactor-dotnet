@@ -11,19 +11,19 @@ namespace Proto.Metrics
     {
         public ActorMetrics(ProtoMetrics metrics)
         {
-            ThreadPoolLatencyHistogram = metrics.CreateHistogram("protoactor_threadpool_latency_duration_seconds", "");
-            DeadletterCount = metrics.CreateCount("protoactor_deadletter_count", "", "messagetype");
-            ActorSpawnCount = metrics.CreateCount("protoactor_actor_spawn_count", "", "actortype");
-            ActorStoppedCount = metrics.CreateCount("protoactor_actor_stopped_count", "", "actortype");
-            ActorRestartedCount = metrics.CreateCount("protoactor_actor_restarted_count", "", "actortype");
-            ActorFailureCount = metrics.CreateCount("protoactor_actor_failure_count", "", "actortype");
+            ThreadPoolLatencyHistogram = metrics.CreateHistogram("protoactor_threadpool_latency_duration_seconds", "","id","address");
+            DeadletterCount = metrics.CreateCount("protoactor_deadletter_count", "", "id","address","messagetype");
+            ActorSpawnCount = metrics.CreateCount("protoactor_actor_spawn_count", "", "id","address","actortype");
+            ActorStoppedCount = metrics.CreateCount("protoactor_actor_stopped_count", "", "id","address","actortype");
+            ActorRestartedCount = metrics.CreateCount("protoactor_actor_restarted_count", "", "id","address","actortype");
+            ActorFailureCount = metrics.CreateCount("protoactor_actor_failure_count", "", "id","address","actortype");
 
-            ActorMailboxLength = metrics.CreateGauge("protoactor_actor_mailbox_length", "", "actortype");
+            ActorMailboxLength = metrics.CreateGauge("protoactor_actor_mailbox_length", "", "id","address","actortype");
             
-            ActorMessageReceiveHistogram = metrics.CreateHistogram("protoactor_actor_messagereceive_duration_seconds", "", "actortype","messagetype");
-            FuturesStartedCount = metrics.CreateCount("protoactor_future_started_count","");
-            FuturesTimedOutCount = metrics.CreateCount("protoactor_future_timedout_count", "");
-            FuturesCompletedCount = metrics.CreateCount("protoactor_future_completed_count", "");
+            ActorMessageReceiveHistogram = metrics.CreateHistogram("protoactor_actor_messagereceive_duration_seconds", "", "id","address","actortype","messagetype");
+            FuturesStartedCount = metrics.CreateCount("protoactor_future_started_count","","id","address");
+            FuturesTimedOutCount = metrics.CreateCount("protoactor_future_timedout_count", "","id","address");
+            FuturesCompletedCount = metrics.CreateCount("protoactor_future_completed_count", "","id","address");
         }
 
         //Threadpool

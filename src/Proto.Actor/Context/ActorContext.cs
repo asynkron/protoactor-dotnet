@@ -206,7 +206,7 @@ namespace Proto.Context
 
         public void Stop(PID pid)
         {
-            System.Metrics.InternalActorMetrics.ActorStoppedCount.Inc(Actor!.GetType().Name);
+            System.Metrics.InternalActorMetrics.ActorStoppedCount.Inc(new[]{System.Id,System.Address, Actor!.GetType().Name});
             var reff = System.ProcessRegistry.Get(pid);
             reff.Stop(pid);
         }
@@ -229,7 +229,7 @@ namespace Proto.Context
 
         public void EscalateFailure(Exception reason, object? message)
         {
-            System.Metrics.InternalActorMetrics.ActorFailureCount.Inc(Actor!.GetType().Name);
+            System.Metrics.InternalActorMetrics.ActorFailureCount.Inc(new []{System.Id,System.Address, Actor!.GetType().Name} );
             var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
             Self.SendSystemMessage(System, SuspendMailbox.Instance);
 
@@ -269,7 +269,7 @@ namespace Proto.Context
         {
             if (!System.Metrics.IsNoop)
             {
-                System.Metrics.InternalActorMetrics.ActorMailboxLength.Set(_mailbox.UserMessageCount, Actor!.GetType().Name);
+                System.Metrics.InternalActorMetrics.ActorMailboxLength.Set(_mailbox.UserMessageCount, new []{System.Id,System.Address, Actor!.GetType().Name} );
             }
 
             return System.Metrics.IsNoop switch
@@ -278,6 +278,8 @@ namespace Proto.Context
                 _ => Measure(() => InternalInvokeUserMessageAsync(msg), System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram,
                     labels: new[]
                     {
+                        System.Id,
+                        System.Address,
                         Actor!.GetType().Name,
                         MessageEnvelope.UnwrapMessage(msg)!.GetType().Name
                     }
@@ -434,7 +436,7 @@ namespace Proto.Context
         {
             _state = ContextState.Alive;
             var actor = _props.Producer(System);
-            System.Metrics.InternalActorMetrics.ActorSpawnCount.Inc(actor.GetType().Name);
+            System.Metrics.InternalActorMetrics.ActorSpawnCount.Inc(new[] {System.Id,System.Address, actor.GetType().Name});
             return actor;
         }
 
@@ -444,7 +446,7 @@ namespace Proto.Context
             CancelReceiveTimeout();
             await InvokeUserMessageAsync(Restarting.Instance);
             await StopAllChildren();
-            System.Metrics.InternalActorMetrics.ActorRestartedCount.Inc(Actor!.GetType().Name);
+            System.Metrics.InternalActorMetrics.ActorRestartedCount.Inc(new[]{System.Id,System.Address, Actor!.GetType().Name});
         }
 
         private Task HandleUnwatch(Unwatch uw)
