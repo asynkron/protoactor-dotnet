@@ -10,7 +10,9 @@ using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
+using Proto.Remote;
 using Proto.Remote.GrpcCore;
+using Some.Namespace;
 using Ubiquitous.Metrics.Prometheus;
 
 namespace ActorMetrics
@@ -24,7 +26,8 @@ namespace ActorMetrics
             var config = ActorSystemConfig.Setup().WithMetricsProviders(new PrometheusConfigurator());
 
             var remoteConfig = GrpcCoreRemoteConfig
-                .BindToLocalhost();
+                .BindToLocalhost()
+                .WithProtoMessages(MessagesReflection.Descriptor);
 
             var clusterConfig =
                 ClusterConfig
@@ -37,17 +40,21 @@ namespace ActorMetrics
             system
                 .Cluster()
                 .StartMemberAsync();
-
+            
+            var props = Props.FromProducer(() => new MyActor());
             
             var config2 = ActorSystemConfig.Setup().WithMetricsProviders(new PrometheusConfigurator());
 
             var remoteConfig2 = GrpcCoreRemoteConfig
-                .BindToLocalhost();
+                .BindToLocalhost()
+                .WithProtoMessages(MessagesReflection.Descriptor);
 
             var clusterConfig2 =
                 ClusterConfig
-                    .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://127.0.0.1:8500/")), new PartitionIdentityLookup());
-
+                    .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://127.0.0.1:8500/")),
+                        new PartitionIdentityLookup()
+                    )
+                    .WithClusterKind("somekind", props);
             
             var system2 = new ActorSystem(config2)
                 .WithRemote(remoteConfig2)
@@ -57,22 +64,13 @@ namespace ActorMetrics
                 .Cluster()
                 .StartMemberAsync();
 
-            var props = Props.FromProducer(() => new MyActor());
-
-            var pid = system.Root.Spawn(props);
-            system.Root.Send(pid, new MyMessage("Asynkron"));
-          //  system.Root.Poison(pid);
-
             _ = SafeTask.Run(async () => {
-
                     var r = new Random();
                     while (true)
                     {
                         await Task.Delay(r.Next(1,2000));
-                        system.Root.Send(pid, new MyMessage("Asynkron"));
-
+                        await system.Cluster().RequestAsync<SomeResponse>($"someactor{r.Next(1, 100)}", "somekind", new SomeRequest(), CancellationTokens.WithTimeout(5000));
                     }
-
                 }
             );
 
@@ -86,10 +84,11 @@ namespace ActorMetrics
         private Random r = new();
         public async Task ReceiveAsync(IContext context)
         {
-            if (context.Message is MyMessage m)
+            if (context.Message is SomeRequest m)
             {
+                Console.WriteLine("tick..");
                 await Task.Delay(r.Next(50, 500));
-                Console.WriteLine(m.Name);
+                context.Respond(new SomeResponse());
             }
         }
     }

@@ -17,9 +17,9 @@ namespace Proto.Cluster.Metrics
             
             ClusterActorSpawnHistogram= metrics.CreateHistogram("protocluster_virtualactor_spawn_duration_seconds" , "", "id","address","clusterkind");
             
-            ClusterRequestHistogram= metrics.CreateHistogram("protocluster_virtualactor_requestasync_duration_seconds" , "", "id","address","clusterkind","messagetype");
+            ClusterRequestHistogram= metrics.CreateHistogram("protocluster_virtualactor_requestasync_duration_seconds" , "", "id","address","clusterkind","messagetype","pidsource");
 
-            ClusterRequestRetryCount = metrics.CreateCount("protocluster_virtualactor_requestasync_retry_count", "","id","address","clusterkind","messagetype","pidsource");
+            ClusterRequestRetryCount = metrics.CreateCount("protocluster_virtualactor_requestasync_retry_count", "","id","address","clusterkind","messagetype");
             
             ClusterTopologyEventGauge = metrics.CreateGauge("protocluster_topology_events", "","id","address");
         }

@@ -6,6 +6,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Grpc.Tools" Version="2.36.1">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="prometheus-net.AspNetCore" Version="4.1.1" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
         <PackageReference Include="Ubiquitous.Metrics" Version="0.1.3-alpha.0.3" />
@@ -16,6 +20,10 @@
       <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
       <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
       <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Protobuf Include="Messages.proto" />
     </ItemGroup>
 
 </Project>
