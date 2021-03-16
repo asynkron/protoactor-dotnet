@@ -154,7 +154,13 @@ namespace Proto.Cluster.Partition
                     //spawn and remember this actor
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
+                    
                     var clusterProps = props.WithClusterInit(_cluster, msg.ClusterIdentity);
+                    if (_cluster.Config.DedupeClusterRequests)
+                    {
+                        clusterProps = clusterProps.WithRequestDedupe(_cluster.Config.DedupeClusterRequestInterval);
+                    }
+                    
                     var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.Identity);
 
                     _myActors[msg.ClusterIdentity] = (pid, _eventId);

@@ -118,10 +118,14 @@ namespace Proto.Cluster.Identity
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
                     var clusterProps = props.WithClusterInit(_cluster, msg.ClusterIdentity);
-
+                    if (_cluster.Config.DedupeClusterRequests)
+                    {
+                        clusterProps = clusterProps.WithRequestDedupe(_cluster.Config.DedupeClusterRequestInterval);
+                    }
+                    
                     var sw = Stopwatch.StartNew();
                     var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.ToString());
-                    context.System.Metrics.Get<ClusterMetrics>().ClusterActorSpawnHistogram.Observe(sw, new []{_cluster.System.Id,_cluster.System.Address,  msg.Kind});
+                    context.System.Metrics.Get<ClusterMetrics>()?.ClusterActorSpawnHistogram.Observe(sw, new []{_cluster.System.Id,_cluster.System.Address,  msg.Kind});
                     sw.Stop();
 
                     //Do not expose the PID externally before we have persisted the activation

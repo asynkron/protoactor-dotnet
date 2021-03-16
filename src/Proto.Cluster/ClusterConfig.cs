@@ -24,6 +24,8 @@ namespace Proto.Cluster
             MaxNumberOfEventsInRequestLogThrottlePeriod = 3;
             RequestLogThrottlePeriod = TimeSpan.FromSeconds(2);
             HeartBeatInterval = TimeSpan.FromSeconds(30);
+            DedupeClusterRequests = true;
+            DedupeClusterRequestInterval = TimeSpan.FromSeconds(30);
             MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
             ClusterKinds = ImmutableDictionary<string, Props>.Empty;
             IdentityLookup = identityLookup;
@@ -44,6 +46,10 @@ namespace Proto.Cluster
 
         public IIdentityLookup? IdentityLookup { get; }
         public TimeSpan HeartBeatInterval { get; init; }
+        
+        public bool DedupeClusterRequests { get; init; }
+        
+        public TimeSpan DedupeClusterRequestInterval { get; init; }
 
         public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } =
             c => new DefaultClusterContext(c.IdentityLookup, c.PidCache, c.Logger, c.Config.ToClusterContextConfig());
@@ -52,13 +58,13 @@ namespace Proto.Cluster
             this with {TimeoutTimespan = timeSpan};
 
         public ClusterConfig WithActorRequestTimeout(TimeSpan timeSpan) =>
-            this with { ActorRequestTimeout = timeSpan };
+            this with {ActorRequestTimeout = timeSpan};
 
         public ClusterConfig WithRequestLogThrottlePeriod(TimeSpan timeSpan) =>
-            this with { RequestLogThrottlePeriod = timeSpan };
+            this with {RequestLogThrottlePeriod = timeSpan};
 
         public ClusterConfig WithMaxNumberOfEventsInRequestLogThrottlePeriod(int max) =>
-            this with { MaxNumberOfEventsInRequestLogThrottlePeriod = max };
+            this with {MaxNumberOfEventsInRequestLogThrottlePeriod = max};
 
         public ClusterConfig WithMemberStrategyBuilder(Func<Cluster, string, IMemberStrategy> builder) =>
             this with {MemberStrategyBuilder = builder};
