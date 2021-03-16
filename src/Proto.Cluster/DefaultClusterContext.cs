@@ -97,7 +97,7 @@ namespace Proto.Cluster
                             break;
                     }
                     
-                    context.System.Metrics.Get<ClusterMetrics>().ClusterRequestRetryCount.Inc( new[]{clusterIdentity.Kind, message.GetType().Name});
+                    context.System.Metrics.Get<ClusterMetrics>().ClusterRequestRetryCount.Inc( new[]{context.System.Id,context.System.Address, clusterIdentity.Kind, message.GetType().Name});
                 }
                 catch(Exception e)
                 {
@@ -127,7 +127,7 @@ namespace Proto.Cluster
             {
                 var sw = Stopwatch.StartNew();
                 var res = await context.RequestAsync<T>(cachedPid, message, _config.ActorRequestTimeout);
-                context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram.Observe(sw,new []{clusterIdentity.Kind,message.GetType().Name,source});
+                context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram.Observe(sw,new []{context.System.Id,context.System.Address, clusterIdentity.Kind,message.GetType().Name,source});
                 
                 if (res is not null) return (ResponseStatus.Ok, res);
             }
