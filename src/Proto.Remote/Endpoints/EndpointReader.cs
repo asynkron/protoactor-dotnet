@@ -39,7 +39,7 @@ namespace Proto.Remote
 
                 throw new RpcException(Status.DefaultCancelled, "Suspended");
             }
-            _system.Metrics.Get<RemoteMetrics>().RemoteEndpointConnectedCount.Inc(context.Peer);
+            _system.Metrics.Get<RemoteMetrics>().RemoteEndpointConnectedCount.Inc(new []{_system.Id,_system.Address, context.Peer});
 
             Logger.LogDebug("[EndpointReader] Accepted connection request from {Remote} to {Local}", context.Peer,
                 context.Host
@@ -104,7 +104,7 @@ namespace Proto.Remote
                 {
                     var target = targets[envelope.Target];
                     var typeName = typeNames[envelope.TypeId];
-                    m.Inc(typeName);
+                    m.Inc(new []{_system.Id,_system.Address, typeName});
                     object message;
                     try
                     {
@@ -132,7 +132,7 @@ namespace Proto.Remote
                 }
             }
 
-            _system.Metrics.Get<RemoteMetrics>().RemoteEndpointDisconnectedCount.Inc(context.Peer);
+            _system.Metrics.Get<RemoteMetrics>().RemoteEndpointDisconnectedCount.Inc(new[]{_system.Id,_system.Address, context.Peer});
             Logger.LogDebug("[EndpointReader] Stream closed by {Remote}", context.Peer);
         }
 

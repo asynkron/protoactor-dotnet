@@ -14,12 +14,12 @@ namespace Proto.Remote.Metrics
     {
         public RemoteMetrics(ProtoMetrics metrics)
         {
-            RemoteSerializedMessageCount = metrics.CreateCount("protoremote_message_serialize_count", "","messagetype");
-            RemoteDeserializedMessageCount = metrics.CreateCount("protoremote_message_deserialize_count", "", "messagetype");
-            RemoteKindCount = metrics.CreateCount("protoremote_kind_count", "");
-            RemoteActorSpawnCount = metrics.CreateCount("protoremote_spawn_count", "");
-            RemoteEndpointConnectedCount = metrics.CreateCount("protoremote_endpoint_connected_count", "", "address");
-            RemoteEndpointDisconnectedCount = metrics.CreateCount("protoremote_endpoint_disconnected_count", "", "address");
+            RemoteSerializedMessageCount = metrics.CreateCount("protoremote_message_serialize_count", "","id","address","messagetype");
+            RemoteDeserializedMessageCount = metrics.CreateCount("protoremote_message_deserialize_count", "", "id","address","messagetype");
+            RemoteKindCount = metrics.CreateCount("protoremote_kind_count", "","id","address");
+            RemoteActorSpawnCount = metrics.CreateCount("protoremote_spawn_count", "","id","address","kind");
+            RemoteEndpointConnectedCount = metrics.CreateCount("protoremote_endpoint_connected_count", "", "id","address","destinationaddress");
+            RemoteEndpointDisconnectedCount = metrics.CreateCount("protoremote_endpoint_disconnected_count", "", "id","address","destinationaddress");
         }
 
         public readonly ICountMetric RemoteSerializedMessageCount;   //done
