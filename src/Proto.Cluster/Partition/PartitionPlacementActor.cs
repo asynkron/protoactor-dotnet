@@ -158,7 +158,7 @@ namespace Proto.Cluster.Partition
                     var clusterProps = props.WithClusterInit(_cluster, msg.ClusterIdentity);
                     if (_cluster.Config.DedupeClusterRequests)
                     {
-                        clusterProps = clusterProps.WithSenderDedupe(_cluster.Config.DedupeClusterRequestInterval);
+                        clusterProps = clusterProps.WithSenderDedupe(_cluster);
                     }
                     
                     var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.Identity);

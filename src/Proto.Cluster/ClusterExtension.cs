@@ -87,9 +87,9 @@ namespace Proto.Cluster
         /// <param name="props"></param>
         /// <param name="dedupeWindow"></param>
         /// <returns></returns>
-        public static Props WithSenderDedupe(this Props props, TimeSpan dedupeWindow)
+        public static Props WithSenderDedupe(this Props props, Cluster cluster)
         {
-            var dedupe = new PidDedupe(dedupeWindow);
+            var dedupe = new PidDedupe(cluster.Config.DedupeClusterRequestInterval, cluster);
             return props.WithReceiverMiddleware(
                 baseReceive => (ctx, env)
                     => env.Sender is null
@@ -114,12 +114,18 @@ namespace Proto.Cluster
             private readonly GetInternalMemberId _getMember;
             private readonly Dictionary<PidRef, long> _processed = new(50);
 
-            public PidDedupe(TimeSpan dedupeInterval)
+            public PidDedupe(TimeSpan dedupeInterval, Cluster cluster)
             {
                 _ttl = Stopwatch.Frequency * (long) dedupeInterval.TotalSeconds;
                 _getMember = (PID pid, out int id) => {
-                    id = pid.Address.GetHashCode(); //Replace with lookup / something
-                    return true;
+                    if (cluster.MemberList.TryGetMemberByAddress(pid.Address, out var member))
+                    {
+                        id = member.Index;
+                        return true;
+                    }
+
+                    id = default;
+                    return false;
                 };
             }
 
@@ -139,7 +145,7 @@ namespace Proto.Cluster
                     await continuation();
                     CleanIfNeeded(cutoff, now);
                     _lastCheck = now;
-                    Add(pidRef,now);
+                    Add(pidRef, now);
                     return;
                 }
 
@@ -170,7 +176,8 @@ namespace Proto.Cluster
                 else if (_processed.Count >= 50 && _cleanedAt < _oldest)
                 {
                     var oldest = long.MaxValue;
-                    foreach (var (key,timestamp) in _processed.ToList())
+
+                    foreach (var (key, timestamp) in _processed.ToList())
                     {
                         if (timestamp < cutoff)
                         {
@@ -181,6 +188,7 @@ namespace Proto.Cluster
                             oldest = Math.Min(timestamp, oldest);
                         }
                     }
+
                     _cleanedAt = now;
                     _oldest = oldest;
                 }

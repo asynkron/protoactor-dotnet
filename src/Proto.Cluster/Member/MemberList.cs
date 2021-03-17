@@ -41,9 +41,12 @@ namespace Proto.Cluster
         //meaning the partition infra might be ahead of this list.
         //come up with a good solution to keep all this in sync
         private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
+        private ImmutableDictionary<string, Member> _membersByAddress = ImmutableDictionary<string, Member>.Empty;
+        private ImmutableDictionary<int, Member> _membersByIndex = ImmutableDictionary<int, Member>.Empty;
 
-        private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind =
-            ImmutableDictionary<string, IMemberStrategy>.Empty;
+        private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
+
+        private int _nextMemberIndex;
 
         public MemberList(Cluster cluster)
         {
@@ -173,7 +176,8 @@ namespace Proto.Cluster
                         {
                             Host = memberThatLeft.Host,
                             Port = memberThatLeft.Port,
-                            Id = memberThatLeft.Id
+                            Id = memberThatLeft.Id,
+                            Index = memberThatLeft.Index
                         }
                     );
                 }
@@ -187,12 +191,14 @@ namespace Proto.Cluster
                 //notify that these members joined
                 foreach (var memberThatJoined in membersThatJoined)
                 {
+                    // Node local short identifier
                     MemberJoin(memberThatJoined);
                     topology.Joined.Add(new Member
                         {
                             Host = memberThatJoined.Host,
                             Port = memberThatJoined.Port,
-                            Id = memberThatJoined.Id
+                            Id = memberThatJoined.Id,
+                            Index = memberThatJoined.Index
                         }
                     );
                 }
@@ -228,6 +234,12 @@ namespace Proto.Cluster
             _bannedMembers.Add(memberThatLeft.Id);
 
             _members = _members.Remove(memberThatLeft.Id);
+            _membersByIndex = _membersByIndex.Remove(memberThatLeft.Index);
+
+            if (_membersByAddress.TryGetValue(memberThatLeft.Address, out var member) && memberThatLeft.Id.Equals(member))
+            {
+                _membersByAddress = _membersByAddress.Remove(memberThatLeft.Address);
+            }
 
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
             _logger.LogDebug("Published event {@EndpointTerminated}", endpointTerminated);
@@ -236,9 +248,13 @@ namespace Proto.Cluster
 
         private void MemberJoin(Member newMember)
         {
+            newMember.Index = _nextMemberIndex++;
+
             //TODO: looks fishy, no locks, are we sure this is safe? it is using private state _vars
 
             _members = _members.Add(newMember.Id, newMember);
+            _membersByIndex = _membersByIndex.Add(newMember.Index, newMember);
+            _membersByAddress = _membersByAddress.Add(newMember.Address, newMember);
 
             foreach (var kind in newMember.Kinds)
             {
@@ -280,6 +296,10 @@ namespace Proto.Cluster
         public bool ContainsMemberId(string memberId) => _members.ContainsKey(memberId);
 
         public bool TryGetMember(string memberId, out Member value) => _members.TryGetValue(memberId, out value);
+
+        public bool TryGetMemberByAddress(string address, out Member value) => _membersByAddress.TryGetValue(address, out value);
+
+        public bool TryGetMember(int memberIndex, out Member value) => _membersByIndex.TryGetValue(memberIndex, out value);
 
         public Member[] GetAllMembers() => _members.Values.ToArray();
     }
