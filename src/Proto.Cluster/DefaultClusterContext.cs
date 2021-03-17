@@ -73,7 +73,7 @@ namespace Proto.Cluster
 
                     case ResponseStatus.Exception:
                         RefreshFuture();
-                        await RemoveFromSource(clusterIdentity, source, pid);
+                        await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
                         await Task.Delay(delay, CancellationToken.None);
                         break;
                     case ResponseStatus.DeadLetter:
@@ -82,7 +82,7 @@ namespace Proto.Cluster
                         break;
                     case ResponseStatus.TimedOut:
                         lastPid = pid;
-                        await RemoveFromSource(clusterIdentity, source, pid);
+                        await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
                         break;
                 }
 
