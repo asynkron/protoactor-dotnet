@@ -120,7 +120,7 @@ namespace Proto.Cluster.Identity
                     var clusterProps = props.WithClusterInit(_cluster, msg.ClusterIdentity);
                     if (_cluster.Config.DedupeClusterRequests)
                     {
-                        clusterProps = clusterProps.WithRequestDedupe(_cluster.Config.DedupeClusterRequestInterval);
+                        clusterProps = clusterProps.WithSenderDedupe(_cluster.Config.DedupeClusterRequestInterval);
                     }
                     
                     var sw = Stopwatch.StartNew();

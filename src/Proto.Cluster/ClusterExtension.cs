@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -59,7 +60,8 @@ namespace Proto.Cluster
                 await baseReceive(ctx, startEnvelope);
                 var grainInit = new ClusterInit(clusterIdentity, cluster);
                 var grainInitEnvelope = new MessageEnvelope(grainInit, null);
-                cluster.System.Metrics.Get<ClusterMetrics>()?.ClusterActorCount.Inc( new []{cluster.System.Id,cluster.System.Address,  clusterIdentity.Kind});
+                cluster.System.Metrics.Get<ClusterMetrics>()?.ClusterActorCount
+                    .Inc(new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
                 await baseReceive(ctx, grainInitEnvelope);
             }
 
@@ -71,23 +73,28 @@ namespace Proto.Cluster
                 MessageEnvelope startEnvelope
             )
             {
-                cluster.System.Metrics.Get<ClusterMetrics>()?.ClusterActorCount.Inc( new[]{cluster.System.Id,cluster.System.Address, clusterIdentity.Kind},-1);
+                cluster.System.Metrics.Get<ClusterMetrics>()?.ClusterActorCount
+                    .Inc(new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind}, -1);
                 await baseReceive(ctx, startEnvelope);
             }
         }
 
-        public static Props WithRequestDedupe(this Props props, TimeSpan dedupeWindow)
+        /// <summary>
+        /// Deduplicates processing when receiving multiple requests from FutureProcess PID's.
+        /// Allows clients to retry requests on the same future, but not have it processed multiple times.
+        /// To guarantee that the message is processed at most once, the dedupe window has to be longer than the retry window. 
+        /// </summary>
+        /// <param name="props"></param>
+        /// <param name="dedupeWindow"></param>
+        /// <returns></returns>
+        public static Props WithSenderDedupe(this Props props, TimeSpan dedupeWindow)
         {
             var dedupe = new PidDedupe(dedupeWindow);
             return props.WithReceiverMiddleware(
-                baseReceive => (ctx, env) => {
-                    if (env.Sender is null)
-                    {
-                        baseReceive(ctx, env);
-                    }
-
-                    return dedupe.Dedupe(env.Sender!,() => baseReceive(ctx, env));
-                }
+                baseReceive => (ctx, env)
+                    => env.Sender is null
+                        ? baseReceive(ctx, env)
+                        : dedupe.Dedupe(env.Sender!, () => baseReceive(ctx, env))
             );
         }
 
@@ -100,15 +107,18 @@ namespace Proto.Cluster
         {
             private static readonly ILogger Logger = Log.CreateLogger<PidDedupe>();
             private readonly long _ttl;
+            private long _lastCheck;
+            private long _oldest;
+            private long _cleanedAt;
 
             private readonly GetInternalMemberId _getMember;
-            private readonly List<DedupeItem> _processed = new(50);
+            private readonly Dictionary<PidRef, long> _processed = new(50);
 
             public PidDedupe(TimeSpan dedupeInterval)
             {
                 _ttl = Stopwatch.Frequency * (long) dedupeInterval.TotalSeconds;
                 _getMember = (PID pid, out int id) => {
-                    id = pid.Address.GetHashCode(); //Replace with lookup
+                    id = pid.Address.GetHashCode(); //Replace with lookup / something
                     return true;
                 };
             }
@@ -117,65 +127,63 @@ namespace Proto.Cluster
             {
                 if (TryGetRef(sender, out var pidRef))
                 {
-                    if (IsDuplicate(ref pidRef))
+                    var now = Stopwatch.GetTimestamp();
+                    var cutoff = now - _ttl;
+
+                    if (IsDuplicate(pidRef, cutoff))
                     {
-                        Logger.LogWarning("Cluster request deduplicated");
+                        Logger.LogInformation("Cluster request deduplicated");
                         return;
                     }
 
                     await continuation();
-                    Add(pidRef);
+                    CleanIfNeeded(cutoff, now);
+                    _lastCheck = now;
+                    Add(pidRef,now);
                     return;
                 }
 
                 await continuation();
             }
 
-            public bool IsDuplicate(ref PidRef sender)
-            {
-                Clean();
+            private bool IsDuplicate(PidRef sender, long cutoff)
+                => _lastCheck > cutoff && (_processed.TryGetValue(sender, out var ticks) && ticks >= cutoff);
 
-                foreach (var tuple in _processed)
+            private void Add(PidRef sender, long now)
+            {
+                if (_processed.Count == 0)
                 {
-                    if (tuple.Sender.Equals(sender)) return true;
+                    _oldest = now;
                 }
 
-                return false;
+                _processed.Add(sender, now);
             }
 
-            public void Add(PidRef sender) => _processed.Add(new DedupeItem(Stopwatch.GetTimestamp(), sender));
-
-            private void Clean()
+            private void CleanIfNeeded(long cutoff, long now)
             {
-                if (_processed.Count == 0) return;
-
-                var cutoff = Stopwatch.GetTimestamp() - _ttl;
-
-                if (!HasTimedOut(_processed[0]))
+                if (_lastCheck < cutoff)
                 {
-                    // None have timed out
-                    return;
-                }
-
-                if (HasTimedOut(_processed[^1]))
-                {
-                    // All have timed out
                     _processed.Clear();
-                    return;
+                    _cleanedAt = now;
+                    _oldest = 0;
                 }
-
-                if (_processed.Count < 50 || !HasTimedOut(_processed[_processed.Count/2])) return;
-
-                RemoveOlderThan(cutoff);
-
-                bool HasTimedOut(DedupeItem item) => item.Ticks < cutoff;
-            }
-
-            private void RemoveOlderThan(long cutoff)
-            {
-                var index = _processed.BinarySearch(new DedupeItem(cutoff, default), DedupeItem.TimestampComparer);
-                if (index < 0) index = ~index;
-                _processed.RemoveRange(0, index + 1);
+                else if (_processed.Count >= 50 && _cleanedAt < _oldest)
+                {
+                    var oldest = long.MaxValue;
+                    foreach (var (key,timestamp) in _processed.ToList())
+                    {
+                        if (timestamp < cutoff)
+                        {
+                            _processed.Remove(key);
+                        }
+                        else
+                        {
+                            oldest = Math.Min(timestamp, oldest);
+                        }
+                    }
+                    _cleanedAt = now;
+                    _oldest = oldest;
+                }
             }
 
             /// <summary>
@@ -184,7 +192,7 @@ namespace Proto.Cluster
             /// <param name="pid">Sender PID</param>
             /// <param name="pidRef"></param>
             /// <returns></returns>
-            public bool TryGetRef(PID? pid, out PidRef pidRef)
+            private bool TryGetRef(PID? pid, out PidRef pidRef)
             {
                 if (pid is not null && int.TryParse(pid.Id.Substring(1), out var id) && _getMember(pid, out var memberId))
                 {
@@ -196,7 +204,7 @@ namespace Proto.Cluster
                 return false;
             }
 
-            public readonly struct PidRef
+            private readonly struct PidRef
             {
                 public int MemberId { get; }
                 public int Id { get; }
