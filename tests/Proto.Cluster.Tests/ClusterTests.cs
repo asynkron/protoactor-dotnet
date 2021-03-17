@@ -18,6 +18,19 @@ namespace Proto.Cluster.Tests
             : base(clusterFixture) => _testOutputHelper = testOutputHelper;
 
         [Fact]
+        public async Task HandlesSlowResponsesCorrectly()
+        {
+            var timeout = new CancellationTokenSource(8000).Token;
+
+            var msg = "Hello-slow-world";
+            var response = await Members.First().RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
+                new SlowPing {Message = msg, DelayMs = 5000}, timeout
+            );
+            response.Should().NotBeNull();
+            response.Message.Should().Be(msg);
+        }
+
+        [Fact]
         public async Task ReSpawnsClusterActorsFromDifferentNodes()
         {
             var timeout = new CancellationTokenSource(5000).Token;
@@ -56,7 +69,6 @@ namespace Proto.Cluster.Tests
             await ClusterFixture.SpawnNode();
 
             await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 5000);
-
 
             _testOutputHelper.WriteLine("All responses OK. Terminating fixture");
         }

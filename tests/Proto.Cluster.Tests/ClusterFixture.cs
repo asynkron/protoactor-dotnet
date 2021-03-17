@@ -142,7 +142,7 @@ namespace Proto.Cluster.Tests
     // ReSharper disable once ClassNeverInstantiated.Global
     public class InMemoryClusterFixture : BaseInMemoryClusterFixture
     {
-        public InMemoryClusterFixture() : base(3)
+        public InMemoryClusterFixture() : base(3,config => config.WithActorRequestTimeout(TimeSpan.FromSeconds(4)))
         {
         }
     }
