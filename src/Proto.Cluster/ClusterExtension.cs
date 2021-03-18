@@ -118,9 +118,9 @@ namespace Proto.Cluster
             {
                 _ttl = Stopwatch.Frequency * (long) dedupeInterval.TotalSeconds;
                 _getMember = (PID pid, out int id) => {
-                    if (cluster.MemberList.TryGetMemberByAddress(pid.Address, out var member))
+                    if (cluster.MemberList.TryGetMemberIndexByAddress(pid.Address, out var index))
                     {
-                        id = member.Index;
+                        id = index;
                         return true;
                     }
 

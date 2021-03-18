@@ -41,7 +41,7 @@ namespace Proto.Cluster
         //meaning the partition infra might be ahead of this list.
         //come up with a good solution to keep all this in sync
         private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
-        private ImmutableDictionary<string, Member> _membersByAddress = ImmutableDictionary<string, Member>.Empty;
+        private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
         private ImmutableDictionary<int, Member> _membersByIndex = ImmutableDictionary<int, Member>.Empty;
 
         private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
@@ -236,9 +236,9 @@ namespace Proto.Cluster
             _members = _members.Remove(memberThatLeft.Id);
             _membersByIndex = _membersByIndex.Remove(memberThatLeft.Index);
 
-            if (_membersByAddress.TryGetValue(memberThatLeft.Address, out var member) && memberThatLeft.Id.Equals(member))
+            if (_indexByAddress.TryGetValue(memberThatLeft.Address, out var member) && memberThatLeft.Id.Equals(member))
             {
-                _membersByAddress = _membersByAddress.Remove(memberThatLeft.Address);
+                _indexByAddress = _indexByAddress.Remove(memberThatLeft.Address);
             }
 
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
@@ -254,7 +254,7 @@ namespace Proto.Cluster
 
             _members = _members.Add(newMember.Id, newMember);
             _membersByIndex = _membersByIndex.Add(newMember.Index, newMember);
-            _membersByAddress = _membersByAddress.Add(newMember.Address, newMember);
+            _indexByAddress = _indexByAddress.Add(newMember.Address, newMember.Index);
 
             foreach (var kind in newMember.Kinds)
             {
@@ -297,9 +297,9 @@ namespace Proto.Cluster
 
         public bool TryGetMember(string memberId, out Member value) => _members.TryGetValue(memberId, out value);
 
-        public bool TryGetMemberByAddress(string address, out Member value) => _membersByAddress.TryGetValue(address, out value);
+        public bool TryGetMemberIndexByAddress(string address, out int value) => _indexByAddress.TryGetValue(address, out value);
 
-        public bool TryGetMember(int memberIndex, out Member value) => _membersByIndex.TryGetValue(memberIndex, out value);
+        public bool TryGetMemberByIndex(int memberIndex, out Member value) => _membersByIndex.TryGetValue(memberIndex, out value);
 
         public Member[] GetAllMembers() => _members.Values.ToArray();
     }

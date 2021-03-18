@@ -53,9 +53,8 @@ namespace Proto.Cluster.Cache
 
         private void AddRemote(PID sender, BitArray activeRemotes)
         {
-            if (Cluster.MemberList.TryGetMemberByAddress(sender.Address, out var member))
+            if (Cluster.MemberList.TryGetMemberIndexByAddress(sender.Address, out var index))
             {
-                var index = member.Index;
                 if (index >= activeRemotes.Length) activeRemotes.Length = index + 1;
 
                 activeRemotes[index] = true;
