@@ -40,7 +40,7 @@ namespace Proto.Cluster.Tests
 
         protected virtual (string, Props)[] ClusterKinds => new[]
         {
-            (EchoActor.Kind, EchoActor.Props),
+            (EchoActor.Kind, EchoActor.Props.WithClusterRequestDeduplication()),
             (EchoActor.Kind2, EchoActor.Props)
         };
 

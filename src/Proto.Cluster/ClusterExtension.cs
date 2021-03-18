@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Metrics;
+using Proto.Deduplication;
 
 namespace Proto.Cluster
 {
@@ -86,135 +87,32 @@ namespace Proto.Cluster
         /// To guarantee that the message is processed at most once, the deduplication window has to be longer than the cluster request retry window. 
         /// </summary>
         /// <param name="props"></param>
-        /// <param name="dedupeWindow"></param>
+        /// <param name="deduplicationWindow"></param>
         /// <returns></returns>
-        public static Props WithSenderDeduplication(this Props props, TimeSpan? dedupeWindow = null)
-            => props.WithContextDecorator(context => new DeduplicationContext(context, dedupeWindow));
-    }
+        public static Props WithClusterRequestDeduplication(this Props props, TimeSpan? deduplicationWindow = null)
+            => props.WithContextDecorator(context => {
+                    var cluster = context.System.Cluster();
+                    var memberList = cluster.MemberList;
 
-    internal class DeduplicationContext : ActorContextDecorator
-    {
-        private readonly PidDeDuplicator _deDuplicator;
+                    return new DeduplicationContext<PidRef>(context, deduplicationWindow ?? cluster.Config.ClusterRequestDeDuplicationWindow, TryGetRef);
 
-        public DeduplicationContext([NotNull] IContext context, TimeSpan? deDuplicationWindow) : base(context)
-        {
-            var cluster = context.System.Cluster();
-            _deDuplicator = new PidDeDuplicator(deDuplicationWindow ?? cluster.Config.ClusterRequestDeDuplicationWindow,
-                cluster.MemberList.TryGetMemberIndexByAddress
+                    bool TryGetRef(MessageEnvelope envelope, out PidRef pidRef)
+                    {
+                        var pid = envelope.Sender;
+                        if (pid is not null && int.TryParse(pid.Id[1..], out var id) &&
+                            memberList.TryGetMemberIndexByAddress(pid.Address, out var memberId))
+                        {
+                            pidRef = new PidRef(memberId, id);
+                            return true;
+                        }
+
+                        pidRef = default;
+                        return false;
+                    }
+                }
             );
-        }
 
-        public override Task Receive(MessageEnvelope envelope) => envelope.Sender is null
-            ? base.Receive(envelope)
-            : _deDuplicator.DeDuplicate(envelope.Sender!, () => base.Receive(envelope));
-    }
-
-    internal delegate bool TryGetMemberIndex(string address, out int memberIndex);
-
-    /// <summary>
-    /// Will deduplicate on a sender id if the sender is an unnamed actor (ie a FutureProcess)
-    /// </summary>
-    internal class PidDeDuplicator
-    {
-        private static readonly ILogger Logger = Log.CreateLogger<PidDeDuplicator>();
-        private readonly long _ttl;
-        private long _lastCheck;
-        private long _oldest;
-        private long _cleanedAt;
-
-        private readonly TryGetMemberIndex _tryGetMemberIndex;
-        private readonly Dictionary<PidRef, long> _processed = new(50);
-
-        public PidDeDuplicator(TimeSpan dedupeInterval, TryGetMemberIndex tryGetMemberIndex)
-        {
-            _ttl = Stopwatch.Frequency * (long) dedupeInterval.TotalSeconds;
-            _tryGetMemberIndex = tryGetMemberIndex;
-        }
-
-        public async Task DeDuplicate(PID sender, Func<Task> continuation)
-        {
-            if (TryGetRef(sender, out var pidRef))
-            {
-                var now = Stopwatch.GetTimestamp();
-                var cutoff = now - _ttl;
-
-                if (IsDuplicate(pidRef, cutoff))
-                {
-                    Logger.LogInformation("Cluster request de-duplicated");
-                    return;
-                }
-
-                await continuation();
-                CleanIfNeeded(cutoff, now);
-                _lastCheck = now;
-                Add(pidRef, now);
-                return;
-            }
-
-            await continuation();
-        }
-
-        private bool IsDuplicate(PidRef sender, long cutoff)
-            => _lastCheck > cutoff && (_processed.TryGetValue(sender, out var ticks) && ticks >= cutoff);
-
-        private void Add(PidRef sender, long now)
-        {
-            if (_processed.Count == 0)
-            {
-                _oldest = now;
-            }
-
-            _processed.Add(sender, now);
-        }
-
-        private void CleanIfNeeded(long cutoff, long now)
-        {
-            if (_lastCheck < cutoff)
-            {
-                _processed.Clear();
-                _cleanedAt = now;
-                _oldest = 0;
-            }
-            else if (_processed.Count >= 50 && _cleanedAt < _oldest)
-            {
-                var oldest = long.MaxValue;
-
-                foreach (var (key, timestamp) in _processed.ToList())
-                {
-                    if (timestamp < cutoff)
-                    {
-                        _processed.Remove(key);
-                    }
-                    else
-                    {
-                        oldest = Math.Min(timestamp, oldest);
-                    }
-                }
-
-                _cleanedAt = now;
-                _oldest = oldest;
-            }
-        }
-
-        /// <summary>
-        /// Will only get unnamed process id's, assuming a format of "$[0-9]*"
-        /// </summary>
-        /// <param name="pid">Sender PID</param>
-        /// <param name="pidRef"></param>
-        /// <returns></returns>
-        private bool TryGetRef(PID? pid, out PidRef pidRef)
-        {
-            if (pid is not null && int.TryParse(pid.Id.Substring(1), out var id) && _tryGetMemberIndex(pid.Address, out var memberId))
-            {
-                pidRef = new PidRef(memberId, id);
-                return true;
-            }
-
-            pidRef = default;
-            return false;
-        }
-
-        private readonly struct PidRef
+        private readonly struct PidRef : IEquatable<PidRef>
         {
             public int MemberId { get; }
             public int Id { get; }
