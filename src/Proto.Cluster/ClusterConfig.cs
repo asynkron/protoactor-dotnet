@@ -24,8 +24,8 @@ namespace Proto.Cluster
             MaxNumberOfEventsInRequestLogThrottlePeriod = 3;
             RequestLogThrottlePeriod = TimeSpan.FromSeconds(2);
             HeartBeatInterval = TimeSpan.FromSeconds(30);
-            DedupeClusterRequests = true;
-            DedupeClusterRequestInterval = TimeSpan.FromSeconds(30);
+            ClusterRequestDeDuplication = true;
+            ClusterRequestDeDuplicationWindow = TimeSpan.FromSeconds(30);
             MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
             ClusterKinds = ImmutableDictionary<string, Props>.Empty;
             IdentityLookup = identityLookup;
@@ -47,9 +47,9 @@ namespace Proto.Cluster
         public IIdentityLookup? IdentityLookup { get; }
         public TimeSpan HeartBeatInterval { get; init; }
         
-        public bool DedupeClusterRequests { get; init; }
+        public bool ClusterRequestDeDuplication { get; init; }
         
-        public TimeSpan DedupeClusterRequestInterval { get; init; }
+        public TimeSpan ClusterRequestDeDuplicationWindow { get; init; }
 
         public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } =
             c => new DefaultClusterContext(c.IdentityLookup, c.PidCache, c.Logger, c.Config.ToClusterContextConfig());
