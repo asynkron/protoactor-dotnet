@@ -33,11 +33,7 @@ namespace Proto.Cluster
 
             _clusterHeartBeat = new ClusterHeartBeat(this);
             system.EventStream.Subscribe<ClusterTopology>(e => {
-                    system.Metrics.Get<ClusterMetrics>().ClusterTopologyEventGauge.Set(e.Members.Count,
-                        new[] {System.Id, System.Address, e.GetMembershipHashCode().ToString()}
-                    );
-
-                    system.Metrics.Get<ClusterMetrics>()?.ClusterTopologyEventGauge.Set(e.Members.Count,new []{System.Id,System.Address});
+                    system.Metrics.Get<ClusterMetrics>()?.ClusterTopologyEventGauge.Set(e.Members.Count,new []{System.Id,System.Address,e.GetMembershipHashCode().ToString()});
                     
                     foreach (var member in e.Left)
                     {
