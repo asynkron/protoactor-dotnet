@@ -137,6 +137,7 @@ namespace Proto.Cluster.Identity
                     if (spawnLock == null)
                     {
                         //TODO; something makes the wait fail sometimes here. ct times out and throws exception
+                        //maybe we didn't get the lock and then the lock disappears and we are waiting until cance?
                         result = await WaitForActivation(clusterIdentity, CancellationTokens.WithTimeout(5000));
                     }
                     else
