@@ -40,10 +40,8 @@ namespace Proto.Cluster.Identity
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            Started _             => Started(context),
             Stopping _            => Stopping(context),
             Stopped _             => Stopped(context),
-            Tick _                => Tick(context),
             Terminated msg        => Terminated(context, msg),
             ActivationRequest msg => ActivationRequest(context, msg),
             _                     => Task.CompletedTask
@@ -51,11 +49,6 @@ namespace Proto.Cluster.Identity
 
         public void Dispose() => _ct?.Dispose();
 
-        private Task Started(IContext context)
-        {
-            _ct = context.Scheduler().SendRepeatedly(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), context.Self!, new Tick());
-            return Task.CompletedTask;
-        }
 
         private Task Stopping(IContext context)
         {
@@ -69,13 +62,7 @@ namespace Proto.Cluster.Identity
             return Task.CompletedTask;
         }
 
-        private Task Tick(IContext context)
-        {
-            var count = _myActors.Count;
-            _logger.LogDebug("Statistics: Actor Count {ActorCount}", count);
-            return Task.CompletedTask;
-        }
-
+    
         private async Task Terminated(IContext context, Terminated msg)
         {
             if (context.System.Shutdown.IsCancellationRequested) return;
