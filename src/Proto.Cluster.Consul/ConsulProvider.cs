@@ -154,31 +154,44 @@ namespace Proto.Cluster.Consul
 
                     while (!_shutdown && !_cluster.System.Shutdown.IsCancellationRequested)
                     {
-                        var statuses = await _client.Health.Service(_consulServiceName, null, false, new QueryOptions
+                        try
+                        {
+                            var statuses = await _client.Health.Service(_consulServiceName, null, false, new QueryOptions
+                                {
+                                    WaitIndex = waitIndex,
+                                    WaitTime = _blockingWaitTime
+                                }
+                                , _cluster.System.Shutdown
+                            );
+                            if (_deregistered) break;
+
+                            _logger.LogDebug("Got status updates from Consul");
+
+                            waitIndex = statuses.LastIndex;
+
+                            var currentMembers =
+                                statuses
+                                    .Response
+                                    .Where(v => IsAlive(v.Checks)) //only include members that are alive
+                                    .Select(ToMember)
+                                    .ToArray();
+
+                            //why is this not updated via the ClusterTopologyEvents?
+                            //because following events is messy
+                            _memberList.UpdateClusterTopology(currentMembers, waitIndex);
+                            var res = new ClusterTopologyEvent(currentMembers);
+                            _cluster.System.EventStream.Publish(res);
+                        }
+                        catch(Exception x)
+                        {
+                            if (!_cluster.System.Shutdown.IsCancellationRequested)
                             {
-                                WaitIndex = waitIndex,
-                                WaitTime = _blockingWaitTime
+                                _logger.LogError(x, "Consul Monitor failed");
+                                
+                                //just backoff and try again
+                                await Task.Delay(2000);
                             }
-                            , _cluster.System.Shutdown
-                        );
-                        if (_deregistered) break;
-
-                        _logger.LogDebug("Got status updates from Consul");
-
-                        waitIndex = statuses.LastIndex;
-
-                        var currentMembers =
-                            statuses
-                                .Response
-                                .Where(v => IsAlive(v.Checks)) //only include members that are alive
-                                .Select(ToMember)
-                                .ToArray();
-
-                        //why is this not updated via the ClusterTopologyEvents?
-                        //because following events is messy
-                        _memberList.UpdateClusterTopology(currentMembers, waitIndex);
-                        var res = new ClusterTopologyEvent(currentMembers);
-                        _cluster.System.EventStream.Publish(res);
+                        }
                     }
                 }
             );
@@ -198,16 +211,30 @@ namespace Proto.Cluster.Consul
             }
         }
 
-        private void StartUpdateTtlLoop() => _ = SafeTask.Run(async () => {
-                while (!_shutdown)
-                {
-                    await _client.Agent.PassTTL("service:" + _consulServiceInstanceId, "");
-                    await Task.Delay(_refreshTtl, _cluster.System.Shutdown);
-                }
+        private void StartUpdateTtlLoop()
+        {
+            _ = SafeTask.Run(async () => {
+                    
+                    while (!_shutdown)
+                    {
+                        try
+                        {
+                            await _client.Agent.PassTTL("service:" + _consulServiceInstanceId, "");
+                            await Task.Delay(_refreshTtl, _cluster.System.Shutdown);
+                        }
+                        catch(Exception x)
+                        {
+                            if (!_cluster.System.Shutdown.IsCancellationRequested)
+                            {
+                                _logger.LogError(x, "Consul TTL Loop failed");
+                            }
+                        }
+                    }
 
-                _logger.LogInformation("Exiting TTL loop");
-            }
-        );
+                    _logger.LogInformation("Consul Exiting TTL loop");
+                }
+            );
+        }
         //
         // private void StartLeaderElectionLoop()
         // {

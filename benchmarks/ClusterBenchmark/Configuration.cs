@@ -131,11 +131,11 @@ namespace ClusterExperiment1
         public static void SetupLogger()
         {
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console(LogEventLevel.Information, "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}")
+                .WriteTo.Console(LogEventLevel.Error, "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}")
                 .CreateLogger();
 
             var l = LoggerFactory.Create(l =>
-                l.AddSerilog()
+                l.AddSerilog().SetMinimumLevel(LogLevel.Error)
             );
 
             Proto.Log.SetLoggerFactory(l);
