@@ -42,6 +42,10 @@ class Program
         {
             remoteAddress = "127.0.0.1";
         }
+        
+        var advertisedHost = Console.ReadLine().Trim();
+        if (advertisedHost == "")
+            advertisedHost = null;
 
         var actorSystemConfig = new ActorSystemConfig()
             .WithDeadLetterThrottleCount(10)
@@ -54,7 +58,7 @@ class Program
         if (provider == 0)
         {
             var remoteConfig = GrpcCoreRemoteConfig
-                .BindToAllInterfaces()
+                .BindToAllInterfaces(advertisedHost)
                 .WithProtoMessages(ProtosReflection.Descriptor);
             remote = new GrpcCoreRemote(system, remoteConfig);
         }

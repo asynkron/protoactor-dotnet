@@ -55,6 +55,12 @@ namespace Node2
             Console.WriteLine("Enter 1 to use GrpcNet provider");
             if (!int.TryParse(Console.ReadLine(), out var provider))
                 provider = 0;
+            
+            Console.WriteLine("Enter Advertised Host");
+            var advertisedHost = Console.ReadLine().Trim();
+            if (advertisedHost == "")
+                advertisedHost = null;
+            
 
             var actorSystemConfig = new ActorSystemConfig()
                 .WithDeadLetterThrottleCount(10)
@@ -66,7 +72,7 @@ namespace Node2
             if (provider == 0)
             {
                 var remoteConfig = GrpcCoreRemoteConfig
-                    .BindToAllInterfaces(port:12000)
+                    .BindToAllInterfaces(advertisedHost,12000)
                     .WithProtoMessages(ProtosReflection.Descriptor)
                     .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
                 remote = new GrpcCoreRemote(system, remoteConfig);
