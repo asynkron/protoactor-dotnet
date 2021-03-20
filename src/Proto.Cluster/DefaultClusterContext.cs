@@ -86,7 +86,7 @@ namespace Proto.Cluster
                         break;
                 }
 
-                context.System.Metrics.Get<ClusterMetrics>()?.ClusterRequestRetryCount.Inc(new[]
+                context.System.Metrics.Get<ClusterMetrics>().ClusterRequestRetryCount.Inc(new[]
                     {context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name}
                 );
             }
@@ -156,7 +156,7 @@ namespace Proto.Cluster
 
                 context.Send(pid, new MessageEnvelope(message, future.Pid));
                 await Task.WhenAny(future.Task, Task.Delay(_config.ActorRequestTimeout));
-                context.System.Metrics.Get<ClusterMetrics>()?.ClusterRequestHistogram
+                context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram
                     .Observe(sw,
                         new[]
                         {
