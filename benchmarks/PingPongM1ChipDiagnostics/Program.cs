@@ -15,7 +15,7 @@ namespace LocalPingPong
             Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
 
             const int messageCount = 1000000;
-            const int batchSize = 5000;
+            const int batchSize = 1000;
             int[] clientCounts = {8, 16 };
 
             Console.WriteLine("Clients\t\tElapsed\t\tMsg/sec");
@@ -52,9 +52,6 @@ namespace LocalPingPong
                 var x = (int)(totalMessages / (double)sw.ElapsedMilliseconds * 1000.0d);
                 Console.WriteLine($"{clientCount}\t\t{sw.ElapsedMilliseconds}\t\t{x:n0}");
 
-                Console.Write("Waiting 2 sec");
-                await Task.Delay(2000);
-                Console.WriteLine(" - Done");
             }
 
             Console.ReadLine();
