@@ -73,7 +73,7 @@ namespace Node2
             {
                 var remoteConfig = GrpcCoreRemoteConfig
                     .BindTo(advertisedHost,12000)
-                //    .WithEndpointWriterBatchSize(10)
+                    .WithEndpointWriterBatchSize(2000)
                     .WithProtoMessages(ProtosReflection.Descriptor)
                     .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
                 remote = new GrpcCoreRemote(system, remoteConfig);

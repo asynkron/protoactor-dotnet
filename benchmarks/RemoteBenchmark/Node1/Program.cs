@@ -61,7 +61,7 @@ class Program
         {
             var remoteConfig = GrpcCoreRemoteConfig
                 .BindTo(advertisedHost)
-               // .WithEndpointWriterBatchSize(10)
+                .WithEndpointWriterBatchSize(2000)
                 .WithProtoMessages(ProtosReflection.Descriptor);
             remote = new GrpcCoreRemote(system, remoteConfig);
         }
