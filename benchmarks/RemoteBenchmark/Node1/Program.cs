@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
@@ -61,14 +62,13 @@ class Program
         {
             var remoteConfig = GrpcCoreRemoteConfig
                 .BindTo(advertisedHost)
-                .WithEndpointWriterBatchSize(2000)
                 .WithProtoMessages(ProtosReflection.Descriptor);
             remote = new GrpcCoreRemote(system, remoteConfig);
         }
         else
         {
             var remoteConfig = GrpcNetRemoteConfig
-                .BindToAllInterfaces()
+                .BindTo(advertisedHost)
                 .WithProtoMessages(ProtosReflection.Descriptor);
             remote = new GrpcNetRemote(system, remoteConfig);
         }
