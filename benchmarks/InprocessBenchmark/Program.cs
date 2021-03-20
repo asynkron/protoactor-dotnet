@@ -15,7 +15,7 @@ using Proto.Mailbox;
 
 public class Program
 {
-    private static void Main(string[] args)
+    private static async Task Main(string[] args)
     {
         var context = new RootContext(new ActorSystem());
         Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
@@ -23,55 +23,56 @@ public class Program
         const int batchSize = 100;
 
         Console.WriteLine("Dispatcher\t\tElapsed\t\tMsg/sec");
-        var tps = new[] {50, 100, 200, 300, 400, 500, 600, 700, 800, 900};
-
+        var tps = new[] {50, 100, 200, 400, 800};
+        int[] clientCounts = {4, 8, 16, 32 };
+        
         foreach (var t in tps)
         {
             var d = new ThreadPoolDispatcher {Throughput = t};
 
-            var clientCount = Environment.ProcessorCount * 1;
-            var clients = new PID[clientCount];
-            var echos = new PID[clientCount];
-            var completions = new TaskCompletionSource<bool>[clientCount];
-
-            var echoProps = Props.FromProducer(() => new EchoActor())
-                .WithDispatcher(d);
-
-            for (var i = 0; i < clientCount; i++)
+            foreach (var clientCount in clientCounts)
             {
-                var tsc = new TaskCompletionSource<bool>();
-                completions[i] = tsc;
-                var clientProps = Props.FromProducer(() => new PingActor(tsc, messageCount, batchSize))
+                var pingActor = new PID[clientCount];
+                var pongActor = new PID[clientCount];
+                var completions = new TaskCompletionSource<bool>[clientCount];
+
+                var pongProps = Props.FromProducer(() => new EchoActor())
                     .WithDispatcher(d);
 
-                clients[i] = context.Spawn(clientProps);
-                echos[i] = context.Spawn(echoProps);
+                for (var i = 0; i < clientCount; i++)
+                {
+                    var tsc = new TaskCompletionSource<bool>();
+                    completions[i] = tsc;
+                    var pingProps = Props.FromProducer(() => new PingActor(tsc, messageCount, batchSize))
+                        .WithDispatcher(d);
+
+                    pingActor[i] = context.Spawn(pingProps);
+                    pongActor[i] = context.Spawn(pongProps);
+                }
+
+                var tasks = completions.Select(tsc => tsc.Task).ToArray();
+                var sw = Stopwatch.StartNew();
+
+                for (var i = 0; i < clientCount; i++)
+                {
+                    var client = pingActor[i];
+                    var echo = pongActor[i];
+
+                    context.Send(client, new Start(echo));
+                }
+
+                await Task.WhenAll(tasks);
+
+                sw.Stop();
+                var totalMessages = messageCount * 2 * clientCount;
+
+                var x = ((int) (totalMessages / (double) sw.ElapsedMilliseconds * 1000.0d)).ToString("#,##0,,M",
+                    CultureInfo.InvariantCulture
+                );
+                Console.WriteLine($"{t}\t\t\t{sw.ElapsedMilliseconds} ms\t\t{x}");
+                await Task.Delay(2000);
             }
-
-            var tasks = completions.Select(tsc => tsc.Task).ToArray();
-            var sw = Stopwatch.StartNew();
-
-            for (var i = 0; i < clientCount; i++)
-            {
-                var client = clients[i];
-                var echo = echos[i];
-
-                context.Send(client, new Start(echo));
-            }
-
-            Task.WaitAll(tasks);
-
-            sw.Stop();
-            var totalMessages = messageCount * 2 * clientCount;
-
-            var x = ((int) (totalMessages / (double) sw.ElapsedMilliseconds * 1000.0d)).ToString("#,##0,,M",
-                CultureInfo.InvariantCulture
-            );
-            Console.WriteLine($"{t}\t\t\t{sw.ElapsedMilliseconds} ms\t\t{x}");
-            Thread.Sleep(2000);
         }
-
-        Console.ReadLine();
     }
 }
 
