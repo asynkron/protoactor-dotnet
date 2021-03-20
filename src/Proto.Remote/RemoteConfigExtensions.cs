@@ -9,10 +9,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf.Reflection;
 using Grpc.Core;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
+    [PublicAPI]
     public static class RemoteConfigExtensions
     {
         public static string[] GetRemoteKinds(this RemoteConfigBase remoteConfig)
@@ -41,7 +43,7 @@ namespace Proto.Remote
         public static TRemoteConfig WithAdvertisedPort<TRemoteConfig>(this TRemoteConfig remoteConfig, int? advertisedPort)
             where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with {AdvertisedPort = advertisedPort};
-
+        
         public static TRemoteConfig WithEndpointWriterBatchSize<TRemoteConfig>(this TRemoteConfig remoteConfig, int endpointWriterBatchSize)
             where TRemoteConfig : RemoteConfigBase
         {

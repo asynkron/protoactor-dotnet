@@ -7,7 +7,9 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core;
+using Grpc.Net.Client;
+using Grpc.Net.Compression;
+using System.IO.Compression;
 using Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
@@ -69,6 +71,13 @@ class Program
         {
             var remoteConfig = GrpcNetRemoteConfig
                 .BindTo(advertisedHost)
+                .WithChannelOptions(new GrpcChannelOptions
+                {
+                    CompressionProviders = new []
+                    {
+                        new GzipCompressionProvider(CompressionLevel.Fastest)
+                    }
+                })
                 .WithProtoMessages(ProtosReflection.Descriptor);
             remote = new GrpcNetRemote(system, remoteConfig);
         }

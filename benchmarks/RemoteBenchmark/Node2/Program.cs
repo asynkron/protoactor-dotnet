@@ -4,7 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.IO.Compression;
 using System.Threading.Tasks;
+using Grpc.Net.Client;
+using Grpc.Net.Compression;
 using Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
@@ -81,6 +84,13 @@ namespace Node2
             {
                 var remoteConfig = GrpcNetRemoteConfig
                     .BindTo(advertisedHost, 12000)
+                    .WithChannelOptions(new GrpcChannelOptions
+                    {
+                        CompressionProviders = new []
+                        {
+                            new GzipCompressionProvider(CompressionLevel.Fastest)
+                        }
+                    })
                     .WithProtoMessages(ProtosReflection.Descriptor)
                     .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
                 remote = new GrpcNetRemote(system, remoteConfig);
