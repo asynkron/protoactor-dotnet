@@ -47,7 +47,7 @@ namespace Proto.Remote
         {
             _userMessages.Push(msg);
 
-            Logger.LogDebug("[EndpointWriterMailbox] received User Message {@Message}", msg);
+            // Logger.LogDebug("[EndpointWriterMailbox] received User Message {@Message}", msg);
             Schedule();
         }
 
@@ -55,7 +55,7 @@ namespace Proto.Remote
         {
             _systemMessages.Push(msg);
 
-            Logger.LogDebug("[EndpointWriterMailbox] received System Message {@Message}", msg);
+            // Logger.LogDebug("[EndpointWriterMailbox] received System Message {@Message}", msg);
             Schedule();
         }
 
@@ -75,10 +75,10 @@ namespace Proto.Remote
 
             try
             {
-                Logger.LogDebug(
-                    "[EndpointWriterMailbox] Running Mailbox Loop HasSystemMessages: {HasSystemMessages} HasUserMessages: {HasUserMessages} Suspended: {Suspended}",
-                    _systemMessages.HasMessages, _userMessages.HasMessages, _suspended
-                );
+                // Logger.LogDebug(
+                //     "[EndpointWriterMailbox] Running Mailbox Loop HasSystemMessages: {HasSystemMessages} HasUserMessages: {HasUserMessages} Suspended: {Suspended}",
+                //     _systemMessages.HasMessages, _userMessages.HasMessages, _suspended
+                // );
                 var _ = _dispatcher!.Throughput; //not used for batch mailbox
                 var batch = new List<RemoteDeliver>(_batchSize);
                 var sys = _systemMessages.Pop();
@@ -160,7 +160,7 @@ namespace Proto.Remote
 
                     while ((msg = _userMessages.Pop()) is not null)
                     {
-                        Logger.LogDebug("[EndpointWriterMailbox] Processing User Message {@Message}", msg);
+                        // Logger.LogDebug("[EndpointWriterMailbox] Processing User Message {@Message}", msg);
 
                         switch (msg)
                         {
@@ -179,7 +179,7 @@ namespace Proto.Remote
                     if (batch.Count > 0)
                     {
                         m = batch;
-                        Logger.LogDebug("[EndpointWriterMailbox] Calling message invoker");
+                        // Logger.LogDebug("[EndpointWriterMailbox] Calling message invoker");
                         await _invoker!.InvokeUserMessageAsync(batch);
                     }
                 }
