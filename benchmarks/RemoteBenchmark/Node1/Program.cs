@@ -34,6 +34,14 @@ class Program
         Console.WriteLine("Enter 1 to use GrpcNet provider");
         if (!int.TryParse(Console.ReadLine(), out var provider))
             provider = 0;
+        
+        Console.WriteLine("Enter remote address (Enter = default)");
+        var remoteAddress = Console.ReadLine().Trim();
+
+        if (remoteAddress == "")
+        {
+            remoteAddress = "127.0.0.1";
+        }
 
         var actorSystemConfig = new ActorSystemConfig()
             .WithDeadLetterThrottleCount(10)
@@ -46,14 +54,14 @@ class Program
         if (provider == 0)
         {
             var remoteConfig = GrpcCoreRemoteConfig
-                .BindToLocalhost()
+                .BindToAllInterfaces()
                 .WithProtoMessages(ProtosReflection.Descriptor);
             remote = new GrpcCoreRemote(system, remoteConfig);
         }
         else
         {
             var remoteConfig = GrpcNetRemoteConfig
-                .BindToLocalhost()
+                .BindToAllInterfaces()
                 .WithProtoMessages(ProtosReflection.Descriptor);
             remote = new GrpcNetRemote(system, remoteConfig);
         }
@@ -73,7 +81,7 @@ class Program
                     try
                     {
                         var actorPidResponse =
-                            await remote.SpawnAsync("127.0.0.1:12000", "echo", TimeSpan.FromSeconds(1));
+                            await remote.SpawnAsync($"{remoteAddress}:12000", "echo", TimeSpan.FromSeconds(1));
 
                         if (actorPidResponse.StatusCode == (int) ResponseStatusCode.OK)
                         {
