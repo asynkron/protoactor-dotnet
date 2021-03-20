@@ -14,7 +14,7 @@ namespace LocalPingPong
         {
             const int messageCount = 1000000;
             const int batchSize = 1000;
-            int[] clientCounts = {8, 16,32 };
+            int[] clientCounts = {8, 16, 32 };
 
             foreach (var clientCount in clientCounts)
             {
