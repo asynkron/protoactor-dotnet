@@ -88,7 +88,7 @@ namespace Node2
                     {
                         CompressionProviders = new []
                         {
-                            new GzipCompressionProvider(CompressionLevel.Fastest)
+                            new GzipCompressionProvider(CompressionLevel.Optimal)
                         }
                     })
                     .WithProtoMessages(ProtosReflection.Descriptor)

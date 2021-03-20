@@ -75,7 +75,7 @@ class Program
                 {
                     CompressionProviders = new []
                     {
-                        new GzipCompressionProvider(CompressionLevel.Fastest)
+                        new GzipCompressionProvider(CompressionLevel.Optimal)
                     }
                 })
                 .WithProtoMessages(ProtosReflection.Descriptor);
