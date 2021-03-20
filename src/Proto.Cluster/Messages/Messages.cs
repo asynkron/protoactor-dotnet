@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
+using System.Linq;
 using Google.Protobuf;
 
 namespace Proto.Cluster
@@ -33,4 +34,18 @@ namespace Proto.Cluster
     }
 
     public record Tick;
+
+    public partial class ClusterTopology
+    {
+        public uint GetMembershipHashCode()
+        {
+            var members = Members;
+            var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
+            var key = string.Join("",x);
+            var hash = MurmurHash2.Hash(key);
+            return hash;
+        }
+    }
+    
+    
 }

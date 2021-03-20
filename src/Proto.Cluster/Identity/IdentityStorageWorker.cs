@@ -112,6 +112,7 @@ namespace Proto.Cluster.Identity
             
             var tries = 0;
             PID? result = null;
+            SpawnLock? spawnLock = null;
             while (result == null && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
             {
                 try
@@ -131,7 +132,7 @@ namespace Proto.Cluster.Identity
                     if (activator == null) return null;
 
                     //try to acquire global lock
-                    var spawnLock = await _storage.TryAcquireLock(clusterIdentity, CancellationTokens.WithTimeout(5000));
+                    spawnLock ??= await _storage.TryAcquireLock(clusterIdentity, CancellationTokens.WithTimeout(5000));
 
                     //we didn't get the lock, wait for activation to complete
                     if (spawnLock == null)
@@ -141,7 +142,7 @@ namespace Proto.Cluster.Identity
                     else
                     {
                         //we have the lock, spawn and return
-                        result = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.WithTimeout(5000));
+                        (result,spawnLock) = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.WithTimeout(5000));
                     }
                 }
                 catch (Exception e)
@@ -167,7 +168,7 @@ namespace Proto.Cluster.Identity
             );
         }
 
-        private async Task<PID?> SpawnActivationAsync(Member activator, SpawnLock spawnLock, CancellationToken ct)
+        private async Task<(PID?, SpawnLock?)> SpawnActivationAsync(Member activator, SpawnLock spawnLock, CancellationToken ct)
         {
             //we own the lock
             _logger.LogDebug("Storing placement lookup for {Identity} {Kind}", spawnLock.ClusterIdentity.Identity,
@@ -188,13 +189,19 @@ namespace Proto.Cluster.Identity
                 if (resp.Pid != null)
                 {
                     _cluster.PidCache.TryAdd(spawnLock.ClusterIdentity, resp.Pid!);
-                    return resp.Pid;
+                    return (resp.Pid, null);
                 }
             }
             //TODO: decide if we throw or return null
+            catch (DeadLetterException)
+            {
+                if (!_cluster.System.Shutdown.IsCancellationRequested && _shouldThrottle().IsOpen())
+                    _logger.LogWarning("[SpawnActivationAsync] Member {Activator} unavailable", activator);
+                return (null, spawnLock);
+            }
             catch (TimeoutException)
             {
-                _logger.LogDebug("[SpawnActivationAsync] Remote PID request timeout {@Request}", req);
+                _logger.LogError("[SpawnActivationAsync] Remote PID request timeout {@Request}", req);
             }
             catch (Exception e)
             {
@@ -204,7 +211,7 @@ namespace Proto.Cluster.Identity
 
             //Clean up our mess..
             await _storage.RemoveLock(spawnLock, ct);
-            return null;
+            return (null, null);;
         }
 
         private async Task<PID?> ValidateAndMapToPid(ClusterIdentity clusterIdentity, StoredActivation? activation)

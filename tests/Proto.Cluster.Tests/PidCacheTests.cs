@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
 using Proto.Cluster.Identity;
-using Proto.Cluster.Testing;
+using Proto.Cluster.Metrics;
 using Xunit;
 
 namespace Proto.Cluster.Tests
@@ -30,6 +30,7 @@ namespace Proto.Cluster.Tests
         public async Task PurgesPidCacheOnNullResponse()
         {
             var system = new ActorSystem();
+            system.Metrics.RegisterKnownMetrics(new ClusterMetrics(system.Metrics));
             var props = Props.FromProducer(() => new EchoActor());
             var deadPid = system.Root.SpawnNamed(props, "stopped");
             var alivePid = system.Root.SpawnNamed(props, "alive");

@@ -36,8 +36,7 @@ namespace Proto.Remote
         {
             foreach (var msg in fd.MessageTypes)
             {
-                var name = $"{fd.Package}.{msg.Name}";
-                TypeLookup.Add(name, msg.Parser);
+                TypeLookup.Add(msg.FullName, msg.Parser);
             }
         }
 

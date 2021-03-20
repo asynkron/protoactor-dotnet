@@ -22,7 +22,7 @@ namespace Proto.Remote.GrpcNet
         public GrpcChannelOptions ChannelOptions { get; init; } = new();
         public Action<ListenOptions>? ConfigureKestrel { get; init; }
 
-        public static GrpcNetRemoteConfig BindToAllInterfaces(string advertisedHost, int port = 0) =>
+        public static GrpcNetRemoteConfig BindToAllInterfaces(string advertisedHost = null, int port = 0) =>
             new GrpcNetRemoteConfig(AllInterfaces, port).WithAdvertisedHost(advertisedHost);
 
         public static GrpcNetRemoteConfig BindToLocalhost(int port = 0) => new(Localhost, port);

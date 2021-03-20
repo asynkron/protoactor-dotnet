@@ -229,8 +229,11 @@ namespace Proto.Remote
 
                 var typeName = _remoteConfig.Serialization.GetTypeName(rd.Message, serializerId);
 
-                counter.Inc(new[]{context.System.Id,context.System.Address, typeName});
-                
+                if (!context.System.Metrics.IsNoop)
+                {
+                    counter.Inc(new[] {context.System.Id, context.System.Address, typeName});
+                }
+
                 if (!typeNames.TryGetValue(typeName, out var typeId))
                 {
                     typeId = typeNames[typeName] = typeNames.Count;

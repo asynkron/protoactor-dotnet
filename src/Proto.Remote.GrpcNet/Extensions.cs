@@ -1,5 +1,7 @@
 using System;
 using Grpc.HealthCheck;
+using Grpc.Net.Client;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Routing;
@@ -8,8 +10,11 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Proto.Remote.GrpcNet
 {
+    [PublicAPI]
     public static class Extensions
     {
+        public static GrpcNetRemoteConfig WithChannelOptions(this GrpcNetRemoteConfig config, GrpcChannelOptions options) => config with {ChannelOptions = options};
+
         public static ActorSystem WithRemote(this ActorSystem system, GrpcNetRemoteConfig remoteConfig)
         {
             var _ = new GrpcNetRemote(system, remoteConfig);

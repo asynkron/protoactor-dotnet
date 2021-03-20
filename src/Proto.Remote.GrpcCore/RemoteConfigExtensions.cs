@@ -6,9 +6,11 @@
 
 using System.Collections.Generic;
 using Grpc.Core;
+using JetBrains.Annotations;
 
 namespace Proto.Remote.GrpcCore
 {
+    [PublicAPI]
     public static class RemoteConfigExtensions
     {
         public static GrpcCoreRemoteConfig WithChannelOptions(this GrpcCoreRemoteConfig remoteConfig, IEnumerable<ChannelOption> options) =>

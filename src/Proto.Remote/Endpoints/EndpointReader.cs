@@ -85,9 +85,9 @@ namespace Proto.Remote
 
                 var batch = requestStream.Current;
 
-                Logger.LogDebug("[EndpointReader] Received a batch of {Count} messages from {Remote}",
-                    batch.TargetNames.Count, context.Peer
-                );
+                // Logger.LogDebug("[EndpointReader] Received a batch of {Count} messages from {Remote}",
+                //     batch.TargetNames.Count, context.Peer
+                // );
 
                 //only grow pid lookup if needed
                 if (batch.TargetNames.Count > targets.Length) targets = new PID[batch.TargetNames.Count];
@@ -104,7 +104,12 @@ namespace Proto.Remote
                 {
                     var target = targets[envelope.Target];
                     var typeName = typeNames[envelope.TypeId];
-                    m.Inc(new []{_system.Id,_system.Address, typeName});
+
+                    if (!_system.Metrics.IsNoop)
+                    {
+                        m.Inc(new[] {_system.Id, _system.Address, typeName});
+                    }
+
                     object message;
                     try
                     {

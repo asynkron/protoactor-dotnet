@@ -218,7 +218,7 @@ namespace ClusterExperiment1
             _ = SafeTask.Run(async () => {
                     foreach (var t in followers)
                     {
-                        await Task.Delay(20000);
+                        await Task.Delay(30000);
                         Console.WriteLine("Stopping node...");
                         _ = t.Kill();
                     }
