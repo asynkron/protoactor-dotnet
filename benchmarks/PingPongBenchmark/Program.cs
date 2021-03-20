@@ -31,8 +31,14 @@ namespace LocalPingPong
 
                     for (var i = 0; i < clientCount; i++)
                     {
-                        pingActors[i] = sys.Root.Spawn(PingActor.Props(messageCount, batchSize).WithDispatcher(d));
-                        pongActors[i] = sys.Root.Spawn(PongActor.Props.WithDispatcher(d));
+                        pingActors[i] = sys.Root.Spawn(
+                            PingActor
+                                .Props(messageCount, batchSize)
+                                .WithDispatcher(d));
+                        pongActors[i] = sys.Root.Spawn(
+                            PongActor
+                            .Props
+                            .WithDispatcher(d));
                     }
 
                     Console.WriteLine("Actors created");

@@ -35,16 +35,14 @@ public class Program
             var completions = new TaskCompletionSource<bool>[clientCount];
 
             var echoProps = Props.FromProducer(() => new EchoActor())
-                .WithDispatcher(d)
-                .WithMailbox(() => BoundedMailbox.Create(2048));
+                .WithDispatcher(d);
 
             for (var i = 0; i < clientCount; i++)
             {
                 var tsc = new TaskCompletionSource<bool>();
                 completions[i] = tsc;
                 var clientProps = Props.FromProducer(() => new PingActor(tsc, messageCount, batchSize))
-                    .WithDispatcher(d)
-                    .WithMailbox(() => BoundedMailbox.Create(2048));
+                    .WithDispatcher(d);
 
                 clients[i] = context.Spawn(clientProps);
                 echos[i] = context.Spawn(echoProps);
@@ -132,9 +130,8 @@ public class PingActor : IActor
             case Msg m:
                 _messageCount--;
 
-                context.Send(_targetPid, m);
-
                 if (_messageCount <= 0) _wgStop.SetResult(true);
+                else context.Send(_targetPid, m);
                 break;
         }
 
