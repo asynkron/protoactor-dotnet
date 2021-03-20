@@ -66,7 +66,7 @@ namespace Node2
             if (provider == 0)
             {
                 var remoteConfig = GrpcCoreRemoteConfig
-                    .BindToLocalhost(12000)
+                    .BindToAllInterfaces(port:12000)
                     .WithProtoMessages(ProtosReflection.Descriptor)
                     .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
                 remote = new GrpcCoreRemote(system, remoteConfig);
@@ -74,7 +74,7 @@ namespace Node2
             else
             {
                 var remoteConfig = GrpcNetRemoteConfig
-                    .BindToLocalhost(12000)
+                    .BindToAllInterfaces(port:12000)
                     .WithProtoMessages(ProtosReflection.Descriptor)
                     .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
                 remote = new GrpcNetRemote(system, remoteConfig);
