@@ -22,7 +22,7 @@ public class Program
         const int messageCount = 1_000_000;
         const int batchSize = 100;
 
-        Console.WriteLine("Dispatcher\t\tElapsed\t\tMsg/sec");
+        Console.WriteLine("ClientCount\t\tDispatcher\t\tElapsed\t\tMsg/sec");
         var tps = new[] {50, 100, 200, 400, 800};
         int[] clientCounts = {4, 8, 16, 32 };
         
@@ -69,7 +69,7 @@ public class Program
                 var x = ((int) (totalMessages / (double) sw.ElapsedMilliseconds * 1000.0d)).ToString("#,##0,,M",
                     CultureInfo.InvariantCulture
                 );
-                Console.WriteLine($"{t}\t\t\t{sw.ElapsedMilliseconds} ms\t\t{x}");
+                Console.WriteLine($"{clientCount}\t\t\t{t}\t\t\t{sw.ElapsedMilliseconds} ms\t\t{x}");
                 await Task.Delay(2000);
             }
         }
