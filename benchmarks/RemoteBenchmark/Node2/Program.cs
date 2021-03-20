@@ -56,10 +56,10 @@ namespace Node2
             if (!int.TryParse(Console.ReadLine(), out var provider))
                 provider = 0;
             
-            Console.WriteLine("Enter Advertised Host");
+            Console.WriteLine("Enter Advertised Host (Enter = localhost)");
             var advertisedHost = Console.ReadLine().Trim();
             if (advertisedHost == "")
-                advertisedHost = null;
+                advertisedHost = "127.0.0.1";
             
 
             var actorSystemConfig = new ActorSystemConfig()
@@ -72,7 +72,8 @@ namespace Node2
             if (provider == 0)
             {
                 var remoteConfig = GrpcCoreRemoteConfig
-                    .BindToAllInterfaces(advertisedHost,12000)
+                    .BindTo(advertisedHost,12000)
+                //    .WithEndpointWriterBatchSize(10)
                     .WithProtoMessages(ProtosReflection.Descriptor)
                     .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
                 remote = new GrpcCoreRemote(system, remoteConfig);
@@ -80,7 +81,7 @@ namespace Node2
             else
             {
                 var remoteConfig = GrpcNetRemoteConfig
-                    .BindToAllInterfaces(port:12000)
+                    .BindTo(advertisedHost, 12000)
                     .WithProtoMessages(ProtosReflection.Descriptor)
                     .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
                 remote = new GrpcNetRemote(system, remoteConfig);

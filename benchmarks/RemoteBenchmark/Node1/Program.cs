@@ -35,7 +35,12 @@ class Program
         if (!int.TryParse(Console.ReadLine(), out var provider))
             provider = 0;
         
-        Console.WriteLine("Enter remote address (Enter = default)");
+        Console.WriteLine("Enter client advertised host (Enter = localhost)");
+        var advertisedHost = Console.ReadLine().Trim();
+        if (advertisedHost == "")
+            advertisedHost = "127.0.0.1";
+        
+        Console.WriteLine("Enter remote advertised host (Enter = localhost)");
         var remoteAddress = Console.ReadLine().Trim();
 
         if (remoteAddress == "")
@@ -43,10 +48,7 @@ class Program
             remoteAddress = "127.0.0.1";
         }
         
-        var advertisedHost = Console.ReadLine().Trim();
-        if (advertisedHost == "")
-            advertisedHost = null;
-
+        
         var actorSystemConfig = new ActorSystemConfig()
             .WithDeadLetterThrottleCount(10)
             .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(2));
@@ -58,7 +60,8 @@ class Program
         if (provider == 0)
         {
             var remoteConfig = GrpcCoreRemoteConfig
-                .BindToAllInterfaces(advertisedHost)
+                .BindTo(advertisedHost)
+               // .WithEndpointWriterBatchSize(10)
                 .WithProtoMessages(ProtosReflection.Descriptor);
             remote = new GrpcCoreRemote(system, remoteConfig);
         }
