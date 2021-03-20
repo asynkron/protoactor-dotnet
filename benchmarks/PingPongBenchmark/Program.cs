@@ -12,17 +12,13 @@ namespace LocalPingPong
     {
         static async Task Main(string[] args)
         {
-            Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
-
             const int messageCount = 1000000;
             const int batchSize = 1000;
-            int[] clientCounts = {8, 16 };
+            int[] clientCounts = {8, 16,32 };
 
-            Console.WriteLine("Clients\t\tElapsed\t\tMsg/sec");
-
-            var sys = new ActorSystem();
             foreach (var clientCount in clientCounts)
             {
+                var sys = new ActorSystem();
                 Console.WriteLine("Starting test  " + clientCount);
                 var pingActors = new PID[clientCount];
                 var pongActors = new PID[clientCount];

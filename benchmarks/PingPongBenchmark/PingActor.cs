@@ -5,8 +5,9 @@ using Proto;
 namespace LocalPingPong
 {
     public record PingMsg(PID Sender);
+
     public record PongMsg;
-    
+
     public class PingActor : IActor
     {
         public class Start
@@ -40,33 +41,35 @@ namespace LocalPingPong
                     var m = new PingMsg(context.Self);
 
                     _messageCount -= _batchSize;
+
                     for (var i = 0; i < _batchSize; i++)
                     {
-                        context.Send(_pong,m);
+                        context.Send(_pong, m);
                     }
 
-                    
+
                     break;
                 case PongMsg:
 
                     _messageCount--;
-                        
+
                     if (_messageCount == 0)
                     {
                         Console.Write(".");
                         context.Send(_replyTo, true);
-                        break;
                     }
-                    else
+                    else if (_messageCount > 0)
                     {
                         context.Send(_pong, new PingMsg(context.Self));
-                        break;
                     }
+
+                    break;
             }
+
             return Task.CompletedTask;
         }
 
-        public static Props Props(int messageCount, int batchSize) => 
+        public static Props Props(int messageCount, int batchSize) =>
             Proto.Props.FromProducer(() => new PingActor(messageCount, batchSize));
     }
 }
