@@ -104,7 +104,12 @@ namespace Proto.Remote
                 {
                     var target = targets[envelope.Target];
                     var typeName = typeNames[envelope.TypeId];
-                    m.Inc(new []{_system.Id,_system.Address, typeName});
+
+                    if (!_system.Metrics.IsNoop)
+                    {
+                        m.Inc(new[] {_system.Id, _system.Address, typeName});
+                    }
+
                     object message;
                     try
                     {
