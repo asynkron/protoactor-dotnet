@@ -15,12 +15,12 @@ namespace Proto.Cluster.Tests
         private string _identity;
         private string _initKind;
 
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
                 case Started _:
-                    Logger.LogDebug($"{context.Self}");
+                    Logger.LogDebug("{Context}",context.Self);
                     break;
                 case ClusterInit init:
                     _identity = init.Identity;
@@ -30,6 +30,12 @@ namespace Proto.Cluster.Tests
                     var pong = new Pong {Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? ""};
                     Logger.LogDebug("Received Ping, replying Pong: {@Pong}", pong);
                     context.Respond(pong);
+                    break;
+                case SlowPing ping:
+                    await Task.Delay(ping.DelayMs);
+                    var slowPong = new Pong {Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? ""};
+                    Logger.LogDebug("Received SlowPing, replying Pong after {Delay} ms: {@Pong}", ping.DelayMs, slowPong);
+                    context.Respond(slowPong);
                     break;
                 case WhereAreYou _:
                     Logger.LogDebug("Responding to location request");
@@ -45,7 +51,7 @@ namespace Proto.Cluster.Tests
                     break;
             }
 
-            return Task.CompletedTask;
+            return;
         }
     }
 }

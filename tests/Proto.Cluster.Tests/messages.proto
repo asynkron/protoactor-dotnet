@@ -13,6 +13,11 @@ message Ping {
   string message = 1;
 }
 
+message SlowPing {
+  string message = 1;
+  int32 delay_ms = 2;
+}
+
 message Pong {
   string message = 1;
   string kind = 2;

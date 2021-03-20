@@ -40,7 +40,7 @@ namespace Proto.Cluster.Tests
 
         protected virtual (string, Props)[] ClusterKinds => new[]
         {
-            (EchoActor.Kind, EchoActor.Props),
+            (EchoActor.Kind, EchoActor.Props.WithClusterRequestDeduplication()),
             (EchoActor.Kind2, EchoActor.Props)
         };
 
@@ -142,7 +142,7 @@ namespace Proto.Cluster.Tests
     // ReSharper disable once ClassNeverInstantiated.Global
     public class InMemoryClusterFixture : BaseInMemoryClusterFixture
     {
-        public InMemoryClusterFixture() : base(3)
+        public InMemoryClusterFixture() : base(3,config => config.WithActorRequestTimeout(TimeSpan.FromSeconds(4)))
         {
         }
     }
