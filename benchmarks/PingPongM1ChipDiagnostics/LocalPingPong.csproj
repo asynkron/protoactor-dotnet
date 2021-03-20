@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Proto.Actor" Version="0.12.1-alpha.0.67" />
+    <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
   </ItemGroup>
 
 </Project>
