@@ -96,9 +96,7 @@ namespace Proto.Cluster.Tests
             protected override (string, Props)[] ClusterKinds { get; } =
                 {(EchoActor.Kind, EchoActor.Props.WithPoisonOnRemoteTraffic(.5f).WithPidCacheInvalidation())};
 
-            protected override async Task<Cluster> SpawnClusterMember(
-                Func<ClusterConfig, ClusterConfig> configure
-            )
+            protected override async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig> configure)
             {
                 var config = ClusterConfig.Setup(
                         _clusterName,

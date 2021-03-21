@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using Xunit;
 
@@ -9,8 +8,8 @@ namespace Proto.Cluster.Tests
     [Collection("ClusterTests")]
     public abstract class ClusterTestBase
     {
-        protected readonly IClusterFixture ClusterFixture;
         private readonly string _runId;
+        protected readonly IClusterFixture ClusterFixture;
 
         protected ClusterTestBase(IClusterFixture clusterFixture)
         {

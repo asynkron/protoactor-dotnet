@@ -20,7 +20,7 @@ namespace Proto.Cluster.Tests
             switch (context.Message)
             {
                 case Started _:
-                    Logger.LogDebug("{Context}",context.Self);
+                    Logger.LogDebug("{Context}", context.Self);
                     break;
                 case ClusterInit init:
                     _identity = init.Identity;
@@ -50,8 +50,6 @@ namespace Proto.Cluster.Tests
                     Logger.LogDebug(context.Message?.GetType().Name);
                     break;
             }
-
-            return;
         }
     }
 }

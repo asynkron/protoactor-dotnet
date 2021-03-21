@@ -31,7 +31,7 @@ namespace Proto.Cluster.Identity.Tests
             }
         }
     }
-    
+
     public class ChaosMongoIdentityClusterFixture : BaseInMemoryClusterFixture
     {
         public ChaosMongoIdentityClusterFixture() : base(3)
@@ -72,7 +72,7 @@ namespace Proto.Cluster.Identity.Tests
 
         public static MongoClient Client { get; }
     }
-    
+
     public class MongoStorageTests : IdentityStorageTests
     {
         public MongoStorageTests(ITestOutputHelper testOutputHelper) : base(Init, testOutputHelper)

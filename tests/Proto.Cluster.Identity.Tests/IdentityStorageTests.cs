@@ -17,8 +17,10 @@ namespace Proto.Cluster.Identity.Tests
         private readonly IIdentityStorage _storageInstance2;
         private readonly ITestOutputHelper _testOutputHelper;
 
-        protected IdentityStorageTests(Func<string, IIdentityStorage> storageFactory,
-            ITestOutputHelper testOutputHelper)
+        protected IdentityStorageTests(
+            Func<string, IIdentityStorage> storageFactory,
+            ITestOutputHelper testOutputHelper
+        )
         {
             _testOutputHelper = testOutputHelper;
             var clusterName = $"test-{Guid.NewGuid().ToString("N").Substring(0, 6)}";
@@ -159,7 +161,6 @@ namespace Proto.Cluster.Identity.Tests
 
             var afterRemoval = await _storage.TryGetExistingActivation(identity, timeout);
 
-
             activation.Should().NotBeNull();
             activation!.MemberId.Should().Be(activator.Id);
             activation!.Pid.Should().BeEquivalentTo(pid);
@@ -173,7 +174,6 @@ namespace Proto.Cluster.Identity.Tests
             var timeout = new CancellationTokenSource(1000).Token;
             var (activator, identity, pid) = await GetActivatedClusterIdentity(timeout);
 
-
             var differentPid = Activate(activator, identity);
 
             var activation = await _storage.TryGetExistingActivation(identity, timeout);
@@ -181,7 +181,6 @@ namespace Proto.Cluster.Identity.Tests
             await _storage.RemoveActivation(differentPid, timeout);
 
             var afterRemoval = await _storage.TryGetExistingActivation(identity, timeout);
-
 
             activation.Should().NotBeNull();
             activation!.MemberId.Should().Be(activator.Id);
@@ -195,7 +194,6 @@ namespace Proto.Cluster.Identity.Tests
         {
             var timeout = new CancellationTokenSource(1000).Token;
             var (activator, identity, _) = await GetActivatedClusterIdentity(timeout);
-
 
             await _storage.RemoveMember(activator.Id, timeout);
 
@@ -223,13 +221,13 @@ namespace Proto.Cluster.Identity.Tests
             activation!.Pid.Should().BeEquivalentTo(newPid);
         }
 
-        [Theory]
-        [InlineData(200, 10000)]
+        [Theory, InlineData(200, 10000)]
         public async Task CanRemoveMemberWithManyActivations(int activations, int msTimeout)
         {
             var identities = new List<ClusterIdentity>();
             var timeout = new CancellationTokenSource(msTimeout).Token;
             var activator = GetFakeActivator();
+
             for (var i = 0; i < activations; i++)
             {
                 var (_, identity, _) = await GetActivatedClusterIdentity(timeout, activator);
@@ -274,8 +272,7 @@ namespace Proto.Cluster.Identity.Tests
             var spawnLock = await _storage.TryAcquireLock(identity, timeout);
             var pid = Activate(activator, identity);
 
-            _ = SafeTask.Run(async () =>
-                {
+            _ = SafeTask.Run(async () => {
                     await Task.Delay(500, timeout);
                     await _storage.StoreActivation(activator.Id, spawnLock!, pid, timeout);
                 }, timeout
