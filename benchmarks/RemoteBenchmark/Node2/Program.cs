@@ -58,12 +58,11 @@ namespace Node2
             Console.WriteLine("Enter 1 to use GrpcNet provider");
             if (!int.TryParse(Console.ReadLine(), out var provider))
                 provider = 0;
-            
+
             Console.WriteLine("Enter Advertised Host (Enter = localhost)");
             var advertisedHost = Console.ReadLine().Trim();
             if (advertisedHost == "")
                 advertisedHost = "127.0.0.1";
-            
 
             var actorSystemConfig = new ActorSystemConfig()
                 .WithDeadLetterThrottleCount(10)
@@ -75,7 +74,7 @@ namespace Node2
             if (provider == 0)
             {
                 var remoteConfig = GrpcCoreRemoteConfig
-                    .BindTo(advertisedHost,12000)
+                    .BindTo(advertisedHost, 12000)
                     .WithProtoMessages(ProtosReflection.Descriptor)
                     .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
                 remote = new GrpcCoreRemote(system, remoteConfig);
@@ -85,12 +84,13 @@ namespace Node2
                 var remoteConfig = GrpcNetRemoteConfig
                     .BindTo(advertisedHost, 12000)
                     .WithChannelOptions(new GrpcChannelOptions
-                    {
-                        CompressionProviders = new []
                         {
-                            new GzipCompressionProvider(CompressionLevel.Fastest)
+                            CompressionProviders = new[]
+                            {
+                                new GzipCompressionProvider(CompressionLevel.Fastest)
+                            }
                         }
-                    })
+                    )
                     .WithProtoMessages(ProtosReflection.Descriptor)
                     .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
                 remote = new GrpcNetRemote(system, remoteConfig);

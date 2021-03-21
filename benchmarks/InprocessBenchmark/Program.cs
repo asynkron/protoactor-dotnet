@@ -8,7 +8,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Runtime;
-using System.Threading;
 using System.Threading.Tasks;
 using Proto;
 using Proto.Mailbox;
@@ -24,8 +23,8 @@ public class Program
 
         Console.WriteLine("ClientCount\t\tDispatcher\t\tElapsed\t\tMsg/sec");
         var tps = new[] {50, 100, 200, 400, 800};
-        int[] clientCounts = {4, 8, 16, 32 };
-        
+        int[] clientCounts = {4, 8, 16, 32};
+
         foreach (var t in tps)
         {
             var d = new ThreadPoolDispatcher {Throughput = t};

@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Events;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
 using Proto.Cluster.Kubernetes;
@@ -27,16 +26,14 @@ namespace KubernetesDiagnostics
              *  kubectl logs -l app=kubdiag --all-containers
              * 
              */
-            
-            
-            
+
             var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Error));
             Log.SetLoggerFactory(l);
             var log = Log.CreateLogger("main");
 
             var db = GetMongo();
             var identity = new IdentityStorageLookup(new MongoIdentityStorage("mycluster", db.GetCollection<PidLookupEntity>("pids"), 200));
-            
+
             var kubernetes = new Kubernetes(KubernetesClientConfiguration.InClusterConfig());
             var clusterprovider = new KubernetesProvider(kubernetes);
 
@@ -44,10 +41,10 @@ namespace KubernetesDiagnostics
             var host = Environment.GetEnvironmentVariable("PROTOHOST");
             var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
 
-            log.LogInformation("Host {host}",host);
-            log.LogInformation("Port {port}",port);
-            log.LogInformation("Advertised Host {advertisedHost}",advertisedHost);
-            
+            log.LogInformation("Host {host}", host);
+            log.LogInformation("Port {port}", port);
+            log.LogInformation("Advertised Host {advertisedHost}", advertisedHost);
+
             var system = new ActorSystem()
                 .WithRemote(GrpcNetRemoteConfig
                     .BindTo(host, port)
@@ -55,24 +52,24 @@ namespace KubernetesDiagnostics
                 )
                 .WithCluster(ClusterConfig
                     .Setup("mycluster", clusterprovider, identity)
-                    .WithClusterKind("empty",Props.Empty)
+                    .WithClusterKind("empty", Props.Empty)
                 );
 
-           system.EventStream.Subscribe<ClusterTopology>(e => {
-                   var members = e.Members;
-                   var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
-                   var key = string.Join("",x);
-                   var hash = MurmurHash2.Hash(key);
-                
-                   Console.WriteLine("My members " + hash);
+            system.EventStream.Subscribe<ClusterTopology>(e => {
+                    var members = e.Members;
+                    var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
+                    var key = string.Join("", x);
+                    var hash = MurmurHash2.Hash(key);
 
-                   foreach (var member in members.OrderBy(m=>m.Id))
-                   {
-                       Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds );
-                   }
-               }
-           );
-            
+                    Console.WriteLine("My members " + hash);
+
+                    foreach (var member in members.OrderBy(m => m.Id))
+                    {
+                        Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds);
+                    }
+                }
+            );
+
             await system
                 .Cluster()
                 .StartMemberAsync();

@@ -119,9 +119,7 @@ namespace ClusterExperiment1
             var system = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3)
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
             );
-            system.EventStream.Subscribe<ClusterTopology>(e => {
-                    Console.Write("CT" + e.GetMembershipHashCode());
-                }
+            system.EventStream.Subscribe<ClusterTopology>(e => { Console.Write("CT" + e.GetMembershipHashCode()); }
             );
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
@@ -139,8 +137,9 @@ namespace ClusterExperiment1
                 .CreateLogger();
 
             Proto.Log.SetLoggerFactory(LoggerFactory.Create(l =>
-                l.AddSerilog().SetMinimumLevel(LogLevel.Error)
-            ));
+                    l.AddSerilog().SetMinimumLevel(LogLevel.Error)
+                )
+            );
         }
     }
 }

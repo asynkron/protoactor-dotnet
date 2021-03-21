@@ -32,7 +32,7 @@ namespace ClusterExperiment1
                 Thread.Sleep(Timeout.Infinite);
                 return;
             }
-            
+
             _ts = new TaskCompletionSource<bool>();
 
             _ = DockerSupport.Run(_ts.Task);
@@ -70,8 +70,6 @@ namespace ClusterExperiment1
 
             Console.WriteLine($"Using {actorCount} actors");
             ActorCount = actorCount;
-
-
 
             switch (res1)
             {
@@ -134,7 +132,6 @@ namespace ClusterExperiment1
         private static void RunBatchClient(int batchSize)
         {
             var logger = Log.CreateLogger(nameof(Program));
-
 
             _ = SafeTask.Run(async () => {
                     await Task.Delay(5000);

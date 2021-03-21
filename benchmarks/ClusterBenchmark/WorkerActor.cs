@@ -12,7 +12,8 @@ namespace ClusterExperiment1
 {
     public class WorkerActor : IActor
     {
-        private Random _rnd = new Random();
+        private readonly Random _rnd = new Random();
+
         public Task ReceiveAsync(IContext ctx)
         {
             switch (ctx.Message)

@@ -5,11 +5,11 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Net.Client;
 using Grpc.Net.Compression;
-using System.IO.Compression;
 using Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
@@ -37,21 +37,17 @@ class Program
         Console.WriteLine("Enter 1 to use GrpcNet provider");
         if (!int.TryParse(Console.ReadLine(), out var provider))
             provider = 0;
-        
+
         Console.WriteLine("Enter client advertised host (Enter = localhost)");
         var advertisedHost = Console.ReadLine().Trim();
         if (advertisedHost == "")
             advertisedHost = "127.0.0.1";
-        
+
         Console.WriteLine("Enter remote advertised host (Enter = localhost)");
         var remoteAddress = Console.ReadLine().Trim();
 
-        if (remoteAddress == "")
-        {
-            remoteAddress = "127.0.0.1";
-        }
-        
-        
+        if (remoteAddress == "") remoteAddress = "127.0.0.1";
+
         var actorSystemConfig = new ActorSystemConfig()
             .WithDeadLetterThrottleCount(10)
             .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(2));
@@ -72,12 +68,13 @@ class Program
             var remoteConfig = GrpcNetRemoteConfig
                 .BindTo(advertisedHost)
                 .WithChannelOptions(new GrpcChannelOptions
-                {
-                    CompressionProviders = new []
                     {
-                        new GzipCompressionProvider(CompressionLevel.Fastest)
+                        CompressionProviders = new[]
+                        {
+                            new GzipCompressionProvider(CompressionLevel.Fastest)
+                        }
                     }
-                })
+                )
                 .WithProtoMessages(ProtosReflection.Descriptor);
             remote = new GrpcNetRemote(system, remoteConfig);
         }

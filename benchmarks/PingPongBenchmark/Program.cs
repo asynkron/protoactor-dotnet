@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime;
-using System.Threading;
 using System.Threading.Tasks;
 using Proto;
 using Proto.Mailbox;
@@ -11,17 +8,17 @@ namespace LocalPingPong
 {
     class Program
     {
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
             const int messageCount = 1000000;
             const int batchSize = 100;
-            int[] clientCounts = {8, 16, 32 };
+            int[] clientCounts = {8, 16, 32};
             var tps = new[] {50, 100, 200, 400, 800};
 
             foreach (var t in tps)
             {
                 var d = new ThreadPoolDispatcher {Throughput = t};
-                
+
                 foreach (var clientCount in clientCounts)
                 {
                     var sys = new ActorSystem();
@@ -34,11 +31,13 @@ namespace LocalPingPong
                         pingActors[i] = sys.Root.Spawn(
                             PingActor
                                 .Props(messageCount, batchSize)
-                                .WithDispatcher(d));
+                                .WithDispatcher(d)
+                        );
                         pongActors[i] = sys.Root.Spawn(
                             PongActor
-                            .Props
-                            .WithDispatcher(d));
+                                .Props
+                                .WithDispatcher(d)
+                        );
                     }
 
                     Console.WriteLine("Actors created");
@@ -62,7 +61,6 @@ namespace LocalPingPong
                     var x = (int) (totalMessages / (double) sw.ElapsedMilliseconds * 1000.0d);
                     Console.WriteLine();
                     Console.WriteLine($"{clientCount}\t\t{sw.ElapsedMilliseconds}\t\t{x:n0}");
-
                 }
             }
         }

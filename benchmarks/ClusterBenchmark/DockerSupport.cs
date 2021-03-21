@@ -4,11 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.IO;
 using System.Threading.Tasks;
-using DotNet.Testcontainers.Containers.Builders;
-using DotNet.Testcontainers.Containers.Modules;
-using DotNet.Testcontainers.Containers.WaitStrategies;
 
 namespace ClusterExperiment1
 {

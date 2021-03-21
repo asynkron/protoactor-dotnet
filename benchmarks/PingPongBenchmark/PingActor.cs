@@ -10,20 +10,10 @@ namespace LocalPingPong
 
     public class PingActor : IActor
     {
-        public class Start
-        {
-            public Start(PID sender)
-            {
-                Sender = sender;
-            }
-
-            public PID Sender { get; }
-        }
-
         private readonly int _batchSize;
         private int _messageCount;
-        private PID _replyTo;
         private PID _pong;
+        private PID _replyTo;
 
         public PingActor(int messageCount, int batchSize)
         {
@@ -47,7 +37,6 @@ namespace LocalPingPong
                         context.Send(_pong, m);
                     }
 
-
                     break;
                 case PongMsg:
 
@@ -58,10 +47,7 @@ namespace LocalPingPong
                         Console.Write(".");
                         context.Send(_replyTo, true);
                     }
-                    else if (_messageCount > 0)
-                    {
-                        context.Send(_pong, new PingMsg(context.Self));
-                    }
+                    else if (_messageCount > 0) context.Send(_pong, new PingMsg(context.Self));
 
                     break;
             }
@@ -71,5 +57,12 @@ namespace LocalPingPong
 
         public static Props Props(int messageCount, int batchSize) =>
             Proto.Props.FromProducer(() => new PingActor(messageCount, batchSize));
+
+        public class Start
+        {
+            public Start(PID sender) => Sender = sender;
+
+            public PID Sender { get; }
+        }
     }
 }
