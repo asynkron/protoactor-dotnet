@@ -4,13 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
-using Microsoft.Extensions.Logging;
 using Proto.Cluster.Metrics;
 using Proto.Deduplication;
 
@@ -82,9 +77,10 @@ namespace Proto.Cluster
         }
 
         /// <summary>
-        /// De-duplicates processing when receiving multiple requests from the same FutureProcess PID.
-        /// Allows clients to retry requests on the same future, but not have it processed multiple times.
-        /// To guarantee that the message is processed at most once, the deduplication window has to be longer than the cluster request retry window. 
+        ///     De-duplicates processing when receiving multiple requests from the same FutureProcess PID.
+        ///     Allows clients to retry requests on the same future, but not have it processed multiple times.
+        ///     To guarantee that the message is processed at most once, the deduplication window has to be longer than the cluster
+        ///     request retry window.
         /// </summary>
         /// <param name="props"></param>
         /// <param name="deduplicationWindow"></param>
@@ -94,11 +90,14 @@ namespace Proto.Cluster
                     var cluster = context.System.Cluster();
                     var memberList = cluster.MemberList;
 
-                    return new DeduplicationContext<PidRef>(context, deduplicationWindow ?? cluster.Config.ClusterRequestDeDuplicationWindow, TryGetRef);
+                    return new DeduplicationContext<PidRef>(context, deduplicationWindow ?? cluster.Config.ClusterRequestDeDuplicationWindow,
+                        TryGetRef
+                    );
 
                     bool TryGetRef(MessageEnvelope envelope, out PidRef pidRef)
                     {
                         var pid = envelope.Sender;
+
                         if (pid is not null && int.TryParse(pid.Id[1..], out var id) &&
                             memberList.TryGetMemberIndexByAddress(pid.Address, out var memberId))
                         {

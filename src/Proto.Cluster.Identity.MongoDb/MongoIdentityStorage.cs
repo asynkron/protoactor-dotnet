@@ -89,7 +89,6 @@ namespace Proto.Cluster.Identity.MongoDb
             );
             if (res.MatchedCount != 1)
                 throw new LockNotFoundException($"Failed to store activation of {pid}");
-
         }
 
         public async Task RemoveActivation(PID pid, CancellationToken ct)
@@ -119,7 +118,7 @@ namespace Proto.Cluster.Identity.MongoDb
         }
 
         public Task Init() => _pids.Indexes.CreateOneAsync(new CreateIndexModel<PidLookupEntity>("{ MemberId: 1 }"));
-        
+
         private async Task<bool> TryAcquireLockAsync(
             ClusterIdentity clusterIdentity,
             string requestId,

@@ -215,9 +215,9 @@ namespace Proto.Remote
             var typeNameList = new List<string>();
             var targetNameList = new List<string>();
             var counter = context.System.Metrics.Get<RemoteMetrics>().RemoteSerializedMessageCount;
+
             foreach (var rd in m)
             {
-                 
                 var targetName = rd.Target.Id;
                 var serializerId = rd.SerializerId == -1 ? _serializerId : rd.SerializerId;
 
@@ -229,10 +229,7 @@ namespace Proto.Remote
 
                 var typeName = _remoteConfig.Serialization.GetTypeName(rd.Message, serializerId);
 
-                if (!context.System.Metrics.IsNoop)
-                {
-                    counter.Inc(new[] {context.System.Id, context.System.Address, typeName});
-                }
+                if (!context.System.Metrics.IsNoop) counter.Inc(new[] {context.System.Id, context.System.Address, typeName});
 
                 if (!typeNames.TryGetValue(typeName, out var typeId))
                 {

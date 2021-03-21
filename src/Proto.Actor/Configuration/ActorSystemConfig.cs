@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 using System;
 using JetBrains.Annotations;
-using Proto.Metrics;
 using Ubiquitous.Metrics;
 using Ubiquitous.Metrics.NoMetrics;
 
@@ -21,7 +20,6 @@ namespace Proto
     [PublicAPI]
     public record ActorSystemConfig
     {
-
         public TimeSpan DeadLetterThrottleInterval { get; init; }
 
         public IMetricsProvider[] MetricsProviders { get; init; } = {new NoMetricsProvider()};

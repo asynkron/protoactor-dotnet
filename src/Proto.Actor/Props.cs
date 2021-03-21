@@ -9,7 +9,6 @@ using System.Linq;
 using JetBrains.Annotations;
 using Proto.Context;
 using Proto.Mailbox;
-using Proto.Metrics;
 
 namespace Proto
 {
@@ -118,10 +117,7 @@ namespace Proto
         public Props WithSpawner(Spawner spawner) =>
             this with {Spawner = spawner};
 
-        internal PID Spawn(ActorSystem system, string name, PID? parent)
-        {
-            return Spawner(system, name, this, parent);
-        }
+        internal PID Spawn(ActorSystem system, string name, PID? parent) => Spawner(system, name, this, parent);
 
         public static Props FromProducer(Producer producer) => Empty.WithProducer(s => producer());
 

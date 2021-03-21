@@ -17,9 +17,9 @@ namespace Proto.Cluster
 {
     public class DefaultClusterContext : IClusterContext
     {
+        private readonly ClusterContextConfig _config;
         private readonly IIdentityLookup _identityLookup;
         private readonly ILogger _logger;
-        private readonly ClusterContextConfig _config;
         private readonly PidCache _pidCache;
         private readonly ShouldThrottle _requestLogThrottle;
 
@@ -105,10 +105,7 @@ namespace Proto.Cluster
 
         private async Task RemoveFromSource(ClusterIdentity clusterIdentity, PidSource source, PID pid)
         {
-            if (source == PidSource.Lookup)
-            {
-                await _identityLookup.RemovePidAsync(pid, CancellationToken.None);
-            }
+            if (source == PidSource.Lookup) await _identityLookup.RemovePidAsync(pid, CancellationToken.None);
 
             _pidCache.RemoveByVal(clusterIdentity, pid);
         }
@@ -117,10 +114,7 @@ namespace Proto.Cluster
         {
             try
             {
-                if (_pidCache.TryGet(clusterIdentity, out var cachedPid))
-                {
-                    return (cachedPid, PidSource.Cache);
-                }
+                if (_pidCache.TryGet(clusterIdentity, out var cachedPid)) return (cachedPid, PidSource.Cache);
 
                 var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
                 if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
@@ -147,10 +141,7 @@ namespace Proto.Cluster
         {
             try
             {
-                if (future.Task.IsCompleted)
-                {
-                    return ToResult<T>(source, context, future.Task.Result);
-                }
+                if (future.Task.IsCompleted) return ToResult<T>(source, context, future.Task.Result);
 
                 var sw = Stopwatch.StartNew();
 

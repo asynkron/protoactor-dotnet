@@ -5,29 +5,33 @@
 // -----------------------------------------------------------------------
 using Proto.Metrics;
 using Ubiquitous.Metrics;
-using Ubiquitous.Metrics.Labels;
 
 namespace Proto.Cluster.Metrics
 {
     public class ClusterMetrics
     {
-        public ClusterMetrics(ProtoMetrics metrics)
-        {
-            ClusterActorCount = metrics.CreateCount("protocluster_virtualactor_count", "", "id","address","clusterkind");
-            
-            ClusterActorSpawnHistogram= metrics.CreateHistogram("protocluster_virtualactor_spawn_duration_seconds" , "", "id","address","clusterkind");
-            
-            ClusterRequestHistogram= metrics.CreateHistogram("protocluster_virtualactor_requestasync_duration_seconds" , "", "id","address","clusterkind","messagetype","pidsource");
-
-            ClusterRequestRetryCount = metrics.CreateCount("protocluster_virtualactor_requestasync_retry_count", "","id","address","clusterkind","messagetype");
-            
-            ClusterTopologyEventGauge = metrics.CreateGauge("protocluster_topology_events", "","id","address","membershiphashcode");
-        }
-
         public readonly ICountMetric ClusterActorCount;
         public readonly IHistogramMetric ClusterActorSpawnHistogram;
         public readonly IHistogramMetric ClusterRequestHistogram;
         public readonly ICountMetric ClusterRequestRetryCount;
         public readonly IGaugeMetric ClusterTopologyEventGauge;
+
+        public ClusterMetrics(ProtoMetrics metrics)
+        {
+            ClusterActorCount = metrics.CreateCount("protocluster_virtualactor_count", "", "id", "address", "clusterkind");
+
+            ClusterActorSpawnHistogram =
+                metrics.CreateHistogram("protocluster_virtualactor_spawn_duration_seconds", "", "id", "address", "clusterkind");
+
+            ClusterRequestHistogram = metrics.CreateHistogram("protocluster_virtualactor_requestasync_duration_seconds", "", "id", "address",
+                "clusterkind", "messagetype", "pidsource"
+            );
+
+            ClusterRequestRetryCount = metrics.CreateCount("protocluster_virtualactor_requestasync_retry_count", "", "id", "address", "clusterkind",
+                "messagetype"
+            );
+
+            ClusterTopologyEventGauge = metrics.CreateGauge("protocluster_topology_events", "", "id", "address", "membershiphashcode");
+        }
     }
 }

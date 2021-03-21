@@ -33,6 +33,7 @@ namespace Proto.Cluster
 
         private readonly ReaderWriterLockSlim _rwLock = new();
         private readonly ActorSystem _system;
+        private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
 
         private LeaderInfo? _leader;
 
@@ -41,7 +42,6 @@ namespace Proto.Cluster
         //meaning the partition infra might be ahead of this list.
         //come up with a good solution to keep all this in sync
         private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
-        private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
         private ImmutableDictionary<int, Member> _membersByIndex = ImmutableDictionary<int, Member>.Empty;
 
         private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
@@ -237,9 +237,7 @@ namespace Proto.Cluster
             _membersByIndex = _membersByIndex.Remove(memberThatLeft.Index);
 
             if (_indexByAddress.TryGetValue(memberThatLeft.Address, out var member) && memberThatLeft.Id.Equals(member))
-            {
                 _indexByAddress = _indexByAddress.Remove(memberThatLeft.Address);
-            }
 
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
             _logger.LogDebug("Published event {@EndpointTerminated}", endpointTerminated);

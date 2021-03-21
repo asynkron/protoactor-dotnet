@@ -8,7 +8,7 @@ namespace Proto.Mailbox
     public interface IMailboxQueue
     {
         bool HasMessages { get; }
-        
+
         int Length { get; }
 
         void Push(object message);

@@ -18,7 +18,7 @@ namespace Proto.Mailbox
     public interface IMailbox
     {
         int UserMessageCount { get; }
-    
+
         void PostUserMessage(object msg);
 
         void PostSystemMessage(object msg);
@@ -64,7 +64,7 @@ namespace Proto.Mailbox
             _dispatcher = NoopDispatcher.Instance;
             _invoker = NoopInvoker.Instance;
         }
-        
+
         public DefaultMailbox(
             IMailboxQueue systemMessages,
             IMailboxQueue userMailbox,

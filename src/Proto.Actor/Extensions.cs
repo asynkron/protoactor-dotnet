@@ -12,11 +12,7 @@ namespace Proto
 {
     public static class CancellationTokens
     {
-        public static CancellationToken WithTimeout(int ms)
-        {
-            return new CancellationTokenSource(ms).Token;
-        }
-
+        public static CancellationToken WithTimeout(int ms) => new CancellationTokenSource(ms).Token;
     }
 
     public static class UtilExtensions

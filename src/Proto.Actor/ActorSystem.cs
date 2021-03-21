@@ -41,24 +41,6 @@ namespace Proto
             RunThreadPoolStats();
         }
 
-        private void RunThreadPoolStats()
-        {
-            var logger = Log.CreateLogger(nameof(ThreadPoolStats));
-            _ = ThreadPoolStats.Run(TimeSpan.FromSeconds(5),
-                t => {
-                    
-                    //collect the latency metrics
-                    Metrics.InternalActorMetrics.ThreadPoolLatencyHistogram.Observe(t, new []{Id,Address});
-                    
-                    //does it take longer than 1 sec for a task to start executing?
-                    if (t > TimeSpan.FromSeconds(1))
-                    {
-                        logger.LogWarning("ThreadPool is running hot, Threadpool latency {ThreadPoolLatency}", t);
-                    }
-                }, _cts.Token
-            );
-        }
-
         public string Id { get; } = Guid.NewGuid().ToString("N");
 
         public string Address { get; private set; } = NoHost;
@@ -74,12 +56,26 @@ namespace Proto
         public DeadLetterProcess DeadLetter { get; }
 
         public EventStream EventStream { get; }
-        
+
         public ProtoMetrics Metrics { get; }
 
         public ActorSystemExtensions Extensions { get; }
 
         public CancellationToken Shutdown => _cts.Token;
+
+        private void RunThreadPoolStats()
+        {
+            var logger = Log.CreateLogger(nameof(ThreadPoolStats));
+            _ = ThreadPoolStats.Run(TimeSpan.FromSeconds(5),
+                t => {
+                    //collect the latency metrics
+                    Metrics.InternalActorMetrics.ThreadPoolLatencyHistogram.Observe(t, new[] {Id, Address});
+
+                    //does it take longer than 1 sec for a task to start executing?
+                    if (t > TimeSpan.FromSeconds(1)) logger.LogWarning("ThreadPool is running hot, Threadpool latency {ThreadPoolLatency}", t);
+                }, _cts.Token
+            );
+        }
 
         public Task ShutdownAsync()
         {

@@ -182,12 +182,12 @@ namespace Proto.Cluster.Consul
                             var res = new ClusterTopologyEvent(currentMembers);
                             _cluster.System.EventStream.Publish(res);
                         }
-                        catch(Exception x)
+                        catch (Exception x)
                         {
                             if (!_cluster.System.Shutdown.IsCancellationRequested)
                             {
                                 _logger.LogError(x, "Consul Monitor failed");
-                                
+
                                 //just backoff and try again
                                 await Task.Delay(2000);
                             }
@@ -211,30 +211,23 @@ namespace Proto.Cluster.Consul
             }
         }
 
-        private void StartUpdateTtlLoop()
-        {
-            _ = SafeTask.Run(async () => {
-                    
-                    while (!_shutdown)
+        private void StartUpdateTtlLoop() => _ = SafeTask.Run(async () => {
+                while (!_shutdown)
+                {
+                    try
                     {
-                        try
-                        {
-                            await _client.Agent.PassTTL("service:" + _consulServiceInstanceId, "");
-                            await Task.Delay(_refreshTtl, _cluster.System.Shutdown);
-                        }
-                        catch(Exception x)
-                        {
-                            if (!_cluster.System.Shutdown.IsCancellationRequested)
-                            {
-                                _logger.LogError(x, "Consul TTL Loop failed");
-                            }
-                        }
+                        await _client.Agent.PassTTL("service:" + _consulServiceInstanceId, "");
+                        await Task.Delay(_refreshTtl, _cluster.System.Shutdown);
                     }
-
-                    _logger.LogInformation("Consul Exiting TTL loop");
+                    catch (Exception x)
+                    {
+                        if (!_cluster.System.Shutdown.IsCancellationRequested) _logger.LogError(x, "Consul TTL Loop failed");
+                    }
                 }
-            );
-        }
+
+                _logger.LogInformation("Consul Exiting TTL loop");
+            }
+        );
         //
         // private void StartLeaderElectionLoop()
         // {

@@ -13,7 +13,6 @@ namespace Proto.Cluster.Cache
 {
     public class ClusterCacheInvalidation : IActorSystemExtension<ClusterCacheInvalidation>
     {
-        public Cluster Cluster { get; }
         private const string ActorName = "$invalidator";
 
         public ClusterCacheInvalidation(Cluster cluster)
@@ -31,6 +30,8 @@ namespace Proto.Cluster.Cache
                 ActorName
             );
         }
+
+        public Cluster Cluster { get; }
 
         private bool IsRemote(PID? sender) => sender?.Address != null && !sender.Address.Equals(Cluster.System.Address);
 

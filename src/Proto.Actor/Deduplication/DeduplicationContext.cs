@@ -25,19 +25,19 @@ namespace Proto.Deduplication
     }
 
     /// <summary>
-    /// Will deduplicate on a sender id if the sender is an unnamed actor (ie a FutureProcess)
+    ///     Will deduplicate on a sender id if the sender is an unnamed actor (ie a FutureProcess)
     /// </summary>
-    internal class DeDuplicator<T> where T : IEquatable<T>
+    class DeDuplicator<T> where T : IEquatable<T>
 
     {
         private readonly TryGetDeduplicationKey<T> _getDeduplicationKey;
         private readonly ILogger _logger = Log.CreateLogger<DeDuplicator<T>>();
-        private readonly long _ttl;
-        private long _lastCheck;
-        private long _oldest;
-        private long _cleanedAt;
 
         private readonly Dictionary<T, long> _processed = new(50);
+        private readonly long _ttl;
+        private long _cleanedAt;
+        private long _lastCheck;
+        private long _oldest;
 
         public DeDuplicator(TimeSpan deduplicationWindow, TryGetDeduplicationKey<T> getDeduplicationKey)
         {
@@ -69,14 +69,11 @@ namespace Proto.Deduplication
         }
 
         private bool IsDuplicate(T key, long cutoff)
-            => _lastCheck > cutoff && (_processed.TryGetValue(key, out var ticks) && ticks >= cutoff);
+            => _lastCheck > cutoff && _processed.TryGetValue(key, out var ticks) && ticks >= cutoff;
 
         private void Add(T key, long now)
         {
-            if (_processed.Count == 0)
-            {
-                _oldest = now;
-            }
+            if (_processed.Count == 0) _oldest = now;
 
             _processed.Add(key, now);
         }
@@ -95,14 +92,8 @@ namespace Proto.Deduplication
 
                 foreach (var (key, timestamp) in _processed.ToList())
                 {
-                    if (timestamp < cutoff)
-                    {
-                        _processed.Remove(key);
-                    }
-                    else
-                    {
-                        oldest = Math.Min(timestamp, oldest);
-                    }
+                    if (timestamp < cutoff) _processed.Remove(key);
+                    else oldest = Math.Min(timestamp, oldest);
                 }
 
                 _cleanedAt = now;

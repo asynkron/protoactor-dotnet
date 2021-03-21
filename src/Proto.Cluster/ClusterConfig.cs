@@ -46,9 +46,9 @@ namespace Proto.Cluster
 
         public IIdentityLookup? IdentityLookup { get; }
         public TimeSpan HeartBeatInterval { get; init; }
-        
+
         public bool ClusterRequestDeDuplication { get; init; }
-        
+
         public TimeSpan ClusterRequestDeDuplicationWindow { get; init; }
 
         public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } =

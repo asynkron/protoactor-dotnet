@@ -11,8 +11,10 @@ namespace Proto.Cluster.Identity
 {
     public interface IIdentityStorage : IDisposable
     {
-        public Task<StoredActivation?> TryGetExistingActivation(ClusterIdentity clusterIdentity,
-            CancellationToken ct);
+        public Task<StoredActivation?> TryGetExistingActivation(
+            ClusterIdentity clusterIdentity,
+            CancellationToken ct
+        );
 
         public Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity, CancellationToken ct);
 

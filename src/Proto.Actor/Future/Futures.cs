@@ -14,7 +14,7 @@ namespace Proto.Future
     {
         private readonly CancellationTokenSource? _cts;
         private readonly TaskCompletionSource<object> _tcs;
-        private ActorMetrics _metrics;
+        private readonly ActorMetrics _metrics;
 
         internal FutureProcess(ActorSystem system, TimeSpan timeout) : this(system, new CancellationTokenSource(timeout)
         )
@@ -33,7 +33,7 @@ namespace Proto.Future
         private FutureProcess(ActorSystem system, CancellationTokenSource? cts) : base(system)
         {
             _metrics = system.Metrics.Get<ActorMetrics>();
-            _metrics.FuturesStartedCount.Inc(new[]{system.Id,system.Address});
+            _metrics.FuturesStartedCount.Inc(new[] {system.Id, system.Address});
             _tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
             _cts = cts;
 
@@ -51,8 +51,8 @@ namespace Proto.Future
                     _tcs.TrySetException(
                         new TimeoutException("Request didn't receive any Response within the expected time.")
                     );
-                    
-                    _metrics.FuturesTimedOutCount.Inc(new[]{System.Id,system.Address});
+
+                    _metrics.FuturesTimedOutCount.Inc(new[] {System.Id, system.Address});
                     Stop(pid);
                 }
             );
@@ -70,7 +70,7 @@ namespace Proto.Future
             }
             finally
             {
-                _metrics.FuturesCompletedCount.Inc(new[]{System.Id,System.Address});
+                _metrics.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
                 Stop(Pid);
             }
         }
@@ -86,7 +86,7 @@ namespace Proto.Future
 
             if (_cts is null || !_cts.IsCancellationRequested) _tcs.TrySetResult(default!);
 
-            _metrics.FuturesCompletedCount.Inc(new[]{System.Id,System.Address});
+            _metrics.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
             Stop(pid);
         }
     }

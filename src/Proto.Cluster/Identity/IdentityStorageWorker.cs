@@ -15,19 +15,19 @@ namespace Proto.Cluster.Identity
     class IdentityStorageWorker : IActor
     {
         private const int MaxSpawnRetries = 3;
-        
+
         private static readonly ConcurrentSet<string> StaleMembers = new();
 
         private readonly Cluster _cluster;
 
         private readonly HashSet<ClusterIdentity> _inProgress = new();
-        private readonly Dictionary<ClusterIdentity, List<PID>> _waitingRequests = new();
         private readonly ILogger _logger = Log.CreateLogger<IdentityStorageWorker>();
         private readonly IdentityStorageLookup _lookup;
         private readonly MemberList _memberList;
 
         private readonly ShouldThrottle _shouldThrottle;
         private readonly IIdentityStorage _storage;
+        private readonly Dictionary<ClusterIdentity, List<PID>> _waitingRequests = new();
 
         public IdentityStorageWorker(IdentityStorageLookup storageLookup)
         {
@@ -70,7 +70,7 @@ namespace Proto.Cluster.Identity
                             var response = new PidResult(task.Result);
                             context.Respond(response);
                             RespondToWaitingRequests(context, clusterIdentity, response);
-                            
+
                             return Task.CompletedTask;
                         }
                         finally
@@ -82,19 +82,11 @@ namespace Proto.Cluster.Identity
             }
             else
             {
-                if (_waitingRequests.TryGetValue(clusterIdentity, out var senders))
-                {
-                    senders.Add(context.Sender);
-                }
-                else
-                {
-                    _waitingRequests[clusterIdentity] = new List<PID> {context.Sender};
-                }
+                if (_waitingRequests.TryGetValue(clusterIdentity, out var senders)) senders.Add(context.Sender);
+                else _waitingRequests[clusterIdentity] = new List<PID> {context.Sender};
             }
 
             return Task.CompletedTask;
-
-
         }
 
         private void RespondToWaitingRequests(IContext context, ClusterIdentity clusterIdentity, PidResult response)
@@ -109,10 +101,10 @@ namespace Proto.Cluster.Identity
 
         private async Task<PID?> GetWithGlobalLock(PID sender, ClusterIdentity clusterIdentity)
         {
-            
             var tries = 0;
             PID? result = null;
             SpawnLock? spawnLock = null;
+
             while (result == null && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
             {
                 try
@@ -135,14 +127,11 @@ namespace Proto.Cluster.Identity
                     spawnLock ??= await _storage.TryAcquireLock(clusterIdentity, CancellationTokens.WithTimeout(5000));
 
                     //we didn't get the lock, wait for activation to complete
-                    if (spawnLock == null)
-                    {
-                        result = await WaitForActivation(clusterIdentity, CancellationTokens.WithTimeout(5000));
-                    }
+                    if (spawnLock == null) result = await WaitForActivation(clusterIdentity, CancellationTokens.WithTimeout(5000));
                     else
                     {
                         //we have the lock, spawn and return
-                        (result,spawnLock) = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.WithTimeout(5000));
+                        (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.WithTimeout(5000));
                     }
                 }
                 catch (Exception e)
@@ -155,6 +144,7 @@ namespace Proto.Cluster.Identity
                     await Task.Delay(tries * 20);
                 }
             }
+
             return result;
         }
 
@@ -211,7 +201,9 @@ namespace Proto.Cluster.Identity
 
             //Clean up our mess..
             await _storage.RemoveLock(spawnLock, ct);
-            return (null, null);;
+            return (null, null);
+
+            ;
         }
 
         private async Task<PID?> ValidateAndMapToPid(ClusterIdentity clusterIdentity, StoredActivation? activation)

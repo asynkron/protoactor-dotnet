@@ -41,11 +41,9 @@ namespace Proto.Cluster
         {
             var members = Members;
             var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
-            var key = string.Join("",x);
+            var key = string.Join("", x);
             var hash = MurmurHash2.Hash(key);
             return hash;
         }
     }
-    
-    
 }

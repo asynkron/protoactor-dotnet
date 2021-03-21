@@ -11,17 +11,16 @@ using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
 using Proto.Remote.Metrics;
-using Ubiquitous.Metrics.Labels;
 
 namespace Proto.Remote
 {
     public class EndpointReader : Remoting.RemotingBase
     {
         private static readonly ILogger Logger = Log.CreateLogger<EndpointReader>();
+        private readonly LogLevel _deserializationErrorLogLevel;
         private readonly EndpointManager _endpointManager;
         private readonly Serialization _serialization;
         private readonly ActorSystem _system;
-        private readonly LogLevel _deserializationErrorLogLevel;
 
         public EndpointReader(ActorSystem system, EndpointManager endpointManager, Serialization serialization)
         {
@@ -39,7 +38,8 @@ namespace Proto.Remote
 
                 throw new RpcException(Status.DefaultCancelled, "Suspended");
             }
-            _system.Metrics.Get<RemoteMetrics>().RemoteEndpointConnectedCount.Inc(new []{_system.Id,_system.Address, context.Peer});
+
+            _system.Metrics.Get<RemoteMetrics>().RemoteEndpointConnectedCount.Inc(new[] {_system.Id, _system.Address, context.Peer});
 
             Logger.LogDebug("[EndpointReader] Accepted connection request from {Remote} to {Local}", context.Peer,
                 context.Host
@@ -100,25 +100,26 @@ namespace Proto.Remote
                 var typeNames = batch.TypeNames.ToArray();
 
                 var m = _system.Metrics.Get<RemoteMetrics>().RemoteDeserializedMessageCount;
+
                 foreach (var envelope in batch.Envelopes)
                 {
                     var target = targets[envelope.Target];
                     var typeName = typeNames[envelope.TypeId];
 
-                    if (!_system.Metrics.IsNoop)
-                    {
-                        m.Inc(new[] {_system.Id, _system.Address, typeName});
-                    }
+                    if (!_system.Metrics.IsNoop) m.Inc(new[] {_system.Id, _system.Address, typeName});
 
                     object message;
+
                     try
                     {
                         message =
-                        _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
+                            _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
                     }
                     catch (Exception)
                     {
-                        Logger.Log(_deserializationErrorLogLevel, "[EndpointReader] Unable to deserialize message with {Type} from {Remote}", typeName, context.Peer);
+                        Logger.Log(_deserializationErrorLogLevel, "[EndpointReader] Unable to deserialize message with {Type} from {Remote}",
+                            typeName, context.Peer
+                        );
                         continue;
                     }
 
@@ -137,7 +138,7 @@ namespace Proto.Remote
                 }
             }
 
-            _system.Metrics.Get<RemoteMetrics>().RemoteEndpointDisconnectedCount.Inc(new[]{_system.Id,_system.Address, context.Peer});
+            _system.Metrics.Get<RemoteMetrics>().RemoteEndpointDisconnectedCount.Inc(new[] {_system.Id, _system.Address, context.Peer});
             Logger.LogDebug("[EndpointReader] Stream closed by {Remote}", context.Peer);
         }
 

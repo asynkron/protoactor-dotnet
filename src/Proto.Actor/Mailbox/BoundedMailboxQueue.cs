@@ -12,7 +12,7 @@ namespace Proto.Mailbox
     {
         private readonly Channel<object> _messages;
         private volatile bool _hasMessages;
-        private int _length; 
+        private int _length;
 
         public BoundedMailboxQueue(int size) => _messages = Channel.CreateBounded<object>(size);
 
@@ -35,11 +35,8 @@ namespace Proto.Mailbox
                 Interlocked.Decrement(ref _length);
                 _hasMessages = true;
             }
-            else
-            {
-                _hasMessages = false;
-            }
-            
+            else _hasMessages = false;
+
             return message;
         }
 

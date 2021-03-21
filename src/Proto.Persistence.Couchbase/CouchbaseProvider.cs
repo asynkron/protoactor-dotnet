@@ -7,7 +7,6 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Couchbase;
 using Couchbase.Core;
 using Couchbase.N1QL;
 

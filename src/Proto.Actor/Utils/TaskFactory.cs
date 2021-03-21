@@ -13,17 +13,17 @@ namespace Proto
 {
     public static class SafeTask
     {
-        private static ILogger Logger = Log.CreateLogger<TaskFactory>();
-        
-        public static async Task Run(Func<Task> body, CancellationToken cancellationToken = default, [CallerMemberName] string name="")
+        private static readonly ILogger Logger = Log.CreateLogger<TaskFactory>();
+
+        public static async Task Run(Func<Task> body, CancellationToken cancellationToken = default, [CallerMemberName] string name = "")
         {
             try
             {
                 await Task.Run(body, cancellationToken);
             }
-            catch(Exception x)
+            catch (Exception x)
             {
-                Logger.LogError(x,"Unhandled exception in async job {Job}",name);
+                Logger.LogError(x, "Unhandled exception in async job {Job}", name);
             }
         }
     }

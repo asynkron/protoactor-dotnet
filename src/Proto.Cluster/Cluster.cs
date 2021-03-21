@@ -33,7 +33,6 @@ namespace Proto.Cluster
 
             _clusterHeartBeat = new ClusterHeartBeat(this);
             system.EventStream.Subscribe<ClusterTopology>(e => {
-
                     system.Metrics.Get<ClusterMetrics>().ClusterTopologyEventGauge.Set(e.Members.Count,
                         new[] {System.Id, System.Address, e.GetMembershipHashCode().ToString()}
                     );
@@ -93,7 +92,7 @@ namespace Proto.Cluster
             IdentityLookup = Config.IdentityLookup ?? new PartitionIdentityLookup();
 
             Remote = System.Extensions.Get<IRemote>() ?? throw new NotSupportedException("Remote module must be configured when using cluster");
-            
+
             await Remote.StartAsync();
             Logger = Log.CreateLogger($"Cluster-{LoggerId}");
             Logger.LogInformation("Starting");

@@ -43,7 +43,7 @@ namespace Proto.Remote
         public static TRemoteConfig WithAdvertisedPort<TRemoteConfig>(this TRemoteConfig remoteConfig, int? advertisedPort)
             where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with {AdvertisedPort = advertisedPort};
-        
+
         public static TRemoteConfig WithEndpointWriterBatchSize<TRemoteConfig>(this TRemoteConfig remoteConfig, int endpointWriterBatchSize)
             where TRemoteConfig : RemoteConfigBase
         {
@@ -110,7 +110,6 @@ namespace Proto.Remote
 
         public static TRemoteConfig WithLogLevelForDeserializationErrors<TRemoteConfig>(this TRemoteConfig remoteConfig, LogLevel level)
             where TRemoteConfig : RemoteConfigBase =>
-            remoteConfig with { DeserializationErrorLogLevel = level };
-
+            remoteConfig with {DeserializationErrorLogLevel = level};
     }
 }

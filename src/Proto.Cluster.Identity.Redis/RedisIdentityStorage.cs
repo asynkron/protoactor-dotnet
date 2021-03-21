@@ -23,13 +23,13 @@ namespace Proto.Cluster.Identity.Redis
         private static readonly RedisValue Address = "adr";
         private static readonly RedisValue MemberId = "mid";
         private static readonly RedisValue LockId = "lid";
+        private readonly AsyncSemaphore _asyncSemaphore;
 
         private readonly RedisKey _clusterIdentityKey;
 
         private readonly IConnectionMultiplexer _connections;
         private readonly TimeSpan _maxLockTime;
         private readonly RedisKey _memberKey;
-        private readonly AsyncSemaphore _asyncSemaphore;
 
         public RedisIdentityStorage(
             string clusterName,
@@ -71,12 +71,10 @@ namespace Proto.Cluster.Identity.Redis
                 //There is an active lock on the pid, spin wait
                 var i = 1;
 
-                do
-                {
-                    await Task.Delay(20 * i++, ct);
-                } while (!ct.IsCancellationRequested
-                      && _maxLockTime > timer.Elapsed
-                      && (activationStatus = await LookupKey(db, key).ConfigureAwait(false))?.ActiveLockId == lockId
+                do await Task.Delay(20 * i++, ct);
+                while (!ct.IsCancellationRequested
+                    && _maxLockTime > timer.Elapsed
+                    && (activationStatus = await LookupKey(db, key).ConfigureAwait(false))?.ActiveLockId == lockId
                 );
             }
 
@@ -146,12 +144,14 @@ namespace Proto.Cluster.Identity.Redis
             if (key == NoKey) return Task.CompletedTask;
 
             const string removePid = "local pidEntry = redis.call('HMGET', KEYS[1], 'pid', 'adr', 'mid');\n" +
-                            "if pidEntry[1]~=ARGV[1] or pidEntry[2]~=ARGV[2] then return 0 end;\n" + // id / address matches
-                            "local memberKey = ARGV[3] .. pidEntry[3];\n" +
-                            "redis.call('SREM', memberKey, KEYS[1] .. '');" +
-                            "return redis.call('DEL', KEYS[1]);";
+                                     "if pidEntry[1]~=ARGV[1] or pidEntry[2]~=ARGV[2] then return 0 end;\n" + // id / address matches
+                                     "local memberKey = ARGV[3] .. pidEntry[3];\n" +
+                                     "redis.call('SREM', memberKey, KEYS[1] .. '');" +
+                                     "return redis.call('DEL', KEYS[1]);";
 
-            return _asyncSemaphore.WaitAsync(() => GetDb().ScriptEvaluateAsync(removePid, new[] {key}, new RedisValue[] {pid.Id, pid.Address, _memberKey.ToString()}));
+            return _asyncSemaphore.WaitAsync(()
+                => GetDb().ScriptEvaluateAsync(removePid, new[] {key}, new RedisValue[] {pid.Id, pid.Address, _memberKey.ToString()})
+            );
         }
 
         public Task RemoveMember(string memberId, CancellationToken ct)
