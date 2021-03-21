@@ -54,9 +54,9 @@ namespace Server
                         {
                             case Connect connect:
                                 Console.WriteLine($"Client {connect.Sender} connected");
-                                
+
                                 clients.Add(connect.Sender);
-                                
+
                                 ctx.Send(
                                     connect.Sender,
                                     new Connected

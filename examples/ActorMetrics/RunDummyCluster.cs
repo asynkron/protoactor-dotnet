@@ -31,7 +31,9 @@ namespace ActorMetrics
 
             var clusterConfig =
                 ClusterConfig
-                    .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://127.0.0.1:8500/")), new PartitionIdentityLookup());
+                    .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://127.0.0.1:8500/")),
+                        new PartitionIdentityLookup()
+                    );
 
             var system = new ActorSystem(config)
                 .WithRemote(remoteConfig)
@@ -40,9 +42,9 @@ namespace ActorMetrics
             system
                 .Cluster()
                 .StartMemberAsync();
-            
+
             var props = Props.FromProducer(() => new MyActor());
-            
+
             var config2 = ActorSystemConfig.Setup().WithMetricsProviders(new PrometheusConfigurator());
 
             var remoteConfig2 = GrpcCoreRemoteConfig
@@ -55,33 +57,36 @@ namespace ActorMetrics
                         new PartitionIdentityLookup()
                     )
                     .WithClusterKind("somekind", props);
-            
+
             var system2 = new ActorSystem(config2)
                 .WithRemote(remoteConfig2)
                 .WithCluster(clusterConfig2);
-            
+
             system2
                 .Cluster()
                 .StartMemberAsync();
 
             _ = SafeTask.Run(async () => {
                     var r = new Random();
+
                     while (true)
                     {
-                        await Task.Delay(r.Next(1,2000));
-                        await system.Cluster().RequestAsync<SomeResponse>($"someactor{r.Next(1, 100)}", "somekind", new SomeRequest(), CancellationTokens.WithTimeout(5000));
+                        await Task.Delay(r.Next(1, 2000));
+                        await system.Cluster().RequestAsync<SomeResponse>($"someactor{r.Next(1, 100)}", "somekind", new SomeRequest(),
+                            CancellationTokens.WithTimeout(5000)
+                        );
                     }
                 }
             );
-
         }
     }
-    
+
     public record MyMessage(string Name);
 
     public class MyActor : IActor
     {
-        private Random r = new();
+        private readonly Random r = new();
+
         public async Task ReceiveAsync(IContext context)
         {
             if (context.Message is SomeRequest m)

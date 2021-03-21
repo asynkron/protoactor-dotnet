@@ -11,10 +11,7 @@ namespace WebApplication1
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
+        public Startup(IConfiguration configuration) => Configuration = configuration;
 
         public IConfiguration Configuration { get; }
 
@@ -22,10 +19,7 @@ namespace WebApplication1
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo {Title = "WebApplication1", Version = "v1"});
-            });
+            services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo {Title = "WebApplication1", Version = "v1"}); });
 
             RunDummyCluster.Run();
         }
@@ -51,7 +45,6 @@ namespace WebApplication1
                     endpoints.MapMetrics();
                 }
             );
-
         }
     }
 }
