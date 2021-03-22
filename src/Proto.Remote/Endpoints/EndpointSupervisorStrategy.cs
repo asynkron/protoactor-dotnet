@@ -42,7 +42,7 @@ namespace Proto.Remote
         {
             if (ShouldStop(rs))
             {
-                Logger.LogError(reason,
+                Logger.LogError(
                     "Stopping connection to address {Address} after retries expired because of {Reason}",
                     _address, reason.GetType().Name
                 );

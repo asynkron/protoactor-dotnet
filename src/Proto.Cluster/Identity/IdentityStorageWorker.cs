@@ -124,15 +124,24 @@ namespace Proto.Cluster.Identity
                     if (activator == null) return null;
 
                     //try to acquire global lock
-                    spawnLock ??= await _storage.TryAcquireLock(clusterIdentity, CancellationTokens.WithTimeout(5000));
+                    spawnLock ??= await _storage.TryAcquireLock(clusterIdentity, CancellationTokens.WithTimeout(1000));
 
                     //we didn't get the lock, wait for activation to complete
-                    if (spawnLock == null) result = await WaitForActivation(clusterIdentity, CancellationTokens.WithTimeout(5000));
+                    if (spawnLock == null) result = await WaitForActivation(clusterIdentity, CancellationTokens.WithTimeout(1000));
                     else
                     {
                         //we have the lock, spawn and return
-                        (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.WithTimeout(5000));
+                        (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.WithTimeout(1000));
                     }
+                }
+                catch (TaskCanceledException e)
+                {
+                    if (_cluster.System.Shutdown.IsCancellationRequested) return null;
+
+                    if (_shouldThrottle().IsOpen())
+                        _logger.LogWarning(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
+                    
+                    await Task.Delay(tries * 20);
                 }
                 catch (Exception e)
                 {
