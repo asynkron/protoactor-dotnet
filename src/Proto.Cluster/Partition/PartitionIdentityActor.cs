@@ -117,8 +117,6 @@ namespace Proto.Cluster.Partition
 
         private async Task ClusterTopology(ClusterTopology msg, IContext context)
         {
-            if (_eventId >= msg.EventId) return;
-
             _eventId = msg.EventId;
             _lastEventTimestamp = DateTime.Now;
             var members = msg.Members.ToArray();
@@ -132,7 +130,6 @@ namespace Proto.Cluster.Partition
                 _eventId, TopologyChangeTimeout
             );
 
-            var requests = new List<Task<IdentityHandoverResponse>>();
             var requestMsg = new IdentityHandoverRequest
             {
                 EventId = _eventId,
@@ -141,13 +138,10 @@ namespace Proto.Cluster.Partition
 
             requestMsg.Members.AddRange(members);
 
-            foreach (var member in members)
-            {
-                var activatorPid = PartitionManager.RemotePartitionPlacementActor(member.Address);
-                var request =
-                    context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg, HandoverTimeout);
-                requests.Add(request);
-            }
+            var requests = members
+                .Select(member => PartitionManager.RemotePartitionPlacementActor(member.Address))
+                .Select(activatorPid => context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg, HandoverTimeout))
+                .ToList();
 
             try
             {

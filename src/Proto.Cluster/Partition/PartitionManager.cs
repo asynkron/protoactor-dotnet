@@ -33,14 +33,10 @@ namespace Proto.Cluster.Partition
         {
             if (_isClient)
             {
-                var eventId = 0ul;
+        
                 //make sure selector is updated first
                 _system.EventStream.Subscribe<ClusterTopology>(e => {
-                        if (e.EventId > eventId)
-                        {
-                            eventId = e.EventId;
-                            Selector.Update(e.Members.ToArray());
-                        }
+                        Selector.Update(e.Members.ToArray());
                     }
                 );
             }
@@ -57,18 +53,18 @@ namespace Proto.Cluster.Partition
 
                 //synchronous subscribe to keep accurate
 
-                var eventId = 0ul;
+                //var eventId = 0ul;
                 //make sure selector is updated first
                 _system.EventStream.Subscribe<ClusterTopology>(e => {
-                        if (e.EventId > eventId)
-                        {
-                            eventId = e.EventId;
-                            _cluster.MemberList.BroadcastEvent(e);
+                        // if (e.EventId > eventId)
+                        // {
+                           // eventId = e.EventId;
+                          //  _cluster.MemberList.BroadcastEvent(e);
 
                             Selector.Update(e.Members.ToArray());
                             _context.Send(_partitionActor, e);
                             _context.Send(_partitionActivator, e);
-                        }
+                        //}
                     }
                 );
             }

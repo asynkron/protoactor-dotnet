@@ -133,8 +133,6 @@ namespace Proto.Cluster
         public void UpdateClusterTopology(IReadOnlyCollection<Member> statuses, ulong eventId)
         {
             
-            
-            
             var locked = _rwLock.TryEnterWriteLock(1000);
 
             while (!locked)
@@ -146,8 +144,7 @@ namespace Proto.Cluster
             try
             {
                 _logger.LogDebug("Updating Cluster Topology");
-                var topology = new ClusterTopology {EventId = eventId};
-
+                
                 //TLDR:
                 //this method basically filters out any member status in the banned list
                 //then makes a delta between new and old members
@@ -166,6 +163,11 @@ namespace Proto.Cluster
                 {
                     return;
                 }
+
+                var topology = new ClusterTopology
+                {
+                    EventId = newMembershipHashCode
+                };
 
                 _currentMembershipHashCode = newMembershipHashCode;
 

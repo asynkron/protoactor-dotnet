@@ -23,8 +23,7 @@ namespace Proto.Cluster.Partition
         //eventId -> the cluster wide eventId when this actor was created
         private readonly Dictionary<ClusterIdentity, (PID pid, ulong eventId)> _myActors =
             new();
-
-        private readonly Rendezvous _rdv = new();
+        
         private CancellationTokenSource? _ct;
 
         //cluster wide eventId.
@@ -40,22 +39,14 @@ namespace Proto.Cluster.Partition
         public Task ReceiveAsync(IContext context) =>
             context.Message switch
             {
-                Started _                   => Started(context),
                 Tick _                      => Tick(context),
                 Terminated msg              => Terminated(context, msg),
-                ClusterTopology msg         => ClusterTopology(msg),
                 IdentityHandoverRequest msg => IdentityHandoverRequest(context, msg),
                 ActivationRequest msg       => ActivationRequest(context, msg),
                 _                           => Task.CompletedTask
             };
 
         public void Dispose() => _ct?.Dispose();
-
-        private Task Started(IContext context)
-        {
-            _ct = context.Scheduler().SendRepeatedly(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), context.Self!, new Tick());
-            return Task.CompletedTask;
-        }
 
         private Task Tick(IContext context)
         {
@@ -76,22 +67,11 @@ namespace Proto.Cluster.Partition
                 EventId = eventId
             };
 
-            var ownerAddress = _rdv.GetOwnerMemberByIdentity(clusterIdentity.Identity);
-            var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
-
-            context.Send(ownerPid, activationTerminated);
+            // var ownerAddress = _rdv.GetOwnerMemberByIdentity(clusterIdentity.Identity);
+            // var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
+            //
+            // context.Send(ownerPid, activationTerminated);
             _myActors.Remove(clusterIdentity);
-            return Task.CompletedTask;
-        }
-
-        private Task ClusterTopology(ClusterTopology msg)
-        {
-            //ignore outdated events
-            if (msg.EventId <= _eventId) return Task.CompletedTask;
-
-            _eventId = msg.EventId;
-            _rdv.UpdateMembers(msg.Members);
-
             return Task.CompletedTask;
         }
 
