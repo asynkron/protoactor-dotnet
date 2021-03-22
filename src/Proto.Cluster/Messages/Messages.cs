@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
+using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 
@@ -37,9 +38,14 @@ namespace Proto.Cluster
 
     public partial class ClusterTopology
     {
-        public uint GetMembershipHashCode()
+        //this ignores joined and left members, only the actual members are relevant
+        public uint GetMembershipHashCode() => Member.GetMembershipHashCode(Members);
+    }
+
+    public partial class Member
+    {
+        public static uint GetMembershipHashCode(IEnumerable<Member> members)
         {
-            var members = Members;
             var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
             var key = string.Join("", x);
             var hash = MurmurHash2.Hash(key);

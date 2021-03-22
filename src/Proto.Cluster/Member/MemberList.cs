@@ -28,6 +28,7 @@ namespace Proto.Cluster
         private readonly Cluster _cluster;
         private readonly EventStream _eventStream;
         private readonly ILogger _logger;
+        private uint _currentMembershipHashCode = uint.MinValue;
 
         private readonly IRootContext _root;
 
@@ -131,6 +132,9 @@ namespace Proto.Cluster
 
         public void UpdateClusterTopology(IReadOnlyCollection<Member> statuses, ulong eventId)
         {
+            
+            
+            
             var locked = _rwLock.TryEnterWriteLock(1000);
 
             while (!locked)
@@ -154,6 +158,16 @@ namespace Proto.Cluster
                     statuses
                         .Where(s => !_bannedMembers.Contains(s.Id))
                         .ToArray();
+                
+                var newMembershipHashCode = Member.GetMembershipHashCode(nonBannedStatuses);
+
+                //same topology, bail out
+                if (newMembershipHashCode == _currentMembershipHashCode)
+                {
+                    return;
+                }
+
+                _currentMembershipHashCode = newMembershipHashCode;
 
                 //these are the member IDs hashset of currently active members
                 var newMemberIds =

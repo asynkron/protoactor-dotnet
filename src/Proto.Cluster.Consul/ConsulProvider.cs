@@ -175,12 +175,8 @@ namespace Proto.Cluster.Consul
                                     .Where(v => IsAlive(v.Checks)) //only include members that are alive
                                     .Select(ToMember)
                                     .ToArray();
-
-                            //why is this not updated via the ClusterTopologyEvents?
-                            //because following events is messy
+                            
                             _memberList.UpdateClusterTopology(currentMembers, waitIndex);
-                            var res = new ClusterTopologyEvent(currentMembers);
-                            _cluster.System.EventStream.Publish(res);
                         }
                         catch (Exception x)
                         {
