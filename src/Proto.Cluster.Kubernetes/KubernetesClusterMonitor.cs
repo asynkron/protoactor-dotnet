@@ -151,8 +151,6 @@ namespace Proto.Cluster.Kubernetes
                 .ToList();
 
             _cluster.MemberList.UpdateClusterTopology(memberStatuses, 0ul);
-            var topology = new ClusterTopologyEvent(memberStatuses);
-            _cluster.System.EventStream.Publish(topology);
         }
     }
 }
