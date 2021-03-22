@@ -23,7 +23,7 @@ namespace ClusterExperiment1
         {
             ThreadPool.SetMinThreads(500, 500);
 
-            Configuration.SetupLogger();
+            
 
             if (args.Length > 0)
             {
@@ -32,6 +32,8 @@ namespace ClusterExperiment1
                 Thread.Sleep(Timeout.Infinite);
                 return;
             }
+
+            Configuration.SetupLogger();
 
             _ts = new TaskCompletionSource<bool>();
 
@@ -106,6 +108,7 @@ namespace ClusterExperiment1
         private static void RunFireForgetClient()
         {
             var logger = Log.CreateLogger(nameof(Program));
+            
 
             _ = SafeTask.Run(async () => {
                     await Task.Delay(5000);
@@ -119,7 +122,7 @@ namespace ClusterExperiment1
                         var id = "myactor" + rnd.Next(0, ActorCount);
                         semaphore.Wait(() => {
                                 return cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                    new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token
+                                    CancellationTokens.WithTimeout(20*1000)
                                 ).ContinueWith(task => { Console.Write(task.Result is null ? "X" : "."); }
                                 );
                             }
@@ -149,7 +152,7 @@ namespace ClusterExperiment1
                             {
                                 var id = "myactor" + rnd.Next(0, ActorCount);
                                 var request = cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                    new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token
+                                    CancellationTokens.WithTimeout(20*1000)
                                 );
 
                                 requests.Add(request);
@@ -184,7 +187,7 @@ namespace ClusterExperiment1
                         try
                         {
                             var res = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token
+                                CancellationTokens.WithTimeout(20*1000)
                             );
 
                             if (res is null)

@@ -104,11 +104,13 @@ namespace Proto.Cluster.Identity
             var tries = 0;
             PID? result = null;
             SpawnLock? spawnLock = null;
-
+            
+            
             while (result == null && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
             {
                 try
                 {
+                
                     var activation = await _storage.TryGetExistingActivation(clusterIdentity, CancellationTokens.WithTimeout(5000));
 
                     //we got an existing activation, use this
@@ -120,6 +122,7 @@ namespace Proto.Cluster.Identity
 
                     //are there any members that can spawn this kind?
                     //if not, just bail out
+                
                     var activator = _memberList.GetActivator(clusterIdentity.Kind, sender.Address);
                     if (activator == null) return null;
 
@@ -131,8 +134,17 @@ namespace Proto.Cluster.Identity
                     else
                     {
                         //we have the lock, spawn and return
-                        (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.WithTimeout(5000));
+                        (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.WithTimeout(1000));
                     }
+                }
+                catch (OperationCanceledException e)
+                {
+                    if (_cluster.System.Shutdown.IsCancellationRequested) return null;
+                    
+                    if (_shouldThrottle().IsOpen())
+                        _logger.LogWarning(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
+                    
+                    await Task.Delay(tries * 20);
                 }
                 catch (Exception e)
                 {
@@ -191,7 +203,7 @@ namespace Proto.Cluster.Identity
             }
             catch (TimeoutException)
             {
-                _logger.LogError("[SpawnActivationAsync] Remote PID request timeout {@Request}", req);
+                _logger.LogWarning("[SpawnActivationAsync] Remote PID request timeout {@Request}", req);
             }
             catch (Exception e)
             {
