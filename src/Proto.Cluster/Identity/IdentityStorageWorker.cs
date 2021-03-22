@@ -140,8 +140,7 @@ namespace Proto.Cluster.Identity
                 catch (OperationCanceledException e)
                 {
                     if (_cluster.System.Shutdown.IsCancellationRequested) return null;
-
-                    Console.Write("RETRY");
+                    
                     if (_shouldThrottle().IsOpen())
                         _logger.LogWarning(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
                     
