@@ -104,11 +104,13 @@ namespace Proto.Cluster.Identity
             var tries = 0;
             PID? result = null;
             SpawnLock? spawnLock = null;
-
+            
+            
             while (result == null && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
             {
                 try
                 {
+                
                     var activation = await _storage.TryGetExistingActivation(clusterIdentity, CancellationTokens.WithTimeout(5000));
 
                     //we got an existing activation, use this
@@ -120,14 +122,15 @@ namespace Proto.Cluster.Identity
 
                     //are there any members that can spawn this kind?
                     //if not, just bail out
+                
                     var activator = _memberList.GetActivator(clusterIdentity.Kind, sender.Address);
                     if (activator == null) return null;
 
                     //try to acquire global lock
-                    spawnLock ??= await _storage.TryAcquireLock(clusterIdentity, CancellationTokens.WithTimeout(1000));
+                    spawnLock ??= await _storage.TryAcquireLock(clusterIdentity, CancellationTokens.WithTimeout(6000));
 
                     //we didn't get the lock, wait for activation to complete
-                    if (spawnLock == null) result = await WaitForActivation(clusterIdentity, CancellationTokens.WithTimeout(1000));
+                    if (spawnLock == null) result = await WaitForActivation(clusterIdentity, CancellationTokens.WithTimeout(6000));
                     else
                     {
                         //we have the lock, spawn and return
@@ -138,6 +141,7 @@ namespace Proto.Cluster.Identity
                 {
                     if (_cluster.System.Shutdown.IsCancellationRequested) return null;
 
+                    Console.Write("RETRY");
                     if (_shouldThrottle().IsOpen())
                         _logger.LogWarning(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
                     
