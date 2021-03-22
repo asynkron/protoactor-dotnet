@@ -38,6 +38,15 @@ namespace ClusterExperiment1
             _ts = new TaskCompletionSource<bool>();
 
             _ = DockerSupport.Run(_ts.Task);
+            
+            Console.WriteLine("Proto.Cluster chaos benchmark");
+            Console.WriteLine();
+            Console.WriteLine("Explanation:");
+            Console.WriteLine(". = a request, or a batch of requests");
+            Console.WriteLine("# = activation of a virtual actor");
+            Console.WriteLine("+ = (deliberate) deactivation of virtual actor");
+            Console.WriteLine("X = NULL response, e.g. requests retried but got no response");
+            Console.WriteLine();
 
             Console.WriteLine("1) Run single process - graceful exit");
             Console.WriteLine("2) Run single process");
