@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Grpc" Version="2.36.0" />
-    <PackageReference Include="Grpc.HealthCheck" Version="2.36.0" />
+    <PackageReference Include="Grpc" Version="2.36.4" />
+    <PackageReference Include="Grpc.HealthCheck" Version="2.36.4" />
   </ItemGroup>
 
   <ItemGroup>
