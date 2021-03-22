@@ -127,17 +127,17 @@ namespace Proto.Cluster.Identity
                     if (activator == null) return null;
 
                     //try to acquire global lock
-                    spawnLock ??= await _storage.TryAcquireLock(clusterIdentity, CancellationTokens.WithTimeout(6000));
+                    spawnLock ??= await _storage.TryAcquireLock(clusterIdentity, CancellationTokens.WithTimeout(5000));
 
                     //we didn't get the lock, wait for activation to complete
-                    if (spawnLock == null) result = await WaitForActivation(clusterIdentity, CancellationTokens.WithTimeout(6000));
+                    if (spawnLock == null) result = await WaitForActivation(clusterIdentity, CancellationTokens.WithTimeout(5000));
                     else
                     {
                         //we have the lock, spawn and return
                         (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.WithTimeout(1000));
                     }
                 }
-                catch (TaskCanceledException e)
+                catch (OperationCanceledException e)
                 {
                     if (_cluster.System.Shutdown.IsCancellationRequested) return null;
 
@@ -204,7 +204,7 @@ namespace Proto.Cluster.Identity
             }
             catch (TimeoutException)
             {
-                _logger.LogError("[SpawnActivationAsync] Remote PID request timeout {@Request}", req);
+                _logger.LogWarning("[SpawnActivationAsync] Remote PID request timeout {@Request}", req);
             }
             catch (Exception e)
             {
