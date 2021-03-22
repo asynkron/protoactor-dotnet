@@ -31,7 +31,7 @@ namespace Proto.Tests
 
             var pid = Context.Spawn(props);
 
-            var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(1));
+            var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5));
             Assert.Equal("response", res);
         }
 
