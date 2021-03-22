@@ -23,7 +23,7 @@ namespace ClusterExperiment1
         {
             ThreadPool.SetMinThreads(500, 500);
 
-            Configuration.SetupLogger();
+            
 
             if (args.Length > 0)
             {
@@ -32,6 +32,8 @@ namespace ClusterExperiment1
                 Thread.Sleep(Timeout.Infinite);
                 return;
             }
+
+            Configuration.SetupLogger();
 
             _ts = new TaskCompletionSource<bool>();
 
