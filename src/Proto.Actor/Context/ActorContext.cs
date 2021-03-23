@@ -229,6 +229,12 @@ namespace Proto.Context
 
         public void EscalateFailure(Exception reason, object? message)
         {
+            if (System.Config.DeveloperSupervisionLogging)
+            {
+                Console.WriteLine($"[Supervision] Actor {Self} : {Actor?.GetType().Name} failed with message:{message} exception:{reason}");
+                Logger.LogError("[Supervision] Actor {Self} : {ActorType} failed with message:{Message} exception:{Reason}",Self,Actor?.GetType().Name,message,reason);
+            }    
+            
             System.Metrics.InternalActorMetrics.ActorFailureCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
             var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
             Self.SendSystemMessage(System, SuspendMailbox.Instance);
