@@ -134,7 +134,7 @@ namespace Proto.Cluster.Partition
 
         private Task ActivationRequest(IContext context, ActivationRequest msg)
         {
-            var props = _cluster.GetClusterKind(msg.ClusterIdentity.Kind);
+            
 
             try
             {
@@ -149,13 +149,14 @@ namespace Proto.Cluster.Partition
                 }
                 else
                 {
+                    var clusterKind = _cluster.GetClusterKind(msg.ClusterIdentity.Kind);
                     //this actor did not exist, lets spawn a new activation
 
                     //spawn and remember this actor
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
 
-                    var clusterProps = props.WithClusterInit(_cluster, msg.ClusterIdentity);
+                    var clusterProps = clusterKind.Props.WithClusterInit(_cluster, msg.ClusterIdentity, clusterKind);
 
                     var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.Identity);
 

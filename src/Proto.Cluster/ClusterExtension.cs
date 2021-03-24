@@ -6,11 +6,13 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Proto.Cluster.Metrics;
 using Proto.Deduplication;
 
 namespace Proto.Cluster
 {
+    [PublicAPI]
     public static class Extensions
     {
         public static ActorSystem WithCluster(this ActorSystem system, ClusterConfig config)
@@ -32,23 +34,21 @@ namespace Proto.Cluster
             return cluster.RequestAsync<T>(identity, kind, message, context, ct);
         }
 
-        public static Props WithClusterInit(this Props props, Cluster cluster, ClusterIdentity clusterIdentity)
+        public static Props WithClusterInit(this Props props, Cluster cluster, ClusterIdentity clusterIdentity, ClusterKind clusterKind)
         {
             return props.WithReceiverMiddleware(
                 baseReceive =>
                     (ctx, env) => {
                         return env.Message switch
                         {
-                            Started => HandleStart(cluster, clusterIdentity, baseReceive, ctx, env),
-                            Stopped => HandleStopped(cluster, clusterIdentity, baseReceive, ctx, env),
+                            Started => HandleStart(baseReceive, ctx, env),
+                            Stopped => HandleStopped(baseReceive, ctx, env),
                             _       => baseReceive(ctx, env)
                         };
                     }
             );
 
-            static async Task HandleStart(
-                Cluster cluster,
-                ClusterIdentity clusterIdentity,
+            async Task HandleStart(
                 Receiver baseReceive,
                 IReceiverContext ctx,
                 MessageEnvelope startEnvelope
@@ -57,21 +57,21 @@ namespace Proto.Cluster
                 await baseReceive(ctx, startEnvelope);
                 var grainInit = new ClusterInit(clusterIdentity, cluster);
                 var grainInitEnvelope = new MessageEnvelope(grainInit, null);
-                cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorCount
-                    .Inc(new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
+                var count = clusterKind.Inc();
+                cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
+                    .Set(count,new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
                 await baseReceive(ctx, grainInitEnvelope);
             }
 
-            static async Task HandleStopped(
-                Cluster cluster,
-                ClusterIdentity clusterIdentity,
+            async Task HandleStopped(
                 Receiver baseReceive,
                 IReceiverContext ctx,
                 MessageEnvelope startEnvelope
             )
             {
-                cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorCount
-                    .Inc(new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind}, -1);
+                var count = clusterKind.Dec();
+                cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
+                    .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
                 await baseReceive(ctx, startEnvelope);
             }
         }
