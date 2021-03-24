@@ -10,7 +10,7 @@ namespace Proto.Cluster.Metrics
 {
     public class ClusterMetrics
     {
-        public readonly ICountMetric ClusterActorCount;
+        public readonly IGaugeMetric ClusterActorGauge;
         public readonly IHistogramMetric ClusterActorSpawnHistogram;
         public readonly IHistogramMetric ClusterRequestHistogram;
         public readonly ICountMetric ClusterRequestRetryCount;
@@ -18,7 +18,7 @@ namespace Proto.Cluster.Metrics
 
         public ClusterMetrics(ProtoMetrics metrics)
         {
-            ClusterActorCount = metrics.CreateCount("protocluster_virtualactor_count", "", "id", "address", "clusterkind");
+            ClusterActorGauge = metrics.CreateGauge("protocluster_virtualactors", "", "id", "address", "clusterkind");
 
             ClusterActorSpawnHistogram =
                 metrics.CreateHistogram("protocluster_virtualactor_spawn_duration_seconds", "", "id", "address", "clusterkind");

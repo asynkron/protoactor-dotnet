@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,13 +65,13 @@ namespace Proto.Cluster
 
         public PidCache PidCache { get; }
 
-        public string[] GetClusterKinds() => Config.ClusterKinds.Keys.ToArray();
+        public string[] GetClusterKinds() =>_clusterKinds.Keys.ToArray();
 
         public async Task StartMemberAsync()
         {
             await BeginStartAsync(false);
             Provider = Config.ClusterProvider;
-            var kinds = GetClusterKinds();
+            
             await Provider.StartMemberAsync(this);
 
             Logger.LogInformation("Started as cluster member");
@@ -88,6 +89,7 @@ namespace Proto.Cluster
 
         private async Task BeginStartAsync(bool client)
         {
+            InitClusterKinds();
             //default to partition identity lookup
             IdentityLookup = Config.IdentityLookup ?? new PartitionIdentityLookup();
 
@@ -102,6 +104,14 @@ namespace Proto.Cluster
             var kinds = GetClusterKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
             await _clusterHeartBeat.StartAsync();
+        }
+
+        private void InitClusterKinds()
+        {
+            foreach (var (name, props) in Config.ClusterKinds)
+            {
+                _clusterKinds.Add(name, new ClusterKind(name, props));
+            }
         }
 
         public async Task ShutdownAsync(bool graceful = true)
@@ -128,12 +138,14 @@ namespace Proto.Cluster
         public Task<T> RequestAsync<T>(string identity, string kind, object message, ISenderContext context, CancellationToken ct) =>
             ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct);
 
-        public Props GetClusterKind(string kind)
-        {
-            if (!Config.ClusterKinds.TryGetValue(kind, out var props))
-                throw new ArgumentException($"No Props found for kind '{kind}'");
 
-            return props;
+        private Dictionary<string, ClusterKind> _clusterKinds = new();
+        public ClusterKind GetClusterKind(string kind)
+        {
+            if (!_clusterKinds.TryGetValue(kind, out var clusterKind))
+                throw new ArgumentException($"No cluster kind '{kind}' was not found");
+
+            return clusterKind;
         }
     }
 }
