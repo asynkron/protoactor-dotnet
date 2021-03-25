@@ -83,8 +83,6 @@ namespace Proto.Cluster.Identity
 
         private Task ActivationRequest(IContext context, ActivationRequest msg)
         {
-            
-
             try
             {
                 if (_myActors.TryGetValue(msg.ClusterIdentity, out var existing))
