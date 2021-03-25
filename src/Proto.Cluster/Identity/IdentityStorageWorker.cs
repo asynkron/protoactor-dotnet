@@ -29,6 +29,8 @@ namespace Proto.Cluster.Identity
         private readonly IIdentityStorage _storage;
         private readonly Dictionary<ClusterIdentity, List<PID>> _waitingRequests = new();
 
+        private IdentityMetrics Metrics => _cluster.System.Metrics.Get<IdentityMetrics>();
+
         public IdentityStorageWorker(IdentityStorageLookup storageLookup)
         {
             _shouldThrottle = Throttle.Create(
@@ -99,75 +101,95 @@ namespace Proto.Cluster.Identity
             }
         }
 
-        private async Task<PID?> GetWithGlobalLock(PID sender, ClusterIdentity clusterIdentity)
+        private Task<PID?> GetWithGlobalLock(PID sender, ClusterIdentity clusterIdentity)
         {
-            var tries = 0;
-            PID? result = null;
-            SpawnLock? spawnLock = null;
-            
-            
-            while (result == null && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
+            async Task<PID?> Inner()
             {
-                try
-                {
-                
-                    var activation = await _storage.TryGetExistingActivation(clusterIdentity, CancellationTokens.WithTimeout(5000));
+                var tries = 0;
+                PID? result = null;
+                SpawnLock? spawnLock = null;
 
-                    //we got an existing activation, use this
-                    if (activation != null)
+
+                while (result == null && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
+                {
+                    try
                     {
-                        var existingPid = await ValidateAndMapToPid(clusterIdentity, activation);
-                        if (existingPid != null) return existingPid;
+                        var activation = await _storage.TryGetExistingActivation(clusterIdentity, CancellationTokens.WithTimeout(5000));
+
+                        //we got an existing activation, use this
+                        if (activation != null)
+                        {
+                            var existingPid = await ValidateAndMapToPid(clusterIdentity, activation);
+                            if (existingPid != null) return existingPid;
+                        }
+
+                        //are there any members that can spawn this kind?
+                        //if not, just bail out
+
+                        var activator = _memberList.GetActivator(clusterIdentity.Kind, sender.Address);
+                        if (activator == null) return null;
+
+                        //try to acquire global lock
+                        spawnLock ??= await TryAcquireLock(clusterIdentity);
+
+                        //we didn't get the lock, wait for activation to complete
+                        if (spawnLock == null) result = await WaitForActivation(clusterIdentity, CancellationTokens.WithTimeout(5000));
+                        else
+                        {
+                            //we have the lock, spawn and return
+                            (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.WithTimeout(1000));
+                        }
                     }
-
-                    //are there any members that can spawn this kind?
-                    //if not, just bail out
-                
-                    var activator = _memberList.GetActivator(clusterIdentity.Kind, sender.Address);
-                    if (activator == null) return null;
-
-                    //try to acquire global lock
-                    spawnLock ??= await _storage.TryAcquireLock(clusterIdentity, CancellationTokens.WithTimeout(5000));
-
-                    //we didn't get the lock, wait for activation to complete
-                    if (spawnLock == null) result = await WaitForActivation(clusterIdentity, CancellationTokens.WithTimeout(5000));
-                    else
+                    catch (OperationCanceledException e)
                     {
-                        //we have the lock, spawn and return
-                        (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.WithTimeout(1000));
+                        if (_cluster.System.Shutdown.IsCancellationRequested) return null;
+
+                        if (_shouldThrottle().IsOpen())
+                            _logger.LogWarning(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
+
+                        await Task.Delay(tries * 20);
+                    }
+                    catch (Exception e)
+                    {
+                        if (_cluster.System.Shutdown.IsCancellationRequested) return null;
+
+                        if (_shouldThrottle().IsOpen())
+                            _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
+
+                        await Task.Delay(tries * 20);
                     }
                 }
-                catch (OperationCanceledException e)
-                {
-                    if (_cluster.System.Shutdown.IsCancellationRequested) return null;
-                    
-                    if (_shouldThrottle().IsOpen())
-                        _logger.LogWarning(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
-                    
-                    await Task.Delay(tries * 20);
-                }
-                catch (Exception e)
-                {
-                    if (_cluster.System.Shutdown.IsCancellationRequested) return null;
 
-                    if (_shouldThrottle().IsOpen())
-                        _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
-
-                    await Task.Delay(tries * 20);
-                }
+                return result;
             }
 
-            return result;
+            return Metrics
+                .GetWithGlobalLockHistogram
+                .Observe(Inner, _cluster.System.Id, _cluster.System.Address, clusterIdentity.Kind);
         }
 
-        private async Task<PID?> WaitForActivation(ClusterIdentity clusterIdentity, CancellationToken ct)
+        private Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity)
         {
-            var activation = _storage.WaitForActivation(clusterIdentity, ct);
+            async Task<SpawnLock?> Inner() => await _storage.TryAcquireLock(clusterIdentity, CancellationTokens.WithTimeout(5000));
 
-            return await ValidateAndMapToPid(
-                clusterIdentity,
-                await activation
-            );
+            return Metrics.TryAcquireLockHistogram.Observe(Inner, _cluster.System.Id, _cluster.System.Address, clusterIdentity.Kind);
+        }
+
+        private Task<PID?> WaitForActivation(ClusterIdentity clusterIdentity, CancellationToken ct)
+        {
+            async Task<PID?> Inner()
+            {
+                var activation = await _storage.WaitForActivation(clusterIdentity, ct);
+                var res = await ValidateAndMapToPid(
+                    clusterIdentity,
+                    activation
+                );
+                return res;
+            }
+            
+            return Metrics
+                .WaitForActivationHistogram
+                .Observe(Inner, _cluster.System.Id,_cluster.System.Address,clusterIdentity.Kind);
         }
 
         private async Task<(PID?, SpawnLock?)> SpawnActivationAsync(Member activator, SpawnLock spawnLock, CancellationToken ct)
@@ -215,7 +237,6 @@ namespace Proto.Cluster.Identity
             await _storage.RemoveLock(spawnLock, ct);
             return (null, null);
 
-            ;
         }
 
         private async Task<PID?> ValidateAndMapToPid(ClusterIdentity clusterIdentity, StoredActivation? activation)
