@@ -15,6 +15,7 @@ namespace Proto.Cluster.Metrics
         public readonly IHistogramMetric ClusterRequestHistogram;
         public readonly ICountMetric ClusterRequestRetryCount;
         public readonly IGaugeMetric ClusterTopologyEventGauge;
+        public readonly IHistogramMetric ClusterResolvePidHistogram;
 
         public ClusterMetrics(ProtoMetrics metrics)
         {
@@ -32,6 +33,10 @@ namespace Proto.Cluster.Metrics
             );
 
             ClusterTopologyEventGauge = metrics.CreateGauge("protocluster_topology_events", "", "id", "address", "membershiphashcode");
+            
+            ClusterResolvePidHistogram =
+                metrics.CreateHistogram("protocluster_resolve_pid_duration_seconds", "", "id", "address", "clusterkind");
+
         }
     }
 }
