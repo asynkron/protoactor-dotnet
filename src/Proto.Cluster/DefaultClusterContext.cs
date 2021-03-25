@@ -50,7 +50,9 @@ namespace Proto.Cluster
 
                 var delay = i * 20;
                 i++;
+                
                 var (pid, source) = await GetPid(clusterIdentity, context, ct);
+                
                 if (context.System.Shutdown.IsCancellationRequested) return default;
 
                 if (pid is null)
@@ -116,7 +118,18 @@ namespace Proto.Cluster
             {
                 if (_pidCache.TryGet(clusterIdentity, out var cachedPid)) return (cachedPid, PidSource.Cache);
 
+                var sw = Stopwatch.StartNew();
                 var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
+                sw.Stop();
+                context.System.Metrics.Get<ClusterMetrics>().ClusterResolvePidHistogram
+                    .Observe(sw,
+                        new[]
+                        {
+                            context.System.Id, context.System.Address, clusterIdentity.Kind
+                        }
+                    );
+                
+                
                 if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
                 return (pid, PidSource.Lookup);
             }
@@ -144,7 +157,6 @@ namespace Proto.Cluster
                 if (future.Task.IsCompleted) return ToResult<T>(source, context, future.Task.Result);
 
                 var sw = Stopwatch.StartNew();
-
                 context.Send(pid, new MessageEnvelope(message, future.Pid));
                 await Task.WhenAny(future.Task, Task.Delay(_config.ActorRequestTimeout));
                 context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram
