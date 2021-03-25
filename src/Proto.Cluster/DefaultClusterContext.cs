@@ -22,7 +22,7 @@ namespace Proto.Cluster
         private readonly ILogger _logger;
         private readonly PidCache _pidCache;
         private readonly ShouldThrottle _requestLogThrottle;
-
+        
         public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ILogger logger, ClusterContextConfig config)
         {
             _identityLookup = identityLookup;
@@ -118,11 +118,8 @@ namespace Proto.Cluster
             {
                 if (_pidCache.TryGet(clusterIdentity, out var cachedPid)) return (cachedPid, PidSource.Cache);
 
-                var sw = Stopwatch.StartNew();
-                var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
-                sw.Stop();
-                context.System.Metrics.Get<ClusterMetrics>().ClusterResolvePidHistogram
-                    .Observe(sw,
+                var pid = await context.System.Metrics.Get<ClusterMetrics>().ClusterResolvePidHistogram
+                    .Observe(async () => await _identityLookup.GetAsync(clusterIdentity, ct),
                         new[]
                         {
                             context.System.Id, context.System.Address, clusterIdentity.Kind
@@ -143,7 +140,7 @@ namespace Proto.Cluster
             }
         }
 
-        private async Task<(ResponseStatus Ok, T?)> TryRequestAsync<T>(
+        private Task<(ResponseStatus Ok, T?)> TryRequestAsync<T>(
             ClusterIdentity clusterIdentity,
             object message,
             PID pid,
@@ -152,46 +149,43 @@ namespace Proto.Cluster
             FutureProcess future
         )
         {
-            try
+            async Task<(ResponseStatus Ok, T?)> Inner()
             {
-                if (future.Task.IsCompleted) return ToResult<T>(source, context, future.Task.Result);
-
-                var sw = Stopwatch.StartNew();
-                context.Send(pid, new MessageEnvelope(message, future.Pid));
-                await Task.WhenAny(future.Task, Task.Delay(_config.ActorRequestTimeout));
-                context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram
-                    .Observe(sw,
-                        new[]
-                        {
-                            context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name,
-                            source == PidSource.Cache ? "PidCache" : "IIdentityLookup"
-                        }
-                    );
-
-                if (future.Task.IsCompleted)
+                try
                 {
-                    var res = future.Task.Result;
+                    if (future.Task.IsCompleted) return ToResult<T>(source, context, future.Task.Result);
+                    context.Send(pid, new MessageEnvelope(message, future.Pid));
+                    await Task.WhenAny(future.Task, Task.Delay(_config.ActorRequestTimeout));
+                    
+                    if (future.Task.IsCompleted)
+                    {
+                        var res = future.Task.Result;
 
-                    return ToResult<T>(source, context, res);
+                        return ToResult<T>(source, context, res);
+                    }
+
+                    if (!context.System.Shutdown.IsCancellationRequested)
+                        _logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
+                    _pidCache.RemoveByVal(clusterIdentity, pid);
+
+                    return (ResponseStatus.TimedOut, default)!;
                 }
-
-                if (!context.System.Shutdown.IsCancellationRequested)
-                    _logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
-                _pidCache.RemoveByVal(clusterIdentity, pid);
-
-                return (ResponseStatus.TimedOut, default)!;
+                catch (TimeoutException)
+                {
+                    return (ResponseStatus.TimedOut, default)!;
+                }
+                catch (Exception x)
+                {
+                    if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
+                        _logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
+                    _pidCache.RemoveByVal(clusterIdentity, pid);
+                    return (ResponseStatus.Exception, default)!;
+                }
             }
-            catch (TimeoutException)
-            {
-                return (ResponseStatus.TimedOut, default)!;
-            }
-            catch (Exception x)
-            {
-                if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
-                    _logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
-                _pidCache.RemoveByVal(clusterIdentity, pid);
-                return (ResponseStatus.Exception, default)!;
-            }
+            
+            return context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram
+                .Observe(Inner, context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name, source == PidSource.Cache ? "PidCache" : "IIdentityLookup"
+                );
         }
 
         private (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)

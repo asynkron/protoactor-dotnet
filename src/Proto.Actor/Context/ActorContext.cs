@@ -281,14 +281,7 @@ namespace Proto.Context
             return System.Metrics.IsNoop switch
             {
                 true => InternalInvokeUserMessageAsync(msg),
-                _ => Measure(() => InternalInvokeUserMessageAsync(msg), System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram,
-                    labels: new[]
-                    {
-                        System.Id,
-                        System.Address,
-                        Actor!.GetType().Name,
-                        MessageEnvelope.UnwrapMessage(msg)!.GetType().Name
-                    }
+                _ => System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram.Observe(() => InternalInvokeUserMessageAsync(msg), System.Id, System.Address, Actor!.GetType().Name, MessageEnvelope.UnwrapMessage(msg)!.GetType().Name
                 )
             };
         }

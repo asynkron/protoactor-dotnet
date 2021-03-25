@@ -22,5 +22,14 @@ namespace Proto
 
             return res;
         }
+        
+        public static async Task Observe(this IHistogramMetric histogram, Func<Task> factory, params string[] labels)
+        {
+            var sw = Stopwatch.StartNew();
+            var t = factory();
+            await t;
+            sw.Stop();
+            histogram.Observe(sw, labels);
+        }
     }
 }
