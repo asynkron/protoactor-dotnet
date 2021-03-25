@@ -35,6 +35,8 @@ namespace Proto.Cluster.Identity
             _memberId = cluster.System.Id;
             MemberList = cluster.MemberList;
             _isClient = isClient;
+            
+            cluster.System.Metrics.RegisterKnownMetrics(new IdentityMetrics(cluster.System.Metrics));
 
             var workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
             _worker = _system.Root.Spawn(workerProps);
