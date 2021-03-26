@@ -45,6 +45,10 @@ namespace Proto.Cluster.Partition
                 return resp.Pid;
             }
             //TODO: decide if we throw or return null
+            catch (DeadLetterException)
+            {
+                return null;
+            }
             catch (TimeoutException)
             {
                 _logger.LogDebug("Remote PID request timeout {@Request}", req);
@@ -56,7 +60,7 @@ namespace Proto.Cluster.Partition
                 return null;
             }
         }
-
+        
         public Task RemovePidAsync(PID pid, CancellationToken ct) => Task.CompletedTask;
 
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
