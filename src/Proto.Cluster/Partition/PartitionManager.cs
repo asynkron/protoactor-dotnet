@@ -36,11 +36,10 @@ namespace Proto.Cluster.Partition
                 var eventId = 0ul;
                 //make sure selector is updated first
                 _system.EventStream.Subscribe<ClusterTopology>(e => {
-                        if (e.EventId > eventId)
-                        {
-                            eventId = e.EventId;
-                            Selector.Update(e.Members.ToArray());
-                        }
+                        if (e.EventId == eventId) return;
+
+                        eventId = e.EventId;
+                        Selector.Update(e.Members.ToArray());
                     }
                 );
             }
@@ -60,15 +59,13 @@ namespace Proto.Cluster.Partition
                 var eventId = 0ul;
                 //make sure selector is updated first
                 _system.EventStream.Subscribe<ClusterTopology>(e => {
-                        if (e.EventId > eventId)
-                        {
-                            eventId = e.EventId;
-                            _cluster.MemberList.BroadcastEvent(e);
+                        if (e.EventId == eventId) return;
 
-                            Selector.Update(e.Members.ToArray());
-                            _context.Send(_partitionActor, e);
-                            _context.Send(_partitionActivator, e);
-                        }
+                        eventId = e.EventId;
+
+                        Selector.Update(e.Members.ToArray());
+                        _context.Send(_partitionActor, e);
+                        _context.Send(_partitionActivator, e);
                     }
                 );
             }

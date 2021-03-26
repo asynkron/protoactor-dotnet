@@ -117,7 +117,7 @@ namespace Proto.Cluster.Partition
 
         private async Task ClusterTopology(ClusterTopology msg, IContext context)
         {
-            if (_eventId >= msg.EventId) return;
+            if (_eventId == msg.EventId) return;
 
             _eventId = msg.EventId;
             _lastEventTimestamp = DateTime.Now;

@@ -87,7 +87,7 @@ namespace Proto.Cluster.Partition
         private Task ClusterTopology(ClusterTopology msg)
         {
             //ignore outdated events
-            if (msg.EventId <= _eventId) return Task.CompletedTask;
+            if (msg.EventId == _eventId) return Task.CompletedTask;
 
             _eventId = msg.EventId;
             _rdv.UpdateMembers(msg.Members);

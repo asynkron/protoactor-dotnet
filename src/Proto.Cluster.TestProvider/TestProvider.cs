@@ -103,7 +103,7 @@ namespace Proto.Cluster.Testing
                     )
                     .ToList();
 
-            _memberList.UpdateClusterTopology(memberStatuses, ++_eventId);
+            _memberList.UpdateClusterTopology(memberStatuses);
         }
 
         private void StartTtlTimer()
