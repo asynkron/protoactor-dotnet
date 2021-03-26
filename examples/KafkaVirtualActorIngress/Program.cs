@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using KafkaVirtualActorIngress.Messages;
 using Proto;
@@ -32,7 +33,7 @@ namespace KafkaVirtualActorIngress
 
             while (true)
             {
-                
+                var sw = Stopwatch.StartNew();
                 //get the messages from Kafka or other log/queue
                 var messages = GetBatchFromKafka();
                 var tasks = new List<Task>();
@@ -55,7 +56,11 @@ namespace KafkaVirtualActorIngress
                 //await response form all actors
                 await Task.WhenAll(tasks);
                 //TODO: commit back to Kafka that all messages succeeded
-                Console.Write(".");
+                sw.Stop();
+                var tps = 1000.0 / sw.Elapsed.TotalMilliseconds * tasks.Count;
+                
+                //show throughput, messages per second
+                Console.WriteLine(tps.ToString("n0"));
             }
         }
 
@@ -64,7 +69,7 @@ namespace KafkaVirtualActorIngress
             //Fake Kafka consumer message generator
             var messages = new List<MyEnvelope>();
             var rnd = new Random();
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < 50; i++)
             {
                 var message = new MyEnvelope
                 {
