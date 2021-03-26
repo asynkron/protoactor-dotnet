@@ -16,6 +16,7 @@ using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
 using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.Kubernetes;
+using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using Serilog;
@@ -62,7 +63,7 @@ namespace ClusterExperiment1
             }
         }
 
-        public static IIdentityLookup GetIdentityLookup() => GetRedisIdentityLookup();
+        public static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup();
 
         private static IIdentityLookup GetRedisIdentityLookup()
         {

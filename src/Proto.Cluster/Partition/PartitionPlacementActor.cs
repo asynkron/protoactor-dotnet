@@ -13,7 +13,7 @@ using Proto.Timers;
 
 namespace Proto.Cluster.Partition
 {
-    class PartitionPlacementActor : IActor, IDisposable
+    class PartitionPlacementActor : IActor
     {
         private readonly Cluster _cluster;
         private readonly ILogger _logger;
@@ -25,7 +25,6 @@ namespace Proto.Cluster.Partition
             new();
 
         private readonly Rendezvous _rdv = new();
-        private CancellationTokenSource? _ct;
 
         //cluster wide eventId.
         //this is useful for knowing if we are in sync with, ahead of or behind other nodes requests
@@ -40,29 +39,12 @@ namespace Proto.Cluster.Partition
         public Task ReceiveAsync(IContext context) =>
             context.Message switch
             {
-                Started _                   => Started(context),
-                Tick _                      => Tick(context),
                 Terminated msg              => Terminated(context, msg),
                 ClusterTopology msg         => ClusterTopology(msg),
                 IdentityHandoverRequest msg => IdentityHandoverRequest(context, msg),
                 ActivationRequest msg       => ActivationRequest(context, msg),
                 _                           => Task.CompletedTask
             };
-
-        public void Dispose() => _ct?.Dispose();
-
-        private Task Started(IContext context)
-        {
-            _ct = context.Scheduler().SendRepeatedly(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), context.Self!, new Tick());
-            return Task.CompletedTask;
-        }
-
-        private Task Tick(IContext context)
-        {
-            var count = _myActors.Count;
-            _logger.LogDebug("Statistics: Actor Count {ActorCount}", count);
-            return Task.CompletedTask;
-        }
 
         private Task Terminated(IContext context, Terminated msg)
         {
