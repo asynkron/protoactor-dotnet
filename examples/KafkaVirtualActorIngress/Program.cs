@@ -55,6 +55,7 @@ namespace KafkaVirtualActorIngress
                 //await response form all actors
                 await Task.WhenAll(tasks);
                 //TODO: commit back to Kafka that all messages succeeded
+                Console.Write(".");
             }
         }
 
@@ -100,8 +101,8 @@ namespace KafkaVirtualActorIngress
         //  .WithMetricsProviders(new StatsdConfigurator(new[] { new Label("service", "my-system-name") }));
 
         private static GrpcCoreRemoteConfig GetRemoteConfig() => GrpcCoreRemoteConfig
-            .BindTo("0.0.0.0", 8080)
-            .WithAdvertisedHost("the hostname or ip of this pod")
+            .BindTo("127.0.0.1")
+         //   .WithAdvertisedHost("the hostname or ip of this pod")
             .WithProtoMessages(MyMessagesReflection.Descriptor);
 
         private static ClusterConfig GetClusterConfig(string clusterName) => ClusterConfig
@@ -131,7 +132,7 @@ namespace KafkaVirtualActorIngress
 
         private static IIdentityStorage GetIdentityLookup(string clusterName) =>
             new RedisIdentityStorage(clusterName, ConnectionMultiplexer
-                .Connect("localhost" /* use proper config */)
+                .Connect("localhost:6379" /* use proper config */)
             );
     }
 }
