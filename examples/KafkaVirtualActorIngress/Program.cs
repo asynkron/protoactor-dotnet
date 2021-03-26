@@ -31,6 +31,11 @@ namespace KafkaVirtualActorIngress
             var cluster = system.Cluster();
             await cluster.StartMemberAsync();
 
+            await RunKafkaConsumeLoop(cluster);
+        }
+
+        private static async Task RunKafkaConsumeLoop(Cluster cluster)
+        {
             while (true)
             {
                 var sw = Stopwatch.StartNew();
@@ -49,7 +54,7 @@ namespace KafkaVirtualActorIngress
 
                     var task = cluster
                         .RequestAsync<Ack>(message.DeviceId, "device", m, CancellationTokens.WithTimeout(5000));
-                    
+
                     tasks.Add(task);
                 }
 
@@ -58,7 +63,7 @@ namespace KafkaVirtualActorIngress
                 //TODO: commit back to Kafka that all messages succeeded
                 sw.Stop();
                 var tps = 1000.0 / sw.Elapsed.TotalMilliseconds * tasks.Count;
-                
+
                 //show throughput, messages per second
                 Console.WriteLine(tps.ToString("n0"));
             }
@@ -74,7 +79,7 @@ namespace KafkaVirtualActorIngress
                 var message = new MyEnvelope
                 {
                     DeviceId = rnd.Next(1,1000).ToString(),
-                    SomeMessage = new SomeMessage()
+                    SomeMessage = new SomeMessage
                     {
                         Data = Guid.NewGuid().ToString()
                     }

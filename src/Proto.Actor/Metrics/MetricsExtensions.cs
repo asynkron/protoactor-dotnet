@@ -6,10 +6,12 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Ubiquitous.Metrics;
 
 namespace Proto
 {
+    [PublicAPI]
     public static class MetricsExtensions
     {
         public static async Task<T> Observe<T>(this IHistogramMetric histogram, Func<Task<T>> factory, params string[] labels)

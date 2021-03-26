@@ -119,14 +119,8 @@ namespace Proto.Cluster
                 if (_pidCache.TryGet(clusterIdentity, out var cachedPid)) return (cachedPid, PidSource.Cache);
 
                 var pid = await context.System.Metrics.Get<ClusterMetrics>().ClusterResolvePidHistogram
-                    .Observe(async () => await _identityLookup.GetAsync(clusterIdentity, ct),
-                        new[]
-                        {
-                            context.System.Id, context.System.Address, clusterIdentity.Kind
-                        }
-                    );
-                
-                
+                    .Observe(async () => await _identityLookup.GetAsync(clusterIdentity, ct), context.System.Id, context.System.Address, clusterIdentity.Kind);
+
                 if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
                 return (pid, PidSource.Lookup);
             }
@@ -203,17 +197,6 @@ namespace Proto.Cluster
                     _logger.LogWarning("Unexpected message. Was type {Type} but expected {ExpectedType}", result.GetType(), typeof(T));
                     return (ResponseStatus.Exception, default);
             }
-        }
-
-        private async Task<(ResponseStatus ok, T res)> HandleDeadLetter<T>(
-            PidSource source,
-            ISenderContext context
-        )
-        {
-            if (!context.System.Shutdown.IsCancellationRequested)
-                _logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
-
-            return (ResponseStatus.DeadLetter, default)!;
         }
 
         private enum ResponseStatus
