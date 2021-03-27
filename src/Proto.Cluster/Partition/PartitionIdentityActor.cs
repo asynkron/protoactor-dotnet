@@ -200,6 +200,7 @@ namespace Proto.Cluster.Partition
                 res,
                 rst => {
                     var response = res.Result;
+                    
                     //TODO: as this is async, there might come in multiple ActivationRequests asking for this
                     //Identity, causing multiple activations
 
@@ -218,7 +219,22 @@ namespace Proto.Cluster.Partition
                         return Task.CompletedTask;
                     }
 
-                    _partitionLookup[msg.ClusterIdentity] = (response.Pid, msg.Kind);
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(msg.Kind))
+                        {
+                            _partitionLookup[msg.ClusterIdentity] = (response.Pid, msg.Kind);    
+                        }
+                        else
+                        {
+                            Console.WriteLine("ERROR MSG NO KIND!!!!!!");
+                        }
+                        
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("NULLREF ERROR " + msg);
+                    }
 
                     context.Respond(response);
 
