@@ -90,7 +90,7 @@ namespace Proto.Cluster.Tests
             {
             }
 
-            protected override ClusterKindSpecification[] ClusterKinds { get; } =
+            protected override ClusterKind[] ClusterKinds { get; } =
             {
                 new(EchoActor.Kind, EchoActor.Props.WithPoisonOnRemoteTraffic(.5f).WithPidCacheInvalidation())
                     {StrategyBuilder = c => new LocalAffinityStrategy(c, 300)}

@@ -36,7 +36,7 @@ namespace Proto.Cluster.Tests
             _clusterName = $"test-cluster-{Guid.NewGuid().ToString().Substring(0, 6)}";
         }
 
-        protected virtual ClusterKindSpecification[] ClusterKinds => new ClusterKindSpecification[]
+        protected virtual ClusterKind[] ClusterKinds => new ClusterKind[]
         {
             new(EchoActor.Kind, EchoActor.Props.WithClusterRequestDeduplication()),
             new(EchoActor.Kind2, EchoActor.Props)

@@ -139,8 +139,8 @@ namespace Proto.Cluster
             ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct);
 
 
-        private Dictionary<string, ClusterKind> _clusterKinds = new();
-        public ClusterKind GetClusterKind(string kind)
+        private Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
+        public ActivatedClusterKind GetClusterKind(string kind)
         {
             if (!_clusterKinds.TryGetValue(kind, out var clusterKind))
                 throw new ArgumentException($"No cluster kind '{kind}' was not found");

@@ -4,15 +4,16 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Threading;
 
 namespace Proto.Cluster
 {
-    public record ClusterKind(string Name, Props Props, IMemberStrategy Strategy)
+    public record ClusterKind(string Name, Props Props)
     {
-        private int _count;
+        public Func<Cluster, IMemberStrategy>? StrategyBuilder { get; init; }
 
-        internal int Inc() => Interlocked.Increment(ref _count);
-        internal int Dec() => Interlocked.Decrement(ref _count);
+        public ClusterKind WithMemberStrategy(Func<Cluster, IMemberStrategy> strategyBuilder)
+            => this with {StrategyBuilder = strategyBuilder};
+
+        internal ActivatedClusterKind Build(Cluster cluster) => new(Name, Props, StrategyBuilder?.Invoke(cluster) ?? new SimpleMemberStrategy());
     }
 }

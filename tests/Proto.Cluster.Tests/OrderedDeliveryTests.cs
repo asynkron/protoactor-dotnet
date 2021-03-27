@@ -140,11 +140,11 @@ namespace Proto.Cluster.Tests
             {
             }
 
-            protected override ClusterKindSpecification[] ClusterKinds {
+            protected override ClusterKind[] ClusterKinds {
                 get {
                     var senderProps = Props.FromProducer(() => new SenderActor());
                     var aggProps = Props.FromProducer(() => new VerifyOrderActor());
-                    return base.ClusterKinds.Concat(new ClusterKindSpecification[]
+                    return base.ClusterKinds.Concat(new ClusterKind[]
                         {
                             new (SenderActor.Kind, senderProps),
                             new (VerifyOrderActor.Kind, aggProps)
