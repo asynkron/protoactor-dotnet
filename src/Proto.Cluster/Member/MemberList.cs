@@ -40,8 +40,6 @@ namespace Proto.Cluster
         //come up with a good solution to keep all this in sync
         private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
         private ImmutableDictionary<int, Member> _membersByIndex = ImmutableDictionary<int, Member>.Empty;
-
-       // private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
         private readonly ConcurrentSet<string> _bannedMembers = new();
         private int _nextMemberIndex;
 
@@ -70,7 +68,6 @@ namespace Proto.Cluster
 
                 _logger.LogError("MemberList did not find any activator for kind '{Kind}'", kind);
                 return null;
-
             }
         }
 
@@ -169,7 +166,6 @@ namespace Proto.Cluster
                 );
             }
 
-
             void MemberLeave(Member memberThatLeft)
             {
                 //update MemberStrategy
@@ -191,6 +187,7 @@ namespace Proto.Cluster
                 _logger.LogDebug("Published event {@EndpointTerminated}", endpointTerminated);
                 _cluster.System.EventStream.Publish(endpointTerminated);
             }
+
 
             void MemberJoin(Member newMember)
             {
