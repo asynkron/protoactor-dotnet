@@ -41,7 +41,7 @@ namespace Proto.Cluster
         private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
         private ImmutableDictionary<int, Member> _membersByIndex = ImmutableDictionary<int, Member>.Empty;
 
-        private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
+       // private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
         private readonly ConcurrentSet<string> _bannedMembers = new();
         private int _nextMemberIndex;
 
@@ -64,11 +64,13 @@ namespace Proto.Cluster
         {
             lock (this)
             {
-                if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
-                    return memberStrategy.GetActivator(requestSourceAddress);
+                var clusterKind = _cluster.GetClusterKind(kind);
+
+                if (clusterKind != null) return clusterKind.GetStrategy(_cluster).GetActivator(requestSourceAddress);
 
                 _logger.LogError("MemberList did not find any activator for kind '{Kind}'", kind);
                 return null;
+
             }
         }
 
@@ -173,14 +175,8 @@ namespace Proto.Cluster
                 //update MemberStrategy
                 foreach (var k in memberThatLeft.Kinds)
                 {
-                    if (!_memberStrategyByKind.TryGetValue(k, out var ms)) continue;
-
-                    ms.RemoveMember(memberThatLeft);
-
-                    if (ms.GetAllMembers().Count == 0)
-                    {
-                        _memberStrategyByKind = _memberStrategyByKind.Remove(k);
-                    }
+                    var ck = _cluster.GetClusterKind(k);
+                    ck.GetStrategy(_cluster).RemoveMember(memberThatLeft);
                 }
 
                 _bannedMembers.Add(memberThatLeft.Id);
@@ -206,14 +202,8 @@ namespace Proto.Cluster
 
                 foreach (var kind in newMember.Kinds)
                 {
-                    if (!_memberStrategyByKind.ContainsKey(kind))
-                    {
-                        _memberStrategyByKind = _memberStrategyByKind.SetItem(kind,
-                            _cluster.Config!.MemberStrategyBuilder(_cluster, kind) ?? new SimpleMemberStrategy()
-                        );
-                    }
-
-                    _memberStrategyByKind[kind].AddMember(newMember);
+                    var ck = _cluster.GetClusterKind(kind);
+                    ck.GetStrategy(_cluster).AddMember(newMember);
                 }
             }
         }

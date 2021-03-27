@@ -108,9 +108,9 @@ namespace Proto.Cluster
 
         private void InitClusterKinds()
         {
-            foreach (var (name, props) in Config.ClusterKinds)
+            foreach (var clusterKind in Config.ClusterKinds)
             {
-                _clusterKinds.Add(name, new ClusterKind(name, props));
+                _clusterKinds.Add(clusterKind.Name, clusterKind);
             }
         }
 
