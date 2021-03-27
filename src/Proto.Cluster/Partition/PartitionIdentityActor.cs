@@ -25,13 +25,11 @@ namespace Proto.Cluster.Partition
         private readonly ILogger _logger;
         private readonly string _myAddress;
 
-        private readonly Dictionary<ClusterIdentity, (PID pid, string kind)> _partitionLookup =
-            new(); //actor/grain name to PID
+        private readonly Dictionary<ClusterIdentity, (PID pid, string kind)> _partitionLookup = new(); //actor/grain name to PID
 
         private readonly Rendezvous _rdv = new();
 
-        private readonly Dictionary<ClusterIdentity, Task<ActivationResponse>> _spawns =
-            new();
+        private readonly Dictionary<ClusterIdentity, Task<ActivationResponse>> _spawns = new();
 
         private ulong _eventId;
         
@@ -50,7 +48,7 @@ namespace Proto.Cluster.Partition
                 ActivationRequest msg    => OnActivationRequest(msg, context),
                 ActivationTerminated msg => OnActivationTerminated(msg, context),
                 ClusterTopology msg      => OnClusterTopology(msg, context),
-                _                        => OnUnhandled()
+                _                        => Task.CompletedTask
             };
 
         private Task OnStarted(IContext context)
@@ -58,10 +56,7 @@ namespace Proto.Cluster.Partition
             _cluster.System.EventStream.Subscribe<ActivationTerminated>(_cluster.System.Root, context.Self!);
             
             return Task.CompletedTask;
-
         }
-
-        private static Task OnUnhandled() => Task.CompletedTask;
 
         private async Task OnClusterTopology(ClusterTopology msg, IContext context)
         {
@@ -131,6 +126,7 @@ namespace Proto.Cluster.Partition
         {
             //we get this via broadcast to all nodes, remove if we have it, or ignore
             _logger.LogDebug("Terminated {Pid}", msg.Pid);
+            _cluster.PidCache.RemoveByVal(msg.ClusterIdentity,msg.Pid);
             _partitionLookup.Remove(msg.ClusterIdentity);
             return Task.CompletedTask;
         }
