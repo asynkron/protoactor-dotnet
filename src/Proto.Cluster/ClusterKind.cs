@@ -8,20 +8,11 @@ using System.Threading;
 
 namespace Proto.Cluster
 {
-    public record ClusterKind(string Name, Props Props, Func<Cluster,IMemberStrategy> StrategyBuilder)
+    public record ClusterKind(string Name, Props Props, IMemberStrategy Strategy)
     {
         private int _count;
 
-        public int Inc() => Interlocked.Increment(ref _count);
-        public int Dec() => Interlocked.Decrement(ref _count);
-
-        private IMemberStrategy? _strategy;
-        
-        public IMemberStrategy GetStrategy(Cluster cluster)
-        {
-            _strategy ??= StrategyBuilder(cluster);
-
-            return _strategy;
-        }
+        internal int Inc() => Interlocked.Increment(ref _count);
+        internal int Dec() => Interlocked.Decrement(ref _count);
     }
 }

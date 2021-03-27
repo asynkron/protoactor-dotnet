@@ -110,7 +110,7 @@ namespace Proto.Cluster
         {
             foreach (var clusterKind in Config.ClusterKinds)
             {
-                _clusterKinds.Add(clusterKind.Name, clusterKind);
+                _clusterKinds.Add(clusterKind.Name, clusterKind.Build(this));
             }
         }
 

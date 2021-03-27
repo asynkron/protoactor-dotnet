@@ -64,7 +64,7 @@ namespace Proto.Cluster
             {
                 var clusterKind = _cluster.GetClusterKind(kind);
 
-                if (clusterKind != null) return clusterKind.GetStrategy(_cluster).GetActivator(requestSourceAddress);
+                if (clusterKind != null) return clusterKind.Strategy.GetActivator(requestSourceAddress);
 
                 _logger.LogError("MemberList did not find any activator for kind '{Kind}'", kind);
                 return null;
@@ -172,7 +172,7 @@ namespace Proto.Cluster
                 foreach (var k in memberThatLeft.Kinds)
                 {
                     var ck = _cluster.GetClusterKind(k);
-                    ck.GetStrategy(_cluster).RemoveMember(memberThatLeft);
+                    ck.Strategy.RemoveMember(memberThatLeft);
                 }
 
                 _bannedMembers.Add(memberThatLeft.Id);
@@ -200,7 +200,7 @@ namespace Proto.Cluster
                 foreach (var kind in newMember.Kinds)
                 {
                     var ck = _cluster.GetClusterKind(kind);
-                    ck.GetStrategy(_cluster).AddMember(newMember);
+                    ck.Strategy.AddMember(newMember);
                 }
             }
         }
