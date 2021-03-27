@@ -17,7 +17,7 @@ namespace Proto.Cluster.Tests
 
         public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct) => Task.FromResult(_pid)!;
 
-        public Task RemovePidAsync(PID pid, CancellationToken ct) => Task.CompletedTask;
+        public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct) => Task.CompletedTask;
 
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient) => Task.CompletedTask;
 

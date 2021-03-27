@@ -61,7 +61,19 @@ namespace Proto.Cluster.Partition
             }
         }
         
-        public Task RemovePidAsync(PID pid, CancellationToken ct) => Task.CompletedTask;
+        public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)
+        {
+            var activationTerminated = new ActivationTerminated
+            {
+                Pid = pid,
+                ClusterIdentity = clusterIdentity,
+                EventId = 0
+            };
+            
+            _cluster.MemberList.BroadcastEvent(activationTerminated);
+            
+            return Task.CompletedTask;
+        }
 
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
         {

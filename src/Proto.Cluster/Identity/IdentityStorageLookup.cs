@@ -68,7 +68,7 @@ namespace Proto.Cluster.Identity
             await RemoveMemberAsync(_memberId);
         }
 
-        public Task RemovePidAsync(PID pid, CancellationToken ct)
+        public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)
         {
             if (_system.Shutdown.IsCancellationRequested) return Task.CompletedTask;
 

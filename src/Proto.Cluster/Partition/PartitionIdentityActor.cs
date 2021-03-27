@@ -40,16 +40,26 @@ namespace Proto.Cluster.Partition
             _logger = Log.CreateLogger($"{nameof(PartitionIdentityActor)}-{cluster.LoggerId}");
             _cluster = cluster;
             _myAddress = cluster.System.Address;
+            
         }
         
         public Task ReceiveAsync(IContext context) =>
             context.Message switch
             {
+                Started                  => OnStarted(context),
                 ActivationRequest msg    => OnActivationRequest(msg, context),
                 ActivationTerminated msg => OnActivationTerminated(msg, context),
                 ClusterTopology msg      => OnClusterTopology(msg, context),
                 _                        => OnUnhandled()
             };
+
+        private Task OnStarted(IContext context)
+        {
+            _cluster.System.EventStream.Subscribe<ActivationTerminated>(_cluster.System.Root, context.Self!);
+            
+            return Task.CompletedTask;
+
+        }
 
         private static Task OnUnhandled() => Task.CompletedTask;
 
@@ -119,18 +129,7 @@ namespace Proto.Cluster.Partition
 
         private Task OnActivationTerminated(ActivationTerminated msg, IContext context)
         {
-            var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
-
-            if (ownerAddress != _myAddress)
-            {
-                var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
-                _logger.LogWarning("Tried to terminate activation on wrong node, forwarding");
-                context.Forward(ownerPid);
-
-                return Task.CompletedTask;
-            }
-
-            //TODO: handle correct incarnation/version
+            //we get this via broadcast to all nodes, remove if we have it, or ignore
             _logger.LogDebug("Terminated {Pid}", msg.Pid);
             _partitionLookup.Remove(msg.ClusterIdentity);
             return Task.CompletedTask;
