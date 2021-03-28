@@ -43,7 +43,6 @@ namespace Proto.Cluster.Partition
             {
                 Pid = pid,
                 ClusterIdentity = clusterIdentity,
-                EventId = 0
             };
             
             _cluster.MemberList.BroadcastEvent(activationTerminated);
@@ -83,7 +82,7 @@ namespace Proto.Cluster.Partition
                     msg.EventId
                 );
 
-                var actor = new Activation {ClusterIdentity = clusterIdentity, Pid = pid, EventId = 0};
+                var actor = new Activation {ClusterIdentity = clusterIdentity, Pid = pid};
                 response.Actors.Add(actor);
                 count++;
             }

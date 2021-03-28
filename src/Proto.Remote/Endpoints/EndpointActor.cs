@@ -75,23 +75,16 @@ namespace Proto.Remote
                 throw;
             }
 
-            try
-            {
-                _client = new Remoting.RemotingClient(_channel);
+            _client = new Remoting.RemotingClient(_channel);
 
-                Logger.LogDebug("[EndpointActor] Created channel and client for address {Address}", _address);
+            Logger.LogDebug("[EndpointActor] Created channel and client for address {Address}", _address);
 
-                var res = await _client.ConnectAsync(new ConnectRequest());
-                _serializerId = res.DefaultSerializerId;
-                _stream = _client.Receive(_remoteConfig.CallOptions);
+            var res = await _client.ConnectAsync(new ConnectRequest());
+            _serializerId = res.DefaultSerializerId;
+            _stream = _client.Receive(_remoteConfig.CallOptions);
 
-                Logger.LogDebug("[EndpointActor] Connected client for address {Address}", _address);
-            }
-            catch (Exception e)
-            {
-                Logger.LogWarning(e, "[EndpointActor] Error connecting to {Address}", _address);
-                throw;
-            }
+            Logger.LogDebug("[EndpointActor] Connected client for address {Address}", _address);
+
 
             _ = SafeTask.Run(
                 async () => {
@@ -107,7 +100,7 @@ namespace Proto.Remote
                     }
                     catch (RpcException x) when (x.StatusCode == StatusCode.Unavailable)
                     {
-                        Logger.LogWarning(x, "[EndpointActor] Lost connection to address {Address}, address is unavailable", _address);
+                        Logger.LogWarning( "[EndpointActor] Lost connection to address {Address}, address is unavailable", _address);
                         var endpointError = new EndpointErrorEvent
                         {
                             Address = _address,
@@ -301,15 +294,10 @@ namespace Proto.Remote
 
             try
             {
-                // Logger.LogDebug("[EndpointActor] Writing batch to {Address}", _address);
-
                 await _stream.RequestStream.WriteAsync(batch).ConfigureAwait(false);
             }
             catch (Exception x)
             {
-                Logger.LogWarning(x, "[EndpointActor] gRPC Failed to send to address {Address}, reason {Message}", _address,
-                    x.Message
-                );
                 context.Stash();
                 throw;
             }

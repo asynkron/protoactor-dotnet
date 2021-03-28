@@ -7,6 +7,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
@@ -58,10 +59,22 @@ namespace Proto.Remote
 
                 _ = SafeTask.Run(async () => {
                         await Task.Delay(duration);
-                        Logger.LogWarning(reason,
-                            "Restarting {Actor} after {Duration} because of {Reason}",
-                            child, duration, reason.GetType().Name
-                        );
+
+                        if (reason is RpcException rpc && rpc.StatusCode == StatusCode.Unavailable)
+                        {
+                            Logger.LogWarning(
+                                "Restarting {Actor} after {Duration} because endpoint is unavailable",
+                                child, duration
+                            );
+                        }
+                        else
+                        {
+                            Logger.LogWarning(reason,
+                                "Restarting {Actor} after {Duration} because of {Reason}",
+                                child, duration, reason.GetType().Name
+                            );
+                        }
+                   
                         supervisor.RestartChildren(reason, child);
                     }
                     , _cancelFutureRetries.Token
