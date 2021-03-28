@@ -24,7 +24,7 @@ namespace Proto.Cluster.Partition
         private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityActor>();
         private readonly string _myAddress;
 
-        private readonly Dictionary<ClusterIdentity, (PID pid, string kind)> _partitionLookup = new(); //actor/grain name to PID
+        private readonly Dictionary<ClusterIdentity, PID> _partitionLookup = new(); //actor/grain name to PID
 
         private readonly Rendezvous _rdv = new();
 
@@ -119,7 +119,7 @@ namespace Proto.Cluster.Partition
             var membersLookup = msg.Members.ToDictionary(m => m.Address, m => m);
 
             //scan through all id lookups and remove cases where the address is no longer part of cluster members
-            foreach (var (actorId, (pid, _)) in _partitionLookup.ToArray())
+            foreach (var (actorId, pid) in _partitionLookup.ToArray())
             {
                 if (!membersLookup.ContainsKey(pid.Address)) _partitionLookup.Remove(actorId);
             }
@@ -140,11 +140,11 @@ namespace Proto.Cluster.Partition
             if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var existing))
             {
                 //these are the same, that's good, just ignore message
-                if (existing.pid.Address == msg.Pid.Address) return;
+                if (existing.Address == msg.Pid.Address) return;
             }
 
             Logger.LogDebug("Taking Ownership of: {Identity}, pid: {Pid}", msg.Identity, msg.Pid);
-            _partitionLookup[msg.ClusterIdentity] = (msg.Pid, msg.Kind);
+            _partitionLookup[msg.ClusterIdentity] = msg.Pid;
         }
 
         private Task OnActivationRequest(ActivationRequest msg, IContext context)
@@ -167,9 +167,9 @@ namespace Proto.Cluster.Partition
             }
 
             //Check if exist in current partition dictionary
-            if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var info))
+            if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
             {
-                context.Respond(new ActivationResponse {Pid = info.pid});
+                context.Respond(new ActivationResponse {Pid = pid});
                 return Task.CompletedTask;
             }
 
@@ -212,9 +212,9 @@ namespace Proto.Cluster.Partition
 
                     //Check if exist in current partition dictionary
                     //This is necessary to avoid race condition during partition map transfer.
-                    if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out info))
+                    if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out pid))
                     {
-                        context.Respond(new ActivationResponse {Pid = info.pid});
+                        context.Respond(new ActivationResponse {Pid = pid});
                         return Task.CompletedTask;
                     }
 
@@ -233,7 +233,7 @@ namespace Proto.Cluster.Partition
                         return Task.CompletedTask;
                     }
 
-                    _partitionLookup[msg.ClusterIdentity] = (response.Pid, msg.Kind);
+                    _partitionLookup[msg.ClusterIdentity] = response.Pid;
                     context.Respond(response);
 
                     try
