@@ -67,7 +67,6 @@ namespace Proto.Cluster.Partition
             {
                 Pid = pid,
                 ClusterIdentity = clusterIdentity,
-                EventId = 0
             };
             
             _cluster.MemberList.BroadcastEvent(activationTerminated);
