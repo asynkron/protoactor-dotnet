@@ -19,10 +19,9 @@ namespace Proto.Cluster.Partition
     class PartitionIdentityActor : IActor
     {
         //for how long do we wait when performing a identity handover?
-       
         
         private readonly Cluster _cluster;
-        private readonly ILogger _logger;
+        private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityActor>();
         private readonly string _myAddress;
 
         private readonly Dictionary<ClusterIdentity, (PID pid, string kind)> _partitionLookup = new(); //actor/grain name to PID
@@ -36,7 +35,6 @@ namespace Proto.Cluster.Partition
 
         public PartitionIdentityActor(Cluster cluster, TimeSpan identityHandoverTimeout)
         {
-            _logger = Log.CreateLogger($"{nameof(PartitionIdentityActor)}-{cluster.LoggerId}");
             _cluster = cluster;
             _myAddress = cluster.System.Address;
             _identityHandoverTimeout = identityHandoverTimeout;
@@ -54,7 +52,11 @@ namespace Proto.Cluster.Partition
 
         private Task OnStarted(IContext context)
         {
-            _cluster.System.EventStream.Subscribe<ActivationTerminated>(_cluster.System.Root, context.Self!);
+            var self = context.Self!;
+            _cluster.System.EventStream.Subscribe<ActivationTerminated>(e => {
+                
+                _cluster.System.Root.Send(self,e);
+            });
             
             return Task.CompletedTask;
         }
@@ -90,11 +92,11 @@ namespace Proto.Cluster.Partition
 
             try
             {
-                _logger.LogDebug("Requesting ownerships");
+                Logger.LogDebug("Requesting ownerships");
 
                 //built in timeout on each request above
                 var responses = await Task.WhenAll(requests);
-                _logger.LogDebug("Got ownerships {EventId}", _eventId);
+                Logger.LogDebug("Got ownerships {EventId}", _eventId);
 
                 foreach (var response in responses)
                 {
@@ -103,15 +105,15 @@ namespace Proto.Cluster.Partition
                         TakeOwnership(actor);
 
                         if (!_partitionLookup.ContainsKey(actor.ClusterIdentity))
-                            _logger.LogError("Ownership bug, we should own {Identity}", actor.ClusterIdentity);
+                            Logger.LogError("Ownership bug, we should own {Identity}", actor.ClusterIdentity);
                         else
-                            _logger.LogDebug("I have ownership of {Identity}", actor.ClusterIdentity);
+                            Logger.LogDebug("I have ownership of {Identity}", actor.ClusterIdentity);
                     }
                 }
             }
             catch (Exception x)
             {
-                _logger.LogError(x, "Failed to get identities");
+                Logger.LogError(x, "Failed to get identities");
             }
 
             var membersLookup = msg.Members.ToDictionary(m => m.Address, m => m);
@@ -126,9 +128,10 @@ namespace Proto.Cluster.Partition
         private Task OnActivationTerminated(ActivationTerminated msg, IContext context)
         {
             //we get this via broadcast to all nodes, remove if we have it, or ignore
-            _logger.LogDebug("Terminated {Pid}", msg.Pid);
-            _cluster.PidCache.RemoveByVal(msg.ClusterIdentity,msg.Pid);
+            Logger.LogDebug("[PartitionIdentityActor] Terminated {Pid}", msg.Pid);
+           // _cluster.PidCache.RemoveByVal(msg.ClusterIdentity,msg.Pid);
             _partitionLookup.Remove(msg.ClusterIdentity);
+
             return Task.CompletedTask;
         }
 
@@ -140,7 +143,7 @@ namespace Proto.Cluster.Partition
                 if (existing.pid.Address == msg.Pid.Address) return;
             }
 
-            _logger.LogDebug("Taking Ownership of: {Identity}, pid: {Pid}", msg.Identity, msg.Pid);
+            Logger.LogDebug("Taking Ownership of: {Identity}, pid: {Pid}", msg.Identity, msg.Pid);
             _partitionLookup[msg.ClusterIdentity] = (msg.Pid, msg.Kind);
         }
 
@@ -148,7 +151,7 @@ namespace Proto.Cluster.Partition
         {
             if (context.Sender is null)
             {
-                _logger.LogCritical("NO SENDER IN GET OR SPAWN!!");
+                Logger.LogCritical("NO SENDER IN GET OR SPAWN!!");
                 return Task.CompletedTask;
             }
 
@@ -157,7 +160,7 @@ namespace Proto.Cluster.Partition
             if (ownerAddress != _myAddress)
             {
                 var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
-                _logger.LogWarning("Tried to spawn on wrong node, forwarding");
+                Logger.LogWarning("Tried to spawn on wrong node, forwarding");
                 context.Forward(ownerPid);
 
                 return Task.CompletedTask;
@@ -177,7 +180,7 @@ namespace Proto.Cluster.Partition
             if (activatorAddress is null || string.IsNullOrEmpty(activatorAddress))
             {
                 //No activator currently available, return unavailable
-                _logger.LogWarning("No members currently available for kind {Kind}", msg.Kind);
+                Logger.LogWarning("No members currently available for kind {Kind}", msg.Kind);
                 context.Respond(new ActivationResponse {Pid = null});
                 return Task.CompletedTask;
             }
@@ -203,10 +206,6 @@ namespace Proto.Cluster.Partition
 
 
                     var response = res.Result;
-
-
-
-
 
                     //TODO: as this is async, there might come in multiple ActivationRequests asking for this
                     //Identity, causing multiple activations
@@ -244,7 +243,7 @@ namespace Proto.Cluster.Partition
                     catch (Exception e)
                     {
                         //debugging hack
-                        _logger.LogInformation(e, "Failed while removing spawn {Id}", msg.Identity);
+                        Logger.LogInformation(e, "Failed while removing spawn {Id}", msg.Identity);
                     }
 
                     return Task.CompletedTask;
@@ -257,7 +256,7 @@ namespace Proto.Cluster.Partition
         {
             try
             {
-                _logger.LogDebug("Spawning Remote Actor {Activator} {Identity} {Kind}", activator, req.Identity,
+                Logger.LogDebug("Spawning Remote Actor {Activator} {Identity} {Kind}", activator, req.Identity,
                     req.Kind
                 );
                 var timeout = _cluster.Config!.TimeoutTimespan;

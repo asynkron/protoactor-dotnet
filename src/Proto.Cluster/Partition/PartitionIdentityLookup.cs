@@ -78,7 +78,7 @@ namespace Proto.Cluster.Partition
                 Pid = pid,
                 ClusterIdentity = clusterIdentity,
             };
-            
+           
             _cluster.MemberList.BroadcastEvent(activationTerminated);
             
             return Task.CompletedTask;
