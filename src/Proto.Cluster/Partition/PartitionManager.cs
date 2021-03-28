@@ -20,13 +20,15 @@ namespace Proto.Cluster.Partition
         private readonly ActorSystem _system;
         private PID _partitionPlacementActor = null!;
         private PID _partitionIdentityActor = null!;
+        private readonly TimeSpan _identityHandoverTimeout;
 
-        internal PartitionManager(Cluster cluster, bool isClient)
+        internal PartitionManager(Cluster cluster, bool isClient, TimeSpan identityHandoverTimeout)
         {
             _cluster = cluster;
             _system = cluster.System;
             _context = _system.Root;
             _isClient = isClient;
+            _identityHandoverTimeout = identityHandoverTimeout;
         }
 
         internal PartitionMemberSelector Selector { get; } = new();
@@ -48,7 +50,7 @@ namespace Proto.Cluster.Partition
             else
             {
                 var partitionActorProps = Props
-                    .FromProducer(() => new PartitionIdentityActor(_cluster))
+                    .FromProducer(() => new PartitionIdentityActor(_cluster, _identityHandoverTimeout))
                     .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
                 _partitionIdentityActor = _context.SpawnNamed(partitionActorProps, PartitionIdentityActorName);
 
