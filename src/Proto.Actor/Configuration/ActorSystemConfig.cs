@@ -24,6 +24,8 @@ namespace Proto
 
         public IMetricsProvider[] MetricsProviders { get; init; } = {new NoMetricsProvider()};
         public int DeadLetterThrottleCount { get; init; }
+
+        public bool DeadLetterRequestLogging { get; set; } = true;
         public bool DeveloperSupervisionLogging { get; init; }
 
         public static ActorSystemConfig Setup() => new();
@@ -33,6 +35,8 @@ namespace Proto
 
         public ActorSystemConfig WithDeadLetterThrottleCount(int deadLetterThrottleCount) =>
             this with {DeadLetterThrottleCount = deadLetterThrottleCount};
+
+        public ActorSystemConfig WithDeadLetterRequestLogging(bool enabled) => this with {DeadLetterRequestLogging = enabled};
 
         public ActorSystemConfig WithDeveloperSupervisionLogging(bool enabled) => this with {DeveloperSupervisionLogging = enabled};
 

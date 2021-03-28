@@ -21,18 +21,20 @@ namespace Proto
     {
         private readonly ILogger _logger = Log.CreateLogger<EventStream>();
 
-        internal EventStream() : this(TimeSpan.Zero, 0, CancellationToken.None)
+        internal EventStream(ActorSystem system)
         {
-        }
-
-        internal EventStream(TimeSpan throttleInterval, int throttleCount, CancellationToken ct)
-        {
-            var shouldThrottle = Throttle.Create(throttleCount, throttleInterval,
+            var shouldThrottle = Throttle.Create(system.Config.DeadLetterThrottleCount, system.Config.DeadLetterThrottleInterval,
                 droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs.", droppedLogs)
             );
             Subscribe<DeadLetterEvent>(
                 dl => {
-                    if (!ct.IsCancellationRequested && shouldThrottle().IsOpen() && dl.Message is not IIgnoreDeadLetterLogging)
+
+                    if (system.Config.DeadLetterRequestLogging is false && dl.Sender is not null)
+                    {
+                        return;
+                    }
+                    
+                    if (!system.Shutdown.IsCancellationRequested && shouldThrottle().IsOpen() && dl.Message is not IIgnoreDeadLetterLogging)
                     {
                         _logger.LogInformation(
                             "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",
