@@ -37,6 +37,7 @@ namespace Proto.Cluster
 
         public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
         {
+            var start = DateTime.UtcNow;
             _logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
             var i = 0;
 
@@ -93,7 +94,10 @@ namespace Proto.Cluster
             }
 
             if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
-                _logger.LogWarning("RequestAsync retried but failed for {ClusterIdentity}", clusterIdentity);
+            {
+                var t = DateTime.UtcNow - start;
+                _logger.LogWarning("RequestAsync retried but failed for {ClusterIdentity}, elapsed {Time}", clusterIdentity,t);
+            }
 
             return default!;
 
