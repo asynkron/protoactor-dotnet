@@ -72,12 +72,13 @@ namespace Proto.Cluster
             }
         }
 
-        public void UpdateClusterTopology(IReadOnlyCollection<Member> statuses, ulong eventId)
+        public void UpdateClusterTopology(IReadOnlyCollection<Member> statuses)
         {
+
             lock (this)
             {
                 _logger.LogDebug("Updating Cluster Topology");
-                var topology = new ClusterTopology {EventId = eventId};
+                var topology = new ClusterTopology {EventId = Member.GetMembershipHashCode(statuses)};
 
                 //TLDR:
                 //this method basically filters out any member status in the banned list

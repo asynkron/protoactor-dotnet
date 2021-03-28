@@ -176,7 +176,7 @@ namespace Proto.Cluster.Consul
                                     .Select(ToMember)
                                     .ToArray();
                             
-                            _memberList.UpdateClusterTopology(currentMembers, waitIndex);
+                            _memberList.UpdateClusterTopology(currentMembers);
                         }
                         catch (Exception x)
                         {

@@ -18,119 +18,57 @@ namespace Proto.Cluster.Partition
     //for spawning/activating cluster actors see PartitionActivator.cs
     class PartitionIdentityActor : IActor
     {
-        //for how long do we wait before sending a ReceiveTimeout message?  (useful for liveliness checks on the actor, log it to show the actor is alive)
-        private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(5);
-
         //for how long do we wait when performing a identity handover?
         private static readonly TimeSpan HandoverTimeout = TimeSpan.FromSeconds(3);
-
-        //for how long do we wait after a topology change before we allow spawning new actors?
-        //do note that this happens after a topology change which can be triggered by a timed out unhealthy service in the cluster provider
-        //the time before the cluster becomes responsive again is TopologyChangeTimeout + Time for service to be unhealthy
-
-        private static readonly TimeSpan TopologyChangeTimeout = TimeSpan.FromSeconds(3);
-
+        
         private readonly Cluster _cluster;
         private readonly ILogger _logger;
         private readonly string _myAddress;
 
-        private readonly Dictionary<ClusterIdentity, (PID pid, string kind)> _partitionLookup =
-            new(); //actor/grain name to PID
+        private readonly Dictionary<ClusterIdentity, (PID pid, string kind)> _partitionLookup = new(); //actor/grain name to PID
 
         private readonly Rendezvous _rdv = new();
 
-        private readonly Dictionary<ClusterIdentity, Task<ActivationResponse>> _spawns =
-            new();
+        private readonly Dictionary<ClusterIdentity, Task<ActivationResponse>> _spawns = new();
 
         private ulong _eventId;
-        private DateTime _lastEventTimestamp;
-
-        private ProcessingMode _mode = ProcessingMode.Waiting;
-        private Task? _resumeProcessing;
-
+        
         public PartitionIdentityActor(Cluster cluster)
         {
             _logger = Log.CreateLogger($"{nameof(PartitionIdentityActor)}-{cluster.LoggerId}");
             _cluster = cluster;
             _myAddress = cluster.System.Address;
+            
         }
-
-        private TimeSpan StartWorkingIn => _lastEventTimestamp + TopologyChangeTimeout - DateTime.Now;
-
+        
         public Task ReceiveAsync(IContext context) =>
             context.Message switch
             {
-                Started _                => Start(context),
-                ReceiveTimeout _         => ReceiveTimeout(context),
-                ActivationRequest msg    => GetOrSpawn(msg, context),
-                ActivationTerminated msg => ActivationTerminated(msg, context),
-                ClusterTopology msg      => ClusterTopology(msg, context),
-                _                        => Unhandled()
+                Started                  => OnStarted(context),
+                ActivationRequest msg    => OnActivationRequest(msg, context),
+                ActivationTerminated msg => OnActivationTerminated(msg, context),
+                ClusterTopology msg      => OnClusterTopology(msg, context),
+                _                        => Task.CompletedTask
             };
 
-        private static Task Unhandled() => Task.CompletedTask;
-
-        private Task Start(IContext context)
+        private Task OnStarted(IContext context)
         {
-            _lastEventTimestamp = DateTime.Now;
-            _logger.LogDebug("Started");
-            PauseProcessing(context, StartWorkingIn);
-
+            _cluster.System.EventStream.Subscribe<ActivationTerminated>(_cluster.System.Root, context.Self!);
+            
             return Task.CompletedTask;
         }
 
-        private void PauseProcessing(IContext context, TimeSpan duration)
+        private async Task OnClusterTopology(ClusterTopology msg, IContext context)
         {
-            if (duration > TimeSpan.Zero)
-            {
-                _mode = ProcessingMode.Waiting;
-                var resume = new TaskCompletionSource<bool>();
-                _resumeProcessing = resume.Task;
-                context.ReenterAfter(Task.Delay(duration), ConsiderResumeProcessing(context, resume));
-            }
-            else
-                _mode = ProcessingMode.Working;
-        }
-
-        private Action ConsiderResumeProcessing(IContext context, TaskCompletionSource<bool> resume) => () => {
-            var delay = StartWorkingIn;
-
-            if (delay > TimeSpan.FromMilliseconds(1))
-            {
-                _logger.LogDebug("Delaying activations with {Timespan}", delay);
-                context.ReenterAfter(Task.Delay(delay), ConsiderResumeProcessing(context, resume));
-            }
-            else
-            {
-                _logger.LogDebug("Starting activations");
-                _mode = ProcessingMode.Working;
-                resume.SetResult(true);
-            }
-        };
-
-        private Task ReceiveTimeout(IContext context)
-        {
-            context.SetReceiveTimeout(IdleTimeout);
-            _logger.LogInformation("I am idle");
-            return Task.CompletedTask;
-        }
-
-        private async Task ClusterTopology(ClusterTopology msg, IContext context)
-        {
-            if (_eventId >= msg.EventId) return;
+            if (_eventId == msg.EventId) return;
 
             _eventId = msg.EventId;
-            _lastEventTimestamp = DateTime.Now;
             var members = msg.Members.ToArray();
 
             _rdv.UpdateMembers(members);
 
             //remove all identities we do no longer own.
             _partitionLookup.Clear();
-
-            _logger.LogInformation("Topology change --- {EventId} --- pausing interactions for {Timeout}",
-                _eventId, TopologyChangeTimeout
-            );
 
             var requests = new List<Task<IdentityHandoverResponse>>();
             var requestMsg = new IdentityHandoverRequest
@@ -175,10 +113,6 @@ namespace Proto.Cluster.Partition
                 _logger.LogError(x, "Failed to get identities");
             }
 
-            //always do this when a member leaves, we need to redistribute the distributed-hash-table
-            //no ifs or else, just always
-            //ClearInvalidOwnership(context);
-
             var membersLookup = msg.Members.ToDictionary(m => m.Address, m => m);
 
             //scan through all id lookups and remove cases where the address is no longer part of cluster members
@@ -186,25 +120,13 @@ namespace Proto.Cluster.Partition
             {
                 if (!membersLookup.ContainsKey(pid.Address)) _partitionLookup.Remove(actorId);
             }
-
-            if (_mode == ProcessingMode.Working) PauseProcessing(context, StartWorkingIn);
         }
 
-        private Task ActivationTerminated(ActivationTerminated msg, IContext context)
+        private Task OnActivationTerminated(ActivationTerminated msg, IContext context)
         {
-            var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
-
-            if (ownerAddress != _myAddress)
-            {
-                var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
-                _logger.LogWarning("Tried to terminate activation on wrong node, forwarding");
-                context.Forward(ownerPid);
-
-                return Task.CompletedTask;
-            }
-
-            //TODO: handle correct incarnation/version
+            //we get this via broadcast to all nodes, remove if we have it, or ignore
             _logger.LogDebug("Terminated {Pid}", msg.Pid);
+            _cluster.PidCache.RemoveByVal(msg.ClusterIdentity,msg.Pid);
             _partitionLookup.Remove(msg.ClusterIdentity);
             return Task.CompletedTask;
         }
@@ -221,7 +143,7 @@ namespace Proto.Cluster.Partition
             _partitionLookup[msg.ClusterIdentity] = (msg.Pid, msg.Kind);
         }
 
-        private Task GetOrSpawn(ActivationRequest msg, IContext context)
+        private Task OnActivationRequest(ActivationRequest msg, IContext context)
         {
             if (context.Sender is null)
             {
@@ -245,19 +167,6 @@ namespace Proto.Cluster.Partition
             {
                 context.Respond(new ActivationResponse {Pid = info.pid});
                 return Task.CompletedTask;
-            }
-
-            if (_mode == ProcessingMode.Waiting)
-            {
-                if (_resumeProcessing is null)
-                    _logger.LogCritical("Reenter task was null in wait mode!");
-                else
-                {
-                    _logger.LogDebug("");
-
-                    context.ReenterAfter(_resumeProcessing, () => GetOrSpawn(msg, context));
-                    return Task.CompletedTask;
-                }
             }
 
             //Get activator
@@ -290,7 +199,14 @@ namespace Proto.Cluster.Partition
             context.ReenterAfter(
                 res,
                 rst => {
+
+
                     var response = res.Result;
+
+
+
+
+
                     //TODO: as this is async, there might come in multiple ActivationRequests asking for this
                     //Identity, causing multiple activations
 
@@ -308,9 +224,16 @@ namespace Proto.Cluster.Partition
                         context.Respond(response);
                         return Task.CompletedTask;
                     }
+                    if (response == null)
+                    {
+                        context.Respond(new ActivationResponse()
+                        {
+                        });
+                        //TODO what do we do in this case?
+                        return Task.CompletedTask;
+                    }
 
                     _partitionLookup[msg.ClusterIdentity] = (response.Pid, msg.Kind);
-
                     context.Respond(response);
 
                     try
@@ -336,33 +259,16 @@ namespace Proto.Cluster.Partition
                 _logger.LogDebug("Spawning Remote Actor {Activator} {Identity} {Kind}", activator, req.Identity,
                     req.Kind
                 );
-                var result = await ActivateAsync(activator, req, _cluster.Config!.TimeoutTimespan);
-                return result;
+                var timeout = _cluster.Config!.TimeoutTimespan;
+                var activator1 = PartitionManager.RemotePartitionPlacementActor(activator);
+
+                var res = await _cluster.System.Root.RequestAsync<ActivationResponse>(activator1, req, timeout);
+                return res;
             }
             catch
             {
                 return null!;
             }
-        }
-
-        //identical to Remote.SpawnNamedAsync, just using the special partition-activator for spawning
-        private async Task<ActivationResponse> ActivateAsync(
-            string address,
-            ActivationRequest req,
-            TimeSpan timeout
-        )
-        {
-            var activator = PartitionManager.RemotePartitionPlacementActor(address);
-
-            var res = await _cluster.System.Root.RequestAsync<ActivationResponse>(activator, req, timeout);
-
-            return res;
-        }
-
-        private enum ProcessingMode
-        {
-            Waiting,
-            Working
         }
     }
 }

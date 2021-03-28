@@ -150,7 +150,7 @@ namespace Proto.Cluster.Kubernetes
                 .Select(x => x.Status)
                 .ToList();
 
-            _cluster.MemberList.UpdateClusterTopology(memberStatuses, 0ul);
+            _cluster.MemberList.UpdateClusterTopology(memberStatuses);
         }
     }
 }

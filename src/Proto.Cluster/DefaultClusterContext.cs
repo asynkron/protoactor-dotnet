@@ -106,7 +106,7 @@ namespace Proto.Cluster
 
         private async Task RemoveFromSource(ClusterIdentity clusterIdentity, PidSource source, PID pid)
         {
-            if (source == PidSource.Lookup) await _identityLookup.RemovePidAsync(pid, CancellationToken.None);
+            if (source == PidSource.Lookup) await _identityLookup.RemovePidAsync(clusterIdentity, pid, CancellationToken.None);
 
             _pidCache.RemoveByVal(clusterIdentity, pid);
         }

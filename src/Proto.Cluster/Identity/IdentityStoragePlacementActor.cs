@@ -72,7 +72,7 @@ namespace Proto.Cluster.Identity
 
                 try
                 {
-                    await _identityLookup.RemovePidAsync(msg.Who, CancellationToken.None);
+                    await _identityLookup.RemovePidAsync(identity, msg.Who, CancellationToken.None);
                 }
                 catch (Exception e)
                 {
