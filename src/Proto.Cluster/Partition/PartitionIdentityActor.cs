@@ -19,7 +19,7 @@ namespace Proto.Cluster.Partition
     class PartitionIdentityActor : IActor
     {
         //for how long do we wait when performing a identity handover?
-        private static readonly TimeSpan HandoverTimeout = TimeSpan.FromSeconds(3);
+        private static readonly TimeSpan HandoverTimeout = TimeSpan.FromSeconds(1);
         
         private readonly Cluster _cluster;
         private readonly ILogger _logger;
