@@ -7,7 +7,7 @@ using System.Threading;
 
 namespace Proto.Cluster
 {
-    public record ActivatedClusterKind(string Name, Props Props, IMemberStrategy Strategy)
+    public record ActivatedClusterKind(string Name, Props Props, IMemberStrategy? Strategy)
     {
         private int _count;
 

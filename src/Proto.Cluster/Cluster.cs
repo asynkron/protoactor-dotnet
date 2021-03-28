@@ -147,5 +147,12 @@ namespace Proto.Cluster
 
             return clusterKind;
         }
+        
+        public ActivatedClusterKind TryGetClusterKind(string kind)
+        {
+            _clusterKinds.TryGetValue(kind, out var clusterKind);
+            
+            return clusterKind;
+        }
     }
 }

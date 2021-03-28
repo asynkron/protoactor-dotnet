@@ -40,6 +40,8 @@ namespace Proto.Cluster
         //come up with a good solution to keep all this in sync
         private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
         private ImmutableDictionary<int, Member> _membersByIndex = ImmutableDictionary<int, Member>.Empty;
+
+        private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
         private readonly ConcurrentSet<string> _bannedMembers = new();
         private int _nextMemberIndex;
 
@@ -62,9 +64,8 @@ namespace Proto.Cluster
         {
             lock (this)
             {
-                var clusterKind = _cluster.GetClusterKind(kind);
-
-                if (clusterKind != null) return clusterKind.Strategy.GetActivator(requestSourceAddress);
+                if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
+                    return memberStrategy.GetActivator(requestSourceAddress);
 
                 _logger.LogError("MemberList did not find any activator for kind '{Kind}'", kind);
                 return null;
@@ -166,13 +167,20 @@ namespace Proto.Cluster
                 );
             }
 
+
             void MemberLeave(Member memberThatLeft)
             {
                 //update MemberStrategy
                 foreach (var k in memberThatLeft.Kinds)
                 {
-                    var ck = _cluster.GetClusterKind(k);
-                    ck.Strategy.RemoveMember(memberThatLeft);
+                    if (!_memberStrategyByKind.TryGetValue(k, out var ms)) continue;
+
+                    ms.RemoveMember(memberThatLeft);
+
+                    if (ms.GetAllMembers().Count == 0)
+                    {
+                        _memberStrategyByKind = _memberStrategyByKind.Remove(k);
+                    }
                 }
 
                 _bannedMembers.Add(memberThatLeft.Id);
@@ -188,7 +196,6 @@ namespace Proto.Cluster
                 _cluster.System.EventStream.Publish(endpointTerminated);
             }
 
-
             void MemberJoin(Member newMember)
             {
                 newMember.Index = _nextMemberIndex++;
@@ -199,10 +206,31 @@ namespace Proto.Cluster
 
                 foreach (var kind in newMember.Kinds)
                 {
-                    var ck = _cluster.GetClusterKind(kind);
-                    ck.Strategy.AddMember(newMember);
+                    if (!_memberStrategyByKind.ContainsKey(kind))
+                    {
+                        _memberStrategyByKind = _memberStrategyByKind.SetItem(kind, GetMemberStrategyByKind(kind));
+                    }
+
+                    _memberStrategyByKind[kind].AddMember(newMember);
                 }
             }
+        }
+
+        //
+        private IMemberStrategy GetMemberStrategyByKind(string kind)
+        {
+            //Try get the cluster kind
+            var clusterKind = _cluster.TryGetClusterKind(kind);
+
+            //if it exists, and if it has a strategy
+            if (clusterKind?.Strategy != null)
+            {
+                //use that strategy
+                return clusterKind.Strategy;
+            }
+            
+            //otherwise, use whatever member strategy the default builder says
+            return _cluster.Config!.MemberStrategyBuilder(_cluster, kind) ?? new SimpleMemberStrategy();
         }
 
         /// <summary>

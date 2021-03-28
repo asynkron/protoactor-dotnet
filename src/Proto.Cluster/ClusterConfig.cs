@@ -26,8 +26,11 @@ namespace Proto.Cluster
             ClusterRequestDeDuplication = true;
             ClusterRequestDeDuplicationWindow = TimeSpan.FromSeconds(30);
             IdentityLookup = identityLookup;
+            MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
         }
 
+        public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; init; }
+        
         public string ClusterName { get; }
 
         public ImmutableList<ClusterKind> ClusterKinds { get; init; } = ImmutableList<ClusterKind>.Empty;
@@ -77,6 +80,9 @@ namespace Proto.Cluster
 
         public ClusterConfig WithClusterKinds(params ClusterKind[] clusterKinds)
             => this with {ClusterKinds = ClusterKinds.AddRange(clusterKinds)};
+        
+        public ClusterConfig WithMemberStrategyBuilder(Func<Cluster, string, IMemberStrategy> builder) =>
+            this with {MemberStrategyBuilder = builder};
 
         public static ClusterConfig Setup(
             string clusterName,
