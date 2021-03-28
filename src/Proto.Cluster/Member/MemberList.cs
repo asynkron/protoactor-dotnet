@@ -208,14 +208,29 @@ namespace Proto.Cluster
                 {
                     if (!_memberStrategyByKind.ContainsKey(kind))
                     {
-                        _memberStrategyByKind = _memberStrategyByKind.SetItem(kind,
-                            _cluster.Config!.MemberStrategyBuilder(_cluster, kind) ?? new SimpleMemberStrategy()
-                        );
+                        _memberStrategyByKind = _memberStrategyByKind.SetItem(kind, GetMemberStrategyByKind(kind));
                     }
 
                     _memberStrategyByKind[kind].AddMember(newMember);
                 }
             }
+        }
+
+        //
+        private IMemberStrategy GetMemberStrategyByKind(string kind)
+        {
+            //Try get the cluster kind
+            var clusterKind = _cluster.TryGetClusterKind(kind);
+
+            //if it exists, and if it has a strategy
+            if (clusterKind?.Strategy != null)
+            {
+                //use that strategy
+                return clusterKind.Strategy;
+            }
+            
+            //otherwise, use whatever member strategy the default builder says
+            return _cluster.Config!.MemberStrategyBuilder(_cluster, kind) ?? new SimpleMemberStrategy();
         }
 
         /// <summary>

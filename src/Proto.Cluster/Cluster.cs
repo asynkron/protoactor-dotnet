@@ -108,9 +108,9 @@ namespace Proto.Cluster
 
         private void InitClusterKinds()
         {
-            foreach (var (name, props) in Config.ClusterKinds)
+            foreach (var clusterKind in Config.ClusterKinds)
             {
-                _clusterKinds.Add(name, new ClusterKind(name, props));
+                _clusterKinds.Add(clusterKind.Name, clusterKind.Build(this));
             }
         }
 
@@ -139,12 +139,19 @@ namespace Proto.Cluster
             ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct);
 
 
-        private Dictionary<string, ClusterKind> _clusterKinds = new();
-        public ClusterKind GetClusterKind(string kind)
+        private Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
+        public ActivatedClusterKind GetClusterKind(string kind)
         {
             if (!_clusterKinds.TryGetValue(kind, out var clusterKind))
                 throw new ArgumentException($"No cluster kind '{kind}' was not found");
 
+            return clusterKind;
+        }
+        
+        public ActivatedClusterKind TryGetClusterKind(string kind)
+        {
+            _clusterKinds.TryGetValue(kind, out var clusterKind);
+            
             return clusterKind;
         }
     }

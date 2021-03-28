@@ -52,7 +52,5 @@ namespace Proto.Cluster
         }
 
         public Member? GetActivator(string senderAddress) => _rr.GetMember();
-
-        public string GetActivatorAddress() => _rr.GetMemberAddress();
     }
 }

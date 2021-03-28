@@ -4,7 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using JetBrains.Annotations;
@@ -26,14 +25,15 @@ namespace Proto.Cluster
             HeartBeatInterval = TimeSpan.FromSeconds(30);
             ClusterRequestDeDuplication = true;
             ClusterRequestDeDuplicationWindow = TimeSpan.FromSeconds(30);
-            MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
-            ClusterKinds = ImmutableDictionary<string, Props>.Empty;
             IdentityLookup = identityLookup;
+            MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
         }
 
+        public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; init; }
+        
         public string ClusterName { get; }
 
-        public ImmutableDictionary<string, Props> ClusterKinds { get; init; }
+        public ImmutableList<ClusterKind> ClusterKinds { get; init; } = ImmutableList<ClusterKind>.Empty;
 
         public IClusterProvider ClusterProvider { get; }
 
@@ -41,8 +41,6 @@ namespace Proto.Cluster
         public TimeSpan ActorRequestTimeout { get; init; }
         public TimeSpan RequestLogThrottlePeriod { get; init; }
         public int MaxNumberOfEventsInRequestLogThrottlePeriod { get; init; }
-
-        public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; init; }
 
         public IIdentityLookup? IdentityLookup { get; }
         public TimeSpan HeartBeatInterval { get; init; }
@@ -66,20 +64,25 @@ namespace Proto.Cluster
         public ClusterConfig WithMaxNumberOfEventsInRequestLogThrottlePeriod(int max) =>
             this with {MaxNumberOfEventsInRequestLogThrottlePeriod = max};
 
-        public ClusterConfig WithMemberStrategyBuilder(Func<Cluster, string, IMemberStrategy> builder) =>
-            this with {MemberStrategyBuilder = builder};
+        public ClusterConfig WithClusterKind(string kind, Props prop)
+            => WithClusterKind(new ClusterKind(kind, prop));
 
-        public ClusterConfig WithClusterKind(string kind, Props prop) =>
-            this with {ClusterKinds = ClusterKinds.Add(kind, prop)};
+        public ClusterConfig WithClusterKind(string kind, Props prop, Func<Cluster, IMemberStrategy> strategyBuilder) =>
+            WithClusterKind(new ClusterKind(kind, prop) {StrategyBuilder = strategyBuilder});
 
         public ClusterConfig WithClusterKinds(params (string kind, Props prop)[] knownKinds) =>
-            this with
-            {
-                ClusterKinds = ClusterKinds
-                    .AddRange(knownKinds
-                        .Select(kk => new KeyValuePair<string, Props>(kk.kind, kk.prop))
-                    )
-            };
+            WithClusterKinds(knownKinds.Select(k => new ClusterKind(k.kind, k.prop)).ToArray());
+
+        public ClusterConfig WithClusterKinds(params (string kind, Props prop, Func<Cluster, IMemberStrategy> strategyBuilder)[] knownKinds) =>
+            WithClusterKinds(knownKinds.Select(k => new ClusterKind(k.kind, k.prop) {StrategyBuilder = k.strategyBuilder}).ToArray());
+
+        public ClusterConfig WithClusterKind(ClusterKind clusterKind) => WithClusterKinds(clusterKind);
+
+        public ClusterConfig WithClusterKinds(params ClusterKind[] clusterKinds)
+            => this with {ClusterKinds = ClusterKinds.AddRange(clusterKinds)};
+        
+        public ClusterConfig WithMemberStrategyBuilder(Func<Cluster, string, IMemberStrategy> builder) =>
+            this with {MemberStrategyBuilder = builder};
 
         public static ClusterConfig Setup(
             string clusterName,
