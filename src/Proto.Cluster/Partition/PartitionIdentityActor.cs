@@ -19,7 +19,7 @@ namespace Proto.Cluster.Partition
     class PartitionIdentityActor : IActor
     {
         //for how long do we wait when performing a identity handover?
-        private static readonly TimeSpan HandoverTimeout = TimeSpan.FromSeconds(3);
+       
         
         private readonly Cluster _cluster;
         private readonly ILogger _logger;
@@ -32,13 +32,14 @@ namespace Proto.Cluster.Partition
         private readonly Dictionary<ClusterIdentity, Task<ActivationResponse>> _spawns = new();
 
         private ulong _eventId;
-        
-        public PartitionIdentityActor(Cluster cluster)
+        private readonly TimeSpan _identityHandoverTimeout;
+
+        public PartitionIdentityActor(Cluster cluster, TimeSpan identityHandoverTimeout)
         {
             _logger = Log.CreateLogger($"{nameof(PartitionIdentityActor)}-{cluster.LoggerId}");
             _cluster = cluster;
             _myAddress = cluster.System.Address;
-            
+            _identityHandoverTimeout = identityHandoverTimeout;
         }
         
         public Task ReceiveAsync(IContext context) =>
@@ -83,7 +84,7 @@ namespace Proto.Cluster.Partition
             {
                 var activatorPid = PartitionManager.RemotePartitionPlacementActor(member.Address);
                 var request =
-                    context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg, HandoverTimeout);
+                    context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg, CancellationTokens.WithTimeout(_identityHandoverTimeout));
                 requests.Add(request);
             }
 

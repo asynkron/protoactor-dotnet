@@ -16,6 +16,16 @@ namespace Proto.Cluster.Partition
         private Cluster _cluster = null!;
         private ILogger _logger = null!;
         private PartitionManager _partitionManager = null!;
+        private readonly TimeSpan _identityHandoverTimeout;
+
+        public PartitionIdentityLookup() : this(TimeSpan.FromMilliseconds(3))
+        {
+        }
+        
+        public PartitionIdentityLookup(TimeSpan identityHandoverTimeout)
+        {
+            _identityHandoverTimeout = identityHandoverTimeout;
+        }
 
         public async Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
         {
@@ -77,7 +87,7 @@ namespace Proto.Cluster.Partition
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
         {
             _cluster = cluster;
-            _partitionManager = new PartitionManager(cluster, isClient);
+            _partitionManager = new PartitionManager(cluster, isClient, _identityHandoverTimeout);
             _logger = Log.CreateLogger(nameof(PartitionIdentityLookup) + "-" + _cluster.LoggerId);
             _partitionManager.Setup();
             return Task.CompletedTask;

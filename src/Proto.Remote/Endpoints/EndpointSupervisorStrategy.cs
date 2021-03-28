@@ -44,7 +44,7 @@ namespace Proto.Remote
             if (ShouldStop(rs))
             {
                 Logger.LogError(
-                    "Stopping connection to address {Address} after retries expired because of {Reason}",
+                    "[EndpointSupervisor] Stopping connection to address {Address} after retries expired because of {Reason}",
                     _address, reason.GetType().Name
                 );
                 _cancelFutureRetries.Cancel();
@@ -63,14 +63,14 @@ namespace Proto.Remote
                         if (reason is RpcException rpc && rpc.StatusCode == StatusCode.Unavailable)
                         {
                             Logger.LogWarning(
-                                "Restarting {Actor} after {Duration} because endpoint is unavailable",
+                                "[EndpointSupervisor] Restarting {Actor} after {Duration} because endpoint is unavailable",
                                 child, duration
                             );
                         }
                         else
                         {
                             Logger.LogWarning(reason,
-                                "Restarting {Actor} after {Duration} because of {Reason}",
+                                "[EndpointSupervisor] Restarting {Actor} after {Duration} because of {Reason}",
                                 child, duration, reason.GetType().Name
                             );
                         }

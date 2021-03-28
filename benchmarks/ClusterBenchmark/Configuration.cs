@@ -41,7 +41,8 @@ namespace ClusterExperiment1
             var remoteConfig = GrpcCoreRemoteConfig
                 .BindTo(host, port)
                 .WithAdvertisedHost(advertisedHost)
-                .WithProtoMessages(MessagesReflection.Descriptor);
+                .WithProtoMessages(MessagesReflection.Descriptor)
+                .WithEndpointWriterMaxRetries(2);
 
             var clusterConfig = ClusterConfig
                 .Setup("mycluster", clusterProvider, identityLookup);
@@ -102,6 +103,7 @@ namespace ClusterExperiment1
         {
             var system = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3)
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
+                .WithDeadLetterRequestLogging(false)
             );
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
@@ -119,6 +121,7 @@ namespace ClusterExperiment1
         {
             var system = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3)
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
+                .WithDeadLetterRequestLogging(false)
             );
             system.EventStream.Subscribe<ClusterTopology>(e => { Console.Write("CT" + e.GetMembershipHashCode()); }
             );
