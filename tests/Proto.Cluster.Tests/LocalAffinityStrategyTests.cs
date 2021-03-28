@@ -85,16 +85,16 @@ namespace Proto.Cluster.Tests
         public class LocalAffinityClusterFixture : BaseInMemoryClusterFixture
         {
             public LocalAffinityClusterFixture() : base(3,
-                config => {
-                    return config.WithMemberStrategyBuilder((cluster, kind) => new LocalAffinityStrategy(cluster, 1100)
-                    );
-                }
+                config => config
             )
             {
             }
 
-            protected override (string, Props)[] ClusterKinds { get; } =
-                {(EchoActor.Kind, EchoActor.Props.WithPoisonOnRemoteTraffic(.5f).WithPidCacheInvalidation())};
+            protected override ClusterKind[] ClusterKinds { get; } =
+            {
+                new(EchoActor.Kind, EchoActor.Props.WithPoisonOnRemoteTraffic(.5f).WithPidCacheInvalidation())
+                    {StrategyBuilder = c => new LocalAffinityStrategy(c, 300)}
+            };
 
             protected override async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig> configure)
             {

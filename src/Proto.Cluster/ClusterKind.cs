@@ -3,15 +3,19 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Threading;
+using System;
+using JetBrains.Annotations;
 
 namespace Proto.Cluster
 {
+    [PublicAPI]
     public record ClusterKind(string Name, Props Props)
     {
-        private int _count;
+        public Func<Cluster, IMemberStrategy>? StrategyBuilder { get; init; }
 
-        public int Inc() => Interlocked.Increment(ref _count);
-        public int Dec() => Interlocked.Decrement(ref _count);
+        public ClusterKind WithMemberStrategy(Func<Cluster, IMemberStrategy> strategyBuilder)
+            => this with {StrategyBuilder = strategyBuilder};
+
+        internal ActivatedClusterKind Build(Cluster cluster) => new(Name, Props, StrategyBuilder?.Invoke(cluster));
     }
 }

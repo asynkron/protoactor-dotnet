@@ -13,6 +13,7 @@
   <ItemGroup>
     <PackageReference Include="Divergic.Logging.Xunit" Version="3.6.0" />
     <PackageReference Include="Grpc.Tools" Version="2.36.4" PrivateAssets="All" />
+    <PackageReference Include="IsExternalInit.System.Runtime.CompilerServices" Version="1.0.0" />
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="*.proto" />

@@ -34,7 +34,7 @@ namespace Proto.Cluster
             return cluster.RequestAsync<T>(identity, kind, message, context, ct);
         }
 
-        public static Props WithClusterInit(this Props props, Cluster cluster, ClusterIdentity clusterIdentity, ClusterKind clusterKind)
+        public static Props WithClusterInit(this Props props, Cluster cluster, ClusterIdentity clusterIdentity, ActivatedClusterKind activatedClusterKind)
         {
             return props.WithReceiverMiddleware(
                 baseReceive =>
@@ -57,7 +57,7 @@ namespace Proto.Cluster
                 await baseReceive(ctx, startEnvelope);
                 var grainInit = new ClusterInit(clusterIdentity, cluster);
                 var grainInitEnvelope = new MessageEnvelope(grainInit, null);
-                var count = clusterKind.Inc();
+                var count = activatedClusterKind.Inc();
                 cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
                     .Set(count,new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
                 await baseReceive(ctx, grainInitEnvelope);
@@ -69,7 +69,7 @@ namespace Proto.Cluster
                 MessageEnvelope startEnvelope
             )
             {
-                var count = clusterKind.Dec();
+                var count = activatedClusterKind.Dec();
                 cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
                     .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
                 await baseReceive(ctx, startEnvelope);
