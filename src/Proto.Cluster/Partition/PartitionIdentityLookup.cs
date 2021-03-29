@@ -70,23 +70,35 @@ namespace Proto.Cluster.Partition
                 return null;
             }
         }
-        
-        
+
+
         public void DumpState(ClusterIdentity clusterIdentity)
         {
             Console.WriteLine("Memberlist members:");
             _cluster.MemberList.DumpState();
-            
+
             Console.WriteLine("Partition manager selector:");
             _partitionManager.Selector.DumpState();
-            
+
             //Get address to node owning this ID
             var identityOwner = _partitionManager.Selector.GetIdentityOwner(clusterIdentity.Identity);
-            
+
             Console.WriteLine("Identity owner for ID:");
             Console.WriteLine(identityOwner);
+
+            var remotePid = PartitionManager.RemotePartitionIdentityActor(identityOwner);
+
+            var req = new ActivationRequest
+            {
+                ClusterIdentity = clusterIdentity
+            };
+
+            var resp = _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, CancellationTokens.WithTimeout(5000)).Result;
+
+            Console.WriteLine("Target Pid:");
+            Console.WriteLine(resp?.Pid);
         }
-        
+
         public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)
         {
             var activationTerminated = new ActivationTerminated
