@@ -155,9 +155,6 @@ namespace Proto.Cluster.Partition
 
         private async Task OnActivationRequest(ActivationRequest msg, IContext context)
         {
-            //only activate members when we are all in sync
-            await _cluster.MemberList.ConsensusAsync();
-            
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
 
             if (ownerAddress != _myAddress)
@@ -179,6 +176,9 @@ namespace Proto.Cluster.Partition
                 context.Respond(new ActivationResponse {Pid = pid});
                 return;
             }
+            
+            //only activate members when we are all in sync
+            await _cluster.MemberList.ConsensusAsync();
 
             //Get activator
             var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender.Address)?.Address;
