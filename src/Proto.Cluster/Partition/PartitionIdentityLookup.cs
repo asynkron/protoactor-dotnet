@@ -96,7 +96,19 @@ namespace Proto.Cluster.Partition
             var resp = _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, CancellationTokens.WithTimeout(5000)).Result;
 
             Console.WriteLine("Target Pid:");
-            Console.WriteLine(resp?.Pid);
+
+            if (resp == null)
+            {
+                Console.WriteLine("Null response");
+            }
+            else if (resp.Pid == null)
+            {
+                Console.WriteLine("Null PID");
+            }
+            else
+            {
+                Console.WriteLine(resp.Pid);
+            }
         }
 
         public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)

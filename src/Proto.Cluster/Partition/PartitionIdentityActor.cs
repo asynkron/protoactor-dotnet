@@ -127,6 +127,11 @@ namespace Proto.Cluster.Partition
 
         private Task OnActivationTerminated(ActivationTerminated msg, IContext context)
         {
+            if (_spawns.ContainsKey(msg.ClusterIdentity))
+            {
+                return Task.CompletedTask;
+            }
+            
             //we get this via broadcast to all nodes, remove if we have it, or ignore
             Logger.LogDebug("[PartitionIdentityActor] Terminated {Pid}", msg.Pid);
            // _cluster.PidCache.RemoveByVal(msg.ClusterIdentity,msg.Pid);
@@ -149,12 +154,6 @@ namespace Proto.Cluster.Partition
 
         private Task OnActivationRequest(ActivationRequest msg, IContext context)
         {
-            if (context.Sender is null)
-            {
-                Logger.LogCritical("NO SENDER IN GET OR SPAWN!!");
-                return Task.CompletedTask;
-            }
-
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
 
             if (ownerAddress != _myAddress)
@@ -169,6 +168,10 @@ namespace Proto.Cluster.Partition
             //Check if exist in current partition dictionary
             if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
             {
+                if (pid == null)
+                {
+                    Logger.LogError("Null PID for ClusterIdentity {ClusterIdentity}",msg.ClusterIdentity);
+                }
                 context.Respond(new ActivationResponse {Pid = pid});
                 return Task.CompletedTask;
             }
@@ -214,6 +217,7 @@ namespace Proto.Cluster.Partition
                     //This is necessary to avoid race condition during partition map transfer.
                     if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out pid))
                     {
+                        _spawns.Remove(msg.ClusterIdentity);
                         context.Respond(new ActivationResponse {Pid = pid});
                         return Task.CompletedTask;
                     }
@@ -221,14 +225,17 @@ namespace Proto.Cluster.Partition
                     //Check if process is faulted
                     if (rst.IsFaulted)
                     {
+                        _spawns.Remove(msg.ClusterIdentity);
                         context.Respond(response);
                         return Task.CompletedTask;
                     }
                     if (response == null)
                     {
-                        context.Respond(new ActivationResponse()
-                        {
-                        });
+                        _spawns.Remove(msg.ClusterIdentity);
+                        // context.Respond(new ActivationResponse()
+                        // {
+                        //     
+                        // });
                         //TODO what do we do in this case?
                         return Task.CompletedTask;
                     }
