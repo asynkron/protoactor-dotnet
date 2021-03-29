@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
+using Proto.Cluster;
+using Proto.Cluster.Partition;
 using Proto.Utils;
 
 namespace ClusterExperiment1
@@ -118,7 +120,6 @@ namespace ClusterExperiment1
         {
             var logger = Log.CreateLogger(nameof(Program));
             
-
             _ = SafeTask.Run(async () => {
                     await Task.Delay(5000);
 
@@ -129,13 +130,27 @@ namespace ClusterExperiment1
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, ActorCount);
-                        semaphore.Wait(() => {
-                                return cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                    CancellationTokens.WithTimeout(20*1000)
-                                ).ContinueWith(task => { Console.Write(task.Result is null ? "X" : "."); }
-                                );
-                            }
-                        );
+                        semaphore.Wait(() => SendRequest(cluster, id, logger));
+                    }
+                }
+            );
+        }
+
+        private static Task SendRequest(Cluster cluster, string id, ILogger logger)
+        {
+
+            return cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+                CancellationTokens.WithTimeout(20000)
+            ).ContinueWith(task => {
+                    if (task.Result is null)
+                    {
+                        logger.LogError("Null response {Id}", id);
+                        var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
+                        il.DumpState(ClusterIdentity.Create(id,"hello"));
+                    }
+                    else
+                    {
+                        Console.Write(".");
                     }
                 }
             );
@@ -160,9 +175,7 @@ namespace ClusterExperiment1
                             for (var i = 0; i < batchSize; i++)
                             {
                                 var id = "myactor" + rnd.Next(0, ActorCount);
-                                var request = cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                    CancellationTokens.WithTimeout(20*1000)
-                                );
+                                var request = SendRequest(cluster, id, logger);
 
                                 requests.Add(request);
                             }
@@ -192,22 +205,7 @@ namespace ClusterExperiment1
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, ActorCount);
-
-                        try
-                        {
-                            var res = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                CancellationTokens.WithTimeout(20*1000)
-                            );
-
-                            if (res is null)
-                                logger.LogError("Null response");
-                            else
-                                Console.Write(".");
-                        }
-                        catch (Exception x)
-                        {
-                            logger.LogError(x, "Request timeout for {Id}", id);
-                        }
+                        await SendRequest(cluster, id, logger);
                     }
                 }
             );

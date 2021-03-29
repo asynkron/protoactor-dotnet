@@ -91,7 +91,7 @@ namespace Proto.Cluster
         {
             InitClusterKinds();
             //default to partition identity lookup
-            IdentityLookup = Config.IdentityLookup ?? new PartitionIdentityLookup();
+            IdentityLookup = Config.IdentityLookup;
 
             Remote = System.Extensions.Get<IRemote>() ?? throw new NotSupportedException("Remote module must be configured when using cluster");
 

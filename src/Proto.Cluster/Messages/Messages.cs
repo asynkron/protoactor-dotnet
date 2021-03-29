@@ -14,6 +14,12 @@ namespace Proto.Cluster
     public sealed partial class ClusterIdentity : ICustomDiagnosticMessage
     {
         public string ToDiagnosticString() => $"{Kind}/{Identity}";
+
+        public static ClusterIdentity Create(string identity, string kind) => new()
+        {
+            Identity = identity,
+            Kind = kind
+        };
     }
 
     public sealed partial class ActivationRequest

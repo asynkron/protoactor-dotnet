@@ -267,5 +267,13 @@ namespace Proto.Cluster
         public bool TryGetMemberByIndex(int memberIndex, out Member value) => _membersByIndex.TryGetValue(memberIndex, out value);
 
         public Member[] GetAllMembers() => _members.Values.ToArray();
+
+        public void DumpState()
+        {
+            foreach (var m in _members)
+            {
+                Console.WriteLine(m);
+            }
+        }
     }
 }
