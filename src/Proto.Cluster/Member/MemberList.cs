@@ -90,54 +90,28 @@ namespace Proto.Cluster
 
         private void ElectLeader()
         {
-            try
-            {
-                var votes = new Dictionary<string, int>();
+            var leaderId =
+                _memberState
+                    .Values
+                    .Where(m => _memberState.ContainsKey(m.LeaderId))
+                    .GroupBy(m => m.LeaderId)
+                    .Select(g => (Id: g.Key, Score: g.Count()))
+                    .OrderByDescending(t => t.Score)
+                    .ThenBy(t => t.Id)
+                    .Select(t => t.Id)
+                    .FirstOrDefault() ?? _memberState.Values.OrderBy(m => m.MemberId).First().MemberId;
 
-                //score all existing leader ids
-                foreach (var m in _memberState.Values)
-                {
-                    //ignore any old non existent ids
-                    if (!_memberState.ContainsKey(m.LeaderId)) continue;
+            var newLeader = _members[leaderId];
 
-                    if (!votes.ContainsKey(m.LeaderId))
-                    {
-                        votes[m.LeaderId] = 0;
-                    }
-                        
-                    votes[m.LeaderId] += 1;
-                }
+            if (newLeader.Equals(_leader)) return;
 
-                //deterministic outcome, all nodes will see the same result
-                var leaderId = votes
-                    .OrderByDescending(kvp => kvp.Value)
-                    .ThenBy(kvp => kvp.Key)
-                    .Select(kvp => kvp.Key)
-                    .FirstOrDefault();
+            _leader = newLeader;
 
-
-                //if nothing of value from the previous step, just order member ids and pick the first
-                leaderId ??= _memberState.Values.OrderBy(m => m.MemberId).First().MemberId;
-
-                var newLeader = _members[leaderId];
-
-                if (newLeader.Equals(_leader)) return;
-
-                _leader = newLeader;
-
-                if (_leader.Id == _system.Id)
-                {
-                    Logger.LogInformation("[MemberList] I am leader {Id}",_leader.Id);
-                }
-                else
-                {
-                    Logger.LogInformation("[MemberList] Member {Id} is leader",_leader.Id);
-                }
-            }
-            catch (Exception x)
-            {
-                Console.WriteLine(x);
-            }
+            Logger.LogInformation(
+                _leader.Id == _system.Id
+                    ? "[MemberList] I am leader {Id}"
+                    : "[MemberList] Member {Id} is leader", _leader.Id
+            );
         }
 
         public Member? GetActivator(string kind, string requestSourceAddress)
