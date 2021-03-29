@@ -34,7 +34,7 @@ namespace Proto.Cluster
         private readonly ActorSystem _system;
         private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
         private ImmutableDictionary<string, uint> _memberHashCodes = ImmutableDictionary<string, uint>.Empty;
-        private TaskCompletionSource<bool> _consensus = new ();
+        private TaskCompletionSource<bool> _topologyConsensus = new ();
 
         private LeaderInfo? _leader;
 
@@ -59,7 +59,7 @@ namespace Proto.Cluster
             
         }
 
-        public Task ConsensusAsync() => _consensus.Task;
+        public Task TopologyConsensus() => _topologyConsensus.Task;
 
         private void OnClusterTopologyNotification(ClusterTopologyNotification ctn)
         {
@@ -71,17 +71,17 @@ namespace Proto.Cluster
                 
                 var everyoneInAgreement = _memberHashCodes.Values.All(x => x == _currentMembershipHashCode);
 
-                if (everyoneInAgreement && !_consensus.Task.IsCompleted)
+                if (everyoneInAgreement && !_topologyConsensus.Task.IsCompleted)
                 {
                     //anyone awaiting this instance will now proceed
                     Logger.LogInformation("[MemberList] Topology consensus");
-                    _consensus.TrySetResult(true);
+                    _topologyConsensus.TrySetResult(true);
                 }
-                else if (!everyoneInAgreement && _consensus.Task.IsCompleted)
+                else if (!everyoneInAgreement && _topologyConsensus.Task.IsCompleted)
                 {
                     //we toggled from consensus to not consensus.
                     //create a new completion source for new awaiters to await
-                    _consensus = new TaskCompletionSource<bool>();
+                    _topologyConsensus = new TaskCompletionSource<bool>();
                 }
 
                 Logger.LogDebug("[MemberList] Got ClusterTopologyNotification {ClusterTopologyNotification}, Consensus {Consensus}, Members {Members}", ctn, everyoneInAgreement,_memberHashCodes.Count);
