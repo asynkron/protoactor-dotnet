@@ -117,7 +117,7 @@ namespace Proto.Cluster
 
 
                 //if nothing of value from the previous step, just order member ids and pick the first
-                leaderId ??= _members.Values.OrderBy(m => m.Id).First().Id;
+                leaderId ??= _memberState.Values.OrderBy(m => m.MemberId).First().MemberId;
 
                 var newLeader = _members[leaderId];
 
