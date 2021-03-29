@@ -18,7 +18,7 @@ namespace Proto.Cluster.Partition
         private PartitionManager _partitionManager = null!;
         private readonly TimeSpan _identityHandoverTimeout;
 
-        public PartitionIdentityLookup() : this(TimeSpan.FromMilliseconds(3))
+        public PartitionIdentityLookup() : this(TimeSpan.FromSeconds(3))
         {
         }
         
@@ -29,6 +29,7 @@ namespace Proto.Cluster.Partition
 
         public async Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
         {
+            ct = CancellationTokens.WithTimeout(1000);
             //Get address to node owning this ID
             var identityOwner = _partitionManager.Selector.GetIdentityOwner(clusterIdentity.Identity);
             _logger.LogDebug("Identity belongs to {address}", identityOwner);
