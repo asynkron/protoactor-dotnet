@@ -42,7 +42,7 @@ namespace Proto.Cluster
         public TimeSpan RequestLogThrottlePeriod { get; init; }
         public int MaxNumberOfEventsInRequestLogThrottlePeriod { get; init; }
 
-        public IIdentityLookup? IdentityLookup { get; }
+        public IIdentityLookup IdentityLookup { get; }
         public TimeSpan HeartBeatInterval { get; init; }
 
         public bool ClusterRequestDeDuplication { get; init; }

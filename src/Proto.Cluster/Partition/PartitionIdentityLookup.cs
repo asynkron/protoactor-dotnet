@@ -69,6 +69,22 @@ namespace Proto.Cluster.Partition
             }
         }
         
+        
+        public void DumpState(ClusterIdentity clusterIdentity)
+        {
+            Console.WriteLine("Memberlist members:");
+            _cluster.MemberList.DumpState();
+            
+            Console.WriteLine("Partition manager selector:");
+            _partitionManager.Selector.DumpState();
+            
+            //Get address to node owning this ID
+            var identityOwner = _partitionManager.Selector.GetIdentityOwner(clusterIdentity.Identity);
+            
+            Console.WriteLine("Identity owner for ID:");
+            Console.WriteLine(identityOwner);
+        }
+        
         public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)
         {
             var activationTerminated = new ActivationTerminated

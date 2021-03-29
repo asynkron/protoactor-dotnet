@@ -21,5 +21,10 @@ namespace Proto.Cluster.Partition
         {
             lock (_lock) return _rdv.GetOwnerMemberByIdentity(key);
         }
+
+        public void DumpState()
+        {
+            lock (_lock) _rdv.Debug();
+        }
     }
 }
