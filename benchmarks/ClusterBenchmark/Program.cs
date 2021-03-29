@@ -132,7 +132,16 @@ namespace ClusterExperiment1
                         semaphore.Wait(() => {
                                 return cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                                     CancellationTokens.WithTimeout(20000)
-                                ).ContinueWith(task => { Console.Write(task.Result is null ? "X" : "."); }
+                                ).ContinueWith(task => {
+                                        if (task.Result is null)
+                                        {
+                                            logger.LogError("Null response {Id}" , id);
+                                        }
+                                        else
+                                        {
+                                            Console.Write(".");
+                                        }
+                                    }
                                 );
                             }
                         );
@@ -200,7 +209,7 @@ namespace ClusterExperiment1
                             );
 
                             if (res is null)
-                                logger.LogError("Null response");
+                                logger.LogError("Null response {Id}" , id);
                             else
                                 Console.Write(".");
                         }
