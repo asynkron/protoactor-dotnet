@@ -82,6 +82,7 @@ message HeartbeatResponse {
 message ClusterTopologyNotification {
   string member_id = 1;
   uint32 membership_hash_code = 2;
+  string leader_id = 3;
 }
 
 message GracefulShutdown {

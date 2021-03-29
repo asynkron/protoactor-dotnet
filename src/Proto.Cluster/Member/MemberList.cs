@@ -20,8 +20,6 @@ namespace Proto.Cluster
     //This class is responsible for figuring out what members are currently active in the cluster
     //it will receive a list of Members from the IClusterProvider
     //from that, we calculate a delta, which members joined, or left.
-
-    //TODO: check usage and threadsafety.
     [PublicAPI]
     public record MemberList
     {
@@ -33,10 +31,10 @@ namespace Proto.Cluster
         private readonly IRootContext _root;
         private readonly ActorSystem _system;
         private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
-        private ImmutableDictionary<string, uint> _memberHashCodes = ImmutableDictionary<string, uint>.Empty;
+        private ImmutableDictionary<string, ClusterTopologyNotification> _memberState = ImmutableDictionary<string, ClusterTopologyNotification>.Empty;
         private TaskCompletionSource<bool> _topologyConsensus = new ();
 
-        private LeaderInfo? _leader;
+        private Member? _leader;
 
         //TODO: the members here are only from the cluster provider
         //The partition lookup broadcasts and use broadcasted information
@@ -56,7 +54,6 @@ namespace Proto.Cluster
             _root = _system.Root;
             _eventStream = _system.EventStream;
             _cluster.System.EventStream.Subscribe<ClusterTopologyNotification>(OnClusterTopologyNotification);
-            
         }
 
         public Task TopologyConsensus() => _topologyConsensus.Task;
@@ -65,17 +62,18 @@ namespace Proto.Cluster
         {
             lock (this)
             {
-                _memberHashCodes = _memberHashCodes.SetItem(ctn.MemberId, ctn.MembershipHashCode);
-                var excludeBannedMembers = _memberHashCodes.Keys.Where(k => _bannedMembers.Contains(k));
-                _memberHashCodes = _memberHashCodes.RemoveRange(excludeBannedMembers);
+                _memberState = _memberState.SetItem(ctn.MemberId, ctn);
+                var excludeBannedMembers = _memberState.Keys.Where(k => _bannedMembers.Contains(k));
+                _memberState = _memberState.RemoveRange(excludeBannedMembers);
                 
-                var everyoneInAgreement = _memberHashCodes.Values.All(x => x == _currentMembershipHashCode);
+                var everyoneInAgreement = _memberState.Values.All(x => x.MembershipHashCode == _currentMembershipHashCode);
 
                 if (everyoneInAgreement && !_topologyConsensus.Task.IsCompleted)
                 {
                     //anyone awaiting this instance will now proceed
                     Logger.LogInformation("[MemberList] Topology consensus");
                     _topologyConsensus.TrySetResult(true);
+                    ElectLeader();
                 }
                 else if (!everyoneInAgreement && _topologyConsensus.Task.IsCompleted)
                 {
@@ -83,8 +81,62 @@ namespace Proto.Cluster
                     //create a new completion source for new awaiters to await
                     _topologyConsensus = new TaskCompletionSource<bool>();
                 }
+                
+                
 
-                Logger.LogDebug("[MemberList] Got ClusterTopologyNotification {ClusterTopologyNotification}, Consensus {Consensus}, Members {Members}", ctn, everyoneInAgreement,_memberHashCodes.Count);
+                Logger.LogDebug("[MemberList] Got ClusterTopologyNotification {ClusterTopologyNotification}, Consensus {Consensus}, Members {Members}", ctn, everyoneInAgreement,_memberState.Count);
+            }
+        }
+
+        private void ElectLeader()
+        {
+            try
+            {
+                var votes = new Dictionary<string, int>();
+
+                //score all existing leader ids
+                foreach (var m in _memberState.Values)
+                {
+                    //ignore any old non existent ids
+                    if (!_memberState.ContainsKey(m.LeaderId)) continue;
+
+                    if (!votes.ContainsKey(m.LeaderId))
+                    {
+                        votes[m.LeaderId] = 0;
+                    }
+                        
+                    votes[m.LeaderId] += 1;
+                }
+
+                //deterministic outcome, all nodes will see the same result
+                var leaderId = votes
+                    .OrderByDescending(kvp => kvp.Value)
+                    .ThenBy(kvp => kvp.Key)
+                    .Select(kvp => kvp.Key)
+                    .FirstOrDefault();
+
+
+                //if nothing of value from the previous step, just order member ids and pick the first
+                leaderId ??= _members.Values.OrderBy(m => m.Id).First().Id;
+
+                var newLeader = _members[leaderId];
+
+                if (newLeader.Equals(_leader)) return;
+
+                _leader = newLeader;
+
+                if (_leader.Id == _system.Id)
+                {
+                    Logger.LogInformation("[MemberList] I am leader {Id}",_leader.Id);
+                }
+                else
+                {
+                    Logger.LogInformation("[MemberList] Member {Id} is leader",_leader.Id);
+                }
+            }
+            catch (Exception x)
+            {
+                Console.WriteLine(x);
             }
         }
 
@@ -186,11 +238,24 @@ namespace Proto.Cluster
 
                 _eventStream.Publish(topology);
 
+                foreach (var m in topology.Members)
+                {
+                    //add any missing member to the hashcode dict
+                    if (!_memberState.ContainsKey(m.Id))
+                    {
+                        _memberState = _memberState.Add(m.Id,new ClusterTopologyNotification()
+                        {
+                            MemberId = m.Id
+                        });
+                    }
+                }
+
                 //Notify other members...
                 BroadcastEvent(new ClusterTopologyNotification
                     {
                         MemberId = _cluster.System.Id,
-                        MembershipHashCode = _currentMembershipHashCode
+                        MembershipHashCode = _currentMembershipHashCode,
+                        LeaderId = _leader == null? "": _leader.Id,
                     }, true
                 );
             }
