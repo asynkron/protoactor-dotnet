@@ -47,27 +47,24 @@ namespace Proto.Cluster.Partition
 
             try
             {
-                var resp = ct == CancellationToken.None
-                    ? await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req,
-                        _cluster.Config!.TimeoutTimespan
-                    )
-                    : await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
+                var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
 
                 return resp.Pid;
             }
             //TODO: decide if we throw or return null
             catch (DeadLetterException)
             {
+                _logger.LogError("Remote PID request deadletter {@Request}, identity Owner {Owner}", req,identityOwner);
                 return null;
             }
             catch (TimeoutException)
             {
-                _logger.LogDebug("Remote PID request timeout {@Request}", req);
+                _logger.LogError("Remote PID request timeout {@Request}, identity Owner {Owner}", req,identityOwner);
                 return null;
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error occured requesting remote PID {@Request}", req);
+                _logger.LogError(e, "Error occured requesting remote PID {@Request}, identity Owner {Owner}", req,identityOwner);
                 return null;
             }
         }

@@ -46,8 +46,6 @@ namespace Proto.Cluster
             var future = new FutureProcess(context.System, ct);
             PID? lastPid = null;
 
-            var pids = new List<PID>();
-
             while (!ct.IsCancellationRequested)
             {
                 if (context.System.Shutdown.IsCancellationRequested) return default;
@@ -65,7 +63,6 @@ namespace Proto.Cluster
                     await Task.Delay(delay, CancellationToken.None);
                     continue;
                 }
-                pids.Add(pid);
 
                 // Ensures that a future is not re-used against another actor.
                 if (lastPid is not null && !pid.Equals(lastPid)) RefreshFuture();
@@ -101,8 +98,7 @@ namespace Proto.Cluster
             if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
             {
                 var t = DateTime.UtcNow - start;
-                var p = string.Join(",", pids.Select(p => p.ToString()));
-                _logger.LogError("RequestAsync retried but failed for {ClusterIdentity}, elapsed {Time}, {Pids}", clusterIdentity,t,p);
+                _logger.LogError("RequestAsync retried but failed for {ClusterIdentity}, elapsed {Time}, {Pids}", clusterIdentity,t);
             }
 
             return default!;
