@@ -17,19 +17,21 @@ namespace Proto.Cluster.Partition
         private ILogger _logger = null!;
         private PartitionManager _partitionManager = null!;
         private readonly TimeSpan _identityHandoverTimeout;
+        private readonly TimeSpan _getPidTimeout;
 
-        public PartitionIdentityLookup() : this(TimeSpan.FromSeconds(3))
+        public PartitionIdentityLookup() : this(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(1))
         {
         }
         
-        public PartitionIdentityLookup(TimeSpan identityHandoverTimeout)
+        public PartitionIdentityLookup(TimeSpan identityHandoverTimeout, TimeSpan getPidTimeout)
         {
             _identityHandoverTimeout = identityHandoverTimeout;
+            _getPidTimeout = getPidTimeout;
         }
 
         public async Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
         {
-            ct = CancellationTokens.WithTimeout(1000);
+            ct = CancellationTokens.WithTimeout(_getPidTimeout);
             //Get address to node owning this ID
             var identityOwner = _partitionManager.Selector.GetIdentityOwner(clusterIdentity.Identity);
             _logger.LogDebug("Identity belongs to {address}", identityOwner);
