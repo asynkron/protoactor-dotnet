@@ -98,7 +98,7 @@ namespace Proto.Cluster
             if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
             {
                 var t = DateTime.UtcNow - start;
-                _logger.LogError("RequestAsync retried but failed for {ClusterIdentity}, elapsed {Time}, {Pids}", clusterIdentity,t);
+                _logger.LogWarning("RequestAsync retried but failed for {ClusterIdentity}, elapsed {Time}", clusterIdentity,t);
             }
 
             return default!;
