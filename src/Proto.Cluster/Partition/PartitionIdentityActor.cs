@@ -63,6 +63,7 @@ namespace Proto.Cluster.Partition
 
         private async Task OnClusterTopology(ClusterTopology msg, IContext context)
         {
+            await _cluster.MemberList.ConsensusAsync();
             if (_eventId == msg.EventId) return;
 
             _eventId = msg.EventId;

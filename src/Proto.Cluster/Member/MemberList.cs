@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Data;
@@ -25,12 +27,14 @@ namespace Proto.Cluster
     {
         private readonly Cluster _cluster;
         private readonly EventStream _eventStream;
-        private readonly ILogger _logger;
+        private static readonly ILogger Logger = Log.CreateLogger<MemberList>();
         private uint _currentMembershipHashCode = uint.MinValue;
 
         private readonly IRootContext _root;
         private readonly ActorSystem _system;
         private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
+        private ImmutableDictionary<string, uint> _memberHashCodes = ImmutableDictionary<string, uint>.Empty;
+        private TaskCompletionSource<bool> _consensus = new ();
 
         private LeaderInfo? _leader;
 
@@ -51,13 +55,37 @@ namespace Proto.Cluster
             _system = _cluster.System;
             _root = _system.Root;
             _eventStream = _system.EventStream;
-            _logger = Log.CreateLogger($"MemberList-{_cluster.LoggerId}");
             _cluster.System.EventStream.Subscribe<ClusterTopologyNotification>(OnClusterTopologyNotification);
+            
         }
+
+        public Task ConsensusAsync() => _consensus.Task;
 
         private void OnClusterTopologyNotification(ClusterTopologyNotification ctn)
         {
-            _logger.LogDebug("[MemberList] Got ClusterTopologyNotification {ClusterTopologyNotification}", ctn);
+            lock (this)
+            {
+                _memberHashCodes = _memberHashCodes.SetItem(ctn.MemberId, ctn.MembershipHashCode);
+                var excludeBannedMembers = _memberHashCodes.Keys.Where(k => _bannedMembers.Contains(k));
+                _memberHashCodes = _memberHashCodes.RemoveRange(excludeBannedMembers);
+                
+                var everyoneInAgreement = _memberHashCodes.Values.All(x => x == _currentMembershipHashCode);
+
+                if (everyoneInAgreement && !_consensus.Task.IsCompleted)
+                {
+                    //anyone awaiting this instance will now proceed
+                    Logger.LogInformation("[MemberList] Topology consensus");
+                    _consensus.TrySetResult(true);
+                }
+                else if (!everyoneInAgreement && _consensus.Task.IsCompleted)
+                {
+                    //we toggled from consensus to not consensus.
+                    //create a new completion source for new awaiters to await
+                    _consensus = new TaskCompletionSource<bool>();
+                }
+
+                Logger.LogDebug("[MemberList] Got ClusterTopologyNotification {ClusterTopologyNotification}, Consensus {Consensus}, Members {Members}", ctn, everyoneInAgreement,_memberHashCodes.Count);
+            }
         }
 
         public Member? GetActivator(string kind, string requestSourceAddress)
@@ -67,17 +95,16 @@ namespace Proto.Cluster
                 if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
                     return memberStrategy.GetActivator(requestSourceAddress);
 
-                _logger.LogError("MemberList did not find any activator for kind '{Kind}'", kind);
+                Logger.LogError("[MemberList] MemberList did not find any activator for kind '{Kind}'", kind);
                 return null;
             }
         }
 
         public void UpdateClusterTopology(IReadOnlyCollection<Member> statuses)
         {
-
             lock (this)
             {
-                _logger.LogDebug("Updating Cluster Topology");
+                Logger.LogDebug("[MemberList] Updating Cluster Topology");
                 var topology = new ClusterTopology {EventId = Member.GetMembershipHashCode(statuses)};
 
                 //TLDR:
@@ -151,11 +178,11 @@ namespace Proto.Cluster
 
                 topology.Members.AddRange(_members.Values);
 
-                _logger.LogDebug("Published ClusterTopology event {ClusterTopology}", topology);
+                Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
 
-                if (topology.Joined.Count > 0) _logger.LogInformation("Cluster members joined {MembersJoined}", topology.Joined);
+                if (topology.Joined.Count > 0) Logger.LogInformation("[MemberList] Cluster members joined {MembersJoined}", topology.Joined);
 
-                if (topology.Left.Count > 0) _logger.LogInformation("Cluster members left {MembersJoined}", topology.Left);
+                if (topology.Left.Count > 0) Logger.LogInformation("[MemberList] Cluster members left {MembersJoined}", topology.Left);
 
                 _eventStream.Publish(topology);
 
@@ -164,7 +191,7 @@ namespace Proto.Cluster
                     {
                         MemberId = _cluster.System.Id,
                         MembershipHashCode = _currentMembershipHashCode
-                    }, false
+                    }, true
                 );
             }
 
@@ -193,7 +220,7 @@ namespace Proto.Cluster
                     _indexByAddress = _indexByAddress.Remove(memberThatLeft.Address);
 
                 var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
-                _logger.LogDebug("Published event {@EndpointTerminated}", endpointTerminated);
+                Logger.LogDebug("[MemberList] Published event {@EndpointTerminated}", endpointTerminated);
                 _cluster.System.EventStream.Publish(endpointTerminated);
             }
 
@@ -241,7 +268,7 @@ namespace Proto.Cluster
         /// <param name="includeSelf"></param>
         public void BroadcastEvent(object message, bool includeSelf = true)
         {
-            foreach (var (id, member) in _members.ToArray())
+            foreach (var (id, member) in _members)
             {
                 if (!includeSelf && id == _cluster.System.Id) continue;
 
@@ -253,7 +280,7 @@ namespace Proto.Cluster
                 }
                 catch (Exception)
                 {
-                    _logger.LogError("Failed to broadcast {Message} to {Pid}", message, pid);
+                    Logger.LogError("[MemberList] Failed to broadcast {Message} to {Pid}", message, pid);
                 }
             }
         }
