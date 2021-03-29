@@ -54,12 +54,12 @@ namespace Proto.Cluster.Partition
             //TODO: decide if we throw or return null
             catch (DeadLetterException)
             {
-                _logger.LogError("Remote PID request deadletter {@Request}, identity Owner {Owner}", req,identityOwner);
+                _logger.LogInformation("Remote PID request deadletter {@Request}, identity Owner {Owner}", req,identityOwner);
                 return null;
             }
             catch (TimeoutException)
             {
-                _logger.LogError("Remote PID request timeout {@Request}, identity Owner {Owner}", req,identityOwner);
+                _logger.LogInformation("Remote PID request timeout {@Request}, identity Owner {Owner}", req,identityOwner);
                 return null;
             }
             catch (Exception e)

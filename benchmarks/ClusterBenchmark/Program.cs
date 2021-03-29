@@ -131,7 +131,7 @@ namespace ClusterExperiment1
                         var id = "myactor" + rnd.Next(0, ActorCount);
                         semaphore.Wait(() => {
                                 return cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                    CancellationTokens.WithTimeout(5000)
+                                    CancellationTokens.WithTimeout(20000)
                                 ).ContinueWith(task => { Console.Write(task.Result is null ? "X" : "."); }
                                 );
                             }
@@ -161,7 +161,7 @@ namespace ClusterExperiment1
                             {
                                 var id = "myactor" + rnd.Next(0, ActorCount);
                                 var request = cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
-                                    CancellationTokens.WithTimeout(20*1000)
+                                    CancellationTokens.WithTimeout(20000)
                                 );
 
                                 requests.Add(request);
