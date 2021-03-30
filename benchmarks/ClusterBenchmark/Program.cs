@@ -19,7 +19,7 @@ namespace ClusterExperiment1
 {
     public static class Program
     {
-        public static bool InteractiveOutput = true;
+        public static bool InteractiveOutput = false;
         private static TaskCompletionSource<bool> _ts;
         private static int ActorCount;
         private static int MemberCount;
