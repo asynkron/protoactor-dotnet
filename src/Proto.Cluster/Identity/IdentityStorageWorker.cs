@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -102,7 +101,7 @@ namespace Proto.Cluster.Identity
             }
         }
 
-        private async Task<PID?> GetWithGlobalLock(PID sender, ClusterIdentity clusterIdentity)
+        private Task<PID?> GetWithGlobalLock(PID sender, ClusterIdentity clusterIdentity)
         {
             async Task<PID?> Inner()
             {
@@ -164,15 +163,9 @@ namespace Proto.Cluster.Identity
                 return result;
             }
 
-            if (_cluster.System.Metrics.IsNoop) return await Inner();
-
-            var sw = Stopwatch.StartNew();
-            var res = await Inner();
-            sw.Stop();
-            Metrics
+            return Metrics
                 .GetWithGlobalLockHistogram
-                .Observe(sw, new[] {_cluster.System.Id, _cluster.System.Address, clusterIdentity.Kind});
-            return res;
+                .Observe(Inner, _cluster.System.Id, _cluster.System.Address, clusterIdentity.Kind);
         }
 
         private Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity)
