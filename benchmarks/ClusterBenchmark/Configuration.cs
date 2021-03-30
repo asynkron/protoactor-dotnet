@@ -105,6 +105,8 @@ namespace ClusterExperiment1
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
                 .WithDeadLetterRequestLogging(false)
             );
+            system.EventStream.Subscribe<ClusterTopology>(e => { Console.WriteLine("ClusterTopology:" + e.GetMembershipHashCode()); });
+            system.EventStream.Subscribe<LeaderElected>(e => { Console.WriteLine("Leader:" + e.Leader.Id); });
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
             var helloProps = Props.FromProducer(() => new WorkerActor());
@@ -123,8 +125,8 @@ namespace ClusterExperiment1
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
                 .WithDeadLetterRequestLogging(false)
             );
-            system.EventStream.Subscribe<ClusterTopology>(e => { Console.Write("CT" + e.GetMembershipHashCode()); }
-            );
+            system.EventStream.Subscribe<ClusterTopology>(e => { Console.WriteLine("ClusterTopology:" + e.GetMembershipHashCode()); });
+            system.EventStream.Subscribe<LeaderElected>(e => { Console.WriteLine("Leader:" + e.Leader.Id); });
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
             var (clusterConfig, remoteConfig) = GetClusterConfig(clusterProvider, identity);

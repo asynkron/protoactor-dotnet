@@ -20,7 +20,8 @@ namespace ClusterExperiment1
             {
                 case Started _:
                     //just to highlight when this happens
-                    Console.Write("#");
+                    if (Program.InteractiveOutput)
+                        Console.Write("#");
                     break;
                 case HelloRequest _:
                     ctx.Respond(new HelloResponse());
@@ -29,7 +30,8 @@ namespace ClusterExperiment1
 
             if (_rnd.Next(0, 1000) == 0)
             {
-                Console.Write("+");
+                if (Program.InteractiveOutput)
+                    Console.Write("+");
                 ctx.Stop(ctx.Self);
             }
 

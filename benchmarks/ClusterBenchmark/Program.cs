@@ -18,15 +18,16 @@ namespace ClusterExperiment1
 {
     public static class Program
     {
+        public static bool InteractiveOutput;
         private static TaskCompletionSource<bool> _ts;
         private static int ActorCount;
 
+        private static int RequestCount;
+        private static int FailureCount;
+        private static int SuccessCount;
         public static async Task Main(string[] args)
         {
             ThreadPool.SetMinThreads(500, 500);
-
-            
-
             if (args.Length > 0)
             {
                 var worker = await Configuration.SpawnMember();
@@ -49,6 +50,11 @@ namespace ClusterExperiment1
             Console.WriteLine("+ = (deliberate) deactivation of virtual actor");
             Console.WriteLine("X = NULL response, e.g. requests retried but got no response");
             Console.WriteLine();
+            Console.WriteLine("1) Run with interactive output");
+            Console.WriteLine("2) Run with interactive output");
+
+            var res0 = Console.ReadLine();
+            InteractiveOutput = res0 == "1";
 
             Console.WriteLine("1) Run single process - graceful exit");
             Console.WriteLine("2) Run single process");
@@ -114,6 +120,10 @@ namespace ClusterExperiment1
             }
 
             await _ts.Task;
+            Console.WriteLine();
+            Console.WriteLine($"Requests:\t{RequestCount:N0}");
+            Console.WriteLine($"Successful:\t{SuccessCount:N0}");
+            Console.WriteLine($"Failures:\t{FailureCount:N0}");
         }
 
         private static void RunFireForgetClient()
@@ -138,19 +148,25 @@ namespace ClusterExperiment1
 
         private static Task SendRequest(Cluster cluster, string id, ILogger logger)
         {
+            Interlocked.Increment(ref RequestCount);
 
             return cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                 CancellationTokens.WithTimeout(20000)
             ).ContinueWith(task => {
                     if (task.Result is null)
                     {
+                        Interlocked.Increment(ref FailureCount);
+                        
                         logger.LogError("Null response {Id}", id);
                         var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
-                        il.DumpState(ClusterIdentity.Create(id,"hello"));
+
+                        il?.DumpState(ClusterIdentity.Create(id, "hello"));
                     }
                     else
                     {
-                        Console.Write(".");
+                        Interlocked.Increment(ref SuccessCount);
+                        if (InteractiveOutput)
+                            Console.Write(".");
                     }
                 }
             );
@@ -181,7 +197,6 @@ namespace ClusterExperiment1
                             }
 
                             await Task.WhenAll(requests);
-                            Console.Write(".");
                         }
                         catch (Exception x)
                         {
