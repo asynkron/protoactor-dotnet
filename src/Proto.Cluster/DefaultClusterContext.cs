@@ -102,6 +102,7 @@ namespace Proto.Cluster
             }
 
             return default!;
+            
 
             void RefreshFuture()
             {
@@ -123,11 +124,22 @@ namespace Proto.Cluster
             {
                 if (_pidCache.TryGet(clusterIdentity, out var cachedPid)) return (cachedPid, PidSource.Cache);
 
-                var pid = await context.System.Metrics.Get<ClusterMetrics>().ClusterResolvePidHistogram
-                    .Observe(async () => await _identityLookup.GetAsync(clusterIdentity, ct), context.System.Id, context.System.Address, clusterIdentity.Kind);
+                if (!context.System.Metrics.IsNoop)
+                {
+                    var pid = await context.System.Metrics.Get<ClusterMetrics>().ClusterResolvePidHistogram
+                        .Observe(async () => await _identityLookup.GetAsync(clusterIdentity, ct), context.System.Id, context.System.Address,
+                            clusterIdentity.Kind
+                        );
 
-                if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
-                return (pid, PidSource.Lookup);
+                    if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
+                    return (pid, PidSource.Lookup);
+                }
+                else
+                {
+                    var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
+                    if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
+                    return (pid, PidSource.Lookup);
+                }
             }
             catch (Exception e)
             {
@@ -153,9 +165,10 @@ namespace Proto.Cluster
                 try
                 {
                     if (future.Task.IsCompleted) return ToResult<T>(source, context, future.Task.Result);
+
                     context.Send(pid, new MessageEnvelope(message, future.Pid));
                     await Task.WhenAny(future.Task, Task.Delay(_config.ActorRequestTimeout));
-                    
+
                     if (future.Task.IsCompleted)
                     {
                         var res = future.Task.Result;
@@ -181,11 +194,18 @@ namespace Proto.Cluster
                     return (ResponseStatus.Exception, default)!;
                 }
             }
-            
-            return context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram
-                .Observe(Inner, context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name, source == PidSource.Cache ? "PidCache" : "IIdentityLookup"
-                );
+
+            if (!context.System.Metrics.IsNoop)
+            {
+                return context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram
+                    .Observe(Inner, context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name,
+                        source == PidSource.Cache ? "PidCache" : "IIdentityLookup"
+                    );
+            }
+
+            return Inner();
         }
+    
 
         private (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
         {

@@ -4,8 +4,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.IO.Compression;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
+using Grpc.Net.Client;
+using Grpc.Net.Compression;
 using k8s;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
@@ -19,6 +22,7 @@ using Proto.Cluster.Kubernetes;
 using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
+using Proto.Remote.GrpcNet;
 using Serilog;
 using Serilog.Events;
 using StackExchange.Redis;
@@ -28,10 +32,29 @@ namespace ClusterExperiment1
 {
     public static class Configuration
     {
-        private static (ClusterConfig, GrpcCoreRemoteConfig) GetClusterConfig(
+        private static ClusterConfig GetClusterConfig(
             IClusterProvider clusterProvider,
             IIdentityLookup identityLookup
         )
+        {
+            var helloProps = Props.FromProducer(() => new WorkerActor());
+            return ClusterConfig
+                .Setup("mycluster", clusterProvider, identityLookup);
+            //.WithClusterKind("hello", helloProps);
+        }
+        
+        private static ClusterConfig GetClientClusterConfig(
+            IClusterProvider clusterProvider,
+            IIdentityLookup identityLookup
+        )
+        {
+            var helloProps = Props.FromProducer(() => new WorkerActor());
+            return ClusterConfig
+                .Setup("mycluster", clusterProvider, identityLookup)
+                .WithClusterKind("hello", helloProps);
+        }
+
+        private static GrpcCoreRemoteConfig GetRemoteConfig()
         {
             var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfigBase.AnyFreePort}";
             var port = int.Parse(portStr);
@@ -42,11 +65,9 @@ namespace ClusterExperiment1
                 .BindTo(host, port)
                 .WithAdvertisedHost(advertisedHost)
                 .WithProtoMessages(MessagesReflection.Descriptor)
+                
                 .WithEndpointWriterMaxRetries(2);
-
-            var clusterConfig = ClusterConfig
-                .Setup("mycluster", clusterProvider, identityLookup);
-            return (clusterConfig, remoteConfig);
+            return remoteConfig;
         }
 
         private static IClusterProvider ClusterProvider()
@@ -64,7 +85,7 @@ namespace ClusterExperiment1
             }
         }
 
-        public static IIdentityLookup GetIdentityLookup() => GetRedisIdentityLookup();//  new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
+        public static IIdentityLookup GetIdentityLookup() =>  new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
 
         private static IIdentityLookup GetRedisIdentityLookup()
         {
@@ -117,14 +138,10 @@ namespace ClusterExperiment1
             });
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
-            var helloProps = Props.FromProducer(() => new WorkerActor());
-            var (clusterConfig, remoteConfig) = GetClusterConfig(clusterProvider, identity);
-            clusterConfig = clusterConfig.WithClusterKind("hello", helloProps);
-            var remote = new GrpcCoreRemote(system, remoteConfig);
-            var cluster = new Cluster(system, clusterConfig);
-
-            await cluster.StartMemberAsync();
-            return cluster;
+            
+            system.WithRemote(GetRemoteConfig()).WithCluster(GetClusterConfig(clusterProvider,identity));
+            await system.Cluster().StartMemberAsync();
+            return system.Cluster();
         }
 
         public static async Task<Cluster> SpawnClient()
@@ -133,15 +150,22 @@ namespace ClusterExperiment1
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
                 .WithDeadLetterRequestLogging(false)
             );
-            // system.EventStream.Subscribe<ClusterTopology>(e => { Console.WriteLine("ClusterTopology:" + e.GetMembershipHashCode()); });
-            // system.EventStream.Subscribe<LeaderElected>(e => { Console.WriteLine("Leader:" + e.Leader.Id); });
+            system.EventStream.Subscribe<ClusterTopology>(e => {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"{system.Id}-ClusterTopology:{e.GetMembershipHashCode()}");
+                Console.ResetColor();
+            });
+            system.EventStream.Subscribe<LeaderElected>(e => {
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine($"{system.Id}-Leader:{e.Leader.Id}");
+                Console.ResetColor();
+            });
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
-            var (clusterConfig, remoteConfig) = GetClusterConfig(clusterProvider, identity);
-            var remote = new GrpcCoreRemote(system, remoteConfig);
-            var cluster = new Cluster(system, clusterConfig);
-            await cluster.StartClientAsync();
-            return cluster;
+            system.WithRemote(GetRemoteConfig()).WithCluster(GetClientClusterConfig(clusterProvider,identity));
+
+            await system.Cluster().StartMemberAsync();
+            return system.Cluster();
         }
 
         public static void SetupLogger()
@@ -149,7 +173,7 @@ namespace ClusterExperiment1
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Console(LogEventLevel.Information)
                 .CreateLogger();
-
+            
             Proto.Log.SetLoggerFactory(LoggerFactory.Create(l =>
                     l.AddSerilog().SetMinimumLevel(LogLevel.Information)
                 )

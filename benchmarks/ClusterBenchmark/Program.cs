@@ -19,7 +19,7 @@ namespace ClusterExperiment1
 {
     public static class Program
     {
-        public static bool InteractiveOutput = false;
+
         private static TaskCompletionSource<bool> _ts;
         private static int ActorCount;
         private static int MemberCount;
@@ -31,6 +31,7 @@ namespace ClusterExperiment1
 
         public static async Task Main(string[] args)
         {
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             ThreadPool.SetMinThreads(500, 500);
 
             if (args.Length > 0)
@@ -130,7 +131,7 @@ namespace ClusterExperiment1
             var logger = Log.CreateLogger(nameof(Program));
 
             _ = SafeTask.Run(async () => {
-                    var semaphore = new AsyncSemaphore(50);
+                    var semaphore = new AsyncSemaphore(500);
                     var cluster = await Configuration.SpawnClient();
                     var rnd = new Random();
 
@@ -147,21 +148,22 @@ namespace ClusterExperiment1
         {
             Interlocked.Increment(ref RequestCount);
 
-            return cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+            var t = cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                 CancellationTokens.WithTimeout(20000)
-            ).ContinueWith(t => {
+            );
+
+       
+            t.ContinueWith(t => {
                     if (t.IsFaulted || t.Result is null)
                     {
                         Interlocked.Increment(ref FailureCount);
-
-
                         
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.Write("X");
                         Console.ResetColor();
                         
                         var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
-
+            
                         il?.DumpState(ClusterIdentity.Create(id, "hello"));
                     }
                     else
@@ -170,18 +172,15 @@ namespace ClusterExperiment1
                         
                         if (res % 10000 == 0)
                         {
-                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.ForegroundColor = ConsoleColor.DarkGreen;
                             Console.Write(".");
                             Console.ResetColor();
-                        }
-
-                        if (InteractiveOutput)
-                        {
-                            Console.Write(".");
                         }
                     }
                 }
             );
+            
+            return t;
         }
 
 
@@ -242,7 +241,7 @@ namespace ClusterExperiment1
             for (var i = 0; i < MemberCount; i++)
             {
                 var p = memberFactory();
-                p.Start();
+                await p.Start();
                 followers.Add(p);
             }
             
@@ -253,6 +252,7 @@ namespace ClusterExperiment1
 
             var sw = Stopwatch.StartNew();
 
+            await Task.Delay(KillTimeoutSeconds * 1000);
             foreach (var t in followers)
             {
                 await Task.Delay(KillTimeoutSeconds * 1000);
