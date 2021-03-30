@@ -19,7 +19,7 @@ namespace ClusterExperiment1
 {
     public static class Program
     {
-        public static bool InteractiveOutput;
+        public static bool InteractiveOutput = true;
         private static TaskCompletionSource<bool> _ts;
         private static int ActorCount;
         private static int MemberCount;
@@ -35,7 +35,7 @@ namespace ClusterExperiment1
 
             if (args.Length > 0)
             {
-                InteractiveOutput = args[0] == "1";
+                // InteractiveOutput = args[0] == "1";
 
                 var worker = await Configuration.SpawnMember();
                 AppDomain.CurrentDomain.ProcessExit += (sender, args) => { worker.ShutdownAsync().Wait(); };
@@ -57,11 +57,11 @@ namespace ClusterExperiment1
             Console.WriteLine("+ = (deliberate) deactivation of virtual actor");
             Console.WriteLine("X = NULL response, e.g. requests retried but got no response");
             Console.WriteLine();
-            Console.WriteLine("1) Run with interactive output");
-            Console.WriteLine("2) Run silent");
-
-            var res0 = Console.ReadLine();
-            InteractiveOutput = res0 == "1";
+            // Console.WriteLine("1) Run with interactive output");
+            // Console.WriteLine("2) Run silent");
+            //
+            // var res0 = Console.ReadLine();
+            // InteractiveOutput = res0 == "1";
 
             Console.WriteLine("1) Run single process - graceful exit");
             Console.WriteLine("2) Run single process");
