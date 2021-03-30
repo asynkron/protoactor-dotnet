@@ -22,6 +22,8 @@ namespace ClusterExperiment1
         public static bool InteractiveOutput;
         private static TaskCompletionSource<bool> _ts;
         private static int ActorCount;
+        private static int MemberCount;
+        private static int KillTimeoutSeconds;
 
         private static int RequestCount;
         private static int FailureCount;
@@ -85,13 +87,19 @@ namespace ClusterExperiment1
             }
 
             Console.WriteLine("Number of virtual actors? default 10000");
-
             var res3 = Console.ReadLine();
-
-            if (!int.TryParse(res3, out var actorCount)) actorCount = 10_000;
-
-            Console.WriteLine($"Using {actorCount} actors");
-            ActorCount = actorCount;
+            if (!int.TryParse(res3, out  ActorCount)) ActorCount = 10_000;
+            Console.WriteLine($"Using {ActorCount} actors");
+            
+            Console.WriteLine("Number of cluster members? default is 8");
+            var res4 = Console.ReadLine();
+            if (!int.TryParse(res4, out MemberCount)) MemberCount = 8;
+            Console.WriteLine($"Using {MemberCount} members");
+            
+            Console.WriteLine("Seconds to run before stopping members? default is 30");
+            var res5 = Console.ReadLine();
+            if (!int.TryParse(res5, out KillTimeoutSeconds)) KillTimeoutSeconds = 30;
+            Console.WriteLine($"Using {KillTimeoutSeconds} seconds");
 
             switch (res1)
             {
@@ -108,6 +116,10 @@ namespace ClusterExperiment1
                     RunWorkers(() => new RunMemberExternalProc());
                     break;
             }
+            
+            Console.Write("Pause, allow cluster to form... ");
+            await Task.Delay(8000);
+            Console.WriteLine("done..");
 
             switch (res2)
             {
@@ -138,9 +150,7 @@ namespace ClusterExperiment1
             var logger = Log.CreateLogger(nameof(Program));
             
             _ = SafeTask.Run(async () => {
-                    await Task.Delay(5000);
-
-                    var semaphore = new AsyncSemaphore(500);
+                    var semaphore = new AsyncSemaphore(50);
                     var cluster = await Configuration.SpawnClient();
                     var rnd = new Random();
 
@@ -155,7 +165,6 @@ namespace ClusterExperiment1
 
         private static async Task SendRequest(Cluster cluster, string id, ILogger logger)
         {
-            await Task.Yield();
             Interlocked.Increment(ref RequestCount);
 
             var result = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
@@ -188,8 +197,6 @@ namespace ClusterExperiment1
             var logger = Log.CreateLogger(nameof(Program));
 
             _ = SafeTask.Run(async () => {
-                    await Task.Delay(5000);
-
                     var cluster = await Configuration.SpawnClient();
                     var rnd = new Random();
 
@@ -223,8 +230,6 @@ namespace ClusterExperiment1
             var logger = Log.CreateLogger(nameof(Program));
 
             _ = SafeTask.Run(async () => {
-                    await Task.Delay(5000);
-
                     var cluster = await Configuration.SpawnClient();
                     var rnd = new Random();
 
@@ -241,7 +246,7 @@ namespace ClusterExperiment1
         {
             var followers = new List<IRunMember>();
 
-            for (var i = 0; i < 8; i++)
+            for (var i = 0; i < MemberCount; i++)
             {
                 var p = memberFactory();
                 p.Start();
@@ -251,7 +256,7 @@ namespace ClusterExperiment1
             _ = SafeTask.Run(async () => {
                     foreach (var t in followers)
                     {
-                        await Task.Delay(30000);
+                        await Task.Delay(KillTimeoutSeconds*1000);
                         Console.WriteLine("Stopping node...");
                         _ = t.Kill();
                     }
