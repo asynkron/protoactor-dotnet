@@ -64,12 +64,12 @@ namespace ClusterExperiment1
             }
         }
 
-        public static IIdentityLookup GetIdentityLookup() =>  new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
+        public static IIdentityLookup GetIdentityLookup() => GetRedisIdentityLookup();//  new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
 
         private static IIdentityLookup GetRedisIdentityLookup()
         {
             var multiplexer = ConnectionMultiplexer.Connect("localhost:6379");
-            var redisIdentityStorage = new RedisIdentityStorage("mycluster", multiplexer);
+            var redisIdentityStorage = new RedisIdentityStorage("mycluster", multiplexer,maxConcurrency:50);
 
             return new IdentityStorageLookup(redisIdentityStorage);
         }
@@ -105,8 +105,16 @@ namespace ClusterExperiment1
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
                 .WithDeadLetterRequestLogging(false)
             );
-            system.EventStream.Subscribe<ClusterTopology>(e => { Console.WriteLine("ClusterTopology:" + e.GetMembershipHashCode()); });
-            system.EventStream.Subscribe<LeaderElected>(e => { Console.WriteLine("Leader:" + e.Leader.Id); });
+            system.EventStream.Subscribe<ClusterTopology>(e => {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"{system.Id}-ClusterTopology:{e.GetMembershipHashCode()}");
+                Console.ResetColor();
+            });
+            system.EventStream.Subscribe<LeaderElected>(e => {
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine($"{system.Id}-Leader:{e.Leader.Id}");
+                Console.ResetColor();
+            });
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
             var helloProps = Props.FromProducer(() => new WorkerActor());
@@ -125,8 +133,8 @@ namespace ClusterExperiment1
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
                 .WithDeadLetterRequestLogging(false)
             );
-            system.EventStream.Subscribe<ClusterTopology>(e => { Console.WriteLine("ClusterTopology:" + e.GetMembershipHashCode()); });
-            system.EventStream.Subscribe<LeaderElected>(e => { Console.WriteLine("Leader:" + e.Leader.Id); });
+            // system.EventStream.Subscribe<ClusterTopology>(e => { Console.WriteLine("ClusterTopology:" + e.GetMembershipHashCode()); });
+            // system.EventStream.Subscribe<LeaderElected>(e => { Console.WriteLine("Leader:" + e.Leader.Id); });
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
             var (clusterConfig, remoteConfig) = GetClusterConfig(clusterProvider, identity);
@@ -139,11 +147,11 @@ namespace ClusterExperiment1
         public static void SetupLogger()
         {
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console(LogEventLevel.Error)
+                .WriteTo.Console(LogEventLevel.Information)
                 .CreateLogger();
 
             Proto.Log.SetLoggerFactory(LoggerFactory.Create(l =>
-                    l.AddSerilog().SetMinimumLevel(LogLevel.Error)
+                    l.AddSerilog().SetMinimumLevel(LogLevel.Information)
                 )
             );
         }

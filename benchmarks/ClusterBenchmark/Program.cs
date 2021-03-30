@@ -155,7 +155,11 @@ namespace ClusterExperiment1
                         Interlocked.Increment(ref FailureCount);
 
 
+                        
+                        Console.ForegroundColor = ConsoleColor.Red;
                         Console.Write("X");
+                        Console.ResetColor();
+                        
                         var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
 
                         il?.DumpState(ClusterIdentity.Create(id, "hello"));
@@ -166,7 +170,9 @@ namespace ClusterExperiment1
                         
                         if (res % 10000 == 0)
                         {
+                            Console.ForegroundColor = ConsoleColor.Green;
                             Console.Write(".");
+                            Console.ResetColor();
                         }
 
                         if (InteractiveOutput)
