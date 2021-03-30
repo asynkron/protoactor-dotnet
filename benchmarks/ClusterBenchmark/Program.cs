@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
@@ -30,6 +31,8 @@ namespace ClusterExperiment1
             ThreadPool.SetMinThreads(500, 500);
             if (args.Length > 0)
             {
+                InteractiveOutput = args[0] == "1";
+
                 var worker = await Configuration.SpawnMember();
                 AppDomain.CurrentDomain.ProcessExit += (sender, args) => { worker.ShutdownAsync().Wait(); };
                 Thread.Sleep(Timeout.Infinite);
@@ -51,7 +54,7 @@ namespace ClusterExperiment1
             Console.WriteLine("X = NULL response, e.g. requests retried but got no response");
             Console.WriteLine();
             Console.WriteLine("1) Run with interactive output");
-            Console.WriteLine("2) Run with interactive output");
+            Console.WriteLine("2) Run silent");
 
             var res0 = Console.ReadLine();
             InteractiveOutput = res0 == "1";
@@ -119,11 +122,15 @@ namespace ClusterExperiment1
                     break;
             }
 
+            var sw = Stopwatch.StartNew();
             await _ts.Task;
+            sw.Stop();
+            var tps = RequestCount / sw.Elapsed.TotalMilliseconds * 1000; 
             Console.WriteLine();
             Console.WriteLine($"Requests:\t{RequestCount:N0}");
             Console.WriteLine($"Successful:\t{SuccessCount:N0}");
             Console.WriteLine($"Failures:\t{FailureCount:N0}");
+            Console.WriteLine($"Throughput:\t{tps:N0} msg/sec");
         }
 
         private static void RunFireForgetClient()
@@ -133,7 +140,7 @@ namespace ClusterExperiment1
             _ = SafeTask.Run(async () => {
                     await Task.Delay(5000);
 
-                    var semaphore = new AsyncSemaphore(50);
+                    var semaphore = new AsyncSemaphore(500);
                     var cluster = await Configuration.SpawnClient();
                     var rnd = new Random();
 
@@ -146,31 +153,35 @@ namespace ClusterExperiment1
             );
         }
 
-        private static Task SendRequest(Cluster cluster, string id, ILogger logger)
+        private static async Task SendRequest(Cluster cluster, string id, ILogger logger)
         {
+            await Task.Yield();
             Interlocked.Increment(ref RequestCount);
 
-            return cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+            var result = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                 CancellationTokens.WithTimeout(20000)
-            ).ContinueWith(task => {
-                    if (task.Result is null)
-                    {
-                        Interlocked.Increment(ref FailureCount);
-                        
-                        logger.LogError("Null response {Id}", id);
-                        var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
-
-                        il?.DumpState(ClusterIdentity.Create(id, "hello"));
-                    }
-                    else
-                    {
-                        Interlocked.Increment(ref SuccessCount);
-                        if (InteractiveOutput)
-                            Console.Write(".");
-                    }
-                }
             );
+
+            if (result is null)
+            {
+                Interlocked.Increment(ref FailureCount);
+
+                logger.LogError("Null response {Id}", id);
+                var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
+
+                il?.DumpState(ClusterIdentity.Create(id, "hello"));
+            }
+            else
+            {
+                Interlocked.Increment(ref SuccessCount);
+
+                if (InteractiveOutput)
+                {
+                    Console.Write(".");
+                }
+            }
         }
+    
 
         private static void RunBatchClient(int batchSize)
         {
