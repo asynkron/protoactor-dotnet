@@ -234,6 +234,8 @@ namespace Proto.Persistence.SqlServer
 
             using var command = new SqlCommand(sql, connection);
 
+            connection.Open();
+
             command.ExecuteNonQuery();
         }
     }
