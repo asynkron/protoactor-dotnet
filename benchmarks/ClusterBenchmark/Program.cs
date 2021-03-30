@@ -143,32 +143,33 @@ namespace ClusterExperiment1
             );
         }
 
-        private static async Task SendRequest(Cluster cluster, string id, ILogger logger)
+        private static Task SendRequest(Cluster cluster, string id, ILogger logger)
         {
             Interlocked.Increment(ref RequestCount);
 
-            var result = await cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+            return cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                 CancellationTokens.WithTimeout(20000)
-            );
+            ).ContinueWith(t => {
+                    if (t.IsFaulted || t.Result is null)
+                    {
+                        Interlocked.Increment(ref FailureCount);
 
-            if (result is null)
-            {
-                Interlocked.Increment(ref FailureCount);
+                        logger.LogError("Null response {Id}", id);
+                        var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
 
-                logger.LogError("Null response {Id}", id);
-                var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
+                        il?.DumpState(ClusterIdentity.Create(id, "hello"));
+                    }
+                    else
+                    {
+                        Interlocked.Increment(ref SuccessCount);
 
-                il?.DumpState(ClusterIdentity.Create(id, "hello"));
-            }
-            else
-            {
-                Interlocked.Increment(ref SuccessCount);
-
-                if (InteractiveOutput)
-                {
-                    Console.Write(".");
+                        if (InteractiveOutput)
+                        {
+                            Console.Write(".");
+                        }
+                    }
                 }
-            }
+            );
         }
 
 

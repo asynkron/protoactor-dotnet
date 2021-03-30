@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -124,15 +123,8 @@ namespace Proto.Cluster
             {
                 if (_pidCache.TryGet(clusterIdentity, out var cachedPid)) return (cachedPid, PidSource.Cache);
 
-                var sw = Stopwatch.StartNew();
-                var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
-                sw.Stop();
-
-                if (!context.System.Metrics.IsNoop)
-                {
-                    context.System.Metrics.Get<ClusterMetrics>().ClusterResolvePidHistogram
-                        .Observe(sw, new[] {context.System.Id, context.System.Address, clusterIdentity.Kind});
-                }
+                var pid = await context.System.Metrics.Get<ClusterMetrics>().ClusterResolvePidHistogram
+                    .Observe(async () => await _identityLookup.GetAsync(clusterIdentity, ct), context.System.Id, context.System.Address, clusterIdentity.Kind);
 
                 if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
                 return (pid, PidSource.Lookup);
@@ -147,7 +139,7 @@ namespace Proto.Cluster
             }
         }
 
-        private async Task<(ResponseStatus Ok, T?)> TryRequestAsync<T>(
+        private Task<(ResponseStatus Ok, T?)> TryRequestAsync<T>(
             ClusterIdentity clusterIdentity,
             object message,
             PID pid,
@@ -189,26 +181,10 @@ namespace Proto.Cluster
                     return (ResponseStatus.Exception, default)!;
                 }
             }
-
             
-
-            if (!context.System.Metrics.IsNoop)
-            {
-                var sw = Stopwatch.StartNew();
-                var res = await Inner();
-                sw.Stop();
-                context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram
-                    .Observe(sw,
-                        new[]
-                        {
-                            context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name,
-                            source == PidSource.Cache ? "PidCache" : "IIdentityLookup"
-                        }
-                    );
-                return res;
-            }
-
-            return await Inner();
+            return context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram
+                .Observe(Inner, context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name, source == PidSource.Cache ? "PidCache" : "IIdentityLookup"
+                );
         }
 
         private (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
