@@ -52,10 +52,10 @@ namespace ClusterExperiment1
             Console.WriteLine("Proto.Cluster chaos benchmark");
             Console.WriteLine();
             Console.WriteLine("Explanation:");
-            Console.WriteLine(". = a request, or a batch of requests");
-            Console.WriteLine("# = activation of a virtual actor");
-            Console.WriteLine("+ = (deliberate) deactivation of virtual actor");
-            Console.WriteLine("X = NULL response, e.g. requests retried but got no response");
+            Console.WriteLine(". = 10 000 successful requests");
+            // Console.WriteLine("# = activation of a virtual actor");
+            // Console.WriteLine("+ = (deliberate) deactivation of virtual actor");
+            // Console.WriteLine("X = NULL response, e.g. requests retried but got no response");
             Console.WriteLine();
             // Console.WriteLine("1) Run with interactive output");
             // Console.WriteLine("2) Run silent");
@@ -154,6 +154,7 @@ namespace ClusterExperiment1
                     {
                         Interlocked.Increment(ref FailureCount);
 
+
                         logger.LogError("Null response {Id}", id);
                         var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
 
@@ -161,7 +162,12 @@ namespace ClusterExperiment1
                     }
                     else
                     {
-                        Interlocked.Increment(ref SuccessCount);
+                        var res = Interlocked.Increment(ref SuccessCount);
+                        
+                        if (res % 10000 == 0)
+                        {
+                            Console.Write(".");
+                        }
 
                         if (InteractiveOutput)
                         {
