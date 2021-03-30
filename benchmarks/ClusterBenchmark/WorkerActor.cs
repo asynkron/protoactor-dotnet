@@ -31,15 +31,15 @@ namespace ClusterExperiment1
                     break;
             }
 
-            // if (_rnd.Next(0, 1000) == 0)
-            // {
-            //     if (Program.InteractiveOutput)
-            //     {
-            //         Console.Write("+");
-            //     }
-            //
-            //     ctx.Stop(ctx.Self);
-            // }
+            if (_rnd.Next(0, 1000) == 0)
+            {
+                if (Program.InteractiveOutput)
+                {
+                    Console.Write("+");
+                }
+
+                ctx.Stop(ctx.Self);
+            }
 
             return Task.CompletedTask;
         }

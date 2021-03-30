@@ -28,9 +28,11 @@ namespace ClusterExperiment1
         private static int RequestCount;
         private static int FailureCount;
         private static int SuccessCount;
+
         public static async Task Main(string[] args)
         {
             ThreadPool.SetMinThreads(500, 500);
+
             if (args.Length > 0)
             {
                 InteractiveOutput = args[0] == "1";
@@ -46,7 +48,7 @@ namespace ClusterExperiment1
             _ts = new TaskCompletionSource<bool>();
 
             _ = DockerSupport.Run(_ts.Task);
-            
+
             Console.WriteLine("Proto.Cluster chaos benchmark");
             Console.WriteLine();
             Console.WriteLine("Explanation:");
@@ -66,78 +68,56 @@ namespace ClusterExperiment1
             Console.WriteLine("3) Run multi process - graceful exit");
             Console.WriteLine("4) Run multi process");
 
-            var res1 = Console.ReadLine();
+            var memberRunStrategy = Console.ReadLine();
 
             Console.WriteLine("1) Run single request client");
             Console.WriteLine("2) Run batch requests client");
             Console.WriteLine("3) Run fire and forget client");
 
-            var res2 = Console.ReadLine();
+            var clientStrategy = Console.ReadLine();
 
             var batchSize = 0;
 
-            if (res2 == "2")
+            if (clientStrategy == "2")
             {
                 Console.WriteLine("Batch size? default is 50");
-                var res = Console.ReadLine();
 
-                if (!int.TryParse(res, out batchSize)) batchSize = 50;
+                if (!int.TryParse(Console.ReadLine(), out batchSize)) batchSize = 50;
 
                 Console.WriteLine($"Using batch size {batchSize}");
             }
 
             Console.WriteLine("Number of virtual actors? default 10000");
-            var res3 = Console.ReadLine();
-            if (!int.TryParse(res3, out  ActorCount)) ActorCount = 10_000;
+            if (!int.TryParse(Console.ReadLine(), out ActorCount)) ActorCount = 10_000;
             Console.WriteLine($"Using {ActorCount} actors");
-            
+
             Console.WriteLine("Number of cluster members? default is 8");
-            var res4 = Console.ReadLine();
-            if (!int.TryParse(res4, out MemberCount)) MemberCount = 8;
+            if (!int.TryParse(Console.ReadLine(), out MemberCount)) MemberCount = 8;
             Console.WriteLine($"Using {MemberCount} members");
-            
+
             Console.WriteLine("Seconds to run before stopping members? default is 30");
-            var res5 = Console.ReadLine();
-            if (!int.TryParse(res5, out KillTimeoutSeconds)) KillTimeoutSeconds = 30;
+            if (!int.TryParse(Console.ReadLine(), out KillTimeoutSeconds)) KillTimeoutSeconds = 30;
             Console.WriteLine($"Using {KillTimeoutSeconds} seconds");
 
-            switch (res1)
+
+            Action run = clientStrategy switch
             {
-                case "1":
-                    RunWorkers(() => new RunMemberInProcGraceful());
-                    break;
-                case "2":
-                    RunWorkers(() => new RunMemberInProc());
-                    break;
-                case "3":
-                    RunWorkers(() => new RunMemberExternalProcGraceful());
-                    break;
-                case "4":
-                    RunWorkers(() => new RunMemberExternalProc());
-                    break;
-            }
+                "1" => () => RunClient(),
+                "2" => () => RunBatchClient(batchSize),
+                "3" => () => RunFireForgetClient(),
+                _   => throw new ArgumentOutOfRangeException()
+            };
             
-            Console.Write("Pause, allow cluster to form... ");
-            await Task.Delay(8000);
-            Console.WriteLine("done..");
-
-            switch (res2)
+            var elapsed = await (memberRunStrategy switch
             {
-                case "1":
-                    RunClient();
-                    break;
-                case "2":
-                    RunBatchClient(batchSize);
-                    break;
-                case "3":
-                    RunFireForgetClient();
-                    break;
-            }
+                "1" => RunWorkers(() => new RunMemberInProcGraceful(), run),
+                "2" => RunWorkers(() => new RunMemberInProc(), run),
+                "3" => RunWorkers(() => new RunMemberExternalProcGraceful(), run),
+                "4" => RunWorkers(() => new RunMemberExternalProc(), run),
+                _   => throw new ArgumentOutOfRangeException()
+            });
 
-            var sw = Stopwatch.StartNew();
-            await _ts.Task;
-            sw.Stop();
-            var tps = RequestCount / sw.Elapsed.TotalMilliseconds * 1000; 
+            var tps = RequestCount / elapsed.TotalMilliseconds * 1000;
             Console.WriteLine();
             Console.WriteLine($"Requests:\t{RequestCount:N0}");
             Console.WriteLine($"Successful:\t{SuccessCount:N0}");
@@ -148,7 +128,7 @@ namespace ClusterExperiment1
         private static void RunFireForgetClient()
         {
             var logger = Log.CreateLogger(nameof(Program));
-            
+
             _ = SafeTask.Run(async () => {
                     var semaphore = new AsyncSemaphore(50);
                     var cluster = await Configuration.SpawnClient();
@@ -190,7 +170,7 @@ namespace ClusterExperiment1
                 }
             }
         }
-    
+
 
         private static void RunBatchClient(int batchSize)
         {
@@ -242,7 +222,7 @@ namespace ClusterExperiment1
             );
         }
 
-        private static void RunWorkers(Func<IRunMember> memberFactory)
+        private static async Task<TimeSpan> RunWorkers(Func<IRunMember> memberFactory, Action startClient)
         {
             var followers = new List<IRunMember>();
 
@@ -252,18 +232,23 @@ namespace ClusterExperiment1
                 p.Start();
                 followers.Add(p);
             }
+            
+            await Task.Delay(8000);
 
-            _ = SafeTask.Run(async () => {
-                    foreach (var t in followers)
-                    {
-                        await Task.Delay(KillTimeoutSeconds*1000);
-                        Console.WriteLine("Stopping node...");
-                        _ = t.Kill();
-                    }
+            startClient();
+            Console.WriteLine("Client started...");
 
-                    _ts.SetResult(true);
-                }
-            );
+            var sw = Stopwatch.StartNew();
+
+            foreach (var t in followers)
+            {
+                await Task.Delay(KillTimeoutSeconds * 1000);
+                Console.WriteLine("Stopping node...");
+                _ = t.Kill();
+            }
+
+            sw.Stop();
+            return sw.Elapsed;
         }
     }
 }
