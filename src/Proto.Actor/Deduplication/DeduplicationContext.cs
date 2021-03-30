@@ -61,7 +61,7 @@ namespace Proto.Deduplication
                 await continuation();
                 CleanIfNeeded(cutoff, now);
                 _lastCheck = now;
-                Add(key, now);
+                Add(key!, now);
                 return;
             }
 
