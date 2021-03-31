@@ -21,7 +21,12 @@ namespace ClusterExperiment1
         }
         public async Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
         {
-            var pid = await _cluster.Config.IdentityLookup.GetAsync(clusterIdentity, CancellationToken.None);
+            if (!_cluster.PidCache.TryGet(clusterIdentity, out var pid))
+            {
+                pid = await _cluster.Config.IdentityLookup.GetAsync(clusterIdentity, CancellationToken.None);
+                _cluster.PidCache.TryAdd(clusterIdentity, pid!);
+            }
+            
             var res = await context.RequestAsync<T>(pid, message);
             return res;
         }

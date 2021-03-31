@@ -20,6 +20,7 @@ using Proto.Cluster.Identity.MongoDb;
 using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.Kubernetes;
 using Proto.Cluster.Partition;
+using Proto.Mailbox;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using Proto.Remote.GrpcNet;
@@ -48,7 +49,7 @@ namespace ClusterExperiment1
             IIdentityLookup identityLookup
         )
         {
-            var helloProps = Props.FromProducer(() => new WorkerActor());
+            var helloProps = Props.FromProducer(() => new WorkerActor()).WithDispatcher(Dispatchers.SynchronousDispatcher);
             return ClusterConfig
                 .Setup("mycluster", clusterProvider, identityLookup)
                 .WithClusterContextProducer(c => new SimpleClusterContext(c))
@@ -66,8 +67,8 @@ namespace ClusterExperiment1
                 .BindTo(host, port)
                 .WithAdvertisedHost(advertisedHost)
                 .WithProtoMessages(MessagesReflection.Descriptor)
-                
                 .WithEndpointWriterMaxRetries(2);
+            
             return remoteConfig;
         }
 
@@ -86,7 +87,7 @@ namespace ClusterExperiment1
             }
         }
 
-        public static IIdentityLookup GetIdentityLookup() => new SimpleIdentityLookup();//   new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
+        public static IIdentityLookup GetIdentityLookup() =>   new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
 
         private static IIdentityLookup GetRedisIdentityLookup()
         {

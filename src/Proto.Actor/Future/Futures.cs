@@ -34,18 +34,23 @@ namespace Proto.Future
         private FutureProcess(ActorSystem system, CancellationTokenSource? cts) : base(system)
         {
             _system = system;
-            _metrics = system.Metrics.Get<ActorMetrics>();
-            _metrics.FuturesStartedCount.Inc(new[] {system.Id, system.Address});
+
+            if (!system.Metrics.IsNoop)
+            {
+                _metrics = system.Metrics.Get<ActorMetrics>();
+                _metrics.FuturesStartedCount.Inc(new[] {system.Id, system.Address});
+            }
+
             _tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
             _cts = cts;
 
             var name = System.ProcessRegistry.NextId();
             var (pid, absent) = System.ProcessRegistry.TryAdd(name, this);
-
+            
             if (!absent) throw new ProcessNameExistException(name, pid);
 
             Pid = pid;
-
+            
             _cts?.Token.Register(
                 () => {
                     if (_tcs.Task.IsCompleted) return;
@@ -56,11 +61,12 @@ namespace Proto.Future
 
                     if (!system.Metrics.IsNoop)
                     {
-                        _metrics.FuturesTimedOutCount.Inc(new[] {System.Id, system.Address});
+                        _metrics!.FuturesTimedOutCount.Inc(new[] {System.Id, system.Address});
                     }
                     Stop(pid);
                 }
-            );
+                , false);
+
             Task = _tcs.Task;
         }
 
@@ -95,7 +101,11 @@ namespace Proto.Future
 
             if (_cts is null || !_cts.IsCancellationRequested) _tcs.TrySetResult(default!);
 
-            _metrics.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
+            if (!_system.Metrics.IsNoop)
+            {
+                _metrics.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
+            }
+
             Stop(pid);
         }
     }
