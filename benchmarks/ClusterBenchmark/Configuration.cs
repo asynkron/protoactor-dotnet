@@ -43,6 +43,15 @@ namespace ClusterExperiment1
                 .Setup("mycluster", clusterProvider, identityLookup)
                 .WithClusterKind("hello", helloProps);
         }
+        
+        private static ClusterConfig GetClientClusterConfig(
+            IClusterProvider clusterProvider,
+            IIdentityLookup identityLookup
+        )
+        {
+            return ClusterConfig
+                .Setup("mycluster", clusterProvider, identityLookup);
+        }
 
         private static GrpcCoreRemoteConfig GetRemoteConfig()
         {
@@ -152,7 +161,7 @@ namespace ClusterExperiment1
             });
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
-            system.WithRemote(GetRemoteConfig()).WithCluster(GetClusterConfig(clusterProvider,identity));
+            system.WithRemote(GetRemoteConfig()).WithCluster(GetClientClusterConfig(clusterProvider,identity));
 
             await system.Cluster().StartClientAsync();
             return system.Cluster();
