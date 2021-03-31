@@ -165,10 +165,9 @@ namespace Proto.Cluster
         )
         {
             var t = DateTimeOffset.UtcNow;
-
             try
             {
-
+                
                 if (future.Task.IsCompleted) return ToResult<T>(source, context, future.Task.Result);
 
                 context.Send(pid, new MessageEnvelope(message, future.Pid));
@@ -204,16 +203,14 @@ namespace Proto.Cluster
                 {
                     var elapsed = DateTimeOffset.UtcNow - t;
                     context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram
-                        .Observe(elapsed, new[]
-                            {
-                                context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name,
-                                source == PidSource.Cache ? "PidCache" : "IIdentityLookup"
-                            }
-                        );
+                        .Observe(elapsed, new []{context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name,
+                            source == PidSource.Cache ? "PidCache" : "IIdentityLookup"
+                        });
                 }
             }
-        }
 
+        }
+    
 
         private (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
         {
