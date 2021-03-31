@@ -8,25 +8,29 @@ using System.Threading;
 
 namespace Proto
 {
-    class HashedConcurrentDictionary
+    class HashedConcurrentDictionary : HashedConcurrentDictionary<string, Process>
+    {
+       
+    }
+    
+    class HashedConcurrentDictionary<TKey, TValue>
     {
         private const int HashSize = 1024;
-        private readonly Partition[] _partitions = new Partition[HashSize];
+        private readonly Dictionary<TKey,TValue>[] _partitions = new Dictionary<TKey,TValue>[HashSize];
 
         private int _count;
-//        public int Count => _partitions.Select(partition => partition.Count).Sum();
 
         internal HashedConcurrentDictionary()
         {
             for (var i = 0; i < _partitions.Length; i++)
             {
-                _partitions[i] = new Partition();
+                _partitions[i] = new Dictionary<TKey,TValue>();
             }
         }
 
         public int Count => _count;
 
-        private Partition GetPartition(string key)
+        private Dictionary<TKey,TValue> GetPartition(TKey key)
         {
             var hash = key.GetHashCode() & (0x7FFFFFFF % HashSize);
 
@@ -34,7 +38,7 @@ namespace Proto
             return p;
         }
 
-        public bool TryAdd(string key, Process reff)
+        public bool TryAdd(TKey key, TValue value)
         {
             var p = GetPartition(key);
 
@@ -42,31 +46,48 @@ namespace Proto
             {
                 if (p.ContainsKey(key)) return false;
 
-                p.Add(key, reff);
-                Interlocked.Increment(ref _count);
+                p.Add(key, value);
+                _count++;
                 return true;
             }
         }
 
-        public bool TryGetValue(string key, out Process aref)
+        public bool TryGetValue(TKey key, out TValue value)
         {
             var p = GetPartition(key);
-            lock (p) return p.TryGetValue(key, out aref);
+            lock (p) return p.TryGetValue(key, out value);
         }
 
-        public void Remove(string key)
+        public bool Remove(TKey key)
         {
             var p = GetPartition(key);
 
             lock (p)
             {
                 if (p.Remove(key))
-                    Interlocked.Decrement(ref _count);
+                {
+                    _count--;
+                    return true;
+                }
+                return false;
             }
         }
 
-        private class Partition : Dictionary<string, Process>
+        public bool RemoveByVal(TKey key, TValue val)
         {
+            var p = GetPartition(key);
+
+            lock (p)
+            {
+                if (p.TryGetValue(key, out var existing) && val.Equals(existing))
+                {
+                    p.Remove(key);
+                    _count--;
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
