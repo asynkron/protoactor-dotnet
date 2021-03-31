@@ -51,6 +51,7 @@ namespace ClusterExperiment1
             var helloProps = Props.FromProducer(() => new WorkerActor());
             return ClusterConfig
                 .Setup("mycluster", clusterProvider, identityLookup)
+                .WithClusterContextProducer(c => new SimpleClusterContext(c))
                 .WithClusterKind("hello", helloProps);
         }
 
@@ -85,7 +86,7 @@ namespace ClusterExperiment1
             }
         }
 
-        public static IIdentityLookup GetIdentityLookup() => new InMemIdentityLookup();//   new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
+        public static IIdentityLookup GetIdentityLookup() => new SimpleIdentityLookup();//   new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
 
         private static IIdentityLookup GetRedisIdentityLookup()
         {

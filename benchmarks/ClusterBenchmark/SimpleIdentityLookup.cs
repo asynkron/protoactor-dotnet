@@ -13,7 +13,7 @@ using Proto.Cluster.Identity;
 
 namespace ClusterExperiment1
 {
-    public class InMemIdentityLookup : IIdentityLookup
+    public class SimpleIdentityLookup : IIdentityLookup
     {
         private readonly ConcurrentDictionary<ClusterIdentity, PID> _pids = new ConcurrentDictionary<ClusterIdentity, PID>();
         private Cluster _cluster;
