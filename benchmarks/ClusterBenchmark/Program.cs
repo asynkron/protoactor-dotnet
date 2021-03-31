@@ -32,7 +32,7 @@ namespace ClusterExperiment1
         public static async Task Main(string[] args)
         {
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-            ThreadPool.SetMinThreads(500, 500);
+        //    ThreadPool.SetMinThreads(500, 500);
 
             if (args.Length > 0)
             {
