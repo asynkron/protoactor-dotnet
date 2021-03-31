@@ -164,6 +164,11 @@ namespace Proto.Persistence.SqlServer
         private void CreateSnapshotTable()
         {
             var sql = $@"
+            IF NOT EXISTS ( SELECT * FROM sys.schemas WHERE name = N'{_tableSchema}' )
+            BEGIN
+                EXEC('CREATE SCHEMA [{_tableSchema}]');
+            END
+
             IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '{_tableSchema}' AND TABLE_NAME = '{_tableSnapshots}')
             BEGIN
                 CREATE TABLE {_tableSchema}.{_tableSnapshots} (
@@ -185,6 +190,11 @@ namespace Proto.Persistence.SqlServer
         private void CreateEventTable()
         {
             var sql = $@"
+            IF NOT EXISTS ( SELECT * FROM sys.schemas WHERE name = N'{_tableSchema}' )
+            BEGIN
+                EXEC('CREATE SCHEMA [{_tableSchema}]');
+            END
+
             IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '{_tableSchema}' AND TABLE_NAME = '{_tableEvents}')
             BEGIN
                 CREATE TABLE {_tableSchema}.{_tableEvents} (
