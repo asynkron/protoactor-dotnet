@@ -253,11 +253,21 @@ namespace ClusterExperiment1
             var sw = Stopwatch.StartNew();
 
             await Task.Delay(KillTimeoutSeconds * 1000);
+            bool first = true;
             foreach (var t in followers)
             {
-                await Task.Delay(KillTimeoutSeconds * 1000);
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    await Task.Delay(KillTimeoutSeconds * 1000);
+                }
+
                 Console.WriteLine("Stopping node...");
                 _ = t.Kill();
+                
             }
 
             sw.Stop();

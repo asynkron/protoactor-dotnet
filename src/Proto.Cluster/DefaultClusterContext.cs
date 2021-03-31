@@ -40,6 +40,7 @@ namespace Proto.Cluster
 
         public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
         {
+            
             var start = DateTime.UtcNow;
             _logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
             var i = 0;
@@ -47,70 +48,77 @@ namespace Proto.Cluster
             var future = new FutureProcess(context.System);
             PID? lastPid = null;
 
-            while (!ct.IsCancellationRequested)
+            try
             {
-                if (context.System.Shutdown.IsCancellationRequested) return default;
-
-                var delay = i * 20;
-                i++;
-                
-                var (pid, source) = await GetPid(clusterIdentity, context, ct);
-                
-                if (context.System.Shutdown.IsCancellationRequested) return default;
-
-                if (pid is null)
+                while (!ct.IsCancellationRequested)
                 {
-                    _logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup", clusterIdentity);
-                    await Task.Delay(delay, CancellationToken.None);
-                    continue;
-                }
+                    if (context.System.Shutdown.IsCancellationRequested) return default;
 
-                // Ensures that a future is not re-used against another actor.
-                if (lastPid is not null && !pid.Equals(lastPid)) RefreshFuture();
+                    var delay = i * 20;
+                    i++;
 
-                _logger.LogDebug("Requesting {ClusterIdentity} - Got PID {Pid} from {Source}", clusterIdentity, pid, source);
-                var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, pid, source, context, future);
+                    var (pid, source) = await GetPid(clusterIdentity, context, ct);
 
-                switch (status)
-                {
-                    case ResponseStatus.Ok:
-                        return res;
+                    if (context.System.Shutdown.IsCancellationRequested) return default;
 
-                    case ResponseStatus.Exception:
-                        RefreshFuture();
-                        await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
+                    if (pid is null)
+                    {
+                        _logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup", clusterIdentity);
                         await Task.Delay(delay, CancellationToken.None);
-                        break;
-                    case ResponseStatus.DeadLetter:
-                        RefreshFuture();
-                        await RemoveFromSource(clusterIdentity, source, pid);
-                        break;
-                    case ResponseStatus.TimedOut:
-                        lastPid = pid;
-                        await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
-                        break;
+                        continue;
+                    }
+
+                    // Ensures that a future is not re-used against another actor.
+                    if (lastPid is not null && !pid.Equals(lastPid)) RefreshFuture();
+
+                    _logger.LogDebug("Requesting {ClusterIdentity} - Got PID {Pid} from {Source}", clusterIdentity, pid, source);
+                    var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, pid, source, context, future);
+
+                    switch (status)
+                    {
+                        case ResponseStatus.Ok:
+                            return res;
+
+                        case ResponseStatus.Exception:
+                            RefreshFuture();
+                            await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
+                            await Task.Delay(delay, CancellationToken.None);
+                            break;
+                        case ResponseStatus.DeadLetter:
+                            RefreshFuture();
+                            await RemoveFromSource(clusterIdentity, source, pid);
+                            break;
+                        case ResponseStatus.TimedOut:
+                            lastPid = pid;
+                            await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
+                            break;
+                    }
+
+                    if (!context.System.Metrics.IsNoop)
+                    {
+                        context.System.Metrics.Get<ClusterMetrics>().ClusterRequestRetryCount.Inc(new[]
+                            {context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name}
+                        );
+                    }
                 }
 
-                if (!context.System.Metrics.IsNoop)
+                if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
                 {
-                    context.System.Metrics.Get<ClusterMetrics>().ClusterRequestRetryCount.Inc(new[]
-                        {context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name}
-                    );
+                    var t = DateTime.UtcNow - start;
+                    _logger.LogWarning("RequestAsync retried but failed for {ClusterIdentity}, elapsed {Time}", clusterIdentity, t);
                 }
-            }
 
-            if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
+                return default!;
+            }
+            finally
             {
-                var t = DateTime.UtcNow - start;
-                _logger.LogWarning("RequestAsync retried but failed for {ClusterIdentity}, elapsed {Time}", clusterIdentity,t);
+                future.Dispose();
             }
-
-            return default!;
-            
 
             void RefreshFuture()
             {
-                future = new FutureProcess(context.System, ct);
+                future.Dispose();
+                future = new FutureProcess(context.System);
                 lastPid = null;
             }
         }
@@ -167,11 +175,10 @@ namespace Proto.Cluster
             var t = DateTimeOffset.UtcNow;
             try
             {
-                
                 if (future.Task.IsCompleted) return ToResult<T>(source, context, future.Task.Result);
 
                 context.Send(pid, new MessageEnvelope(message, future.Pid));
-                await Task.WhenAny(future.Task, Task.Delay(_config.ActorRequestTimeout));
+                await future.Task.WithTimeout(_config.ActorRequestTimeout);
 
                 if (future.Task.IsCompleted)
                 {
