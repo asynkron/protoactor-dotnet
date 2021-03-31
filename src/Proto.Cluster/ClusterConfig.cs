@@ -50,7 +50,7 @@ namespace Proto.Cluster
         public TimeSpan ClusterRequestDeDuplicationWindow { get; init; }
 
         public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } =
-            c => new DefaultClusterContext(c.IdentityLookup, c.PidCache, c.Logger, c.Config.ToClusterContextConfig());
+            c => new DefaultClusterContext(c.IdentityLookup, c.PidCache, c.Logger, c.Config.ToClusterContextConfig(),c.System.Shutdown);
 
         public ClusterConfig WithTimeout(TimeSpan timeSpan) =>
             this with {TimeoutTimespan = timeSpan};
