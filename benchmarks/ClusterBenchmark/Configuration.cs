@@ -4,11 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.IO.Compression;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
-using Grpc.Net.Client;
-using Grpc.Net.Compression;
 using k8s;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
@@ -19,11 +16,8 @@ using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
 using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.Kubernetes;
-using Proto.Cluster.Partition;
-using Proto.Mailbox;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
-using Proto.Remote.GrpcNet;
 using Serilog;
 using Serilog.Events;
 using StackExchange.Redis;
@@ -38,7 +32,7 @@ namespace ClusterExperiment1
             IIdentityLookup identityLookup
         )
         {
-            var helloProps = Props.FromProducer(() => new WorkerActor()).WithDispatcher(Dispatchers.SynchronousDispatcher);
+            var helloProps = Props.FromProducer(() => new WorkerActor());
             return ClusterConfig
                 .Setup("mycluster", clusterProvider, identityLookup)
                 .WithClusterKind("hello", helloProps);
@@ -75,7 +69,7 @@ namespace ClusterExperiment1
             }
         }
 
-        public static IIdentityLookup GetIdentityLookup() =>   new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
+        public static IIdentityLookup GetIdentityLookup() => GetRedisIdentityLookup();// new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
 
         private static IIdentityLookup GetRedisIdentityLookup()
         {

@@ -131,7 +131,7 @@ namespace ClusterExperiment1
             var logger = Log.CreateLogger(nameof(Program));
 
             _ = SafeTask.Run(async () => {
-                    var semaphore = new AsyncSemaphore(500);
+                    var semaphore = new AsyncSemaphore(50);
                     var cluster = await Configuration.SpawnClient();
                     var rnd = new Random();
 
