@@ -84,6 +84,9 @@ namespace Proto.Cluster
         public ClusterConfig WithMemberStrategyBuilder(Func<Cluster, string, IMemberStrategy> builder) =>
             this with {MemberStrategyBuilder = builder};
 
+        public ClusterConfig WithClusterContextProducer(Func<Cluster, IClusterContext> producer) =>
+            this with {ClusterContextProducer = producer};
+
         public static ClusterConfig Setup(
             string clusterName,
             IClusterProvider clusterProvider,

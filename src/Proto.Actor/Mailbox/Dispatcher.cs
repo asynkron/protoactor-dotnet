@@ -50,7 +50,7 @@ namespace Proto.Mailbox
 
         public ThreadPoolDispatcher(int throughput = DefaultThroughput) => Throughput = throughput;
 
-        public void Schedule(Func<Task> runner) => Task.Factory.StartNew(runner, TaskCreationOptions.None);
+        public void Schedule(Func<Task> runner) => Task.Factory.StartNew(runner, TaskCreationOptions.PreferFairness);
 
         public int Throughput { get; set; }
     }

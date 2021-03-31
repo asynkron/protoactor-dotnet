@@ -20,6 +20,7 @@ namespace Proto.Cluster
     //This class is responsible for figuring out what members are currently active in the cluster
     //it will receive a list of Members from the IClusterProvider
     //from that, we calculate a delta, which members joined, or left.
+
     [PublicAPI]
     public record MemberList
     {
@@ -73,7 +74,23 @@ namespace Proto.Cluster
                     //anyone awaiting this instance will now proceed
                     Logger.LogInformation("[MemberList] Topology consensus");
                     _topologyConsensus.TrySetResult(true);
-                    ElectLeader();
+                    var leaderId = LeaderElection.Elect(_memberState);
+                    var newLeader = _members[leaderId];
+                    if (!newLeader.Equals(_leader))
+                    {
+                        _leader = newLeader;
+                        _system.EventStream.Publish(new LeaderElected(newLeader));
+
+                        // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
+                        if (_leader.Id == _system.Id)
+                        {
+                            Logger.LogInformation("[MemberList] I am leader {Id}", _leader.Id);
+                        }
+                        else
+                        {
+                            Logger.LogInformation("[MemberList] Member {Id} is leader", _leader.Id);
+                        }
+                    }
                 }
                 else if (!everyoneInAgreement && _topologyConsensus.Task.IsCompleted)
                 {
@@ -86,32 +103,6 @@ namespace Proto.Cluster
 
                 Logger.LogDebug("[MemberList] Got ClusterTopologyNotification {ClusterTopologyNotification}, Consensus {Consensus}, Members {Members}", ctn, everyoneInAgreement,_memberState.Count);
             }
-        }
-
-        private void ElectLeader()
-        {
-            var leaderId =
-                _memberState
-                    .Values
-                    .Where(m => _memberState.ContainsKey(m.LeaderId))
-                    .GroupBy(m => m.LeaderId)
-                    .Select(g => (Id: g.Key, Score: g.Count()))
-                    .OrderByDescending(t => t.Score)
-                    .ThenBy(t => t.Id)
-                    .Select(t => t.Id)
-                    .FirstOrDefault() ?? _memberState.Values.OrderBy(m => m.MemberId).First().MemberId;
-
-            var newLeader = _members[leaderId];
-
-            if (newLeader.Equals(_leader)) return;
-
-            _leader = newLeader;
-
-            Logger.LogInformation(
-                _leader.Id == _system.Id
-                    ? "[MemberList] I am leader {Id}"
-                    : "[MemberList] Member {Id} is leader", _leader.Id
-            );
         }
 
         public Member? GetActivator(string kind, string requestSourceAddress)

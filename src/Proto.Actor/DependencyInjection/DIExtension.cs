@@ -27,6 +27,7 @@ namespace Proto.DependencyInjection
             return actorSystem;
         }
 
-        public static IDependencyResolver DI(this ActorSystem system) => system.Extensions.Get<DIExtension>().Resolver;
+        // ReSharper disable once InconsistentNaming
+        public static IDependencyResolver DI(this ActorSystem system) => system.Extensions.Get<DIExtension>()!.Resolver;
     }
 }

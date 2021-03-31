@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,73 +40,85 @@ namespace Proto.Cluster
 
         public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
         {
+            
             var start = DateTime.UtcNow;
             _logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
             var i = 0;
 
-            var future = new FutureProcess(context.System, ct);
+            var future = new FutureProcess(context.System);
             PID? lastPid = null;
 
-            while (!ct.IsCancellationRequested)
+            try
             {
-                if (context.System.Shutdown.IsCancellationRequested) return default;
-
-                var delay = i * 20;
-                i++;
-                
-                var (pid, source) = await GetPid(clusterIdentity, context, ct);
-                
-                if (context.System.Shutdown.IsCancellationRequested) return default;
-
-                if (pid is null)
+                while (!ct.IsCancellationRequested)
                 {
-                    _logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup", clusterIdentity);
-                    await Task.Delay(delay, CancellationToken.None);
-                    continue;
-                }
+                    if (context.System.Shutdown.IsCancellationRequested) return default;
 
-                // Ensures that a future is not re-used against another actor.
-                if (lastPid is not null && !pid.Equals(lastPid)) RefreshFuture();
+                    var delay = i * 20;
+                    i++;
 
-                _logger.LogDebug("Requesting {ClusterIdentity} - Got PID {Pid} from {Source}", clusterIdentity, pid, source);
-                var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, pid, source, context, future);
+                    var (pid, source) = await GetPid(clusterIdentity, context, ct);
 
-                switch (status)
-                {
-                    case ResponseStatus.Ok:
-                        return res;
+                    if (context.System.Shutdown.IsCancellationRequested) return default;
 
-                    case ResponseStatus.Exception:
-                        RefreshFuture();
-                        await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
+                    if (pid is null)
+                    {
+                        _logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup", clusterIdentity);
                         await Task.Delay(delay, CancellationToken.None);
-                        break;
-                    case ResponseStatus.DeadLetter:
-                        RefreshFuture();
-                        await RemoveFromSource(clusterIdentity, source, pid);
-                        break;
-                    case ResponseStatus.TimedOut:
-                        lastPid = pid;
-                        await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
-                        break;
+                        continue;
+                    }
+
+                    // Ensures that a future is not re-used against another actor.
+                    if (lastPid is not null && !pid.Equals(lastPid)) RefreshFuture();
+
+                    _logger.LogDebug("Requesting {ClusterIdentity} - Got PID {Pid} from {Source}", clusterIdentity, pid, source);
+                    var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, pid, source, context, future);
+
+                    switch (status)
+                    {
+                        case ResponseStatus.Ok:
+                            return res;
+
+                        case ResponseStatus.Exception:
+                            RefreshFuture();
+                            await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
+                            await Task.Delay(delay, CancellationToken.None);
+                            break;
+                        case ResponseStatus.DeadLetter:
+                            RefreshFuture();
+                            await RemoveFromSource(clusterIdentity, source, pid);
+                            break;
+                        case ResponseStatus.TimedOut:
+                            lastPid = pid;
+                            await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
+                            break;
+                    }
+
+                    if (!context.System.Metrics.IsNoop)
+                    {
+                        context.System.Metrics.Get<ClusterMetrics>().ClusterRequestRetryCount.Inc(new[]
+                            {context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name}
+                        );
+                    }
                 }
 
-                context.System.Metrics.Get<ClusterMetrics>().ClusterRequestRetryCount.Inc(new[]
-                    {context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name}
-                );
-            }
+                if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
+                {
+                    var t = DateTime.UtcNow - start;
+                    _logger.LogWarning("RequestAsync retried but failed for {ClusterIdentity}, elapsed {Time}", clusterIdentity, t);
+                }
 
-            if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
+                return default!;
+            }
+            finally
             {
-                var t = DateTime.UtcNow - start;
-                _logger.LogWarning("RequestAsync retried but failed for {ClusterIdentity}, elapsed {Time}", clusterIdentity,t);
+                future.Dispose();
             }
-
-            return default!;
 
             void RefreshFuture()
             {
-                future = new FutureProcess(context.System, ct);
+                future.Dispose();
+                future = new FutureProcess(context.System);
                 lastPid = null;
             }
         }
@@ -123,11 +136,22 @@ namespace Proto.Cluster
             {
                 if (_pidCache.TryGet(clusterIdentity, out var cachedPid)) return (cachedPid, PidSource.Cache);
 
-                var pid = await context.System.Metrics.Get<ClusterMetrics>().ClusterResolvePidHistogram
-                    .Observe(async () => await _identityLookup.GetAsync(clusterIdentity, ct), context.System.Id, context.System.Address, clusterIdentity.Kind);
+                if (!context.System.Metrics.IsNoop)
+                {
+                    var pid = await context.System.Metrics.Get<ClusterMetrics>().ClusterResolvePidHistogram
+                        .Observe(async () => await _identityLookup.GetAsync(clusterIdentity, ct), context.System.Id, context.System.Address,
+                            clusterIdentity.Kind
+                        );
 
-                if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
-                return (pid, PidSource.Lookup);
+                    if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
+                    return (pid, PidSource.Lookup);
+                }
+                else
+                {
+                    var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
+                    if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
+                    return (pid, PidSource.Lookup);
+                }
             }
             catch (Exception e)
             {
@@ -139,7 +163,7 @@ namespace Proto.Cluster
             }
         }
 
-        private Task<(ResponseStatus Ok, T?)> TryRequestAsync<T>(
+        private async ValueTask<(ResponseStatus Ok, T?)> TryRequestAsync<T>(
             ClusterIdentity clusterIdentity,
             object message,
             PID pid,
@@ -148,44 +172,52 @@ namespace Proto.Cluster
             FutureProcess future
         )
         {
-            async Task<(ResponseStatus Ok, T?)> Inner()
+            var t = DateTimeOffset.UtcNow;
+            try
             {
-                try
+                if (future.Task.IsCompleted) return ToResult<T>(source, context, future.Task.Result);
+
+                context.Send(pid, new MessageEnvelope(message, future.Pid));
+                await future.Task.WithTimeout(_config.ActorRequestTimeout);
+
+                if (future.Task.IsCompleted)
                 {
-                    if (future.Task.IsCompleted) return ToResult<T>(source, context, future.Task.Result);
-                    context.Send(pid, new MessageEnvelope(message, future.Pid));
-                    await Task.WhenAny(future.Task, Task.Delay(_config.ActorRequestTimeout));
-                    
-                    if (future.Task.IsCompleted)
-                    {
-                        var res = future.Task.Result;
+                    var res = future.Task.Result;
 
-                        return ToResult<T>(source, context, res);
-                    }
-
-                    if (!context.System.Shutdown.IsCancellationRequested)
-                        _logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
-                    _pidCache.RemoveByVal(clusterIdentity, pid);
-
-                    return (ResponseStatus.TimedOut, default)!;
+                    return ToResult<T>(source, context, res);
                 }
-                catch (TimeoutException)
+
+                if (!context.System.Shutdown.IsCancellationRequested)
+                    _logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
+                _pidCache.RemoveByVal(clusterIdentity, pid);
+
+                return (ResponseStatus.TimedOut, default)!;
+            }
+            catch (TimeoutException)
+            {
+                return (ResponseStatus.TimedOut, default)!;
+            }
+            catch (Exception x)
+            {
+                if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
+                    _logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
+                _pidCache.RemoveByVal(clusterIdentity, pid);
+                return (ResponseStatus.Exception, default)!;
+            }
+            finally
+            {
+                if (!context.System.Metrics.IsNoop)
                 {
-                    return (ResponseStatus.TimedOut, default)!;
-                }
-                catch (Exception x)
-                {
-                    if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
-                        _logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
-                    _pidCache.RemoveByVal(clusterIdentity, pid);
-                    return (ResponseStatus.Exception, default)!;
+                    var elapsed = DateTimeOffset.UtcNow - t;
+                    context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram
+                        .Observe(elapsed, new []{context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name,
+                            source == PidSource.Cache ? "PidCache" : "IIdentityLookup"
+                        });
                 }
             }
-            
-            return context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram
-                .Observe(Inner, context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name, source == PidSource.Cache ? "PidCache" : "IIdentityLookup"
-                );
+
         }
+    
 
         private (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
         {
