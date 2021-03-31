@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,7 +44,7 @@ namespace Proto.Cluster
             _logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
             var i = 0;
 
-            var future = new FutureProcess(context.System, ct);
+            var future = new FutureProcess(context.System);
             PID? lastPid = null;
 
             while (!ct.IsCancellationRequested)
@@ -90,9 +91,12 @@ namespace Proto.Cluster
                         break;
                 }
 
-                context.System.Metrics.Get<ClusterMetrics>().ClusterRequestRetryCount.Inc(new[]
-                    {context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name}
-                );
+                if (!context.System.Metrics.IsNoop)
+                {
+                    context.System.Metrics.Get<ClusterMetrics>().ClusterRequestRetryCount.Inc(new[]
+                        {context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name}
+                    );
+                }
             }
 
             if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
@@ -151,7 +155,7 @@ namespace Proto.Cluster
             }
         }
 
-        private Task<(ResponseStatus Ok, T?)> TryRequestAsync<T>(
+        private async ValueTask<(ResponseStatus Ok, T?)> TryRequestAsync<T>(
             ClusterIdentity clusterIdentity,
             object message,
             PID pid,
@@ -160,52 +164,56 @@ namespace Proto.Cluster
             FutureProcess future
         )
         {
-            async Task<(ResponseStatus Ok, T?)> Inner()
+            var t = DateTimeOffset.UtcNow;
+
+            try
             {
-                try
+
+                if (future.Task.IsCompleted) return ToResult<T>(source, context, future.Task.Result);
+
+                context.Send(pid, new MessageEnvelope(message, future.Pid));
+                await Task.WhenAny(future.Task, Task.Delay(_config.ActorRequestTimeout));
+
+                if (future.Task.IsCompleted)
                 {
-                    if (future.Task.IsCompleted) return ToResult<T>(source, context, future.Task.Result);
+                    var res = future.Task.Result;
 
-                    context.Send(pid, new MessageEnvelope(message, future.Pid));
-                    await Task.WhenAny(future.Task, Task.Delay(_config.ActorRequestTimeout));
-
-                    if (future.Task.IsCompleted)
-                    {
-                        var res = future.Task.Result;
-
-                        return ToResult<T>(source, context, res);
-                    }
-
-                    if (!context.System.Shutdown.IsCancellationRequested)
-                        _logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
-                    _pidCache.RemoveByVal(clusterIdentity, pid);
-
-                    return (ResponseStatus.TimedOut, default)!;
+                    return ToResult<T>(source, context, res);
                 }
-                catch (TimeoutException)
+
+                if (!context.System.Shutdown.IsCancellationRequested)
+                    _logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
+                _pidCache.RemoveByVal(clusterIdentity, pid);
+
+                return (ResponseStatus.TimedOut, default)!;
+            }
+            catch (TimeoutException)
+            {
+                return (ResponseStatus.TimedOut, default)!;
+            }
+            catch (Exception x)
+            {
+                if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
+                    _logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
+                _pidCache.RemoveByVal(clusterIdentity, pid);
+                return (ResponseStatus.Exception, default)!;
+            }
+            finally
+            {
+                if (!context.System.Metrics.IsNoop)
                 {
-                    return (ResponseStatus.TimedOut, default)!;
-                }
-                catch (Exception x)
-                {
-                    if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
-                        _logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
-                    _pidCache.RemoveByVal(clusterIdentity, pid);
-                    return (ResponseStatus.Exception, default)!;
+                    var elapsed = DateTimeOffset.UtcNow - t;
+                    context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram
+                        .Observe(elapsed, new[]
+                            {
+                                context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name,
+                                source == PidSource.Cache ? "PidCache" : "IIdentityLookup"
+                            }
+                        );
                 }
             }
-
-            if (!context.System.Metrics.IsNoop)
-            {
-                return context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram
-                    .Observe(Inner, context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name,
-                        source == PidSource.Cache ? "PidCache" : "IIdentityLookup"
-                    );
-            }
-
-            return Inner();
         }
-    
+
 
         private (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
         {
