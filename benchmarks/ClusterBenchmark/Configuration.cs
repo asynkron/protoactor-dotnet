@@ -155,11 +155,11 @@ namespace ClusterExperiment1
         public static void SetupLogger()
         {
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console(LogEventLevel.Information)
+                .WriteTo.Console(LogEventLevel.Error)
                 .CreateLogger();
             
             Proto.Log.SetLoggerFactory(LoggerFactory.Create(l =>
-                    l.AddSerilog().SetMinimumLevel(LogLevel.Information)
+                    l.AddSerilog().SetMinimumLevel(LogLevel.Error)
                 )
             );
         }
