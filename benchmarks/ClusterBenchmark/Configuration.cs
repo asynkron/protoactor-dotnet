@@ -69,7 +69,7 @@ namespace ClusterExperiment1
             }
         }
 
-        public static IIdentityLookup GetIdentityLookup() => GetRedisIdentityLookup();// new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
+        public static IIdentityLookup GetIdentityLookup() => GetMongoIdentityLookup();//  GetRedisIdentityLookup();// new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
 
         private static IIdentityLookup GetRedisIdentityLookup()
         {
