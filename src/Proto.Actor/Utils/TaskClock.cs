@@ -15,9 +15,9 @@ namespace Proto.Utils
         private readonly TimeSpan _updateInterval;
         private readonly CancellationToken _ct;
         public Task CurrentBucket { get; private set; }
-        public TaskClock(TimeSpan bucketSize, TimeSpan updateInterval, CancellationToken ct)
+        public TaskClock(TimeSpan timeout, TimeSpan updateInterval, CancellationToken ct)
         {
-            _bucketSize = bucketSize;
+            _bucketSize = timeout + updateInterval;
             _updateInterval = updateInterval;
             _ct = ct;
         }
