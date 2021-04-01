@@ -3,13 +3,14 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Proto.Router.Routers
 {
-    class ConsistentHashRouterState : RouterState
+    internal class ConsistentHashRouterState : RouterState
     {
         private readonly Func<string, uint> _hash;
         private readonly Func<object, string>? _messageHasher;
@@ -36,11 +37,11 @@ namespace Proto.Router.Routers
         public override void SetRoutees(PID[] routees)
         {
             _routeeMap.Clear();
-            var nodes = new List<string>();
+            List<string>? nodes = new List<string>();
 
             foreach (var pid in routees)
             {
-                var nodeName = pid.ToString();
+                string? nodeName = pid.ToString();
                 nodes.Add(nodeName);
                 _routeeMap[nodeName] = pid;
             }
@@ -50,24 +51,27 @@ namespace Proto.Router.Routers
 
         public override void RouteMessage(object message)
         {
-            if (_hashRing is null) throw new InvalidOperationException("Routees not set");
+            if (_hashRing is null)
+            {
+                throw new InvalidOperationException("Routees not set");
+            }
 
-            var env = MessageEnvelope.Unwrap(message);
+            (object message, PID? sender, MessageHeader headers) env = MessageEnvelope.Unwrap(message);
 
             if (env.message is IHashable hashable)
             {
-                var key = hashable.HashBy();
-                var node = _hashRing.GetNode(key);
-                var routee = _routeeMap[node];
+                string? key = hashable.HashBy();
+                string? node = _hashRing.GetNode(key);
+                PID? routee = _routeeMap[node];
 
                 //by design, just forward message
                 _senderContext.Send(routee, message);
             }
             else if (_messageHasher is not null)
             {
-                var key = _messageHasher(message);
-                var node = _hashRing.GetNode(key);
-                var routee = _routeeMap[node];
+                string? key = _messageHasher(message);
+                string? node = _hashRing.GetNode(key);
+                PID? routee = _routeeMap[node];
 
                 //by design, just forward message
                 _senderContext.Send(routee, message);

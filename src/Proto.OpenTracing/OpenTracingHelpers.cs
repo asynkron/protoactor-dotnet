@@ -6,19 +6,21 @@ using OpenTracing.Tag;
 
 namespace Proto.OpenTracing
 {
-    static class OpenTracingHelpers
+    internal static class OpenTracingHelpers
     {
         public static void DefaultSetupSpan(ISpan span, object message)
         {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IScope BuildStartedScope(this ITracer tracer, ISpanContext parentSpan, string verb, object message, SpanSetup spanSetup)
+        public static IScope BuildStartedScope(this ITracer tracer, ISpanContext parentSpan, string verb,
+            object message, SpanSetup spanSetup)
         {
-            var messageType = message?.GetType().Name ?? "Unknown";
+            string messageType = message?.GetType().Name ?? "Unknown";
 
-            var scope = tracer
-                .BuildSpan($"{verb} {messageType}") // <= perhaps is not good to have the operation name mentioning the message type
+            IScope scope = tracer
+                .BuildSpan(
+                    $"{verb} {messageType}") // <= perhaps is not good to have the operation name mentioning the message type
                 .AsChildOf(parentSpan)
                 .StartActive(true);
 
@@ -32,10 +34,13 @@ namespace Proto.OpenTracing
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void SetupSpan(this Exception exception, ISpan span)
         {
-            if (span == null) return;
+            if (span == null)
+            {
+                return;
+            }
 
             Tags.Error.Set(span, true);
-            var baseEx = exception.GetBaseException();
+            Exception baseEx = exception.GetBaseException();
             span.Log(
                 new Dictionary<string, object>
                 {

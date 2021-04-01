@@ -5,9 +5,9 @@
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
+
 using System;
 using System.Collections.Concurrent;
-using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -23,18 +23,20 @@ namespace Proto
 
         internal EventStream(ActorSystem system)
         {
-            var shouldThrottle = Throttle.Create(system.Config.DeadLetterThrottleCount, system.Config.DeadLetterThrottleInterval,
+            ShouldThrottle? shouldThrottle = Throttle.Create(system.Config.DeadLetterThrottleCount,
+                system.Config.DeadLetterThrottleInterval,
                 droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs.", droppedLogs)
             );
             Subscribe<DeadLetterEvent>(
-                dl => {
-
+                dl =>
+                {
                     if (system.Config.DeadLetterRequestLogging is false && dl.Sender is not null)
                     {
                         return;
                     }
-                    
-                    if (!system.Shutdown.IsCancellationRequested && shouldThrottle().IsOpen() && dl.Message is not IIgnoreDeadLetterLogging)
+
+                    if (!system.Shutdown.IsCancellationRequested && shouldThrottle().IsOpen() &&
+                        dl.Message is not IIgnoreDeadLetterLogging)
                     {
                         _logger.LogInformation(
                             "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",
@@ -72,10 +74,11 @@ namespace Proto
         /// <returns>A new subscription that can be used to unsubscribe</returns>
         public EventStreamSubscription<T> Subscribe(Action<T> action, IDispatcher? dispatcher = null)
         {
-            var sub = new EventStreamSubscription<T>(
+            EventStreamSubscription<T>? sub = new EventStreamSubscription<T>(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
-                x => {
+                x =>
+                {
                     action(x);
                     return Task.CompletedTask;
                 }
@@ -92,7 +95,8 @@ namespace Proto
         /// <returns>A new subscription that can be used to unsubscribe</returns>
         public EventStreamSubscription<T> Subscribe(Func<T, Task> action, IDispatcher? dispatcher = null)
         {
-            var sub = new EventStreamSubscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, action);
+            EventStreamSubscription<T>? sub =
+                new EventStreamSubscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, action);
             _subscriptions.TryAdd(sub.Id, sub);
             return sub;
         }
@@ -106,11 +110,15 @@ namespace Proto
         public EventStreamSubscription<T> Subscribe<TMsg>(Action<TMsg> action, IDispatcher? dispatcher = null)
             where TMsg : T
         {
-            var sub = new EventStreamSubscription<T>(
+            EventStreamSubscription<T>? sub = new EventStreamSubscription<T>(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
-                msg => {
-                    if (msg is TMsg typed) action(typed);
+                msg =>
+                {
+                    if (msg is TMsg typed)
+                    {
+                        action(typed);
+                    }
 
                     return Task.CompletedTask;
                 }
@@ -133,11 +141,15 @@ namespace Proto
             IDispatcher? dispatcher = null
         ) where TMsg : T
         {
-            var sub = new EventStreamSubscription<T>(
+            EventStreamSubscription<T>? sub = new EventStreamSubscription<T>(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
-                msg => {
-                    if (msg is TMsg typed && predicate(typed)) action(typed);
+                msg =>
+                {
+                    if (msg is TMsg typed && predicate(typed))
+                    {
+                        action(typed);
+                    }
 
                     return Task.CompletedTask;
                 }
@@ -155,10 +167,11 @@ namespace Proto
         /// <returns>A new subscription that can be used to unsubscribe</returns>
         public EventStreamSubscription<T> Subscribe<TMsg>(ISenderContext context, params PID[] pids) where TMsg : T
         {
-            var sub = new EventStreamSubscription<T>(
+            EventStreamSubscription<T>? sub = new EventStreamSubscription<T>(
                 this,
                 Dispatchers.SynchronousDispatcher,
-                msg => {
+                msg =>
+                {
                     if (msg is TMsg)
                     {
                         foreach (var pid in pids)
@@ -184,7 +197,7 @@ namespace Proto
         public EventStreamSubscription<T> Subscribe<TMsg>(Func<TMsg, Task> action, IDispatcher? dispatcher = null)
             where TMsg : T
         {
-            var sub = new EventStreamSubscription<T>(
+            EventStreamSubscription<T>? sub = new EventStreamSubscription<T>(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
                 msg => msg is TMsg typed ? action(typed) : Task.CompletedTask
@@ -203,7 +216,8 @@ namespace Proto
             foreach (var sub in _subscriptions.Values)
             {
                 sub.Dispatcher.Schedule(
-                    () => {
+                    () =>
+                    {
                         try
                         {
                             sub.Action(msg);
@@ -231,7 +245,10 @@ namespace Proto
         /// <param name="subscription"> A subscription to remove</param>
         public void Unsubscribe(EventStreamSubscription<T>? subscription)
         {
-            if (subscription is not null) Unsubscribe(subscription.Id);
+            if (subscription is not null)
+            {
+                Unsubscribe(subscription.Id);
+            }
         }
     }
 

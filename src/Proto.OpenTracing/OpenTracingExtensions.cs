@@ -39,17 +39,21 @@ namespace Proto.OpenTracing
         ///     Only responsible to tweak the envelop in order to send SpanContext informations.
         /// </summary>
         public static Func<Sender, Sender> OpenTracingSenderMiddleware(ITracer tracer = null)
-            => next => async (context, target, envelope) => {
+            => next => async (context, target, envelope) =>
+            {
                 tracer ??= GlobalTracer.Instance;
 
-                var span = tracer.ActiveSpan;
+                ISpan span = tracer.ActiveSpan;
 
                 Task SimpleNext() => next(context, target, envelope); // to forget nothing
 
-                if (span == null) await SimpleNext().ConfigureAwait(false);
+                if (span == null)
+                {
+                    await SimpleNext().ConfigureAwait(false);
+                }
                 else
                 {
-                    var dictionary = new Dictionary<string, string>();
+                    Dictionary<string, string> dictionary = new Dictionary<string, string>();
                     tracer.Inject(span.Context, BuiltinFormats.TextMap, new TextMapInjectAdapter(dictionary));
                     envelope = envelope.WithHeaders(dictionary);
 
@@ -80,7 +84,8 @@ namespace Proto.OpenTracing
         /// <param name="sendSpanSetup">provide a way inject send span constumisation according to the message.</param>
         /// <param name="tracer">OpenTracing, if nul : GlobalTracer.Instance will be used.</param>
         /// <returns>IRootContext</returns>
-        public static IRootContext WithOpenTracing(this IRootContext context, SpanSetup sendSpanSetup = null, ITracer tracer = null)
+        public static IRootContext WithOpenTracing(this IRootContext context, SpanSetup sendSpanSetup = null,
+            ITracer tracer = null)
         {
             sendSpanSetup ??= OpenTracingHelpers.DefaultSetupSpan;
             tracer ??= GlobalTracer.Instance;

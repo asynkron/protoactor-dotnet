@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,22 +36,35 @@ namespace Proto.Utils
         )
         {
             if (period == TimeSpan.Zero || maxEventsInPeriod < 1 || maxEventsInPeriod == int.MaxValue)
+            {
                 return () => Valve.Open;
+            }
 
-            var currentEvents = 0;
-            return () => {
-                var tries = Interlocked.Increment(ref currentEvents);
-                if (tries == 1) StartTimer(throttledCallBack);
+            int currentEvents = 0;
+            return () =>
+            {
+                int tries = Interlocked.Increment(ref currentEvents);
+                if (tries == 1)
+                {
+                    StartTimer(throttledCallBack);
+                }
 
-                if (tries == maxEventsInPeriod) return Valve.Closing;
+                if (tries == maxEventsInPeriod)
+                {
+                    return Valve.Closing;
+                }
 
                 return tries > maxEventsInPeriod ? Valve.Closed : Valve.Open;
             };
 
-            void StartTimer(Action<int>? callBack) => _ = SafeTask.Run(async () => {
+            void StartTimer(Action<int>? callBack) => _ = SafeTask.Run(async () =>
+                {
                     await Task.Delay(period);
-                    var timesCalled = Interlocked.Exchange(ref currentEvents, 0);
-                    if (timesCalled > maxEventsInPeriod) callBack?.Invoke(timesCalled - maxEventsInPeriod);
+                    int timesCalled = Interlocked.Exchange(ref currentEvents, 0);
+                    if (timesCalled > maxEventsInPeriod)
+                    {
+                        callBack?.Invoke(timesCalled - maxEventsInPeriod);
+                    }
                 }
             );
         }

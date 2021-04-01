@@ -3,9 +3,10 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Router.Routers
 {
-    record RandomGroupRouterConfig : GroupRouterConfig
+    internal record RandomGroupRouterConfig : GroupRouterConfig
     {
         private readonly int _seed;
 

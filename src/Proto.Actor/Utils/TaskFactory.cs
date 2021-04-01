@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -15,7 +16,8 @@ namespace Proto
     {
         private static readonly ILogger Logger = Log.CreateLogger<TaskFactory>();
 
-        public static async Task Run(Func<Task> body, CancellationToken cancellationToken = default, [CallerMemberName] string name = "")
+        public static async Task Run(Func<Task> body, CancellationToken cancellationToken = default,
+            [CallerMemberName] string name = "")
         {
             try
             {

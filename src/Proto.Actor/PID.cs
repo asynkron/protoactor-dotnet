@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using Google.Protobuf;
 
 namespace Proto
@@ -28,26 +29,32 @@ namespace Proto
         {
             if (_process is not null)
             {
-                if (_process is ActorProcess actorProcess && actorProcess.IsDead) _process = null;
+                if (_process is ActorProcess actorProcess && actorProcess.IsDead)
+                {
+                    _process = null;
+                }
 
                 return _process;
             }
 
-            var reff = system.ProcessRegistry.Get(this);
-            if (!(reff is DeadLetterProcess)) _process = reff;
+            Process? reff = system.ProcessRegistry.Get(this);
+            if (!(reff is DeadLetterProcess))
+            {
+                _process = reff;
+            }
 
             return _process;
         }
 
         internal void SendUserMessage(ActorSystem system, object message)
         {
-            var reff = Ref(system) ?? system.ProcessRegistry.Get(this);
+            Process? reff = Ref(system) ?? system.ProcessRegistry.Get(this);
             reff.SendUserMessage(this, message);
         }
 
         public void SendSystemMessage(ActorSystem system, object sys)
         {
-            var reff = Ref(system) ?? system.ProcessRegistry.Get(this);
+            Process? reff = Ref(system) ?? system.ProcessRegistry.Get(this);
             reff.SendSystemMessage(this, sys);
         }
     }

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -18,16 +19,18 @@ namespace Proto.Deduplication
     {
         private readonly DeDuplicator<T> _deDuplicator;
 
-        public DeduplicationContext(IContext context, TimeSpan deDuplicationWindow, TryGetDeduplicationKey<T> deduplicateBy) : base(context
+        public DeduplicationContext(IContext context, TimeSpan deDuplicationWindow,
+            TryGetDeduplicationKey<T> deduplicateBy) : base(context
         ) => _deDuplicator = new DeDuplicator<T>(deDuplicationWindow, deduplicateBy);
 
-        public override Task Receive(MessageEnvelope envelope) => _deDuplicator.DeDuplicate(envelope!, () => base.Receive(envelope));
+        public override Task Receive(MessageEnvelope envelope) =>
+            _deDuplicator.DeDuplicate(envelope!, () => base.Receive(envelope));
     }
 
     /// <summary>
     ///     Will deduplicate on a sender id if the sender is an unnamed actor (ie a FutureProcess)
     /// </summary>
-    class DeDuplicator<T> where T : IEquatable<T>
+    internal class DeDuplicator<T> where T : IEquatable<T>
 
     {
         private readonly TryGetDeduplicationKey<T> _getDeduplicationKey;
@@ -42,15 +45,15 @@ namespace Proto.Deduplication
         public DeDuplicator(TimeSpan deduplicationWindow, TryGetDeduplicationKey<T> getDeduplicationKey)
         {
             _getDeduplicationKey = getDeduplicationKey;
-            _ttl = Stopwatch.Frequency * (long) deduplicationWindow.TotalSeconds;
+            _ttl = Stopwatch.Frequency * (long)deduplicationWindow.TotalSeconds;
         }
 
         public async Task DeDuplicate(MessageEnvelope envelope, Func<Task> continuation)
         {
-            if (_getDeduplicationKey(envelope, out var key))
+            if (_getDeduplicationKey(envelope, out T? key))
             {
-                var now = Stopwatch.GetTimestamp();
-                var cutoff = now - _ttl;
+                long now = Stopwatch.GetTimestamp();
+                long cutoff = now - _ttl;
 
                 if (IsDuplicate(key!, cutoff))
                 {
@@ -69,11 +72,14 @@ namespace Proto.Deduplication
         }
 
         private bool IsDuplicate(T key, long cutoff)
-            => _lastCheck > cutoff && _processed.TryGetValue(key, out var ticks) && ticks >= cutoff;
+            => _lastCheck > cutoff && _processed.TryGetValue(key, out long ticks) && ticks >= cutoff;
 
         private void Add(T key, long now)
         {
-            if (_processed.Count == 0) _oldest = now;
+            if (_processed.Count == 0)
+            {
+                _oldest = now;
+            }
 
             _processed.Add(key, now);
         }
@@ -88,12 +94,18 @@ namespace Proto.Deduplication
             }
             else if (_processed.Count >= 50 && _cleanedAt < _oldest)
             {
-                var oldest = long.MaxValue;
+                long oldest = long.MaxValue;
 
-                foreach (var (key, timestamp) in _processed.ToList())
+                foreach ((T key, long timestamp) in _processed.ToList())
                 {
-                    if (timestamp < cutoff) _processed.Remove(key);
-                    else oldest = Math.Min(timestamp, oldest);
+                    if (timestamp < cutoff)
+                    {
+                        _processed.Remove(key);
+                    }
+                    else
+                    {
+                        oldest = Math.Min(timestamp, oldest);
+                    }
                 }
 
                 _cleanedAt = now;

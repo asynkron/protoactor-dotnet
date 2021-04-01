@@ -3,6 +3,8 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,8 +37,11 @@ namespace Proto.Router
 
             if (context.Message is RouterAddRoutee addRoutee)
             {
-                var r = _routerState.GetRoutees();
-                if (r.Contains(addRoutee.Pid)) return Task.CompletedTask;
+                HashSet<PID>? r = _routerState.GetRoutees();
+                if (r.Contains(addRoutee.Pid))
+                {
+                    return Task.CompletedTask;
+                }
 
                 context.Watch(addRoutee.Pid);
                 r.Add(addRoutee.Pid);
@@ -46,8 +51,11 @@ namespace Proto.Router
 
             if (context.Message is RouterRemoveRoutee removeRoutee)
             {
-                var r = _routerState.GetRoutees();
-                if (!r.Contains(removeRoutee.Pid)) return Task.CompletedTask;
+                HashSet<PID>? r = _routerState.GetRoutees();
+                if (!r.Contains(removeRoutee.Pid))
+                {
+                    return Task.CompletedTask;
+                }
 
                 context.Unwatch(removeRoutee.Pid);
                 r.Remove(removeRoutee.Pid);
@@ -57,7 +65,7 @@ namespace Proto.Router
 
             if (context.Message is RouterBroadcastMessage broadcastMessage)
             {
-                var sender = context.Sender;
+                PID? sender = context.Sender;
 
                 foreach (var routee in _routerState.GetRoutees())
                 {
@@ -69,7 +77,7 @@ namespace Proto.Router
 
             if (context.Message is RouterGetRoutees)
             {
-                var r = _routerState.GetRoutees().ToList();
+                List<PID>? r = _routerState.GetRoutees().ToList();
                 context.Respond(new Routees(r));
             }
 

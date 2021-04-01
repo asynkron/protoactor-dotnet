@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Threading;
@@ -31,7 +32,7 @@ namespace Proto
             System = system;
 
             SenderMiddleware = middleware.Reverse()
-                .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner));
+                .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner));
             Headers = messageHeader ?? MessageHeader.Empty;
         }
 
@@ -46,13 +47,13 @@ namespace Proto
 
         public PID Spawn(Props props)
         {
-            var name = System.ProcessRegistry.NextId();
+            string? name = System.ProcessRegistry.NextId();
             return SpawnNamed(props, name);
         }
 
         public PID SpawnNamed(Props props, string name)
         {
-            var parent = props.GuardianStrategy is not null
+            PID? parent = props.GuardianStrategy is not null
                 ? System.Guardians.GetGuardianPid(props.GuardianStrategy)
                 : null;
             return props.Spawn(System, name, parent);
@@ -60,7 +61,7 @@ namespace Proto
 
         public PID SpawnPrefix(Props props, string prefix)
         {
-            var name = prefix + System.ProcessRegistry.NextId();
+            string? name = prefix + System.ProcessRegistry.NextId();
             return SpawnNamed(props, name);
         }
 
@@ -72,7 +73,7 @@ namespace Proto
 
         public void Request(PID target, object message, PID? sender)
         {
-            var envelope = new MessageEnvelope(message, sender);
+            MessageEnvelope? envelope = new MessageEnvelope(message, sender);
             Send(target, envelope);
         }
 
@@ -87,15 +88,18 @@ namespace Proto
 
         public void Stop(PID? pid)
         {
-            if (pid is null) return;
+            if (pid is null)
+            {
+                return;
+            }
 
-            var reff = System.ProcessRegistry.Get(pid);
+            Process? reff = System.ProcessRegistry.Get(pid);
             reff.Stop(pid);
         }
 
         public Task StopAsync(PID pid)
         {
-            var future = new FutureProcess(System);
+            FutureProcess? future = new FutureProcess(System);
 
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
@@ -114,7 +118,7 @@ namespace Proto
             this with
             {
                 SenderMiddleware = middleware.Reverse()
-                    .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner))
+                    .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner))
             };
 
         private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
@@ -125,11 +129,14 @@ namespace Proto
 
         private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)
         {
-            if (target is null) throw new ArgumentNullException(nameof(target));
+            if (target is null)
+            {
+                throw new ArgumentNullException(nameof(target));
+            }
 
-            var messageEnvelope = new MessageEnvelope(message, future.Pid);
+            MessageEnvelope? messageEnvelope = new MessageEnvelope(message, future.Pid);
             SendUserMessage(target, messageEnvelope);
-            var result = await future.Task;
+            object? result = await future.Task;
 
             switch (result)
             {
@@ -137,7 +144,7 @@ namespace Proto
                     throw new DeadLetterException(deadLetterResponse.Target);
                 case null:
                 case T _:
-                    return (T) result!;
+                    return (T)result!;
                 default:
                     throw new InvalidOperationException(
                         $"Unexpected message. Was type {result.GetType()} but expected {typeof(T)}"
@@ -147,7 +154,10 @@ namespace Proto
 
         private void SendUserMessage(PID target, object message)
         {
-            if (target is null) throw new ArgumentNullException(nameof(target));
+            if (target is null)
+            {
+                throw new ArgumentNullException(nameof(target));
+            }
 
             if (SenderMiddleware is not null)
             {

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using JetBrains.Annotations;
 using Ubiquitous.Metrics;
@@ -36,10 +37,13 @@ namespace Proto
         public ActorSystemConfig WithDeadLetterThrottleCount(int deadLetterThrottleCount) =>
             this with {DeadLetterThrottleCount = deadLetterThrottleCount};
 
-        public ActorSystemConfig WithDeadLetterRequestLogging(bool enabled) => this with {DeadLetterRequestLogging = enabled};
+        public ActorSystemConfig WithDeadLetterRequestLogging(bool enabled) =>
+            this with {DeadLetterRequestLogging = enabled};
 
-        public ActorSystemConfig WithDeveloperSupervisionLogging(bool enabled) => this with {DeveloperSupervisionLogging = enabled};
+        public ActorSystemConfig WithDeveloperSupervisionLogging(bool enabled) =>
+            this with {DeveloperSupervisionLogging = enabled};
 
-        public ActorSystemConfig WithMetricsProviders(params IMetricsProvider[] providers) => this with {MetricsProviders = providers};
+        public ActorSystemConfig WithMetricsProviders(params IMetricsProvider[] providers) =>
+            this with {MetricsProviders = providers};
     }
 }

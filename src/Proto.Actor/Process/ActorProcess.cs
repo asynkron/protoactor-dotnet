@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Threading;
 using Proto.Mailbox;
 
@@ -17,7 +18,8 @@ namespace Proto
 
         private IMailbox Mailbox { get; }
 
-        internal bool IsDead {
+        internal bool IsDead
+        {
             get => Interlocked.Read(ref _isDead) == 1;
             private set => Interlocked.Exchange(ref _isDead, value ? 1 : 0);
         }

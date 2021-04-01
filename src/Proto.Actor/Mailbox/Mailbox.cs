@@ -3,13 +3,14 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto.Mailbox
 {
-    static class MailboxStatus
+    internal static class MailboxStatus
     {
         public const int Idle = 0;
         public const int Busy = 1;
@@ -99,7 +100,10 @@ namespace Proto.Mailbox
         {
             _systemMessages.Push(msg);
             if (msg is Stop)
+            {
                 _invoker?.CancellationTokenSource?.Cancel();
+            }
+
             Interlocked.Increment(ref _systemMessageCount);
 
             foreach (var t in _stats)
@@ -126,16 +130,20 @@ namespace Proto.Mailbox
 
         private Task RunAsync()
         {
-            var done = ProcessMessages();
+            bool done = ProcessMessages();
 
             if (!done)
                 // mailbox is halted, awaiting completion of a message task, upon which mailbox will be rescheduled
+            {
                 return Task.CompletedTask;
+            }
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
             if (_systemMessages.HasMessages || !_suspended && _userMailbox.HasMessages)
+            {
                 Schedule();
+            }
             else
             {
                 foreach (var t in _stats)
@@ -153,7 +161,7 @@ namespace Proto.Mailbox
 
             try
             {
-                for (var i = 0; i < _dispatcher.Throughput; i++)
+                for (int i = 0; i < _dispatcher.Throughput; i++)
                 {
                     if (Interlocked.Read(ref _systemMessageCount) > 0 && (msg = _systemMessages.Pop()) is not null)
                     {
@@ -165,7 +173,7 @@ namespace Proto.Mailbox
                             ResumeMailbox _  => false,
                             _                => _suspended
                         };
-                        var t = _invoker.InvokeSystemMessageAsync(msg);
+                        Task? t = _invoker.InvokeSystemMessageAsync(msg);
 
                         if (t.IsFaulted)
                         {
@@ -194,11 +202,14 @@ namespace Proto.Mailbox
                         continue;
                     }
 
-                    if (_suspended) break;
+                    if (_suspended)
+                    {
+                        break;
+                    }
 
                     if ((msg = _userMailbox.Pop()) is not null)
                     {
-                        var t = _invoker.InvokeUserMessageAsync(msg);
+                        Task? t = _invoker.InvokeUserMessageAsync(msg);
 
                         if (t.IsFaulted)
                         {
@@ -225,7 +236,9 @@ namespace Proto.Mailbox
                         }
                     }
                     else
+                    {
                         break;
+                    }
                 }
             }
             catch (Exception e)
@@ -239,9 +252,13 @@ namespace Proto.Mailbox
         private void RescheduleOnTaskComplete(Task task, object message)
         {
             if (task.IsFaulted)
+            {
                 _invoker.EscalateFailure(task.Exception, message);
+            }
             else if (task.IsCanceled)
+            {
                 _invoker.EscalateFailure(new TaskCanceledException(), message);
+            }
             else
             {
                 foreach (var t in _stats)
@@ -256,7 +273,9 @@ namespace Proto.Mailbox
         protected void Schedule()
         {
             if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
+            {
                 _dispatcher.Schedule(RunAsync);
+            }
         }
     }
 

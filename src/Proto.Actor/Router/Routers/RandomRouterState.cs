@@ -3,11 +3,12 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 
 namespace Proto.Router.Routers
 {
-    class RandomRouterState : RouterState
+    internal class RandomRouterState : RouterState
     {
         private readonly Random _random;
         private readonly ISenderContext _senderContext;
@@ -20,8 +21,8 @@ namespace Proto.Router.Routers
 
         public override void RouteMessage(object message)
         {
-            var i = _random.Next(Values.Count);
-            var pid = Values[i];
+            int i = _random.Next(Values.Count);
+            PID? pid = Values[i];
             _senderContext.Send(pid, message);
         }
     }

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using Microsoft.Extensions.Logging;
 
@@ -32,7 +33,7 @@ namespace Proto
             object? message
         )
         {
-            var directive = _decider(child, reason);
+            SupervisorDirective directive = _decider(child, reason);
 
             switch (directive)
             {
@@ -71,7 +72,10 @@ namespace Proto
 
         private bool ShouldStop(RestartStatistics rs)
         {
-            if (_maxNrOfRetries == 0) return true;
+            if (_maxNrOfRetries == 0)
+            {
+                return true;
+            }
 
             rs.Fail();
 

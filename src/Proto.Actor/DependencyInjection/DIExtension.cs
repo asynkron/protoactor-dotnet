@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using JetBrains.Annotations;
 using Proto.Extensions;
@@ -21,8 +22,8 @@ namespace Proto.DependencyInjection
     {
         public static ActorSystem WithServiceProvider(this ActorSystem actorSystem, IServiceProvider serviceProvider)
         {
-            var dependencyResolver = new DependencyResolver(serviceProvider);
-            var diExtension = new DIExtension(dependencyResolver);
+            DependencyResolver? dependencyResolver = new DependencyResolver(serviceProvider);
+            DIExtension? diExtension = new DIExtension(dependencyResolver);
             actorSystem.Extensions.Register(diExtension);
             return actorSystem;
         }

@@ -18,7 +18,10 @@ namespace Proto.Metrics
 
         public ProtoMetrics(IMetricsProvider[] configurators)
         {
-            if (configurators.FirstOrDefault() is NoMetricsProvider) IsNoop = true;
+            if (configurators.FirstOrDefault() is NoMetricsProvider)
+            {
+                IsNoop = true;
+            }
 
             _metrics = Ubiquitous.Metrics.Metrics.CreateUsing(configurators);
             _configurators = configurators;
@@ -28,7 +31,7 @@ namespace Proto.Metrics
 
         public void RegisterKnownMetrics<T>(T instance) => _knownMetrics.Add<T>(instance!);
 
-        public T Get<T>() => (T) _knownMetrics.Get<T>()!;
+        public T Get<T>() => (T)_knownMetrics.Get<T>()!;
 
         public ICountMetric CreateCount(string name, string description, params LabelName[] labelNames)
             => _metrics.CreateCount(name, description, labelNames);

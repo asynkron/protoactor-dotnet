@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -30,7 +31,7 @@ namespace Proto
 
         public Task ReceiveAsync(IContext context)
         {
-            var behavior = _behaviors.Peek();
+            Receive? behavior = _behaviors.Peek();
             return behavior(context);
         }
     }

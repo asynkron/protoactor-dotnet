@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -34,7 +35,9 @@ namespace Proto.Mailbox
                 _messages.Enqueue(message);
             }
             else
+            {
                 _overflowAction(message);
+            }
         }
 
         public object? Pop() => _messages.TryDequeue(out var message) ? message : null;

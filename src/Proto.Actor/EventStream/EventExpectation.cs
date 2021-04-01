@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -11,7 +12,7 @@ using JetBrains.Annotations;
 namespace Proto
 {
     [PublicAPI]
-    class EventExpectation<T>
+    internal class EventExpectation<T>
     {
         private readonly Func<T, bool> _predicate;
 
@@ -24,7 +25,10 @@ namespace Proto
 
         public bool Evaluate(T @event)
         {
-            if (!_predicate(@event)) return false;
+            if (!_predicate(@event))
+            {
+                return false;
+            }
 
             _source.SetResult(@event);
             return true;

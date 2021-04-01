@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -26,7 +27,10 @@ namespace Proto
         /// <param name="system">Actor system</param>
         internal static void Stop(this IEnumerable<PID> self, ActorSystem system)
         {
-            if (self is null!) return;
+            if (self is null!)
+            {
+                return;
+            }
 
             foreach (var pid in self)
             {

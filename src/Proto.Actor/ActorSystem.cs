@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -65,14 +66,18 @@ namespace Proto
 
         private void RunThreadPoolStats()
         {
-            var logger = Log.CreateLogger(nameof(ThreadPoolStats));
+            ILogger? logger = Log.CreateLogger(nameof(ThreadPoolStats));
             _ = ThreadPoolStats.Run(TimeSpan.FromSeconds(5),
-                t => {
+                t =>
+                {
                     //collect the latency metrics
                     Metrics.InternalActorMetrics.ThreadPoolLatencyHistogram.Observe(t, new[] {Id, Address});
 
                     //does it take longer than 1 sec for a task to start executing?
-                    if (t > TimeSpan.FromSeconds(1)) logger.LogWarning("ThreadPool is running hot, Threadpool latency {ThreadPoolLatency}", t);
+                    if (t > TimeSpan.FromSeconds(1))
+                    {
+                        logger.LogWarning("ThreadPool is running hot, Threadpool latency {ThreadPoolLatency}", t);
+                    }
                 }, _cts.Token
             );
         }

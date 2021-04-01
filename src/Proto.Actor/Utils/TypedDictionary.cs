@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 
@@ -20,8 +21,11 @@ namespace Proto.Utils
         {
             lock (_lockObject)
             {
-                var id = TypeKey<TKey>.Id;
-                if (id >= _values.Length) Array.Resize(ref _values, id * 2);
+                int id = TypeKey<TKey>.Id;
+                if (id >= _values.Length)
+                {
+                    Array.Resize(ref _values, id * 2);
+                }
 
                 _values[id] = value;
             }
@@ -29,7 +33,7 @@ namespace Proto.Utils
 
         public TValue? Get<TKey>()
         {
-            var id = TypeKey<TKey>.Id;
+            int id = TypeKey<TKey>.Id;
             return id >= _values.Length ? default : _values[id];
         }
 

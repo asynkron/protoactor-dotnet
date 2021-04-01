@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,11 +11,11 @@ using Proto.Metrics;
 
 namespace Proto.Future
 {
-    class FutureProcess : Process, IDisposable
+    internal class FutureProcess : Process, IDisposable
     {
         private readonly CancellationTokenSource? _cts;
-        private readonly TaskCompletionSource<object> _tcs;
         private readonly ActorMetrics? _metrics;
+        private readonly TaskCompletionSource<object> _tcs;
 
         internal FutureProcess(ActorSystem system, TimeSpan timeout) : this(system, new CancellationTokenSource(timeout)
         )
@@ -41,24 +42,31 @@ namespace Proto.Future
             _tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
             _cts = cts;
 
-            var name = System.ProcessRegistry.NextId();
-            var (pid, absent) = System.ProcessRegistry.TryAdd(name, this);
-            
-            if (!absent) throw new ProcessNameExistException(name, pid);
+            string? name = System.ProcessRegistry.NextId();
+            (var pid, bool absent) = System.ProcessRegistry.TryAdd(name, this);
+
+            if (!absent)
+            {
+                throw new ProcessNameExistException(name, pid);
+            }
 
             Pid = pid;
-            
+
             _cts?.Token.Register(
-                () => {
-                    if (_tcs.Task.IsCompleted) return;
+                () =>
+                {
+                    if (_tcs.Task.IsCompleted)
+                    {
+                        return;
+                    }
 
                     _tcs.TrySetException(
                         new TimeoutException("Request didn't receive any Response within the expected time.")
                     );
 
-                    
+
                     _metrics?.FuturesTimedOutCount.Inc(new[] {System.Id, system.Address});
-                    
+
                     Stop(pid);
                 }
                 , false);
@@ -68,6 +76,13 @@ namespace Proto.Future
 
         public PID Pid { get; }
         public Task<object> Task { get; }
+
+        public void Dispose()
+        {
+            System.ProcessRegistry.Remove(Pid);
+            _tcs.Task.Dispose();
+            _cts?.Dispose();
+        }
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
@@ -92,18 +107,14 @@ namespace Proto.Future
                 return;
             }
 
-            if (_cts is null || !_cts.IsCancellationRequested) _tcs.TrySetResult(default!);
+            if (_cts is null || !_cts.IsCancellationRequested)
+            {
+                _tcs.TrySetResult(default!);
+            }
 
             _metrics?.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
 
             Stop(pid);
-        }
-
-        public void Dispose()
-        {
-            System.ProcessRegistry.Remove(Pid);
-            _tcs.Task.Dispose();
-            _cts?.Dispose();
         }
     }
 }

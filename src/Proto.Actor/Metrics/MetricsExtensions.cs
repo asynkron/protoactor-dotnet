@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -14,21 +15,22 @@ namespace Proto
     [PublicAPI]
     public static class MetricsExtensions
     {
-        public static async Task<T> Observe<T>(this IHistogramMetric histogram, Func<Task<T>> factory, params string[] labels)
+        public static async Task<T> Observe<T>(this IHistogramMetric histogram, Func<Task<T>> factory,
+            params string[] labels)
         {
-            var sw = Stopwatch.StartNew();
-            var t = factory();
-            var res = await t;
+            Stopwatch? sw = Stopwatch.StartNew();
+            Task<T>? t = factory();
+            T? res = await t;
             sw.Stop();
             histogram.Observe(sw, labels);
 
             return res;
         }
-        
+
         public static async Task Observe(this IHistogramMetric histogram, Func<Task> factory, params string[] labels)
         {
-            var sw = Stopwatch.StartNew();
-            var t = factory();
+            Stopwatch? sw = Stopwatch.StartNew();
+            Task? t = factory();
             await t;
             sw.Stop();
             histogram.Observe(sw, labels);

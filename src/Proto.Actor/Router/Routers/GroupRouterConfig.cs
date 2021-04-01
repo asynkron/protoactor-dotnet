@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Router.Routers
 {
     public abstract record GroupRouterConfig(ISenderContext SenderContext, PID[] Routees) : RouterConfig

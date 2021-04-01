@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
@@ -27,7 +28,8 @@ namespace Proto
         private readonly ILogger _logger = Log.CreateLogger<EventProbe<T>>();
         private EventExpectation<T>? _currentExpectation;
 
-        public EventProbe(EventStream<T> eventStream) => _eventStreamSubscription = eventStream.Subscribe(e => {
+        public EventProbe(EventStream<T> eventStream) => _eventStreamSubscription = eventStream.Subscribe(e =>
+            {
                 lock (_lock)
                 {
                     _events.Enqueue(e);
@@ -40,7 +42,7 @@ namespace Proto
         {
             lock (_lock)
             {
-                var expectation = new EventExpectation<T>(@event => @event is TE);
+                EventExpectation<T>? expectation = new EventExpectation<T>(@event => @event is TE);
                 _currentExpectation = expectation;
                 NotifyChanges();
                 return expectation.Task;
@@ -51,7 +53,8 @@ namespace Proto
         {
             lock (_lock)
             {
-                var expectation = new EventExpectation<T>(@event => {
+                EventExpectation<T>? expectation = new EventExpectation<T>(@event =>
+                    {
                         return @event switch
                         {
                             TE e when predicate(e) => true,
@@ -78,7 +81,7 @@ namespace Proto
         //TODO: make lockfree
         private void NotifyChanges()
         {
-            while (_currentExpectation is not null && _events.TryDequeue(out var @event))
+            while (_currentExpectation is not null && _events.TryDequeue(out T @event))
             {
                 if (_currentExpectation.Evaluate(@event))
                 {

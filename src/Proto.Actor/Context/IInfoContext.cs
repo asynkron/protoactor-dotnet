@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
+
 namespace Proto
 {
     public interface IInfoContext

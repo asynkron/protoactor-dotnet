@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +25,7 @@ namespace Proto.Interactive
         {
             var (s, routees, router) = Start(body, concurrencyLevel);
 
-            foreach (var msg in self)
+            foreach (T msg in self)
             {
                 s.Root.Send(router, msg!);
             }
@@ -40,7 +41,7 @@ namespace Proto.Interactive
         {
             var (s, routees, router) = Start(body, concurrencyLevel);
 
-            await foreach (var msg in self)
+            await foreach (T msg in self)
             {
                 s.Root.Send(router, msg!);
             }
@@ -53,7 +54,8 @@ namespace Proto.Interactive
             Action<T> body,
             int concurrencyLevel = 10
         ) =>
-            self.ParallelForEach(x => {
+            self.ParallelForEach(x =>
+                {
                     body(x);
                     return Task.CompletedTask;
                 }, concurrencyLevel
@@ -71,19 +73,23 @@ namespace Proto.Interactive
 
         private static (ActorSystem, PID[], PID) Start<T>(Func<T, Task> body, int concurrencyLevel)
         {
-            var s = new ActorSystem();
-            var props = Props.FromFunc(async ctx => {
-                    if (ctx.Message is T msg) await body(msg);
+            ActorSystem? s = new ActorSystem();
+            Props? props = Props.FromFunc(async ctx =>
+                {
+                    if (ctx.Message is T msg)
+                    {
+                        await body(msg);
+                    }
                 }
             ).WithMailbox(() => new DefaultMailbox(new UnboundedMailboxQueue(), new BoundedMailboxQueue(10)));
 
-            var routees = Enumerable
+            PID[]? routees = Enumerable
                 .Range(0, concurrencyLevel)
                 .Select(_ => s.Root.Spawn(props))
                 .ToArray();
 
-            var routerProps = s.Root.NewRoundRobinGroup(routees);
-            var router = s.Root.Spawn(routerProps);
+            Props? routerProps = s.Root.NewRoundRobinGroup(routees);
+            PID? router = s.Root.Spawn(routerProps);
             return (s, routees, router);
         }
     }

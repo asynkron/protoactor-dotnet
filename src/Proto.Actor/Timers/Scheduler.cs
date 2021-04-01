@@ -14,9 +14,10 @@ namespace Proto.Timers
 
         public CancellationTokenSource SendOnce(TimeSpan delay, PID target, object message)
         {
-            var cts = new CancellationTokenSource();
+            CancellationTokenSource? cts = new CancellationTokenSource();
 
-            _ = SafeTask.Run(async () => {
+            _ = SafeTask.Run(async () =>
+                {
                     await Task.Delay(delay, cts.Token);
 
                     _context.Send(target, message);
@@ -31,9 +32,10 @@ namespace Proto.Timers
 
         public CancellationTokenSource SendRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
         {
-            var cts = new CancellationTokenSource();
+            CancellationTokenSource? cts = new CancellationTokenSource();
 
-            _ = SafeTask.Run(async () => {
+            _ = SafeTask.Run(async () =>
+                {
                     await Task.Delay(delay, cts.Token);
 
                     async Task Trigger()
@@ -41,7 +43,9 @@ namespace Proto.Timers
                         while (true)
                         {
                             if (cts.IsCancellationRequested)
+                            {
                                 return;
+                            }
 
                             _context.Send(target, message);
 
@@ -58,9 +62,10 @@ namespace Proto.Timers
 
         public CancellationTokenSource RequestOnce(TimeSpan delay, PID sender, PID target, object message)
         {
-            var cts = new CancellationTokenSource();
+            CancellationTokenSource? cts = new CancellationTokenSource();
 
-            _ = SafeTask.Run(async () => {
+            _ = SafeTask.Run(async () =>
+                {
                     await Task.Delay(delay, cts.Token);
 
                     //TODO: allow custom sender
@@ -76,9 +81,10 @@ namespace Proto.Timers
 
         public CancellationTokenSource RequestRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
         {
-            var cts = new CancellationTokenSource();
+            CancellationTokenSource? cts = new CancellationTokenSource();
 
-            _ = SafeTask.Run(async () => {
+            _ = SafeTask.Run(async () =>
+                {
                     await Task.Delay(delay, cts.Token);
 
                     async Task Trigger()
@@ -86,7 +92,9 @@ namespace Proto.Timers
                         while (true)
                         {
                             if (cts.IsCancellationRequested)
+                            {
                                 return;
+                            }
 
                             _context.Request(target, message);
 

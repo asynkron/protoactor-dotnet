@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -76,7 +77,7 @@ namespace Proto.Mailbox
         public int Throughput { get; }
     }
 
-    class NoopDispatcher : IDispatcher
+    internal class NoopDispatcher : IDispatcher
     {
         internal static readonly IDispatcher Instance = new NoopDispatcher();
         public int Throughput => 0;
@@ -84,7 +85,7 @@ namespace Proto.Mailbox
         public void Schedule(Func<Task> runner) => throw new NotImplementedException();
     }
 
-    class NoopInvoker : IMessageInvoker
+    internal class NoopInvoker : IMessageInvoker
     {
         internal static readonly IMessageInvoker Instance = new NoopInvoker();
 

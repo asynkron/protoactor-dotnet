@@ -3,9 +3,10 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Router.Routers
 {
-    class BroadcastRouterState : RouterState
+    internal class BroadcastRouterState : RouterState
     {
         private readonly ISenderContext _senderContext;
 

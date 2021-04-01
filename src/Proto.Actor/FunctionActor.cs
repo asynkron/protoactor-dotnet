@@ -3,12 +3,13 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Threading.Tasks;
 
 namespace Proto
 {
     //this is used when creating actors from a Func
-    class FunctionActor : IActor
+    internal class FunctionActor : IActor
     {
         private readonly Receive _receive;
 

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 
@@ -29,13 +30,16 @@ namespace Proto
             object? message
         )
         {
-            if (rs.NumberOfFailures(_backoffWindow) == 0) rs.Reset();
+            if (rs.NumberOfFailures(_backoffWindow) == 0)
+            {
+                rs.Reset();
+            }
 
             rs.Fail();
 
-            var backoff = rs.FailureCount * (int) _initialBackoff.TotalMilliseconds;
-            var noise = _random.Next(500);
-            var duration = TimeSpan.FromMilliseconds(backoff + noise);
+            int backoff = rs.FailureCount * (int)_initialBackoff.TotalMilliseconds;
+            int noise = _random.Next(500);
+            TimeSpan duration = TimeSpan.FromMilliseconds(backoff + noise);
             Task.Delay(duration).ContinueWith(t => supervisor.RestartChildren(reason, child));
         }
     }

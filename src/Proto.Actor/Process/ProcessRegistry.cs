@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,26 +34,35 @@ namespace Proto
             if (pid.Address == ActorSystem.NoHost || pid.Address == System.Address)
 
             {
-                if (_localProcesses.TryGetValue(pid.Id, out var process)) return process;
+                if (_localProcesses.TryGetValue(pid.Id, out var process))
+                {
+                    return process;
+                }
 
-                var client = _clientResolvers.Select(x => x(pid)).FirstOrDefault();
-                if (client is null) return System.DeadLetter;
+                Process? client = _clientResolvers.Select(x => x(pid)).FirstOrDefault();
+                if (client is null)
+                {
+                    return System.DeadLetter;
+                }
 
                 return client;
             }
 
-            var reff = _hostResolvers.Select(x => x(pid)).FirstOrDefault();
+            Process? reff = _hostResolvers.Select(x => x(pid)).FirstOrDefault();
 
-            if (reff is null) throw new NotSupportedException("Unknown host");
+            if (reff is null)
+            {
+                throw new NotSupportedException("Unknown host");
+            }
 
             return reff;
         }
 
         public (PID pid, bool ok) TryAdd(string id, Process process)
         {
-            var pid = new PID(System.Address, id, process);
+            PID? pid = new PID(System.Address, id, process);
 
-            var ok = _localProcesses.TryAdd(pid.Id, process);
+            bool ok = _localProcesses.TryAdd(pid.Id, process);
             return ok ? (pid, true) : (PID.FromAddress(System.Address, id), false);
         }
 
@@ -60,7 +70,7 @@ namespace Proto
 
         public string NextId()
         {
-            var counter = Interlocked.Increment(ref _sequenceId);
+            int counter = Interlocked.Increment(ref _sequenceId);
             return "$" + counter;
         }
     }

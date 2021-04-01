@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -23,15 +24,20 @@ namespace Proto.Mailbox
 
         public MPMCQueue(int bufferSize)
         {
-            if (bufferSize < 2) throw new ArgumentException($"{nameof(bufferSize)} should be greater than 2");
+            if (bufferSize < 2)
+            {
+                throw new ArgumentException($"{nameof(bufferSize)} should be greater than 2");
+            }
 
             if ((bufferSize & (bufferSize - 1)) != 0)
+            {
                 throw new ArgumentException($"{nameof(bufferSize)} should be a power of 2");
+            }
 
             _bufferMask = bufferSize - 1;
             _buffer = new Cell[bufferSize];
 
-            for (var i = 0; i < bufferSize; i++)
+            for (int i = 0; i < bufferSize; i++)
             {
                 _buffer[i] = new Cell(i, null);
             }
@@ -46,10 +52,10 @@ namespace Proto.Mailbox
         {
             do
             {
-                var buffer = _buffer;
-                var pos = _enqueuePos;
-                var index = pos & _bufferMask;
-                var cell = buffer[index];
+                Cell[]? buffer = _buffer;
+                int pos = _enqueuePos;
+                int index = pos & _bufferMask;
+                Cell cell = buffer[index];
 
                 if (cell.Sequence == pos && Interlocked.CompareExchange(ref _enqueuePos, pos + 1, pos) == pos)
                 {
@@ -58,7 +64,10 @@ namespace Proto.Mailbox
                     return true;
                 }
 
-                if (cell.Sequence < pos) return false;
+                if (cell.Sequence < pos)
+                {
+                    return false;
+                }
             } while (true);
         }
 
@@ -66,7 +75,10 @@ namespace Proto.Mailbox
         {
             while (true)
             {
-                if (TryEnqueue(item)) break;
+                if (TryEnqueue(item))
+                {
+                    break;
+                }
 
                 Task.Delay(1)
                     .Wait(); // Could be Thread.Sleep(1) or Thread.SpinWait() if the assembly is not portable lib.
@@ -77,11 +89,11 @@ namespace Proto.Mailbox
         {
             do
             {
-                var buffer = _buffer;
-                var bufferMask = _bufferMask;
-                var pos = _dequeuePos;
-                var index = pos & bufferMask;
-                var cell = buffer[index];
+                Cell[]? buffer = _buffer;
+                int bufferMask = _bufferMask;
+                int pos = _dequeuePos;
+                int index = pos & bufferMask;
+                Cell cell = buffer[index];
 
                 if (cell.Sequence == pos + 1 && Interlocked.CompareExchange(ref _dequeuePos, pos + 1, pos) == pos)
                 {

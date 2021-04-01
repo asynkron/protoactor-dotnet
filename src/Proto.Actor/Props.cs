@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Immutable;
 using System.Linq;
@@ -43,14 +44,17 @@ namespace Proto
 
         public static PID DefaultSpawner(ActorSystem system, string name, Props props, PID? parent)
         {
-            var mailbox = props.MailboxProducer();
-            var dispatcher = props.Dispatcher;
-            var process = new ActorProcess(system, mailbox);
-            var (self, absent) = system.ProcessRegistry.TryAdd(name, process);
+            IMailbox? mailbox = props.MailboxProducer();
+            IDispatcher? dispatcher = props.Dispatcher;
+            ActorProcess? process = new ActorProcess(system, mailbox);
+            (var self, bool absent) = system.ProcessRegistry.TryAdd(name, process);
 
-            if (!absent) throw new ProcessNameExistException(name, self);
+            if (!absent)
+            {
+                throw new ProcessNameExistException(name, self);
+            }
 
-            var ctx = ActorContext.Setup(system, props, parent, self, mailbox);
+            ActorContext? ctx = ActorContext.Setup(system, props, parent, self, mailbox);
             mailbox.RegisterHandlers(ctx, dispatcher);
             mailbox.PostSystemMessage(Started.Instance);
             mailbox.Start();
@@ -72,7 +76,7 @@ namespace Proto
 
         public Props WithContextDecorator(params Func<IContext, IContext>[] contextDecorator)
         {
-            var x = ContextDecorator.AddRange(contextDecorator);
+            ImmutableList<Func<IContext, IContext>>? x = ContextDecorator.AddRange(contextDecorator);
             return this with
             {
                 ContextDecorator = x,
@@ -80,7 +84,7 @@ namespace Proto
                     .AsEnumerable()
                     .Reverse()
                     .Aggregate(
-                        (Func<IContext, IContext>) DefaultContextDecorator,
+                        (Func<IContext, IContext>)DefaultContextDecorator,
                         (inner, outer) => ctx => outer(inner(ctx))
                     )
             };
@@ -94,23 +98,23 @@ namespace Proto
 
         public Props WithReceiverMiddleware(params Func<Receiver, Receiver>[] middleware)
         {
-            var x = ReceiverMiddleware.AddRange(middleware);
+            ImmutableList<Func<Receiver, Receiver>>? x = ReceiverMiddleware.AddRange(middleware);
             return this with
             {
                 ReceiverMiddleware = x,
                 ReceiverMiddlewareChain = x.AsEnumerable().Reverse()
-                    .Aggregate((Receiver) Middleware.Receive, (inner, outer) => outer(inner))
+                    .Aggregate((Receiver)Middleware.Receive, (inner, outer) => outer(inner))
             };
         }
 
         public Props WithSenderMiddleware(params Func<Sender, Sender>[] middleware)
         {
-            var x = SenderMiddleware.AddRange(middleware);
+            ImmutableList<Func<Sender, Sender>>? x = SenderMiddleware.AddRange(middleware);
             return this with
             {
                 SenderMiddleware = x,
                 SenderMiddlewareChain = x.AsEnumerable().Reverse()
-                    .Aggregate((Sender) Middleware.Sender, (inner, outer) => outer(inner))
+                    .Aggregate((Sender)Middleware.Sender, (inner, outer) => outer(inner))
             };
         }
 

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
@@ -37,13 +38,13 @@ namespace Proto
 
         public MessageEnvelope WithHeader(string key, string value)
         {
-            var header = Header.With(key, value);
+            MessageHeader? header = Header.With(key, value);
             return this with {Header = header};
         }
 
         public MessageEnvelope WithHeaders(IEnumerable<KeyValuePair<string, string>> items)
         {
-            var header = Header.With(items);
+            MessageHeader? header = Header.With(items);
             return this with {Header = header};
         }
 

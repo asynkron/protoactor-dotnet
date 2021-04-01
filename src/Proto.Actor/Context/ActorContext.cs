@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -13,17 +14,16 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Future;
 using Proto.Mailbox;
-using static Ubiquitous.Metrics.Metrics;
 
 namespace Proto.Context
 {
     public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         private static readonly ImmutableHashSet<PID> EmptyChildren = ImmutableHashSet<PID>.Empty;
+        private readonly IMailbox _mailbox;
         private readonly Props _props;
 
         private ActorContextExtras? _extras;
-        private readonly IMailbox _mailbox;
         private object? _messageOrEnvelope;
         private ContextState _state;
 
@@ -61,7 +61,10 @@ namespace Proto.Context
 
         public void Stash()
         {
-            if (_messageOrEnvelope is not null) EnsureExtras().Stash.Push(_messageOrEnvelope);
+            if (_messageOrEnvelope is not null)
+            {
+                EnsureExtras().Stash.Push(_messageOrEnvelope);
+            }
         }
 
         public void Respond(object message)
@@ -72,27 +75,31 @@ namespace Proto.Context
                 Send(Sender, message);
             }
             else
+            {
                 Logger.LogWarning("{Self} Tried to respond but sender is null, with message {Message}", Self, message);
+            }
         }
 
         public PID Spawn(Props props)
         {
-            var id = System.ProcessRegistry.NextId();
+            string? id = System.ProcessRegistry.NextId();
             return SpawnNamed(props, id);
         }
 
         public PID SpawnPrefix(Props props, string prefix)
         {
-            var name = prefix + System.ProcessRegistry.NextId();
+            string? name = prefix + System.ProcessRegistry.NextId();
             return SpawnNamed(props, name);
         }
 
         public PID SpawnNamed(Props props, string name)
         {
             if (props.GuardianStrategy is not null)
+            {
                 throw new ArgumentException("Props used to spawn child cannot have GuardianStrategy.");
+            }
 
-            var pid = props.Spawn(System, $"{Self.Id}/{name}", Self);
+            PID? pid = props.Spawn(System, $"{Self.Id}/{name}", Self);
             EnsureExtras().AddChild(pid);
 
             return pid;
@@ -105,9 +112,14 @@ namespace Proto.Context
         public void SetReceiveTimeout(TimeSpan duration)
         {
             if (duration <= TimeSpan.Zero)
+            {
                 throw new ArgumentOutOfRangeException(nameof(duration), duration, "Duration must be greater than zero");
+            }
 
-            if (duration == ReceiveTimeout) return;
+            if (duration == ReceiveTimeout)
+            {
+                return;
+            }
 
             ReceiveTimeout = duration;
 
@@ -124,12 +136,17 @@ namespace Proto.Context
                 );
             }
             else
+            {
                 _extras.ResetReceiveTimeoutTimer(ReceiveTimeout);
+            }
         }
 
         public void CancelReceiveTimeout()
         {
-            if (_extras?.ReceiveTimeoutTimer is null) return;
+            if (_extras?.ReceiveTimeoutTimer is null)
+            {
+                return;
+            }
 
             _extras.StopReceiveTimeoutTimer();
             _extras.KillReceiveTimeoutTimer();
@@ -157,13 +174,13 @@ namespace Proto.Context
 
         public void Request(PID target, object message)
         {
-            var messageEnvelope = new MessageEnvelope(message, Self);
+            MessageEnvelope? messageEnvelope = new MessageEnvelope(message, Self);
             SendUserMessage(target, messageEnvelope);
         }
 
         public void Request(PID target, object message, PID? sender)
         {
-            var messageEnvelope = new MessageEnvelope(message, sender);
+            MessageEnvelope? messageEnvelope = new MessageEnvelope(message, sender);
             SendUserMessage(target, messageEnvelope);
         }
 
@@ -178,18 +195,19 @@ namespace Proto.Context
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
-            var msg = _messageOrEnvelope;
-            var cont = new Continuation(() => action(target), msg);
+            object? msg = _messageOrEnvelope;
+            Continuation? cont = new Continuation(() => action(target), msg);
 
             ScheduleContinuation(target, cont);
         }
 
         public void ReenterAfter(Task target, Action action)
         {
-            var msg = _messageOrEnvelope;
+            object? msg = _messageOrEnvelope;
 
-            var cont = new Continuation(
-                () => {
+            Continuation? cont = new Continuation(
+                () =>
+                {
                     action();
                     return Task.CompletedTask;
                 }, msg
@@ -206,14 +224,17 @@ namespace Proto.Context
 
         public void Stop(PID pid)
         {
-            System.Metrics.InternalActorMetrics.ActorStoppedCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
-            var reff = System.ProcessRegistry.Get(pid);
+            System.Metrics.InternalActorMetrics.ActorStoppedCount.Inc(new[]
+            {
+                System.Id, System.Address, Actor!.GetType().Name
+            });
+            Process? reff = System.ProcessRegistry.Get(pid);
             reff.Stop(pid);
         }
 
         public Task StopAsync(PID pid)
         {
-            var future = new FutureProcess(System);
+            FutureProcess? future = new FutureProcess(System);
 
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
@@ -231,18 +252,28 @@ namespace Proto.Context
         {
             if (System.Config.DeveloperSupervisionLogging)
             {
-                Console.WriteLine($"[Supervision] Actor {Self} : {Actor?.GetType().Name} failed with message:{message} exception:{reason}");
-                Logger.LogError("[Supervision] Actor {Self} : {ActorType} failed with message:{Message} exception:{Reason}",Self,Actor?.GetType().Name,message,reason);
-            }    
-            
-            System.Metrics.InternalActorMetrics.ActorFailureCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
-            var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
+                Console.WriteLine(
+                    $"[Supervision] Actor {Self} : {Actor?.GetType().Name} failed with message:{message} exception:{reason}");
+                Logger.LogError(
+                    "[Supervision] Actor {Self} : {ActorType} failed with message:{Message} exception:{Reason}", Self,
+                    Actor?.GetType().Name, message, reason);
+            }
+
+            System.Metrics.InternalActorMetrics.ActorFailureCount.Inc(new[]
+            {
+                System.Id, System.Address, Actor!.GetType().Name
+            });
+            Failure? failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
             Self.SendSystemMessage(System, SuspendMailbox.Instance);
 
             if (Parent is null)
+            {
                 HandleRootFailure(failure);
+            }
             else
+            {
                 Parent.SendSystemMessage(System, failure);
+            }
         }
 
         public Task InvokeSystemMessageAsync(object msg)
@@ -274,14 +305,18 @@ namespace Proto.Context
         public Task InvokeUserMessageAsync(object msg)
         {
             if (!System.Metrics.IsNoop)
+            {
                 System.Metrics.InternalActorMetrics.ActorMailboxLength.Set(_mailbox.UserMessageCount,
                     new[] {System.Id, System.Address, Actor!.GetType().Name}
                 );
+            }
 
             return System.Metrics.IsNoop switch
             {
                 true => InternalInvokeUserMessageAsync(msg),
-                _ => System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram.Observe(() => InternalInvokeUserMessageAsync(msg), System.Id, System.Address, Actor!.GetType().Name, MessageEnvelope.UnwrapMessage(msg)!.GetType().Name
+                _ => System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram.Observe(
+                    () => InternalInvokeUserMessageAsync(msg), System.Id, System.Address, Actor!.GetType().Name,
+                    MessageEnvelope.UnwrapMessage(msg)!.GetType().Name
                 )
             };
         }
@@ -305,22 +340,28 @@ namespace Proto.Context
                 return Task.CompletedTask;
             }
 
-            var influenceTimeout = true;
+            bool influenceTimeout = true;
 
             if (ReceiveTimeout > TimeSpan.Zero)
             {
-                var notInfluenceTimeout = msg is INotInfluenceReceiveTimeout;
+                bool notInfluenceTimeout = msg is INotInfluenceReceiveTimeout;
                 influenceTimeout = !notInfluenceTimeout;
 
-                if (influenceTimeout) _extras?.StopReceiveTimeoutTimer();
+                if (influenceTimeout)
+                {
+                    _extras?.StopReceiveTimeoutTimer();
+                }
             }
 
-            var res = ProcessMessageAsync(msg);
+            Task? res = ProcessMessageAsync(msg);
 
             if (ReceiveTimeout != TimeSpan.Zero && influenceTimeout)
             {
                 //special handle non completed tasks that need to reset ReceiveTimout
-                if (!res.IsCompleted) return ContinueAfter();
+                if (!res.IsCompleted)
+                {
+                    return ContinueAfter();
+                }
 
                 _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
             }
@@ -338,7 +379,8 @@ namespace Proto.Context
             new(system, props, parent, self, mailbox);
 
         private void ScheduleContinuation(Task target, Continuation cont) =>
-            _ = SafeTask.Run(async () => {
+            _ = SafeTask.Run(async () =>
+                {
                     await target;
                     Self.SendSystemMessage(System, cont);
                 }
@@ -359,9 +401,12 @@ namespace Proto.Context
 
         private ActorContextExtras EnsureExtras()
         {
-            if (_extras is not null) return _extras;
+            if (_extras is not null)
+            {
+                return _extras;
+            }
 
-            var context = _props.ContextDecoratorChain?.Invoke(this) ?? this;
+            IContext? context = _props.ContextDecoratorChain?.Invoke(this) ?? this;
             _extras = new ActorContextExtras(context);
 
             return _extras;
@@ -372,12 +417,15 @@ namespace Proto.Context
             Message switch
             {
                 PoisonPill => HandlePoisonPill(),
-                _          => Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this)
+                _ => Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this)
             };
 
         private Task HandlePoisonPill()
         {
-            if (Sender != null) HandleWatch(new Watch(Sender));
+            if (Sender != null)
+            {
+                HandleWatch(new Watch(Sender));
+            }
 
             Stop(Self);
             return Task.CompletedTask;
@@ -387,10 +435,14 @@ namespace Proto.Context
         {
             //slow path, there is middleware, message must be wrapped in an envelope
             if (_props.ReceiverMiddlewareChain is not null)
+            {
                 return _props.ReceiverMiddlewareChain(EnsureExtras().Context, MessageEnvelope.Wrap(msg));
+            }
 
             if (_props.ContextDecoratorChain is not null)
+            {
                 return EnsureExtras().Context.Receive(MessageEnvelope.Wrap(msg));
+            }
 
             //fast path, 0 alloc invocation of actor receive
             _messageOrEnvelope = msg;
@@ -399,9 +451,9 @@ namespace Proto.Context
 
         private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)
         {
-            var messageEnvelope = new MessageEnvelope(message, future.Pid);
+            MessageEnvelope? messageEnvelope = new MessageEnvelope(message, future.Pid);
             SendUserMessage(target, messageEnvelope);
-            var result = await future.Task;
+            object? result = await future.Task;
 
             switch (result)
             {
@@ -409,7 +461,7 @@ namespace Proto.Context
                     throw new DeadLetterException(target);
                 case null:
                 case T:
-                    return (T) result!;
+                    return (T)result!;
                 default:
                     throw new InvalidOperationException(
                         $"Unexpected message. Was type {result?.GetType()} but expected {typeof(T)}"
@@ -434,8 +486,11 @@ namespace Proto.Context
         private IActor IncarnateActor()
         {
             _state = ContextState.Alive;
-            var actor = _props.Producer(System);
-            System.Metrics.InternalActorMetrics.ActorSpawnCount.Inc(new[] {System.Id, System.Address, actor.GetType().Name});
+            IActor? actor = _props.Producer(System);
+            System.Metrics.InternalActorMetrics.ActorSpawnCount.Inc(new[]
+            {
+                System.Id, System.Address, actor.GetType().Name
+            });
             return actor;
         }
 
@@ -445,7 +500,10 @@ namespace Proto.Context
             CancelReceiveTimeout();
             await InvokeUserMessageAsync(Restarting.Instance);
             await StopAllChildren();
-            System.Metrics.InternalActorMetrics.ActorRestartedCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
+            System.Metrics.InternalActorMetrics.ActorRestartedCount.Inc(new[]
+            {
+                System.Id, System.Address, Actor!.GetType().Name
+            });
         }
 
         private Task HandleUnwatch(Unwatch uw)
@@ -457,9 +515,13 @@ namespace Proto.Context
         private Task HandleWatch(Watch w)
         {
             if (_state >= ContextState.Stopping)
+            {
                 w.Watcher.SendSystemMessage(System, Terminated.From(Self, TerminatedReason.Stopped));
+            }
             else
+            {
                 EnsureExtras().Watch(w.Watcher);
+            }
 
             return Task.CompletedTask;
         }
@@ -487,7 +549,10 @@ namespace Proto.Context
             _extras?.RemoveChild(msg.Who);
             await InvokeUserMessageAsync(msg);
 
-            if (_state == ContextState.Stopping || _state == ContextState.Restarting) await TryRestartOrStopAsync();
+            if (_state == ContextState.Stopping || _state == ContextState.Restarting)
+            {
+                await TryRestartOrStopAsync();
+            }
         }
 
         private void HandleRootFailure(Failure failure)
@@ -522,7 +587,10 @@ namespace Proto.Context
         //intermediate stopping stage, waiting for children to stop
         private Task TryRestartOrStopAsync()
         {
-            if (_extras?.Children.Count > 0) return Task.CompletedTask;
+            if (_extras?.Children.Count > 0)
+            {
+                return Task.CompletedTask;
+            }
 
             CancelReceiveTimeout();
 
@@ -562,13 +630,13 @@ namespace Proto.Context
 
             if (_extras?.Stash is not null)
             {
-                var currentStash = new Stack<object>(_extras.Stash);
+                Stack<object>? currentStash = new Stack<object>(_extras.Stash);
                 _extras.Stash.Clear();
 
                 //TODO: what happens if we hit a failure here?
                 while (currentStash.Any())
                 {
-                    var msg = currentStash.Pop();
+                    object? msg = currentStash.Pop();
                     await InvokeUserMessageAsync(msg);
                 }
             }
@@ -590,7 +658,10 @@ namespace Proto.Context
 
         private void ReceiveTimeoutCallback(object state)
         {
-            if (_extras?.ReceiveTimeoutTimer is null) return;
+            if (_extras?.ReceiveTimeoutTimer is null)
+            {
+                return;
+            }
 
             Send(Self, Proto.ReceiveTimeout.Instance);
         }

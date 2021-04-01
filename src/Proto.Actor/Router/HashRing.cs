@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,11 +25,7 @@ namespace Proto.Router
                         Enumerable
                             .Range(0, replicaCount)
                             .Select(
-                                i => new
-                                {
-                                    hashKey = i + n,
-                                    node = n
-                                }
+                                i => new {hashKey = i + n, node = n}
                             )
                 )
                 .Select(a => Tuple.Create(_hash(a.hashKey), a.node))

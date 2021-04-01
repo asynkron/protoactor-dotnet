@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Threading;
 using System.Threading.Channels;
 
@@ -35,7 +36,10 @@ namespace Proto.Mailbox
                 Interlocked.Decrement(ref _length);
                 _hasMessages = true;
             }
-            else _hasMessages = false;
+            else
+            {
+                _hasMessages = false;
+            }
 
             return message;
         }

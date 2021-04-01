@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -11,6 +12,7 @@ using System.Threading.Tasks;
 namespace Proto.Mailbox
 {
     public record MessageBatch(IList<object> Messages);
+
     public class BatchingMailbox : IMailbox
     {
         private readonly int _batchSize;
@@ -22,10 +24,7 @@ namespace Proto.Mailbox
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
 
-        public BatchingMailbox(int batchSize)
-        {
-            _batchSize = batchSize;
-        }
+        public BatchingMailbox(int batchSize) => _batchSize = batchSize;
 
         public int UserMessageCount => _userMessages.Length;
 
@@ -57,8 +56,8 @@ namespace Proto.Mailbox
 
             try
             {
-                var batch = new List<object>(_batchSize);
-                var sys = _systemMessages.Pop();
+                List<object>? batch = new List<object>(_batchSize);
+                object? sys = _systemMessages.Pop();
 
                 if (sys is not null)
                 {
@@ -85,7 +84,7 @@ namespace Proto.Mailbox
 
                     if (batch.Count > 0)
                     {
-                        currentMessage = batch;                        
+                        currentMessage = batch;
                         await _invoker!.InvokeUserMessageAsync(new MessageBatch(batch));
                     }
                 }
@@ -98,13 +97,18 @@ namespace Proto.Mailbox
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
-            if (_systemMessages.HasMessages || _userMessages.HasMessages & !_suspended) Schedule();
+            if (_systemMessages.HasMessages || _userMessages.HasMessages & !_suspended)
+            {
+                Schedule();
+            }
         }
 
         private void Schedule()
         {
             if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
+            {
                 _dispatcher!.Schedule(RunAsync);
+            }
         }
     }
 }

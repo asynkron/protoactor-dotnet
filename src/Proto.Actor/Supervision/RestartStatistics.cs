@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +17,7 @@ namespace Proto
 
         public RestartStatistics(int failureCount, DateTimeOffset? lastFailureTime)
         {
-            for (var i = 0; i < failureCount; i++)
+            for (int i = 0; i < failureCount; i++)
             {
                 _failureTimes.Add(lastFailureTime ?? DateTimeOffset.UtcNow);
             }

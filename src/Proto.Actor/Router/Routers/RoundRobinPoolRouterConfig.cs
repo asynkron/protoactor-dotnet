@@ -3,9 +3,10 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Router.Routers
 {
-    record RoundRobinPoolRouterConfig : PoolRouterConfig
+    internal record RoundRobinPoolRouterConfig : PoolRouterConfig
     {
         private readonly ISenderContext _senderContext;
 

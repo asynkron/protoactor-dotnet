@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,8 +25,8 @@ namespace Proto.Utils
 
             try
             {
-                var task = producer();
-                var result = await task;
+                Task<T>? task = producer();
+                T? result = await task;
                 return result;
             }
             finally
@@ -40,7 +41,7 @@ namespace Proto.Utils
 
             try
             {
-                var task = producer();
+                Task? task = producer();
                 await task;
             }
             finally
@@ -54,10 +55,11 @@ namespace Proto.Utils
             //block caller
             _semaphore.Wait();
 
-            _ = SafeTask.Run(async () => {
+            _ = SafeTask.Run(async () =>
+                {
                     try
                     {
-                        var task = producer();
+                        Task? task = producer();
                         await task;
                     }
                     finally
