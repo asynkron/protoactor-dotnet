@@ -151,10 +151,15 @@ namespace Proto
 
             if (SenderMiddleware is not null)
             {
-                //slow path
-                SenderMiddleware(this, target, MessageEnvelope.Wrap(message));
+                var envelope = MessageEnvelope.Wrap(message).WithHeader(Headers);
+                SenderMiddleware(this, target, envelope);
             }
-            else
+            else if (Headers != MessageHeader.Empty)
+            {
+                var envelope = MessageEnvelope.Wrap(message).WithHeader(Headers);
+                target.SendUserMessage(System, envelope);
+            }
+            else 
             {
                 //fast path, 0 alloc
                 target.SendUserMessage(System, message);
