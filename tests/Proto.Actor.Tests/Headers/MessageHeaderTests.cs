@@ -16,6 +16,7 @@ using Xunit.Abstractions;
 
 namespace Proto.Tests.Headers
 {
+    
     public class MessageHeaderTests
     {
         public record SomeRequest();
@@ -29,18 +30,22 @@ namespace Proto.Tests.Headers
         [Fact]
         public async Task HeadersArePropagatedBackInReply()
         {
+            Func<Sender,Sender> propagateHeaders = next => async (context, target, envelope) => {
+                await next(context, target, envelope.WithHeader(context.Headers));
+            };
+            
             var system = new ActorSystem();
             var props1 = Props.FromFunc(ctx => {
                     switch (ctx.Message)
                     {
-                        case SomeRequest: 
+                        case SomeRequest:
                             ctx.Respond(new SomeResponse());
                             return Task.CompletedTask;
                         default:
                             return Task.CompletedTask;
                     }
                 }
-            );
+            ).WithSenderMiddleware(propagateHeaders);
 
             var pid1 = system.Root.Spawn(props1);
             
@@ -53,13 +58,14 @@ namespace Proto.Tests.Headers
                             tcs1.SetResult(ctx.Headers);
                             ctx.Request(pid1, new SomeRequest());
                             break;
-                        case SomeResponse: tcs2.SetResult(ctx.Headers);
+                        case SomeResponse:
+                            tcs2.SetResult(ctx.Headers);
                             break;
                     }
 
                     return Task.CompletedTask;
                 }
-            );
+            ).WithSenderMiddleware(propagateHeaders);
             
             var pid2 = system.Root.Spawn(props2);
             
@@ -68,16 +74,20 @@ namespace Proto.Tests.Headers
             Assert.Equal("bar", headers.GetOrDefault("foo"));
             
             //use the headers and send the request
-            var root = new RootContext(system, headers);
+            var root = system
+                .Root
+                .WithHeaders(headers)
+                .WithSenderMiddleware(propagateHeaders);
+            
             root.Send(pid2,new StartMessage());
 
             //actor1 should have headers
             var headers1 = await tcs1.Task.WithTimeout(TimeSpan.FromSeconds(5));
-            Assert.Equal("bar", headers1.GetOrDefault("foo"));
+            Assert.Equal(headers, headers1);
             
             //actor2 should have headers
             var headers2 = await tcs2.Task.WithTimeout(TimeSpan.FromSeconds(5));
-            Assert.Equal("bar", headers2.GetOrDefault("foo"));
+            Assert.Equal(headers, headers2);
         }
     }
 }

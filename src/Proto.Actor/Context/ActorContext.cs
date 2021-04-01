@@ -419,21 +419,15 @@ namespace Proto.Context
 
         private void SendUserMessage(PID target, object message)
         {
-            if (_props.SenderMiddlewareChain is not null)
-            {
-                //slow path
-                var envelope = MessageEnvelope.Wrap(message).WithHeader(Headers);
-                _props.SenderMiddlewareChain(EnsureExtras().Context, target, envelope);
-            }
-            else if (Headers != MessageHeader.Empty)
-            {
-                var envelope = MessageEnvelope.Wrap(message).WithHeader(Headers);
-                target.SendUserMessage(System, envelope);
-            }
-            else
+            if (_props.SenderMiddlewareChain is null)
             {
                 //fast path, 0 alloc
                 target.SendUserMessage(System, message);
+            }
+            else
+            {
+                //slow path
+                _props.SenderMiddlewareChain(EnsureExtras().Context, target, MessageEnvelope.Wrap(message));
             }
         }
 
