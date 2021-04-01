@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Proto;
@@ -10,7 +11,7 @@ using Proto.Router;
 
 namespace RouterExample
 {
-    class Message : IHashable
+    internal class Message : IHashable
     {
         public string Text;
 
@@ -19,16 +20,20 @@ namespace RouterExample
         public override string ToString() => Text;
     }
 
-    class MyActor : IActor
+    internal class MyActor : IActor
     {
         public Task ReceiveAsync(IContext context)
         {
-            if (context.Message is Message msg) Console.WriteLine($"Actor {context.Self.Id} got message '{msg.Text}'.");
+            if (context.Message is Message msg)
+            {
+                Console.WriteLine($"Actor {context.Self.Id} got message '{msg.Text}'.");
+            }
+
             return Task.CompletedTask;
         }
     }
 
-    class Program
+    internal class Program
     {
         private static readonly Props MyActorProps = Props.FromProducer(() => new MyActor());
 
@@ -51,30 +56,30 @@ namespace RouterExample
 
         private static void TestBroadcastGroup()
         {
-            var system = new ActorSystem();
-            var context = new RootContext(system);
-            var props = context.NewBroadcastGroup(
+            ActorSystem system = new ActorSystem();
+            RootContext context = new RootContext(system);
+            Props props = context.NewBroadcastGroup(
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps)
             );
 
-            for (var i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
-                var pid = context.Spawn(props);
+                PID pid = context.Spawn(props);
                 context.Send(pid, new Message {Text = $"{i % 4}"});
             }
         }
 
         private static void TestBroadcastPool()
         {
-            var system = new ActorSystem();
-            var context = new RootContext(system);
-            var props = context.NewBroadcastPool(MyActorProps, 5);
-            var pid = context.Spawn(props);
+            ActorSystem system = new ActorSystem();
+            RootContext context = new RootContext(system);
+            Props props = context.NewBroadcastPool(MyActorProps, 5);
+            PID pid = context.Spawn(props);
 
-            for (var i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
             }
@@ -82,17 +87,17 @@ namespace RouterExample
 
         private static void TestConsistentHashGroup()
         {
-            var system = new ActorSystem();
-            var context = new RootContext(system);
-            var props = context.NewConsistentHashGroup(
+            ActorSystem system = new ActorSystem();
+            RootContext context = new RootContext(system);
+            Props props = context.NewConsistentHashGroup(
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps)
             );
-            var pid = context.Spawn(props);
+            PID pid = context.Spawn(props);
 
-            for (var i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
             }
@@ -100,12 +105,12 @@ namespace RouterExample
 
         private static void TestConsistentHashPool()
         {
-            var system = new ActorSystem();
-            var context = new RootContext(system);
-            var props = context.NewConsistentHashPool(MyActorProps, 5);
-            var pid = context.Spawn(props);
+            ActorSystem system = new ActorSystem();
+            RootContext context = new RootContext(system);
+            Props props = context.NewConsistentHashPool(MyActorProps, 5);
+            PID pid = context.Spawn(props);
 
-            for (var i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
             }
@@ -113,17 +118,17 @@ namespace RouterExample
 
         private static void TestRoundRobinGroup()
         {
-            var system = new ActorSystem();
-            var context = new RootContext(system);
-            var props = context.NewRoundRobinGroup(
+            ActorSystem system = new ActorSystem();
+            RootContext context = new RootContext(system);
+            Props props = context.NewRoundRobinGroup(
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps)
             );
-            var pid = context.Spawn(props);
+            PID pid = context.Spawn(props);
 
-            for (var i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
             }
@@ -131,12 +136,12 @@ namespace RouterExample
 
         private static void TestRoundRobinPool()
         {
-            var system = new ActorSystem();
-            var context = new RootContext(system);
-            var props = context.NewRoundRobinPool(MyActorProps, 5);
-            var pid = context.Spawn(props);
+            ActorSystem system = new ActorSystem();
+            RootContext context = new RootContext(system);
+            Props props = context.NewRoundRobinPool(MyActorProps, 5);
+            PID pid = context.Spawn(props);
 
-            for (var i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
             }
@@ -144,17 +149,17 @@ namespace RouterExample
 
         private static void TestRandomGroup()
         {
-            var system = new ActorSystem();
-            var context = new RootContext(system);
-            var props = context.NewRandomGroup(
+            ActorSystem system = new ActorSystem();
+            RootContext context = new RootContext(system);
+            Props props = context.NewRandomGroup(
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps),
                 context.Spawn(MyActorProps)
             );
-            var pid = context.Spawn(props);
+            PID pid = context.Spawn(props);
 
-            for (var i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
             }
@@ -162,12 +167,12 @@ namespace RouterExample
 
         private static void TestRandomPool()
         {
-            var system = new ActorSystem();
-            var context = new RootContext(system);
-            var props = context.NewRandomPool(MyActorProps, 5);
-            var pid = context.Spawn(props);
+            ActorSystem system = new ActorSystem();
+            RootContext context = new RootContext(system);
+            Props props = context.NewRandomPool(MyActorProps, 5);
+            PID pid = context.Spawn(props);
 
-            for (var i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
                 context.Send(pid, new Message {Text = $"{i % 4}"});
             }

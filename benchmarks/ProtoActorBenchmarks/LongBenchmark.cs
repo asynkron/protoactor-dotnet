@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,7 +13,8 @@ using Proto.Mailbox;
 
 namespace ProtoActorBenchmarks
 {
-    [MemoryDiagnoser, InProcess]
+    [MemoryDiagnoser]
+    [InProcess]
     public class LongBenchmark
     {
         private RootContext _context;
@@ -20,11 +22,9 @@ namespace ProtoActorBenchmarks
         [Params(300, 400, 500, 600, 700, 800, 900)]
         public int Tps { get; set; }
 
-        [Params(1000000)]
-        public int MessageCount { get; set; }
+        [Params(1000000)] public int MessageCount { get; set; }
 
-        [Params(100)]
-        public int BatchSize { get; set; }
+        [Params(100)] public int BatchSize { get; set; }
 
         [GlobalSetup]
         public void Setup() => _context = new RootContext(new ActorSystem());
@@ -32,23 +32,23 @@ namespace ProtoActorBenchmarks
         [Benchmark]
         public Task InProcessPingPong()
         {
-            var d = new ThreadPoolDispatcher {Throughput = Tps};
+            ThreadPoolDispatcher d = new ThreadPoolDispatcher {Throughput = Tps};
 
-            var clientCount = Environment.ProcessorCount * 1;
-            var clients = new PID[clientCount];
-            var echos = new PID[clientCount];
-            var completions = new TaskCompletionSource<bool>[clientCount];
+            int clientCount = Environment.ProcessorCount * 1;
+            PID[] clients = new PID[clientCount];
+            PID[] echos = new PID[clientCount];
+            TaskCompletionSource<bool>[] completions = new TaskCompletionSource<bool>[clientCount];
 
-            var echoProps = Props.FromProducer(() => new EchoActor())
+            Props echoProps = Props.FromProducer(() => new EchoActor())
                 .WithDispatcher(d)
                 .WithMailbox(() => BoundedMailbox.Create(2048));
 
-            for (var i = 0; i < clientCount; i++)
+            for (int i = 0; i < clientCount; i++)
             {
-                var tsc = new TaskCompletionSource<bool>();
+                TaskCompletionSource<bool> tsc = new TaskCompletionSource<bool>();
                 completions[i] = tsc;
 
-                var clientProps = Props.FromProducer(() => new PingActor(tsc, MessageCount, BatchSize))
+                Props clientProps = Props.FromProducer(() => new PingActor(tsc, MessageCount, BatchSize))
                     .WithDispatcher(d)
                     .WithMailbox(() => BoundedMailbox.Create(2048));
 
@@ -56,12 +56,12 @@ namespace ProtoActorBenchmarks
                 echos[i] = _context.Spawn(echoProps);
             }
 
-            var tasks = completions.Select(tsc => tsc.Task).ToArray();
+            Task<bool>[] tasks = completions.Select(tsc => tsc.Task).ToArray();
 
-            for (var i = 0; i < clientCount; i++)
+            for (int i = 0; i < clientCount; i++)
             {
-                var client = clients[i];
-                var echo = echos[i];
+                PID client = clients[i];
+                PID echo = echos[i];
 
                 _context.Send(client, new Start(echo));
             }

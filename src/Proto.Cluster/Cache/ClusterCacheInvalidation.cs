@@ -3,8 +3,10 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Proto.Extensions;
@@ -20,9 +22,12 @@ namespace Proto.Cluster.Cache
             Cluster = cluster;
             Cluster.System.Extensions.Register(this);
             Cluster.System.Root.SpawnNamed(
-                Props.FromFunc(context => {
+                Props.FromFunc(context =>
+                    {
                         if (context.Message is ActivationTerminated terminated)
+                        {
                             cluster.PidCache.RemoveByVal(terminated.ClusterIdentity, terminated.Pid);
+                        }
 
                         return Task.CompletedTask;
                     }
@@ -37,12 +42,8 @@ namespace Proto.Cluster.Cache
 
         private void Invalidate(ClusterIdentity identity, PID activation, BitArray activeRemotes)
         {
-            var message = new ActivationTerminated
-            {
-                ClusterIdentity = identity,
-                Pid = activation
-            };
-            var remotesToInvalidate = Cluster.MemberList.GetAllMembers()
+            ActivationTerminated? message = new ActivationTerminated {ClusterIdentity = identity, Pid = activation};
+            IEnumerable<string>? remotesToInvalidate = Cluster.MemberList.GetAllMembers()
                 .Where(member => activeRemotes.Length > member.Index && activeRemotes[member.Index])
                 .Select(member => member.Address);
 
@@ -54,9 +55,12 @@ namespace Proto.Cluster.Cache
 
         private void AddRemote(PID sender, BitArray activeRemotes)
         {
-            if (Cluster.MemberList.TryGetMemberIndexByAddress(sender.Address, out var index))
+            if (Cluster.MemberList.TryGetMemberIndexByAddress(sender.Address, out int index))
             {
-                if (index >= activeRemotes.Length) activeRemotes.Length = index + 1;
+                if (index >= activeRemotes.Length)
+                {
+                    activeRemotes.Length = index + 1;
+                }
 
                 activeRemotes[index] = true;
             }
@@ -64,10 +68,17 @@ namespace Proto.Cluster.Cache
 
         internal Action<MessageEnvelope> ForActor(ClusterIdentity identity, PID activation)
         {
-            var activeRemotes = new BitArray(16);
-            return envelope => {
-                if (envelope.Message is Stopped) Invalidate(identity, activation, activeRemotes);
-                else if (IsRemote(envelope.Sender)) AddRemote(envelope.Sender!, activeRemotes);
+            BitArray? activeRemotes = new BitArray(16);
+            return envelope =>
+            {
+                if (envelope.Message is Stopped)
+                {
+                    Invalidate(identity, activation, activeRemotes);
+                }
+                else if (IsRemote(envelope.Sender))
+                {
+                    AddRemote(envelope.Sender!, activeRemotes);
+                }
             };
         }
     }

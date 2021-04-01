@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf.Reflection;
 using GrainGenerator;
+using ProtoBuf.Reflection;
 
 namespace ProtoGrainGenerator
 {
@@ -17,10 +19,10 @@ namespace ProtoGrainGenerator
     {
         internal static Task GenerateOne(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath)
         {
-            var set = GetSet(importPath);
+            FileDescriptorSet set = GetSet(importPath);
 
-            var r = input.OpenText();
-            var defaultOutputName = output?.FullName ?? Path.GetFileNameWithoutExtension(input.Name);
+            StreamReader r = input.OpenText();
+            string defaultOutputName = output?.FullName ?? Path.GetFileNameWithoutExtension(input.Name);
             set.Add(defaultOutputName, true, r);
 
             return ProcessAndWriteFiles(set);
@@ -28,12 +30,12 @@ namespace ProtoGrainGenerator
 
         internal static Task GenerateMany(IEnumerable<FileInfo> input, IEnumerable<DirectoryInfo> importPath)
         {
-            var set = GetSet(importPath);
+            FileDescriptorSet set = GetSet(importPath);
 
-            foreach (var proto in input)
+            foreach (FileInfo proto in input)
             {
-                var r = proto.OpenText();
-                var defaultOutputName = Path.GetFileNameWithoutExtension(proto.Name);
+                StreamReader r = proto.OpenText();
+                string? defaultOutputName = Path.GetFileNameWithoutExtension(proto.Name);
                 set.Add(defaultOutputName, true, r);
             }
 
@@ -42,9 +44,9 @@ namespace ProtoGrainGenerator
 
         private static FileDescriptorSet GetSet(IEnumerable<DirectoryInfo> importPaths)
         {
-            var set = new FileDescriptorSet();
+            FileDescriptorSet set = new FileDescriptorSet();
 
-            foreach (var path in importPaths)
+            foreach (DirectoryInfo path in importPaths)
             {
                 set.AddImportPath(path.FullName);
             }
@@ -56,10 +58,11 @@ namespace ProtoGrainGenerator
         {
             set.Process();
 
-            var gen = new GrainGen();
-            var res = gen.Generate(set).ToList();
+            GrainGen gen = new GrainGen();
+            List<CodeFile> res = gen.Generate(set).ToList();
 
-            return Task.WhenAll(res.Select(x => {
+            return Task.WhenAll(res.Select(x =>
+                    {
                         Console.WriteLine($"Writing generated file: {x.Name}");
                         return File.WriteAllTextAsync(x.Name, x.Text);
                     }

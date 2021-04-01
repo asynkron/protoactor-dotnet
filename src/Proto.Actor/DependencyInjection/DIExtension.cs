@@ -22,8 +22,8 @@ namespace Proto.DependencyInjection
     {
         public static ActorSystem WithServiceProvider(this ActorSystem actorSystem, IServiceProvider serviceProvider)
         {
-            DependencyResolver? dependencyResolver = new DependencyResolver(serviceProvider);
-            DIExtension? diExtension = new DIExtension(dependencyResolver);
+            DependencyResolver? dependencyResolver = new(serviceProvider);
+            DIExtension? diExtension = new(dependencyResolver);
             actorSystem.Extensions.Register(diExtension);
             return actorSystem;
         }

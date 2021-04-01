@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Proto;
@@ -11,7 +12,7 @@ using Saga.Messages;
 
 namespace Saga
 {
-    class TransferProcess : IActor
+    internal class TransferProcess : IActor
     {
         private readonly decimal _amount;
         private readonly double _availability;
@@ -46,7 +47,7 @@ namespace Saga
 
         public async Task ReceiveAsync(IContext context)
         {
-            var message = context.Message;
+            object? message = context.Message;
             Console.WriteLine($"[{_persistenceId}] Recieiving :{message}");
 
             switch (message)
@@ -79,7 +80,10 @@ namespace Saga
                     return;
                 default:
                     // simulate failures of the transfer process itself
-                    if (Fail()) throw new Exception();
+                    if (Fail())
+                    {
+                        throw new Exception();
+                    }
 
                     break;
             }
@@ -120,7 +124,7 @@ namespace Saga
 
         private bool Fail()
         {
-            var comparison = _random.NextDouble() * 100;
+            double comparison = _random.NextDouble() * 100;
             return comparison > _availability;
         }
 
@@ -170,9 +174,9 @@ namespace Saga
                     context.SpawnNamed(TryCredit(_to, +_amount), "CreditAttempt");
                     break;
                 case OK msg:
-                    var fromBalance =
+                    decimal fromBalance =
                         await context.RequestAsync<decimal>(_from, new GetBalance(), TimeSpan.FromMilliseconds(2000));
-                    var toBalance =
+                    decimal toBalance =
                         await context.RequestAsync<decimal>(_to, new GetBalance(), TimeSpan.FromMilliseconds(2000));
 
                     await _persistence.PersistEventAsync(new AccountCredited());

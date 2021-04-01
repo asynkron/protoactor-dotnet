@@ -3,11 +3,12 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using Proto;
 
 namespace Saga.Messages
 {
-    class TransferCompleted
+    internal class TransferCompleted
     {
         public TransferCompleted(PID from, decimal fromBalance, PID to, decimal toBalance)
         {

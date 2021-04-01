@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,7 +18,7 @@ using static Proto.Cluster.Kubernetes.ProtoLabels;
 
 namespace Proto.Cluster.Kubernetes
 {
-    static class KubernetesExtensions
+    internal static class KubernetesExtensions
     {
         private static string cachedNamespace;
 
@@ -45,9 +46,10 @@ namespace Proto.Cluster.Kubernetes
             IDictionary<string, string> labels
         )
         {
-            var patch = new JsonPatchDocument<V1Pod>();
+            JsonPatchDocument<V1Pod> patch = new JsonPatchDocument<V1Pod>();
             patch.Replace(x => x.Metadata.Labels, labels);
-            return kubernetes.PatchNamespacedPodAsync(new V1Patch(patch, V1Patch.PatchType.JsonPatch), podName, podNamespace);
+            return kubernetes.PatchNamespacedPodAsync(new V1Patch(patch, V1Patch.PatchType.JsonPatch), podName,
+                podNamespace);
         }
 
         /// <summary>
@@ -57,28 +59,22 @@ namespace Proto.Cluster.Kubernetes
         /// <returns></returns>
         internal static (bool IsCandidate, bool IsAlive, Member Status) GetMemberStatus(this V1Pod pod)
         {
-            var isCandidate = pod.Status.Phase == "Running" && pod.Status.PodIP is not null;
+            bool isCandidate = pod.Status.Phase == "Running" && pod.Status.PodIP is not null;
 
-            var kinds = pod
+            string[] kinds = pod
                 .Metadata
                 .Labels
                 .Where(l => l.Key.StartsWith(LabelKind) && l.Value == "true")
                 .Select(l => l.Key.Substring(LabelKind.Length + 1))
                 .ToArray();
 
-            var host = pod.Status.PodIP ?? "";
-            var port = Convert.ToInt32(pod.Metadata.Labels[LabelPort]);
-            var mid = pod.Metadata.Labels[LabelMemberId];
-            var alive = pod.Status.ContainerStatuses.All(x => x.Ready);
+            string host = pod.Status.PodIP ?? "";
+            int port = Convert.ToInt32(pod.Metadata.Labels[LabelPort]);
+            string mid = pod.Metadata.Labels[LabelMemberId];
+            bool alive = pod.Status.ContainerStatuses.All(x => x.Ready);
 
             return (isCandidate, alive,
-                new Member
-                {
-                    Id = mid,
-                    Host = host,
-                    Port = port,
-                    Kinds = {kinds}
-                });
+                new Member {Id = mid, Host = host, Port = port, Kinds = {kinds}});
         }
 
         /// <summary>
@@ -89,7 +85,7 @@ namespace Proto.Cluster.Kubernetes
         {
             if (cachedNamespace is null)
             {
-                var namespaceFile = Path.Combine(
+                string namespaceFile = Path.Combine(
                     $"{Path.DirectorySeparatorChar}var",
                     "run",
                     "secrets",

@@ -1,4 +1,5 @@
 ﻿// ReSharper disable UnusedType.Global
+
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 using Proto.Cluster.Identity.MongoDb;
@@ -17,8 +18,8 @@ namespace Proto.Cluster.Identity.Tests
 
         protected override IIdentityLookup GetIdentityLookup(string clusterName)
         {
-            var pids = MongoFixture.Database.GetCollection<PidLookupEntity>("pids");
-            var identity = new IdentityStorageLookup(new MongoIdentityStorage(clusterName, pids));
+            IMongoCollection<PidLookupEntity> pids = MongoFixture.Database.GetCollection<PidLookupEntity>("pids");
+            IdentityStorageLookup identity = new IdentityStorageLookup(new MongoIdentityStorage(clusterName, pids));
             return identity;
         }
 
@@ -40,27 +41,29 @@ namespace Proto.Cluster.Identity.Tests
 
         protected override IIdentityLookup GetIdentityLookup(string clusterName)
         {
-            var pids = MongoFixture.Database.GetCollection<PidLookupEntity>("pids");
-            var identity = new IdentityStorageLookup(new FailureInjectionStorage(new MongoIdentityStorage(clusterName, pids)));
+            IMongoCollection<PidLookupEntity> pids = MongoFixture.Database.GetCollection<PidLookupEntity>("pids");
+            IdentityStorageLookup identity =
+                new IdentityStorageLookup(new FailureInjectionStorage(new MongoIdentityStorage(clusterName, pids)));
             return identity;
         }
 
         public class ChaosMongoClusterTests : ClusterTests, IClassFixture<ChaosMongoIdentityClusterFixture>
         {
             // ReSharper disable once SuggestBaseTypeForParameter
-            public ChaosMongoClusterTests(ITestOutputHelper testOutputHelper, ChaosMongoIdentityClusterFixture clusterFixture)
+            public ChaosMongoClusterTests(ITestOutputHelper testOutputHelper,
+                ChaosMongoIdentityClusterFixture clusterFixture)
                 : base(testOutputHelper, clusterFixture)
             {
             }
         }
     }
 
-    static class MongoFixture
+    internal static class MongoFixture
     {
         static MongoFixture()
         {
-            var connectionString = TestConfig.Configuration.GetConnectionString("MongoDB");
-            var settings = MongoClientSettings.FromConnectionString(connectionString);
+            string connectionString = TestConfig.Configuration.GetConnectionString("MongoDB");
+            MongoClientSettings settings = MongoClientSettings.FromConnectionString(connectionString);
             settings.MaxConnectionPoolSize = 200;
             settings.RetryReads = true;
             settings.RetryWrites = true;

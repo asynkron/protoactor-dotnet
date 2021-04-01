@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections.Immutable;
 using System.Linq;
 using Proto.Cluster.Partition;
@@ -20,7 +21,7 @@ namespace Proto.Cluster
         Member? GetActivator(string senderAddress);
     }
 
-    class SimpleMemberStrategy : IMemberStrategy
+    internal class SimpleMemberStrategy : IMemberStrategy
     {
         private readonly Rendezvous _rdv;
         private readonly RoundRobinMemberSelector _rr;
@@ -38,7 +39,10 @@ namespace Proto.Cluster
         public void AddMember(Member member)
         {
             // Avoid adding the same member twice
-            if (_members.Any(x => x.Address == member.Address)) return;
+            if (_members.Any(x => x.Address == member.Address))
+            {
+                return;
+            }
 
             _members = _members.Add(member);
             _rdv.UpdateMembers(_members);

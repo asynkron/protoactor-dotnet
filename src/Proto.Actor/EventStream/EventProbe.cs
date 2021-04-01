@@ -42,7 +42,7 @@ namespace Proto
         {
             lock (_lock)
             {
-                EventExpectation<T>? expectation = new EventExpectation<T>(@event => @event is TE);
+                EventExpectation<T>? expectation = new(@event => @event is TE);
                 _currentExpectation = expectation;
                 NotifyChanges();
                 return expectation.Task;
@@ -53,7 +53,7 @@ namespace Proto
         {
             lock (_lock)
             {
-                EventExpectation<T>? expectation = new EventExpectation<T>(@event =>
+                EventExpectation<T>? expectation = new(@event =>
                     {
                         return @event switch
                         {

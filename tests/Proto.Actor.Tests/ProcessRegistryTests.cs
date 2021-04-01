@@ -11,11 +11,11 @@ namespace Proto.Tests
         [Fact]
         public void Given_PIDDoesNotExist_TryAddShouldAddLocalPID()
         {
-            var id = Guid.NewGuid().ToString();
-            var p = new TestProcess(System);
-            var reg = new ProcessRegistry(System);
+            string id = Guid.NewGuid().ToString();
+            TestProcess p = new TestProcess(System);
+            ProcessRegistry reg = new ProcessRegistry(System);
 
-            var (pid, ok) = reg.TryAdd(id, p);
+            (PID pid, bool ok) = reg.TryAdd(id, p);
 
             Assert.True(ok);
             Assert.Equal(System.Address, pid.Address);
@@ -24,12 +24,12 @@ namespace Proto.Tests
         [Fact]
         public void Given_PIDExists_TryAddShouldNotAddLocalPID()
         {
-            var id = Guid.NewGuid().ToString();
-            var p = new TestProcess(System);
-            var reg = new ProcessRegistry(System);
+            string id = Guid.NewGuid().ToString();
+            TestProcess p = new TestProcess(System);
+            ProcessRegistry reg = new ProcessRegistry(System);
             reg.TryAdd(id, p);
 
-            var (_, ok) = reg.TryAdd(id, p);
+            (_, bool ok) = reg.TryAdd(id, p);
 
             Assert.False(ok);
         }
@@ -37,13 +37,13 @@ namespace Proto.Tests
         [Fact]
         public void Given_PIDExists_GetShouldReturnIt()
         {
-            var id = Guid.NewGuid().ToString();
-            var p = new TestProcess(System);
-            var reg = new ProcessRegistry(System);
+            string id = Guid.NewGuid().ToString();
+            TestProcess p = new TestProcess(System);
+            ProcessRegistry reg = new ProcessRegistry(System);
             reg.TryAdd(id, p);
-            var (pid, _) = reg.TryAdd(id, p);
+            (PID pid, _) = reg.TryAdd(id, p);
 
-            var p2 = reg.Get(pid);
+            Process p2 = reg.Get(pid);
 
             Assert.Same(p, p2);
         }
@@ -51,13 +51,13 @@ namespace Proto.Tests
         [Fact]
         public void Given_PIDWasRemoved_GetShouldReturnDeadLetterProcess()
         {
-            var id = Guid.NewGuid().ToString();
-            var p = new TestProcess(System);
-            var reg = new ProcessRegistry(System);
-            var (pid, _) = reg.TryAdd(id, p);
+            string id = Guid.NewGuid().ToString();
+            TestProcess p = new TestProcess(System);
+            ProcessRegistry reg = new ProcessRegistry(System);
+            (PID pid, _) = reg.TryAdd(id, p);
             reg.Remove(pid);
 
-            var p2 = reg.Get(pid);
+            Process p2 = reg.Get(pid);
 
             Assert.Same(System.DeadLetter, p2);
         }
@@ -65,12 +65,12 @@ namespace Proto.Tests
         [Fact]
         public void Given_PIDExistsInHostResolver_GetShouldReturnIt()
         {
-            var pid = new PID();
-            var p = new TestProcess(System);
-            var reg = new ProcessRegistry(System);
+            PID pid = new PID();
+            TestProcess p = new TestProcess(System);
+            ProcessRegistry reg = new ProcessRegistry(System);
             reg.RegisterHostResolver(x => p);
 
-            var p2 = reg.Get(pid);
+            Process p2 = reg.Get(pid);
 
             Assert.Same(p, p2);
         }
@@ -78,13 +78,13 @@ namespace Proto.Tests
         [Fact]
         public void Given_PIDExistsInClientResolver_GetShouldReturnIt()
         {
-            var pid = new PID();
+            PID pid = new PID();
             pid.Address = System.Address;
-            var p = new TestProcess(System);
-            var reg = new ProcessRegistry(System);
+            TestProcess p = new TestProcess(System);
+            ProcessRegistry reg = new ProcessRegistry(System);
             reg.RegisterClientResolver(x => p);
 
-            var p2 = reg.Get(pid);
+            Process p2 = reg.Get(pid);
 
             Assert.Same(p, p2);
         }

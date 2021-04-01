@@ -25,32 +25,32 @@ namespace Proto.Remote
             switch (context.Message)
             {
                 case ActorPidRequest msg:
-                    var props = _remoteConfig.GetRemoteKind(msg.Kind);
-                    var name = msg.Name;
-                    if (string.IsNullOrEmpty(name)) name = _system.ProcessRegistry.NextId();
+                    Props? props = _remoteConfig.GetRemoteKind(msg.Kind);
+                    string? name = msg.Name;
+                    if (string.IsNullOrEmpty(name))
+                    {
+                        name = _system.ProcessRegistry.NextId();
+                    }
 
                     try
                     {
-                        var pid = _system.Root.SpawnNamed(props, name);
-                        context.System.Metrics.Get<RemoteMetrics>().RemoteActorSpawnCount.Inc(new[] {_system.Id, _system.Address, msg.Kind});
-                        var response = new ActorPidResponse {Pid = pid};
+                        PID? pid = _system.Root.SpawnNamed(props, name);
+                        context.System.Metrics.Get<RemoteMetrics>().RemoteActorSpawnCount
+                            .Inc(new[] {_system.Id, _system.Address, msg.Kind});
+                        ActorPidResponse? response = new ActorPidResponse {Pid = pid};
                         context.Respond(response);
                     }
                     catch (ProcessNameExistException ex)
                     {
-                        var response = new ActorPidResponse
+                        ActorPidResponse? response = new ActorPidResponse
                         {
-                            Pid = ex.Pid,
-                            StatusCode = (int) ResponseStatusCode.ProcessNameAlreadyExist
+                            Pid = ex.Pid, StatusCode = (int)ResponseStatusCode.ProcessNameAlreadyExist
                         };
                         context.Respond(response);
                     }
                     catch
                     {
-                        var response = new ActorPidResponse
-                        {
-                            StatusCode = (int) ResponseStatusCode.Error
-                        };
+                        ActorPidResponse? response = new ActorPidResponse {StatusCode = (int)ResponseStatusCode.Error};
                         context.Respond(response);
 
                         throw;

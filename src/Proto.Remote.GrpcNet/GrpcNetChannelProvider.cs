@@ -11,10 +11,11 @@ namespace Proto.Remote.GrpcNet
 
         public ChannelBase GetChannel(string address)
         {
-            var addressWithProtocol =
+            string? addressWithProtocol =
                 $"{(_remoteConfig.UseHttps ? "https://" : "http://")}{address}";
 
-            var channel = GrpcChannel.ForAddress(addressWithProtocol, _remoteConfig?.ChannelOptions ?? new GrpcChannelOptions());
+            GrpcChannel? channel = GrpcChannel.ForAddress(addressWithProtocol,
+                _remoteConfig?.ChannelOptions ?? new GrpcChannelOptions());
             return channel;
         }
     }

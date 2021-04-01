@@ -60,7 +60,7 @@ namespace Proto
 
         public (PID pid, bool ok) TryAdd(string id, Process process)
         {
-            PID? pid = new PID(System.Address, id, process);
+            PID? pid = new(System.Address, id, process);
 
             bool ok = _localProcesses.TryAdd(pid.Id, process);
             return ok ? (pid, true) : (PID.FromAddress(System.Address, id), false);

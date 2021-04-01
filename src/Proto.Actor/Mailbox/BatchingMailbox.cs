@@ -56,7 +56,7 @@ namespace Proto.Mailbox
 
             try
             {
-                List<object>? batch = new List<object>(_batchSize);
+                List<object>? batch = new(_batchSize);
                 object? sys = _systemMessages.Pop();
 
                 if (sys is not null)

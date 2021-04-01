@@ -35,7 +35,9 @@ namespace Proto.Remote
             _system.ProcessRegistry.RegisterHostResolver(pid => new RemoteProcess(_system, this, pid));
             _remoteConfig = remoteConfig;
             _channelProvider = channelProvider;
-            _endpointTerminatedEvnSub = _system.EventStream.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated, Dispatchers.DefaultDispatcher);
+            _endpointTerminatedEvnSub =
+                _system.EventStream.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated,
+                    Dispatchers.DefaultDispatcher);
             _endpointConnectedEvnSub = _system.EventStream.Subscribe<EndpointConnectedEvent>(OnEndpointConnected);
             _endpointErrorEvnSub = _system.EventStream.Subscribe<EndpointErrorEvent>(OnEndpointError);
             _deadLetterEvnSub = _system.EventStream.Subscribe<DeadLetterEvent>(OnDeadLetterEvent);
@@ -49,16 +51,16 @@ namespace Proto.Remote
             switch (deadLetterEvent.Message)
             {
                 case RemoteWatch msg:
-                    msg.Watcher.SendSystemMessage(_system, new Terminated
-                        {
-                            Why = TerminatedReason.AddressTerminated,
-                            Who = msg.Watchee
-                        }
+                    msg.Watcher.SendSystemMessage(_system,
+                        new Terminated {Why = TerminatedReason.AddressTerminated, Who = msg.Watchee}
                     );
                     break;
                 case RemoteDeliver rd:
                     if (rd.Sender != null)
+                    {
                         _system.Root.Send(rd.Sender, new DeadLetterResponse {Target = rd.Target});
+                    }
+
                     _system.EventStream.Publish(new DeadLetterEvent(rd.Target, rd.Message, rd.Sender));
                     break;
             }
@@ -70,7 +72,10 @@ namespace Proto.Remote
         {
             lock (_synLock)
             {
-                if (CancellationToken.IsCancellationRequested) return;
+                if (CancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
 
                 Logger.LogDebug("[EndpointManager] Stopping");
 
@@ -79,7 +84,7 @@ namespace Proto.Remote
                 _system.EventStream.Unsubscribe(_endpointErrorEvnSub);
                 _system.EventStream.Unsubscribe(_deadLetterEvnSub);
 
-                var stopEndpointTasks = new List<Task>();
+                List<Task>? stopEndpointTasks = new List<Task>();
 
                 foreach (var endpoint in _connections.Values)
                 {
@@ -101,7 +106,9 @@ namespace Proto.Remote
         private void OnEndpointError(EndpointErrorEvent evt)
         {
             if (_connections.TryGetValue(evt.Address, out var endpoint))
+            {
                 endpoint.SendSystemMessage(_system, evt);
+            }
         }
 
         private void OnEndpointTerminated(EndpointTerminatedEvent evt)
@@ -114,9 +121,11 @@ namespace Proto.Remote
                 {
                     _system.Root.StopAsync(endpoint).GetAwaiter().GetResult();
 
-                    if (_remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue && _terminatedConnections.TryAdd(evt.Address, endpoint))
+                    if (_remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue &&
+                        _terminatedConnections.TryAdd(evt.Address, endpoint))
                     {
-                        _ = SafeTask.Run(async () => {
+                        _ = SafeTask.Run(async () =>
+                            {
                                 await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value);
                                 _terminatedConnections.TryRemove(evt.Address, out var _);
                             }
@@ -128,28 +137,38 @@ namespace Proto.Remote
 
         private void OnEndpointConnected(EndpointConnectedEvent evt)
         {
-            var endpoint = GetEndpoint(evt.Address);
+            PID? endpoint = GetEndpoint(evt.Address);
             if (endpoint is null)
+            {
                 return;
+            }
 
             endpoint.SendSystemMessage(_system, evt);
         }
 
         internal PID? GetEndpoint(string address)
         {
-            if (string.IsNullOrWhiteSpace(address)) throw new ArgumentNullException(nameof(address));
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                throw new ArgumentNullException(nameof(address));
+            }
 
             lock (_synLock)
             {
-                if (_terminatedConnections.ContainsKey(address) || _cancellationTokenSource.IsCancellationRequested) return null;
+                if (_terminatedConnections.ContainsKey(address) || _cancellationTokenSource.IsCancellationRequested)
+                {
+                    return null;
+                }
 
-                return _connections.GetOrAdd(address, v => {
+                return _connections.GetOrAdd(address, v =>
+                    {
                         Logger.LogDebug("[EndpointManager] Requesting new endpoint for {Address}", v);
-                        var props = Props
+                        Props? props = Props
                             .FromProducer(() => new EndpointActor(v, _remoteConfig, _channelProvider))
-                            .WithMailbox(() => new EndpointWriterMailbox(_system, _remoteConfig.EndpointWriterOptions.EndpointWriterBatchSize, v))
+                            .WithMailbox(() => new EndpointWriterMailbox(_system,
+                                _remoteConfig.EndpointWriterOptions.EndpointWriterBatchSize, v))
                             .WithGuardianSupervisorStrategy(new EndpointSupervisorStrategy(v, _remoteConfig, _system));
-                        var endpointActorPid = _system.Root.SpawnNamed(props, $"endpoint-{v}");
+                        PID? endpointActorPid = _system.Root.SpawnNamed(props, $"endpoint-{v}");
                         Logger.LogDebug("[EndpointManager] Created new endpoint for {Address}", v);
                         return endpointActorPid;
                     }
@@ -159,7 +178,7 @@ namespace Proto.Remote
 
         private void SpawnActivator()
         {
-            var props = Props.FromProducer(() => new Activator(_remoteConfig, _system))
+            Props? props = Props.FromProducer(() => new Activator(_remoteConfig, _system))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
             ActivatorPid = _system.Root.SpawnNamed(props, "activator");
         }

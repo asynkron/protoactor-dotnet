@@ -48,16 +48,17 @@ namespace Proto.Remote
                     _address, reason.GetType().Name
                 );
                 _cancelFutureRetries.Cancel();
-                var terminated = new EndpointTerminatedEvent {Address = _address!};
+                EndpointTerminatedEvent? terminated = new EndpointTerminatedEvent {Address = _address!};
                 _system.EventStream.Publish(terminated);
             }
             else
             {
-                var backoff = rs.FailureCount * (int) _backoff.TotalMilliseconds;
-                var noise = _random.Next(500);
-                var duration = TimeSpan.FromMilliseconds(backoff + noise);
+                int backoff = rs.FailureCount * (int)_backoff.TotalMilliseconds;
+                int noise = _random.Next(500);
+                TimeSpan duration = TimeSpan.FromMilliseconds(backoff + noise);
 
-                _ = SafeTask.Run(async () => {
+                _ = SafeTask.Run(async () =>
+                    {
                         await Task.Delay(duration);
 
                         if (reason is RpcException rpc && rpc.StatusCode == StatusCode.Unavailable)
@@ -74,7 +75,7 @@ namespace Proto.Remote
                                 child, duration, reason.GetType().Name
                             );
                         }
-                   
+
                         supervisor.RestartChildren(reason, child);
                     }
                     , _cancelFutureRetries.Token
@@ -84,7 +85,10 @@ namespace Proto.Remote
 
         private bool ShouldStop(RestartStatistics rs)
         {
-            if (_maxNrOfRetries == 0) return true;
+            if (_maxNrOfRetries == 0)
+            {
+                return true;
+            }
 
             rs.Fail();
 

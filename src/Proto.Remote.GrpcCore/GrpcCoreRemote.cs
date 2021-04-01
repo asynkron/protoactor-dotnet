@@ -44,29 +44,28 @@ namespace Proto.Remote.GrpcCore
             lock (this)
             {
                 if (Started)
+                {
                     return Task.CompletedTask;
+                }
 
-                var channelProvider = new GrpcCoreChannelProvider(_config);
+                GrpcCoreChannelProvider? channelProvider = new GrpcCoreChannelProvider(_config);
                 _endpointManager = new EndpointManager(System, Config, channelProvider);
                 _endpointReader = new EndpointReader(System, _endpointManager, Config.Serialization);
                 _healthCheck = new HealthServiceImpl();
                 _server = new Server
                 {
-                    Services =
-                    {
-                        Remoting.BindService(_endpointReader),
-                        Health.BindService(_healthCheck)
-                    },
+                    Services = {Remoting.BindService(_endpointReader), Health.BindService(_healthCheck)},
                     Ports = {new ServerPort(Config.Host, Config.Port, _config.ServerCredentials)}
                 };
                 _server.Start();
 
-                var boundPort = _server.Ports.Single().BoundPort;
+                int boundPort = _server.Ports.Single().BoundPort;
                 System.SetAddress(Config.AdvertisedHost ?? Config.Host, Config.AdvertisedPort ?? boundPort
                 );
                 _endpointManager.Start();
 
-                Logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host, boundPort,
+                Logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host,
+                    boundPort,
                     System.Address
                 );
                 Started = true;
@@ -79,7 +78,9 @@ namespace Proto.Remote.GrpcCore
             lock (this)
             {
                 if (!Started)
+                {
                     return;
+                }
 
                 Started = false;
             }
@@ -91,7 +92,10 @@ namespace Proto.Remote.GrpcCore
                     _endpointManager.Stop();
                     await _server.KillAsync();
                 }
-                else await _server.KillAsync();
+                else
+                {
+                    await _server.KillAsync();
+                }
 
                 Logger.LogInformation(
                     "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",

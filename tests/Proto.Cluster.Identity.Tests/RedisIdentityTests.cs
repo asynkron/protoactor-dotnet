@@ -21,7 +21,8 @@ namespace Proto.Cluster.Identity.Tests
 
         protected override IIdentityLookup GetIdentityLookup(string clusterName)
         {
-            var identity = new IdentityStorageLookup(new RedisIdentityStorage(clusterName, RedisFixture.Multiplexer));
+            IdentityStorageLookup identity =
+                new IdentityStorageLookup(new RedisIdentityStorage(clusterName, RedisFixture.Multiplexer));
             return identity;
         }
 
@@ -43,8 +44,9 @@ namespace Proto.Cluster.Identity.Tests
 
         protected override IIdentityLookup GetIdentityLookup(string clusterName)
         {
-            var identity = new IdentityStorageLookup(
-                new FailureInjectionStorage(new RedisIdentityStorage(clusterName, RedisFixture.Multiplexer, TimeSpan.FromSeconds(10)))
+            IdentityStorageLookup identity = new IdentityStorageLookup(
+                new FailureInjectionStorage(new RedisIdentityStorage(clusterName, RedisFixture.Multiplexer,
+                    TimeSpan.FromSeconds(10)))
             );
             return identity;
         }
@@ -62,7 +64,7 @@ namespace Proto.Cluster.Identity.Tests
         }
     }
 
-    static class RedisFixture
+    internal static class RedisFixture
     {
         private static readonly Lazy<ConnectionMultiplexer> LazyConnection = new(()
             => ConnectionMultiplexer.Connect(TestConfig.Configuration.GetConnectionString("Redis")));

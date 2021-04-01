@@ -3,17 +3,19 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Proto;
 
 namespace EscalateSupervision
 {
-    class Program
+    internal class Program
     {
         private static void Main(string[] args)
         {
-            var childProps = Props.FromFunc(context => {
+            Props childProps = Props.FromFunc(context =>
+                {
                     Console.WriteLine($"{context.Self.Id}: MSG: {context.Message.GetType()}");
 
                     switch (context.Message)
@@ -26,7 +28,8 @@ namespace EscalateSupervision
                 }
             );
 
-            var rootProps = Props.FromFunc(context => {
+            Props rootProps = Props.FromFunc(context =>
+                    {
                         Console.WriteLine($"{context.Self.Id}: MSG: {context.Message.GetType()}");
 
                         switch (context.Message)
@@ -47,7 +50,7 @@ namespace EscalateSupervision
                     )
                 );
 
-            var rootContext = new RootContext(new ActorSystem());
+            RootContext rootContext = new RootContext(new ActorSystem());
             rootContext.SpawnNamed(rootProps, "root");
 
             Console.ReadLine();

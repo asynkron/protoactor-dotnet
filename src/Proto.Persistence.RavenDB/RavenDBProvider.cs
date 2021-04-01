@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Indexes;
 using Raven.Client.Documents.Operations;
+using Raven.Client.Documents.Session;
 
 namespace Proto.Persistence.RavenDB
 {
@@ -18,17 +20,18 @@ namespace Proto.Persistence.RavenDB
             SetupIndexes();
         }
 
-        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd,
+            Action<object> callback)
         {
-            using var session = _store.OpenAsyncSession();
+            using IAsyncDocumentSession session = _store.OpenAsyncSession();
 
-            var events = await session.Query<Event>()
+            List<Event> events = await session.Query<Event>()
                 .Where(x => x.ActorName == actorName)
                 .Where(x => x.Index >= indexStart && x.Index <= indexEnd)
                 .OrderBy(x => x.Index)
                 .ToListAsync();
 
-            foreach (var @event in events)
+            foreach (Event @event in events)
             {
                 callback(@event.Data);
             }
@@ -38,9 +41,9 @@ namespace Proto.Persistence.RavenDB
 
         public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
-            using var session = _store.OpenAsyncSession();
+            using IAsyncDocumentSession session = _store.OpenAsyncSession();
 
-            var snapshot = await session.Query<Snapshot>()
+            Snapshot snapshot = await session.Query<Snapshot>()
                 .Where(x => x.ActorName == actorName)
                 .OrderByDescending(x => x.Index)
                 .FirstOrDefaultAsync();
@@ -50,7 +53,7 @@ namespace Proto.Persistence.RavenDB
 
         public async Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
-            using var session = _store.OpenAsyncSession();
+            using IAsyncDocumentSession session = _store.OpenAsyncSession();
 
             await session.StoreAsync(new Event(actorName, index, @event));
 
@@ -61,7 +64,7 @@ namespace Proto.Persistence.RavenDB
 
         public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)
         {
-            using var session = _store.OpenAsyncSession();
+            using IAsyncDocumentSession session = _store.OpenAsyncSession();
 
             await session.StoreAsync(new Snapshot(actorName, index, snapshot));
 

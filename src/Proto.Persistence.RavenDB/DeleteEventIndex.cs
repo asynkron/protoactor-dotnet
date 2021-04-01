@@ -3,7 +3,7 @@ using Raven.Client.Documents.Indexes;
 
 namespace Proto.Persistence.RavenDB
 {
-    class DeleteEventIndex : AbstractIndexCreationTask<Event>
+    internal class DeleteEventIndex : AbstractIndexCreationTask<Event>
     {
         public DeleteEventIndex()
         {

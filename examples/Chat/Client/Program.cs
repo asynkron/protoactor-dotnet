@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using chat.messages;
@@ -13,7 +14,7 @@ using static Proto.Remote.GrpcCore.GrpcCoreRemoteConfig;
 
 namespace Client
 {
-    static class Program
+    internal static class Program
     {
         private static RootContext context;
 
@@ -32,11 +33,11 @@ namespace Client
 
         private static void InitializeActorSystem()
         {
-            var config =
+            GrpcCoreRemoteConfig config =
                 BindToLocalhost()
                     .WithProtoMessages(ChatReflection.Descriptor);
 
-            var system =
+            ActorSystem system =
                 new ActorSystem()
                     .WithRemote(config);
 
@@ -50,7 +51,8 @@ namespace Client
         private static void SpawnClient() =>
             client = context.Spawn(
                 Props.FromFunc(
-                    ctx => {
+                    ctx =>
+                    {
                         switch (ctx.Message)
                         {
                             case Connected connected:
@@ -75,37 +77,34 @@ namespace Client
         private static void ConnectToServer() =>
             context.Send(
                 server,
-                new Connect
-                {
-                    Sender = client
-                }
+                new Connect {Sender = client}
             );
 
         private static void EvaluateCommands()
         {
-            var nick = "Alex";
+            string nick = "Alex";
 
             while (true)
             {
-                var text = Console.ReadLine();
+                string text = Console.ReadLine();
 
                 if (string.IsNullOrWhiteSpace(text))
+                {
                     continue;
+                }
 
                 if (text.Equals("/exit"))
+                {
                     return;
+                }
 
                 if (text.StartsWith("/nick "))
                 {
-                    var t = text.Split(' ')[1];
+                    string t = text.Split(' ')[1];
 
                     context.Send(
                         server,
-                        new NickRequest
-                        {
-                            OldUserName = nick,
-                            NewUserName = t
-                        }
+                        new NickRequest {OldUserName = nick, NewUserName = t}
                     );
 
                     nick = t;
@@ -115,11 +114,7 @@ namespace Client
 
                 context.Send(
                     server,
-                    new SayRequest
-                    {
-                        UserName = nick,
-                        Message = text
-                    }
+                    new SayRequest {UserName = nick, Message = text}
                 );
             }
         }

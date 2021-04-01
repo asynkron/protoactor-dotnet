@@ -9,24 +9,29 @@ namespace Proto.Persistence.Sqlite
 {
     public class SqliteProvider : IProvider
     {
-        private static readonly JsonSerializerSettings AutoTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Auto};
-        private static readonly JsonSerializerSettings AllTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};
+        private static readonly JsonSerializerSettings AutoTypeSettings =
+            new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Auto};
+
+        private static readonly JsonSerializerSettings AllTypeSettings =
+            new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};
+
         private readonly SqliteConnectionStringBuilder _connectionStringBuilder;
 
         public SqliteProvider(SqliteConnectionStringBuilder connectionStringBuilder)
         {
             _connectionStringBuilder = connectionStringBuilder;
 
-            using var connection = new SqliteConnection(ConnectionString);
+            using SqliteConnection connection = new SqliteConnection(ConnectionString);
 
             connection.Open();
 
-            using var initEventsCommand = connection.CreateCommand();
+            using SqliteCommand initEventsCommand = connection.CreateCommand();
 
-            initEventsCommand.CommandText = "CREATE TABLE IF NOT EXISTS Events (Id TEXT, ActorName TEXT, EventIndex REAL, EventData TEXT)";
+            initEventsCommand.CommandText =
+                "CREATE TABLE IF NOT EXISTS Events (Id TEXT, ActorName TEXT, EventIndex REAL, EventData TEXT)";
             initEventsCommand.ExecuteNonQuery();
 
-            using var initSnapshotsCommand = connection.CreateCommand();
+            using SqliteCommand initSnapshotsCommand = connection.CreateCommand();
 
             initSnapshotsCommand.CommandText =
                 "CREATE TABLE IF NOT EXISTS Snapshots (Id TEXT, ActorName TEXT, SnapshotIndex REAL, SnapshotData TEXT)";
@@ -37,11 +42,11 @@ namespace Proto.Persistence.Sqlite
 
         public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
         {
-            using var connection = new SqliteConnection(ConnectionString);
+            using SqliteConnection connection = new SqliteConnection(ConnectionString);
 
             await connection.OpenAsync();
 
-            using var deleteCommand = CreateCommand(
+            using SqliteCommand deleteCommand = CreateCommand(
                 connection,
                 "DELETE FROM Events WHERE ActorName = $actorName AND EventIndex <= $inclusiveToIndex",
                 ("$actorName", actorName),
@@ -53,11 +58,11 @@ namespace Proto.Persistence.Sqlite
 
         public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
         {
-            using var connection = new SqliteConnection(ConnectionString);
+            using SqliteConnection connection = new SqliteConnection(ConnectionString);
 
             await connection.OpenAsync();
 
-            using var deleteCommand = CreateCommand(
+            using SqliteCommand deleteCommand = CreateCommand(
                 connection,
                 "DELETE FROM Snapshots WHERE ActorName = $actorName AND SnapshotIndex <= $inclusiveToIndex",
                 ("$actorName", actorName),
@@ -67,13 +72,14 @@ namespace Proto.Persistence.Sqlite
             await deleteCommand.ExecuteNonQueryAsync();
         }
 
-        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd,
+            Action<object> callback)
         {
-            using var connection = new SqliteConnection(ConnectionString);
+            using SqliteConnection connection = new SqliteConnection(ConnectionString);
 
             await connection.OpenAsync();
 
-            using var selectCommand = CreateCommand(
+            using SqliteCommand selectCommand = CreateCommand(
                 connection,
                 "SELECT EventIndex, EventData FROM Events WHERE ActorName = $ActorName AND EventIndex >= $IndexStart AND EventIndex <= $IndexEnd ORDER BY EventIndex ASC",
                 ("$ActorName", actorName),
@@ -81,9 +87,9 @@ namespace Proto.Persistence.Sqlite
                 ("$IndexEnd", indexEnd)
             );
 
-            var indexes = new List<long>();
+            List<long> indexes = new List<long>();
 
-            using var reader = await selectCommand.ExecuteReaderAsync();
+            using SqliteDataReader reader = await selectCommand.ExecuteReaderAsync();
 
             while (await reader.ReadAsync())
             {
@@ -100,17 +106,17 @@ namespace Proto.Persistence.Sqlite
             object snapshot = null;
             long index = 0;
 
-            using var connection = new SqliteConnection(ConnectionString);
+            using SqliteConnection connection = new SqliteConnection(ConnectionString);
 
             await connection.OpenAsync();
 
-            using var selectCommand = CreateCommand(
+            using SqliteCommand selectCommand = CreateCommand(
                 connection,
                 "SELECT SnapshotIndex, SnapshotData FROM Snapshots WHERE ActorName = $ActorName ORDER BY SnapshotIndex DESC LIMIT 1",
                 ("$ActorName", actorName)
             );
 
-            using var reader = await selectCommand.ExecuteReaderAsync();
+            using SqliteDataReader reader = await selectCommand.ExecuteReaderAsync();
 
             while (await reader.ReadAsync())
             {
@@ -123,15 +129,15 @@ namespace Proto.Persistence.Sqlite
 
         public async Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
-            var item = new Event(
+            Event item = new Event(
                 actorName, index, JsonConvert.SerializeObject(@event, AllTypeSettings)
             );
 
-            using var connection = new SqliteConnection(ConnectionString);
+            using SqliteConnection connection = new SqliteConnection(ConnectionString);
 
             await connection.OpenAsync();
 
-            using var insertCommand = CreateCommand(
+            using SqliteCommand insertCommand = CreateCommand(
                 connection,
                 "INSERT INTO Events (Id, ActorName, EventIndex, EventData) VALUES ($Id, $ActorName, $EventIndex, $EventData)",
                 ("$Id", item.Id),
@@ -147,15 +153,15 @@ namespace Proto.Persistence.Sqlite
 
         public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)
         {
-            var item = new Snapshot(
+            Snapshot item = new Snapshot(
                 actorName, index, JsonConvert.SerializeObject(snapshot, AllTypeSettings)
             );
 
-            using var connection = new SqliteConnection(ConnectionString);
+            using SqliteConnection connection = new SqliteConnection(ConnectionString);
 
             await connection.OpenAsync();
 
-            using var insertCommand = CreateCommand(
+            using SqliteCommand insertCommand = CreateCommand(
                 connection,
                 "INSERT INTO Snapshots (Id, ActorName, SnapshotIndex, SnapshotData) VALUES ($Id, $ActorName, $SnapshotIndex, $SnapshotData)",
                 ("$Id", item.Id),
@@ -167,9 +173,10 @@ namespace Proto.Persistence.Sqlite
             await insertCommand.ExecuteNonQueryAsync();
         }
 
-        private static SqliteCommand CreateCommand(SqliteConnection connection, string command, params (string Name, object Value)[] parameters)
+        private static SqliteCommand CreateCommand(SqliteConnection connection, string command,
+            params (string Name, object Value)[] parameters)
         {
-            var sqliteCommand = connection.CreateCommand();
+            SqliteCommand sqliteCommand = connection.CreateCommand();
             sqliteCommand.CommandText = command;
             sqliteCommand.Parameters.AddRange(parameters.Select(x => new SqliteParameter(x.Name, x.Value)));
             return sqliteCommand;

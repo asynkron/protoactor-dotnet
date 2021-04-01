@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Immutable;
 using System.Linq;
@@ -30,7 +31,7 @@ namespace Proto.Cluster
         }
 
         public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; init; }
-        
+
         public string ClusterName { get; }
 
         public ImmutableList<ClusterKind> ClusterKinds { get; init; } = ImmutableList<ClusterKind>.Empty;
@@ -50,7 +51,8 @@ namespace Proto.Cluster
         public TimeSpan ClusterRequestDeDuplicationWindow { get; init; }
 
         public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } =
-            c => new DefaultClusterContext(c.IdentityLookup, c.PidCache, c.Logger, c.Config.ToClusterContextConfig(),c.System.Shutdown);
+            c => new DefaultClusterContext(c.IdentityLookup, c.PidCache, c.Logger, c.Config.ToClusterContextConfig(),
+                c.System.Shutdown);
 
         public ClusterConfig WithTimeout(TimeSpan timeSpan) =>
             this with {TimeoutTimespan = timeSpan};
@@ -73,14 +75,16 @@ namespace Proto.Cluster
         public ClusterConfig WithClusterKinds(params (string kind, Props prop)[] knownKinds) =>
             WithClusterKinds(knownKinds.Select(k => new ClusterKind(k.kind, k.prop)).ToArray());
 
-        public ClusterConfig WithClusterKinds(params (string kind, Props prop, Func<Cluster, IMemberStrategy> strategyBuilder)[] knownKinds) =>
-            WithClusterKinds(knownKinds.Select(k => new ClusterKind(k.kind, k.prop) {StrategyBuilder = k.strategyBuilder}).ToArray());
+        public ClusterConfig WithClusterKinds(
+            params (string kind, Props prop, Func<Cluster, IMemberStrategy> strategyBuilder)[] knownKinds) =>
+            WithClusterKinds(knownKinds
+                .Select(k => new ClusterKind(k.kind, k.prop) {StrategyBuilder = k.strategyBuilder}).ToArray());
 
         public ClusterConfig WithClusterKind(ClusterKind clusterKind) => WithClusterKinds(clusterKind);
 
         public ClusterConfig WithClusterKinds(params ClusterKind[] clusterKinds)
             => this with {ClusterKinds = ClusterKinds.AddRange(clusterKinds)};
-        
+
         public ClusterConfig WithMemberStrategyBuilder(Func<Cluster, string, IMemberStrategy> builder) =>
             this with {MemberStrategyBuilder = builder};
 

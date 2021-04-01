@@ -14,8 +14,8 @@ namespace Proto.Mailbox.Tests
         public MailboxStatisticsTests()
         {
             _mailboxHandler = new TestMailboxHandler();
-            var userMailbox = new UnboundedMailboxQueue();
-            var systemMessages = new UnboundedMailboxQueue();
+            UnboundedMailboxQueue userMailbox = new UnboundedMailboxQueue();
+            UnboundedMailboxQueue systemMessages = new UnboundedMailboxQueue();
             _mailboxStatistics = new TestMailboxStatistics();
             _mailbox = new DefaultMailbox(systemMessages, userMailbox, _mailboxStatistics);
             _mailbox.RegisterHandlers(_mailboxHandler, _mailboxHandler);
@@ -32,7 +32,7 @@ namespace Proto.Mailbox.Tests
         [Fact]
         public void GivenUserMessage_ShouldInvokeMessagePosted()
         {
-            var msg1 = new TestMessage();
+            TestMessage msg1 = new TestMessage();
 
             _mailbox.PostUserMessage(msg1);
             Assert.Contains(msg1, _mailboxStatistics.Posted);
@@ -41,7 +41,7 @@ namespace Proto.Mailbox.Tests
         [Fact]
         public void GivenSystemMessage_ShouldInvokeMessagePosted()
         {
-            var msg1 = new TestMessage();
+            TestMessage msg1 = new TestMessage();
 
             _mailbox.PostSystemMessage(msg1);
             Assert.Contains(msg1, _mailboxStatistics.Posted);
@@ -50,7 +50,7 @@ namespace Proto.Mailbox.Tests
         [Fact]
         public async Task GivenNonCompletedUserMessage_ShouldInvokeMessageReceivedAfterCompletion()
         {
-            var msg1 = new TestMessage();
+            TestMessage msg1 = new TestMessage();
 
             _mailbox.PostUserMessage(msg1);
             Assert.DoesNotContain(msg1, _mailboxStatistics.Received);
@@ -65,7 +65,7 @@ namespace Proto.Mailbox.Tests
         [Fact]
         public void GivenCompletedUserMessage_ShouldInvokeMessageReceivedImmediately()
         {
-            var msg1 = new TestMessage();
+            TestMessage msg1 = new TestMessage();
             msg1.TaskCompletionSource.SetResult(0);
 
             _mailbox.PostUserMessage(msg1);
@@ -75,7 +75,7 @@ namespace Proto.Mailbox.Tests
         [Fact]
         public async Task GivenNonCompletedUserMessageThrewException_ShouldNotInvokeMessageReceived()
         {
-            var msg1 = new TestMessage();
+            TestMessage msg1 = new TestMessage();
 
             _mailbox.PostUserMessage(msg1);
 
@@ -89,7 +89,7 @@ namespace Proto.Mailbox.Tests
         [Fact]
         public void GivenCompletedUserMessageThrewException_ShouldNotInvokeMessageReceived()
         {
-            var msg1 = new TestMessage();
+            TestMessage msg1 = new TestMessage();
             msg1.TaskCompletionSource.SetException(new Exception());
 
             _mailbox.PostUserMessage(msg1);
@@ -100,7 +100,7 @@ namespace Proto.Mailbox.Tests
         [Fact]
         public async Task GivenNonCompletedSystemMessageThrewException_ShouldNotInvokeMessageReceived()
         {
-            var msg1 = new TestMessage();
+            TestMessage msg1 = new TestMessage();
 
             _mailbox.PostSystemMessage(msg1);
 
@@ -114,7 +114,7 @@ namespace Proto.Mailbox.Tests
         [Fact]
         public void GivenCompletedSystemMessageThrewException_ShouldNotInvokeMessageReceived()
         {
-            var msg1 = new TestMessage();
+            TestMessage msg1 = new TestMessage();
             msg1.TaskCompletionSource.SetException(new Exception());
 
             _mailbox.PostSystemMessage(msg1);

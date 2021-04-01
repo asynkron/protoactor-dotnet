@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,13 +12,12 @@ using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Rest;
-using Proto.Cluster.Events;
 using static Proto.Cluster.Kubernetes.Messages;
 using static Proto.Cluster.Kubernetes.ProtoLabels;
 
 namespace Proto.Cluster.Kubernetes
 {
-    class KubernetesClusterMonitor : IActor
+    internal class KubernetesClusterMonitor : IActor
     {
         private static readonly ILogger Logger = Log.CreateLogger<KubernetesClusterMonitor>();
         private readonly Cluster _cluster;
@@ -77,7 +77,7 @@ namespace Proto.Cluster.Kubernetes
 
         private Task StartWatchingCluster(string clusterName, ISenderContext context)
         {
-            var selector = $"{LabelCluster}={clusterName}";
+            string selector = $"{LabelCluster}={clusterName}";
             Logger.LogDebug("[Cluster] Starting to watch pods with {Selector}", selector);
 
             _watcherTask = _kubernetes.ListNamespacedPodWithHttpMessagesAsync(
@@ -91,7 +91,10 @@ namespace Proto.Cluster.Kubernetes
             void Error(Exception ex)
             {
                 // If we are already in stopping state, just ignore it
-                if (_stopping) return;
+                if (_stopping)
+                {
+                    return;
+                }
 
                 // We log it and attempt to watch again, overcome transient issues
                 Logger.LogInformation("[Cluster] Unable to watch the cluster status: {Error}", ex.Message);
@@ -102,7 +105,10 @@ namespace Proto.Cluster.Kubernetes
             void Closed()
             {
                 // If we are already in stopping state, just ignore it
-                if (_stopping) return;
+                if (_stopping)
+                {
+                    return;
+                }
 
                 Logger.LogDebug("[Cluster] Watcher has closed, restarting");
                 Restart();
@@ -121,9 +127,9 @@ namespace Proto.Cluster.Kubernetes
 
         private void Watch(WatchEventType eventType, V1Pod eventPod)
         {
-            var podLabels = eventPod.Metadata.Labels;
+            IDictionary<string, string> podLabels = eventPod.Metadata.Labels;
 
-            if (!podLabels.TryGetValue(LabelCluster, out var podClusterName))
+            if (!podLabels.TryGetValue(LabelCluster, out string podClusterName))
             {
                 Logger.LogInformation("[Cluster] The pod {PodName} is not a Proto.Cluster node", eventPod.Metadata.Name
                 );
@@ -140,11 +146,15 @@ namespace Proto.Cluster.Kubernetes
 
             // Update the list of known pods
             if (eventType == WatchEventType.Deleted)
+            {
                 _clusterPods.Remove(eventPod.Uid());
+            }
             else
+            {
                 _clusterPods[eventPod.Uid()] = eventPod;
+            }
 
-            var memberStatuses = _clusterPods.Values
+            List<Member> memberStatuses = _clusterPods.Values
                 .Select(x => x.GetMemberStatus())
                 .Where(x => x.IsCandidate)
                 .Select(x => x.Status)

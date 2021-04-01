@@ -15,7 +15,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_AllRouteesReceiveMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
 
             ActorSystem.Root.Send(router, "hello");
 
@@ -27,7 +27,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_WhenOneRouteeIsStopped_AllOtherRouteesReceiveMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
 
             await ActorSystem.Root.StopAsync(routee2);
             ActorSystem.Root.Send(router, "hello");
@@ -39,7 +39,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_WhenOneRouteeIsSlow_AllOtherRouteesReceiveMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
 
             ActorSystem.Root.Send(routee2, "go slow");
             ActorSystem.Root.Send(router, "hello");
@@ -51,11 +51,11 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_RouteesCanBeRemoved()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
 
             ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
 
-            var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+            Routees routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.Pids);
             Assert.Contains(routee2, routees.Pids);
             Assert.Contains(routee3, routees.Pids);
@@ -64,11 +64,11 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_RouteesCanBeAdded()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
-            var routee4 = ActorSystem.Root.Spawn(MyActorProps);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
+            PID routee4 = ActorSystem.Root.Spawn(MyActorProps);
             ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
 
-            var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+            Routees routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.Pids);
             Assert.Contains(routee2, routees.Pids);
             Assert.Contains(routee3, routees.Pids);
@@ -78,7 +78,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_RemovedRouteesNoLongerReceiveMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
 
             ActorSystem.Root.Send(router, "first message");
             ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
@@ -92,8 +92,8 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_AddedRouteesReceiveMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
-            var routee4 = ActorSystem.Root.Spawn(MyActorProps);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
+            PID routee4 = ActorSystem.Root.Spawn(MyActorProps);
             ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
             ActorSystem.Root.Send(router, "a message");
 
@@ -106,7 +106,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
 
             ActorSystem.Root.Send(router, new RouterBroadcastMessage("hello"));
 
@@ -115,15 +115,16 @@ namespace Proto.Router.Tests
             Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));
         }
 
-        private static (PID router, PID routee1, PID routee2, PID routee3) CreateBroadcastGroupRouterWith3Routees(ActorSystem system)
+        private static (PID router, PID routee1, PID routee2, PID routee3) CreateBroadcastGroupRouterWith3Routees(
+            ActorSystem system)
         {
-            var routee1 = system.Root.Spawn(MyActorProps);
-            var routee2 = system.Root.Spawn(MyActorProps);
-            var routee3 = system.Root.Spawn(MyActorProps);
+            PID routee1 = system.Root.Spawn(MyActorProps);
+            PID routee2 = system.Root.Spawn(MyActorProps);
+            PID routee3 = system.Root.Spawn(MyActorProps);
 
-            var props = system.Root.NewBroadcastGroup(routee1, routee2, routee3)
+            Props props = system.Root.NewBroadcastGroup(routee1, routee2, routee3)
                 .WithMailbox(() => new TestMailbox());
-            var router = system.Root.Spawn(props);
+            PID router = system.Root.Spawn(props);
             return (router, routee1, routee2, routee3);
         }
 

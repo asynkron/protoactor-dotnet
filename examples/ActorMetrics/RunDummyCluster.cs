@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -21,21 +22,23 @@ namespace ActorMetrics
     {
         public static void Run()
         {
-            var l = LoggerFactory.Create(x => x.AddConsole().SetMinimumLevel(LogLevel.Information));
+            ILoggerFactory l = LoggerFactory.Create(x => x.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
-            var config = ActorSystemConfig.Setup().WithMetricsProviders(new PrometheusConfigurator());
+            ActorSystemConfig config = ActorSystemConfig.Setup().WithMetricsProviders(new PrometheusConfigurator());
 
-            var remoteConfig = GrpcCoreRemoteConfig
+            GrpcCoreRemoteConfig remoteConfig = GrpcCoreRemoteConfig
                 .BindToLocalhost()
                 .WithProtoMessages(MessagesReflection.Descriptor);
 
-            var clusterConfig =
+            ClusterConfig clusterConfig =
                 ClusterConfig
-                    .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://127.0.0.1:8500/")),
+                    .Setup("MyCluster",
+                        new ConsulProvider(new ConsulProviderConfig(),
+                            c => c.Address = new Uri("http://127.0.0.1:8500/")),
                         new PartitionIdentityLookup()
                     );
 
-            var system = new ActorSystem(config)
+            ActorSystem system = new ActorSystem(config)
                 .WithRemote(remoteConfig)
                 .WithCluster(clusterConfig);
 
@@ -43,22 +46,24 @@ namespace ActorMetrics
                 .Cluster()
                 .StartMemberAsync();
 
-            var props = Props.FromProducer(() => new MyActor());
+            Props props = Props.FromProducer(() => new MyActor());
 
-            var config2 = ActorSystemConfig.Setup().WithMetricsProviders(new PrometheusConfigurator());
+            ActorSystemConfig config2 = ActorSystemConfig.Setup().WithMetricsProviders(new PrometheusConfigurator());
 
-            var remoteConfig2 = GrpcCoreRemoteConfig
+            GrpcCoreRemoteConfig remoteConfig2 = GrpcCoreRemoteConfig
                 .BindToLocalhost()
                 .WithProtoMessages(MessagesReflection.Descriptor);
 
-            var clusterConfig2 =
+            ClusterConfig clusterConfig2 =
                 ClusterConfig
-                    .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://127.0.0.1:8500/")),
+                    .Setup("MyCluster",
+                        new ConsulProvider(new ConsulProviderConfig(),
+                            c => c.Address = new Uri("http://127.0.0.1:8500/")),
                         new PartitionIdentityLookup()
                     )
                     .WithClusterKind("somekind", props);
 
-            var system2 = new ActorSystem(config2)
+            ActorSystem system2 = new ActorSystem(config2)
                 .WithRemote(remoteConfig2)
                 .WithCluster(clusterConfig2);
 
@@ -66,13 +71,15 @@ namespace ActorMetrics
                 .Cluster()
                 .StartMemberAsync();
 
-            _ = SafeTask.Run(async () => {
-                    var r = new Random();
+            _ = SafeTask.Run(async () =>
+                {
+                    Random r = new Random();
 
                     while (true)
                     {
                         await Task.Delay(r.Next(1, 2000));
-                        await system.Cluster().RequestAsync<SomeResponse>($"someactor{r.Next(1, 100)}", "somekind", new SomeRequest(),
+                        await system.Cluster().RequestAsync<SomeResponse>($"someactor{r.Next(1, 100)}", "somekind",
+                            new SomeRequest(),
                             CancellationTokens.WithTimeout(5000)
                         );
                     }

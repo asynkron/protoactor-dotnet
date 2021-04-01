@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -30,7 +31,7 @@ namespace DependencyInjection.Controllers
         {
             _logger.LogInformation("Got request");
 
-            var greeting = $"Hello to you {msg.Name}";
+            string greeting = $"Hello to you {msg.Name}";
             context.Respond(new HelloResponse(greeting));
             return Task.CompletedTask;
         }
@@ -40,7 +41,8 @@ namespace DependencyInjection.Controllers
 
     public record HelloResponse(string Greeting);
 
-    [ApiController, Route("[controller]")]
+    [ApiController]
+    [Route("[controller]")]
     public class ActorController : ControllerBase
     {
         private readonly ActorSystem _actorSystem;
@@ -51,13 +53,14 @@ namespace DependencyInjection.Controllers
         public async Task<string> Get()
         {
             //Get props for dependency injected actor 
-            var props = _actorSystem.DI().PropsFor<DependencyInjectedActor>();
+            Props props = _actorSystem.DI().PropsFor<DependencyInjectedActor>();
 
             //spawn the actor
-            var pid = _actorSystem.Root.Spawn(props);
+            PID pid = _actorSystem.Root.Spawn(props);
 
             //send a request and await the response
-            var response = await _actorSystem.Root.RequestAsync<HelloResponse>(pid, new HelloRequest("Proto.Actor"));
+            HelloResponse response =
+                await _actorSystem.Root.RequestAsync<HelloResponse>(pid, new HelloRequest("Proto.Actor"));
 
             //stop the actor
             await _actorSystem.Root.StopAsync(pid);

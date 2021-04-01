@@ -3,11 +3,12 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using Proto;
 
 namespace Saga.Messages
 {
-    class SuccessResult : Result
+    internal class SuccessResult : Result
     {
         public SuccessResult(PID pid) : base(pid)
         {

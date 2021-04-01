@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -49,7 +50,8 @@ namespace Proto.Cluster.Identity
             nameof(RemoveActivation), pid.ToString()
         );
 
-        public Task RemoveMember(string memberId, CancellationToken ct) => LogCall(() => _storage.RemoveMember(memberId, ct),
+        public Task RemoveMember(string memberId, CancellationToken ct) => LogCall(
+            () => _storage.RemoveMember(memberId, ct),
             nameof(RemoveMember), memberId
         );
 
@@ -61,7 +63,7 @@ namespace Proto.Cluster.Identity
 
         private async Task LogCall(Func<Task> call, string method, string subject)
         {
-            var timer = Stopwatch.StartNew();
+            Stopwatch timer = Stopwatch.StartNew();
 
             try
             {
@@ -86,14 +88,14 @@ namespace Proto.Cluster.Identity
 
         private async Task<T> LogCall<T>(Func<Task<T>> call, string method, string subject)
         {
-            var timer = Stopwatch.StartNew();
+            Stopwatch timer = Stopwatch.StartNew();
 
             try
             {
                 _logger.LogInformation("{Method}: {Subject} before",
                     method, subject
                 );
-                var result = await call();
+                T result = await call();
                 timer.Stop();
                 _logger.LogInformation("{Method}: {Subject} after {Elapsed} returned {Result}",
                     method, subject, timer.Elapsed, result

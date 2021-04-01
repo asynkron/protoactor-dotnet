@@ -16,16 +16,16 @@ using Proto.Persistence.Sqlite;
 using Event = Proto.Persistence.Event;
 using Snapshot = Proto.Persistence.Snapshot;
 
-class Program
+internal class Program
 {
     private static void Main(string[] args)
     {
-        var context = new RootContext(new ActorSystem());
-        var provider = new SqliteProvider(new SqliteConnectionStringBuilder {DataSource = "states.db"});
+        RootContext context = new RootContext(new ActorSystem());
+        SqliteProvider provider = new SqliteProvider(new SqliteConnectionStringBuilder {DataSource = "states.db"});
 
-        var props = Props.FromProducer(() => new MyPersistenceActor(provider));
+        Props props = Props.FromProducer(() => new MyPersistenceActor(provider));
 
-        var pid = context.Spawn(props);
+        PID pid = context.Spawn(props);
 
         Console.ReadLine();
     }
@@ -85,7 +85,8 @@ class Program
                     if (msg.Data is RenameEvent re)
                     {
                         _state.Name = re.Name;
-                        Console.WriteLine("MyPersistenceActor - RecoverEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
+                        Console.WriteLine("MyPersistenceActor - RecoverEvent = Event.Index = {0}, Event.Data = {1}",
+                            msg.Index, msg.Data);
                     }
 
                     break;
@@ -93,12 +94,14 @@ class Program
                     if (msg.Data is RenameEvent rp)
                     {
                         _state.Name = rp.Name;
-                        Console.WriteLine("MyPersistenceActor - ReplayEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
+                        Console.WriteLine("MyPersistenceActor - ReplayEvent = Event.Index = {0}, Event.Data = {1}",
+                            msg.Index, msg.Data);
                     }
 
                     break;
                 case PersistedEvent msg:
-                    Console.WriteLine("MyPersistenceActor - PersistedEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
+                    Console.WriteLine("MyPersistenceActor - PersistedEvent = Event.Index = {0}, Event.Data = {1}",
+                        msg.Index, msg.Data);
                     break;
             }
         }
@@ -111,7 +114,9 @@ class Program
                     if (msg.State is State ss)
                     {
                         _state = ss;
-                        Console.WriteLine("MyPersistenceActor - RecoverSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}", _persistence.Index,
+                        Console.WriteLine(
+                            "MyPersistenceActor - RecoverSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}",
+                            _persistence.Index,
                             ss.Name
                         );
                     }
@@ -122,13 +127,16 @@ class Program
 
         private Task Handle(IContext context, StartLoopActor message)
         {
-            if (_timerStarted) return Task.CompletedTask;
+            if (_timerStarted)
+            {
+                return Task.CompletedTask;
+            }
 
             _timerStarted = true;
 
             Console.WriteLine("MyPersistenceActor - StartLoopActor");
 
-            var props = Props.FromProducer(() => new LoopActor());
+            Props props = Props.FromProducer(() => new LoopActor());
 
             _loopActor = context.Spawn(props);
 
@@ -164,7 +172,8 @@ class Program
                     break;
                 case LoopParentMessage _:
 
-                    _ = SafeTask.Run(async () => {
+                    _ = SafeTask.Run(async () =>
+                        {
                             context.Send(context.Parent, new RenameCommand {Name = GeneratePronounceableName(5)});
 
                             await Task.Delay(TimeSpan.FromMilliseconds(500));
@@ -184,12 +193,12 @@ class Program
             const string vowels = "aeiou";
             const string consonants = "bcdfghjklmnpqrstvwxyz";
 
-            var rnd = new Random();
-            var name = new StringBuilder();
+            Random rnd = new Random();
+            StringBuilder name = new StringBuilder();
 
             length = length % 2 == 0 ? length : length + 1;
 
-            for (var i = 0; i < length / 2; i++)
+            for (int i = 0; i < length / 2; i++)
             {
                 name
                     .Append(vowels[rnd.Next(vowels.Length)])

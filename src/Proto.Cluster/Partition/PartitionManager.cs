@@ -3,24 +3,24 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Proto.Cluster.Partition
 {
     //helper to interact with partition actors on this and other members
-    class PartitionManager
+    internal class PartitionManager
     {
         private const string PartitionIdentityActorName = "partition-identity";
         private const string PartitionPlacementActorName = "partition-activator";
         private readonly Cluster _cluster;
         private readonly IRootContext _context;
+        private readonly TimeSpan _identityHandoverTimeout;
         private readonly bool _isClient;
         private readonly ActorSystem _system;
-        private PID _partitionPlacementActor = null!;
         private PID _partitionIdentityActor = null!;
-        private readonly TimeSpan _identityHandoverTimeout;
+        private PID _partitionPlacementActor = null!;
 
         internal PartitionManager(Cluster cluster, bool isClient, TimeSpan identityHandoverTimeout)
         {
@@ -37,10 +37,14 @@ namespace Proto.Cluster.Partition
         {
             if (_isClient)
             {
-                var eventId = 0ul;
+                ulong eventId = 0ul;
                 //make sure selector is updated first
-                _system.EventStream.Subscribe<ClusterTopology>(e => {
-                        if (e.EventId == eventId) return;
+                _system.EventStream.Subscribe<ClusterTopology>(e =>
+                    {
+                        if (e.EventId == eventId)
+                        {
+                            return;
+                        }
 
                         eventId = e.EventId;
                         Selector.Update(e.Members.ToArray());
@@ -49,21 +53,25 @@ namespace Proto.Cluster.Partition
             }
             else
             {
-                var partitionActorProps = Props
+                Props? partitionActorProps = Props
                     .FromProducer(() => new PartitionIdentityActor(_cluster, _identityHandoverTimeout))
                     .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
                 _partitionIdentityActor = _context.SpawnNamed(partitionActorProps, PartitionIdentityActorName);
 
-                var partitionActivatorProps =
+                Props? partitionActivatorProps =
                     Props.FromProducer(() => new PartitionPlacementActor(_cluster));
                 _partitionPlacementActor = _context.SpawnNamed(partitionActivatorProps, PartitionPlacementActorName);
 
                 //synchronous subscribe to keep accurate
 
-                var eventId = 0ul;
+                ulong eventId = 0ul;
                 //make sure selector is updated first
-                _system.EventStream.Subscribe<ClusterTopology>(e => {
-                        if (e.EventId == eventId) return;
+                _system.EventStream.Subscribe<ClusterTopology>(e =>
+                    {
+                        if (e.EventId == eventId)
+                        {
+                            return;
+                        }
 
                         eventId = e.EventId;
 
@@ -93,5 +101,4 @@ namespace Proto.Cluster.Partition
         public static PID RemotePartitionPlacementActor(string address) =>
             PID.FromAddress(address, PartitionPlacementActorName);
     }
-    
 }

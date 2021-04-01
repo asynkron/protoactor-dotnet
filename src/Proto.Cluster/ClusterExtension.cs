@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,20 +26,24 @@ namespace Proto.Cluster
             => system.Extensions.Get<Cluster>() ?? throw new NotSupportedException("Cluster has not been configured");
 
         public static Cluster Cluster(this IContext context)
-            => context.System.Extensions.Get<Cluster>() ?? throw new NotSupportedException("Cluster has not been configured");
+            => context.System.Extensions.Get<Cluster>() ??
+               throw new NotSupportedException("Cluster has not been configured");
 
-        public static Task<T> ClusterRequestAsync<T>(this IContext context, string identity, string kind, object message, CancellationToken ct)
+        public static Task<T> ClusterRequestAsync<T>(this IContext context, string identity, string kind,
+            object message, CancellationToken ct)
         {
-            var cluster = context.System.Extensions.Get<Cluster>();
+            Cluster? cluster = context.System.Extensions.Get<Cluster>();
             //call cluster RequestAsync using actor context
             return cluster.RequestAsync<T>(identity, kind, message, context, ct);
         }
 
-        public static Props WithClusterInit(this Props props, Cluster cluster, ClusterIdentity clusterIdentity, ActivatedClusterKind activatedClusterKind)
+        public static Props WithClusterInit(this Props props, Cluster cluster, ClusterIdentity clusterIdentity,
+            ActivatedClusterKind activatedClusterKind)
         {
             return props.WithReceiverMiddleware(
                 baseReceive =>
-                    (ctx, env) => {
+                    (ctx, env) =>
+                    {
                         return env.Message switch
                         {
                             Started => HandleStart(baseReceive, ctx, env),
@@ -55,11 +60,11 @@ namespace Proto.Cluster
             )
             {
                 await baseReceive(ctx, startEnvelope);
-                var grainInit = new ClusterInit(clusterIdentity, cluster);
-                var grainInitEnvelope = new MessageEnvelope(grainInit, null);
-                var count = activatedClusterKind.Inc();
+                ClusterInit? grainInit = new(clusterIdentity, cluster);
+                MessageEnvelope? grainInitEnvelope = new(grainInit, null);
+                int count = activatedClusterKind.Inc();
                 cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
-                    .Set(count,new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
+                    .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
                 await baseReceive(ctx, grainInitEnvelope);
             }
 
@@ -69,7 +74,7 @@ namespace Proto.Cluster
                 MessageEnvelope startEnvelope
             )
             {
-                var count = activatedClusterKind.Dec();
+                int count = activatedClusterKind.Dec();
                 cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
                     .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
                 await baseReceive(ctx, startEnvelope);
@@ -86,20 +91,22 @@ namespace Proto.Cluster
         /// <param name="deduplicationWindow"></param>
         /// <returns></returns>
         public static Props WithClusterRequestDeduplication(this Props props, TimeSpan? deduplicationWindow = null)
-            => props.WithContextDecorator(context => {
-                    var cluster = context.System.Cluster();
-                    var memberList = cluster.MemberList;
+            => props.WithContextDecorator(context =>
+                {
+                    Cluster? cluster = context.System.Cluster();
+                    MemberList? memberList = cluster.MemberList;
 
-                    return new DeduplicationContext<PidRef>(context, deduplicationWindow ?? cluster.Config.ClusterRequestDeDuplicationWindow,
+                    return new DeduplicationContext<PidRef>(context,
+                        deduplicationWindow ?? cluster.Config.ClusterRequestDeDuplicationWindow,
                         TryGetRef
                     );
 
                     bool TryGetRef(MessageEnvelope envelope, out PidRef pidRef)
                     {
-                        var pid = envelope.Sender;
+                        PID? pid = envelope.Sender;
 
-                        if (pid is not null && int.TryParse(pid.Id[1..], out var id) &&
-                            memberList.TryGetMemberIndexByAddress(pid.Address, out var memberId))
+                        if (pid is not null && int.TryParse(pid.Id[1..], out int id) &&
+                            memberList.TryGetMemberIndexByAddress(pid.Address, out int memberId))
                         {
                             pidRef = new PidRef(memberId, id);
                             return true;

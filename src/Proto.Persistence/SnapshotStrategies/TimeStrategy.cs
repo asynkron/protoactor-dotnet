@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 
 namespace Proto.Persistence.SnapshotStrategies
@@ -22,8 +23,11 @@ namespace Proto.Persistence.SnapshotStrategies
 
         public bool ShouldTakeSnapshot(PersistedEvent persistedEvent)
         {
-            var now = _getNow();
-            if (_lastTaken.Add(_interval) > now) return false;
+            DateTime now = _getNow();
+            if (_lastTaken.Add(_interval) > now)
+            {
+                return false;
+            }
 
             _lastTaken = now;
             return true;

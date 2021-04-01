@@ -11,19 +11,19 @@ namespace Proto.Tests
         [Fact]
         public void Can_pass_ActorSystem_via_Props()
         {
-            var system = new ActorSystem();
-            var props = Props.FromProducer(s => new ActorWithSystem(s));
-            var actor = (ActorWithSystem) props.Producer(system);
+            ActorSystem system = new ActorSystem();
+            Props props = Props.FromProducer(s => new ActorWithSystem(s));
+            ActorWithSystem actor = (ActorWithSystem)props.Producer(system);
             Assert.Same(system, actor.System);
         }
 
         [Fact]
         public void Given_Props_When_WithDispatcher_Then_mutate_Dispatcher()
         {
-            var dispatcher = new TestDispatcher();
+            TestDispatcher dispatcher = new TestDispatcher();
 
-            var props = new Props();
-            var props2 = props.WithDispatcher(dispatcher);
+            Props props = new Props();
+            Props props2 = props.WithDispatcher(dispatcher);
 
             Assert.NotEqual(props, props2);
             Assert.Equal(dispatcher, props2.Dispatcher);
@@ -42,8 +42,8 @@ namespace Proto.Tests
         {
             IMailbox MailboxProducer() => new TestMailbox();
 
-            var props = new Props();
-            var props2 = props.WithMailbox(MailboxProducer);
+            Props props = new Props();
+            Props props2 = props.WithMailbox(MailboxProducer);
 
             Assert.NotEqual(props, props2);
             Assert.Equal(MailboxProducer, props2.MailboxProducer);
@@ -64,9 +64,9 @@ namespace Proto.Tests
             Func<Receiver, Receiver> middleware2 = r => r;
             Func<Receiver, Receiver> middleware3 = r => r;
 
-            var props = new Props();
-            var props2 = props.WithReceiverMiddleware(middleware, middleware2);
-            var props3 = props2.WithReceiverMiddleware(middleware3);
+            Props props = new Props();
+            Props props2 = props.WithReceiverMiddleware(middleware, middleware2);
+            Props props3 = props2.WithReceiverMiddleware(middleware3);
 
             Assert.NotEqual(props, props2);
             Assert.Equal(props.ReceiverMiddleware.Count + 2, props2.ReceiverMiddleware.Count);
@@ -86,8 +86,8 @@ namespace Proto.Tests
         {
             static IActor Producer(ActorSystem s) => null;
 
-            var props = new Props();
-            var props2 = props.WithProducer(Producer);
+            Props props = new Props();
+            Props props2 = props.WithProducer(Producer);
 
             Assert.NotEqual(props, props2);
             Assert.Equal(Producer, props2.Producer);
@@ -106,8 +106,8 @@ namespace Proto.Tests
         {
             PID Spawner(ActorSystem s, string id, Props p, PID? parent) => new();
 
-            var props = new Props();
-            var props2 = props.WithSpawner(Spawner);
+            Props props = new Props();
+            Props props2 = props.WithSpawner(Spawner);
 
             Assert.NotEqual(props, props2);
             Assert.Equal(Spawner, props2.Spawner);
@@ -124,10 +124,10 @@ namespace Proto.Tests
         [Fact]
         public void Given_Props_When_WithSupervisor_Then_mutate_SupervisorStrategy()
         {
-            var supervision = new DoNothingSupervisorStrategy();
+            DoNothingSupervisorStrategy supervision = new DoNothingSupervisorStrategy();
 
-            var props = new Props();
-            var props2 = props.WithChildSupervisorStrategy(supervision);
+            Props props = new Props();
+            Props props2 = props.WithChildSupervisorStrategy(supervision);
 
             Assert.NotEqual(props, props2);
             Assert.Equal(supervision, props2.SupervisorStrategy);

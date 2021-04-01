@@ -73,7 +73,7 @@ namespace Proto
 
         public void Request(PID target, object message, PID? sender)
         {
-            MessageEnvelope? envelope = new MessageEnvelope(message, sender);
+            MessageEnvelope? envelope = new(message, sender);
             Send(target, envelope);
         }
 
@@ -99,7 +99,7 @@ namespace Proto
 
         public Task StopAsync(PID pid)
         {
-            FutureProcess? future = new FutureProcess(System);
+            FutureProcess? future = new(System);
 
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
@@ -134,7 +134,7 @@ namespace Proto
                 throw new ArgumentNullException(nameof(target));
             }
 
-            MessageEnvelope? messageEnvelope = new MessageEnvelope(message, future.Pid);
+            MessageEnvelope? messageEnvelope = new(message, future.Pid);
             SendUserMessage(target, messageEnvelope);
             object? result = await future.Task;
 

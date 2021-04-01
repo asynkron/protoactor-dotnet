@@ -17,9 +17,11 @@ namespace Proto.Remote.Tests
         {
             public Fixture()
             {
-                var clientConfig = ConfigureClientRemoteConfig(GrpcCoreRemoteConfig.BindToLocalhost(5000));
+                GrpcCoreRemoteConfig clientConfig =
+                    ConfigureClientRemoteConfig(GrpcCoreRemoteConfig.BindToLocalhost(5000));
                 Remote = GetGrpcCoreRemote(clientConfig);
-                var serverConfig = ConfigureServerRemoteConfig(GrpcCoreRemoteConfig.BindToLocalhost(5001));
+                GrpcCoreRemoteConfig serverConfig =
+                    ConfigureServerRemoteConfig(GrpcCoreRemoteConfig.BindToLocalhost(5001));
                 ServerRemote = GetGrpcCoreRemote(serverConfig);
             }
         }

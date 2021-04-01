@@ -15,7 +15,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RandomGroupRouter_RouteesReceiveMessagesInRandomOrder()
         {
-            var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(ActorSystem);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateRouterWith3Routees(ActorSystem);
 
             ActorSystem.Root.Send(router, "1");
             ActorSystem.Root.Send(router, "2");
@@ -29,8 +29,8 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RandomGroupRouter_NewlyAddedRouteesReceiveMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(ActorSystem);
-            var routee4 = ActorSystem.Root.Spawn(MyActorProps);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateRouterWith3Routees(ActorSystem);
+            PID routee4 = ActorSystem.Root.Spawn(MyActorProps);
             ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
             await Task.Delay(500);
             ActorSystem.Root.Send(router, "1");
@@ -49,11 +49,11 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RandomGroupRouter_RemovedRouteesDoNotReceiveMessages()
         {
-            var (router, routee1, _, _) = CreateRouterWith3Routees(ActorSystem);
+            (PID router, PID routee1, _, _) = CreateRouterWith3Routees(ActorSystem);
 
             ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
 
-            for (var i = 0; i < 100; i++)
+            for (int i = 0; i < 100; i++)
             {
                 ActorSystem.Root.Send(router, i.ToString());
             }
@@ -64,11 +64,11 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RandomGroupRouter_RouteesCanBeRemoved()
         {
-            var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(ActorSystem);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateRouterWith3Routees(ActorSystem);
 
             ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
 
-            var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+            Routees routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.Pids);
             Assert.Contains(routee2, routees.Pids);
             Assert.Contains(routee3, routees.Pids);
@@ -77,11 +77,11 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RandomGroupRouter_RouteesCanBeAdded()
         {
-            var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(ActorSystem);
-            var routee4 = ActorSystem.Root.Spawn(MyActorProps);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateRouterWith3Routees(ActorSystem);
+            PID routee4 = ActorSystem.Root.Spawn(MyActorProps);
             ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
 
-            var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+            Routees routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.Pids);
             Assert.Contains(routee2, routees.Pids);
             Assert.Contains(routee3, routees.Pids);
@@ -91,7 +91,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RandomGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(ActorSystem);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateRouterWith3Routees(ActorSystem);
 
             ActorSystem.Root.Send(router, new RouterBroadcastMessage("hello"));
 
@@ -102,13 +102,13 @@ namespace Proto.Router.Tests
 
         private (PID router, PID routee1, PID routee2, PID routee3) CreateRouterWith3Routees(ActorSystem system)
         {
-            var routee1 = system.Root.Spawn(MyActorProps);
-            var routee2 = system.Root.Spawn(MyActorProps);
-            var routee3 = system.Root.Spawn(MyActorProps);
+            PID routee1 = system.Root.Spawn(MyActorProps);
+            PID routee2 = system.Root.Spawn(MyActorProps);
+            PID routee3 = system.Root.Spawn(MyActorProps);
 
-            var props = system.Root.NewRandomGroup(10000, routee1, routee2, routee3)
+            Props props = system.Root.NewRandomGroup(10000, routee1, routee2, routee3)
                 .WithMailbox(() => new TestMailbox());
-            var router = system.Root.Spawn(props);
+            PID router = system.Root.Spawn(props);
             return (router, routee1, routee2, routee3);
         }
 

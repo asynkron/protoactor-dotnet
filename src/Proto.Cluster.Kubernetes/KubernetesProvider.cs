@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -38,17 +39,19 @@ namespace Proto.Cluster.Kubernetes
         public KubernetesProvider(IKubernetes kubernetes)
         {
             if (KubernetesExtensions.GetKubeNamespace() is null)
+            {
                 throw new InvalidOperationException("The application doesn't seem to be running in Kubernetes");
+            }
 
             _kubernetes = kubernetes;
         }
 
         public async Task StartMemberAsync(Cluster cluster)
         {
-            var memberList = cluster.MemberList;
-            var clusterName = cluster.Config.ClusterName;
-            var (host, port) = cluster.System.GetAddress();
-            var kinds = cluster.GetClusterKinds();
+            MemberList memberList = cluster.MemberList;
+            string clusterName = cluster.Config.ClusterName;
+            (string host, int port) = cluster.System.GetAddress();
+            string[] kinds = cluster.GetClusterKinds();
             _cluster = cluster;
             _memberList = memberList;
             _clusterName = clusterName;
@@ -63,9 +66,9 @@ namespace Proto.Cluster.Kubernetes
 
         public Task StartClientAsync(Cluster cluster)
         {
-            var memberList = cluster.MemberList;
-            var clusterName = cluster.Config.ClusterName;
-            var (host, port) = cluster.System.GetAddress();
+            MemberList memberList = cluster.MemberList;
+            string clusterName = cluster.Config.ClusterName;
+            (string host, int port) = cluster.System.GetAddress();
             _cluster = cluster;
             _memberList = memberList;
             _clusterName = clusterName;
@@ -89,34 +92,38 @@ namespace Proto.Cluster.Kubernetes
         {
             Logger.LogInformation("Registering service {PodName} on {PodIp}", _podName, _address);
 
-            var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace());
-            if (pod is null) throw new ApplicationException($"Unable to get own pod information for {_podName}");
+            V1Pod pod = await _kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace());
+            if (pod is null)
+            {
+                throw new ApplicationException($"Unable to get own pod information for {_podName}");
+            }
 
             Logger.LogInformation("Using Kubernetes namespace: " + pod.Namespace());
 
-            var matchingPort = pod.FindPort(_port);
+            V1ContainerPort matchingPort = pod.FindPort(_port);
 
-            if (matchingPort is null) Logger.LogWarning("Registration port doesn't match any of the container ports");
+            if (matchingPort is null)
+            {
+                Logger.LogWarning("Registration port doesn't match any of the container ports");
+            }
 
             Logger.LogInformation("Using Kubernetes port: " + _port);
 
-            var existingLabels = pod.Metadata.Labels;
+            IDictionary<string, string> existingLabels = pod.Metadata.Labels;
 
-            var labels = new Dictionary<string, string>
+            Dictionary<string, string> labels = new Dictionary<string, string>
             {
-                [LabelCluster] = _clusterName,
-                [LabelPort] = _port.ToString(),
-                [LabelMemberId] = _cluster.System.Id
+                [LabelCluster] = _clusterName, [LabelPort] = _port.ToString(), [LabelMemberId] = _cluster.System.Id
             };
 
-            foreach (var kind in _kinds)
+            foreach (string kind in _kinds)
             {
-                var labelKey = $"{LabelKind}-{kind}";
+                string labelKey = $"{LabelKind}-{kind}";
                 labels.TryAdd(labelKey, "true");
             }
 
             //add existing labels back
-            foreach (var existing in existingLabels)
+            foreach (KeyValuePair<string, string> existing in existingLabels)
             {
                 labels.TryAdd(existing.Key, existing.Value);
             }
@@ -134,7 +141,7 @@ namespace Proto.Cluster.Kubernetes
 
         private void StartClusterMonitor()
         {
-            var props = Props
+            Props props = Props
                 .FromProducer(() => new KubernetesClusterMonitor(_cluster, _kubernetes))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
                 .WithDispatcher(Dispatchers.SynchronousDispatcher);
@@ -158,15 +165,15 @@ namespace Proto.Cluster.Kubernetes
         {
             Logger.LogInformation("Unregistering service {PodName} on {PodIp}", _podName, _address);
 
-            var kubeNamespace = KubernetesExtensions.GetKubeNamespace();
+            string kubeNamespace = KubernetesExtensions.GetKubeNamespace();
 
-            var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace);
+            V1Pod pod = await _kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace);
 
-            foreach (var kind in _kinds)
+            foreach (string kind in _kinds)
             {
                 try
                 {
-                    var labelKey = $"{LabelKind}-{kind}";
+                    string labelKey = $"{LabelKind}-{kind}";
                     pod.SetLabel(labelKey, null);
                 }
                 catch (Exception x)
@@ -182,6 +189,7 @@ namespace Proto.Cluster.Kubernetes
             cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
         }
 
-        public void MonitorMemberStatusChanges() => _cluster.System.Root.Send(_clusterMonitor, new StartWatchingCluster(_clusterName));
+        public void MonitorMemberStatusChanges() =>
+            _cluster.System.Root.Send(_clusterMonitor, new StartWatchingCluster(_clusterName));
     }
 }

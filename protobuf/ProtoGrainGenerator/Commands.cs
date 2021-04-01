@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections;
 using System.Collections.Generic;
 using System.CommandLine;
@@ -16,11 +17,11 @@ namespace ProtoGrainGenerator
     {
         public static RootCommand CreateCommands()
         {
-            var importPath =
+            Option<IEnumerable<DirectoryInfo>> importPath =
                 new Option<IEnumerable<DirectoryInfo>>("--importPath", () => new Empty(), "Path for additional imports")
                     .ExistingOnly();
 
-            var rootCommand = new RootCommand
+            RootCommand rootCommand = new RootCommand
             {
                 new Argument<FileInfo>("input", "Proto file name").ExistingOnly(),
                 new Argument<FileInfo>("output", () => null, "Generated file name"),
@@ -31,10 +32,9 @@ namespace ProtoGrainGenerator
             rootCommand.Handler =
                 CommandHandler.Create<FileInfo, FileInfo, IEnumerable<DirectoryInfo>>(Generator.GenerateOne);
 
-            var generateCommand = new Command("many", "Generate code from proto files")
+            Command generateCommand = new Command("many", "Generate code from proto files")
             {
-                new Argument<IEnumerable<FileInfo>>("input", "Proto file names"),
-                importPath
+                new Argument<IEnumerable<FileInfo>>("input", "Proto file names"), importPath
             };
 
             generateCommand.Handler =
@@ -45,7 +45,7 @@ namespace ProtoGrainGenerator
         }
     }
 
-    class Empty : IEnumerable<DirectoryInfo>
+    internal class Empty : IEnumerable<DirectoryInfo>
     {
         public IEnumerator<DirectoryInfo> GetEnumerator() => Enumerable.Empty<DirectoryInfo>().GetEnumerator();
 

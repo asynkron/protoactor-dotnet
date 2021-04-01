@@ -14,10 +14,11 @@ namespace Proto.Tests
         [Fact]
         public async Task receive_timeout_received_within_expected_time()
         {
-            var timeoutReceived = false;
-            var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
+            bool timeoutReceived = false;
+            TaskCompletionSource<int> receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Props.FromFunc(context => {
+            Props props = Props.FromFunc(context =>
+                {
                     switch (context.Message)
                     {
                         case Started _:
@@ -41,10 +42,11 @@ namespace Proto.Tests
         [Fact]
         public async Task receive_timeout_not_received_within_expected_time()
         {
-            var timeoutReceived = false;
-            var actorStartedWaiter = GetExpiringTaskCompletionSource();
+            bool timeoutReceived = false;
+            TaskCompletionSource<int> actorStartedWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Props.FromFunc(context => {
+            Props props = Props.FromFunc(context =>
+                {
                     switch (context.Message)
                     {
                         case Started _:
@@ -68,11 +70,12 @@ namespace Proto.Tests
         [Fact]
         public async Task can_cancel_receive_timeout()
         {
-            var timeoutReceived = false;
-            var endingTimeout = TimeSpan.MaxValue;
-            var autoExpiringWaiter = GetExpiringTaskCompletionSource(1500);
+            bool timeoutReceived = false;
+            TimeSpan endingTimeout = TimeSpan.MaxValue;
+            TaskCompletionSource<int> autoExpiringWaiter = GetExpiringTaskCompletionSource(1500);
 
-            var props = Props.FromFunc(context => {
+            Props props = Props.FromFunc(context =>
+                {
                     switch (context.Message)
                     {
                         case Started _:
@@ -102,10 +105,11 @@ namespace Proto.Tests
         [Fact]
         public async Task can_still_set_receive_timeout_after_cancelling()
         {
-            var timeoutReceived = false;
-            var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
+            bool timeoutReceived = false;
+            TaskCompletionSource<int> receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 
-            var props = Props.FromFunc(context => {
+            Props props = Props.FromFunc(context =>
+                {
                     switch (context.Message)
                     {
                         case Started _:
@@ -130,8 +134,8 @@ namespace Proto.Tests
 
         private TaskCompletionSource<int> GetExpiringTaskCompletionSource(int timeoutMs = 60000)
         {
-            var tcs = new TaskCompletionSource<int>();
-            var ct = new CancellationTokenSource();
+            TaskCompletionSource<int> tcs = new TaskCompletionSource<int>();
+            CancellationTokenSource ct = new CancellationTokenSource();
             ct.Token.Register(() => tcs.TrySetCanceled());
             ct.CancelAfter(timeoutMs);
             return tcs;

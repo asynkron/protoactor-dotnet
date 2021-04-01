@@ -22,7 +22,10 @@ namespace Proto.Remote
 
         public static Props GetRemoteKind(this RemoteConfigBase remoteConfig, string kind)
         {
-            if (!remoteConfig.RemoteKinds.TryGetValue(kind, out var props)) throw new ArgumentException($"No Props found for kind '{kind}'");
+            if (!remoteConfig.RemoteKinds.TryGetValue(kind, out var props))
+            {
+                throw new ArgumentException($"No Props found for kind '{kind}'");
+            }
 
             return props;
         }
@@ -31,7 +34,8 @@ namespace Proto.Remote
             where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with {CallOptions = options};
 
-        public static TRemoteConfig WithAdvertisedHost<TRemoteConfig>(this TRemoteConfig remoteConfig, string? advertisedHostname)
+        public static TRemoteConfig WithAdvertisedHost<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            string? advertisedHostname)
             where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with {AdvertisedHost = advertisedHostname};
 
@@ -40,18 +44,21 @@ namespace Proto.Remote
         /// </summary>
         /// <param name="advertisedPort"></param>
         /// <returns></returns>
-        public static TRemoteConfig WithAdvertisedPort<TRemoteConfig>(this TRemoteConfig remoteConfig, int? advertisedPort)
+        public static TRemoteConfig WithAdvertisedPort<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            int? advertisedPort)
             where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with {AdvertisedPort = advertisedPort};
 
-        public static TRemoteConfig WithEndpointWriterBatchSize<TRemoteConfig>(this TRemoteConfig remoteConfig, int endpointWriterBatchSize)
+        public static TRemoteConfig WithEndpointWriterBatchSize<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            int endpointWriterBatchSize)
             where TRemoteConfig : RemoteConfigBase
         {
             remoteConfig.EndpointWriterOptions.EndpointWriterBatchSize = endpointWriterBatchSize;
             return remoteConfig;
         }
 
-        public static TRemoteConfig WithEndpointWriterMaxRetries<TRemoteConfig>(this TRemoteConfig remoteConfig, int endpointWriterMaxRetries)
+        public static TRemoteConfig WithEndpointWriterMaxRetries<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            int endpointWriterMaxRetries)
             where TRemoteConfig : RemoteConfigBase
         {
             remoteConfig.EndpointWriterOptions.MaxRetries = endpointWriterMaxRetries;
@@ -78,7 +85,8 @@ namespace Proto.Remote
             return remoteConfig;
         }
 
-        public static TRemoteConfig WithProtoMessages<TRemoteConfig>(this TRemoteConfig remoteConfig, params FileDescriptor[] fileDescriptors)
+        public static TRemoteConfig WithProtoMessages<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            params FileDescriptor[] fileDescriptors)
             where TRemoteConfig : RemoteConfigBase
         {
             foreach (var fd in fileDescriptors)
@@ -89,26 +97,31 @@ namespace Proto.Remote
             return remoteConfig;
         }
 
-        public static TRemoteConfig WithRemoteKind<TRemoteConfig>(this TRemoteConfig remoteConfig, string kind, Props prop)
+        public static TRemoteConfig WithRemoteKind<TRemoteConfig>(this TRemoteConfig remoteConfig, string kind,
+            Props prop)
             where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with {RemoteKinds = remoteConfig.RemoteKinds.Add(kind, prop)};
 
-        public static TRemoteConfig WithRemoteKinds<TRemoteConfig>(this TRemoteConfig remoteConfig, params (string kind, Props prop)[] knownKinds)
+        public static TRemoteConfig WithRemoteKinds<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            params (string kind, Props prop)[] knownKinds)
             where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with
             {
                 RemoteKinds =
-                remoteConfig.RemoteKinds.AddRange(knownKinds.Select(kk => new KeyValuePair<string, Props>(kk.kind, kk.prop)))
+                remoteConfig.RemoteKinds.AddRange(knownKinds.Select(kk =>
+                    new KeyValuePair<string, Props>(kk.kind, kk.prop)))
             };
 
-        public static TRemoteConfig WithSerializer<TRemoteConfig>(this TRemoteConfig remoteConfig, ISerializer serializer, bool makeDefault = false)
+        public static TRemoteConfig WithSerializer<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            ISerializer serializer, bool makeDefault = false)
             where TRemoteConfig : RemoteConfigBase
         {
             remoteConfig.Serialization.RegisterSerializer(serializer, makeDefault);
             return remoteConfig;
         }
 
-        public static TRemoteConfig WithLogLevelForDeserializationErrors<TRemoteConfig>(this TRemoteConfig remoteConfig, LogLevel level)
+        public static TRemoteConfig WithLogLevelForDeserializationErrors<TRemoteConfig>(this TRemoteConfig remoteConfig,
+            LogLevel level)
             where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with {DeserializationErrorLogLevel = level};
     }

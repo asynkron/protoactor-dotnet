@@ -174,13 +174,13 @@ namespace Proto.Context
 
         public void Request(PID target, object message)
         {
-            MessageEnvelope? messageEnvelope = new MessageEnvelope(message, Self);
+            MessageEnvelope? messageEnvelope = new(message, Self);
             SendUserMessage(target, messageEnvelope);
         }
 
         public void Request(PID target, object message, PID? sender)
         {
-            MessageEnvelope? messageEnvelope = new MessageEnvelope(message, sender);
+            MessageEnvelope? messageEnvelope = new(message, sender);
             SendUserMessage(target, messageEnvelope);
         }
 
@@ -196,7 +196,7 @@ namespace Proto.Context
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
             object? msg = _messageOrEnvelope;
-            Continuation? cont = new Continuation(() => action(target), msg);
+            Continuation? cont = new(() => action(target), msg);
 
             ScheduleContinuation(target, cont);
         }
@@ -205,7 +205,7 @@ namespace Proto.Context
         {
             object? msg = _messageOrEnvelope;
 
-            Continuation? cont = new Continuation(
+            Continuation? cont = new(
                 () =>
                 {
                     action();
@@ -234,7 +234,7 @@ namespace Proto.Context
 
         public Task StopAsync(PID pid)
         {
-            FutureProcess? future = new FutureProcess(System);
+            FutureProcess? future = new(System);
 
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
@@ -263,7 +263,7 @@ namespace Proto.Context
             {
                 System.Id, System.Address, Actor!.GetType().Name
             });
-            Failure? failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
+            Failure? failure = new(Self, reason, EnsureExtras().RestartStatistics, message);
             Self.SendSystemMessage(System, SuspendMailbox.Instance);
 
             if (Parent is null)
@@ -451,7 +451,7 @@ namespace Proto.Context
 
         private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)
         {
-            MessageEnvelope? messageEnvelope = new MessageEnvelope(message, future.Pid);
+            MessageEnvelope? messageEnvelope = new(message, future.Pid);
             SendUserMessage(target, messageEnvelope);
             object? result = await future.Task;
 
@@ -630,7 +630,7 @@ namespace Proto.Context
 
             if (_extras?.Stash is not null)
             {
-                Stack<object>? currentStash = new Stack<object>(_extras.Stash);
+                Stack<object>? currentStash = new(_extras.Stash);
                 _extras.Stash.Clear();
 
                 //TODO: what happens if we hit a failure here?

@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Metrics;
 using Xunit;
@@ -17,7 +18,8 @@ namespace Proto.Cluster.Tests
 
         public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct) => Task.FromResult(_pid)!;
 
-        public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct) => Task.CompletedTask;
+        public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct) =>
+            Task.CompletedTask;
 
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient) => Task.CompletedTask;
 
@@ -29,27 +31,29 @@ namespace Proto.Cluster.Tests
         [Fact]
         public async Task PurgesPidCacheOnNullResponse()
         {
-            var system = new ActorSystem();
+            ActorSystem? system = new ActorSystem();
             system.Metrics.RegisterKnownMetrics(new ClusterMetrics(system.Metrics));
-            var props = Props.FromProducer(() => new EchoActor());
-            var deadPid = system.Root.SpawnNamed(props, "stopped");
-            var alivePid = system.Root.SpawnNamed(props, "alive");
+            Props? props = Props.FromProducer(() => new EchoActor());
+            PID? deadPid = system.Root.SpawnNamed(props, "stopped");
+            PID? alivePid = system.Root.SpawnNamed(props, "alive");
             await system.Root.StopAsync(deadPid).ConfigureAwait(false);
 
-            var dummyIdentityLookup = new DummyIdentityLookup(alivePid);
-            var pidCache = new PidCache();
+            DummyIdentityLookup? dummyIdentityLookup = new DummyIdentityLookup(alivePid);
+            PidCache? pidCache = new PidCache();
 
-            var logger = Log.CreateLogger("dummylog");
-            var clusterIdentity = new ClusterIdentity {Identity = "identity", Kind = "kind"};
+            ILogger? logger = Log.CreateLogger("dummylog");
+            ClusterIdentity? clusterIdentity = new ClusterIdentity {Identity = "identity", Kind = "kind"};
             pidCache.TryAdd(clusterIdentity, deadPid);
-            var requestAsyncStrategy = new DefaultClusterContext(dummyIdentityLookup, pidCache, logger, new ClusterContextConfig(), system.Shutdown);
+            DefaultClusterContext? requestAsyncStrategy = new DefaultClusterContext(dummyIdentityLookup, pidCache,
+                logger, new ClusterContextConfig(), system.Shutdown);
 
-            var res = await requestAsyncStrategy.RequestAsync<Pong>(clusterIdentity, new Ping {Message = "msg"}, system.Root,
+            Pong? res = await requestAsyncStrategy.RequestAsync<Pong>(clusterIdentity, new Ping {Message = "msg"},
+                system.Root,
                 new CancellationTokenSource(6000).Token
             );
 
             res.Message.Should().Be("msg");
-            var foundInCache = pidCache.TryGet(clusterIdentity, out var pidInCache);
+            bool foundInCache = pidCache.TryGet(clusterIdentity, out var pidInCache);
             foundInCache.Should().BeTrue();
             pidInCache.Should().BeEquivalentTo(alivePid);
         }

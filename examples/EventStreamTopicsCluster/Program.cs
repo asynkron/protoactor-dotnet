@@ -19,22 +19,22 @@ namespace EventStreamTopicsCluster
         string Topic { get; }
     }
 
-    class Program
+    internal class Program
     {
         private static async Task Main(string[] args)
         {
-            var remoteConfig = GrpcCoreRemoteConfig
+            GrpcCoreRemoteConfig remoteConfig = GrpcCoreRemoteConfig
                 .BindToLocalhost()
                 .WithProtoMessages(ProtosReflection.Descriptor);
 
-            var consulProvider =
+            ConsulProvider consulProvider =
                 new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://consul:8500/"));
 
-            var clusterConfig =
+            ClusterConfig clusterConfig =
                 ClusterConfig
                     .Setup("MyCluster", consulProvider, new PartitionIdentityLookup());
 
-            var system = new ActorSystem()
+            ActorSystem system = new ActorSystem()
                 .WithRemote(remoteConfig)
                 .WithCluster(clusterConfig);
 
@@ -43,7 +43,8 @@ namespace EventStreamTopicsCluster
                 .StartMemberAsync();
 
             //subscribe to the eventstream via type, just like you do locally
-            system.EventStream.SubscribeToTopic<SomeMessage>("MyTopic.*", x => Console.WriteLine($"Got message for {x.Name}"));
+            system.EventStream.SubscribeToTopic<SomeMessage>("MyTopic.*",
+                x => Console.WriteLine($"Got message for {x.Name}"));
 
             //publish messages onto the eventstream on Subtopic1 on MyTopic root
             //but do this using cluster broadcasting. this will publish the event
@@ -70,10 +71,14 @@ namespace EventStreamTopicsCluster
 
         //use regex or whatever fits your needs for subscription to topic matching
         //here we use the built in Like operator from VB.NET for this. just as an example
-        public static EventStreamSubscription<object> SubscribeToTopic<T>(this EventStream self, string topic, Action<T> body) where T : ITopicMessage
-            => self.Subscribe<T>(x => {
+        public static EventStreamSubscription<object> SubscribeToTopic<T>(this EventStream self, string topic,
+            Action<T> body) where T : ITopicMessage
+            => self.Subscribe<T>(x =>
+                {
                     if (!LikeOperator.LikeString(x.Topic, topic, CompareMethod.Binary))
+                    {
                         return;
+                    }
 
                     body(x);
                 }

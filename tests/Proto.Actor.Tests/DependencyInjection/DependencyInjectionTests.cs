@@ -10,20 +10,20 @@ namespace Proto.Tests.DependencyInjection
         [Fact]
         public void CanResolveDependencies()
         {
-            var s = new ServiceCollection();
+            ServiceCollection s = new ServiceCollection();
             s.AddSingleton<FooDep>();
             s.AddSingleton<BarDep>();
             s.AddTransient<DiActor>();
-            var provider = s.BuildServiceProvider();
+            ServiceProvider provider = s.BuildServiceProvider();
 
-            var resolver = new DependencyResolver(provider);
-            var plugin = new DIExtension(resolver);
+            DependencyResolver resolver = new DependencyResolver(provider);
+            DIExtension plugin = new DIExtension(resolver);
 
-            var system = new ActorSystem();
+            ActorSystem system = new ActorSystem();
             system.Extensions.Register(plugin);
 
-            var props = system.DI().PropsFor<DiActor>();
-            var actor = (DiActor) props.Producer(system);
+            Props props = system.DI().PropsFor<DiActor>();
+            DiActor actor = (DiActor)props.Producer(system);
 
             Assert.NotNull(props);
             Assert.NotNull(actor);

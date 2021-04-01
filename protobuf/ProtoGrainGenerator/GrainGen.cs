@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using Google.Protobuf.Reflection;
@@ -22,9 +23,9 @@ namespace GrainGenerator
 
         protected override void WriteFile(GeneratorContext ctx, FileDescriptorProto obj)
         {
-            var file = ctx.File;
+            FileDescriptorProto file = ctx.File;
 
-            var ast = new ProtoFile
+            ProtoFile ast = new ProtoFile
             {
                 PackageName = file.Package,
                 CsNamespace = file.Options?.CsharpNamespace ?? file.Package,
@@ -55,23 +56,25 @@ namespace GrainGenerator
                     )
                     .ToArray()
             };
-            var f = Handlebars.Compile(Template.Code);
+            HandlebarsTemplate<object, object> f = Handlebars.Compile(Template.Code);
 
-            var result = f(ast);
+            string result = f(ast);
             ctx.WriteLine(result);
 
             static string RemovePackageName(ReadOnlySpan<char> type)
             {
-                var index = type.LastIndexOf('.');
+                int index = type.LastIndexOf('.');
                 return type.Slice(index + 1).ToString();
             }
         }
 
         #region UnusedMethods
 
-        protected override void WriteNamespaceHeader(GeneratorContext ctx, string @namespace) => throw new NotImplementedException();
+        protected override void WriteNamespaceHeader(GeneratorContext ctx, string @namespace) =>
+            throw new NotImplementedException();
 
-        protected override void WriteNamespaceFooter(GeneratorContext ctx, string @namespace) => throw new NotImplementedException();
+        protected override void WriteNamespaceFooter(GeneratorContext ctx, string @namespace) =>
+            throw new NotImplementedException();
 
         protected override void WriteField(
             GeneratorContext ctx,

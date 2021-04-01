@@ -3,28 +3,29 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using Proto;
 
 namespace Saga
 {
-    class Program
+    internal class Program
     {
         private static readonly RootContext Context = new ActorSystem().Root;
 
         public static void Main(string[] args)
         {
             Console.WriteLine("Starting");
-            var random = new Random();
-            var numberOfTransfers = 5;
-            var intervalBetweenConsoleUpdates = 1;
-            var uptime = 99.99;
-            var retryAttempts = 0;
-            var refusalProbability = 0.01;
-            var busyProbability = 0.01;
-            var verbose = false;
+            Random random = new Random();
+            int numberOfTransfers = 5;
+            int intervalBetweenConsoleUpdates = 1;
+            double uptime = 99.99;
+            int retryAttempts = 0;
+            double refusalProbability = 0.01;
+            double busyProbability = 0.01;
+            bool verbose = false;
 
-            var props = Props.FromProducer(() => new Runner(numberOfTransfers, intervalBetweenConsoleUpdates, uptime,
+            Props props = Props.FromProducer(() => new Runner(numberOfTransfers, intervalBetweenConsoleUpdates, uptime,
                         refusalProbability, busyProbability, retryAttempts, verbose
                     )
                 )
@@ -34,7 +35,7 @@ namespace Saga
                 );
 
             Console.WriteLine("Spawning runner");
-            var runner = Context.SpawnNamed(props, "runner");
+            PID runner = Context.SpawnNamed(props, "runner");
 
             Console.ReadLine();
         }

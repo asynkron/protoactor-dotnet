@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,6 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Proto.Cluster.Data;
-using Proto.Cluster.Events;
 
 namespace Proto.Cluster.Consul
 {
@@ -79,8 +79,8 @@ namespace Proto.Cluster.Consul
 
         public async Task StartMemberAsync(Cluster cluster)
         {
-            var (host, port) = cluster.System.GetAddress();
-            var kinds = cluster.GetClusterKinds();
+            (string host, int port) = cluster.System.GetAddress();
+            string[] kinds = cluster.GetClusterKinds();
             SetState(cluster, cluster.Config.ClusterName, host, port, kinds, cluster.MemberList);
             await RegisterMemberAsync();
             StartUpdateTtlLoop();
@@ -90,7 +90,7 @@ namespace Proto.Cluster.Consul
 
         public Task StartClientAsync(Cluster cluster)
         {
-            var (host, port) = cluster.System.GetAddress();
+            (string host, int port) = cluster.System.GetAddress();
             SetState(cluster, cluster.Config.ClusterName, host, port, null, cluster.MemberList);
 
             StartMonitorMemberStatusChangesLoop();
@@ -149,33 +149,34 @@ namespace Proto.Cluster.Consul
 
         private void StartMonitorMemberStatusChangesLoop()
         {
-            _ = SafeTask.Run(async () => {
-                    var waitIndex = 0ul;
+            _ = SafeTask.Run(async () =>
+                {
+                    ulong waitIndex = 0ul;
 
                     while (!_shutdown && !_cluster.System.Shutdown.IsCancellationRequested)
                     {
                         try
                         {
-                            var statuses = await _client.Health.Service(_consulServiceName, null, false, new QueryOptions
-                                {
-                                    WaitIndex = waitIndex,
-                                    WaitTime = _blockingWaitTime
-                                }
+                            QueryResult<ServiceEntry[]> statuses = await _client.Health.Service(_consulServiceName,
+                                null, false, new QueryOptions {WaitIndex = waitIndex, WaitTime = _blockingWaitTime}
                                 , _cluster.System.Shutdown
                             );
-                            if (_deregistered) break;
+                            if (_deregistered)
+                            {
+                                break;
+                            }
 
                             _logger.LogDebug("Got status updates from Consul");
 
                             waitIndex = statuses.LastIndex;
 
-                            var currentMembers =
+                            Member[] currentMembers =
                                 statuses
                                     .Response
                                     .Where(v => IsAlive(v.Checks)) //only include members that are alive
                                     .Select(ToMember)
                                     .ToArray();
-                            
+
                             _memberList.UpdateClusterTopology(currentMembers);
                         }
                         catch (Exception x)
@@ -194,12 +195,7 @@ namespace Proto.Cluster.Consul
 
             Member ToMember(ServiceEntry v)
             {
-                var member = new Member
-                {
-                    Id = v.Service.Meta["id"],
-                    Host = v.Service.Address,
-                    Port = v.Service.Port
-                };
+                Member member = new Member {Id = v.Service.Meta["id"], Host = v.Service.Address, Port = v.Service.Port};
 
                 member.Kinds.AddRange(v.Service.Tags);
 
@@ -207,7 +203,8 @@ namespace Proto.Cluster.Consul
             }
         }
 
-        private void StartUpdateTtlLoop() => _ = SafeTask.Run(async () => {
+        private void StartUpdateTtlLoop() => _ = SafeTask.Run(async () =>
+            {
                 while (!_shutdown)
                 {
                     try
@@ -217,7 +214,10 @@ namespace Proto.Cluster.Consul
                     }
                     catch (Exception x)
                     {
-                        if (!_cluster.System.Shutdown.IsCancellationRequested) _logger.LogError(x, "Consul TTL Loop failed");
+                        if (!_cluster.System.Shutdown.IsCancellationRequested)
+                        {
+                            _logger.LogError(x, "Consul TTL Loop failed");
+                        }
                     }
                 }
 
@@ -330,18 +330,14 @@ namespace Proto.Cluster.Consul
         //register this cluster in consul.
         private async Task RegisterMemberAsync()
         {
-            var s = new AgentServiceRegistration
+            AgentServiceRegistration s = new AgentServiceRegistration
             {
                 ID = _consulServiceInstanceId,
                 Name = _consulServiceName,
                 Tags = _kinds.ToArray(),
                 Address = _host,
                 Port = _port,
-                Check = new AgentServiceCheck
-                {
-                    DeregisterCriticalServiceAfter = _deregisterCritical,
-                    TTL = _serviceTtl
-                },
+                Check = new AgentServiceCheck {DeregisterCriticalServiceAfter = _deregisterCritical, TTL = _serviceTtl},
                 Meta = new Dictionary<string, string>
                 {
                     //register a unique ID for the current process

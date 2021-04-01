@@ -3,11 +3,12 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using Proto;
 
 namespace Saga.Messages
 {
-    class FailedButConsistentResult : Result
+    internal class FailedButConsistentResult : Result
     {
         public FailedButConsistentResult(PID pid) : base(pid)
         {

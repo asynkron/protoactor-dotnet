@@ -33,7 +33,9 @@ namespace Proto.TestFixtures
             Stats.Add(message);
             Received.Add(message);
             if (_waitForReceived is not null && _waitForReceived(message))
+            {
                 Reset.Set();
+            }
         }
 
         public void MailboxEmpty() => Stats.Add("Empty");

@@ -20,10 +20,10 @@ namespace Proto.Cluster.Tests
         [Fact]
         public async Task HandlesSlowResponsesCorrectly()
         {
-            var timeout = new CancellationTokenSource(8000).Token;
+            CancellationToken timeout = new CancellationTokenSource(8000).Token;
 
-            var msg = "Hello-slow-world";
-            var response = await Members.First().RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
+            string msg = "Hello-slow-world";
+            Pong response = await Members.First().RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
                 new SlowPing {Message = msg, DelayMs = 5000}, timeout
             );
             response.Should().NotBeNull();
@@ -33,20 +33,21 @@ namespace Proto.Cluster.Tests
         [Fact]
         public async Task ReSpawnsClusterActorsFromDifferentNodes()
         {
-            var timeout = new CancellationTokenSource(5000).Token;
-            var id = CreateIdentity("1");
+            CancellationToken timeout = new CancellationTokenSource(5000).Token;
+            string id = CreateIdentity("1");
             await PingPong(Members[0], id, timeout);
             await PingPong(Members[1], id, timeout);
 
             //Retrieve the node the virtual actor was not spawned on
-            var nodeLocation = await Members[0].RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), timeout);
+            HereIAm nodeLocation =
+                await Members[0].RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), timeout);
             nodeLocation.Should().NotBeNull("We expect the actor to respond correctly");
-            var otherNode = Members.First(node => node.System.Address != nodeLocation.Address);
+            Cluster otherNode = Members.First(node => node.System.Address != nodeLocation.Address);
 
             //Kill it
             await otherNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout);
 
-            var timer = Stopwatch.StartNew();
+            Stopwatch timer = Stopwatch.StartNew();
             // And force it to restart.
             // DeadLetterResponse should be sent to requestAsync, enabling a quick initialization of the new virtual actor
             await PingPong(otherNode, id, timeout);
@@ -58,11 +59,11 @@ namespace Proto.Cluster.Tests
         [Fact]
         public async Task HandlesLosingANode()
         {
-            var ids = Enumerable.Range(1, 200).Select(id => id.ToString()).ToList();
+            List<string> ids = Enumerable.Range(1, 200).Select(id => id.ToString()).ToList();
 
             await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 5000);
 
-            var toBeRemoved = Members.Last();
+            Cluster toBeRemoved = Members.Last();
             _testOutputHelper.WriteLine("Removing node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
             await ClusterFixture.RemoveNode(toBeRemoved);
             _testOutputHelper.WriteLine("Removed node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
@@ -99,24 +100,26 @@ namespace Proto.Cluster.Tests
         //     //Repair cluster..
         // }
 
-        private async Task CanGetResponseFromAllIdsOnAllNodes(IEnumerable<string> actorIds, IList<Cluster> nodes, int timeoutMs)
+        private async Task CanGetResponseFromAllIdsOnAllNodes(IEnumerable<string> actorIds, IList<Cluster> nodes,
+            int timeoutMs)
         {
-            var timer = Stopwatch.StartNew();
-            var timeout = new CancellationTokenSource(timeoutMs).Token;
+            Stopwatch timer = Stopwatch.StartNew();
+            CancellationToken timeout = new CancellationTokenSource(timeoutMs).Token;
             await Task.WhenAll(nodes.SelectMany(entryNode => actorIds.Select(id => PingPong(entryNode, id, timeout))));
             _testOutputHelper.WriteLine("Got response from {0} nodes in {1}", nodes.Count(), timer.Elapsed);
         }
 
-        [Theory, InlineData(100, 10000)]
+        [Theory]
+        [InlineData(100, 10000)]
         public async Task CanSpawnVirtualActorsSequentially(int actorCount, int timeoutMs)
         {
-            var timeout = new CancellationTokenSource(timeoutMs).Token;
+            CancellationToken timeout = new CancellationTokenSource(timeoutMs).Token;
 
-            var entryNode = Members.First();
+            Cluster entryNode = Members.First();
 
-            var timer = Stopwatch.StartNew();
+            Stopwatch timer = Stopwatch.StartNew();
 
-            foreach (var id in GetActorIds(actorCount))
+            foreach (string id in GetActorIds(actorCount))
             {
                 await PingPong(entryNode, id, timeout);
             }
@@ -125,15 +128,16 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
 
-        [Theory, InlineData(100, 10000)]
+        [Theory]
+        [InlineData(100, 10000)]
         public async Task ConcurrentActivationsOnSameIdWorks(int clientCount, int timeoutMs)
         {
-            var timeout = new CancellationTokenSource(timeoutMs).Token;
+            CancellationToken timeout = new CancellationTokenSource(timeoutMs).Token;
 
-            var entryNode = Members.First();
-            var timer = Stopwatch.StartNew();
+            Cluster entryNode = Members.First();
+            Stopwatch timer = Stopwatch.StartNew();
 
-            var id = GetActorIds(clientCount).First();
+            string id = GetActorIds(clientCount).First();
 
             await Task.WhenAll(Enumerable.Range(0, clientCount).Select(_ => PingPong(entryNode, id, timeout)));
 
@@ -141,29 +145,31 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine($"Spawned 1 actor from {clientCount} clients in {timer.Elapsed}");
         }
 
-        [Theory, InlineData(100, 10000)]
+        [Theory]
+        [InlineData(100, 10000)]
         public async Task CanSpawnVirtualActorsConcurrently(int actorCount, int timeoutMs)
         {
-            var timeout = new CancellationTokenSource(timeoutMs).Token;
+            CancellationToken timeout = new CancellationTokenSource(timeoutMs).Token;
 
-            var entryNode = Members.First();
+            Cluster entryNode = Members.First();
 
-            var timer = Stopwatch.StartNew();
+            Stopwatch timer = Stopwatch.StartNew();
             await Task.WhenAll(GetActorIds(actorCount).Select(id => PingPong(entryNode, id, timeout)));
             timer.Stop();
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
 
-        [Theory, InlineData(100, 10000)]
+        [Theory]
+        [InlineData(100, 10000)]
         public async Task CanSpawnMultipleKindsWithSameIdentityConcurrently(int actorCount, int timeoutMs)
         {
-            using var cts = new CancellationTokenSource(timeoutMs);
-            var timeout = cts.Token;
+            using CancellationTokenSource cts = new CancellationTokenSource(timeoutMs);
+            CancellationToken timeout = cts.Token;
 
-            var entryNode = Members.First();
+            Cluster entryNode = Members.First();
 
-            var timer = Stopwatch.StartNew();
-            var actorIds = GetActorIds(actorCount);
+            Stopwatch timer = Stopwatch.StartNew();
+            IEnumerable<string> actorIds = GetActorIds(actorCount);
             await Task.WhenAll(actorIds.Select(id => Task.WhenAll(
                         PingPong(entryNode, id, timeout),
                         PingPong(entryNode, id, timeout, EchoActor.Kind2)
@@ -176,12 +182,13 @@ namespace Proto.Cluster.Tests
             );
         }
 
-        [Theory, InlineData(100, 10000)]
+        [Theory]
+        [InlineData(100, 10000)]
         public async Task CanSpawnVirtualActorsConcurrentlyOnAllNodes(int actorCount, int timeoutMs)
         {
-            var timeout = new CancellationTokenSource(timeoutMs).Token;
+            CancellationToken timeout = new CancellationTokenSource(timeoutMs).Token;
 
-            var timer = Stopwatch.StartNew();
+            Stopwatch timer = Stopwatch.StartNew();
             await Task.WhenAll(Members.SelectMany(member =>
                     GetActorIds(actorCount).Select(id => PingPong(member, id, timeout))
                 )
@@ -190,17 +197,18 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
 
-        [Theory, InlineData(100, 20000)]
+        [Theory]
+        [InlineData(100, 20000)]
         public async Task CanRespawnVirtualActors(int actorCount, int timeoutMs)
         {
-            using var cts = new CancellationTokenSource(timeoutMs);
-            var timeout = cts.Token;
+            using CancellationTokenSource cts = new CancellationTokenSource(timeoutMs);
+            CancellationToken timeout = cts.Token;
 
-            var entryNode = Members.First();
+            Cluster entryNode = Members.First();
 
-            var timer = Stopwatch.StartNew();
+            Stopwatch timer = Stopwatch.StartNew();
 
-            var ids = GetActorIds(actorCount).ToList();
+            List<string> ids = GetActorIds(actorCount).ToList();
 
             await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout)));
             await Task.WhenAll(ids.Select(id =>
@@ -223,8 +231,8 @@ namespace Proto.Cluster.Tests
         {
             await Task.Yield();
 
-            var response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind);
-            var tries = 1;
+            Pong response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind);
+            int tries = 1;
 
             while (response == null && !token.IsCancellationRequested)
             {
@@ -235,12 +243,8 @@ namespace Proto.Cluster.Tests
 
             response.Should().NotBeNull($"We expect a response before timeout on {kind}/{id}");
 
-            response.Should().BeEquivalentTo(new Pong
-                {
-                    Identity = id,
-                    Kind = kind,
-                    Message = id
-                }, "Echo should come from the correct virtual actor"
+            response.Should().BeEquivalentTo(new Pong {Identity = id, Kind = kind, Message = id},
+                "Echo should come from the correct virtual actor"
             );
         }
     }

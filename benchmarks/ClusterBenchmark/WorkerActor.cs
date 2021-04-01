@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
@@ -12,7 +13,7 @@ namespace ClusterExperiment1
 {
     public class WorkerActor : IActor
     {
-        private readonly Random _rnd = new Random();
+        private readonly Random _rnd = new();
 
         public Task ReceiveAsync(IContext ctx)
         {
@@ -20,7 +21,7 @@ namespace ClusterExperiment1
             {
                 case Started _:
                     //just to highlight when this happens
-                    
+
 
                     break;
                 case HelloRequest _:

@@ -12,23 +12,21 @@ using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using StackExchange.Redis;
 
-using MyMessagesReflection = KafkaVirtualActorIngress.Messages.MyMessagesReflection;
-
 namespace KafkaVirtualActorIngress
 {
-    class Program
+    internal class Program
     {
         private static async Task Main(string[] args)
         {
-            var systemConfig = GetSystemConfig();
-            var remoteConfig = GetRemoteConfig();
-            var clusterConfig = GetClusterConfig("my-cluster");
+            ActorSystemConfig systemConfig = GetSystemConfig();
+            GrpcCoreRemoteConfig remoteConfig = GetRemoteConfig();
+            ClusterConfig clusterConfig = GetClusterConfig("my-cluster");
 
-            var system = new ActorSystem(systemConfig)
+            ActorSystem system = new ActorSystem(systemConfig)
                 .WithRemote(remoteConfig)
                 .WithCluster(clusterConfig);
 
-            var cluster = system.Cluster();
+            Cluster cluster = system.Cluster();
             await cluster.StartMemberAsync();
 
             await RunKafkaConsumeLoop(cluster);
@@ -38,21 +36,21 @@ namespace KafkaVirtualActorIngress
         {
             while (true)
             {
-                var sw = Stopwatch.StartNew();
+                Stopwatch sw = Stopwatch.StartNew();
                 //get the messages from Kafka or other log/queue
-                var messages = GetBatchFromKafka();
-                var tasks = new List<Task>();
+                IEnumerable<MyEnvelope> messages = GetBatchFromKafka();
+                List<Task> tasks = new List<Task>();
 
                 //forward each message to their actors
-                foreach (var message in messages)
+                foreach (MyEnvelope message in messages)
                 {
                     object m = message.MessageCase switch
                     {
                         MyEnvelope.MessageOneofCase.SomeMessage      => message.SomeMessage,
-                        MyEnvelope.MessageOneofCase.SomeOtherMessage => message.SomeOtherMessage,
+                        MyEnvelope.MessageOneofCase.SomeOtherMessage => message.SomeOtherMessage
                     };
 
-                    var task = cluster
+                    Task<Ack> task = cluster
                         .RequestAsync<Ack>(message.DeviceId, "device", m, CancellationTokens.WithTimeout(5000));
 
                     tasks.Add(task);
@@ -62,7 +60,7 @@ namespace KafkaVirtualActorIngress
                 await Task.WhenAll(tasks);
                 //TODO: commit back to Kafka that all messages succeeded
                 sw.Stop();
-                var tps = 1000.0 / sw.Elapsed.TotalMilliseconds * tasks.Count;
+                double tps = 1000.0 / sw.Elapsed.TotalMilliseconds * tasks.Count;
 
                 //show throughput, messages per second
                 Console.WriteLine(tps.ToString("n0"));
@@ -72,27 +70,21 @@ namespace KafkaVirtualActorIngress
         private static IEnumerable<MyEnvelope> GetBatchFromKafka()
         {
             //Fake Kafka consumer message generator
-            var messages = new List<MyEnvelope>();
-            var rnd = new Random();
+            List<MyEnvelope> messages = new List<MyEnvelope>();
+            Random rnd = new Random();
             for (int i = 0; i < 50; i++)
             {
-                var message = new MyEnvelope
+                MyEnvelope message = new MyEnvelope
                 {
-                    DeviceId = rnd.Next(1,1000).ToString(),
-                    SomeMessage = new SomeMessage
-                    {
-                        Data = Guid.NewGuid().ToString()
-                    }
+                    DeviceId = rnd.Next(1, 1000).ToString(),
+                    SomeMessage = new SomeMessage {Data = Guid.NewGuid().ToString()}
                 };
                 messages.Add(message);
-                
-                var message2 = new MyEnvelope
+
+                MyEnvelope message2 = new MyEnvelope
                 {
-                    DeviceId = rnd.Next(1,1000).ToString(),
-                    SomeOtherMessage = new SomeOtherMessage
-                    {
-                        IntProperty = rnd.Next(1,100000)
-                    }
+                    DeviceId = rnd.Next(1, 1000).ToString(),
+                    SomeOtherMessage = new SomeOtherMessage {IntProperty = rnd.Next(1, 100000)}
                 };
                 messages.Add(message2);
             }
@@ -101,7 +93,6 @@ namespace KafkaVirtualActorIngress
         }
 
         private static ActorSystemConfig GetSystemConfig() =>
-
             ActorSystemConfig
                 .Setup()
                 .WithDeadLetterThrottleCount(3)
@@ -112,7 +103,7 @@ namespace KafkaVirtualActorIngress
 
         private static GrpcCoreRemoteConfig GetRemoteConfig() => GrpcCoreRemoteConfig
             .BindTo("127.0.0.1")
-         //   .WithAdvertisedHost("the hostname or ip of this pod")
+            //   .WithAdvertisedHost("the hostname or ip of this pod")
             .WithProtoMessages(MyMessagesReflection.Descriptor);
 
         private static ClusterConfig GetClusterConfig(string clusterName) => ClusterConfig

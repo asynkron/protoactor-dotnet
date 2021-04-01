@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,11 +18,12 @@ namespace Proto.Tests.Interactive
         [Fact]
         public async Task CanBatchProcessIEnumerable()
         {
-            var ints = Enumerable.Range(1, 100).ToList();
-            var threads = new ConcurrentDictionary<Thread, bool>();
-            var numbers = new ConcurrentDictionary<int, bool>();
+            List<int> ints = Enumerable.Range(1, 100).ToList();
+            ConcurrentDictionary<Thread, bool> threads = new ConcurrentDictionary<Thread, bool>();
+            ConcurrentDictionary<int, bool> numbers = new ConcurrentDictionary<int, bool>();
 
-            await ints.ParallelForEach(i => {
+            await ints.ParallelForEach(i =>
+                {
                     threads.TryAdd(Thread.CurrentThread, true);
                     numbers.TryAdd(i, true);
                 }

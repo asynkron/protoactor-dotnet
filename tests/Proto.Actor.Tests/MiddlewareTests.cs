@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    class TestContextDecorator : ActorContextDecorator
+    internal class TestContextDecorator : ActorContextDecorator
     {
         private readonly List<string> _logs;
 
@@ -39,12 +39,13 @@ namespace Proto.Tests
         [Fact]
         public void Given_ContextDecorator_Should_Call_Decorator_Before_Actor_Receive()
         {
-            var logs = new List<string>();
-            var logs2 = new List<string>();
-            var logs3 = new List<string>();
+            List<string> logs = new List<string>();
+            List<string> logs2 = new List<string>();
+            List<string> logs3 = new List<string>();
 
-            var testMailbox = new TestMailbox();
-            var props = Props.FromFunc(c => {
+            TestMailbox testMailbox = new TestMailbox();
+            Props props = Props.FromFunc(c =>
+                    {
                         switch (c.Message)
                         {
                             //only inspect "decorator" message
@@ -59,7 +60,7 @@ namespace Proto.Tests
                 .WithMailbox(() => testMailbox)
                 .WithContextDecorator(c => new TestContextDecorator(c, logs), c => new TestContextDecorator(c, logs2))
                 .WithContextDecorator(c => new TestContextDecorator(c, logs3));
-            var pid = Context.Spawn(props);
+            PID pid = Context.Spawn(props);
 
             Context.Send(pid, "middleware");
 
@@ -67,7 +68,7 @@ namespace Proto.Tests
             Assert.Equal("decorator", logs[0]);
             Assert.Equal("actor", logs[1]);
 
-            foreach (var log in new[] {logs2, logs3})
+            foreach (List<string> log in new[] {logs2, logs3})
             {
                 Assert.Single(log);
                 Assert.Equal("decorator", log[0]);
@@ -78,9 +79,10 @@ namespace Proto.Tests
         public void
             Given_ReceiverMiddleware_and_ContextDecorator_Should_Call_Middleware_and_Decorator_Before_Actor_Receive()
         {
-            var logs = new List<string>();
-            var testMailbox = new TestMailbox();
-            var props = Props.FromFunc(c => {
+            List<string> logs = new List<string>();
+            TestMailbox testMailbox = new TestMailbox();
+            Props props = Props.FromFunc(c =>
+                    {
                         switch (c.Message)
                         {
                             //only inspect "decorator" message
@@ -93,7 +95,8 @@ namespace Proto.Tests
                     }
                 )
                 .WithReceiverMiddleware(
-                    next => async (c, env) => {
+                    next => async (c, env) =>
+                    {
                         //only inspect "start" message
                         if (env.Message is string str && str == "start")
                         {
@@ -107,7 +110,7 @@ namespace Proto.Tests
                 )
                 .WithMailbox(() => testMailbox)
                 .WithContextDecorator(c => new TestContextDecorator(c, logs));
-            var pid = Context.Spawn(props);
+            PID pid = Context.Spawn(props);
 
             Context.Send(pid, "start");
 
@@ -122,28 +125,40 @@ namespace Proto.Tests
         [Fact]
         public void Given_ReceiverMiddleware_Should_Call_Middleware_In_Order_Then_Actor_Receive()
         {
-            var logs = new List<string>();
-            var testMailbox = new TestMailbox();
-            var props = Props.FromFunc(c => {
+            List<string> logs = new List<string>();
+            TestMailbox testMailbox = new TestMailbox();
+            Props props = Props.FromFunc(c =>
+                    {
                         if (c.Message is string)
+                        {
                             logs.Add("actor");
+                        }
+
                         return Task.CompletedTask;
                     }
                 )
                 .WithReceiverMiddleware(
-                    next => async (c, env) => {
+                    next => async (c, env) =>
+                    {
                         if (env.Message is string)
+                        {
                             logs.Add("middleware 1");
+                        }
+
                         await next(c, env);
                     },
-                    next => async (c, env) => {
+                    next => async (c, env) =>
+                    {
                         if (env.Message is string)
+                        {
                             logs.Add("middleware 2");
+                        }
+
                         await next(c, env);
                     }
                 )
                 .WithMailbox(() => testMailbox);
-            var pid = Context.Spawn(props);
+            PID pid = Context.Spawn(props);
 
             Context.Send(pid, "");
 
@@ -156,28 +171,40 @@ namespace Proto.Tests
         [Fact]
         public void Given_SenderMiddleware_Should_Call_Middleware_In_Order()
         {
-            var logs = new List<string>();
-            var pid1 = Context.Spawn(Props.FromProducer(() => new DoNothingActor()));
-            var props = Props.FromFunc(c => {
+            List<string> logs = new List<string>();
+            PID pid1 = Context.Spawn(Props.FromProducer(() => new DoNothingActor()));
+            Props props = Props.FromFunc(c =>
+                    {
                         if (c.Message is string)
+                        {
                             c.Send(pid1, "hey");
+                        }
+
                         return Task.CompletedTask;
                     }
                 )
                 .WithSenderMiddleware(
-                    next => (c, t, e) => {
+                    next => (c, t, e) =>
+                    {
                         if (c.Message is string)
+                        {
                             logs.Add("middleware 1");
+                        }
+
                         return next(c, t, e);
                     },
-                    next => (c, t, e) => {
+                    next => (c, t, e) =>
+                    {
                         if (c.Message is string)
+                        {
                             logs.Add("middleware 2");
+                        }
+
                         return next(c, t, e);
                     }
                 )
                 .WithMailbox(() => new TestMailbox());
-            var pid2 = Context.Spawn(props);
+            PID pid2 = Context.Spawn(props);
 
             Context.Send(pid2, "");
 

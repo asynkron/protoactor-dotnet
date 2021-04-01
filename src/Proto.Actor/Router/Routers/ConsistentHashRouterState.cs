@@ -37,7 +37,7 @@ namespace Proto.Router.Routers
         public override void SetRoutees(PID[] routees)
         {
             _routeeMap.Clear();
-            List<string>? nodes = new List<string>();
+            List<string>? nodes = new();
 
             foreach (var pid in routees)
             {

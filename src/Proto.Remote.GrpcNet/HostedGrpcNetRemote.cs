@@ -39,16 +39,19 @@ namespace Proto.Remote.GrpcNet
             lock (this)
             {
                 if (Started)
+                {
                     return Task.CompletedTask;
+                }
 
-                var uri = ServerAddressesFeature?.Addresses.Select(address => new Uri(address)).FirstOrDefault();
-                var boundPort = uri?.Port ?? Config.Port;
-                var host = uri?.Host ?? Config.Host;
+                Uri? uri = ServerAddressesFeature?.Addresses.Select(address => new Uri(address)).FirstOrDefault();
+                int boundPort = uri?.Port ?? Config.Port;
+                string? host = uri?.Host ?? Config.Host;
                 System.SetAddress(Config.AdvertisedHost ?? host,
                     Config.AdvertisedPort ?? boundPort
                 );
                 _endpointManager.Start();
-                _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", host, boundPort, System.Address);
+                _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", host, boundPort,
+                    System.Address);
                 Started = true;
                 return Task.CompletedTask;
             }
@@ -59,7 +62,9 @@ namespace Proto.Remote.GrpcNet
             lock (this)
             {
                 if (!Started)
+                {
                     return Task.CompletedTask;
+                }
 
                 try
                 {

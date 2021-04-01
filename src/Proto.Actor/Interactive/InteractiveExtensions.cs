@@ -73,7 +73,7 @@ namespace Proto.Interactive
 
         private static (ActorSystem, PID[], PID) Start<T>(Func<T, Task> body, int concurrencyLevel)
         {
-            ActorSystem? s = new ActorSystem();
+            ActorSystem? s = new();
             Props? props = Props.FromFunc(async ctx =>
                 {
                     if (ctx.Message is T msg)

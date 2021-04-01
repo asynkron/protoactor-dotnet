@@ -3,19 +3,20 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Proto;
 
 namespace HelloWorld
 {
-    class Program
+    internal class Program
     {
         private static void Main(string[] args)
         {
-            var system = new ActorSystem();
-            var props = Props.FromProducer(() => new HelloActor());
-            var pid = system.Root.Spawn(props);
+            ActorSystem system = new ActorSystem();
+            Props props = Props.FromProducer(() => new HelloActor());
+            PID pid = system.Root.Spawn(props);
             system.Root.Send(pid, new Hello("ProtoActor"));
             Console.ReadLine();
         }
@@ -33,8 +34,12 @@ namespace HelloWorld
         {
             public Task ReceiveAsync(IContext context)
             {
-                var msg = context.Message;
-                if (msg is Hello r) Console.WriteLine($"Hello {r.Who}");
+                object? msg = context.Message;
+                if (msg is Hello r)
+                {
+                    Console.WriteLine($"Hello {r.Who}");
+                }
+
                 return Task.CompletedTask;
             }
         }

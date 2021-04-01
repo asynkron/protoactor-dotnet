@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -14,8 +15,10 @@ namespace Proto.Cluster.Cache
         private static readonly ILogger Logger = Log.CreateLogger(nameof(CacheInvalidationExtensions));
 
         public static Props WithPidCacheInvalidation(this Props props)
-            => props.WithContextDecorator(context => {
-                    var cacheInvalidation = context.System.Extensions.Get<ClusterCacheInvalidation>();
+            => props.WithContextDecorator(context =>
+                {
+                    ClusterCacheInvalidation? cacheInvalidation =
+                        context.System.Extensions.Get<ClusterCacheInvalidation>();
 
                     if (cacheInvalidation is null)
                     {
@@ -41,15 +44,22 @@ namespace Proto.Cluster.Cache
             private readonly ClusterCacheInvalidation _plugin;
             private Action<MessageEnvelope>? _callBack;
 
-            public CacheInvalidationContext(IContext context, ClusterCacheInvalidation cacheInvalidation) : base(context)
+            public CacheInvalidationContext(IContext context, ClusterCacheInvalidation cacheInvalidation) : base(
+                context)
                 => _plugin = cacheInvalidation;
 
             public override async Task Receive(MessageEnvelope envelope)
             {
                 await base.Receive(envelope);
 
-                if (envelope.Message is ClusterInit init) _callBack = _plugin.ForActor(init.ClusterIdentity, Self!);
-                else _callBack?.Invoke(envelope);
+                if (envelope.Message is ClusterInit init)
+                {
+                    _callBack = _plugin.ForActor(init.ClusterIdentity, Self!);
+                }
+                else
+                {
+                    _callBack?.Invoke(envelope);
+                }
             }
         }
     }

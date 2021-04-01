@@ -32,19 +32,23 @@ namespace Proto.Remote
                 case Watch w:
                     if (_endpoint is null)
                     {
-                        System.Root.Send(w.Watcher, new Terminated {Why = TerminatedReason.AddressTerminated, Who = _pid});
+                        System.Root.Send(w.Watcher,
+                            new Terminated {Why = TerminatedReason.AddressTerminated, Who = _pid});
                         return;
                     }
 
                     message = new RemoteWatch(w.Watcher, _pid);
                     break;
                 case Unwatch uw:
-                    if (_endpoint is null) return;
+                    if (_endpoint is null)
+                    {
+                        return;
+                    }
 
                     message = new RemoteUnwatch(uw.Watcher, _pid);
                     break;
                 default:
-                    var (m, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
+                    (var m, PID? sender, var header) = Proto.MessageEnvelope.Unwrap(msg);
 
                     if (_endpoint is null)
                     {

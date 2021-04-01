@@ -8,6 +8,7 @@ namespace Proto.Remote.GrpcCore
 
         public GrpcCoreChannelProvider(GrpcCoreRemoteConfig remoteConfig) => _remoteConfig = remoteConfig;
 
-        public ChannelBase GetChannel(string address) => new Channel(address, _remoteConfig.ChannelCredentials, _remoteConfig.ChannelOptions);
+        public ChannelBase GetChannel(string address) =>
+            new Channel(address, _remoteConfig.ChannelCredentials, _remoteConfig.ChannelOptions);
     }
 }

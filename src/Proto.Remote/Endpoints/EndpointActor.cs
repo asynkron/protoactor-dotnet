@@ -8,9 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Proto.Remote.Metrics;
+using Ubiquitous.Metrics;
 
 namespace Proto.Remote
 {
@@ -79,7 +81,7 @@ namespace Proto.Remote
 
             Logger.LogDebug("[EndpointActor] Created channel and client for address {Address}", _address);
 
-            var res = await _client.ConnectAsync(new ConnectRequest());
+            ConnectResponse? res = await _client.ConnectAsync(new ConnectRequest());
             _serializerId = res.DefaultSerializerId;
             _stream = _client.Receive(_remoteConfig.CallOptions);
 
@@ -87,35 +89,26 @@ namespace Proto.Remote
 
 
             _ = SafeTask.Run(
-                async () => {
+                async () =>
+                {
                     try
                     {
                         await _stream.ResponseStream.MoveNext();
                         Logger.LogDebug("[EndpointActor] {Address} Disconnected", _address);
-                        var terminated = new EndpointTerminatedEvent
-                        {
-                            Address = _address
-                        };
+                        EndpointTerminatedEvent? terminated = new EndpointTerminatedEvent {Address = _address};
                         context.System.EventStream.Publish(terminated);
                     }
                     catch (RpcException x) when (x.StatusCode == StatusCode.Unavailable)
                     {
-                        Logger.LogWarning( "[EndpointActor] Lost connection to address {Address}, address is unavailable", _address);
-                        var endpointError = new EndpointErrorEvent
-                        {
-                            Address = _address,
-                            Exception = x
-                        };
+                        Logger.LogWarning(
+                            "[EndpointActor] Lost connection to address {Address}, address is unavailable", _address);
+                        EndpointErrorEvent? endpointError = new EndpointErrorEvent {Address = _address, Exception = x};
                         context.System.EventStream.Publish(endpointError);
                     }
                     catch (Exception x)
                     {
                         Logger.LogError(x, "[EndpointActor] Lost connection to address {Address}", _address);
-                        var endpointError = new EndpointErrorEvent
-                        {
-                            Address = _address,
-                            Exception = x
-                        };
+                        EndpointErrorEvent? endpointError = new EndpointErrorEvent {Address = _address, Exception = x};
                         context.System.EventStream.Publish(endpointError);
                     }
                 }
@@ -123,10 +116,7 @@ namespace Proto.Remote
 
             Logger.LogDebug("[EndpointActor] Created reader for address {Address}", _address);
 
-            var connected = new EndpointConnectedEvent
-            {
-                Address = _address
-            };
+            EndpointConnectedEvent? connected = new EndpointConnectedEvent {Address = _address};
             context.System.EventStream.Publish(connected);
 
             Logger.LogDebug("[EndpointActor] Connected to address {Address}", _address);
@@ -135,9 +125,15 @@ namespace Proto.Remote
 
         private async Task ShutDownChannel()
         {
-            if (_stream != null) await _stream.RequestStream.CompleteAsync();
+            if (_stream != null)
+            {
+                await _stream.RequestStream.CompleteAsync();
+            }
 
-            if (_channel != null) await _channel.ShutdownAsync();
+            if (_channel != null)
+            {
+                await _channel.ShutdownAsync();
+            }
         }
 
         private Task EndpointError(EndpointErrorEvent evt) => throw evt.Exception;
@@ -148,17 +144,16 @@ namespace Proto.Remote
 
             foreach (var (id, pidSet) in _watchedActors)
             {
-                var watcherPid = PID.FromAddress(context.System.Address, id);
-                var watcherRef = context.System.ProcessRegistry.Get(watcherPid);
+                PID? watcherPid = PID.FromAddress(context.System.Address, id);
+                Process? watcherRef = context.System.ProcessRegistry.Get(watcherPid);
 
-                if (watcherRef == context.System.DeadLetter) continue;
+                if (watcherRef == context.System.DeadLetter)
+                {
+                    continue;
+                }
 
                 foreach (var t in pidSet.Select(
-                    pid => new Terminated
-                    {
-                        Who = pid,
-                        Why = TerminatedReason.AddressTerminated
-                    }
+                    pid => new Terminated {Who = pid, Why = TerminatedReason.AddressTerminated}
                 ))
                 {
                     //send the address Terminated event to the Watcher
@@ -176,11 +171,14 @@ namespace Proto.Remote
             {
                 pidSet.Remove(msg.Watchee);
 
-                if (pidSet.Count == 0) _watchedActors.Remove(msg.Watcher.Id);
+                if (pidSet.Count == 0)
+                {
+                    _watchedActors.Remove(msg.Watcher.Id);
+                }
             }
 
             //create a terminated event for the Watched actor
-            var t = new Terminated {Who = msg.Watchee};
+            Terminated? t = new Terminated {Who = msg.Watchee};
 
             //send the address Terminated event to the Watcher
             msg.Watcher.SendSystemMessage(context.System, t);
@@ -193,56 +191,68 @@ namespace Proto.Remote
             {
                 pidSet.Remove(msg.Watchee);
 
-                if (pidSet.Count == 0) _watchedActors.Remove(msg.Watcher.Id);
+                if (pidSet.Count == 0)
+                {
+                    _watchedActors.Remove(msg.Watcher.Id);
+                }
             }
 
-            var w = new Unwatch(msg.Watcher);
+            Unwatch? w = new Unwatch(msg.Watcher);
             RemoteDeliver(context, msg.Watchee, w);
             return Task.CompletedTask;
         }
 
         private Task RemoteWatch(IContext context, RemoteWatch msg)
         {
-            if (_watchedActors.TryGetValue(msg.Watcher.Id, out var pidSet)) pidSet.Add(msg.Watchee);
-            else _watchedActors[msg.Watcher.Id] = new HashSet<PID> {msg.Watchee};
+            if (_watchedActors.TryGetValue(msg.Watcher.Id, out var pidSet))
+            {
+                pidSet.Add(msg.Watchee);
+            }
+            else
+            {
+                _watchedActors[msg.Watcher.Id] = new HashSet<PID> {msg.Watchee};
+            }
 
-            var w = new Watch(msg.Watcher);
+            Watch? w = new Watch(msg.Watcher);
             RemoteDeliver(context, msg.Watchee, w);
             return Task.CompletedTask;
         }
 
         public void RemoteDeliver(IContext context, PID pid, object msg)
         {
-            var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
-            var env = new RemoteDeliver(header!, message, pid, sender!, -1);
+            (var message, PID? sender, var header) = Proto.MessageEnvelope.Unwrap(msg);
+            RemoteDeliver? env = new RemoteDeliver(header!, message, pid, sender!, -1);
             context.Send(context.Self!, env);
         }
 
         private Task RemoteDeliver(IEnumerable<RemoteDeliver> m, IContext context)
         {
-            var envelopes = new List<MessageEnvelope>();
-            var typeNames = new Dictionary<string, int>();
-            var targetNames = new Dictionary<string, int>();
-            var typeNameList = new List<string>();
-            var targetNameList = new List<string>();
-            var counter = context.System.Metrics.Get<RemoteMetrics>().RemoteSerializedMessageCount;
+            List<MessageEnvelope>? envelopes = new List<MessageEnvelope>();
+            Dictionary<string, int>? typeNames = new Dictionary<string, int>();
+            Dictionary<string, int>? targetNames = new Dictionary<string, int>();
+            List<string>? typeNameList = new List<string>();
+            List<string>? targetNameList = new List<string>();
+            ICountMetric? counter = context.System.Metrics.Get<RemoteMetrics>().RemoteSerializedMessageCount;
 
             foreach (var rd in m)
             {
-                var targetName = rd.Target.Id;
-                var serializerId = rd.SerializerId == -1 ? _serializerId : rd.SerializerId;
+                string? targetName = rd.Target.Id;
+                int serializerId = rd.SerializerId == -1 ? _serializerId : rd.SerializerId;
 
-                if (!targetNames.TryGetValue(targetName, out var targetId))
+                if (!targetNames.TryGetValue(targetName, out int targetId))
                 {
                     targetId = targetNames[targetName] = targetNames.Count;
                     targetNameList.Add(targetName);
                 }
 
-                var typeName = _remoteConfig.Serialization.GetTypeName(rd.Message, serializerId);
+                string? typeName = _remoteConfig.Serialization.GetTypeName(rd.Message, serializerId);
 
-                if (!context.System.Metrics.IsNoop) counter.Inc(new[] {context.System.Id, context.System.Address, typeName});
+                if (!context.System.Metrics.IsNoop)
+                {
+                    counter.Inc(new[] {context.System.Id, context.System.Address, typeName});
+                }
 
-                if (!typeNames.TryGetValue(typeName, out var typeId))
+                if (!typeNames.TryGetValue(typeName, out int typeId))
                 {
                     typeId = typeNames[typeName] = typeNames.Count;
                     typeNameList.Add(typeName);
@@ -256,9 +266,9 @@ namespace Proto.Remote
                     header.HeaderData.Add(rd.Header.ToDictionary());
                 }
 
-                var bytes = _remoteConfig.Serialization.Serialize(rd.Message, serializerId);
+                ByteString? bytes = _remoteConfig.Serialization.Serialize(rd.Message, serializerId);
 
-                var envelope = new MessageEnvelope
+                MessageEnvelope? envelope = new MessageEnvelope
                 {
                     MessageData = bytes,
                     Sender = rd.Sender,
@@ -271,7 +281,7 @@ namespace Proto.Remote
                 envelopes.Add(envelope);
             }
 
-            var batch = new MessageBatch();
+            MessageBatch? batch = new MessageBatch();
             batch.TargetNames.AddRange(targetNameList);
             batch.TypeNames.AddRange(typeNameList);
             batch.Envelopes.AddRange(envelopes);

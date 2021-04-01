@@ -17,8 +17,15 @@ namespace LocalPingPong
                 case PingMsg msg:
                     messagesLeft--;
 
-                    if (messagesLeft == 0) Console.Write("#");
-                    else if (messagesLeft < 0) Console.Write("!"); //should not happen
+                    if (messagesLeft == 0)
+                    {
+                        Console.Write("#");
+                    }
+                    else if (messagesLeft < 0)
+                    {
+                        Console.Write("!"); //should not happen
+                    }
+
                     context.Send(msg.Sender, new PongMsg());
                     break;
             }

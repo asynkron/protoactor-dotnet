@@ -11,10 +11,10 @@ namespace Proto.Tests
         [Fact]
         public async Task can_change_states()
         {
-            var testActorProps = Props.FromProducer(() => new LightBulb());
-            var actor = Context.Spawn(testActorProps);
+            Props testActorProps = Props.FromProducer(() => new LightBulb());
+            PID actor = Context.Spawn(testActorProps);
 
-            var response = await Context.RequestAsync<string>(actor, new PressSwitch());
+            string response = await Context.RequestAsync<string>(actor, new PressSwitch());
             Assert.Equal("Turning on", response);
             response = await Context.RequestAsync<string>(actor, new Touch());
             Assert.Equal("Hot!", response);
@@ -27,10 +27,10 @@ namespace Proto.Tests
         [Fact]
         public async Task can_use_global_behaviour()
         {
-            var testActorProps = Props.FromProducer(() => new LightBulb());
-            var actor = Context.Spawn(testActorProps);
-            var _ = await Context.RequestAsync<string>(actor, new PressSwitch());
-            var response = await Context.RequestAsync<string>(actor, new HitWithHammer());
+            Props testActorProps = Props.FromProducer(() => new LightBulb());
+            PID actor = Context.Spawn(testActorProps);
+            string _ = await Context.RequestAsync<string>(actor, new PressSwitch());
+            string response = await Context.RequestAsync<string>(actor, new HitWithHammer());
             Assert.Equal("Smashed!", response);
             response = await Context.RequestAsync<string>(actor, new PressSwitch());
             Assert.Equal("Broken", response);
@@ -43,11 +43,13 @@ namespace Proto.Tests
         [Fact]
         public async Task pop_behavior_should_restore_pushed_behavior()
         {
-            var behavior = new Behavior();
-            behavior.Become(ctx => {
+            Behavior behavior = new Behavior();
+            behavior.Become(ctx =>
+                {
                     if (ctx.Message is string)
                     {
-                        behavior.BecomeStacked(ctx2 => {
+                        behavior.BecomeStacked(ctx2 =>
+                            {
                                 ctx2.Respond(42);
                                 behavior.UnbecomeStacked();
                                 return Task.CompletedTask;
@@ -59,11 +61,11 @@ namespace Proto.Tests
                     return Task.CompletedTask;
                 }
             );
-            var pid = SpawnActorFromFunc(behavior.ReceiveAsync);
+            PID pid = SpawnActorFromFunc(behavior.ReceiveAsync);
 
-            var reply = await Context.RequestAsync<string>(pid, "number");
-            var replyAfterPush = await Context.RequestAsync<int>(pid, null);
-            var replyAfterPop = await Context.RequestAsync<string>(pid, "answertolifetheuniverseandeverything");
+            string reply = await Context.RequestAsync<string>(pid, "number");
+            int replyAfterPush = await Context.RequestAsync<int>(pid, null);
+            string replyAfterPop = await Context.RequestAsync<string>(pid, "answertolifetheuniverseandeverything");
 
             Assert.Equal("number42answertolifetheuniverseandeverything", $"{reply}{replyAfterPush}{replyAfterPop}");
         }

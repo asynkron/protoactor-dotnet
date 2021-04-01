@@ -18,10 +18,11 @@ namespace Proto.Tests
         [Fact]
         public async Task ReenterAfterCompletedTask()
         {
-            var props = Props.FromFunc(ctx => {
+            Props props = Props.FromFunc(ctx =>
+                {
                     if (ctx.Message is string str && str == "reenter")
                     {
-                        var delay = Task.Delay(500);
+                        Task delay = Task.Delay(500);
                         ctx.ReenterAfter(delay, () => { ctx.Respond("response"); });
                     }
 
@@ -29,28 +30,33 @@ namespace Proto.Tests
                 }
             );
 
-            var pid = Context.Spawn(props);
+            PID pid = Context.Spawn(props);
 
-            var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5));
+            string res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5));
             Assert.Equal("response", res);
         }
 
         [Fact]
         public async Task ReenterAfterHonorsActorConcurrency()
         {
-            var activeCount = 0;
-            var correct = true;
-            var counter = 0;
-            var props = Props.FromFunc(ctx => {
+            int activeCount = 0;
+            bool correct = true;
+            int counter = 0;
+            Props props = Props.FromFunc(ctx =>
+                {
                     if (ctx.Message is string msg && msg == "reenter")
                     {
                         //use ++ on purpose, any race condition would make the counter go out of sync
                         counter++;
 
-                        var task = Task.Delay(0);
-                        ctx.ReenterAfter(task, () => {
-                                var res = Interlocked.Increment(ref activeCount);
-                                if (res != 1) correct = false;
+                        Task task = Task.Delay(0);
+                        ctx.ReenterAfter(task, () =>
+                            {
+                                int res = Interlocked.Increment(ref activeCount);
+                                if (res != 1)
+                                {
+                                    correct = false;
+                                }
 
                                 Interlocked.Decrement(ref activeCount);
                             }
@@ -61,10 +67,10 @@ namespace Proto.Tests
                 }
             );
 
-            var pid = Context.Spawn(props);
+            PID pid = Context.Spawn(props);
 
             //concurrency yolo, no way to force a failure, especially not if the implementation is correct, as expected
-            for (var i = 0; i < 100000; i++)
+            for (int i = 0; i < 100000; i++)
             {
                 Context.Send(pid, "reenter");
             }

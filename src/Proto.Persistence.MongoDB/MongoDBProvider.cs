@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MongoDB.Driver;
@@ -25,16 +26,17 @@ namespace Proto.Persistence.MongoDB
 
         private IMongoCollection<Snapshot> SnapshotCollection => _mongoDB.GetCollection<Snapshot>("snapshots");
 
-        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd,
+            Action<object> callback)
         {
-            var sort = Builders<Event>.Sort.Ascending("EventIndex");
+            SortDefinition<Event> sort = Builders<Event>.Sort.Ascending("EventIndex");
 
-            var events = await EventCollection
+            List<Event> events = await EventCollection
                 .Find(e => e.ActorName == actorName && e.EventIndex >= indexStart && e.EventIndex <= indexEnd)
                 .Sort(sort)
                 .ToListAsync();
 
-            foreach (var @event in events)
+            foreach (Event @event in events)
             {
                 callback(@event.Data);
             }
@@ -44,9 +46,9 @@ namespace Proto.Persistence.MongoDB
 
         public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
-            var sort = Builders<Snapshot>.Sort.Descending("SnapshotIndex");
+            SortDefinition<Snapshot> sort = Builders<Snapshot>.Sort.Descending("SnapshotIndex");
 
-            var snapshot = await SnapshotCollection
+            Snapshot snapshot = await SnapshotCollection
                 .Find(s => s.ActorName == actorName)
                 .Sort(sort)
                 .FirstOrDefaultAsync();

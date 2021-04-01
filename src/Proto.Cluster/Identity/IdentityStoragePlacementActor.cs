@@ -15,7 +15,7 @@ using Proto.Cluster.Metrics;
 
 namespace Proto.Cluster.Identity
 {
-    class IdentityStoragePlacementActor : IActor, IDisposable
+    internal class IdentityStoragePlacementActor : IActor, IDisposable
     {
         private const int PersistenceRetries = 3;
         private readonly Cluster _cluster;
@@ -61,7 +61,10 @@ namespace Proto.Cluster.Identity
 
         private async Task Terminated(IContext context, Terminated msg)
         {
-            if (context.System.Shutdown.IsCancellationRequested) return;
+            if (context.System.Shutdown.IsCancellationRequested)
+            {
+                return;
+            }
 
             var (identity, pid) = _myActors.FirstOrDefault(kvp => kvp.Value.Equals(msg.Who));
 
@@ -92,25 +95,26 @@ namespace Proto.Cluster.Identity
                 }
                 else
                 {
-                    var clusterKind = _cluster.GetClusterKind(msg.Kind);
+                    ActivatedClusterKind? clusterKind = _cluster.GetClusterKind(msg.Kind);
                     //this actor did not exist, lets spawn a new activation
 
                     //spawn and remember this actor
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
-                    var clusterProps = clusterKind.Props.WithClusterInit(_cluster, msg.ClusterIdentity, clusterKind);
+                    Props? clusterProps = clusterKind.Props.WithClusterInit(_cluster, msg.ClusterIdentity, clusterKind);
 
-                    var sw = Stopwatch.StartNew();
-                    var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.ToString());
+                    Stopwatch? sw = Stopwatch.StartNew();
+                    PID? pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.ToString());
                     context.System.Metrics.Get<ClusterMetrics>().ClusterActorSpawnHistogram
                         .Observe(sw, new[] {_cluster.System.Id, _cluster.System.Address, msg.Kind});
                     sw.Stop();
 
                     //Do not expose the PID externally before we have persisted the activation
-                    var completionCallback = new TaskCompletionSource<PID?>();
+                    TaskCompletionSource<PID?>? completionCallback = new TaskCompletionSource<PID?>();
 
-                    context.ReenterAfter(Task.Run(() => PersistActivation(context, msg, pid)), persistResult => {
-                            var wasPersistedCorrectly = persistResult.Result;
+                    context.ReenterAfter(Task.Run(() => PersistActivation(context, msg, pid)), persistResult =>
+                        {
+                            bool wasPersistedCorrectly = persistResult.Result;
 
                             if (wasPersistedCorrectly)
                             {
@@ -141,18 +145,15 @@ namespace Proto.Cluster.Identity
 
             void Respond(PID? result)
             {
-                var response = new ActivationResponse
-                {
-                    Pid = result
-                };
+                ActivationResponse? response = new ActivationResponse {Pid = result};
                 context.Respond(response);
             }
         }
 
         private async Task<bool> PersistActivation(IContext context, ActivationRequest msg, PID pid)
         {
-            var attempts = 0;
-            var spawnLock = new SpawnLock(msg.RequestId, msg.ClusterIdentity);
+            int attempts = 0;
+            SpawnLock? spawnLock = new SpawnLock(msg.RequestId, msg.ClusterIdentity);
 
             while (true)
             {

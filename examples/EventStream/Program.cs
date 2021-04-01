@@ -6,11 +6,11 @@ namespace EventStream
     //define some form of message
     public record SomeMessage(string Name);
 
-    class Program
+    internal class Program
     {
         private static void Main(string[] args)
         {
-            var system = new ActorSystem();
+            ActorSystem system = new ActorSystem();
 
             //subscribe to the eventstream via type
             system.EventStream.Subscribe<SomeMessage>(x => Console.WriteLine($"Got message for {x.Name}"));

@@ -27,14 +27,18 @@ namespace Proto.Cluster.Tests
                     _initKind = init.Kind;
                     break;
                 case Ping ping:
-                    var pong = new Pong {Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? ""};
+                    Pong pong = new Pong {Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? ""};
                     Logger.LogDebug("Received Ping, replying Pong: {@Pong}", pong);
                     context.Respond(pong);
                     break;
                 case SlowPing ping:
                     await Task.Delay(ping.DelayMs);
-                    var slowPong = new Pong {Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? ""};
-                    Logger.LogDebug("Received SlowPing, replying Pong after {Delay} ms: {@Pong}", ping.DelayMs, slowPong);
+                    Pong slowPong = new Pong
+                    {
+                        Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? ""
+                    };
+                    Logger.LogDebug("Received SlowPing, replying Pong after {Delay} ms: {@Pong}", ping.DelayMs,
+                        slowPong);
                     context.Respond(slowPong);
                     break;
                 case WhereAreYou _:

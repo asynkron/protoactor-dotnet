@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using Google.Protobuf;
 
@@ -16,21 +17,23 @@ namespace Proto.Remote
 
         public ByteString Serialize(object obj)
         {
-            var message = obj as IMessage;
+            IMessage? message = obj as IMessage;
             return message.ToByteString();
         }
 
         public object Deserialize(ByteString bytes, string typeName)
         {
-            var parser = _serialization.TypeLookup[typeName];
-            var o = parser.ParseFrom(bytes);
+            MessageParser? parser = _serialization.TypeLookup[typeName];
+            IMessage? o = parser.ParseFrom(bytes);
             return o;
         }
 
         public string GetTypeName(object obj)
         {
             if (obj is IMessage message)
+            {
                 return message.Descriptor.FullName;
+            }
 
             throw new ArgumentException("obj must be of type IMessage", nameof(obj));
         }

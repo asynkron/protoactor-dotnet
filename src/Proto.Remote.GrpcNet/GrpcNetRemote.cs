@@ -41,20 +41,26 @@ namespace Proto.Remote.GrpcNet
             lock (this)
             {
                 if (Started)
+                {
                     return Task.CompletedTask;
+                }
 
-                var channelProvider = new GrpcNetChannelProvider(_config);
+                GrpcNetChannelProvider? channelProvider = new GrpcNetChannelProvider(_config);
                 _endpointManager = new EndpointManager(System, Config, channelProvider);
                 _endpointReader = new EndpointReader(System, _endpointManager, Config.Serialization);
                 _healthCheck = new HealthServiceImpl();
 
                 if (!IPAddress.TryParse(Config.Host, out var ipAddress))
+                {
                     ipAddress = IPAddress.Any;
+                }
+
                 IServerAddressesFeature? serverAddressesFeature = null;
 
                 _host = new WebHostBuilder()
                     .UseKestrel()
-                    .ConfigureKestrel(serverOptions => {
+                    .ConfigureKestrel(serverOptions =>
+                        {
                             if (_config.ConfigureKestrel == null)
                             {
                                 serverOptions.Listen(ipAddress, Config.Port,
@@ -69,9 +75,11 @@ namespace Proto.Remote.GrpcNet
                             }
                         }
                     )
-                    .ConfigureServices(serviceCollection => {
+                    .ConfigureServices(serviceCollection =>
+                        {
                             serviceCollection.AddSingleton(Log.GetLoggerFactory());
-                            serviceCollection.AddGrpc(options => {
+                            serviceCollection.AddGrpc(options =>
+                                {
                                     options.MaxReceiveMessageSize = null;
                                     options.EnableDetailedErrors = true;
                                 }
@@ -80,9 +88,11 @@ namespace Proto.Remote.GrpcNet
                             serviceCollection.AddSingleton<Health.HealthBase>(_healthCheck);
                             serviceCollection.AddSingleton<IRemote>(this);
                         }
-                    ).Configure(app => {
+                    ).Configure(app =>
+                        {
                             app.UseRouting();
-                            app.UseEndpoints(endpoints => {
+                            app.UseEndpoints(endpoints =>
+                                {
                                     endpoints.MapGrpcService<Remoting.RemotingBase>();
                                     endpoints.MapGrpcService<Health.HealthBase>();
                                 }
@@ -92,13 +102,14 @@ namespace Proto.Remote.GrpcNet
                         }
                     )
                     .Start();
-                var uri = serverAddressesFeature!.Addresses.Select(address => new Uri(address)).First();
-                var boundPort = uri.Port;
+                Uri? uri = serverAddressesFeature!.Addresses.Select(address => new Uri(address)).First();
+                int boundPort = uri.Port;
                 System.SetAddress(Config.AdvertisedHost ?? Config.Host,
                     Config.AdvertisedPort ?? boundPort
                 );
                 _endpointManager.Start();
-                _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host, Config.Port, System.Address);
+                _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host,
+                    Config.Port, System.Address);
                 Started = true;
                 return Task.CompletedTask;
             }
@@ -109,7 +120,9 @@ namespace Proto.Remote.GrpcNet
             lock (this)
             {
                 if (!Started)
+                {
                     return;
+                }
 
                 Started = false;
             }
@@ -122,7 +135,9 @@ namespace Proto.Remote.GrpcNet
                     {
                         _endpointManager.Stop();
                         if (_host is not null)
+                        {
                             await _host.StopAsync();
+                        }
                     }
                 }
 

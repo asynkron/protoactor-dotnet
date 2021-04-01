@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 
 namespace Saga.Internal
@@ -26,17 +27,31 @@ namespace Saga.Internal
         {
             bool mustRunNth(int current)
             {
-                if (current == 0 && _runOnStart) return true;
-                if (current == 0) return false;
+                if (current == 0 && _runOnStart)
+                {
+                    return true;
+                }
+
+                if (current == 0)
+                {
+                    return false;
+                }
 
                 return current % _everyNth == 0;
             }
 
-            for (var i = 1; i < _total + 1; i++)
+            for (int i = 1; i < _total + 1; i++)
             {
-                var must = mustRunNth(i);
-                if (must) everyNthAction(i);
-                if (must && !_runBothOnEvery) continue;
+                bool must = mustRunNth(i);
+                if (must)
+                {
+                    everyNthAction(i);
+                }
+
+                if (must && !_runBothOnEvery)
+                {
+                    continue;
+                }
 
                 everyAction(i, must);
             }

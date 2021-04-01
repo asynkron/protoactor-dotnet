@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Threading.Tasks;
 using Proto;
 
@@ -32,9 +33,15 @@ namespace ProtoActorBenchmarks
                 case Msg m:
                     _batch--;
 
-                    if (_batch > 0) break;
+                    if (_batch > 0)
+                    {
+                        break;
+                    }
 
-                    if (!SendBatch(context, m.Sender)) _wgStop.SetResult(true);
+                    if (!SendBatch(context, m.Sender))
+                    {
+                        _wgStop.SetResult(true);
+                    }
 
                     break;
             }
@@ -44,11 +51,14 @@ namespace ProtoActorBenchmarks
 
         private bool SendBatch(IContext context, PID sender)
         {
-            if (_messageCount == 0) return false;
+            if (_messageCount == 0)
+            {
+                return false;
+            }
 
-            var m = new Msg(context.Self);
+            Msg m = new Msg(context.Self);
 
-            for (var i = 0; i < _batchSize; i++)
+            for (int i = 0; i < _batchSize; i++)
             {
                 context.Send(sender, m);
             }

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using Google.Protobuf;
 
@@ -16,29 +17,36 @@ namespace Proto.Remote
 
         public ByteString Serialize(object obj)
         {
-            if (obj is JsonMessage jsonMessage) return ByteString.CopyFromUtf8(jsonMessage.Json);
+            if (obj is JsonMessage jsonMessage)
+            {
+                return ByteString.CopyFromUtf8(jsonMessage.Json);
+            }
 
-            var message = obj as IMessage;
-            var json = JsonFormatter.Default.Format(message);
+            IMessage? message = obj as IMessage;
+            string? json = JsonFormatter.Default.Format(message);
             return ByteString.CopyFromUtf8(json);
         }
 
         public object Deserialize(ByteString bytes, string typeName)
         {
-            var json = bytes.ToStringUtf8();
-            var parser = _serialization.TypeLookup[typeName];
+            string? json = bytes.ToStringUtf8();
+            MessageParser? parser = _serialization.TypeLookup[typeName];
 
-            var o = parser.ParseJson(json);
+            IMessage? o = parser.ParseJson(json);
             return o;
         }
 
         public string GetTypeName(object obj)
         {
             if (obj is JsonMessage jsonMessage)
+            {
                 return jsonMessage.TypeName;
+            }
 
             if (obj is IMessage message)
+            {
                 return message.Descriptor.FullName;
+            }
 
             throw new ArgumentException("obj must be of type IMessage", nameof(obj));
         }

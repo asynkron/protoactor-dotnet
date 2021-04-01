@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Proto.Persistence.SnapshotStrategies;
 using Xunit;
@@ -10,19 +11,19 @@ namespace Proto.Persistence.Tests
         [Fact]
         public async Task GivenAnIntervalStrategy_ShouldSaveSnapshotAccordingly()
         {
-            var state = 1;
-            var provider = new InMemoryProvider();
-            var actorId = Guid.NewGuid().ToString();
-            var persistence = Persistence.WithEventSourcingAndSnapshotting(provider, provider, actorId,
-                @event => { state *= ((Multiplied) @event.Data).Amount; },
-                snapshot => { state = (int) snapshot.State; },
+            int state = 1;
+            InMemoryProvider provider = new InMemoryProvider();
+            string actorId = Guid.NewGuid().ToString();
+            Persistence persistence = Persistence.WithEventSourcingAndSnapshotting(provider, provider, actorId,
+                @event => { state *= ((Multiplied)@event.Data).Amount; },
+                snapshot => { state = (int)snapshot.State; },
                 new IntervalStrategy(1), () => state
             );
 
             await persistence.PersistEventAsync(new Multiplied {Amount = 2});
             await persistence.PersistEventAsync(new Multiplied {Amount = 2});
             await persistence.PersistEventAsync(new Multiplied {Amount = 2});
-            var snapshots = provider.GetSnapshots(actorId);
+            Dictionary<long, object> snapshots = provider.GetSnapshots(actorId);
             Assert.Equal(3, snapshots.Count);
             Assert.Equal(2, snapshots[0]);
             Assert.Equal(4, snapshots[1]);

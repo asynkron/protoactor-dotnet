@@ -10,7 +10,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Proto.Remote.GrpcNet
 {
-    class RemoteHostedService : IHostedService
+    internal class RemoteHostedService : IHostedService
     {
         private readonly IHostApplicationLifetime _appLifetime;
         private readonly IRemote _remote;

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,17 +28,20 @@ namespace Proto.Cluster.Partition
                     return _members[0].Info.Address;
             }
 
-            var keyBytes = Encoding.UTF8.GetBytes(identity);
+            byte[]? keyBytes = Encoding.UTF8.GetBytes(identity);
 
             uint maxScore = 0;
             Member? maxNode = null;
 
-            foreach (var member in _members)
+            foreach (MemberData member in _members)
             {
-                var hashBytes = member.Hash;
-                var score = RdvHash(hashBytes, keyBytes);
+                byte[]? hashBytes = member.Hash;
+                uint score = RdvHash(hashBytes, keyBytes);
 
-                if (score <= maxScore) continue;
+                if (score <= maxScore)
+                {
+                    continue;
+                }
 
                 maxScore = score;
                 maxNode = member.Info;
@@ -54,16 +58,24 @@ namespace Proto.Cluster.Partition
 
         private static uint RdvHash(byte[] node, byte[] key)
         {
-            var hashBytes = MergeBytes(key, node);
+            byte[]? hashBytes = MergeBytes(key, node);
             return MurmurHash2.Hash(hashBytes);
         }
 
         private static byte[] MergeBytes(byte[] front, byte[] back)
         {
-            var combined = new byte[front.Length + back.Length];
+            byte[]? combined = new byte[front.Length + back.Length];
             Array.Copy(front, combined, front.Length);
             Array.Copy(back, 0, combined, front.Length, back.Length);
             return combined;
+        }
+
+        public void Debug()
+        {
+            foreach (MemberData m in _members)
+            {
+                Console.WriteLine(m.Info);
+            }
         }
 
         private readonly struct MemberData
@@ -76,14 +88,6 @@ namespace Proto.Cluster.Partition
 
             public Member Info { get; }
             public byte[] Hash { get; }
-        }
-
-        public void Debug()
-        {
-            foreach (var m in _members)
-            {
-                Console.WriteLine(m.Info);
-            }
         }
     }
 }

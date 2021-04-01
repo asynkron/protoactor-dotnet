@@ -16,7 +16,8 @@ namespace Proto.Remote
         /// <param name="kind">Actor kind, must be known on the remote node</param>
         /// <param name="timeout">Timeout for the confirmation to be received from the remote node</param>
         /// <returns></returns>
-        public static Task<ActorPidResponse> SpawnAsync(this IRemote remote, string address, string kind, TimeSpan timeout) =>
+        public static Task<ActorPidResponse> SpawnAsync(this IRemote remote, string address, string kind,
+            TimeSpan timeout) =>
             SpawnNamedAsync(remote, address, "", kind, timeout);
 
         /// <summary>
@@ -27,16 +28,13 @@ namespace Proto.Remote
         /// <param name="kind">Actor kind, must be known on the remote node</param>
         /// <param name="timeout">Timeout for the confirmation to be received from the remote node</param>
         /// <returns></returns>
-        public static async Task<ActorPidResponse> SpawnNamedAsync(this IRemote remote, string address, string name, string kind, TimeSpan timeout)
+        public static async Task<ActorPidResponse> SpawnNamedAsync(this IRemote remote, string address, string name,
+            string kind, TimeSpan timeout)
         {
-            var activator = ActivatorForAddress(address);
+            PID? activator = ActivatorForAddress(address);
 
-            var res = await remote.System.Root.RequestAsync<ActorPidResponse>(
-                activator, new ActorPidRequest
-                {
-                    Kind = kind,
-                    Name = name
-                }, timeout
+            ActorPidResponse? res = await remote.System.Root.RequestAsync<ActorPidResponse>(
+                activator, new ActorPidRequest {Kind = kind, Name = name}, timeout
             );
 
             return res;

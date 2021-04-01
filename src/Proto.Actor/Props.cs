@@ -46,7 +46,7 @@ namespace Proto
         {
             IMailbox? mailbox = props.MailboxProducer();
             IDispatcher? dispatcher = props.Dispatcher;
-            ActorProcess? process = new ActorProcess(system, mailbox);
+            ActorProcess? process = new(system, mailbox);
             (var self, bool absent) = system.ProcessRegistry.TryAdd(name, process);
 
             if (!absent)

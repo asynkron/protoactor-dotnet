@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -18,13 +19,13 @@ namespace Saga
             new ConcurrentDictionary<string, Dictionary<long, object>>();
 
         public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName) =>
-            Task.FromResult(((object) default(Snapshot), 0L));
+            Task.FromResult(((object)default(Snapshot), 0L));
 
         public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
-            if (Events.TryGetValue(actorName, out var events))
+            if (Events.TryGetValue(actorName, out Dictionary<long, object> events))
             {
-                foreach (var e in events.Where(e => e.Key >= indexStart && e.Key <= indexEnd))
+                foreach (KeyValuePair<long, object> e in events.Where(e => e.Key >= indexStart && e.Key <= indexEnd))
                 {
                     callback(e.Value);
                 }
@@ -37,10 +38,12 @@ namespace Saga
 
         public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
         {
-            if (!Events.TryGetValue(actorName, out var events))
+            if (!Events.TryGetValue(actorName, out Dictionary<long, object> events))
+            {
                 return Task.FromResult<(object, long)>((null, 0));
+            }
 
-            var eventsToRemove = events.Where(s => s.Key <= inclusiveToIndex)
+            List<long> eventsToRemove = events.Where(s => s.Key <= inclusiveToIndex)
                 .Select(e => e.Key)
                 .ToList();
 
@@ -55,9 +58,13 @@ namespace Saga
 
         public Task PersistEventAsync(string actorName, long index, object @event)
         {
-            var events = Events.GetOrAdd(actorName, new Dictionary<long, object>());
+            Dictionary<long, object> events = Events.GetOrAdd(actorName, new Dictionary<long, object>());
             long nextEventIndex = 1;
-            if (events.Any()) nextEventIndex = events.Last().Key + 1;
+            if (events.Any())
+            {
+                nextEventIndex = events.Last().Key + 1;
+            }
+
             events.Add(nextEventIndex, @event);
 
             return Task.FromResult(0);

@@ -3,9 +3,10 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Cluster.Testing
 {
-    static class Messages
+    internal static class Messages
     {
         public class RegisterMember
         {

@@ -16,16 +16,16 @@ namespace Proto.Tests
         [Fact]
         public void AllForOneStrategy_Should_ResumeChildOnFailure()
         {
-            var child1MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
-            var child2MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
-            var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Resume, 1, null);
-            var child1Props = Props.FromProducer(() => new ChildActor())
+            TestMailboxStatistics child1MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
+            TestMailboxStatistics child2MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
+            AllForOneStrategy strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Resume, 1, null);
+            Props child1Props = Props.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
-            var child2Props = Props.FromProducer(() => new ChildActor())
+            Props child2Props = Props.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
-            var parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
+            Props parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Context.Spawn(parentProps);
+            PID parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
 
@@ -39,16 +39,16 @@ namespace Proto.Tests
         [Fact]
         public void AllForOneStrategy_Should_StopAllChildrenOnFailure()
         {
-            var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-            var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-            var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
-            var child1Props = Props.FromProducer(() => new ChildActor())
+            TestMailboxStatistics child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            TestMailboxStatistics child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            AllForOneStrategy strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
+            Props child1Props = Props.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
-            var child2Props = Props.FromProducer(() => new ChildActor())
+            Props child2Props = Props.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
-            var parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
+            Props parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Context.Spawn(parentProps);
+            PID parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
 
@@ -63,16 +63,16 @@ namespace Proto.Tests
         [Fact]
         public void AllForOneStrategy_Should_RestartAllChildrenOnFailure()
         {
-            var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-            var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-            var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
-            var child1Props = Props.FromProducer(() => new ChildActor())
+            TestMailboxStatistics child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            TestMailboxStatistics child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            AllForOneStrategy strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
+            Props child1Props = Props.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
-            var child2Props = Props.FromProducer(() => new ChildActor())
+            Props child2Props = Props.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
-            var parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
+            Props parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Context.Spawn(parentProps);
+            PID parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
 
@@ -87,16 +87,16 @@ namespace Proto.Tests
         [Fact]
         public void AllForOneStrategy_Should_PassExceptionOnRestart()
         {
-            var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-            var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-            var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
-            var child1Props = Props.FromProducer(() => new ChildActor())
+            TestMailboxStatistics child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            TestMailboxStatistics child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            AllForOneStrategy strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
+            Props child1Props = Props.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
-            var child2Props = Props.FromProducer(() => new ChildActor())
+            Props child2Props = Props.FromProducer(() => new ChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
-            var parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
+            Props parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Context.Spawn(parentProps);
+            PID parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
 
@@ -111,18 +111,18 @@ namespace Proto.Tests
         [Fact]
         public void AllForOneStrategy_Should_EscalateFailureToParent()
         {
-            var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-            var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
-            var childProps = Props.FromProducer(() => new ChildActor());
-            var parentProps = Props.FromProducer(() => new ParentActor(childProps, childProps))
+            TestMailboxStatistics parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+            AllForOneStrategy strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
+            Props childProps = Props.FromProducer(() => new ChildActor());
+            Props parentProps = Props.FromProducer(() => new ParentActor(childProps, childProps))
                 .WithChildSupervisorStrategy(strategy)
                 .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
-            var parent = Context.Spawn(parentProps);
+            PID parent = Context.Spawn(parentProps);
 
             Context.Send(parent, "hello");
 
             parentMailboxStats.Reset.Wait(1000);
-            var failure = parentMailboxStats.Received.OfType<Failure>().Single();
+            Failure failure = parentMailboxStats.Received.OfType<Failure>().Single();
             Assert.IsType<Exception>(failure.Reason);
         }
 

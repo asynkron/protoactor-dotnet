@@ -9,9 +9,9 @@ namespace Proto.Tests
         [Fact]
         public void EventStream_CanSubscribeToSpecificEventTypes()
         {
-            var system = new ActorSystem();
-            var eventStream = system.EventStream;
-            var received = "";
+            ActorSystem system = new ActorSystem();
+            EventStream eventStream = system.EventStream;
+            string received = "";
 
             eventStream.Subscribe<string>(theString => received = theString);
             eventStream.Publish("hello");
@@ -21,10 +21,10 @@ namespace Proto.Tests
         [Fact]
         public void EventStream_CanSubscribeToAllEventTypes()
         {
-            var system = new ActorSystem();
-            var eventStream = system.EventStream;
-            var receivedEvents = new List<object>();
-            
+            ActorSystem system = new ActorSystem();
+            EventStream eventStream = system.EventStream;
+            List<object> receivedEvents = new List<object>();
+
             eventStream.Subscribe(@event => receivedEvents.Add(@event));
             eventStream.Publish("hello");
             eventStream.Publish(1);
@@ -35,10 +35,11 @@ namespace Proto.Tests
         [Fact]
         public void EventStream_CanUnsubscribeFromEvents()
         {
-            var system = new ActorSystem();
-            var eventStream = system.EventStream;
-            var receivedEvents = new List<object>();
-            var subscription = eventStream.Subscribe<string>(@event => receivedEvents.Add(@event));
+            ActorSystem system = new ActorSystem();
+            EventStream eventStream = system.EventStream;
+            List<object> receivedEvents = new List<object>();
+            EventStreamSubscription<object> subscription =
+                eventStream.Subscribe<string>(@event => receivedEvents.Add(@event));
             eventStream.Publish("first message");
             subscription.Unsubscribe();
             eventStream.Publish("second message");
@@ -48,10 +49,10 @@ namespace Proto.Tests
         [Fact]
         public void EventStream_OnlyReceiveSubscribedToEventTypes()
         {
-            var system = new ActorSystem();
-            var eventStream = system.EventStream;
-            
-            var eventsReceived = new List<object>();
+            ActorSystem system = new ActorSystem();
+            EventStream eventStream = system.EventStream;
+
+            List<object> eventsReceived = new List<object>();
             eventStream.Subscribe<int>(@event => eventsReceived.Add(@event));
             eventStream.Publish("not an int");
             Assert.Empty(eventsReceived);
@@ -60,11 +61,12 @@ namespace Proto.Tests
         [Fact]
         public void EventStream_CanSubscribeToSpecificEventTypes_Async()
         {
-            var system = new ActorSystem();
-            var eventStream = system.EventStream;
-            
+            ActorSystem system = new ActorSystem();
+            EventStream eventStream = system.EventStream;
+
             string received;
-            eventStream.Subscribe<string>(theString => {
+            eventStream.Subscribe<string>(theString =>
+                {
                     received = theString;
                     Assert.Equal("hello", received);
                 }, Dispatchers.DefaultDispatcher

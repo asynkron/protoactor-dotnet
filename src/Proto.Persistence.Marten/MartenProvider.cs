@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
@@ -11,17 +12,18 @@ namespace Proto.Persistence.Marten
 
         public MartenProvider(IDocumentStore store) => _store = store;
 
-        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd,
+            Action<object> callback)
         {
-            using var session = _store.OpenSession();
+            using IDocumentSession session = _store.OpenSession();
 
-            var events = await session.Query<Event>()
+            IReadOnlyList<Event> events = await session.Query<Event>()
                 .Where(x => x.ActorName == actorName)
                 .Where(x => x.Index >= indexStart && x.Index <= indexEnd)
                 .OrderBy(x => x.Index)
                 .ToListAsync();
 
-            foreach (var @event in events)
+            foreach (Event @event in events)
             {
                 callback(@event.Data);
             }
@@ -31,9 +33,9 @@ namespace Proto.Persistence.Marten
 
         public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
-            using var session = _store.OpenSession();
+            using IDocumentSession session = _store.OpenSession();
 
-            var snapshot = await session.Query<Snapshot>()
+            Snapshot snapshot = await session.Query<Snapshot>()
                 .Where(x => x.ActorName == actorName)
                 .OrderByDescending(x => x.Index)
                 .FirstOrDefaultAsync();
@@ -43,7 +45,7 @@ namespace Proto.Persistence.Marten
 
         public async Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
-            using var session = _store.OpenSession();
+            using IDocumentSession session = _store.OpenSession();
 
             session.Store(new Event(actorName, index, @event));
 
@@ -54,7 +56,7 @@ namespace Proto.Persistence.Marten
 
         public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)
         {
-            using var session = _store.OpenSession();
+            using IDocumentSession session = _store.OpenSession();
 
             session.Store(new Snapshot(actorName, index, snapshot));
 
@@ -63,7 +65,7 @@ namespace Proto.Persistence.Marten
 
         public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
         {
-            using var session = _store.OpenSession();
+            using IDocumentSession session = _store.OpenSession();
 
             session.DeleteWhere<Event>(x =>
                 x.ActorName == actorName &&
@@ -75,7 +77,7 @@ namespace Proto.Persistence.Marten
 
         public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
         {
-            using var session = _store.OpenSession();
+            using IDocumentSession session = _store.OpenSession();
 
             session.DeleteWhere<Snapshot>(x =>
                 x.ActorName == actorName &&

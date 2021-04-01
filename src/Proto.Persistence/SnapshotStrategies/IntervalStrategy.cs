@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Persistence.SnapshotStrategies
 {
     public class IntervalStrategy : ISnapshotStrategy

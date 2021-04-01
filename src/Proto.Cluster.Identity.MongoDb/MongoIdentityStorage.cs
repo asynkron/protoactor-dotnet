@@ -27,8 +27,8 @@ namespace Proto.Cluster.Identity.MongoDb
             CancellationToken ct
         )
         {
-            var requestId = Guid.NewGuid().ToString();
-            var hasLock = await TryAcquireLockAsync(clusterIdentity, requestId, ct);
+            string? requestId = Guid.NewGuid().ToString();
+            bool hasLock = await TryAcquireLockAsync(clusterIdentity, requestId, ct);
             return hasLock ? new SpawnLock(requestId, clusterIdentity) : null;
         }
 
@@ -37,20 +37,25 @@ namespace Proto.Cluster.Identity.MongoDb
             CancellationToken ct
         )
         {
-            var key = GetKey(clusterIdentity);
-            var pidLookupEntity = await LookupKey(key, ct);
-            var lockId = pidLookupEntity?.LockedBy;
+            string? key = GetKey(clusterIdentity);
+            PidLookupEntity? pidLookupEntity = await LookupKey(key, ct);
+            string? lockId = pidLookupEntity?.LockedBy;
 
             if (lockId != null)
             {
                 //There is an active lock on the pid, spin wait
-                var i = 0;
-                do await Task.Delay(20 * i, ct);
-                while ((pidLookupEntity = await LookupKey(key, ct))?.LockedBy == lockId && ++i < 10);
+                int i = 0;
+                do
+                {
+                    await Task.Delay(20 * i, ct);
+                } while ((pidLookupEntity = await LookupKey(key, ct))?.LockedBy == lockId && ++i < 10);
             }
 
             //the lookup entity was lost, stale lock maybe?
-            if (pidLookupEntity == null) return null;
+            if (pidLookupEntity == null)
+            {
+                return null;
+            }
 
             //lookup was unlocked, return this pid
             if (pidLookupEntity.LockedBy == null)
@@ -61,7 +66,10 @@ namespace Proto.Cluster.Identity.MongoDb
             }
 
             //Still locked but not by the same request that originally locked it, so not stale
-            if (pidLookupEntity.LockedBy != lockId) return null;
+            if (pidLookupEntity.LockedBy != lockId)
+            {
+                return null;
+            }
 
             //Stale lock. just delete it and let cluster retry
             // _logger.LogDebug($"Stale lock: {pidLookupEntity.Key}");
@@ -75,8 +83,8 @@ namespace Proto.Cluster.Identity.MongoDb
         public async Task StoreActivation(string memberId, SpawnLock spawnLock, PID pid, CancellationToken ct)
         {
             Logger.LogDebug("Storing activation: {@ActivatorId}, {@SpawnLock}, {@PID}", memberId, spawnLock, pid);
-            var key = GetKey(spawnLock.ClusterIdentity);
-            var res = await _asyncSemaphore.WaitAsync(() => _pids.UpdateOneAsync(
+            string? key = GetKey(spawnLock.ClusterIdentity);
+            UpdateResult? res = await _asyncSemaphore.WaitAsync(() => _pids.UpdateOneAsync(
                     s => s.Key == key && s.LockedBy == spawnLock.LockId && s.Revision == 1,
                     Builders<PidLookupEntity>.Update
                         .Set(l => l.Address, pid.Address)
@@ -88,7 +96,9 @@ namespace Proto.Cluster.Identity.MongoDb
                 )
             );
             if (res.MatchedCount != 1)
+            {
                 throw new LockNotFoundException($"Failed to store activation of {pid}");
+            }
         }
 
         public async Task RemoveActivation(PID pid, CancellationToken ct)
@@ -105,7 +115,7 @@ namespace Proto.Cluster.Identity.MongoDb
             CancellationToken ct
         )
         {
-            var pidLookup = await LookupKey(GetKey(clusterIdentity), ct);
+            PidLookupEntity? pidLookup = await LookupKey(GetKey(clusterIdentity), ct);
             return pidLookup?.Address == null || pidLookup?.UniqueIdentity == null
                 ? null
                 : new StoredActivation(pidLookup.MemberId,
@@ -125,8 +135,8 @@ namespace Proto.Cluster.Identity.MongoDb
             CancellationToken ct
         )
         {
-            var key = GetKey(clusterIdentity);
-            var lockEntity = new PidLookupEntity
+            string? key = GetKey(clusterIdentity);
+            PidLookupEntity? lockEntity = new PidLookupEntity
             {
                 Address = null,
                 Identity = clusterIdentity.Identity,
@@ -146,18 +156,17 @@ namespace Proto.Cluster.Identity.MongoDb
             }
             catch (MongoWriteException)
             {
-                var l = await _asyncSemaphore.WaitAsync(() => _pids.ReplaceOneAsync(x => x.Key == key && x.LockedBy == null && x.Revision == 0,
+                ReplaceOneResult? l = await _asyncSemaphore.WaitAsync(() => _pids.ReplaceOneAsync(
+                        x => x.Key == key && x.LockedBy == null && x.Revision == 0,
                         lockEntity,
-                        new ReplaceOptions
-                        {
-                            IsUpsert = false
-                        }, ct
+                        new ReplaceOptions {IsUpsert = false}, ct
                     )
                 );
 
                 //if l.MatchCount == 1, then one document was updated by us, and we should own the lock, no?
-                var gotLock = l.IsAcknowledged && l.ModifiedCount == 1;
-                Logger.LogDebug("Did {Got}get lock on second try for {ClusterIdentity}", gotLock ? "" : "not ", clusterIdentity);
+                bool gotLock = l.IsAcknowledged && l.ModifiedCount == 1;
+                Logger.LogDebug("Did {Got}get lock on second try for {ClusterIdentity}", gotLock ? "" : "not ",
+                    clusterIdentity);
                 return gotLock;
             }
         }
@@ -166,7 +175,8 @@ namespace Proto.Cluster.Identity.MongoDb
         {
             try
             {
-                var res = await _asyncSemaphore.WaitAsync(() => _pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct));
+                PidLookupEntity? res = await _asyncSemaphore.WaitAsync(() =>
+                    _pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct));
                 return res;
             }
             catch (MongoConnectionException x)

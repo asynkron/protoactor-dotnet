@@ -3,6 +3,8 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
+using System.Collections.Immutable;
 using System.Threading;
 
 namespace Proto.Cluster
@@ -16,33 +18,35 @@ namespace Proto.Cluster
 
         public string GetMemberAddress()
         {
-            var members = _memberStrategy.GetAllMembers();
-            var l = members.Count;
+            ImmutableList<Member>? members = _memberStrategy.GetAllMembers();
+            int l = members.Count;
 
             switch (l)
             {
                 case 0: return "";
                 case 1: return members[0].Address;
-                default: {
-                    var nv = Interlocked.Increment(ref _val);
-                    return members[nv % l].Address;
-                }
+                default:
+                    {
+                        int nv = Interlocked.Increment(ref _val);
+                        return members[nv % l].Address;
+                    }
             }
         }
 
         public Member? GetMember()
         {
-            var members = _memberStrategy.GetAllMembers();
-            var l = members.Count;
+            ImmutableList<Member>? members = _memberStrategy.GetAllMembers();
+            int l = members.Count;
 
             switch (l)
             {
                 case 0: return null;
                 case 1: return members[0];
-                default: {
-                    var nv = Interlocked.Increment(ref _val);
-                    return members[nv % l];
-                }
+                default:
+                    {
+                        int nv = Interlocked.Increment(ref _val);
+                        return members[nv % l];
+                    }
             }
         }
     }

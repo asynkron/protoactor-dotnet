@@ -21,19 +21,21 @@ namespace Proto.Persistence.Tests
 
         public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
-            if (!_snapshots.TryGetValue(actorName, out var snapshots))
+            if (!_snapshots.TryGetValue(actorName, out Dictionary<long, object> snapshots))
+            {
                 return Task.FromResult<(object, long)>((null, 0));
+            }
 
-            var snapshot = snapshots.OrderBy(ss => ss.Key).LastOrDefault();
+            KeyValuePair<long, object> snapshot = snapshots.OrderBy(ss => ss.Key).LastOrDefault();
             return Task.FromResult((snapshot.Value, snapshot.Key));
         }
 
         public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
-            var lastIndex = 0l;
-            if (_events.TryGetValue(actorName, out var events))
+            long lastIndex = 0l;
+            if (_events.TryGetValue(actorName, out Dictionary<long, object> events))
             {
-                foreach (var e in events.Where(e => e.Key >= indexStart && e.Key <= indexEnd))
+                foreach (KeyValuePair<long, object> e in events.Where(e => e.Key >= indexStart && e.Key <= indexEnd))
                 {
                     lastIndex = e.Key;
                     callback(e.Value);
@@ -45,7 +47,7 @@ namespace Proto.Persistence.Tests
 
         public Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
-            var events = _events.GetOrAdd(actorName, new Dictionary<long, object>());
+            Dictionary<long, object> events = _events.GetOrAdd(actorName, new Dictionary<long, object>());
 
             events.Add(index, @event);
 
@@ -56,9 +58,9 @@ namespace Proto.Persistence.Tests
 
         public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
         {
-            var type = snapshot.GetType();
-            var snapshots = _snapshots.GetOrAdd(actorName, new Dictionary<long, object>());
-            var copy = JsonConvert.DeserializeObject(JsonConvert.SerializeObject(snapshot), type);
+            Type type = snapshot.GetType();
+            Dictionary<long, object> snapshots = _snapshots.GetOrAdd(actorName, new Dictionary<long, object>());
+            object? copy = JsonConvert.DeserializeObject(JsonConvert.SerializeObject(snapshot), type);
 
             snapshots.Add(index, copy);
 
@@ -67,10 +69,12 @@ namespace Proto.Persistence.Tests
 
         public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
         {
-            if (!_events.TryGetValue(actorName, out var events))
+            if (!_events.TryGetValue(actorName, out Dictionary<long, object> events))
+            {
                 return Task.FromResult<(object, long)>((null, 0));
+            }
 
-            var eventsToRemove = events.Where(s => s.Key <= inclusiveToIndex)
+            List<long> eventsToRemove = events.Where(s => s.Key <= inclusiveToIndex)
                 .Select(e => e.Key)
                 .ToList();
 
@@ -81,10 +85,12 @@ namespace Proto.Persistence.Tests
 
         public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
         {
-            if (!_snapshots.TryGetValue(actorName, out var snapshots))
+            if (!_snapshots.TryGetValue(actorName, out Dictionary<long, object> snapshots))
+            {
                 return Task.FromResult<(object, long)>((null, 0));
+            }
 
-            var snapshotsToRemove = snapshots.Where(s => s.Key <= inclusiveToIndex)
+            List<long> snapshotsToRemove = snapshots.Where(s => s.Key <= inclusiveToIndex)
                 .Select(snapshot => snapshot.Key)
                 .ToList();
 

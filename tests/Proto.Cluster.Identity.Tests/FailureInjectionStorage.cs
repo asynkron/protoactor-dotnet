@@ -57,13 +57,17 @@ namespace Proto.Cluster.Identity.Tests
             // MaybeFail();
             _identityStorageImplementation.RemoveActivation(pid, ct);
 
-        public Task RemoveMember(string memberId, CancellationToken ct) => _identityStorageImplementation.RemoveMember(memberId, ct);
+        public Task RemoveMember(string memberId, CancellationToken ct) =>
+            _identityStorageImplementation.RemoveMember(memberId, ct);
 
         public Task Init() => _identityStorageImplementation.Init();
 
         private static void MaybeFail()
         {
-            if (Mayhem.NextDouble() > SuccessRate) throw new Exception("Chaos monkey at work");
+            if (Mayhem.NextDouble() > SuccessRate)
+            {
+                throw new Exception("Chaos monkey at work");
+            }
         }
     }
 }

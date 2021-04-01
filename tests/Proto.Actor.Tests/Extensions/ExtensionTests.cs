@@ -16,21 +16,16 @@ namespace Proto.Tests.Extensions
     public class ExtensionTests
     {
         [Fact]
-        public void ExtensionsGetOwnId() => Assert.NotEqual(IActorSystemExtension<ExtensionA>.Id, IActorSystemExtension<ExtensionB>.Id);
+        public void ExtensionsGetOwnId() =>
+            Assert.NotEqual(IActorSystemExtension<ExtensionA>.Id, IActorSystemExtension<ExtensionB>.Id);
 
         [Fact]
         public void CanGetExtension()
         {
-            var system = new ActorSystem();
-            system.Extensions.Register(new ExtensionA
-                {
-                    A = 123
-                }
+            ActorSystem system = new ActorSystem();
+            system.Extensions.Register(new ExtensionA {A = 123}
             );
-            system.Extensions.Register(new ExtensionB
-                {
-                    B = "Hello"
-                }
+            system.Extensions.Register(new ExtensionB {B = "Hello"}
             );
 
             Assert.Equal(123, system.Extensions.Get<ExtensionA>().A);

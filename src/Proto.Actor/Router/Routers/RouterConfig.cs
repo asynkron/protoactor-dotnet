@@ -21,12 +21,12 @@ namespace Proto.Router.Routers
         private PID SpawnRouterProcess(ActorSystem system, string name, Props props, PID? parent)
         {
             RouterState? routerState = CreateRouterState();
-            AutoResetEvent? wg = new AutoResetEvent(false);
+            AutoResetEvent? wg = new(false);
             Props? p = props.WithProducer(() => new RouterActor(this, routerState, wg));
 
             IMailbox? mailbox = props.MailboxProducer();
             IDispatcher? dispatcher = props.Dispatcher;
-            RouterProcess? process = new RouterProcess(system, routerState, mailbox);
+            RouterProcess? process = new(system, routerState, mailbox);
             (var self, bool absent) = system.ProcessRegistry.TryAdd(name, process);
 
             if (!absent)

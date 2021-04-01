@@ -28,11 +28,11 @@ namespace LocalPingPong
                 case Start s:
                     _pong = s.Sender;
                     _replyTo = context.Sender;
-                    var m = new PingMsg(context.Self);
+                    PingMsg m = new PingMsg(context.Self);
 
                     _messageCount -= _batchSize;
 
-                    for (var i = 0; i < _batchSize; i++)
+                    for (int i = 0; i < _batchSize; i++)
                     {
                         context.Send(_pong, m);
                     }
@@ -47,7 +47,10 @@ namespace LocalPingPong
                         Console.Write(".");
                         context.Send(_replyTo, true);
                     }
-                    else if (_messageCount > 0) context.Send(_pong, new PingMsg(context.Self));
+                    else if (_messageCount > 0)
+                    {
+                        context.Send(_pong, new PingMsg(context.Self));
+                    }
 
                     break;
             }

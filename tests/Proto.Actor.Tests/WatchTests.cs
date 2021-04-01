@@ -14,8 +14,9 @@ namespace Proto.Tests
         [Fact]
         public async Task MultipleStopsTriggerSingleTerminated()
         {
-            var counter = 0;
-            var childProps = Props.FromFunc(context => {
+            int counter = 0;
+            Props childProps = Props.FromFunc(context =>
+                {
                     switch (context.Message)
                     {
                         case Started _:
@@ -28,7 +29,8 @@ namespace Proto.Tests
                 }
             );
 
-            Context.Spawn(Props.FromFunc(context => {
+            Context.Spawn(Props.FromFunc(context =>
+                    {
                         switch (context.Message)
                         {
                             case Started _:
@@ -51,15 +53,15 @@ namespace Proto.Tests
         [Fact]
         public async void CanWatchLocalActors()
         {
-            var watchee = Context.Spawn(Props.FromProducer(() => new DoNothingActor())
+            PID watchee = Context.Spawn(Props.FromProducer(() => new DoNothingActor())
                 .WithMailbox(() => new TestMailbox())
             );
-            var watcher = Context.Spawn(Props.FromProducer(() => new LocalActor(watchee))
+            PID watcher = Context.Spawn(Props.FromProducer(() => new LocalActor(watchee))
                 .WithMailbox(() => new TestMailbox())
             );
 
             await Context.StopAsync(watchee);
-            var terminatedMessageReceived = await Context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
+            bool terminatedMessageReceived = await Context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
             Assert.True(terminatedMessageReceived);
         }
 

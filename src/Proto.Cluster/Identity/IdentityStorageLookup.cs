@@ -22,9 +22,9 @@ namespace Proto.Cluster.Identity
 
         public async Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
         {
-            var msg = new GetPid(clusterIdentity, ct);
+            GetPid? msg = new GetPid(clusterIdentity, ct);
 
-            var res = await _system.Root.RequestAsync<PidResult>(_worker, msg, ct);
+            PidResult? res = await _system.Root.RequestAsync<PidResult>(_worker, msg, ct);
             return res?.Pid;
         }
 
@@ -35,14 +35,15 @@ namespace Proto.Cluster.Identity
             _memberId = cluster.System.Id;
             MemberList = cluster.MemberList;
             _isClient = isClient;
-            
+
             cluster.System.Metrics.RegisterKnownMetrics(new IdentityMetrics(cluster.System.Metrics));
 
-            var workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
+            Props? workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
             _worker = _system.Root.Spawn(workerProps);
 
             //hook up events
-            cluster.System.EventStream.Subscribe<ClusterTopology>(e => {
+            cluster.System.EventStream.Subscribe<ClusterTopology>(e =>
+                {
                     //delete all members that have left from the lookup
                     foreach (var left in e.Left)
                         //YOLO. event stream is not async
@@ -52,9 +53,12 @@ namespace Proto.Cluster.Identity
                 }
             );
 
-            if (isClient) return Task.CompletedTask;
+            if (isClient)
+            {
+                return Task.CompletedTask;
+            }
 
-            var props = Props.FromProducer(() => new IdentityStoragePlacementActor(Cluster, this));
+            Props? props = Props.FromProducer(() => new IdentityStoragePlacementActor(Cluster, this));
             _placementActor = _system.Root.SpawnNamed(props, PlacementActorName);
 
             return Task.CompletedTask;
@@ -63,14 +67,20 @@ namespace Proto.Cluster.Identity
         public async Task ShutdownAsync()
         {
             await Cluster.System.Root.StopAsync(_worker);
-            if (!_isClient) await Cluster.System.Root.StopAsync(_placementActor);
+            if (!_isClient)
+            {
+                await Cluster.System.Root.StopAsync(_placementActor);
+            }
 
             await RemoveMemberAsync(_memberId);
         }
 
         public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)
         {
-            if (_system.Shutdown.IsCancellationRequested) return Task.CompletedTask;
+            if (_system.Shutdown.IsCancellationRequested)
+            {
+                return Task.CompletedTask;
+            }
 
             return Storage.RemoveActivation(pid, ct);
         }
@@ -81,7 +91,7 @@ namespace Proto.Cluster.Identity
 
         public static bool TryGetClusterIdentityShortString(string pidId, out string? clusterIdentity)
         {
-            var idIndex = pidId.LastIndexOf("$", StringComparison.Ordinal);
+            int idIndex = pidId.LastIndexOf("$", StringComparison.Ordinal);
 
             if (idIndex > PidClusterIdentityStartIndex)
             {

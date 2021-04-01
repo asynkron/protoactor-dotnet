@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -10,24 +11,24 @@ using Proto;
 
 namespace Middleware
 {
-    class Program
+    internal class Program
     {
         private static void Main(string[] args)
         {
             //Set headers, e.g. Zipkin trace headers
-            var headers = new MessageHeader(
+            MessageHeader headers = new MessageHeader(
                 new Dictionary<string, string>
                 {
-                    {"TraceID", Guid.NewGuid().ToString()},
-                    {"SpanID", Guid.NewGuid().ToString()}
+                    {"TraceID", Guid.NewGuid().ToString()}, {"SpanID", Guid.NewGuid().ToString()}
                 }
             );
-            var system = new ActorSystem();
-            var root = new RootContext(
+            ActorSystem system = new ActorSystem();
+            RootContext root = new RootContext(
                 system,
                 headers,
-                next => async (c, target, envelope) => {
-                    var newEnvelope = envelope
+                next => async (c, target, envelope) =>
+                {
+                    MessageEnvelope newEnvelope = envelope
                         .WithHeader("TraceID", c.Headers.GetOrDefault("TraceID"))
                         .WithHeader("SpanID", Guid.NewGuid().ToString())
                         .WithHeader("ParentSpanID", c.Headers.GetOrDefault("SpanID"));
@@ -41,13 +42,15 @@ namespace Middleware
                     //it looks like this finishes before the actor receive middleware kicks in
                     //which is exactly what it does, due to the actor mailbox.
                     //that is, the sender side of things just put the message on the mailbox and exits
-                    Console.WriteLine(" 1 Exit RootContext SenderMiddleware - Send is async, this is out of order by design"
+                    Console.WriteLine(
+                        " 1 Exit RootContext SenderMiddleware - Send is async, this is out of order by design"
                     );
                 }
             );
 
-            var actor = Props.FromFunc(
-                    c => {
+            Props actor = Props.FromFunc(
+                    c =>
+                    {
                         if (c.Message is string)
                         {
                             Console.WriteLine("   3 Enter Actor");
@@ -62,10 +65,11 @@ namespace Middleware
                         return Task.CompletedTask;
                     }
                 )
-                .WithReceiverMiddleware(next => async (context, envelope) => {
+                .WithReceiverMiddleware(next => async (context, envelope) =>
+                    {
                         if (envelope.Message is string)
                         {
-                            var newEnvelope = envelope
+                            MessageEnvelope newEnvelope = envelope
                                 .WithHeader("TraceID", envelope.Header.GetOrDefault("TraceID"))
                                 .WithHeader("SpanID", Guid.NewGuid().ToString())
                                 .WithHeader("ParentSpanID", envelope.Header.GetOrDefault("SpanID"));
@@ -78,10 +82,13 @@ namespace Middleware
                             Console.WriteLine("  2 Exit Actor ReceiverMiddleware");
                         }
                         else
+                        {
                             await next(context, envelope);
+                        }
                     }
-                ).WithSenderMiddleware(next => async (context, target, envelope) => {
-                        var newEnvelope = envelope
+                ).WithSenderMiddleware(next => async (context, target, envelope) =>
+                    {
+                        MessageEnvelope newEnvelope = envelope
                             .WithHeader("TraceID", context.Headers.GetOrDefault("TraceID"))
                             .WithHeader("SpanID", Guid.NewGuid().ToString())
                             .WithHeader("ParentSpanID", context.Headers.GetOrDefault("SpanID"));
@@ -94,14 +101,14 @@ namespace Middleware
                         Console.WriteLine("    4 Exit Actor SenderMiddleware");
                     }
                 );
-            var pid = root.Spawn(actor);
+            PID pid = root.Spawn(actor);
 
             Task.Delay(500).Wait();
             Console.WriteLine("0 TraceID: " + root.Headers.GetOrDefault("TraceID"));
             Console.WriteLine("0 SpanID: " + root.Headers.GetOrDefault("SpanID"));
             Console.WriteLine("0 ParentSpanID: " + root.Headers.GetOrDefault("ParentSpanID"));
 
-            var res = root.RequestAsync<string>(pid, "hello").Result;
+            string res = root.RequestAsync<string>(pid, "hello").Result;
             Console.WriteLine("Got result " + res);
 
             Console.ReadLine();

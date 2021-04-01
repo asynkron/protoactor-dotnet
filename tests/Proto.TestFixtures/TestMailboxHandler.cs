@@ -18,16 +18,20 @@ namespace Proto.TestFixtures
 
         public void Schedule(Func<Task> runner)
         {
-            var waitingTaskExists = _taskCompletionQueue.TryDequeue(out var onScheduleCompleted);
-            runner().ContinueWith(t => {
-                    if (waitingTaskExists) onScheduleCompleted.SetResult(0);
+            bool waitingTaskExists = _taskCompletionQueue.TryDequeue(out TaskCompletionSource<int> onScheduleCompleted);
+            runner().ContinueWith(t =>
+                {
+                    if (waitingTaskExists)
+                    {
+                        onScheduleCompleted.SetResult(0);
+                    }
                 }
             );
         }
 
-        public Task InvokeSystemMessageAsync(object msg) => ((TestMessage) msg).TaskCompletionSource.Task;
+        public Task InvokeSystemMessageAsync(object msg) => ((TestMessage)msg).TaskCompletionSource.Task;
 
-        public Task InvokeUserMessageAsync(object msg) => ((TestMessage) msg).TaskCompletionSource.Task;
+        public Task InvokeUserMessageAsync(object msg) => ((TestMessage)msg).TaskCompletionSource.Task;
 
         public void EscalateFailure(Exception reason, object message) => EscalatedFailures.Add(reason);
 
@@ -40,12 +44,12 @@ namespace Proto.TestFixtures
         /// <param name="timeoutMs">The waiting task will be cancelled after the timeout expires</param>
         public Task ResumeMailboxProcessingAndWaitAsync(Action resumeMailboxProcessing, int timeoutMs = 60000)
         {
-            var onScheduleCompleted = new TaskCompletionSource<int>();
+            TaskCompletionSource<int> onScheduleCompleted = new();
             _taskCompletionQueue.Enqueue(onScheduleCompleted);
 
             resumeMailboxProcessing();
 
-            var ct = new CancellationTokenSource();
+            CancellationTokenSource ct = new();
             ct.Token.Register(() => onScheduleCompleted.TrySetCanceled());
             ct.CancelAfter(timeoutMs);
 

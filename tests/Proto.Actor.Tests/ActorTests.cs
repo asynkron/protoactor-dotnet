@@ -17,13 +17,18 @@ namespace Proto.Tests
         [Fact]
         public async Task RequestActorAsync()
         {
-            var pid = SpawnActorFromFunc(ctx => {
-                    if (ctx.Message is string) ctx.Respond("hey");
+            PID pid = SpawnActorFromFunc(ctx =>
+                {
+                    if (ctx.Message is string)
+                    {
+                        ctx.Respond("hey");
+                    }
+
                     return Task.CompletedTask;
                 }
             );
 
-            var reply = await Context.RequestAsync<object>(pid, "hello");
+            object reply = await Context.RequestAsync<object>(pid, "hello");
 
             Assert.Equal("hey", reply);
         }
@@ -31,9 +36,9 @@ namespace Proto.Tests
         [Fact]
         public async Task RequestActorAsync_should_raise_TimeoutException_when_timeout_is_reached()
         {
-            var pid = SpawnActorFromFunc(EmptyReceive);
+            PID pid = SpawnActorFromFunc(EmptyReceive);
 
-            var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(
+            TimeoutException timeoutEx = await Assert.ThrowsAsync<TimeoutException>(
                 () => { return Context.RequestAsync<object>(pid, "", TimeSpan.FromMilliseconds(20)); }
             );
             Assert.Equal("Request didn't receive any Response within the expected time.", timeoutEx.Message);
@@ -42,13 +47,18 @@ namespace Proto.Tests
         [Fact]
         public async Task RequestActorAsync_should_not_raise_TimeoutException_when_result_is_first()
         {
-            var pid = SpawnActorFromFunc(ctx => {
-                    if (ctx.Message is string) ctx.Respond("hey");
+            PID pid = SpawnActorFromFunc(ctx =>
+                {
+                    if (ctx.Message is string)
+                    {
+                        ctx.Respond("hey");
+                    }
+
                     return Task.CompletedTask;
                 }
             );
 
-            var reply = await Context.RequestAsync<object>(pid, "hello", TimeSpan.FromMilliseconds(1000));
+            object reply = await Context.RequestAsync<object>(pid, "hello", TimeSpan.FromMilliseconds(1000));
 
             Assert.Equal("hey", reply);
         }
@@ -56,10 +66,11 @@ namespace Proto.Tests
         [Fact]
         public async Task ActorLifeCycle()
         {
-            var messages = new Queue<object>();
+            Queue<object> messages = new Queue<object>();
 
-            var pid = Context.Spawn(
-                Props.FromFunc(ctx => {
+            PID pid = Context.Spawn(
+                Props.FromFunc(ctx =>
+                        {
                             messages.Enqueue(ctx.Message);
                             return Task.CompletedTask;
                         }
@@ -72,7 +83,7 @@ namespace Proto.Tests
             await Context.StopAsync(pid);
 
             Assert.Equal(4, messages.Count);
-            var msgs = messages.ToArray();
+            object[] msgs = messages.ToArray();
             Assert.IsType<Started>(msgs[0]);
             Assert.IsType<string>(msgs[1]);
             Assert.IsType<Stopping>(msgs[2]);
@@ -122,19 +133,29 @@ namespace Proto.Tests
         [Fact]
         public async Task ForwardActorAsync()
         {
-            var pid = SpawnActorFromFunc(ctx => {
-                    if (ctx.Message is string) ctx.Respond("hey");
+            PID pid = SpawnActorFromFunc(ctx =>
+                {
+                    if (ctx.Message is string)
+                    {
+                        ctx.Respond("hey");
+                    }
+
                     return Task.CompletedTask;
                 }
             );
 
-            var forwarder = SpawnForwarderFromFunc(ctx => {
-                    if (ctx.Message is string) ctx.Forward(pid);
+            PID forwarder = SpawnForwarderFromFunc(ctx =>
+                {
+                    if (ctx.Message is string)
+                    {
+                        ctx.Forward(pid);
+                    }
+
                     return Task.CompletedTask;
                 }
             );
 
-            var reply = await Context.RequestAsync<object>(forwarder, "hello");
+            object reply = await Context.RequestAsync<object>(forwarder, "hello");
 
             Assert.Equal("hey", reply);
         }

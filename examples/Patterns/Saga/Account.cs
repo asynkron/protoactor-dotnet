@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -12,7 +13,7 @@ using Saga.Messages;
 
 namespace Saga
 {
-    class Account : IActor
+    internal class Account : IActor
     {
         private readonly double _busyProbability;
         private readonly string _name;
@@ -84,13 +85,17 @@ namespace Saga
             }
 
             if (Busy())
+            {
                 context.Send(replyTo, new ServiceUnavailable());
+            }
 
             // generate the behavior to be used whilst processing this message
-            var behaviour = DetermineProcessingBehavior();
+            Behavior behaviour = DetermineProcessingBehavior();
 
             if (behaviour == Behavior.FailBeforeProcessing)
+            {
                 return Failure();
+            }
 
             // simulate potential long-running process
             Thread.Sleep(_random.Next(0, 150));
@@ -102,7 +107,9 @@ namespace Saga
             // force a retry of the operation which will test the operation
             // is idempotent
             if (behaviour == Behavior.FailAfterProcessing)
+            {
                 return Failure();
+            }
 
             context.Send(replyTo, new OK());
             return Task.CompletedTask;
@@ -116,22 +123,24 @@ namespace Saga
 
         private bool Busy()
         {
-            var comparison = _random.NextDouble() * 100;
+            double comparison = _random.NextDouble() * 100;
             return comparison <= _busyProbability;
         }
 
         private bool RefusePermanently()
         {
-            var comparison = _random.NextDouble() * 100;
+            double comparison = _random.NextDouble() * 100;
             return comparison <= _refusalProbability;
         }
 
         private Behavior DetermineProcessingBehavior()
         {
-            var comparision = _random.NextDouble() * 100;
+            double comparision = _random.NextDouble() * 100;
 
             if (comparision > _serviceUptime)
+            {
                 return _random.NextDouble() * 100 > 50 ? Behavior.FailBeforeProcessing : Behavior.FailAfterProcessing;
+            }
 
             return Behavior.ProcessSuccessfully;
         }

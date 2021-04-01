@@ -29,14 +29,14 @@ namespace Proto.Cluster.Tests
         {
             await Task.Delay(3000);
             TestOutputHelper.WriteLine("Cluster ready");
-            var timeout = new CancellationTokenSource(100000).Token;
+            CancellationToken timeout = new CancellationTokenSource(100000).Token;
 
-            var firstNode = Members[0];
+            Cluster firstNode = Members[0];
 
             await PingAll(firstNode);
             await PingAll(firstNode);
 
-            var secondNode = Members[1];
+            Cluster secondNode = Members[1];
             firstNode.System.ProcessRegistry.ProcessCount.Should().BeGreaterThan(1000,
                 "We expect the actors to be localized to the node receiving traffic."
             );
@@ -45,7 +45,7 @@ namespace Proto.Cluster.Tests
             TestOutputHelper.WriteLine(
                 $"Actors: first node: {firstNode.System.ProcessRegistry.ProcessCount}, second node: {secondNode.System.ProcessRegistry.ProcessCount}"
             );
-            var secondNodeTimings = Stopwatch.StartNew();
+            Stopwatch secondNodeTimings = Stopwatch.StartNew();
             await PingAll(secondNode);
             await PingAll(secondNode);
             await PingAll(secondNode);
@@ -68,7 +68,8 @@ namespace Proto.Cluster.Tests
                 .BeLessThan(3000, "We expect dead letter responses instead of timeouts");
 
             Task PingAll(Cluster cluster) => Task.WhenAll(
-                Enumerable.Range(0, 1000).Select(async i => {
+                Enumerable.Range(0, 1000).Select(async i =>
+                    {
                         Pong pong = null;
 
                         while (pong is null)
@@ -93,12 +94,14 @@ namespace Proto.Cluster.Tests
             protected override ClusterKind[] ClusterKinds { get; } =
             {
                 new(EchoActor.Kind, EchoActor.Props.WithPoisonOnRemoteTraffic(.5f).WithPidCacheInvalidation())
-                    {StrategyBuilder = c => new LocalAffinityStrategy(c, 300)}
+                {
+                    StrategyBuilder = c => new LocalAffinityStrategy(c, 300)
+                }
             };
 
             protected override async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig> configure)
             {
-                var config = ClusterConfig.Setup(
+                ClusterConfig config = ClusterConfig.Setup(
                         _clusterName,
                         GetClusterProvider(),
                         GetIdentityLookup(_clusterName)
@@ -106,12 +109,13 @@ namespace Proto.Cluster.Tests
                     .WithClusterKinds(ClusterKinds);
 
                 config = configure?.Invoke(config) ?? config;
-                var system = new ActorSystem();
+                ActorSystem system = new ActorSystem();
 
-                var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
-                var _ = new GrpcCoreRemote(system, remoteConfig);
+                GrpcCoreRemoteConfig remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost()
+                    .WithProtoMessages(MessagesReflection.Descriptor);
+                GrpcCoreRemote _ = new GrpcCoreRemote(system, remoteConfig);
 
-                var cluster = new Cluster(system, config);
+                Cluster cluster = new Cluster(system, config);
                 cluster.WithPidCacheInvalidation();
                 await cluster.StartMemberAsync();
                 return cluster;

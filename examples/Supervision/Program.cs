@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Threading;
@@ -10,23 +11,20 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto;
 
-class Program
+internal class Program
 {
     private static void Main()
     {
-        var context = new RootContext(new ActorSystem());
+        RootContext context = new RootContext(new ActorSystem());
         Log.SetLoggerFactory(LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Debug)));
 
-        var props = Props.FromProducer(() => new ParentActor())
+        Props props = Props.FromProducer(() => new ParentActor())
             .WithChildSupervisorStrategy(new OneForOneStrategy(Decider.Decide, 1, null));
 
-        var actor = context.Spawn(props);
+        PID actor = context.Spawn(props);
 
         context.Send(
-            actor, new Hello
-            {
-                Who = "Alex"
-            }
+            actor, new Hello {Who = "Alex"}
         );
         context.Send(actor, new Recoverable());
         context.Send(actor, new Fatal());
@@ -58,11 +56,13 @@ class Program
 
             if (context.Children is null || context.Children.Count == 0)
             {
-                var props = Props.FromProducer(() => new ChildActor());
+                Props props = Props.FromProducer(() => new ChildActor());
                 child = context.Spawn(props);
             }
             else
+            {
                 child = context.Children.First();
+            }
 
             switch (context.Message)
             {

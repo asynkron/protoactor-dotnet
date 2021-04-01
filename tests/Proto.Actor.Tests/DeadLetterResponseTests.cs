@@ -9,8 +9,12 @@ namespace Proto.Tests
         private static readonly ActorSystem System = new();
         private static readonly RootContext Context = System.Root;
 
-        private static readonly Props EchoProps = Props.FromFunc(context => {
-                if (context.Message is string s) context.Respond(s);
+        private static readonly Props EchoProps = Props.FromFunc(context =>
+            {
+                if (context.Message is string s)
+                {
+                    context.Respond(s);
+                }
 
                 return Task.CompletedTask;
             }
@@ -19,10 +23,10 @@ namespace Proto.Tests
         [Fact]
         public async Task ThrowsDeadLetterException()
         {
-            var echoPid = System.Root.Spawn(EchoProps);
+            PID echoPid = System.Root.Spawn(EchoProps);
 
             const string message = "hello";
-            var response = await Context.RequestAsync<string>(echoPid, message);
+            string response = await Context.RequestAsync<string>(echoPid, message);
             response.Should().Be(message);
             await Context.PoisonAsync(echoPid);
 
@@ -33,11 +37,11 @@ namespace Proto.Tests
         [Fact]
         public async Task SendsDeadLetterResponse()
         {
-            var validationActor = Props.FromProducer(() => new DeadLetterResponseValidationActor());
+            Props validationActor = Props.FromProducer(() => new DeadLetterResponseValidationActor());
 
-            var pid = Context.Spawn(validationActor);
+            PID pid = Context.Spawn(validationActor);
 
-            var response = await Context.RequestAsync<string>(pid, "Validate");
+            string response = await Context.RequestAsync<string>(pid, "Validate");
 
             response.Should().Be("Validated");
         }
@@ -57,11 +61,12 @@ namespace Proto.Tests
                         await context.PoisonAsync(_deadLetterTarget);
                         context.Request(_deadLetterTarget, "One dead letter please");
                         break;
-                    case DeadLetterResponse response: {
-                        response.Target.Should().Be(_deadLetterTarget);
-                        context.Send(_sender, "Validated");
-                        break;
-                    }
+                    case DeadLetterResponse response:
+                        {
+                            response.Target.Should().Be(_deadLetterTarget);
+                            context.Send(_sender, "Validated");
+                            break;
+                        }
                 }
             }
         }

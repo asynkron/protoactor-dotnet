@@ -3,7 +3,9 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
 using Proto.Utils;
@@ -32,22 +34,26 @@ namespace Proto.Cluster
             Predicate<MessageEnvelope>? hasLocalAffinity = null
         )
         {
-            if (relocationFactor <= 0) throw new ArgumentException("RelocationFactor must be positive");
+            if (relocationFactor <= 0)
+            {
+                throw new ArgumentException("RelocationFactor must be positive");
+            }
 
             hasLocalAffinity ??= _ => true;
-            var shouldRelocate = CreateShouldRelocate(relocationFactor);
+            Func<bool>? shouldRelocate = CreateShouldRelocate(relocationFactor);
 
-            return props.WithReceiverMiddleware(receiver => (context, envelope) => {
+            return props.WithReceiverMiddleware(receiver => (context, envelope) =>
+                {
                     //Sender is removed from context after call
-                    var sender = context.Sender;
+                    PID? sender = context.Sender;
 
-                    var task = receiver(context, envelope);
+                    Task? task = receiver(context, envelope);
 
                     if (!(envelope.Message is PoisonPill && envelope.Message is not SystemMessage)
-                     && sender.IsRemote(context)
-                     && hasLocalAffinity(envelope)
-                     && shouldRelocate()
-                     && throttle?.Invoke() != Throttle.Valve.Closed
+                        && sender.IsRemote(context)
+                        && hasLocalAffinity(envelope)
+                        && shouldRelocate()
+                        && throttle?.Invoke() != Throttle.Valve.Closed
                     )
                     {
                         Logger.LogDebug("Poisoning {ActorPid}, because of {MessageType} from {Sender}", context.Self,
@@ -64,9 +70,12 @@ namespace Proto.Cluster
 
         private static Func<bool> CreateShouldRelocate(float relocationFactor)
         {
-            if (relocationFactor >= 1) return () => true;
+            if (relocationFactor >= 1)
+            {
+                return () => true;
+            }
 
-            var random = new Random();
+            Random? random = new Random();
             return () => random.NextDouble() < relocationFactor;
         }
 

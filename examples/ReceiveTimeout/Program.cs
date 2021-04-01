@@ -3,18 +3,20 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto;
 
-class Program
+internal class Program
 {
     private static void Main(string[] args)
     {
-        var rootContext = new RootContext(new ActorSystem());
-        var c = 0;
-        var props = Props.FromFunc(context => {
+        RootContext rootContext = new RootContext(new ActorSystem());
+        int c = 0;
+        Props props = Props.FromFunc(context =>
+            {
                 switch (context.Message)
                 {
                     case Started _:
@@ -36,9 +38,9 @@ class Program
                 return Task.CompletedTask;
             }
         );
-        var pid = rootContext.Spawn(props);
+        PID pid = rootContext.Spawn(props);
 
-        for (var i = 0; i < 6; i++)
+        for (int i = 0; i < 6; i++)
         {
             rootContext.Send(pid, "hello");
             Thread.Sleep(500);
@@ -47,7 +49,7 @@ class Program
         Console.WriteLine("Hit [return] to send no-influence messages");
         Console.ReadLine();
 
-        for (var i = 0; i < 6; i++)
+        for (int i = 0; i < 6; i++)
         {
             rootContext.Send(pid, new NoInfluence());
             Thread.Sleep(500);
@@ -63,6 +65,6 @@ class Program
     }
 }
 
-class NoInfluence : INotInfluenceReceiveTimeout
+internal class NoInfluence : INotInfluenceReceiveTimeout
 {
 }

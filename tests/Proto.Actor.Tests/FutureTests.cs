@@ -17,14 +17,19 @@ namespace Proto.Tests
         [Fact]
         public void Given_Actor_When_AwaitRequestAsync_Should_ReturnReply()
         {
-            var pid = Context.Spawn(Props.FromFunc(ctx => {
-                        if (ctx.Message is string) ctx.Respond("hey");
+            PID pid = Context.Spawn(Props.FromFunc(ctx =>
+                    {
+                        if (ctx.Message is string)
+                        {
+                            ctx.Respond("hey");
+                        }
+
                         return Task.CompletedTask;
                     }
                 )
             );
 
-            var reply = Context.RequestAsync<object>(pid, "hello").Result;
+            object reply = Context.RequestAsync<object>(pid, "hello").Result;
 
             Assert.Equal("hey", reply);
         }
@@ -32,23 +37,29 @@ namespace Proto.Tests
         [Fact]
         public void Given_Actor_When_AwaitContextRequestAsync_Should_GetReply()
         {
-            var pid1 = Context.Spawn(Props.FromFunc(ctx => {
-                        if (ctx.Message is string) ctx.Respond("hey");
+            PID pid1 = Context.Spawn(Props.FromFunc(ctx =>
+                    {
+                        if (ctx.Message is string)
+                        {
+                            ctx.Respond("hey");
+                        }
+
                         return Task.CompletedTask;
                     }
                 )
             );
-            var pid2 = Context.Spawn(Props.FromFunc(async ctx => {
+            PID pid2 = Context.Spawn(Props.FromFunc(async ctx =>
+                    {
                         if (ctx.Message is string)
                         {
-                            var reply1 = await ctx.RequestAsync<string>(pid1, "");
+                            string reply1 = await ctx.RequestAsync<string>(pid1, "");
                             ctx.Respond(ctx.Message + reply1);
                         }
                     }
                 )
             );
 
-            var reply2 = Context.RequestAsync<string>(pid2, "hello").Result;
+            string reply2 = Context.RequestAsync<string>(pid2, "hello").Result;
 
             Assert.Equal("hellohey", reply2);
         }
@@ -56,21 +67,28 @@ namespace Proto.Tests
         [Fact]
         public void Given_Actor_When_ReplyIsNull_Should_Return()
         {
-            var pid = Context.Spawn(Props.FromFunc(ctx => {
-                        if (ctx.Message is string) ctx.Respond(null);
+            PID pid = Context.Spawn(Props.FromFunc(ctx =>
+                    {
+                        if (ctx.Message is string)
+                        {
+                            ctx.Respond(null);
+                        }
+
                         return Task.CompletedTask;
                     }
                 )
             );
 
-            var reply = Context.RequestAsync<object>(pid, "hello", TimeSpan.FromSeconds(1)).Result;
+            object reply = Context.RequestAsync<object>(pid, "hello", TimeSpan.FromSeconds(1)).Result;
 
             Assert.Null(reply);
         }
 
         [Fact]
-        public void TestInATask() => SafeTask.Run(async () => {
-                var pid = Context.Spawn(Props.FromFunc(ctx => {
+        public void TestInATask() => SafeTask.Run(async () =>
+            {
+                PID pid = Context.Spawn(Props.FromFunc(ctx =>
+                        {
                             if (ctx.Message is string msg)
                             {
                                 output.WriteLine("Got Message " + msg);
@@ -84,18 +102,20 @@ namespace Proto.Tests
                 );
 
                 output.WriteLine("Starting");
-                var reply1 = await Context.RequestAsync<object>(pid, "hello1", TimeSpan.FromSeconds(10));
+                object reply1 = await Context.RequestAsync<object>(pid, "hello1", TimeSpan.FromSeconds(10));
                 Assert.Null(reply1);
                 output.WriteLine("got response 1");
-                var reply2 = Context.RequestAsync<object>(pid, "hello2", TimeSpan.FromSeconds(10)).Result;
+                object reply2 = Context.RequestAsync<object>(pid, "hello2", TimeSpan.FromSeconds(10)).Result;
                 Assert.Null(reply2);
                 output.WriteLine("got response 2");
             }
         ).Wait();
 
         [Fact]
-        public void TestInATaskIndirect() => Task.Run(async () => {
-                var replier = Context.Spawn(Props.FromFunc(ctx => {
+        public void TestInATaskIndirect() => Task.Run(async () =>
+            {
+                PID replier = Context.Spawn(Props.FromFunc(ctx =>
+                        {
                             if (ctx.Message is Tuple<PID, string> msg)
                             {
                                 output.WriteLine("replier Got Message " + msg.Item2);
@@ -107,7 +127,8 @@ namespace Proto.Tests
                         }
                     )
                 );
-                var pid = Context.Spawn(Props.FromFunc(ctx => {
+                PID pid = Context.Spawn(Props.FromFunc(ctx =>
+                        {
                             if (ctx.Message is string msg)
                             {
                                 output.WriteLine("pid Got Message " + msg);
@@ -121,10 +142,10 @@ namespace Proto.Tests
                 );
 
                 output.WriteLine("Starting");
-                var reply1 = await Context.RequestAsync<object>(pid, "hello1", TimeSpan.FromSeconds(2));
+                object reply1 = await Context.RequestAsync<object>(pid, "hello1", TimeSpan.FromSeconds(2));
                 Assert.Null(reply1);
                 output.WriteLine("got response 1");
-                var reply2 = Context.RequestAsync<object>(pid, "hello2", TimeSpan.FromSeconds(2)).Result;
+                object reply2 = Context.RequestAsync<object>(pid, "hello2", TimeSpan.FromSeconds(2)).Result;
                 Assert.Null(reply2);
                 output.WriteLine("got response 2");
             }

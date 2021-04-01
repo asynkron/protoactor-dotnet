@@ -18,19 +18,16 @@ namespace Proto.Cluster.Tests
         {
         }
 
-        [Theory, InlineData(1000, 10, 8000)]
+        [Theory]
+        [InlineData(1000, 10, 8000)]
         public async Task OrderedDeliveryFromActors(int sendingActors, int messagesSentPerCall, int timeoutMs)
         {
-            var aggregatorId = CreateIdentity("agg-1");
+            string aggregatorId = CreateIdentity("agg-1");
 
-            var timeout = new CancellationTokenSource(timeoutMs).Token;
+            CancellationToken timeout = new CancellationTokenSource(timeoutMs).Token;
 
-            var sendToRequest = new SendToRequest
-            {
-                Count = messagesSentPerCall,
-                Id = aggregatorId
-            };
-            var sendRequestsSent = Members.SelectMany(
+            SendToRequest sendToRequest = new() {Count = messagesSentPerCall, Id = aggregatorId};
+            List<Task<Ack>> sendRequestsSent = Members.SelectMany(
                     cluster => GetActorIds(sendingActors)
                         .Select(id => cluster.RequestAsync<Ack>(id, SenderActor.Kind, sendToRequest, timeout))
                 )
@@ -38,7 +35,8 @@ namespace Proto.Cluster.Tests
 
             await Task.WhenAll(sendRequestsSent);
 
-            var result = await Members.First().RequestAsync<AggregatorResult>(aggregatorId, VerifyOrderActor.Kind,
+            AggregatorResult result = await Members.First().RequestAsync<AggregatorResult>(aggregatorId,
+                VerifyOrderActor.Kind,
                 new AskAggregator(),
                 new CancellationTokenSource(5000).Token
             );
@@ -68,17 +66,13 @@ namespace Proto.Cluster.Tests
                         break;
                     case SendToRequest sendTo:
 
-                        var key = Guid.NewGuid().ToString("N");
+                        string key = Guid.NewGuid().ToString("N");
 
-                        for (var i = 0; i < sendTo.Count; i++)
+                        for (int i = 0; i < sendTo.Count; i++)
                         {
                             await _cluster.RequestAsync<Ack>(sendTo.Id, VerifyOrderActor.Kind,
-                                new SequentialIdRequest
-                                {
-                                    SequenceKey = key,
-                                    SequenceId = _seq++,
-                                    Sender = _instanceId
-                                }, CancellationToken.None
+                                new SequentialIdRequest {SequenceKey = key, SequenceId = _seq++, Sender = _instanceId},
+                                CancellationToken.None
                             );
                         }
 
@@ -124,10 +118,13 @@ namespace Proto.Cluster.Tests
             {
                 _seqRequests++;
                 _senders.Add(request.Sender);
-                var outOfOrder = _lastReceivedSeq.TryGetValue(request.SequenceKey, out var last) &&
-                                 last + 1 != request.SequenceId;
+                bool outOfOrder = _lastReceivedSeq.TryGetValue(request.SequenceKey, out int last) &&
+                                  last + 1 != request.SequenceId;
                 _lastReceivedSeq[request.SequenceKey] = request.SequenceId;
-                if (outOfOrder) _outOfOrderErrors++;
+                if (outOfOrder)
+                {
+                    _outOfOrderErrors++;
+                }
 
                 context.Respond(new Ack());
             }
@@ -140,14 +137,15 @@ namespace Proto.Cluster.Tests
             {
             }
 
-            protected override ClusterKind[] ClusterKinds {
-                get {
-                    var senderProps = Props.FromProducer(() => new SenderActor());
-                    var aggProps = Props.FromProducer(() => new VerifyOrderActor());
+            protected override ClusterKind[] ClusterKinds
+            {
+                get
+                {
+                    Props senderProps = Props.FromProducer(() => new SenderActor());
+                    Props aggProps = Props.FromProducer(() => new VerifyOrderActor());
                     return base.ClusterKinds.Concat(new ClusterKind[]
                         {
-                            new (SenderActor.Kind, senderProps),
-                            new (VerifyOrderActor.Kind, aggProps)
+                            new(SenderActor.Kind, senderProps), new(VerifyOrderActor.Kind, aggProps)
                         }
                     ).ToArray();
                 }

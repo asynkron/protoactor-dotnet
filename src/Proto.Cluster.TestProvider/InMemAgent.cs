@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -34,7 +35,8 @@ namespace Proto.Cluster.Testing
 
         public void RegisterService(AgentServiceRegistration registration)
         {
-            _services.TryAdd(registration.ID, new AgentServiceStatus
+            _services.TryAdd(registration.ID,
+                new AgentServiceStatus
                 {
                     ID = registration.ID,
                     TTL = DateTimeOffset.Now,
@@ -55,7 +57,10 @@ namespace Proto.Cluster.Testing
         public void RefreshServiceTTL(string id)
         {
             //TODO: this is racy, but yolo for now
-            if (_services.TryGetValue(id, out var service)) service.TTL = DateTimeOffset.Now;
+            if (_services.TryGetValue(id, out AgentServiceStatus service))
+            {
+                service.TTL = DateTimeOffset.Now;
+            }
         }
     }
 }

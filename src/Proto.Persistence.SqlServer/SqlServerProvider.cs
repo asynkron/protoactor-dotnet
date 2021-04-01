@@ -9,8 +9,12 @@ namespace Proto.Persistence.SqlServer
 {
     public class SqlServerProvider : IProvider
     {
-        private static readonly JsonSerializerSettings AutoTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Auto};
-        private static readonly JsonSerializerSettings AllTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};
+        private static readonly JsonSerializerSettings AutoTypeSettings =
+            new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Auto};
+
+        private static readonly JsonSerializerSettings AllTypeSettings =
+            new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};
+
         private readonly string _connectionString;
 
         private readonly string _sqlDeleteEvents;
@@ -32,7 +36,9 @@ namespace Proto.Persistence.SqlServer
         {
             _connectionString = connectionString;
             _tableSchema = useTablesWithSchema;
-            _tableSnapshots = string.IsNullOrEmpty(useTablesWithPrefix) ? "Snapshots" : $"{useTablesWithPrefix}_Snapshots";
+            _tableSnapshots = string.IsNullOrEmpty(useTablesWithPrefix)
+                ? "Snapshots"
+                : $"{useTablesWithPrefix}_Snapshots";
             _tableEvents = string.IsNullOrEmpty(useTablesWithPrefix) ? "Events" : $"{useTablesWithPrefix}_Events";
 
             if (autoCreateTables)
@@ -42,7 +48,8 @@ namespace Proto.Persistence.SqlServer
             }
 
             // execute string interpolation once
-            _sqlDeleteEvents = $@"DELETE FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex <= @EventIndex";
+            _sqlDeleteEvents =
+                $@"DELETE FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex <= @EventIndex";
             _sqlDeleteSnapshots =
                 $@"DELETE FROM [{_tableSchema}].[{_tableSnapshots}] WHERE ActorName = @ActorName AND SnapshotIndex <= @SnapshotIndex";
 
@@ -73,11 +80,12 @@ namespace Proto.Persistence.SqlServer
                 CreateParameter("SnapshotIndex", BigInt, inclusiveToIndex)
             );
 
-        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd,
+            Action<object> callback)
         {
-            using var connection = new SqlConnection(_connectionString);
+            using SqlConnection connection = new SqlConnection(_connectionString);
 
-            using var command = new SqlCommand(_sqlReadEvents, connection);
+            using SqlCommand command = new SqlCommand(_sqlReadEvents, connection);
 
             await connection.OpenAsync();
 
@@ -85,18 +93,17 @@ namespace Proto.Persistence.SqlServer
                 new[]
                 {
                     CreateParameter("ActorName", NVarChar, actorName),
-                    CreateParameter("IndexStart", BigInt, indexStart),
-                    CreateParameter("IndexEnd", BigInt, indexEnd)
+                    CreateParameter("IndexStart", BigInt, indexStart), CreateParameter("IndexEnd", BigInt, indexEnd)
                 }
             );
 
             long lastIndex = -1;
 
-            var eventReader = await command.ExecuteReaderAsync();
+            SqlDataReader eventReader = await command.ExecuteReaderAsync();
 
             while (await eventReader.ReadAsync())
             {
-                lastIndex = (long) eventReader["EventIndex"];
+                lastIndex = (long)eventReader["EventIndex"];
 
                 callback(JsonConvert.DeserializeObject<object>(eventReader["EventData"].ToString(), AutoTypeSettings));
             }
@@ -109,15 +116,15 @@ namespace Proto.Persistence.SqlServer
             long snapshotIndex = 0;
             object snapshotData = null;
 
-            using var connection = new SqlConnection(_connectionString);
+            using SqlConnection connection = new SqlConnection(_connectionString);
 
-            using var command = new SqlCommand(_sqlReadSnapshot, connection);
+            using SqlCommand command = new SqlCommand(_sqlReadSnapshot, connection);
 
             await connection.OpenAsync();
 
             command.Parameters.Add(CreateParameter("ActorName", NVarChar, actorName));
 
-            var snapshotReader = await command.ExecuteReaderAsync();
+            SqlDataReader snapshotReader = await command.ExecuteReaderAsync();
 
             while (await snapshotReader.ReadAsync())
             {
@@ -133,7 +140,7 @@ namespace Proto.Persistence.SqlServer
 
         public async Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
-            var item = new Event(actorName, index, @event);
+            Event item = new Event(actorName, index, @event);
 
             await ExecuteNonQueryAsync(
                 _sqlSaveEvents,
@@ -148,7 +155,7 @@ namespace Proto.Persistence.SqlServer
 
         public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
         {
-            var item = new Snapshot(actorName, index, snapshot);
+            Snapshot item = new Snapshot(actorName, index, snapshot);
 
             return ExecuteNonQueryAsync(
                 _sqlSaveSnapshot,
@@ -163,7 +170,7 @@ namespace Proto.Persistence.SqlServer
 
         private void CreateSnapshotTable()
         {
-            var sql = $@"
+            string sql = $@"
             IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '{_tableSchema}' AND TABLE_NAME = '{_tableSnapshots}')
             BEGIN
                 CREATE TABLE {_tableSchema}.{_tableSnapshots} (
@@ -184,7 +191,7 @@ namespace Proto.Persistence.SqlServer
 
         private void CreateEventTable()
         {
-            var sql = $@"
+            string sql = $@"
             IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '{_tableSchema}' AND TABLE_NAME = '{_tableEvents}')
             BEGIN
                 CREATE TABLE {_tableSchema}.{_tableEvents} (
@@ -204,24 +211,24 @@ namespace Proto.Persistence.SqlServer
         }
 
         private static SqlParameter CreateParameter(string name, SqlDbType type, object value)
-            => new SqlParameter(name, type)
-            {
-                SqlValue = value
-            };
+            => new SqlParameter(name, type) {SqlValue = value};
 
         private async Task ExecuteNonQueryAsync(string sql, params SqlParameter[] parameters)
         {
-            using var connection = new SqlConnection(_connectionString);
+            using SqlConnection connection = new SqlConnection(_connectionString);
 
-            using var command = new SqlCommand(sql, connection);
+            using SqlCommand command = new SqlCommand(sql, connection);
 
             await connection.OpenAsync();
 
-            using var tx = connection.BeginTransaction();
+            using SqlTransaction tx = connection.BeginTransaction();
 
             command.Transaction = tx;
 
-            if (parameters.Length > 0) command.Parameters.AddRange(parameters);
+            if (parameters.Length > 0)
+            {
+                command.Parameters.AddRange(parameters);
+            }
 
             await command.ExecuteNonQueryAsync();
 
@@ -230,9 +237,9 @@ namespace Proto.Persistence.SqlServer
 
         private void ExecuteNonQuery(string sql)
         {
-            using var connection = new SqlConnection(_connectionString);
+            using SqlConnection connection = new SqlConnection(_connectionString);
 
-            using var command = new SqlCommand(sql, connection);
+            using SqlCommand command = new SqlCommand(sql, connection);
 
             connection.Open();
 

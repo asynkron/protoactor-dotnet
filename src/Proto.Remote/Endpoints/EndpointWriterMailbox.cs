@@ -13,7 +13,7 @@ using Proto.Mailbox;
 
 namespace Proto.Remote
 {
-    static class MailboxStatus
+    internal static class MailboxStatus
     {
         public const int Idle = 0;
         public const int Busy = 1;
@@ -79,9 +79,9 @@ namespace Proto.Remote
                 //     "[EndpointWriterMailbox] Running Mailbox Loop HasSystemMessages: {HasSystemMessages} HasUserMessages: {HasUserMessages} Suspended: {Suspended}",
                 //     _systemMessages.HasMessages, _userMessages.HasMessages, _suspended
                 // );
-                var _ = _dispatcher!.Throughput; //not used for batch mailbox
-                var batch = new List<RemoteDeliver>(_batchSize);
-                var sys = _systemMessages.Pop();
+                int _ = _dispatcher!.Throughput; //not used for batch mailbox
+                List<RemoteDeliver>? batch = new List<RemoteDeliver>(_batchSize);
+                object? sys = _systemMessages.Pop();
 
                 if (sys is not null)
                 {
@@ -100,7 +100,10 @@ namespace Proto.Remote
                     {
                         case EndpointErrorEvent e:
                             if (!_suspended) // Since it's already stopped, there is no need to throw the error
+                            {
                                 await _invoker!.InvokeUserMessageAsync(sys);
+                            }
+
                             break;
                         default:
                             await _invoker!.InvokeSystemMessageAsync(sys);
@@ -112,8 +115,8 @@ namespace Proto.Remote
                         // Logger.LogWarning("Endpoint writer is stopping...");
                         //Dump messages from user messages queue to deadletter and inform watchers about termination
                         object? usrMsg;
-                        var droppedRemoteDeliverCount = 0;
-                        var remoteTerminateCount = 0;
+                        int droppedRemoteDeliverCount = 0;
+                        int remoteTerminateCount = 0;
 
                         while ((usrMsg = _userMessages.Pop()) is not null)
                         {
@@ -121,17 +124,17 @@ namespace Proto.Remote
                             {
                                 case RemoteWatch msg:
                                     remoteTerminateCount++;
-                                    msg.Watcher.SendSystemMessage(_system, new Terminated
-                                        {
-                                            Why = TerminatedReason.AddressTerminated,
-                                            Who = msg.Watchee
-                                        }
+                                    msg.Watcher.SendSystemMessage(_system,
+                                        new Terminated {Why = TerminatedReason.AddressTerminated, Who = msg.Watchee}
                                     );
                                     break;
                                 case RemoteDeliver rd:
                                     droppedRemoteDeliverCount++;
                                     if (rd.Sender != null)
+                                    {
                                         _system.Root.Send(rd.Sender, new DeadLetterResponse {Target = rd.Target});
+                                    }
+
                                     _system.EventStream.Publish(new DeadLetterEvent(rd.Target, rd.Message, rd.Sender));
                                     break;
                             }
@@ -139,14 +142,17 @@ namespace Proto.Remote
 
                         if (droppedRemoteDeliverCount > 0)
                         {
-                            Logger.LogInformation("[EndpointWriterMailbox] Dropped {count} user Messages for {Address}", droppedRemoteDeliverCount,
+                            Logger.LogInformation("[EndpointWriterMailbox] Dropped {count} user Messages for {Address}",
+                                droppedRemoteDeliverCount,
                                 _address
                             );
                         }
 
                         if (remoteTerminateCount > 0)
                         {
-                            Logger.LogInformation("[EndpointWriterMailbox] Sent {Count} remote terminations for {Address}", remoteTerminateCount,
+                            Logger.LogInformation(
+                                "[EndpointWriterMailbox] Sent {Count} remote terminations for {Address}",
+                                remoteTerminateCount,
                                 _address
                             );
                         }
@@ -171,9 +177,12 @@ namespace Proto.Remote
                                 continue;
                         }
 
-                        batch.Add((RemoteDeliver) msg);
+                        batch.Add((RemoteDeliver)msg);
 
-                        if (batch.Count >= _batchSize) break;
+                        if (batch.Count >= _batchSize)
+                        {
+                            break;
+                        }
                     }
 
                     if (batch.Count > 0)
@@ -201,13 +210,18 @@ namespace Proto.Remote
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
-            if (_systemMessages.HasMessages || _userMessages.HasMessages & !_suspended) Schedule();
+            if (_systemMessages.HasMessages || _userMessages.HasMessages & !_suspended)
+            {
+                Schedule();
+            }
         }
 
         private void Schedule()
         {
             if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
+            {
                 _dispatcher!.Schedule(RunAsync);
+            }
         }
     }
 }

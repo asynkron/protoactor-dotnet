@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,16 +46,12 @@ namespace Messages
 
         private async Task<HelloResponse> SayHello(HelloRequest request, CancellationToken ct)
         {
-            var gr = new GrainRequest
-            {
-                MethodIndex = 0,
-                MessageData = request.ToByteString()
-            };
+            GrainRequest gr = new GrainRequest {MethodIndex = 0, MessageData = request.ToByteString()};
 
             async Task<HelloResponse> Inner()
             {
                 //request the RPC method to be invoked
-                var res = await _cluster.RequestAsync<object>(_id, "HelloGrain", gr, ct);
+                object res = await _cluster.RequestAsync<object>(_id, "HelloGrain", gr, ct);
 
                 return res switch
                 {
@@ -86,47 +83,51 @@ namespace Messages
         {
             switch (context.Message)
             {
-                case ClusterInit msg: {
-                    _inner = _grains.GetHelloGrain();
-                    context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
-                    Identity = msg.Identity;
-                    Kind = msg.Kind;
-                    break;
-                }
-                case ReceiveTimeout _: {
-                    context.Stop(context.Self!);
-                    break;
-                }
-                case GrainRequest request: {
-                    switch (request.MethodIndex)
+                case ClusterInit msg:
                     {
-                        case 0: {
-                            var r = HelloRequest.Parser.ParseFrom(request.MessageData);
-
-                            try
-                            {
-                                var res = await _inner.SayHello(r);
-                                var grainResponse = new GrainResponse
-                                {
-                                    MessageData = res.ToByteString()
-                                };
-                                context.Respond(grainResponse);
-                            }
-                            catch (Exception x)
-                            {
-                                var grainErrorResponse = new GrainErrorResponse
-                                {
-                                    Err = x.ToString()
-                                };
-                                context.Respond(grainErrorResponse);
-                            }
-
-                            break;
-                        }
+                        _inner = _grains.GetHelloGrain();
+                        context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
+                        Identity = msg.Identity;
+                        Kind = msg.Kind;
+                        break;
                     }
+                case ReceiveTimeout _:
+                    {
+                        context.Stop(context.Self!);
+                        break;
+                    }
+                case GrainRequest request:
+                    {
+                        switch (request.MethodIndex)
+                        {
+                            case 0:
+                                {
+                                    HelloRequest r = HelloRequest.Parser.ParseFrom(request.MessageData);
 
-                    break;
-                }
+                                    try
+                                    {
+                                        HelloResponse res = await _inner.SayHello(r);
+                                        GrainResponse grainResponse = new GrainResponse
+                                        {
+                                            MessageData = res.ToByteString()
+                                        };
+                                        context.Respond(grainResponse);
+                                    }
+                                    catch (Exception x)
+                                    {
+                                        GrainErrorResponse grainErrorResponse = new GrainErrorResponse
+                                        {
+                                            Err = x.ToString()
+                                        };
+                                        context.Respond(grainErrorResponse);
+                                    }
+
+                                    break;
+                                }
+                        }
+
+                        break;
+                    }
             }
         }
     }

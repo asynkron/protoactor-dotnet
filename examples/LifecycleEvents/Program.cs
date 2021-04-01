@@ -3,17 +3,18 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Proto;
 
 namespace LifecycleEvents
 {
-    static class Program
+    internal static class Program
     {
         private static async Task Main()
         {
-            var system = new ActorSystem();
+            ActorSystem system = new ActorSystem();
 
             system.EventStream.Subscribe<DeadLetterEvent>(
                 dl => Console.WriteLine(
@@ -21,17 +22,14 @@ namespace LifecycleEvents
                 )
             );
 
-            var context = new RootContext(system);
+            RootContext context = new RootContext(system);
 
-            var props = Props.FromProducer(() => new ChildActor());
+            Props props = Props.FromProducer(() => new ChildActor());
 
-            var actor = context.Spawn(props);
+            PID actor = context.Spawn(props);
 
             context.Send(
-                actor, new Hello
-                {
-                    Who = "Alex"
-                }
+                actor, new Hello {Who = "Alex"}
             );
 
             //StopAsync. Stop instantly kills actor

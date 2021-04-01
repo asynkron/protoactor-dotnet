@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf.Collections;
 using k8s;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
@@ -27,25 +28,27 @@ namespace KubernetesDiagnostics
              * 
              */
 
-            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Error));
+            ILoggerFactory l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Error));
             Log.SetLoggerFactory(l);
-            var log = Log.CreateLogger("main");
+            ILogger log = Log.CreateLogger("main");
 
-            var db = GetMongo();
-            var identity = new IdentityStorageLookup(new MongoIdentityStorage("mycluster", db.GetCollection<PidLookupEntity>("pids"), 200));
+            IMongoDatabase db = GetMongo();
+            IdentityStorageLookup identity =
+                new IdentityStorageLookup(new MongoIdentityStorage("mycluster",
+                    db.GetCollection<PidLookupEntity>("pids"), 200));
 
-            var kubernetes = new Kubernetes(KubernetesClientConfiguration.InClusterConfig());
-            var clusterprovider = new KubernetesProvider(kubernetes);
+            Kubernetes kubernetes = new Kubernetes(KubernetesClientConfiguration.InClusterConfig());
+            KubernetesProvider clusterprovider = new KubernetesProvider(kubernetes);
 
-            var port = int.Parse(Environment.GetEnvironmentVariable("PROTOPORT")!);
-            var host = Environment.GetEnvironmentVariable("PROTOHOST");
-            var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
+            int port = int.Parse(Environment.GetEnvironmentVariable("PROTOPORT")!);
+            string? host = Environment.GetEnvironmentVariable("PROTOHOST");
+            string? advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
 
             log.LogInformation("Host {host}", host);
             log.LogInformation("Port {port}", port);
             log.LogInformation("Advertised Host {advertisedHost}", advertisedHost);
 
-            var system = new ActorSystem()
+            ActorSystem system = new ActorSystem()
                 .WithRemote(GrpcNetRemoteConfig
                     .BindTo(host, port)
                     .WithAdvertisedHost(advertisedHost)
@@ -55,15 +58,16 @@ namespace KubernetesDiagnostics
                     .WithClusterKind("empty", Props.Empty)
                 );
 
-            system.EventStream.Subscribe<ClusterTopology>(e => {
-                    var members = e.Members;
-                    var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
-                    var key = string.Join("", x);
-                    var hash = MurmurHash2.Hash(key);
+            system.EventStream.Subscribe<ClusterTopology>(e =>
+                {
+                    RepeatedField<Member> members = e.Members;
+                    string[] x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
+                    string key = string.Join("", x);
+                    uint hash = MurmurHash2.Hash(key);
 
                     Console.WriteLine("My members " + hash);
 
-                    foreach (var member in members.OrderBy(m => m.Id))
+                    foreach (Member member in members.OrderBy(m => m.Id))
                     {
                         Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds);
                     }
@@ -79,17 +83,17 @@ namespace KubernetesDiagnostics
 
         private static IMongoDatabase GetMongo()
         {
-            var connectionString =
+            string? connectionString =
                 Environment.GetEnvironmentVariable("MONGO");
-            var url = MongoUrl.Create(connectionString);
-            var settings = MongoClientSettings.FromUrl(url);
+            MongoUrl url = MongoUrl.Create(connectionString);
+            MongoClientSettings settings = MongoClientSettings.FromUrl(url);
             // settings.WaitQueueSize = 10000;
             // settings.WaitQueueTimeout = TimeSpan.FromSeconds(10);
             //
             // settings.WriteConcern = WriteConcern.WMajority;
             // settings.ReadConcern = ReadConcern.Majority;
-            var client = new MongoClient(settings);
-            var database = client.GetDatabase("ProtoMongo");
+            MongoClient client = new MongoClient(settings);
+            IMongoDatabase database = client.GetDatabase("ProtoMongo");
             return database;
         }
     }

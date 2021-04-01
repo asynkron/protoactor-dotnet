@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -15,10 +16,7 @@ namespace Proto.Cluster
         {
             if (context.Message is HeartbeatRequest)
             {
-                context.Respond(new HeartbeatResponse
-                    {
-                        ActorCount = (uint) context.System.ProcessRegistry.ProcessCount
-                    }
+                context.Respond(new HeartbeatResponse {ActorCount = (uint)context.System.ProcessRegistry.ProcessCount}
                 );
             }
 
@@ -43,7 +41,7 @@ namespace Proto.Cluster
 
         public Task StartAsync()
         {
-            var props = Props.FromProducer(() => new ClusterHeartBeatActor());
+            Props? props = Props.FromProducer(() => new ClusterHeartBeatActor());
             _pid = _context.SpawnNamed(props, ClusterHeartBeatName);
             _logger = Log.CreateLogger("ClusterHeartBeat-" + _cluster.LoggerId);
             _logger.LogInformation("Started Cluster Heartbeats");
@@ -60,11 +58,11 @@ namespace Proto.Cluster
                 try
                 {
                     await Task.Delay(_cluster.Config.HeartBeatInterval);
-                    var members = _cluster.MemberList.GetAllMembers();
+                    Member[]? members = _cluster.MemberList.GetAllMembers();
 
                     foreach (var member in members)
                     {
-                        var pid = PID.FromAddress(member.Address, ClusterHeartBeatName);
+                        PID? pid = PID.FromAddress(member.Address, ClusterHeartBeatName);
 
                         try
                         {
@@ -78,7 +76,10 @@ namespace Proto.Cluster
                         }
                         catch (TimeoutException)
                         {
-                            if (_cluster.System.Shutdown.IsCancellationRequested) return;
+                            if (_cluster.System.Shutdown.IsCancellationRequested)
+                            {
+                                return;
+                            }
 
                             _logger.LogWarning("Heartbeat request for member id {MemberId} Address {Address} timed out",
                                 member.Id, member.Address
@@ -86,7 +87,10 @@ namespace Proto.Cluster
                         }
                         catch (DeadLetterException)
                         {
-                            if (_cluster.System.Shutdown.IsCancellationRequested) return;
+                            if (_cluster.System.Shutdown.IsCancellationRequested)
+                            {
+                                return;
+                            }
 
                             _logger.LogWarning(
                                 "Heartbeat request for member id {MemberId} Address {Address} got dead letter response",

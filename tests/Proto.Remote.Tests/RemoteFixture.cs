@@ -62,29 +62,33 @@ namespace Proto.Remote.Tests
 #if NETCORE
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
-            var hostBuilder = Host.CreateDefaultBuilder(Array.Empty<string>())
-                .ConfigureServices(services => {
+            IHostBuilder hostBuilder = Host.CreateDefaultBuilder(Array.Empty<string>())
+                .ConfigureServices(services =>
+                    {
                         services.AddGrpc();
                         services.AddSingleton(Log.GetLoggerFactory());
                         services.AddSingleton(sp => new ActorSystem());
                         services.AddRemote(config);
                     }
                 )
-                .ConfigureWebHostDefaults(webBuilder => {
-                        webBuilder.ConfigureKestrel(kestrelServerOptions => {
+                .ConfigureWebHostDefaults(webBuilder =>
+                    {
+                        webBuilder.ConfigureKestrel(kestrelServerOptions =>
+                                {
                                     kestrelServerOptions.Listen(IPAddress.Parse(config.Host), config.Port,
                                         listenOption => { listenOption.Protocols = HttpProtocols.Http2; }
                                     );
                                 }
                             )
-                            .Configure(app => {
+                            .Configure(app =>
+                                {
                                     app.UseRouting();
                                     app.UseProtoRemote();
                                 }
                             );
                     }
                 );
-            var host = hostBuilder.Start();
+            IHost host = hostBuilder.Start();
             return (host, host.Services.GetRequiredService<HostedGrpcNetRemote>());
         }
 

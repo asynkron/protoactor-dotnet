@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,7 +15,7 @@ using static Proto.Remote.GrpcCore.GrpcCoreRemoteConfig;
 
 namespace Server
 {
-    static class Program
+    internal static class Program
     {
         private static RootContext context;
 
@@ -28,11 +29,11 @@ namespace Server
 
         private static void InitializeActorSystem()
         {
-            var config =
+            GrpcCoreRemoteConfig config =
                 BindToLocalhost(8000)
                     .WithProtoMessages(ChatReflection.Descriptor);
 
-            var system
+            ActorSystem system
                 = new ActorSystem()
                     .WithRemote(config);
 
@@ -45,11 +46,12 @@ namespace Server
 
         private static void SpawnServer()
         {
-            var clients = new HashSet<PID>();
+            HashSet<PID> clients = new HashSet<PID>();
 
             context.SpawnNamed(
                 Props.FromFunc(
-                    ctx => {
+                    ctx =>
+                    {
                         switch (ctx.Message)
                         {
                             case Connect connect:
@@ -59,28 +61,21 @@ namespace Server
 
                                 ctx.Send(
                                     connect.Sender,
-                                    new Connected
-                                    {
-                                        Message = "Welcome!"
-                                    }
+                                    new Connected {Message = "Welcome!"}
                                 );
                                 break;
                             case SayRequest sayRequest:
-                                foreach (var client in clients)
+                                foreach (PID client in clients)
                                 {
                                     ctx.Send(
                                         client,
-                                        new SayResponse
-                                        {
-                                            UserName = sayRequest.UserName,
-                                            Message = sayRequest.Message
-                                        }
+                                        new SayResponse {UserName = sayRequest.UserName, Message = sayRequest.Message}
                                     );
                                 }
 
                                 break;
                             case NickRequest nickRequest:
-                                foreach (var client in clients)
+                                foreach (PID client in clients)
                                 {
                                     ctx.Send(
                                         client,

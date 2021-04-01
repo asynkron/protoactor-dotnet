@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Couchbase.Core;
@@ -20,32 +21,32 @@ namespace Proto.Persistence.Couchbase
 
         public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
-            var query = GenerateGetEventsQuery(actorName, indexStart, indexEnd);
+            string query = GenerateGetEventsQuery(actorName, indexStart, indexEnd);
 
             return ExecuteGetEventsQueryAsync(query, callback);
         }
 
         public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
-            var query =
+            string query =
                 $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName = '{actorName}' AND b.type = 'snapshot' ORDER BY b.snapshotIndex DESC LIMIT 1";
 
-            var req = QueryRequest.Create(query);
+            IQueryRequest req = QueryRequest.Create(query);
 
             req.ScanConsistency(ScanConsistency.RequestPlus);
 
-            var res = await _bucket.QueryAsync<Snapshot>(req);
+            IQueryResult<Snapshot> res = await _bucket.QueryAsync<Snapshot>(req);
 
             ThrowOnError(res);
 
-            var snapshot = res.Rows.FirstOrDefault();
+            Snapshot snapshot = res.Rows.FirstOrDefault();
 
             return snapshot != null ? (snapshot.Data, snapshot.SnapshotIndex) : (null, 0);
         }
 
         public async Task<long> PersistEventAsync(string actorName, long index, object @event)
         {
-            var evnt = new Event(actorName, index, @event);
+            Event evnt = new Event(actorName, index, @event);
 
             await _bucket.InsertAsync(evnt.Key, evnt);
 
@@ -54,43 +55,43 @@ namespace Proto.Persistence.Couchbase
 
         public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
         {
-            var ss = new Snapshot(actorName, index, snapshot);
+            Snapshot ss = new Snapshot(actorName, index, snapshot);
 
             return _bucket.InsertAsync(ss.Key, ss);
         }
 
         public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
         {
-            var query =
+            string query =
                 $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.type = 'event' AND b.eventIndex <= {inclusiveToIndex}";
 
-            var req = QueryRequest.Create(query);
+            IQueryRequest req = QueryRequest.Create(query);
 
             req.ScanConsistency(ScanConsistency.RequestPlus);
 
-            var res = await _bucket.QueryAsync<Event>(req);
+            IQueryResult<Event> res = await _bucket.QueryAsync<Event>(req);
 
             ThrowOnError(res);
 
-            var envelopes = res.Rows;
+            List<Event> envelopes = res.Rows;
 
             await Task.WhenAll(envelopes.Select(x => _bucket.RemoveAsync(x.Key)));
         }
 
         public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
         {
-            var query =
+            string query =
                 $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName='{actorName}' AND b.type = 'snapshot' AND b.snapshotIndex <= {inclusiveToIndex}";
 
-            var req = QueryRequest.Create(query);
+            IQueryRequest req = QueryRequest.Create(query);
 
             req.ScanConsistency(ScanConsistency.RequestPlus);
 
-            var res = await _bucket.QueryAsync<Snapshot>(req);
+            IQueryResult<Snapshot> res = await _bucket.QueryAsync<Snapshot>(req);
 
             ThrowOnError(res);
 
-            var envelopes = res.Rows;
+            List<Snapshot> envelopes = res.Rows;
 
             await Task.WhenAll(envelopes.Select(x => _bucket.RemoveAsync(x.Key)));
         }
@@ -104,17 +105,17 @@ namespace Proto.Persistence.Couchbase
 
         private async Task<long> ExecuteGetEventsQueryAsync(string query, Action<object> callback)
         {
-            var req = QueryRequest.Create(query);
+            IQueryRequest req = QueryRequest.Create(query);
 
             req.ScanConsistency(ScanConsistency.RequestPlus);
 
-            var res = await _bucket.QueryAsync<Event>(req);
+            IQueryResult<Event> res = await _bucket.QueryAsync<Event>(req);
 
             ThrowOnError(res);
 
-            var events = res.Rows;
+            List<Event> events = res.Rows;
 
-            foreach (var @event in events)
+            foreach (Event @event in events)
             {
                 callback(@event.Data);
             }
@@ -124,7 +125,10 @@ namespace Proto.Persistence.Couchbase
 
         private static void ThrowOnError<T>(IQueryResult<T> res)
         {
-            if (!res.Success) throw new Exception($"Couchbase query failed: {res}");
+            if (!res.Success)
+            {
+                throw new Exception($"Couchbase query failed: {res}");
+            }
         }
     }
 }

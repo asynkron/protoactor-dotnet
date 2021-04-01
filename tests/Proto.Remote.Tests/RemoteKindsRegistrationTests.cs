@@ -9,9 +9,9 @@ namespace Proto.Remote.Tests
         [Fact]
         public void CanRegisterKind()
         {
-            var props = new Props();
-            var kind = Guid.NewGuid().ToString();
-            var remote = new GrpcCoreRemote(new ActorSystem(),
+            Props props = new Props();
+            string kind = Guid.NewGuid().ToString();
+            GrpcCoreRemote remote = new GrpcCoreRemote(new ActorSystem(),
                 GrpcCoreRemoteConfig.BindToLocalhost()
                     .WithRemoteKinds((kind, props))
             );
@@ -22,10 +22,10 @@ namespace Proto.Remote.Tests
         [Fact]
         public void CanRegisterMultipleKinds()
         {
-            var props = new Props();
-            var kind1 = Guid.NewGuid().ToString();
-            var kind2 = Guid.NewGuid().ToString();
-            var remote = new GrpcCoreRemote(new ActorSystem(),
+            Props props = new Props();
+            string kind1 = Guid.NewGuid().ToString();
+            string kind2 = Guid.NewGuid().ToString();
+            GrpcCoreRemote remote = new GrpcCoreRemote(new ActorSystem(),
                 GrpcCoreRemoteConfig
                     .BindToLocalhost()
                     .WithRemoteKinds(
@@ -34,7 +34,7 @@ namespace Proto.Remote.Tests
                     )
             );
 
-            var kinds = remote.Config.GetRemoteKinds();
+            string[] kinds = remote.Config.GetRemoteKinds();
             Assert.Contains(kind1, kinds);
             Assert.Contains(kind2, kinds);
         }
@@ -42,7 +42,7 @@ namespace Proto.Remote.Tests
         [Fact]
         public void UnknownKindThrowsException()
         {
-            var remote = new GrpcCoreRemote(new ActorSystem(), GrpcCoreRemoteConfig.BindToLocalhost());
+            GrpcCoreRemote remote = new GrpcCoreRemote(new ActorSystem(), GrpcCoreRemoteConfig.BindToLocalhost());
 
             Assert.Throws<ArgumentException>(() => { remote.Config.GetRemoteKind("not registered"); });
         }

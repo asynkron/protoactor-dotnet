@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
+
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
@@ -15,11 +16,7 @@ namespace Proto.Cluster
     {
         public string ToDiagnosticString() => $"{Kind}/{Identity}";
 
-        public static ClusterIdentity Create(string identity, string kind) => new()
-        {
-            Identity = identity,
-            Kind = kind
-        };
+        public static ClusterIdentity Create(string identity, string kind) => new() {Identity = identity, Kind = kind};
     }
 
     public sealed partial class ActivationRequest
@@ -52,9 +49,9 @@ namespace Proto.Cluster
     {
         public static uint GetMembershipHashCode(IEnumerable<Member> members)
         {
-            var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
-            var key = string.Join("", x);
-            var hash = MurmurHash2.Hash(key);
+            string[]? x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
+            string? key = string.Join("", x);
+            uint hash = MurmurHash2.Hash(key);
             return hash;
         }
     }

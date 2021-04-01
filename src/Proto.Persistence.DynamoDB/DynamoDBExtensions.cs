@@ -68,12 +68,16 @@ namespace Proto.Persistence.DynamoDB
             int writeCapacityUnits
         )
         {
-            var existingTable = await dynamoDB.IsTableCreated(tableName, true);
+            (bool Created, TableDescription TableDesc) existingTable = await dynamoDB.IsTableCreated(tableName, true);
 
-            if (existingTable.Created) CheckTableKeys(existingTable.TableDesc, partitionKey, sortKey);
+            if (existingTable.Created)
+            {
+                CheckTableKeys(existingTable.TableDesc, partitionKey, sortKey);
+            }
             else
             {
-                var res = await dynamoDB.CreateTable(tableName, partitionKey, sortKey, readCapacityUnits, writeCapacityUnits);
+                TableDescription res = await dynamoDB.CreateTable(tableName, partitionKey, sortKey, readCapacityUnits,
+                    writeCapacityUnits);
 
                 if (res.TableStatus != "ACTIVE")
                 {
@@ -89,14 +93,16 @@ namespace Proto.Persistence.DynamoDB
             bool falseAccepted
         )
         {
-            var retry = 10;
+            int retry = 10;
 
             do
             {
-                var (created, tableDesc, shouldRetry) = await TryCheckTable();
+                (bool created, TableDescription tableDesc, bool shouldRetry) = await TryCheckTable();
 
                 if (!shouldRetry)
+                {
                     return (created, tableDesc);
+                }
 
                 await Task.Delay(2000); // Wait 2 seconds.
             } while (retry-- > 0);
@@ -108,20 +114,24 @@ namespace Proto.Persistence.DynamoDB
             {
                 try
                 {
-                    var res = await dynamoDB.DescribeTableAsync(
+                    DescribeTableResponse res = await dynamoDB.DescribeTableAsync(
                         new DescribeTableRequest {TableName = tableName}
                     );
 
                     return res.Table.TableStatus.Value switch
                     {
-                        "ACTIVE"   => (true, res.Table, false),
-                        "DELETING" => throw new InvalidOperationException($"DynamoDB table ${tableName} is being deleted."),
-                        _          => (false, null, true)
+                        "ACTIVE" => (true, res.Table, false),
+                        "DELETING" => throw new InvalidOperationException(
+                            $"DynamoDB table ${tableName} is being deleted."),
+                        _ => (false, null, true)
                     };
                 }
                 catch (ResourceNotFoundException)
                 {
-                    if (falseAccepted) return (false, null, false);
+                    if (falseAccepted)
+                    {
+                        return (false, null, false);
+                    }
                 }
 
                 return (false, null, true);
@@ -137,43 +147,32 @@ namespace Proto.Persistence.DynamoDB
             int writeCapacityUnits
         )
         {
-            var request = new CreateTableRequest
+            CreateTableRequest request = new CreateTableRequest
             {
                 AttributeDefinitions = new List<AttributeDefinition>
                 {
-                    new AttributeDefinition
-                    {
-                        AttributeName = partitionKey,
-                        AttributeType = "S"
-                    },
-                    new AttributeDefinition
-                    {
-                        AttributeName = sortKey,
-                        AttributeType = "N"
-                    }
+                    new AttributeDefinition {AttributeName = partitionKey, AttributeType = "S"},
+                    new AttributeDefinition {AttributeName = sortKey, AttributeType = "N"}
                 },
                 KeySchema = new List<KeySchemaElement>
                 {
                     new KeySchemaElement
                     {
-                        AttributeName = partitionKey,
-                        KeyType = "HASH" //Partition key
+                        AttributeName = partitionKey, KeyType = "HASH" //Partition key
                     },
                     new KeySchemaElement
                     {
-                        AttributeName = sortKey,
-                        KeyType = "RANGE" //Sort key
+                        AttributeName = sortKey, KeyType = "RANGE" //Sort key
                     }
                 },
                 ProvisionedThroughput = new ProvisionedThroughput
                 {
-                    ReadCapacityUnits = readCapacityUnits,
-                    WriteCapacityUnits = writeCapacityUnits
+                    ReadCapacityUnits = readCapacityUnits, WriteCapacityUnits = writeCapacityUnits
                 },
                 TableName = tableName
             };
 
-            var response = await dynamoDB.CreateTableAsync(request);
+            CreateTableResponse response = await dynamoDB.CreateTableAsync(request);
 
             return response.TableDescription;
         }
@@ -181,8 +180,8 @@ namespace Proto.Persistence.DynamoDB
         private static void CheckTableKeys(TableDescription status, string requiredPartitionKey, string requiredSortKey)
         {
             // Check HASH and RANGE keys
-            var partitionKey = status.KeySchema.FirstOrDefault(s => s.KeyType == "HASH");
-            var sortKey = status.KeySchema.FirstOrDefault(s => s.KeyType == "RANGE");
+            KeySchemaElement partitionKey = status.KeySchema.FirstOrDefault(s => s.KeyType == "HASH");
+            KeySchemaElement sortKey = status.KeySchema.FirstOrDefault(s => s.KeyType == "RANGE");
 
             if (partitionKey == null || partitionKey.AttributeName != requiredPartitionKey)
             {
@@ -199,8 +198,10 @@ namespace Proto.Persistence.DynamoDB
             }
 
             // Check HASH AND RANGE keys types
-            var partitionKeyType = status.AttributeDefinitions.FirstOrDefault(a => a.AttributeName == requiredPartitionKey);
-            var sortKeyType = status.AttributeDefinitions.FirstOrDefault(a => a.AttributeName == requiredSortKey);
+            AttributeDefinition partitionKeyType =
+                status.AttributeDefinitions.FirstOrDefault(a => a.AttributeName == requiredPartitionKey);
+            AttributeDefinition sortKeyType =
+                status.AttributeDefinitions.FirstOrDefault(a => a.AttributeName == requiredSortKey);
 
             if (partitionKeyType == null || partitionKeyType.AttributeType != "S")
             {

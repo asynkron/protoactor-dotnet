@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Proto;
@@ -10,7 +11,7 @@ using Saga.Messages;
 
 namespace Saga
 {
-    class AccountProxy : IActor
+    internal class AccountProxy : IActor
     {
         private readonly Func<PID, object> _createMessage;
         private readonly PID _target;

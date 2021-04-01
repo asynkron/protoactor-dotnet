@@ -3,7 +3,7 @@ using Raven.Client.Documents.Indexes;
 
 namespace Proto.Persistence.RavenDB
 {
-    class DeleteSnapshotIndex : AbstractIndexCreationTask<Snapshot>
+    internal class DeleteSnapshotIndex : AbstractIndexCreationTask<Snapshot>
     {
         public DeleteSnapshotIndex()
         {

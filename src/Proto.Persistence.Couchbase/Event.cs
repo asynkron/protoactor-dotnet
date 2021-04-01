@@ -2,7 +2,7 @@
 
 namespace Proto.Persistence.Couchbase
 {
-    class Event
+    internal class Event
     {
         public Event(string actorName, long eventIndex, object data)
         {
@@ -18,7 +18,6 @@ namespace Proto.Persistence.Couchbase
         public object Data { get; }
         public string Type { get; }
 
-        [JsonIgnore]
-        public string Key { get; }
+        [JsonIgnore] public string Key { get; }
     }
 }

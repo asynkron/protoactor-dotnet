@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Messages;
@@ -14,22 +15,22 @@ using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using ProtosReflection = Messages.ProtosReflection;
 
-class Program
+internal class Program
 {
     private static async Task Main(string[] args)
     {
-        var remoteConfig = GrpcCoreRemoteConfig
+        GrpcCoreRemoteConfig remoteConfig = GrpcCoreRemoteConfig
             .BindToLocalhost()
             .WithProtoMessages(ProtosReflection.Descriptor);
 
-        var consulProvider =
+        ConsulProvider consulProvider =
             new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://consul:8500/"));
 
-        var clusterConfig =
+        ClusterConfig clusterConfig =
             ClusterConfig
                 .Setup("MyCluster", consulProvider, new PartitionIdentityLookup());
 
-        var system = new ActorSystem()
+        ActorSystem system = new ActorSystem()
             .WithRemote(remoteConfig)
             .WithCluster(clusterConfig);
 
@@ -39,15 +40,16 @@ class Program
 
         await Task.Delay(2000);
 
-        var grains = new Grains(system.Cluster());
-        var client = grains.HelloGrain("Roger");
+        Grains grains = new Grains(system.Cluster());
+        HelloGrainClient client = grains.HelloGrain("Roger");
 
-        var res = await client.SayHello(new HelloRequest());
+        HelloResponse res = await client.SayHello(new HelloRequest());
         Console.WriteLine(res.Message);
 
         res = await client.SayHello(new HelloRequest());
         Console.WriteLine(res.Message);
-        Console.CancelKeyPress += async (e, y) => {
+        Console.CancelKeyPress += async (e, y) =>
+        {
             Console.WriteLine("Shutting Down...");
             await system.Cluster().ShutdownAsync();
         };

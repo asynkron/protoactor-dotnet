@@ -42,13 +42,15 @@ namespace Proto.Cluster.Tests
             new(EchoActor.Kind2, EchoActor.Props)
         };
 
-        public async Task InitializeAsync() => Members = await SpawnClusterNodes(_clusterSize, _configure).ConfigureAwait(false);
+        public async Task InitializeAsync() =>
+            Members = await SpawnClusterNodes(_clusterSize, _configure).ConfigureAwait(false);
 
         public async Task DisposeAsync()
         {
             try
             {
-                await Task.WhenAll(Members?.Select(cluster => cluster.ShutdownAsync()) ?? new[] {Task.CompletedTask}).ConfigureAwait(false);
+                await Task.WhenAll(Members?.Select(cluster => cluster.ShutdownAsync()) ?? new[] {Task.CompletedTask})
+                    .ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -64,7 +66,10 @@ namespace Proto.Cluster.Tests
                 Members.Remove(member);
                 await member.ShutdownAsync(graceful).ConfigureAwait(false);
             }
-            else throw new ArgumentException("No such member");
+            else
+            {
+                throw new ArgumentException("No such member");
+            }
         }
 
         /// <summary>
@@ -74,7 +79,7 @@ namespace Proto.Cluster.Tests
         /// <exception cref="ArgumentException"></exception>
         public async Task<Cluster> SpawnNode()
         {
-            var newMember = await SpawnClusterMember(_configure);
+            Cluster newMember = await SpawnClusterMember(_configure);
             Members.Add(newMember);
             return newMember;
         }
@@ -91,7 +96,7 @@ namespace Proto.Cluster.Tests
 
         protected virtual async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig> configure)
         {
-            var config = ClusterConfig.Setup(
+            ClusterConfig config = ClusterConfig.Setup(
                     _clusterName,
                     GetClusterProvider(),
                     GetIdentityLookup(_clusterName)
@@ -99,12 +104,13 @@ namespace Proto.Cluster.Tests
                 .WithClusterKinds(ClusterKinds);
 
             config = configure?.Invoke(config) ?? config;
-            var system = new ActorSystem();
+            ActorSystem system = new ActorSystem();
 
-            var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
-            var _ = new GrpcCoreRemote(system, remoteConfig);
+            GrpcCoreRemoteConfig remoteConfig =
+                GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
+            GrpcCoreRemote _ = new GrpcCoreRemote(system, remoteConfig);
 
-            var cluster = new Cluster(system, config);
+            Cluster cluster = new Cluster(system, config);
 
             await cluster.StartMemberAsync();
             return cluster;

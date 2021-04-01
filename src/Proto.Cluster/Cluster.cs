@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,6 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Metrics;
-using Proto.Cluster.Partition;
 using Proto.Extensions;
 using Proto.Remote;
 
@@ -22,6 +22,9 @@ namespace Proto.Cluster
     public class Cluster : IActorSystemExtension<Cluster>
     {
         private ClusterHeartBeat _clusterHeartBeat;
+
+
+        private Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
 
         public Cluster(ActorSystem system, ClusterConfig config)
         {
@@ -33,7 +36,8 @@ namespace Proto.Cluster
             system.Serialization().RegisterFileDescriptor(ProtosReflection.Descriptor);
 
             _clusterHeartBeat = new ClusterHeartBeat(this);
-            system.EventStream.Subscribe<ClusterTopology>(e => {
+            system.EventStream.Subscribe<ClusterTopology>(e =>
+                {
                     system.Metrics.Get<ClusterMetrics>().ClusterTopologyEventGauge.Set(e.Members.Count,
                         new[] {System.Id, System.Address, e.GetMembershipHashCode().ToString()}
                     );
@@ -65,13 +69,13 @@ namespace Proto.Cluster
 
         public PidCache PidCache { get; }
 
-        public string[] GetClusterKinds() =>_clusterKinds.Keys.ToArray();
+        public string[] GetClusterKinds() => _clusterKinds.Keys.ToArray();
 
         public async Task StartMemberAsync()
         {
             await BeginStartAsync(false);
             Provider = Config.ClusterProvider;
-            
+
             await Provider.StartMemberAsync(this);
 
             Logger.LogInformation("Started as cluster member");
@@ -93,7 +97,8 @@ namespace Proto.Cluster
             //default to partition identity lookup
             IdentityLookup = Config.IdentityLookup;
 
-            Remote = System.Extensions.Get<IRemote>() ?? throw new NotSupportedException("Remote module must be configured when using cluster");
+            Remote = System.Extensions.Get<IRemote>() ??
+                     throw new NotSupportedException("Remote module must be configured when using cluster");
 
             await Remote.StartAsync();
             Logger = Log.CreateLogger($"Cluster-{LoggerId}");
@@ -101,7 +106,7 @@ namespace Proto.Cluster
             MemberList = new MemberList(this);
             ClusterContext = Config.ClusterContextProducer(this);
 
-            var kinds = GetClusterKinds();
+            string[]? kinds = GetClusterKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
             await _clusterHeartBeat.StartAsync();
         }
@@ -120,7 +125,11 @@ namespace Proto.Cluster
             Logger.LogInformation("Stopping Cluster {Id}", System.Id);
 
             await _clusterHeartBeat.ShutdownAsync();
-            if (graceful) await IdentityLookup!.ShutdownAsync();
+            if (graceful)
+            {
+                await IdentityLookup!.ShutdownAsync();
+            }
+
             await Config!.ClusterProvider.ShutdownAsync(graceful);
             await Remote.ShutdownAsync(graceful);
 
@@ -133,25 +142,28 @@ namespace Proto.Cluster
             IdentityLookup!.GetAsync(new ClusterIdentity {Identity = identity, Kind = kind}, ct);
 
         public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) =>
-            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, System.Root, ct);
+            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, System.Root,
+                ct);
 
-        public Task<T> RequestAsync<T>(string identity, string kind, object message, ISenderContext context, CancellationToken ct) =>
-            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct);
+        public Task<T> RequestAsync<T>(string identity, string kind, object message, ISenderContext context,
+            CancellationToken ct) =>
+            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context,
+                ct);
 
-
-        private Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
         public ActivatedClusterKind GetClusterKind(string kind)
         {
             if (!_clusterKinds.TryGetValue(kind, out var clusterKind))
+            {
                 throw new ArgumentException($"No cluster kind '{kind}' was not found");
+            }
 
             return clusterKind;
         }
-        
+
         public ActivatedClusterKind TryGetClusterKind(string kind)
         {
             _clusterKinds.TryGetValue(kind, out var clusterKind);
-            
+
             return clusterKind;
         }
     }

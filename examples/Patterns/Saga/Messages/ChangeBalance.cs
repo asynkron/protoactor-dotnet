@@ -3,11 +3,12 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using Proto;
 
 namespace Saga.Messages
 {
-    abstract class ChangeBalance
+    internal abstract class ChangeBalance
     {
         protected ChangeBalance(decimal amount, PID replyTo)
         {

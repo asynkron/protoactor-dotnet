@@ -3,11 +3,12 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 
 namespace Proto.Cluster.Testing
 {
-    class DeadMember : IEquatable<DeadMember>
+    internal class DeadMember : IEquatable<DeadMember>
     {
         public DeadMember(string memberId, DateTimeOffset foundDeadAt, TimeSpan deregisterInterval)
         {
@@ -25,7 +26,7 @@ namespace Proto.Cluster.Testing
 
         public override bool Equals(object obj)
             => !ReferenceEquals(null, obj) &&
-               (ReferenceEquals(this, obj) || obj.GetType() == GetType() && Equals((DeadMember) obj));
+               (ReferenceEquals(this, obj) || obj.GetType() == GetType() && Equals((DeadMember)obj));
 
         public override int GetHashCode() => MemberId is not null ? MemberId.GetHashCode() : 0;
     }

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using DependencyInjection.Controllers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -27,7 +28,10 @@ namespace DependencyInjection
             services.AddSingleton(serviceProvider => new ActorSystem().WithServiceProvider(serviceProvider));
             services.AddTransient<DependencyInjectedActor>();
             services.AddControllers();
-            services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo {Title = "DependencyInjection", Version = "v1"}); }
+            services.AddSwaggerGen(c =>
+                {
+                    c.SwaggerDoc("v1", new OpenApiInfo {Title = "DependencyInjection", Version = "v1"});
+                }
             );
         }
 

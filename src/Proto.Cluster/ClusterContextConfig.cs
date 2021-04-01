@@ -28,7 +28,8 @@ namespace Proto.Cluster
             => new()
             {
                 ActorRequestTimeout = clusterConfig.ActorRequestTimeout,
-                MaxNumberOfEventsInRequestLogThrottlePeriod = clusterConfig.MaxNumberOfEventsInRequestLogThrottlePeriod,
+                MaxNumberOfEventsInRequestLogThrottlePeriod =
+                    clusterConfig.MaxNumberOfEventsInRequestLogThrottlePeriod,
                 RequestLogThrottlePeriod = clusterConfig.RequestLogThrottlePeriod
             };
     }

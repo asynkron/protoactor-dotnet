@@ -3,7 +3,9 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
@@ -33,10 +35,10 @@ namespace Proto.Cluster.Testing
 
         public Task StartMemberAsync(Cluster cluster)
         {
-            var memberList = cluster.MemberList;
-            var clusterName = cluster.Config.ClusterName;
-            var (host, port) = cluster.System.GetAddress();
-            var kinds = cluster.GetClusterKinds();
+            MemberList memberList = cluster.MemberList;
+            string clusterName = cluster.Config.ClusterName;
+            (string host, int port) = cluster.System.GetAddress();
+            string[] kinds = cluster.GetClusterKinds();
             _id = cluster.System.Id;
             _clusterName = clusterName;
             _system = cluster.System;
@@ -44,13 +46,7 @@ namespace Proto.Cluster.Testing
             _agent.StatusUpdate += AgentOnStatusUpdate;
             StartTtlTimer();
 
-            _agent.RegisterService(new AgentServiceRegistration
-                {
-                    Host = host,
-                    ID = _id,
-                    Kinds = kinds,
-                    Port = port
-                }
+            _agent.RegisterService(new AgentServiceRegistration {Host = host, ID = _id, Kinds = kinds, Port = port}
             );
 
             return Task.CompletedTask;
@@ -58,8 +54,8 @@ namespace Proto.Cluster.Testing
 
         public Task StartClientAsync(Cluster cluster)
         {
-            var memberList = cluster.MemberList;
-            var clusterName = cluster.Config.ClusterName;
+            MemberList memberList = cluster.MemberList;
+            string clusterName = cluster.Config.ClusterName;
 
             _id = cluster.System.Id;
             _clusterName = clusterName;
@@ -84,19 +80,15 @@ namespace Proto.Cluster.Testing
 
         private void NotifyStatuses()
         {
-            var statuses = _agent.GetServicesHealth();
+            AgentServiceStatus[] statuses = _agent.GetServicesHealth();
 
-            Logger.LogDebug("TestAgent response: {@Response}", (object) statuses);
+            Logger.LogDebug("TestAgent response: {@Response}", (object)statuses);
 
-            var memberStatuses =
+            List<Member> memberStatuses =
                 statuses.Select(
-                        x => {
-                            var member = new Member
-                            {
-                                Id = x.ID.ToString(),
-                                Host = x.Host,
-                                Port = x.Port
-                            };
+                        x =>
+                        {
+                            Member member = new Member {Id = x.ID.ToString(), Host = x.Host, Port = x.Port};
                             member.Kinds.AddRange(x.Kinds);
                             return member;
                         }

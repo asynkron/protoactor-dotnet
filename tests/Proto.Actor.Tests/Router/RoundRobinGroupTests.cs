@@ -17,7 +17,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async void RoundRobinGroupRouter_RouteesReceiveMessagesInRoundRobinStyle()
         {
-            var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
 
             ActorSystem.Root.Send(router, "1");
 
@@ -45,11 +45,11 @@ namespace Proto.Router.Tests
         [Fact]
         public async void RoundRobinGroupRouter_RouteesCanBeRemoved()
         {
-            var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
 
             ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
 
-            var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+            Routees routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.Pids);
             Assert.Contains(routee2, routees.Pids);
             Assert.Contains(routee3, routees.Pids);
@@ -58,11 +58,11 @@ namespace Proto.Router.Tests
         [Fact]
         public async void RoundRobinGroupRouter_RouteesCanBeAdded()
         {
-            var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
-            var routee4 = ActorSystem.Root.Spawn(MyActorProps);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
+            PID routee4 = ActorSystem.Root.Spawn(MyActorProps);
             ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
 
-            var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+            Routees routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.Pids);
             Assert.Contains(routee2, routees.Pids);
             Assert.Contains(routee3, routees.Pids);
@@ -72,7 +72,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async void RoundRobinGroupRouter_RemovedRouteesNoLongerReceiveMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
 
             ActorSystem.Root.Send(router, "0");
             ActorSystem.Root.Send(router, "0");
@@ -91,8 +91,8 @@ namespace Proto.Router.Tests
         [Fact]
         public async void RoundRobinGroupRouter_AddedRouteesReceiveMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
-            var routee4 = ActorSystem.Root.Spawn(MyActorProps);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
+            PID routee4 = ActorSystem.Root.Spawn(MyActorProps);
             ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
             // should now have 4 routees, so need to send 4 messages to ensure all get them
             ActorSystem.Root.Send(router, "1");
@@ -109,7 +109,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async void RoundRobinGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
+            (PID router, PID routee1, PID routee2, PID routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
 
             ActorSystem.Root.Send(router, new RouterBroadcastMessage("hello"));
 
@@ -118,15 +118,16 @@ namespace Proto.Router.Tests
             Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));
         }
 
-        private (PID router, PID routee1, PID routee2, PID routee3) CreateRoundRobinRouterWith3Routees(ActorSystem system)
+        private (PID router, PID routee1, PID routee2, PID routee3) CreateRoundRobinRouterWith3Routees(
+            ActorSystem system)
         {
-            var routee1 = system.Root.Spawn(MyActorProps);
-            var routee2 = system.Root.Spawn(MyActorProps);
-            var routee3 = system.Root.Spawn(MyActorProps);
+            PID routee1 = system.Root.Spawn(MyActorProps);
+            PID routee2 = system.Root.Spawn(MyActorProps);
+            PID routee3 = system.Root.Spawn(MyActorProps);
 
-            var props = system.Root.NewRoundRobinGroup(routee1, routee2, routee3)
+            Props props = system.Root.NewRoundRobinGroup(routee1, routee2, routee3)
                 .WithMailbox(() => new TestMailbox());
-            var router = system.Root.Spawn(props);
+            PID router = system.Root.Spawn(props);
             return (router, routee1, routee2, routee3);
         }
 

@@ -25,7 +25,8 @@ namespace HostedService
         public Task StartAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Starting cluster...");
-            _appLifetime.ApplicationStarted.Register(() => SafeTask.Run(RunRequestLoop, _appLifetime.ApplicationStopping));
+            _appLifetime.ApplicationStarted.Register(() =>
+                SafeTask.Run(RunRequestLoop, _appLifetime.ApplicationStopping));
             _appLifetime.ApplicationStopping.Register(OnStopping);
             return Task.CompletedTask;
         }
@@ -37,16 +38,17 @@ namespace HostedService
         {
             await Task.Yield();
 
-            var rnd = new Random();
+            Random rnd = new Random();
 
             while (!_appLifetime.ApplicationStopping.IsCancellationRequested)
             {
-                var tasks = new List<Task>();
+                List<Task> tasks = new List<Task>();
 
-                for (var i = 0; i < 1000; i++)
+                for (int i = 0; i < 1000; i++)
                 {
-                    var id = rnd.Next(0, 100000);
-                    var t = _cluster.RequestAsync<int>($"abc{id}", "kind", 123, new CancellationTokenSource(20000).Token);
+                    int id = rnd.Next(0, 100000);
+                    Task<int> t = _cluster.RequestAsync<int>($"abc{id}", "kind", 123,
+                        new CancellationTokenSource(20000).Token);
                     tasks.Add(t);
                 }
 
@@ -56,11 +58,13 @@ namespace HostedService
 
         private void OnStopping()
         {
-            var shutdown = _cluster.ShutdownAsync();
-            var timeout = Task.Delay(15000);
+            Task shutdown = _cluster.ShutdownAsync();
+            Task timeout = Task.Delay(15000);
             Task.WhenAny(shutdown, timeout).GetAwaiter().GetResult();
             if (timeout.IsCompleted)
+            {
                 _logger.LogError("Shut down cluster timed out...");
+            }
         }
     }
 }

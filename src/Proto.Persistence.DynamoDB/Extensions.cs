@@ -14,9 +14,12 @@ namespace Proto.Persistence.DynamoDB
 
         public static DynamoDBEntry GetValueOrThrow(this Document doc, string attribute)
         {
-            var success = doc.TryGetValue(attribute, out var entry);
+            bool success = doc.TryGetValue(attribute, out DynamoDBEntry entry);
 
-            if (!success) throw new InvalidOperationException("Attribute does NOT exists: " + attribute);
+            if (!success)
+            {
+                throw new InvalidOperationException("Attribute does NOT exists: " + attribute);
+            }
 
             return entry;
         }
@@ -24,9 +27,12 @@ namespace Proto.Persistence.DynamoDB
         public static object FromDocumentDynamic(this DynamoDBContext ctx, Document doc, Type type)
         {
             if (fromDocumentMi == null)
-                fromDocumentMi = typeof(DynamoDBContext).GetMethods().First(m => m.Name == "FromDocument" && m.GetParameters().Length == 1);
+            {
+                fromDocumentMi = typeof(DynamoDBContext).GetMethods()
+                    .First(m => m.Name == "FromDocument" && m.GetParameters().Length == 1);
+            }
 
-            var obj = fromDocumentMi
+            object obj = fromDocumentMi
                 .MakeGenericMethod(type)
                 .Invoke(ctx, new object[] {doc});
 
@@ -36,9 +42,12 @@ namespace Proto.Persistence.DynamoDB
         public static Document ToDocumentDynamic(this DynamoDBContext ctx, object obj, Type objType)
         {
             if (toDocumentMi == null)
-                toDocumentMi = typeof(DynamoDBContext).GetMethods().First(m => m.Name == "ToDocument" && m.GetParameters().Count() == 1);
+            {
+                toDocumentMi = typeof(DynamoDBContext).GetMethods()
+                    .First(m => m.Name == "ToDocument" && m.GetParameters().Count() == 1);
+            }
 
-            var doc = toDocumentMi
+            Document doc = toDocumentMi
                 .MakeGenericMethod(objType)
                 .Invoke(ctx, new[] {obj}) as Document;
 
@@ -47,12 +56,18 @@ namespace Proto.Persistence.DynamoDB
 
         public static string AssemblyQualifiedNameSimple(this Type type)
         {
-            var name = type.AssemblyQualifiedName;
-            var index1St = name.IndexOf(",");
-            if (index1St < 0) return name;
+            string name = type.AssemblyQualifiedName;
+            int index1St = name.IndexOf(",");
+            if (index1St < 0)
+            {
+                return name;
+            }
 
-            var index2nd = name.IndexOf(",", index1St + 1);
-            if (index2nd < 0) return name;
+            int index2nd = name.IndexOf(",", index1St + 1);
+            if (index2nd < 0)
+            {
+                return name;
+            }
 
             return name.Substring(0, index2nd);
         }

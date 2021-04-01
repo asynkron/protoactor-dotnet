@@ -74,7 +74,7 @@ namespace Proto
         /// <returns>A new subscription that can be used to unsubscribe</returns>
         public EventStreamSubscription<T> Subscribe(Action<T> action, IDispatcher? dispatcher = null)
         {
-            EventStreamSubscription<T>? sub = new EventStreamSubscription<T>(
+            EventStreamSubscription<T>? sub = new(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
                 x =>
@@ -96,7 +96,7 @@ namespace Proto
         public EventStreamSubscription<T> Subscribe(Func<T, Task> action, IDispatcher? dispatcher = null)
         {
             EventStreamSubscription<T>? sub =
-                new EventStreamSubscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, action);
+                new(this, dispatcher ?? Dispatchers.SynchronousDispatcher, action);
             _subscriptions.TryAdd(sub.Id, sub);
             return sub;
         }
@@ -110,7 +110,7 @@ namespace Proto
         public EventStreamSubscription<T> Subscribe<TMsg>(Action<TMsg> action, IDispatcher? dispatcher = null)
             where TMsg : T
         {
-            EventStreamSubscription<T>? sub = new EventStreamSubscription<T>(
+            EventStreamSubscription<T>? sub = new(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
                 msg =>
@@ -141,7 +141,7 @@ namespace Proto
             IDispatcher? dispatcher = null
         ) where TMsg : T
         {
-            EventStreamSubscription<T>? sub = new EventStreamSubscription<T>(
+            EventStreamSubscription<T>? sub = new(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
                 msg =>
@@ -167,7 +167,7 @@ namespace Proto
         /// <returns>A new subscription that can be used to unsubscribe</returns>
         public EventStreamSubscription<T> Subscribe<TMsg>(ISenderContext context, params PID[] pids) where TMsg : T
         {
-            EventStreamSubscription<T>? sub = new EventStreamSubscription<T>(
+            EventStreamSubscription<T>? sub = new(
                 this,
                 Dispatchers.SynchronousDispatcher,
                 msg =>
@@ -197,7 +197,7 @@ namespace Proto
         public EventStreamSubscription<T> Subscribe<TMsg>(Func<TMsg, Task> action, IDispatcher? dispatcher = null)
             where TMsg : T
         {
-            EventStreamSubscription<T>? sub = new EventStreamSubscription<T>(
+            EventStreamSubscription<T>? sub = new(
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
                 msg => msg is TMsg typed ? action(typed) : Task.CompletedTask

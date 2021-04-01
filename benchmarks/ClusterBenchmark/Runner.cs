@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -43,7 +44,7 @@ namespace ClusterExperiment1
         public Task Start()
         {
             Console.WriteLine("Starting external worker");
-            var l = typeof(Program).Assembly.Location;
+            string l = typeof(Program).Assembly.Location;
 
             _process = Process.Start(new ProcessStartInfo("dotnet", $"{l} worker"));
 
@@ -67,7 +68,7 @@ namespace ClusterExperiment1
         public Task Start()
         {
             Console.WriteLine("Starting external worker");
-            var l = typeof(Program).Assembly.Location;
+            string l = typeof(Program).Assembly.Location;
 
             _process = Process.Start(new ProcessStartInfo("dotnet", $"{l} worker"));
 

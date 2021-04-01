@@ -14,7 +14,7 @@ namespace Proto.Timers
 
         public CancellationTokenSource SendOnce(TimeSpan delay, PID target, object message)
         {
-            CancellationTokenSource? cts = new CancellationTokenSource();
+            CancellationTokenSource? cts = new();
 
             _ = SafeTask.Run(async () =>
                 {
@@ -32,7 +32,7 @@ namespace Proto.Timers
 
         public CancellationTokenSource SendRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
         {
-            CancellationTokenSource? cts = new CancellationTokenSource();
+            CancellationTokenSource? cts = new();
 
             _ = SafeTask.Run(async () =>
                 {
@@ -62,7 +62,7 @@ namespace Proto.Timers
 
         public CancellationTokenSource RequestOnce(TimeSpan delay, PID sender, PID target, object message)
         {
-            CancellationTokenSource? cts = new CancellationTokenSource();
+            CancellationTokenSource? cts = new();
 
             _ = SafeTask.Run(async () =>
                 {
@@ -81,7 +81,7 @@ namespace Proto.Timers
 
         public CancellationTokenSource RequestRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
         {
-            CancellationTokenSource? cts = new CancellationTokenSource();
+            CancellationTokenSource? cts = new();
 
             _ = SafeTask.Run(async () =>
                 {

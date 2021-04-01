@@ -22,7 +22,7 @@ namespace Proto.Remote.Tests
 
             public object Deserialize(ByteString bytes, string typeName)
             {
-                var type = _types.GetOrAdd(typeName, name => Type.GetType(name));
+                Type type = _types.GetOrAdd(typeName, name => Type.GetType(name));
                 return System.Text.Json.JsonSerializer.Deserialize(bytes.ToStringUtf8(), type);
             }
 
@@ -39,10 +39,10 @@ namespace Proto.Remote.Tests
 
             public Fixture()
             {
-                var clientConfig = ConfigureClientRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost())
+                GrpcNetRemoteConfig clientConfig = ConfigureClientRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost())
                     .WithSerializer(new CustomSerializer(), true);
                 (_clientHost, Remote) = GetHostedGrpcNetRemote(clientConfig);
-                var serverConfig = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost())
+                GrpcNetRemoteConfig serverConfig = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost())
                     .WithSerializer(new CustomSerializer(), true);
                 (_serverHost, ServerRemote) = GetHostedGrpcNetRemote(serverConfig);
             }

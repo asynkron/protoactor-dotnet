@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.IO.Compression;
 using System.Threading.Tasks;
@@ -40,7 +41,7 @@ namespace Node2
         }
     }
 
-    class Program
+    internal class Program
     {
         private static async Task Main(string[] args)
         {
@@ -56,24 +57,28 @@ namespace Node2
 
             Console.WriteLine("Enter 0 to use GrpcCore provider");
             Console.WriteLine("Enter 1 to use GrpcNet provider");
-            if (!int.TryParse(Console.ReadLine(), out var provider))
+            if (!int.TryParse(Console.ReadLine(), out int provider))
+            {
                 provider = 0;
+            }
 
             Console.WriteLine("Enter Advertised Host (Enter = localhost)");
-            var advertisedHost = Console.ReadLine().Trim();
+            string advertisedHost = Console.ReadLine().Trim();
             if (advertisedHost == "")
+            {
                 advertisedHost = "127.0.0.1";
+            }
 
-            var actorSystemConfig = new ActorSystemConfig()
+            ActorSystemConfig actorSystemConfig = new ActorSystemConfig()
                 .WithDeadLetterThrottleCount(10)
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(2));
-            var system = new ActorSystem(actorSystemConfig);
-            var context = new RootContext(system);
+            ActorSystem system = new(actorSystemConfig);
+            RootContext context = new(system);
             IRemote remote;
 
             if (provider == 0)
             {
-                var remoteConfig = GrpcCoreRemoteConfig
+                GrpcCoreRemoteConfig remoteConfig = GrpcCoreRemoteConfig
                     .BindTo(advertisedHost, 12000)
                     .WithProtoMessages(ProtosReflection.Descriptor)
                     .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
@@ -81,14 +86,11 @@ namespace Node2
             }
             else
             {
-                var remoteConfig = GrpcNetRemoteConfig
+                GrpcNetRemoteConfig remoteConfig = GrpcNetRemoteConfig
                     .BindTo(advertisedHost, 12000)
                     .WithChannelOptions(new GrpcChannelOptions
                         {
-                            CompressionProviders = new[]
-                            {
-                                new GzipCompressionProvider(CompressionLevel.Fastest)
-                            }
+                            CompressionProviders = new[] {new GzipCompressionProvider(CompressionLevel.Fastest)}
                         }
                     )
                     .WithProtoMessages(ProtosReflection.Descriptor)

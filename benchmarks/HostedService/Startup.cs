@@ -32,23 +32,31 @@ namespace HostedService
                 )
             );
 
-            var settings = MongoClientSettings.FromUrl(MongoUrl.Create("mongodb://127.0.0.1:27017"));
+            MongoClientSettings settings = MongoClientSettings.FromUrl(MongoUrl.Create("mongodb://127.0.0.1:27017"));
             // settings.MinConnectionPoolSize = 10;
             // settings.MaxConnectionPoolSize = 100;
             settings.WaitQueueTimeout = TimeSpan.FromSeconds(10);
             settings.WaitQueueSize = 10000;
 
-            var mongoClient = new MongoClient(settings);
+            MongoClient mongoClient = new MongoClient(settings);
 
-            var pids = mongoClient.GetDatabase("dummydb").GetCollection<PidLookupEntity>("pids");
+            IMongoCollection<PidLookupEntity> pids = mongoClient.GetDatabase("dummydb")
+                .GetCollection<PidLookupEntity>("pids");
 
-            var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
-            var identityLookup = new IdentityStorageLookup(new MongoIdentityStorage("foo", pids, 150));
-            var sys = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3).WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1)))
+            ConsulProvider clusterProvider = new ConsulProvider(new ConsulProviderConfig());
+            IdentityStorageLookup identityLookup =
+                new IdentityStorageLookup(new MongoIdentityStorage("foo", pids, 150));
+            ActorSystem sys = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3)
+                    .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1)))
                 .WithRemote(GrpcCoreRemoteConfig.BindToLocalhost(9090))
                 .WithCluster(ClusterConfig.Setup("test", clusterProvider, identityLookup)
-                    .WithClusterKind("kind", Props.FromFunc(ctx => {
-                                if (ctx.Message is int i) ctx.Respond(i * 2);
+                    .WithClusterKind("kind", Props.FromFunc(ctx =>
+                            {
+                                if (ctx.Message is int i)
+                                {
+                                    ctx.Respond(i * 2);
+                                }
+
                                 return Task.CompletedTask;
                             }
                         )

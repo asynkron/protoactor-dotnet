@@ -3,9 +3,10 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Saga.Messages
 {
-    class TransferFailed
+    internal class TransferFailed
     {
         public TransferFailed(string reason) => Reason = reason;
 

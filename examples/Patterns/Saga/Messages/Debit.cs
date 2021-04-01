@@ -3,11 +3,12 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using Proto;
 
 namespace Saga.Messages
 {
-    class Debit : ChangeBalance
+    internal class Debit : ChangeBalance
     {
         public Debit(decimal amount, PID replyTo) : base(amount, replyTo)
         {

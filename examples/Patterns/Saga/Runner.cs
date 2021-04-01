@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -70,23 +71,26 @@ namespace Saga
                     CheckForCompletion(msg.Pid);
                     break;
                 case Started _:
-                    var random = new Random();
+                    Random random = new Random();
                     _inMemoryProvider = new InMemoryProvider();
                     new ForWithProgress(_numberOfIterations, _intervalBetweenConsoleUpdates, true, false).EveryNth(
                         i => Console.WriteLine($"Started {i}/{_numberOfIterations} processes"),
-                        (i, nth) => {
-                            var j = i;
-                            var fromAccount = CreateAccount(context, $"FromAccount{j}", random);
-                            var toAccount = CreateAccount(context, $"ToAccount{j}", random);
-                            var actorName = $"Transfer Process {j}";
-                            var persistanceID = $"Transfer Process {j}";
-                            var factory = new TransferFactory(context, _inMemoryProvider, random, _uptime,
+                        (i, nth) =>
+                        {
+                            int j = i;
+                            PID fromAccount = CreateAccount(context, $"FromAccount{j}", random);
+                            PID toAccount = CreateAccount(context, $"ToAccount{j}", random);
+                            string actorName = $"Transfer Process {j}";
+                            string persistanceID = $"Transfer Process {j}";
+                            TransferFactory factory = new TransferFactory(context, _inMemoryProvider, random, _uptime,
                                 _retryAttempts
                             );
-                            var transfer = factory.CreateTransfer(actorName, fromAccount, toAccount, 10, persistanceID);
+                            PID transfer = factory.CreateTransfer(actorName, fromAccount, toAccount, 10, persistanceID);
                             _transfers.Add(transfer);
                             if (i == _numberOfIterations && !nth)
+                            {
                                 Console.WriteLine($"Started {j}/{_numberOfIterations} proesses");
+                            }
                         }
                     );
                     break;
@@ -97,7 +101,7 @@ namespace Saga
 
         private PID CreateAccount(IContext context, string name, Random random)
         {
-            var accountProps = Props.FromProducer(() =>
+            Props accountProps = Props.FromProducer(() =>
                 new Account(name, _uptime, _refusalProbability, _busyProbability, random)
             );
             return context.SpawnNamed(accountProps, name);
@@ -107,7 +111,7 @@ namespace Saga
         {
             _transfers.Remove(pid);
 
-            var remaining = _transfers.Count;
+            int remaining = _transfers.Count;
 
             if (_numberOfIterations >= _intervalBetweenConsoleUpdates)
             {
@@ -120,7 +124,9 @@ namespace Saga
                 }
             }
             else
+            {
                 Console.WriteLine($"{remaining} processes remaining");
+            }
 
             if (remaining == 0)
             {
@@ -144,12 +150,12 @@ namespace Saga
 
                 if (_verbose)
                 {
-                    foreach (var stream in _inMemoryProvider.Events)
+                    foreach (KeyValuePair<string, Dictionary<long, object>> stream in _inMemoryProvider.Events)
                     {
                         Console.WriteLine();
                         Console.WriteLine($"Event log for {stream.Key}");
 
-                        foreach (var @event in stream.Value)
+                        foreach (KeyValuePair<long, object> @event in stream.Value)
                         {
                             Console.WriteLine(@event.Value);
                         }

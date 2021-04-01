@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Diagnostics;
 using System.IO.Compression;
@@ -18,7 +19,7 @@ using Proto.Remote.GrpcCore;
 using Proto.Remote.GrpcNet;
 using ProtosReflection = Messages.ProtosReflection;
 
-class Program
+internal class Program
 {
     private static async Task Main(string[] args)
     {
@@ -28,51 +29,55 @@ class Program
             )
         );
 
-        var logger = Log.CreateLogger<Program>();
+        ILogger logger = Log.CreateLogger<Program>();
 #if NETCORE
         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
 
         Console.WriteLine("Enter 0 to use GrpcCore provider");
         Console.WriteLine("Enter 1 to use GrpcNet provider");
-        if (!int.TryParse(Console.ReadLine(), out var provider))
+        if (!int.TryParse(Console.ReadLine(), out int provider))
+        {
             provider = 0;
+        }
 
         Console.WriteLine("Enter client advertised host (Enter = localhost)");
-        var advertisedHost = Console.ReadLine().Trim();
+        string advertisedHost = Console.ReadLine().Trim();
         if (advertisedHost == "")
+        {
             advertisedHost = "127.0.0.1";
+        }
 
         Console.WriteLine("Enter remote advertised host (Enter = localhost)");
-        var remoteAddress = Console.ReadLine().Trim();
+        string remoteAddress = Console.ReadLine().Trim();
 
-        if (remoteAddress == "") remoteAddress = "127.0.0.1";
+        if (remoteAddress == "")
+        {
+            remoteAddress = "127.0.0.1";
+        }
 
-        var actorSystemConfig = new ActorSystemConfig()
+        ActorSystemConfig actorSystemConfig = new ActorSystemConfig()
             .WithDeadLetterThrottleCount(10)
             .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(2));
-        var system = new ActorSystem(actorSystemConfig);
-        var context = new RootContext(system);
+        ActorSystem system = new(actorSystemConfig);
+        RootContext context = new(system);
 
         IRemote remote;
 
         if (provider == 0)
         {
-            var remoteConfig = GrpcCoreRemoteConfig
+            GrpcCoreRemoteConfig remoteConfig = GrpcCoreRemoteConfig
                 .BindTo(advertisedHost)
                 .WithProtoMessages(ProtosReflection.Descriptor);
             remote = new GrpcCoreRemote(system, remoteConfig);
         }
         else
         {
-            var remoteConfig = GrpcNetRemoteConfig
+            GrpcNetRemoteConfig remoteConfig = GrpcNetRemoteConfig
                 .BindTo(advertisedHost)
                 .WithChannelOptions(new GrpcChannelOptions
                     {
-                        CompressionProviders = new[]
-                        {
-                            new GzipCompressionProvider(CompressionLevel.Fastest)
-                        }
+                        CompressionProviders = new[] {new GzipCompressionProvider(CompressionLevel.Fastest)}
                     }
                 )
                 .WithProtoMessages(ProtosReflection.Descriptor);
@@ -81,47 +86,48 @@ class Program
 
         await remote.StartAsync();
 
-        var messageCount = 1000000;
-        var cancellationTokenSource = new CancellationTokenSource();
-        _ = SafeTask.Run(async () => {
+        int messageCount = 1000000;
+        CancellationTokenSource cancellationTokenSource = new();
+        _ = SafeTask.Run(async () =>
+            {
                 while (!cancellationTokenSource.IsCancellationRequested)
                 {
-                    var semaphore = new SemaphoreSlim(0);
-                    var props = Props.FromProducer(() => new LocalActor(0, messageCount, semaphore));
+                    SemaphoreSlim semaphore = new(0);
+                    Props props = Props.FromProducer(() => new LocalActor(0, messageCount, semaphore));
 
-                    var pid = context.Spawn(props);
+                    PID pid = context.Spawn(props);
 
                     try
                     {
-                        var actorPidResponse =
+                        ActorPidResponse actorPidResponse =
                             await remote.SpawnAsync($"{remoteAddress}:12000", "echo", TimeSpan.FromSeconds(1));
 
-                        if (actorPidResponse.StatusCode == (int) ResponseStatusCode.OK)
+                        if (actorPidResponse.StatusCode == (int)ResponseStatusCode.OK)
                         {
-                            var remotePid = actorPidResponse.Pid;
+                            PID remotePid = actorPidResponse.Pid;
                             await context.RequestAsync<Start>(remotePid, new StartRemote {Sender = pid},
                                 TimeSpan.FromSeconds(1)
                             );
-                            var stopWatch = new Stopwatch();
+                            Stopwatch stopWatch = new();
                             stopWatch.Start();
                             Console.WriteLine("Starting to send");
-                            var msg = new Ping();
+                            Ping msg = new();
 
-                            for (var i = 0; i < messageCount; i++)
+                            for (int i = 0; i < messageCount; i++)
                             {
                                 context.Send(remotePid, msg);
                             }
 
-                            var linkedTokenSource =
+                            CancellationTokenSource linkedTokenSource =
                                 CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token,
                                     new CancellationTokenSource(2000).Token
                                 );
                             await semaphore.WaitAsync(linkedTokenSource.Token);
                             stopWatch.Stop();
-                            var elapsed = stopWatch.Elapsed;
+                            TimeSpan elapsed = stopWatch.Elapsed;
                             Console.WriteLine("Elapsed {0}", elapsed);
 
-                            var t = messageCount * 2.0 / elapsed.TotalMilliseconds * 1000;
+                            double t = messageCount * 2.0 / elapsed.TotalMilliseconds * 1000;
                             Console.Clear();
                             Console.WriteLine("Throughput {0} msg / sec", t);
                             await context.StopAsync(remotePid);
@@ -169,8 +175,16 @@ class Program
             {
                 case Pong _:
                     _count++;
-                    if (_count % 50000 == 0) Console.WriteLine(_count);
-                    if (_count == _messageCount) _semaphore.Release();
+                    if (_count % 50000 == 0)
+                    {
+                        Console.WriteLine(_count);
+                    }
+
+                    if (_count == _messageCount)
+                    {
+                        _semaphore.Release();
+                    }
+
                     break;
             }
 
