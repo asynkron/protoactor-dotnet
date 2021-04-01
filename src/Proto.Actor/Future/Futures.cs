@@ -14,8 +14,7 @@ namespace Proto.Future
     {
         private readonly CancellationTokenSource? _cts;
         private readonly TaskCompletionSource<object> _tcs;
-        private readonly ActorMetrics _metrics;
-        private readonly ActorSystem _system;
+        private readonly ActorMetrics? _metrics;
 
         internal FutureProcess(ActorSystem system, TimeSpan timeout) : this(system, new CancellationTokenSource(timeout)
         )
@@ -33,8 +32,6 @@ namespace Proto.Future
 
         private FutureProcess(ActorSystem system, CancellationTokenSource? cts) : base(system)
         {
-            _system = system;
-
             if (!system.Metrics.IsNoop)
             {
                 _metrics = system.Metrics.Get<ActorMetrics>();
@@ -59,10 +56,9 @@ namespace Proto.Future
                         new TimeoutException("Request didn't receive any Response within the expected time.")
                     );
 
-                    if (!system.Metrics.IsNoop)
-                    {
-                        _metrics!.FuturesTimedOutCount.Inc(new[] {System.Id, system.Address});
-                    }
+                    
+                    _metrics?.FuturesTimedOutCount.Inc(new[] {System.Id, system.Address});
+                    
                     Stop(pid);
                 }
                 , false);
@@ -81,11 +77,8 @@ namespace Proto.Future
             }
             finally
             {
-                if (!_system.Metrics.IsNoop)
-                {
-                    _metrics.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
-                }
-                
+                _metrics?.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
+
                 Stop(Pid);
             }
         }
@@ -101,10 +94,7 @@ namespace Proto.Future
 
             if (_cts is null || !_cts.IsCancellationRequested) _tcs.TrySetResult(default!);
 
-            if (!_system.Metrics.IsNoop)
-            {
-                _metrics.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
-            }
+            _metrics?.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
 
             Stop(pid);
         }
