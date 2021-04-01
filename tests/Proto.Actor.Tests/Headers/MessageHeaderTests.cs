@@ -30,10 +30,10 @@ namespace Proto.Tests.Headers
         [Fact]
         public async Task HeadersArePropagatedBackInReply()
         {
-            Func<Sender,Sender> propagateHeaders = next => async (context, target, envelope) => {
-                await next(context, target, envelope.WithHeader(context.Headers));
-            };
-            
+            Sender PropagateHeaders(Sender next) => 
+                (context, target, envelope) => 
+                    next(context, target, envelope.WithHeader(context.Headers));
+
             var system = new ActorSystem();
             var props1 = Props.FromFunc(ctx => {
                     switch (ctx.Message)
@@ -45,7 +45,7 @@ namespace Proto.Tests.Headers
                             return Task.CompletedTask;
                     }
                 }
-            ).WithSenderMiddleware(propagateHeaders);
+            ).WithSenderMiddleware((Func<Sender,Sender>) PropagateHeaders);
 
             var pid1 = system.Root.Spawn(props1);
             
@@ -65,7 +65,7 @@ namespace Proto.Tests.Headers
 
                     return Task.CompletedTask;
                 }
-            ).WithSenderMiddleware(propagateHeaders);
+            ).WithSenderMiddleware((Func<Sender,Sender>) PropagateHeaders);
             
             var pid2 = system.Root.Spawn(props2);
             
@@ -77,7 +77,7 @@ namespace Proto.Tests.Headers
             var root = system
                 .Root
                 .WithHeaders(headers)
-                .WithSenderMiddleware(propagateHeaders);
+                .WithSenderMiddleware((Func<Sender,Sender>) PropagateHeaders);
             
             root.Send(pid2,new StartMessage());
 
