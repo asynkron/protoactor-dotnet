@@ -4,7 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Collections.Generic;
-using System.Threading;
 
 namespace Proto
 {
