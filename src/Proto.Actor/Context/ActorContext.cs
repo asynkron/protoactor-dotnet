@@ -375,8 +375,7 @@ namespace Proto.Context
 
             return _extras;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         private Task DefaultReceive() =>
             Message switch
             {
@@ -425,8 +424,7 @@ namespace Proto.Context
                     );
             }
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         private void SendUserMessage(PID target, object message)
         {
             if (_props.SenderMiddlewareChain is null)
@@ -440,8 +438,7 @@ namespace Proto.Context
                 _props.SenderMiddlewareChain(EnsureExtras().Context, target, MessageEnvelope.Wrap(message));
             }
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         private IActor IncarnateActor()
         {
             _state = ContextState.Alive;

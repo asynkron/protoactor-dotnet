@@ -21,8 +21,8 @@ namespace Proto.Mailbox.Tests
             mailbox.PostUserMessage(msg1);
 
             Assert.Single(mailboxHandler.EscalatedFailures);
-            var e = Assert.IsType<AggregateException>(mailboxHandler.EscalatedFailures[0]);
-            Assert.Equal(taskException, e.InnerException);
+            var e = Assert.IsType<Exception>(mailboxHandler.EscalatedFailures[0]);
+            Assert.Equal(taskException, e);
         }
 
         [Fact]
@@ -39,8 +39,8 @@ namespace Proto.Mailbox.Tests
             mailbox.PostSystemMessage(msg1);
 
             Assert.Single(mailboxHandler.EscalatedFailures);
-            var e = Assert.IsType<AggregateException>(mailboxHandler.EscalatedFailures[0]);
-            Assert.Equal(taskException, e.InnerException);
+            var e = Assert.IsType<Exception>(mailboxHandler.EscalatedFailures[0]);
+            Assert.Equal(taskException, e);
         }
 
         [Fact]
