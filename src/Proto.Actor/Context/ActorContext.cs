@@ -247,7 +247,7 @@ namespace Proto.Context
                 Parent.SendSystemMessage(System, failure);
         }
 
-        public async Task InvokeSystemMessageAsync(object msg)
+        public async ValueTask InvokeSystemMessageAsync(object msg)
         {
             try
             {

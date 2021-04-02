@@ -13,7 +13,7 @@ namespace Proto.Mailbox
     {
         CancellationTokenSource? CancellationTokenSource { get; }
 
-        Task InvokeSystemMessageAsync(object msg);
+        ValueTask InvokeSystemMessageAsync(object msg);
 
         Task InvokeUserMessageAsync(object msg);
 
@@ -90,7 +90,7 @@ namespace Proto.Mailbox
 
         public CancellationTokenSource CancellationTokenSource => throw new NotImplementedException();
 
-        public Task InvokeSystemMessageAsync(object msg) => throw new NotImplementedException();
+        public ValueTask InvokeSystemMessageAsync(object msg) => throw new NotImplementedException();
 
         public Task InvokeUserMessageAsync(object msg) => throw new NotImplementedException();
 

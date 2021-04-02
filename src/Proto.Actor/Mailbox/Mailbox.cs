@@ -124,13 +124,13 @@ namespace Proto.Mailbox
             }
         }
 
-        private Task RunAsync()
+        private async Task RunAsync()
         {
-            var done = ProcessMessages();
+            var done = await ProcessMessages();
 
             if (!done)
                 // mailbox is halted, awaiting completion of a message task, upon which mailbox will be rescheduled
-                return Task.CompletedTask;
+                return ;
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
@@ -143,11 +143,9 @@ namespace Proto.Mailbox
                     t.MailboxEmpty();
                 }
             }
-
-            return Task.CompletedTask;
         }
 
-        private bool ProcessMessages()
+        private async Task<bool> ProcessMessages()
         {
             object? msg = null;
 
@@ -165,25 +163,15 @@ namespace Proto.Mailbox
                             ResumeMailbox _  => false,
                             _                => _suspended
                         };
-                        var t = _invoker.InvokeSystemMessageAsync(msg);
 
-                        if (t.IsFaulted)
+                        try
                         {
-                            _invoker.EscalateFailure(t.Exception, msg);
-                            continue;
+                            await _invoker.InvokeSystemMessageAsync(msg);
                         }
-
-                        if (t.IsCanceled)
+                        catch (Exception x)
                         {
-                            _invoker.EscalateFailure(new TaskCanceledException(), msg);
+                            _invoker.EscalateFailure(x, msg);
                             continue;
-                        }
-
-                        if (!t.IsCompleted)
-                        {
-                            // if task didn't complete immediately, halt processing and reschedule a new run when task completes
-                            t.ContinueWith(RescheduleOnTaskComplete, msg);
-                            return false;
                         }
 
                         foreach (var t1 in _stats)
