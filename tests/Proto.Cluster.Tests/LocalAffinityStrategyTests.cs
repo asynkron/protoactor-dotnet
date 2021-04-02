@@ -29,7 +29,7 @@ namespace Proto.Cluster.Tests
         {
             await Task.Delay(3000);
             TestOutputHelper.WriteLine("Cluster ready");
-            var timeout = new CancellationTokenSource(100000).Token;
+            var timeout = new CancellationTokenSource(100_000).Token;
 
             var firstNode = Members[0];
 
@@ -37,7 +37,7 @@ namespace Proto.Cluster.Tests
             await PingAll(firstNode);
 
             var secondNode = Members[1];
-            firstNode.System.ProcessRegistry.ProcessCount.Should().BeGreaterThan(1000,
+            firstNode.System.ProcessRegistry.ProcessCount.Should().BeGreaterThan(900,
                 "We expect the actors to be localized to the node receiving traffic."
             );
             secondNode.System.ProcessRegistry.ProcessCount.Should().BeLessThan(100);

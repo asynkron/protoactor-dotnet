@@ -24,8 +24,9 @@ namespace Proto.Cluster
         private readonly ILogger _logger;
         private readonly PidCache _pidCache;
         private readonly ShouldThrottle _requestLogThrottle;
-        
-        public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ILogger logger, ClusterContextConfig config)
+        private readonly TaskClock _clock;
+
+        public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ILogger logger, ClusterContextConfig config, CancellationToken killSwitch)
         {
             _identityLookup = identityLookup;
             _pidCache = pidCache;
@@ -36,6 +37,8 @@ namespace Proto.Cluster
                 _config.RequestLogThrottlePeriod,
                 i => _logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
             );
+            _clock = new TaskClock(config.ActorRequestTimeout, TimeSpan.FromSeconds(1), killSwitch);
+            _clock.Start();
         }
 
         public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
@@ -178,7 +181,7 @@ namespace Proto.Cluster
                 if (future.Task.IsCompleted) return ToResult<T>(source, context, future.Task.Result);
 
                 context.Send(pid, new MessageEnvelope(message, future.Pid));
-                await future.Task.WithTimeout(_config.ActorRequestTimeout);
+                await Task.WhenAny(future.Task, _clock.CurrentBucket);
 
                 if (future.Task.IsCompleted)
                 {
