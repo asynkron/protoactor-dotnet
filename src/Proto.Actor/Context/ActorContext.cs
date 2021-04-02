@@ -205,9 +205,12 @@ namespace Proto.Context
 
         public void Stop(PID pid)
         {
-            System.Metrics.InternalActorMetrics.ActorStoppedCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
-            var reff = System.ProcessRegistry.Get(pid);
-            reff.Stop(pid);
+            if (!System.Metrics.IsNoop)
+            {
+                System.Metrics.InternalActorMetrics.ActorStoppedCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
+            }
+
+            pid.Stop(System);
         }
 
         public Task StopAsync(PID pid)

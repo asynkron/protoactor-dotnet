@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using Google.Protobuf;
 
 namespace Proto
@@ -49,6 +50,12 @@ namespace Proto
         {
             var reff = Ref(system) ?? system.ProcessRegistry.Get(this);
             reff.SendSystemMessage(this, sys);
+        }
+
+        public void Stop(ActorSystem system)
+        {
+            var reff = _process ?? system.ProcessRegistry.Get(this);
+            reff.Stop(this);
         }
     }
 }
