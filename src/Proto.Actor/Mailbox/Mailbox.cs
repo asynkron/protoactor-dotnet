@@ -50,7 +50,6 @@ namespace Proto.Mailbox
 
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
-        private long _systemMessageCount;
 
         public DefaultMailbox(
             IMailboxQueue systemMessages,
@@ -100,7 +99,6 @@ namespace Proto.Mailbox
             _systemMessages.Push(msg);
             if (msg is Stop)
                 _invoker?.CancellationTokenSource?.Cancel();
-            Interlocked.Increment(ref _systemMessageCount);
 
             foreach (var t in _stats)
             {
@@ -149,10 +147,9 @@ namespace Proto.Mailbox
             {
                 for (var i = 0; i < _dispatcher.Throughput; i++)
                 {
-                    if (Interlocked.Read(ref _systemMessageCount) > 0 && (msg = _systemMessages.Pop()) is not null)
+                    msg = _systemMessages.Pop();
+                    if (msg is not null)
                     {
-                        Interlocked.Decrement(ref _systemMessageCount);
-
                         _suspended = msg switch
                         {
                             SuspendMailbox => true,
@@ -160,15 +157,7 @@ namespace Proto.Mailbox
                             _              => _suspended
                         };
 
-                        try
-                        {
-                            await _invoker.InvokeSystemMessageAsync(msg);
-                        }
-                        catch (Exception x)
-                        {
-                            _invoker.EscalateFailure(x, msg);
-                            continue;
-                        }
+                        await _invoker.InvokeSystemMessageAsync(msg);
 
                         foreach (var t1 in _stats)
                         {
@@ -180,17 +169,10 @@ namespace Proto.Mailbox
 
                     if (_suspended) break;
 
-                    if ((msg = _userMailbox.Pop()) is not null)
+                    msg = _userMailbox.Pop();
+                    if (msg is not null)
                     {
-                        try
-                        {
-                            await _invoker.InvokeUserMessageAsync(msg);
-                        }
-                        catch (Exception x)
-                        {
-                            _invoker.EscalateFailure(x, msg);
-                            continue;
-                        }
+                        await _invoker.InvokeUserMessageAsync(msg);
 
                         foreach (var t1 in _stats)
                         {
