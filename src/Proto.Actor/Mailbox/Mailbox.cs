@@ -40,7 +40,7 @@ namespace Proto.Mailbox
             new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue(), stats);
     }
 
-    public class DefaultMailbox : IMailbox
+    public sealed class DefaultMailbox : IMailbox
     {
         private readonly IMailboxStatistics[] _stats;
         private readonly IMailboxQueue _systemMessages;
@@ -126,11 +126,7 @@ namespace Proto.Mailbox
 
         private async Task RunAsync()
         {
-            var done = await ProcessMessages();
-
-            if (!done)
-                // mailbox is halted, awaiting completion of a message task, upon which mailbox will be rescheduled
-                return ;
+            await ProcessMessages();
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
@@ -145,7 +141,7 @@ namespace Proto.Mailbox
             }
         }
 
-        private async Task<bool> ProcessMessages()
+        private async ValueTask ProcessMessages()
         {
             object? msg = null;
 
@@ -159,9 +155,9 @@ namespace Proto.Mailbox
 
                         _suspended = msg switch
                         {
-                            SuspendMailbox _ => true,
-                            ResumeMailbox _  => false,
-                            _                => _suspended
+                            SuspendMailbox => true,
+                            ResumeMailbox  => false,
+                            _              => _suspended
                         };
 
                         try
@@ -186,25 +182,14 @@ namespace Proto.Mailbox
 
                     if ((msg = _userMailbox.Pop()) is not null)
                     {
-                        var t = _invoker.InvokeUserMessageAsync(msg);
-
-                        if (t.IsFaulted)
+                        try
                         {
-                            _invoker.EscalateFailure(t.Exception, msg);
-                            continue;
+                            await _invoker.InvokeUserMessageAsync(msg);
                         }
-
-                        if (t.IsCanceled)
+                        catch (Exception x)
                         {
-                            _invoker.EscalateFailure(new TaskCanceledException(), msg);
+                            _invoker.EscalateFailure(x, msg);
                             continue;
-                        }
-
-                        if (!t.IsCompleted)
-                        {
-                            // if task didn't complete immediately, halt processing and reschedule a new run when task completes
-                            t.ContinueWith(RescheduleOnTaskComplete, msg);
-                            return false;
                         }
 
                         foreach (var t1 in _stats)
@@ -220,28 +205,9 @@ namespace Proto.Mailbox
             {
                 _invoker.EscalateFailure(e, msg);
             }
-
-            return true;
         }
 
-        private void RescheduleOnTaskComplete(Task task, object message)
-        {
-            if (task.IsFaulted)
-                _invoker.EscalateFailure(task.Exception, message);
-            else if (task.IsCanceled)
-                _invoker.EscalateFailure(new TaskCanceledException(), message);
-            else
-            {
-                foreach (var t in _stats)
-                {
-                    t.MessageReceived(message);
-                }
-            }
-
-            _dispatcher.Schedule(RunAsync);
-        }
-
-        protected void Schedule()
+        private void Schedule()
         {
             if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
                 _dispatcher.Schedule(RunAsync);
