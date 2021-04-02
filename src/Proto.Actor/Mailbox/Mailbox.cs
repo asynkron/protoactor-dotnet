@@ -173,6 +173,7 @@ namespace Proto.Mailbox
                             continue;
                         }
 
+                        //race here, but that's ok, we process it next round in the loop
                         _hasSystemMessages = false;
                     }
 
