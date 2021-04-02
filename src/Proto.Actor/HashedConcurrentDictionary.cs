@@ -33,7 +33,7 @@ namespace Proto
 
         private Dictionary<TKey,TValue> GetPartition(TKey key)
         {
-            var hash = (key.GetHashCode() & 0x7FFFFFFF) & (HashSize-1);
+            var hash = key.GetHashCode() & HashSize-1;
 
             var p = _partitions[hash];
             return p;
