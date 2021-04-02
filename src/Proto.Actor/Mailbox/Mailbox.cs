@@ -50,6 +50,7 @@ namespace Proto.Mailbox
 
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
+        private volatile bool _hasSystemMessages;
 
         public DefaultMailbox(
             IMailboxQueue systemMessages,
@@ -97,6 +98,8 @@ namespace Proto.Mailbox
         public void PostSystemMessage(object msg)
         {
             _systemMessages.Push(msg);
+            _hasSystemMessages = true;
+            
             if (msg is Stop)
                 _invoker?.CancellationTokenSource?.Cancel();
 
@@ -147,29 +150,36 @@ namespace Proto.Mailbox
             {
                 for (var i = 0; i < _dispatcher.Throughput; i++)
                 {
-                    msg = _systemMessages.Pop();
-                    if (msg is not null)
+                    if (_hasSystemMessages)
                     {
-                        _suspended = msg switch
-                        {
-                            SuspendMailbox => true,
-                            ResumeMailbox  => false,
-                            _              => _suspended
-                        };
+                        msg = _systemMessages.Pop();
 
-                        await _invoker.InvokeSystemMessageAsync(msg);
-
-                        foreach (var t1 in _stats)
+                        if (msg is not null)
                         {
-                            t1.MessageReceived(msg);
+                            _suspended = msg switch
+                            {
+                                SuspendMailbox => true,
+                                ResumeMailbox  => false,
+                                _              => _suspended
+                            };
+
+                            await _invoker.InvokeSystemMessageAsync(msg);
+
+                            foreach (var t1 in _stats)
+                            {
+                                t1.MessageReceived(msg);
+                            }
+
+                            continue;
                         }
 
-                        continue;
+                        _hasSystemMessages = false;
                     }
 
                     if (_suspended) break;
 
                     msg = _userMailbox.Pop();
+
                     if (msg is not null)
                     {
                         await _invoker.InvokeUserMessageAsync(msg);
