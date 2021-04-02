@@ -27,7 +27,7 @@ namespace Proto.TestFixtures
 
         public async ValueTask InvokeSystemMessageAsync(object msg) => await ((TestMessage) msg).TaskCompletionSource.Task;
 
-        public Task InvokeUserMessageAsync(object msg) => ((TestMessage) msg).TaskCompletionSource.Task;
+        public async ValueTask InvokeUserMessageAsync(object msg) => await ((TestMessage) msg).TaskCompletionSource.Task;
 
         public void EscalateFailure(Exception reason, object message) => EscalatedFailures.Add(reason);
 

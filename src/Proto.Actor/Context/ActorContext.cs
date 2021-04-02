@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -290,19 +291,25 @@ namespace Proto.Context
             }
         }
 
-        public Task InvokeUserMessageAsync(object msg)
+        public async ValueTask InvokeUserMessageAsync(object msg)
         {
-            if (!System.Metrics.IsNoop)
+            if (System.Metrics.IsNoop)
+            {
+                await InternalInvokeUserMessageAsync(msg);
+            }
+            else
+            {
                 System.Metrics.InternalActorMetrics.ActorMailboxLength.Set(_mailbox.UserMessageCount,
                     new[] {System.Id, System.Address, Actor!.GetType().Name}
                 );
 
-            return System.Metrics.IsNoop switch
-            {
-                true => InternalInvokeUserMessageAsync(msg),
-                false => System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram.Observe(() => InternalInvokeUserMessageAsync(msg), System.Id, System.Address, Actor!.GetType().Name, MessageEnvelope.UnwrapMessage(msg)!.GetType().Name
-                )
-            };
+                var sw = Stopwatch.StartNew();
+                await InternalInvokeUserMessageAsync(msg);
+                sw.Stop();
+                System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram.Observe(sw,
+                    new[] {System.Id, System.Address, Actor!.GetType().Name, MessageEnvelope.UnwrapMessage(msg)!.GetType().Name}
+                );
+            }
         }
 
         public IImmutableSet<PID> Children => _extras?.Children ?? EmptyChildren;
@@ -315,41 +322,25 @@ namespace Proto.Context
         public void ResumeChildren(params PID[] pids) => pids.SendSystemMessage(ResumeMailbox.Instance, System);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Task InternalInvokeUserMessageAsync(object msg)
+        private async ValueTask InternalInvokeUserMessageAsync(object msg)
         {
             if (_state == ContextState.Stopped)
             {
                 //already stopped, send message to deadletter process
                 System.DeadLetter.SendUserMessage(Self, msg);
-                return Task.CompletedTask;
+                return;
             }
-
-            var influenceTimeout = true;
 
             if (ReceiveTimeout > TimeSpan.Zero)
             {
                 var notInfluenceTimeout = msg is INotInfluenceReceiveTimeout;
-                influenceTimeout = !notInfluenceTimeout;
+                var influenceTimeout = !notInfluenceTimeout;
 
                 if (influenceTimeout) _extras?.StopReceiveTimeoutTimer();
             }
 
-            var res = ProcessMessageAsync(msg);
-
-            if (ReceiveTimeout == TimeSpan.Zero || !influenceTimeout) return res;
-
-            //special handle non completed tasks that need to reset ReceiveTimout
-            if (!res.IsCompleted) return ContinueAfter();
-
+            await ProcessMessageAsync(msg);
             _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
-
-            return res;
-
-            async Task ContinueAfter()
-            {
-                await res;
-                _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
-            }
         }
 
         public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox) =>
