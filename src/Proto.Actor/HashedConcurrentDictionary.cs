@@ -17,6 +17,7 @@ namespace Proto
     {
         //power of two
         private const int HashSize = 1024;
+        private const int HashMask = HashSize-1;
         private readonly Dictionary<TKey,TValue>[] _partitions = new Dictionary<TKey,TValue>[HashSize];
 
         private int _count;
@@ -33,7 +34,7 @@ namespace Proto
 
         private Dictionary<TKey,TValue> GetPartition(TKey key)
         {
-            var hash = key.GetHashCode() & HashSize-1;
+            var hash = key.GetHashCode() & HashMask;
 
             var p = _partitions[hash];
             return p;
