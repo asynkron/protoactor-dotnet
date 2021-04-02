@@ -15,6 +15,7 @@ namespace Proto
     
     class HashedConcurrentDictionary<TKey, TValue>
     {
+        //power of two
         private const int HashSize = 1024;
         private readonly Dictionary<TKey,TValue>[] _partitions = new Dictionary<TKey,TValue>[HashSize];
 
@@ -32,7 +33,7 @@ namespace Proto
 
         private Dictionary<TKey,TValue> GetPartition(TKey key)
         {
-            var hash = key.GetHashCode() & (0x7FFFFFFF % HashSize);
+            var hash = (key.GetHashCode() & 0x7FFFFFFF) & (HashSize-1);
 
             var p = _partitions[hash];
             return p;
@@ -47,7 +48,7 @@ namespace Proto
                 if (p.ContainsKey(key)) return false;
 
                 p.Add(key, value);
-                _count++;
+                Interlocked.Increment(ref _count);
                 return true;
             }
         }
@@ -58,7 +59,7 @@ namespace Proto
             lock (p) return p.TryGetValue(key, out value);
         }
 
-        public bool Remove(TKey key)
+        public void Remove(TKey key)
         {
             var p = GetPartition(key);
 
@@ -66,28 +67,9 @@ namespace Proto
             {
                 if (p.Remove(key))
                 {
-                    _count--;
-                    return true;
-                }
-                return false;
-            }
-        }
-
-        public bool RemoveByVal(TKey key, TValue val)
-        {
-            var p = GetPartition(key);
-
-            lock (p)
-            {
-                if (p.TryGetValue(key, out var existing) && val.Equals(existing))
-                {
-                    p.Remove(key);
-                    _count--;
-                    return true;
+                    Interlocked.Decrement(ref _count);
                 }
             }
-
-            return false;
         }
     }
 }
