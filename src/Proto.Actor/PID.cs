@@ -34,7 +34,7 @@ namespace Proto
             }
 
             var reff = system.ProcessRegistry.Get(this);
-            if (!(reff is DeadLetterProcess)) _process = reff;
+            if (reff is not DeadLetterProcess) _process = reff;
 
             return _process;
         }

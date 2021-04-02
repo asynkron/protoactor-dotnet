@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Future;
 using Proto.Mailbox;
-using static Ubiquitous.Metrics.Metrics;
 
 namespace Proto.Context
 {
@@ -69,7 +68,7 @@ namespace Proto.Context
             if (Sender is not null)
             {
                 Logger.LogDebug("{Self} Responding to {Sender} with message {Message}", Self, Sender, message);
-                Send(Sender, message);
+                SendUserMessage(Sender, message);
             }
             else
                 Logger.LogWarning("{Self} Tried to respond but sender is null, with message {Message}", Self, message);
@@ -245,24 +244,41 @@ namespace Proto.Context
                 Parent.SendSystemMessage(System, failure);
         }
 
-        public Task InvokeSystemMessageAsync(object msg)
+        public async Task InvokeSystemMessageAsync(object msg)
         {
             try
             {
-                return msg switch
+                switch (msg)
                 {
-                    Started s         => InvokeUserMessageAsync(s),
-                    Stop _            => InitiateStopAsync(),
-                    Terminated t      => HandleTerminatedAsync(t),
-                    Watch w           => HandleWatch(w),
-                    Unwatch uw        => HandleUnwatch(uw),
-                    Failure f         => HandleFailureAsync(f),
-                    Restart _         => HandleRestartAsync(),
-                    SuspendMailbox _  => Task.CompletedTask,
-                    ResumeMailbox _   => Task.CompletedTask,
-                    Continuation cont => HandleContinuation(cont),
-                    _                 => HandleUnknownSystemMessage(msg)
-                };
+                    case Started s:
+                        await InvokeUserMessageAsync(s);
+                        break;
+                    case Stop _:
+                        await InitiateStopAsync();
+                        break;
+                    case Terminated t:
+                        await HandleTerminatedAsync(t);
+                        break;
+                    case Watch w:
+                        HandleWatch(w);
+                        break;
+                    case Unwatch uw:
+                        HandleUnwatch(uw);
+                        break;
+                    case Failure f:
+                        HandleFailureAsync(f);
+                        break;
+                    case Restart:
+                        await HandleRestartAsync();
+                        break;
+                    case SuspendMailbox or ResumeMailbox: return;
+                    case Continuation cont:
+                        await HandleContinuation(cont);
+                        break;
+                    default:
+                        await HandleUnknownSystemMessage(msg);
+                        break;
+                }
             }
             catch (Exception x)
             {
@@ -281,7 +297,7 @@ namespace Proto.Context
             return System.Metrics.IsNoop switch
             {
                 true => InternalInvokeUserMessageAsync(msg),
-                _ => System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram.Observe(() => InternalInvokeUserMessageAsync(msg), System.Id, System.Address, Actor!.GetType().Name, MessageEnvelope.UnwrapMessage(msg)!.GetType().Name
+                false => System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram.Observe(() => InternalInvokeUserMessageAsync(msg), System.Id, System.Address, Actor!.GetType().Name, MessageEnvelope.UnwrapMessage(msg)!.GetType().Name
                 )
             };
         }
@@ -317,13 +333,12 @@ namespace Proto.Context
 
             var res = ProcessMessageAsync(msg);
 
-            if (ReceiveTimeout != TimeSpan.Zero && influenceTimeout)
-            {
-                //special handle non completed tasks that need to reset ReceiveTimout
-                if (!res.IsCompleted) return ContinueAfter();
+            if (ReceiveTimeout == TimeSpan.Zero || !influenceTimeout) return res;
 
-                _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
-            }
+            //special handle non completed tasks that need to reset ReceiveTimout
+            if (!res.IsCompleted) return ContinueAfter();
+
+            _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
 
             return res;
 
@@ -417,6 +432,7 @@ namespace Proto.Context
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SendUserMessage(PID target, object message)
         {
             if (_props.SenderMiddlewareChain is null)
@@ -431,6 +447,7 @@ namespace Proto.Context
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private IActor IncarnateActor()
         {
             _state = ContextState.Alive;
@@ -439,7 +456,8 @@ namespace Proto.Context
             return actor;
         }
 
-        private async Task HandleRestartAsync()
+        
+        private async ValueTask HandleRestartAsync()
         {
             _state = ContextState.Restarting;
             CancelReceiveTimeout();
@@ -448,23 +466,20 @@ namespace Proto.Context
             System.Metrics.InternalActorMetrics.ActorRestartedCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
         }
 
-        private Task HandleUnwatch(Unwatch uw)
+        private void HandleUnwatch(Unwatch uw)
         {
             _extras?.Unwatch(uw.Watcher);
-            return Task.CompletedTask;
         }
 
-        private Task HandleWatch(Watch w)
+        private void HandleWatch(Watch w)
         {
             if (_state >= ContextState.Stopping)
                 w.Watcher.SendSystemMessage(System, Terminated.From(Self, TerminatedReason.Stopped));
             else
                 EnsureExtras().Watch(w.Watcher);
-
-            return Task.CompletedTask;
         }
 
-        private Task HandleFailureAsync(Failure msg)
+        private void HandleFailureAsync(Failure msg)
         {
             switch (Actor)
             {
@@ -479,10 +494,9 @@ namespace Proto.Context
                     break;
             }
 
-            return Task.CompletedTask;
         }
 
-        private async Task HandleTerminatedAsync(Terminated msg)
+        private async ValueTask HandleTerminatedAsync(Terminated msg)
         {
             _extras?.RemoveChild(msg.Who);
             await InvokeUserMessageAsync(msg);
@@ -497,7 +511,7 @@ namespace Proto.Context
             );
 
         //Initiate stopping, not final
-        private async Task InitiateStopAsync()
+        private async ValueTask InitiateStopAsync()
         {
             if (_state >= ContextState.Stopping)
             {
@@ -508,34 +522,36 @@ namespace Proto.Context
             _state = ContextState.Stopping;
             CancelReceiveTimeout();
             //this is intentional
+
             await InvokeUserMessageAsync(Stopping.Instance);
             await StopAllChildren();
         }
 
-        private async Task StopAllChildren()
+        private async ValueTask StopAllChildren()
         {
-            _extras?.Children?.Stop(System);
+            _extras?.Children.Stop(System);
 
             await TryRestartOrStopAsync();
         }
 
         //intermediate stopping stage, waiting for children to stop
-        private Task TryRestartOrStopAsync()
+        private async ValueTask TryRestartOrStopAsync()
         {
-            if (_extras?.Children.Count > 0) return Task.CompletedTask;
+            if (_extras?.Children.Count > 0) return;
 
             CancelReceiveTimeout();
 
-            return _state switch
+            switch (_state)
             {
-                ContextState.Restarting => RestartAsync(),
-                ContextState.Stopping   => FinalizeStopAsync(),
-                _                       => Task.CompletedTask
-            };
+                case ContextState.Restarting: await RestartAsync();
+                    break;
+                case ContextState.Stopping:   await FinalizeStopAsync();
+                    break;
+            }
         }
 
         //Last and final termination step
-        private async Task FinalizeStopAsync()
+        private async ValueTask FinalizeStopAsync()
         {
             System.ProcessRegistry.Remove(Self);
             //This is intentional
@@ -552,7 +568,7 @@ namespace Proto.Context
             _state = ContextState.Stopped;
         }
 
-        private async Task RestartAsync()
+        private async ValueTask RestartAsync()
         {
             await DisposeActorIfDisposable();
             Actor = IncarnateActor();
@@ -574,25 +590,24 @@ namespace Proto.Context
             }
         }
 
-        private ValueTask DisposeActorIfDisposable()
+        private async ValueTask DisposeActorIfDisposable()
         {
             switch (Actor)
             {
                 case IAsyncDisposable asyncDisposableActor:
-                    return asyncDisposableActor.DisposeAsync();
+                    await asyncDisposableActor.DisposeAsync();
+                    break;
                 case IDisposable disposableActor:
                     disposableActor.Dispose();
                     break;
             }
-
-            return default;
         }
 
         private void ReceiveTimeoutCallback(object state)
         {
             if (_extras?.ReceiveTimeoutTimer is null) return;
 
-            Send(Self, Proto.ReceiveTimeout.Instance);
+            SendUserMessage(Self, Proto.ReceiveTimeout.Instance);
         }
     }
 }
