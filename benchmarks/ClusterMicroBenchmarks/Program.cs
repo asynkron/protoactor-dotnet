@@ -5,6 +5,6 @@ namespace ClusterMicroBenchmarks
 {
     class Program
     {
-        static void Main() => BenchmarkRunner.Run<DictionaryReadBenchmark>();
+        static void Main() => BenchmarkRunner.Run<DictionaryConcurrencyBenchmark>();
     }
 }

@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Proto
 {
@@ -46,7 +47,7 @@ namespace Proto
                 if (p.ContainsKey(key)) return false;
 
                 p.Add(key, value);
-                _count++;
+                Interlocked.Increment(ref _count);
                 return true;
             }
         }
@@ -65,7 +66,7 @@ namespace Proto
             {
                 if (p.Remove(key))
                 {
-                    _count--;
+                    Interlocked.Decrement(ref _count);
                     return true;
                 }
                 return false;
@@ -81,7 +82,7 @@ namespace Proto
                 if (p.TryGetValue(key, out var existing) && val.Equals(existing))
                 {
                     p.Remove(key);
-                    _count--;
+                    Interlocked.Decrement(ref _count);
                     return true;
                 }
             }
