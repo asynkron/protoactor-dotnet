@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Google.Protobuf;
+using Proto.Context;
 
 namespace Proto
 {
@@ -39,16 +40,16 @@ namespace Proto
             return _process;
         }
 
-        internal void SendUserMessage(ActorSystem system, object message)
+        internal void SendUserMessage(ActorSystem system, object message, IExecutionContext? ec=null)
         {
             var reff = Ref(system) ?? system.ProcessRegistry.Get(this);
-            reff.SendUserMessage(this, message);
+            reff.SendUserMessage(this, message, ec);
         }
 
-        public void SendSystemMessage(ActorSystem system, object sys)
+        public void SendSystemMessage(ActorSystem system, object sys, IExecutionContext? ec=null)
         {
             var reff = Ref(system) ?? system.ProcessRegistry.Get(this);
-            reff.SendSystemMessage(this, sys);
+            reff.SendSystemMessage(this, sys, ec);
         }
     }
 }

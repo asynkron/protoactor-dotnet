@@ -17,6 +17,10 @@ using static Ubiquitous.Metrics.Metrics;
 
 namespace Proto.Context
 {
+    public interface IExecutionContext
+    {
+        void Append();
+    }
     public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         private static readonly ImmutableHashSet<PID> EmptyChildren = ImmutableHashSet<PID>.Empty;
@@ -136,6 +140,8 @@ namespace Proto.Context
 
             ReceiveTimeout = TimeSpan.Zero;
         }
+        
+        private IExecutionContext? ExecutionContext => _mailbox as  IExecutionContext;
 
         public void Send(PID target, object message) => SendUserMessage(target, message);
 
@@ -221,7 +227,7 @@ namespace Proto.Context
             return future.Task;
         }
 
-        public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
+        public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance, ExecutionContext);
 
         public Task PoisonAsync(PID pid) => RequestAsync<Terminated>(pid, PoisonPill.Instance, CancellationToken.None);
 
@@ -422,7 +428,7 @@ namespace Proto.Context
             if (_props.SenderMiddlewareChain is null)
             {
                 //fast path, 0 alloc
-                target.SendUserMessage(System, message);
+                target.SendUserMessage(System, message, ExecutionContext);
             }
             else
             {

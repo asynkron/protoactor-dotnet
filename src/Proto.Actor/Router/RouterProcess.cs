@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using Proto.Context;
 using Proto.Mailbox;
 using Proto.Router.Messages;
 using Proto.Router.Routers;
@@ -15,7 +16,7 @@ namespace Proto.Router
 
         public RouterProcess(ActorSystem system, RouterState state, IMailbox mailbox) : base(system, mailbox) => _state = state;
 
-        protected internal override void SendUserMessage(PID pid, object message)
+        protected internal override void SendUserMessage(PID pid, object message, IExecutionContext? ec=null)
         {
             var (msg, _, _) = MessageEnvelope.Unwrap(message);
 

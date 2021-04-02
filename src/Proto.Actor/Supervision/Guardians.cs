@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using Proto.Context;
 using Proto.Mailbox;
 
 // ReSharper disable once CheckNamespace
@@ -59,10 +60,10 @@ namespace Proto
 
         public void ResumeChildren(params PID[] pids) => pids?.SendSystemMessage(ResumeMailbox.Instance, System);
 
-        protected internal override void SendUserMessage(PID pid, object message)
+        protected internal override void SendUserMessage(PID pid, object message, IExecutionContext? ec=null)
             => throw new InvalidOperationException("Guardian actor cannot receive any user messages.");
 
-        protected internal override void SendSystemMessage(PID pid, object message)
+        protected internal override void SendSystemMessage(PID pid, object message, IExecutionContext? ec=null)
         {
             if (message is Failure msg)
                 _supervisorStrategy.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason, msg.Message);

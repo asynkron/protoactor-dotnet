@@ -4,6 +4,8 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using Proto.Context;
+
 namespace Proto.Remote
 {
     public class RemoteProcess : Process
@@ -18,9 +20,9 @@ namespace Proto.Remote
             _pid = pid;
         }
 
-        protected override void SendUserMessage(PID _, object message) => Send(message);
+        protected override void SendUserMessage(PID _, object message, IExecutionContext? ec=null) => Send(message);
 
-        protected override void SendSystemMessage(PID _, object message) => Send(message);
+        protected override void SendSystemMessage(PID _, object message, IExecutionContext? ec=null) => Send(message);
 
         private void Send(object msg)
         {

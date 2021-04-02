@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Context;
 
 namespace Proto.Mailbox
 {
@@ -40,7 +41,7 @@ namespace Proto.Mailbox
             new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue(), stats);
     }
 
-    public class DefaultMailbox : IMailbox
+    public class DefaultMailbox : IMailbox, IExecutionContext
     {
         private readonly IMailboxStatistics[] _stats;
         private readonly IMailboxQueue _systemMessages;
@@ -257,6 +258,11 @@ namespace Proto.Mailbox
         {
             if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
                 _dispatcher.Schedule(RunAsync);
+        }
+
+        public void Append()
+        {
+            throw new NotImplementedException();
         }
     }
 

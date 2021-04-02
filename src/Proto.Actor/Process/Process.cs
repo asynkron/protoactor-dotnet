@@ -5,6 +5,8 @@
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
+using Proto.Context;
+
 namespace Proto
 {
     public abstract class Process
@@ -13,10 +15,10 @@ namespace Proto
 
         protected ActorSystem System { get; }
 
-        protected internal abstract void SendUserMessage(PID pid, object message);
+        protected internal abstract void SendUserMessage(PID pid, object message, IExecutionContext? ec=null);
 
-        protected internal abstract void SendSystemMessage(PID pid, object message);
-
+        protected internal abstract void SendSystemMessage(PID pid, object message, IExecutionContext? ec=null);
+        
         public virtual void Stop(PID pid) => SendSystemMessage(pid, Proto.Stop.Instance);
     }
 }

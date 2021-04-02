@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Context;
 using Proto.Metrics;
 
 namespace Proto.Future
@@ -73,7 +74,7 @@ namespace Proto.Future
         public PID Pid { get; }
         public Task<object> Task { get; }
 
-        protected internal override void SendUserMessage(PID pid, object message)
+        protected internal override void SendUserMessage(PID pid, object message, IExecutionContext? ec=null)
         {
             try
             {
@@ -90,7 +91,7 @@ namespace Proto.Future
             }
         }
 
-        protected internal override void SendSystemMessage(PID pid, object message)
+        protected internal override void SendSystemMessage(PID pid, object message, IExecutionContext? ec=null)
         {
             if (message is Stop)
             {

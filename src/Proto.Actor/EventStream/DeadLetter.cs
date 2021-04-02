@@ -10,6 +10,7 @@
 
 using System;
 using JetBrains.Annotations;
+using Proto.Context;
 using Proto.Metrics;
 
 namespace Proto
@@ -41,7 +42,7 @@ namespace Proto
         {
         }
 
-        protected internal override void SendUserMessage(PID pid, object message)
+        protected internal override void SendUserMessage(PID pid, object message, IExecutionContext? ec=null)
         {
             System.Metrics.Get<ActorMetrics>().DeadletterCount.Inc(new[] {System.Id, System.Address, message.GetType().Name});
             var (msg, sender, header) = MessageEnvelope.Unwrap(message);
@@ -54,7 +55,7 @@ namespace Proto
             );
         }
 
-        protected internal override void SendSystemMessage(PID pid, object message)
+        protected internal override void SendSystemMessage(PID pid, object message, IExecutionContext? ec=null)
         {
             System.Metrics.Get<ActorMetrics>().DeadletterCount.Inc(new[] {System.Id, System.Address, message.GetType().Name});
             System.EventStream.Publish(new DeadLetterEvent(pid, message, null, null));

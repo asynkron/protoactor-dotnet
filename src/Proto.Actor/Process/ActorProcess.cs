@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Threading;
+using Proto.Context;
 using Proto.Mailbox;
 
 // ReSharper disable once CheckNamespace
@@ -22,10 +23,10 @@ namespace Proto
             private set => Interlocked.Exchange(ref _isDead, value ? 1 : 0);
         }
 
-        protected internal override void SendUserMessage(PID pid, object message) =>
+        protected internal override void SendUserMessage(PID pid, object message, IExecutionContext? ec=null) =>
             Mailbox.PostUserMessage(message);
 
-        protected internal override void SendSystemMessage(PID pid, object message) =>
+        protected internal override void SendSystemMessage(PID pid, object message, IExecutionContext? ec=null) =>
             Mailbox.PostSystemMessage(message);
 
         public override void Stop(PID pid)

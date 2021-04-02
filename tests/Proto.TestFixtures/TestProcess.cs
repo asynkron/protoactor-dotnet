@@ -1,4 +1,6 @@
-﻿namespace Proto.TestFixtures
+﻿using Proto.Context;
+
+namespace Proto.TestFixtures
 {
     public class TestProcess : Process
     {
@@ -6,11 +8,11 @@
         {
         }
 
-        protected override void SendUserMessage(PID pid, object message)
+        protected override void SendUserMessage(PID pid, object message, IExecutionContext? ec=null)
         {
         }
 
-        protected override void SendSystemMessage(PID pid, object message)
+        protected override void SendSystemMessage(PID pid, object message, IExecutionContext? ec=null)
         {
         }
     }

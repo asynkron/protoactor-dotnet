@@ -7,6 +7,7 @@
 // ReSharper disable once CheckNamespace
 
 using JetBrains.Annotations;
+using Proto.Context;
 
 // ReSharper disable once CheckNamespace
 namespace Proto
@@ -18,13 +19,13 @@ namespace Proto
         {
         }
 
-        protected internal override void SendUserMessage(PID pid, object message)
+        protected internal override void SendUserMessage(PID pid, object message, IExecutionContext? ec=null)
         {
             var (msg, _, _) = MessageEnvelope.Unwrap(message);
             System.EventStream.Publish(msg);
         }
 
-        protected internal override void SendSystemMessage(PID pid, object message)
+        protected internal override void SendSystemMessage(PID pid, object message, IExecutionContext? ec=null)
         {
             //pass
         }
