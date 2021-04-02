@@ -20,7 +20,7 @@ namespace Proto.Mailbox
     {
         int UserMessageCount { get; }
 
-        void PostUserMessage(object msg);
+        void PostUserMessage(object msg, IExecutionContext ec = null);
 
         void PostSystemMessage(object msg);
 
@@ -84,7 +84,7 @@ namespace Proto.Mailbox
 
         public int UserMessageCount => _userMailbox.Length;
 
-        public void PostUserMessage(object msg)
+        public void PostUserMessage(object msg, IExecutionContext? ec = null)
         {
             _userMailbox.Push(msg);
 
@@ -93,7 +93,14 @@ namespace Proto.Mailbox
                 t.MessagePosted(msg);
             }
 
-            Schedule();
+            if (ec != null && ec.TrySchedule(this))
+            {
+                //scheduled inline   
+            }
+            else
+            {
+                Schedule();
+            }
         }
 
         public void PostSystemMessage(object msg)
@@ -147,6 +154,7 @@ namespace Proto.Mailbox
 
             return Task.CompletedTask;
         }
+        
 
         private bool ProcessMessages()
         {
@@ -166,6 +174,14 @@ namespace Proto.Mailbox
                             ResumeMailbox _  => false,
                             _                => _suspended
                         };
+
+                        if (msg is RunInline ri)
+                        {
+                            ri.runnable();
+                            continue;
+                        }
+                        
+                        
                         var t = _invoker.InvokeSystemMessageAsync(msg);
 
                         if (t.IsFaulted)
@@ -259,11 +275,20 @@ namespace Proto.Mailbox
             if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
                 _dispatcher.Schedule(RunAsync);
         }
-
-        public void Append()
+        
+        protected bool ScheduleInline()
         {
-            throw new NotImplementedException();
+            if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
+            {
+                _ = RunAsync();
+                return true;
+            }
+
+            return false;
         }
+
+        public bool TrySchedule(IMailbox other) =>
+            other is DefaultMailbox dm && dm.ScheduleInline();
     }
 
     /// <summary>

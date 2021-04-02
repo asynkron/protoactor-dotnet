@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Context;
 
 namespace Proto.Mailbox
 {
@@ -28,7 +29,7 @@ namespace Proto.Mailbox
 
         public int UserMessageCount => _userMessages.Length;
 
-        public void PostUserMessage(object msg)
+        public void PostUserMessage(object msg, IExecutionContext ec = null)
         {
             _userMessages.Push(msg);
             Schedule();

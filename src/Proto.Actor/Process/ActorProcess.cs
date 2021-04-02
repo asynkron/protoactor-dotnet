@@ -24,7 +24,7 @@ namespace Proto
         }
 
         protected internal override void SendUserMessage(PID pid, object message, IExecutionContext? ec=null) =>
-            Mailbox.PostUserMessage(message);
+            Mailbox.PostUserMessage(message, ec);
 
         protected internal override void SendSystemMessage(PID pid, object message, IExecutionContext? ec=null) =>
             Mailbox.PostSystemMessage(message);

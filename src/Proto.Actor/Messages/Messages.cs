@@ -18,6 +18,8 @@ namespace Proto
     public sealed partial class Terminated : SystemMessage
     {
     }
+    
+    public record RunInline(Action runnable);
 
     public sealed class Restarting
     {

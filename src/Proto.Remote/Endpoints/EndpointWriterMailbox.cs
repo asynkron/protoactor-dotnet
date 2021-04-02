@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Context;
 using Proto.Mailbox;
 
 namespace Proto.Remote
@@ -43,7 +44,7 @@ namespace Proto.Remote
 
         public int UserMessageCount => _userMessages.Length;
 
-        public void PostUserMessage(object msg)
+        public void PostUserMessage(object msg, IExecutionContext ec = null)
         {
             _userMessages.Push(msg);
 

@@ -19,7 +19,7 @@ namespace Proto.Context
 {
     public interface IExecutionContext
     {
-        void Append();
+        bool TrySchedule(IMailbox other);
     }
     public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {

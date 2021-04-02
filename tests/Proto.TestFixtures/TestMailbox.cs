@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
+using Proto.Context;
 using Proto.Mailbox;
 
 namespace Proto.TestFixtures
@@ -17,7 +18,7 @@ namespace Proto.TestFixtures
 
         public int UserMessageCount => UserMessages.Count;
 
-        public void PostUserMessage(object msg)
+        public void PostUserMessage(object msg, IExecutionContext ec = null)
         {
             UserMessages.Add(msg);
             _invoker?.InvokeUserMessageAsync(msg).Wait();
