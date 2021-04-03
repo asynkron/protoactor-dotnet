@@ -142,7 +142,7 @@ namespace Proto.Mailbox
             }
         }
 
-        private async ValueTask ProcessMessages()
+        private ValueTask ProcessMessages()
         {
             object? msg = null;
 
@@ -163,7 +163,11 @@ namespace Proto.Mailbox
                                 _              => _suspended
                             };
 
-                            await _invoker.InvokeSystemMessageAsync(msg);
+                            var t = _invoker.InvokeSystemMessageAsync(msg);
+                            if (!t.IsCompletedSuccessfully)
+                            {
+                                return Await(msg, t, this);
+                            }
 
                             foreach (var t1 in _stats)
                             {
@@ -183,7 +187,12 @@ namespace Proto.Mailbox
 
                     if (msg is not null)
                     {
-                        await _invoker.InvokeUserMessageAsync(msg);
+                        var t= _invoker.InvokeUserMessageAsync(msg);
+
+                        if (!t.IsCompletedSuccessfully)
+                        {
+                            return Await(msg, t, this);
+                        }
 
                         foreach (var t1 in _stats)
                         {
@@ -197,6 +206,23 @@ namespace Proto.Mailbox
             catch (Exception e)
             {
                 _invoker.EscalateFailure(e, msg);
+            }
+            return default;
+
+            static async ValueTask Await(object msg, ValueTask task, DefaultMailbox self)
+            {
+                try
+                {
+                    await task;
+                    foreach (var t1 in self._stats)
+                    {
+                        t1.MessageReceived(msg);
+                    }
+                }
+                catch (Exception e)
+                {
+                    self._invoker.EscalateFailure(e, msg);
+                }
             }
         }
 
