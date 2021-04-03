@@ -30,20 +30,22 @@ namespace Proto.Mailbox.Tests
         }
 
         [Fact]
-        public void GivenUserMessage_ShouldInvokeMessagePosted()
+        public async Task GivenUserMessage_ShouldInvokeMessagePosted()
         {
             var msg1 = new TestMessageWithTaskCompletionSource();
 
             _mailbox.PostUserMessage(msg1);
+            await Task.Delay(1000);
             Assert.Contains(msg1, _mailboxStatistics.Posted);
         }
 
         [Fact]
-        public void GivenSystemMessage_ShouldInvokeMessagePosted()
+        public async Task GivenSystemMessage_ShouldInvokeMessagePosted()
         {
             var msg1 = new TestMessageWithTaskCompletionSource();
 
             _mailbox.PostSystemMessage(msg1);
+            await Task.Delay(1000);
             Assert.Contains(msg1, _mailboxStatistics.Posted);
         }
 
