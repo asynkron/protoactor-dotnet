@@ -332,14 +332,14 @@ namespace Proto.Context
                 return default;
             }
 
-            return Await();
+            return Await(t,_extras,ReceiveTimeout);
 
-            async ValueTask Await()
+            //static, dont create closure
+            static async ValueTask Await(Task t, ActorContextExtras? extras, TimeSpan receiveTimeout)
             {
                 await t;
-                _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
+                extras?.ResetReceiveTimeoutTimer(receiveTimeout);
             }
-            
         }
 
         public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox) =>
