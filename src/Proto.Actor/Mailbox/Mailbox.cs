@@ -164,7 +164,12 @@ namespace Proto.Mailbox
                             };
 
                             var t = _invoker.InvokeSystemMessageAsync(msg);
-                            if (!t.IsCompletedSuccessfully)
+
+                            if (t.IsCompleted)
+                            {
+                                t.GetAwaiter().GetResult();
+                            }
+                            else
                             {
                                 return Await(msg, t, this);
                             }
@@ -189,9 +194,13 @@ namespace Proto.Mailbox
                     {
                         var t= _invoker.InvokeUserMessageAsync(msg);
 
-                        if (!t.IsCompletedSuccessfully)
+                        if (t.IsCompleted)
                         {
-                            return Await(msg, t, this);
+                            t.GetAwaiter().GetResult();
+                        }
+                        else
+                        {
+                            return Await(msg, t.Preserve(), this);
                         }
 
                         foreach (var t1 in _stats)
