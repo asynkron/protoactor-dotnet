@@ -16,8 +16,8 @@ namespace Proto.Mailbox.Tests
             var mailbox = new DefaultMailbox(systemMessages, userMailbox);
             mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
 
-            var msg1 = new TestMessage();
-            var msg2 = new TestMessage();
+            var msg1 = new TestMessageWithTaskCompletionSource();
+            var msg2 = new TestMessageWithTaskCompletionSource();
 
             mailbox.PostUserMessage(msg1);
             mailbox.PostUserMessage(msg2);
@@ -49,8 +49,8 @@ namespace Proto.Mailbox.Tests
             var mailbox = new DefaultMailbox(systemMessages, userMailbox);
             mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
 
-            var msg1 = new TestMessage();
-            var msg2 = new TestMessage();
+            var msg1 = new TestMessageWithTaskCompletionSource();
+            var msg2 = new TestMessageWithTaskCompletionSource();
             msg1.TaskCompletionSource.SetResult(0);
             msg2.TaskCompletionSource.SetResult(0);
 
@@ -70,8 +70,8 @@ namespace Proto.Mailbox.Tests
             var mailbox = new DefaultMailbox(systemMessages, userMailbox);
             mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
 
-            var msg1 = new TestMessage();
-            var msg2 = new TestMessage();
+            var msg1 = new TestMessageWithTaskCompletionSource();
+            var msg2 = new TestMessageWithTaskCompletionSource();
 
             mailbox.PostSystemMessage(msg1);
             mailbox.PostSystemMessage(msg2);
@@ -104,8 +104,8 @@ namespace Proto.Mailbox.Tests
             var mailbox = new DefaultMailbox(systemMessages, userMailbox);
             mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
 
-            var msg1 = new TestMessage();
-            var msg2 = new TestMessage();
+            var msg1 = new TestMessageWithTaskCompletionSource();
+            var msg2 = new TestMessageWithTaskCompletionSource();
             msg1.TaskCompletionSource.SetResult(0);
             msg2.TaskCompletionSource.SetResult(0);
 
@@ -125,7 +125,7 @@ namespace Proto.Mailbox.Tests
             var mailbox = new DefaultMailbox(systemMessages, userMailbox);
             mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
 
-            var msg1 = new TestMessage();
+            var msg1 = new TestMessageWithTaskCompletionSource();
             mailbox.PostUserMessage(msg1);
 
             void ResumeMailboxTrigger() => msg1.TaskCompletionSource.SetResult(0);

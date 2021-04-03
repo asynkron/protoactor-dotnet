@@ -12,22 +12,28 @@ namespace Proto.TestFixtures
         private readonly ConcurrentQueue<TaskCompletionSource<int>> _taskCompletionQueue =
             new();
 
-        public List<Exception> EscalatedFailures { get; set; } = new();
+        public List<Exception> EscalatedFailures { get; } = new();
 
-        public int Throughput { get; } = 10;
+        public int Throughput => 10;
 
-        public void Schedule(Func<Task> runner)
+        public async void Schedule(Func<Task> runner)
         {
             var waitingTaskExists = _taskCompletionQueue.TryDequeue(out var onScheduleCompleted);
-            runner().ContinueWith(t => {
-                    if (waitingTaskExists) onScheduleCompleted.SetResult(0);
-                }
-            );
+            await runner();
+            if (waitingTaskExists) onScheduleCompleted.SetResult(0);
         }
 
-        public async ValueTask InvokeSystemMessageAsync(object msg) => await ((TestMessage) msg).TaskCompletionSource.Task;
+        public async ValueTask InvokeSystemMessageAsync(object msg)
+        {
+            await Task.Yield();
+            await ((TestMessageWithTaskCompletionSource) msg).TaskCompletionSource.Task;
+        }
 
-        public async ValueTask InvokeUserMessageAsync(object msg) => await ((TestMessage) msg).TaskCompletionSource.Task;
+        public async ValueTask InvokeUserMessageAsync(object msg)
+        {
+            await Task.Yield();
+            await ((TestMessageWithTaskCompletionSource) msg).TaskCompletionSource.Task;
+        }
 
         public void EscalateFailure(Exception reason, object message) => EscalatedFailures.Add(reason);
 
@@ -38,7 +44,7 @@ namespace Proto.TestFixtures
         /// </summary>
         /// <param name="resumeMailboxProcessing">A trigger that will cause message processing to resume</param>
         /// <param name="timeoutMs">The waiting task will be cancelled after the timeout expires</param>
-        public Task ResumeMailboxProcessingAndWaitAsync(Action resumeMailboxProcessing, int timeoutMs = 60000)
+        public async Task ResumeMailboxProcessingAndWaitAsync(Action resumeMailboxProcessing, int timeoutMs = 60000)
         {
             var onScheduleCompleted = new TaskCompletionSource<int>();
             _taskCompletionQueue.Enqueue(onScheduleCompleted);
@@ -49,9 +55,7 @@ namespace Proto.TestFixtures
             ct.Token.Register(() => onScheduleCompleted.TrySetCanceled());
             ct.CancelAfter(timeoutMs);
 
-            return onScheduleCompleted.Task
-                // suppress any TaskCanceledException to let the test continue
-                .ContinueWith(t => t);
+            await onScheduleCompleted.Task;
         }
     }
 }
