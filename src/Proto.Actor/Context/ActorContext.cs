@@ -280,19 +280,21 @@ namespace Proto.Context
                 return InternalInvokeUserMessageAsync(msg);
             }
 
-            return WithMetrics();
+            return Await(this, msg);
 
-            async ValueTask WithMetrics()
+            
+            //static, don't create a closure
+            static async ValueTask Await(ActorContext self, object msg)
             {
-                System.Metrics.InternalActorMetrics.ActorMailboxLength.Set(_mailbox.UserMessageCount,
-                    new[] {System.Id, System.Address, Actor!.GetType().Name}
+                self.System.Metrics.InternalActorMetrics.ActorMailboxLength.Set(self._mailbox.UserMessageCount,
+                    new[] {self.System.Id, self.System.Address, self.Actor!.GetType().Name}
                 );
 
                 var sw = Stopwatch.StartNew();
-                await InternalInvokeUserMessageAsync(msg);
+                await self.InternalInvokeUserMessageAsync(msg);
                 sw.Stop();
-                System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram.Observe(sw,
-                    new[] {System.Id, System.Address, Actor!.GetType().Name, MessageEnvelope.UnwrapMessage(msg)!.GetType().Name}
+                self.System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram.Observe(sw,
+                    new[] {self.System.Id, self.System.Address, self.Actor!.GetType().Name, MessageEnvelope.UnwrapMessage(msg)!.GetType().Name}
                 );
             }
         }
@@ -332,13 +334,13 @@ namespace Proto.Context
                 return default;
             }
 
-            return Await(t,_extras,ReceiveTimeout);
+            return Await(this, t);
 
             //static, dont create closure
-            static async ValueTask Await(Task t, ActorContextExtras? extras, TimeSpan receiveTimeout)
+            static async ValueTask Await(ActorContext self, Task t)
             {
                 await t;
-                extras?.ResetReceiveTimeoutTimer(receiveTimeout);
+                self._extras?.ResetReceiveTimeoutTimer(self.ReceiveTimeout);
             }
         }
 
