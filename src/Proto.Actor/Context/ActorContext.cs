@@ -307,13 +307,13 @@ namespace Proto.Context
         public void ResumeChildren(params PID[] pids) => pids.SendSystemMessage(ResumeMailbox.Instance, System);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private async ValueTask InternalInvokeUserMessageAsync(object msg)
+        private ValueTask InternalInvokeUserMessageAsync(object msg)
         {
             if (_state == ContextState.Stopped)
             {
                 //already stopped, send message to deadletter process
                 System.DeadLetter.SendUserMessage(Self, msg);
-                return;
+                return default;
             }
 
             if (ReceiveTimeout > TimeSpan.Zero)
@@ -324,8 +324,22 @@ namespace Proto.Context
                 if (influenceTimeout) _extras?.StopReceiveTimeoutTimer();
             }
 
-            await ProcessMessageAsync(msg);
-            _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
+            var t = ProcessMessageAsync(msg);
+
+            if (t.IsCompleted)
+            {
+                _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
+                return default;
+            }
+
+            return Await();
+
+            async ValueTask Await()
+            {
+                await t;
+                _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
+            }
+            
         }
 
         public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox) =>
