@@ -281,7 +281,6 @@ namespace Proto.Context
             }
 
             return Await(this, msg);
-
             
             //static, don't create a closure
             static async ValueTask Await(ActorContext self, object msg)
@@ -326,7 +325,23 @@ namespace Proto.Context
                 if (influenceTimeout) _extras?.StopReceiveTimeoutTimer();
             }
 
-            var t = ProcessMessageAsync(msg);
+            Task t;
+
+            //slow path, there is middleware, message must be wrapped in an envelope
+            if (_props.ReceiverMiddlewareChain is not null)
+                t = _props.ReceiverMiddlewareChain(EnsureExtras().Context, MessageEnvelope.Wrap(msg));
+            else
+            {
+                if (_props.ContextDecoratorChain is not null)
+                    t = EnsureExtras().Context.Receive(MessageEnvelope.Wrap(msg));
+                else
+                {
+                    _messageOrEnvelope = msg;
+                    t = DefaultReceive();
+                }
+
+                //fast path, 0 alloc invocation of actor receive
+            }
 
             if (t.IsCompleted)
             {
@@ -377,6 +392,7 @@ namespace Proto.Context
             return _extras;
         }
         
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Task DefaultReceive() =>
             Message switch
             {
@@ -390,20 +406,6 @@ namespace Proto.Context
 
             Stop(Self);
             return Task.CompletedTask;
-        }
-
-        private Task ProcessMessageAsync(object msg)
-        {
-            //slow path, there is middleware, message must be wrapped in an envelope
-            if (_props.ReceiverMiddlewareChain is not null)
-                return _props.ReceiverMiddlewareChain(EnsureExtras().Context, MessageEnvelope.Wrap(msg));
-
-            if (_props.ContextDecoratorChain is not null)
-                return EnsureExtras().Context.Receive(MessageEnvelope.Wrap(msg));
-
-            //fast path, 0 alloc invocation of actor receive
-            _messageOrEnvelope = msg;
-            return DefaultReceive();
         }
 
         private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)

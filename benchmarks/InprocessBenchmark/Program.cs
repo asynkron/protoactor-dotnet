@@ -35,7 +35,7 @@ public class Program
                 var pongActor = new PID[clientCount];
                 var completions = new TaskCompletionSource<bool>[clientCount];
 
-                var pongProps = Props.FromProducer(() => new EchoActor())
+                var pongProps = Props.FromProducer(() => new PongActor())
                     .WithDispatcher(d);
 
                 for (var i = 0; i < clientCount; i++)
@@ -89,7 +89,7 @@ public class Start
     public PID Sender { get; }
 }
 
-public class EchoActor : IActor
+public class PongActor : IActor
 {
     public Task ReceiveAsync(IContext context)
     {
