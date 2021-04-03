@@ -248,41 +248,23 @@ namespace Proto.Context
                 Parent.SendSystemMessage(System, failure);
         }
 
-        public async ValueTask InvokeSystemMessageAsync(object msg)
+        public ValueTask InvokeSystemMessageAsync(object msg)
         {
             try
             {
-                switch (msg)
+                return msg switch
                 {
-                    case Started s:
-                        await InvokeUserMessageAsync(s);
-                        break;
-                    case Stop _:
-                        await InitiateStopAsync();
-                        break;
-                    case Terminated t:
-                        await HandleTerminatedAsync(t);
-                        break;
-                    case Watch w:
-                        HandleWatch(w);
-                        break;
-                    case Unwatch uw:
-                        HandleUnwatch(uw);
-                        break;
-                    case Failure f:
-                        HandleFailureAsync(f);
-                        break;
-                    case Restart:
-                        await HandleRestartAsync();
-                        break;
-                    case SuspendMailbox or ResumeMailbox: return;
-                    case Continuation cont:
-                        await HandleContinuation(cont);
-                        break;
-                    default:
-                        await HandleUnknownSystemMessage(msg);
-                        break;
-                }
+                    Started s                       => InvokeUserMessageAsync(s),
+                    Stop _                          => InitiateStopAsync(),
+                    Terminated t                    => HandleTerminatedAsync(t),
+                    Watch w                         => HandleWatch(w),
+                    Unwatch uw                      => HandleUnwatch(uw),
+                    Failure f                       => HandleFailureAsync(f),
+                    Restart                         => HandleRestartAsync(),
+                    SuspendMailbox or ResumeMailbox => default,
+                    Continuation cont               => HandleContinuation(cont),
+                    _                               => HandleUnknownSystemMessage(msg)
+                };
             }
             catch (Exception x)
             {
@@ -291,13 +273,16 @@ namespace Proto.Context
             }
         }
 
-        public async ValueTask InvokeUserMessageAsync(object msg)
+        public ValueTask InvokeUserMessageAsync(object msg)
         {
             if (System.Metrics.IsNoop)
             {
-                await InternalInvokeUserMessageAsync(msg);
+                return InternalInvokeUserMessageAsync(msg);
             }
-            else
+
+            return WithMetrics();
+
+            async ValueTask WithMetrics()
             {
                 System.Metrics.InternalActorMetrics.ActorMailboxLength.Set(_mailbox.UserMessageCount,
                     new[] {System.Id, System.Address, Actor!.GetType().Name}
@@ -354,16 +339,16 @@ namespace Proto.Context
                 , CancellationToken.None
             );
 
-        private static Task HandleUnknownSystemMessage(object msg)
+        private static ValueTask HandleUnknownSystemMessage(object msg)
         {
             Logger.LogDebug("Unknown system message {Message}", msg);
-            return Task.CompletedTask;
+            return default;
         }
 
-        private Task HandleContinuation(Continuation cont)
+        private async ValueTask HandleContinuation(Continuation cont)
         {
             _messageOrEnvelope = cont.Message;
-            return cont.Action();
+            await cont.Action();
         }
 
         private ActorContextExtras EnsureExtras()
@@ -457,20 +442,23 @@ namespace Proto.Context
             System.Metrics.InternalActorMetrics.ActorRestartedCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
         }
 
-        private void HandleUnwatch(Unwatch uw)
+        private ValueTask HandleUnwatch(Unwatch uw)
         {
             _extras?.Unwatch(uw.Watcher);
+            return default;
         }
 
-        private void HandleWatch(Watch w)
+        private ValueTask HandleWatch(Watch w)
         {
             if (_state >= ContextState.Stopping)
                 w.Watcher.SendSystemMessage(System, Terminated.From(Self, TerminatedReason.Stopped));
             else
                 EnsureExtras().Watch(w.Watcher);
+
+            return default;
         }
 
-        private void HandleFailureAsync(Failure msg)
+        private ValueTask HandleFailureAsync(Failure msg)
         {
             switch (Actor)
             {
@@ -485,6 +473,7 @@ namespace Proto.Context
                     break;
             }
 
+            return default;
         }
 
         private async ValueTask HandleTerminatedAsync(Terminated msg)
