@@ -12,6 +12,9 @@ namespace Proto.TestFixtures
         private readonly ConcurrentQueue<TaskCompletionSource<int>> _taskCompletionQueue =
             new();
 
+        private TaskCompletionSource<bool> _hasFailures = new();
+        public Task HasFailures => _hasFailures.Task;
+
         public List<Exception> EscalatedFailures { get; } = new();
 
         public int Throughput => 10;
@@ -27,7 +30,11 @@ namespace Proto.TestFixtures
 
         public async ValueTask InvokeUserMessageAsync(object msg) => await ((TestMessageWithTaskCompletionSource) msg).TaskCompletionSource.Task;
 
-        public void EscalateFailure(Exception reason, object message) => EscalatedFailures.Add(reason);
+        public void EscalateFailure(Exception reason, object message)
+        {
+            EscalatedFailures.Add(reason);
+            _hasFailures.TrySetResult(true);
+        }
 
         public CancellationTokenSource CancellationTokenSource { get; } = new();
         

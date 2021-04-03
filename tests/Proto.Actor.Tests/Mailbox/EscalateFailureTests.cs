@@ -19,7 +19,7 @@ namespace Proto.Mailbox.Tests
             msg1.TaskCompletionSource.SetException(taskException);
 
             mailbox.PostUserMessage(msg1);
-            await Task.Delay(1000);
+            await mailboxHandler.HasFailures;
 
             Assert.Single(mailboxHandler.EscalatedFailures);
             var e = Assert.IsType<Exception>(mailboxHandler.EscalatedFailures[0]);
@@ -38,7 +38,7 @@ namespace Proto.Mailbox.Tests
             msg1.TaskCompletionSource.SetException(taskException);
 
             mailbox.PostSystemMessage(msg1);
-            await Task.Delay(1000);
+            await mailboxHandler.HasFailures;
 
             Assert.Single(mailboxHandler.EscalatedFailures);
             var e = Assert.IsType<Exception>(mailboxHandler.EscalatedFailures[0]);
@@ -59,7 +59,7 @@ namespace Proto.Mailbox.Tests
 
             await Task.Delay(1000);
             msg1.TaskCompletionSource.SetException(taskException);
-            await Task.Delay(1000);
+            await mailboxHandler.HasFailures;
 
             Assert.Single(mailboxHandler.EscalatedFailures);
             var e = Assert.IsType<Exception>(mailboxHandler.EscalatedFailures[0]);
@@ -76,11 +76,17 @@ namespace Proto.Mailbox.Tests
             var msg1 = new TestMessageWithTaskCompletionSource();
 
             mailbox.PostSystemMessage(msg1);
-            var taskException = new Exception();
             
+            //make sure the message is being processed by the mailboxHandler
+            //e.g. await mailboxHandler.GotMessage()
             await Task.Delay(1000);
+            
+            
+            //fail the current task being processed
+            var taskException = new Exception();
             msg1.TaskCompletionSource.SetException(taskException);
-            await Task.Delay(1000);
+            
+            await mailboxHandler.HasFailures;
 
             Assert.Single(mailboxHandler.EscalatedFailures);
             var e = Assert.IsType<Exception>(mailboxHandler.EscalatedFailures[0]);
@@ -99,7 +105,7 @@ namespace Proto.Mailbox.Tests
             msg1.TaskCompletionSource.SetCanceled();
 
             mailbox.PostUserMessage(msg1);
-            await Task.Delay(1000);
+            await mailboxHandler.HasFailures;
 
             Assert.Single(mailboxHandler.EscalatedFailures);
             Assert.IsType<TaskCanceledException>(mailboxHandler.EscalatedFailures[0]);
@@ -113,11 +119,10 @@ namespace Proto.Mailbox.Tests
             mailbox.RegisterHandlers(mailboxHandler, mailboxHandler);
 
             var msg1 = new TestMessageWithTaskCompletionSource();
-            var taskException = new Exception();
             msg1.TaskCompletionSource.SetCanceled();
 
             mailbox.PostSystemMessage(msg1);
-            await Task.Delay(1000);
+            await mailboxHandler.HasFailures;
 
             Assert.Single(mailboxHandler.EscalatedFailures);
             Assert.IsType<TaskCanceledException>(mailboxHandler.EscalatedFailures[0]);
@@ -136,7 +141,7 @@ namespace Proto.Mailbox.Tests
             
             await Task.Delay(1000);
             msg1.TaskCompletionSource.SetCanceled();
-            await Task.Delay(1000);
+            await mailboxHandler.HasFailures;
 
             Assert.Single(mailboxHandler.EscalatedFailures);
             Assert.IsType<TaskCanceledException>(mailboxHandler.EscalatedFailures[0]);
@@ -156,7 +161,7 @@ namespace Proto.Mailbox.Tests
             
             await Task.Delay(1000);
             msg1.TaskCompletionSource.SetCanceled();
-            await Task.Delay(1000);
+            await mailboxHandler.HasFailures;
 
             Assert.Single(mailboxHandler.EscalatedFailures);
             Assert.IsType<TaskCanceledException>(mailboxHandler.EscalatedFailures[0]);
