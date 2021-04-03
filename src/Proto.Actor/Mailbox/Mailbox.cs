@@ -125,9 +125,14 @@ namespace Proto.Mailbox
             }
         }
 
-        private async Task RunAsync()
+        private Task RunAsync()
         {
-            await ProcessMessages();
+            var task = ProcessMessages();
+
+            if (!task.IsCompletedSuccessfully)
+            {
+                return Await(this, task);
+            }
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
@@ -138,6 +143,25 @@ namespace Proto.Mailbox
                 foreach (var t in _stats)
                 {
                     t.MailboxEmpty();
+                }
+            }
+
+            return Task.CompletedTask;
+
+            static async Task Await(DefaultMailbox self, ValueTask task)
+            {
+                await task;
+                
+                Interlocked.Exchange(ref self._status, MailboxStatus.Idle);
+
+                if (self._systemMessages.HasMessages || !self._suspended && self._userMailbox.HasMessages)
+                    self.Schedule();
+                else
+                {
+                    foreach (var t in self._stats)
+                    {
+                        t.MailboxEmpty();
+                    }
                 }
             }
         }
