@@ -4,7 +4,11 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Runtime;
+using System.Threading;
 using System.Threading.Tasks;
+using Akka.Configuration;
+using Akka.Dispatch;
+using Akka.Util.Internal;
 
 namespace LocalPingPong
 {
@@ -21,53 +25,61 @@ namespace LocalPingPong
             var tps = new[] {50, 100, 200, 400, 800};
             int[] clientCounts = {4, 8, 16, 32, 64, 128};
 
-
-            foreach (var clientCount in clientCounts)
+            foreach (var t in tps)
             {
-                var pingActor = new IActorRef[clientCount];
-                var pongActor = new IActorRef[clientCount];
-                var completions = new TaskCompletionSource<bool>[clientCount];
-
-                var pongProps = Props.Create(() => new PongActor());
-
-                for (var i = 0; i < clientCount; i++)
+                foreach (var clientCount in clientCounts)
                 {
-                    var tsc = new TaskCompletionSource<bool>();
-                    completions[i] = tsc;
-                    var pingProps = Props.Create(() => new PingActor(tsc, messageCount, batchSize));
+                    var pingActor = new IActorRef[clientCount];
+                    var pongActor = new IActorRef[clientCount];
+                    var completions = new TaskCompletionSource<bool>[clientCount];
 
-                    pingActor[i] = system.ActorOf(pingProps);
-                    pongActor[i] = system.ActorOf(pongProps);
+                    var pongProps = Props.Create(() => new PongActor());
+
+                    for (var i = 0; i < clientCount; i++)
+                    {
+                        var tsc = new TaskCompletionSource<bool>();
+                        completions[i] = tsc;
+                        var pingProps = Props.Create(() => new PingActor(tsc, messageCount, batchSize));
+
+                        pingActor[i] = system.ActorOf(pingProps);
+                        pongActor[i] = system.ActorOf(pongProps);
+                        
+                        var destination = (RepointableActorRef)pingActor[i];
+                        SpinWait.SpinUntil(() => destination.IsStarted);
+                        destination.Underlying.AsInstanceOf<ActorCell>().Dispatcher.Throughput = t;
+                        
+                        destination = (RepointableActorRef)pongActor[i];
+                        SpinWait.SpinUntil(() => destination.IsStarted);
+                        destination.Underlying.AsInstanceOf<ActorCell>().Dispatcher.Throughput = t;
+                        
+                    }
+
+                    var tasks = completions.Select(tsc => tsc.Task).ToArray();
+                    var sw = Stopwatch.StartNew();
+
+                    for (var i = 0; i < clientCount; i++)
+                    {
+                        var client = pingActor[i];
+                        var echo = pongActor[i];
+
+                        client.Tell(new Start(echo));
+                    }
+
+                    await Task.WhenAll(tasks);
+
+                    sw.Stop();
+                    var totalMessages = messageCount * 2 * clientCount;
+
+                    var x = ((int) (totalMessages / (double) sw.ElapsedMilliseconds * 1000.0d)).ToString("#,##0,,M",
+                        CultureInfo.InvariantCulture
+                    );
+                    Console.WriteLine($"{clientCount}\t\t\t{t}\t\t\t{sw.ElapsedMilliseconds} ms\t\t{x}");
+                    await Task.Delay(2000);
                 }
-
-                var tasks = completions.Select(tsc => tsc.Task).ToArray();
-                var sw = Stopwatch.StartNew();
-
-                for (var i = 0; i < clientCount; i++)
-                {
-                    var client = pingActor[i];
-                    var echo = pongActor[i];
-
-                    client.Tell(new Start(echo));
-                }
-
-                await Task.WhenAll(tasks);
-
-                sw.Stop();
-                var totalMessages = messageCount * 2 * clientCount;
-
-                var x = ((int) (totalMessages / (double) sw.ElapsedMilliseconds * 1000.0d)).ToString("#,##0,,M",
-                    CultureInfo.InvariantCulture
-                );
-                Console.WriteLine($"{clientCount}\t\t\taaa\t\t\t{sw.ElapsedMilliseconds} ms\t\t{x}");
-                await Task.Delay(2000);
             }
         }
-
     }
 
-    
-    
     public class Msg
     {
         public Msg(IActorRef pingActor) => PingActor = pingActor;
