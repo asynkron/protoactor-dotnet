@@ -54,10 +54,8 @@ namespace Proto.Mailbox.Tests
 
             _mailbox.PostUserMessage(msg1);
             Assert.DoesNotContain(msg1, _mailboxStatistics.Received);
-
-            Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetResult(0);
-            await _mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
-                .ConfigureAwait(false);
+            msg1.TaskCompletionSource.SetResult(0);
+            await Task.Delay(1000);
 
             Assert.Contains(msg1, _mailboxStatistics.Posted);
         }
@@ -79,9 +77,8 @@ namespace Proto.Mailbox.Tests
 
             _mailbox.PostUserMessage(msg1);
 
-            Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetException(new Exception());
-            await _mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
-                .ConfigureAwait(false);
+            msg1.TaskCompletionSource.SetException(new Exception());
+            await Task.Delay(1000);
 
             Assert.DoesNotContain(msg1, _mailboxStatistics.Received);
         }
@@ -103,10 +100,8 @@ namespace Proto.Mailbox.Tests
             var msg1 = new TestMessageWithTaskCompletionSource();
 
             _mailbox.PostSystemMessage(msg1);
-
-            Action resumeMailboxTrigger = () => msg1.TaskCompletionSource.SetException(new Exception());
-            await _mailboxHandler.ResumeMailboxProcessingAndWaitAsync(resumeMailboxTrigger)
-                .ConfigureAwait(false);
+            msg1.TaskCompletionSource.SetException(new Exception());
+            await Task.Delay(1000);
 
             Assert.DoesNotContain(msg1, _mailboxStatistics.Received);
         }

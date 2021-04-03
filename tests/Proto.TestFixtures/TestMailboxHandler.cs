@@ -25,13 +25,11 @@ namespace Proto.TestFixtures
 
         public async ValueTask InvokeSystemMessageAsync(object msg)
         {
-            await Task.Yield();
             await ((TestMessageWithTaskCompletionSource) msg).TaskCompletionSource.Task;
         }
 
         public async ValueTask InvokeUserMessageAsync(object msg)
         {
-            await Task.Yield();
             await ((TestMessageWithTaskCompletionSource) msg).TaskCompletionSource.Task;
         }
 
