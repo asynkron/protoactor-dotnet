@@ -20,7 +20,7 @@ namespace Proto.TestFixtures
         public void PostUserMessage(object msg)
         {
             UserMessages.Add(msg);
-            _invoker?.InvokeUserMessageAsync(msg).Wait();
+            _invoker?.InvokeUserMessageAsync(msg).GetAwaiter().GetResult();
         }
 
         public void PostSystemMessage(object msg)
@@ -28,7 +28,7 @@ namespace Proto.TestFixtures
             if (msg is Stop)
                 _invoker?.CancellationTokenSource?.Cancel();
             SystemMessages.Add(msg);
-            _invoker?.InvokeSystemMessageAsync(msg).Wait();
+            _invoker?.InvokeSystemMessageAsync(msg).GetAwaiter().GetResult();
         }
 
         public void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher) => _invoker = invoker;
