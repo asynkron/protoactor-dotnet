@@ -19,7 +19,7 @@ namespace LocalPingPong
 
             Console.WriteLine("ClientCount\t\tDispatcher\t\tElapsed\t\tMsg/sec");
             var tps = new[] {50, 100, 200, 400, 800};
-            int[] clientCounts = {4, 8, 16, 32};
+            int[] clientCounts = {4, 8, 16, 32, 64, 128};
 
 
             foreach (var clientCount in clientCounts)
