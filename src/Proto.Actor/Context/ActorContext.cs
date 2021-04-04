@@ -540,11 +540,14 @@ namespace Proto.Context
         }
 
         //intermediate stopping stage, waiting for children to stop
+        //this is directly triggered by StopAllChildren, or by Terminated messages from stopping children
         private ValueTask TryRestartOrStopAsync()
         {
             if (_extras?.Children.Count > 0) return default;
 
             CancelReceiveTimeout();
+            
+            //all children are now stopped, should we restart or stop ourselves?
             switch (_state)
             {
                 case ContextState.Restarting:
