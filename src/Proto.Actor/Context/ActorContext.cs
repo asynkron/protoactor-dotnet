@@ -525,26 +525,32 @@ namespace Proto.Context
             await StopAllChildren();
         }
 
-        private async ValueTask StopAllChildren()
+        private ValueTask StopAllChildren()
         {
             _extras?.Children.Stop(System);
 
-            await TryRestartOrStopAsync();
+            return TryRestartOrStopAsync();
         }
 
         //intermediate stopping stage, waiting for children to stop
-        private async ValueTask TryRestartOrStopAsync()
+        private ValueTask TryRestartOrStopAsync()
         {
-            if (_extras?.Children.Count > 0) return;
+            if (_extras?.Children.Count > 0) return default;
 
             CancelReceiveTimeout();
-
-            switch (_state)
+            return Await(this);
+            
+            static async ValueTask Await(ActorContext self)
             {
-                case ContextState.Restarting: await RestartAsync();
-                    break;
-                case ContextState.Stopping:   await FinalizeStopAsync();
-                    break;
+                switch (self._state)
+                {
+                    case ContextState.Restarting:
+                        await self.RestartAsync();
+                        break;
+                    case ContextState.Stopping:
+                        await self.FinalizeStopAsync();
+                        break;
+                }
             }
         }
 
@@ -588,17 +594,18 @@ namespace Proto.Context
             }
         }
 
-        private async ValueTask DisposeActorIfDisposable()
+        private ValueTask DisposeActorIfDisposable()
         {
             switch (Actor)
             {
                 case IAsyncDisposable asyncDisposableActor:
-                    await asyncDisposableActor.DisposeAsync();
-                    break;
+                    return asyncDisposableActor.DisposeAsync();
                 case IDisposable disposableActor:
                     disposableActor.Dispose();
                     break;
             }
+
+            return default;
         }
 
         private void ReceiveTimeoutCallback(object state)
