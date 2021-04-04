@@ -68,7 +68,11 @@ namespace Proto.Context
         {
             if (Sender is not null)
             {
-                Logger.LogDebug("{Self} Responding to {Sender} with message {Message}", Self, Sender, message);
+                if (Logger.IsEnabled(LogLevel.Debug))
+                {
+                    Logger.LogDebug("{Self} Responding to {Sender} with message {Message}", Self, Sender, message);
+                }
+
                 SendUserMessage(Sender, message);
             }
             else
@@ -372,7 +376,8 @@ namespace Proto.Context
 
         private static ValueTask HandleUnknownSystemMessage(object msg)
         {
-            Logger.LogDebug("Unknown system message {Message}", msg);
+            //TODO: sounds like a pretty severe issue if we end up here? what todo?
+            Logger.LogWarning("Unknown system message {Message}", msg);
             return default;
         }
 
@@ -446,7 +451,12 @@ namespace Proto.Context
         {
             _state = ContextState.Alive;
             var actor = _props.Producer(System);
-            System.Metrics.InternalActorMetrics.ActorSpawnCount.Inc(new[] {System.Id, System.Address, actor.GetType().Name});
+
+            if (!System.Metrics.IsNoop)
+            {
+                System.Metrics.InternalActorMetrics.ActorSpawnCount.Inc(new[] {System.Id, System.Address, actor.GetType().Name});
+            }
+
             return actor;
         }
 
@@ -457,7 +467,11 @@ namespace Proto.Context
             CancelReceiveTimeout();
             await InvokeUserMessageAsync(Restarting.Instance);
             await StopAllChildren();
-            System.Metrics.InternalActorMetrics.ActorRestartedCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
+
+            if (!System.Metrics.IsNoop)
+            {
+                System.Metrics.InternalActorMetrics.ActorRestartedCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
+            }
         }
 
         private ValueTask HandleUnwatch(Unwatch uw)
