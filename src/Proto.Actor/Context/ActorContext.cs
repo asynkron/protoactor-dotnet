@@ -68,7 +68,11 @@ namespace Proto.Context
         {
             if (Sender is not null)
             {
-                Logger.LogDebug("{Self} Responding to {Sender} with message {Message}", Self, Sender, message);
+                if (Logger.IsEnabled(LogLevel.Debug))
+                {
+                    Logger.LogDebug("{Self} Responding to {Sender} with message {Message}", Self, Sender, message);
+                }
+
                 SendUserMessage(Sender, message);
             }
             else
@@ -255,7 +259,7 @@ namespace Proto.Context
                 return msg switch
                 {
                     Started s                       => InvokeUserMessageAsync(s),
-                    Stop _                          => InitiateStopAsync(),
+                    Stop _                          => HandleStopAsync(),
                     Terminated t                    => HandleTerminatedAsync(t),
                     Watch w                         => HandleWatch(w),
                     Unwatch uw                      => HandleUnwatch(uw),
@@ -372,7 +376,8 @@ namespace Proto.Context
 
         private static ValueTask HandleUnknownSystemMessage(object msg)
         {
-            Logger.LogDebug("Unknown system message {Message}", msg);
+            //TODO: sounds like a pretty severe issue if we end up here? what todo?
+            Logger.LogWarning("Unknown system message {Message}", msg);
             return default;
         }
 
@@ -446,7 +451,12 @@ namespace Proto.Context
         {
             _state = ContextState.Alive;
             var actor = _props.Producer(System);
-            System.Metrics.InternalActorMetrics.ActorSpawnCount.Inc(new[] {System.Id, System.Address, actor.GetType().Name});
+
+            if (!System.Metrics.IsNoop)
+            {
+                System.Metrics.InternalActorMetrics.ActorSpawnCount.Inc(new[] {System.Id, System.Address, actor.GetType().Name});
+            }
+
             return actor;
         }
 
@@ -457,7 +467,11 @@ namespace Proto.Context
             CancelReceiveTimeout();
             await InvokeUserMessageAsync(Restarting.Instance);
             await StopAllChildren();
-            System.Metrics.InternalActorMetrics.ActorRestartedCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
+
+            if (!System.Metrics.IsNoop)
+            {
+                System.Metrics.InternalActorMetrics.ActorRestartedCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
+            }
         }
 
         private ValueTask HandleUnwatch(Unwatch uw)
@@ -494,12 +508,15 @@ namespace Proto.Context
             return default;
         }
 
+        // this will be triggered by the actors own Termination, _and_ terminating direct children, or Watchees
         private async ValueTask HandleTerminatedAsync(Terminated msg)
         {
+            //In the case of a Watchee terminating, this will have no effect, except that the terminate message is
+            //passed onto the user message Receive for user level handling
             _extras?.RemoveChild(msg.Who);
             await InvokeUserMessageAsync(msg);
 
-            if (_state == ContextState.Stopping || _state == ContextState.Restarting) await TryRestartOrStopAsync();
+            if (_state is ContextState.Stopping or ContextState.Restarting) await TryRestartOrStopAsync();
         }
 
         private void HandleRootFailure(Failure failure)
@@ -509,42 +526,50 @@ namespace Proto.Context
             );
 
         //Initiate stopping, not final
-        private async ValueTask InitiateStopAsync()
+        private ValueTask HandleStopAsync()
         {
             if (_state >= ContextState.Stopping)
             {
                 //already stopping or stopped
-                return;
+                return default;
             }
 
             _state = ContextState.Stopping;
             CancelReceiveTimeout();
-            //this is intentional
 
-            await InvokeUserMessageAsync(Stopping.Instance);
-            await StopAllChildren();
+            return Await(this);
+
+            static async ValueTask Await(ActorContext self)
+            {
+                await self.InvokeUserMessageAsync(Stopping.Instance);
+                await self.StopAllChildren();
+            }
         }
 
-        private async ValueTask StopAllChildren()
+        private ValueTask StopAllChildren()
         {
             _extras?.Children.Stop(System);
 
-            await TryRestartOrStopAsync();
+            return TryRestartOrStopAsync();
         }
 
         //intermediate stopping stage, waiting for children to stop
-        private async ValueTask TryRestartOrStopAsync()
+        //this is directly triggered by StopAllChildren, or by Terminated messages from stopping children
+        private ValueTask TryRestartOrStopAsync()
         {
-            if (_extras?.Children.Count > 0) return;
+            if (_extras?.Children.Count > 0) return default;
 
             CancelReceiveTimeout();
-
+            
+            //all children are now stopped, should we restart or stop ourselves?
             switch (_state)
             {
-                case ContextState.Restarting: await RestartAsync();
-                    break;
-                case ContextState.Stopping:   await FinalizeStopAsync();
-                    break;
+                case ContextState.Restarting:
+                    return RestartAsync();
+                case ContextState.Stopping:
+                    return FinalizeStopAsync();
+                default:
+                    return default;
             }
         }
 
@@ -588,17 +613,18 @@ namespace Proto.Context
             }
         }
 
-        private async ValueTask DisposeActorIfDisposable()
+        private ValueTask DisposeActorIfDisposable()
         {
             switch (Actor)
             {
                 case IAsyncDisposable asyncDisposableActor:
-                    await asyncDisposableActor.DisposeAsync();
-                    break;
+                    return asyncDisposableActor.DisposeAsync();
                 case IDisposable disposableActor:
                     disposableActor.Dispose();
                     break;
             }
+
+            return default;
         }
 
         private void ReceiveTimeoutCallback(object state)
