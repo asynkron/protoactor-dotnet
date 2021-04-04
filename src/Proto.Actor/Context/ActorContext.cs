@@ -255,7 +255,7 @@ namespace Proto.Context
                 return msg switch
                 {
                     Started s                       => InvokeUserMessageAsync(s),
-                    Stop _                          => InitiateStopAsync(),
+                    Stop _                          => HandleStopAsync(),
                     Terminated t                    => HandleTerminatedAsync(t),
                     Watch w                         => HandleWatch(w),
                     Unwatch uw                      => HandleUnwatch(uw),
@@ -494,12 +494,15 @@ namespace Proto.Context
             return default;
         }
 
+        // this will be triggered by the actors own Termination, _and_ terminating direct children, or Watchees
         private async ValueTask HandleTerminatedAsync(Terminated msg)
         {
+            //In the case of a Watchee terminating, this will have no effect, except that the terminate message is
+            //passed onto the user message Receive for user level handling
             _extras?.RemoveChild(msg.Who);
             await InvokeUserMessageAsync(msg);
 
-            if (_state == ContextState.Stopping || _state == ContextState.Restarting) await TryRestartOrStopAsync();
+            if (_state is ContextState.Stopping or ContextState.Restarting) await TryRestartOrStopAsync();
         }
 
         private void HandleRootFailure(Failure failure)
@@ -509,20 +512,24 @@ namespace Proto.Context
             );
 
         //Initiate stopping, not final
-        private async ValueTask InitiateStopAsync()
+        private ValueTask HandleStopAsync()
         {
             if (_state >= ContextState.Stopping)
             {
                 //already stopping or stopped
-                return;
+                return default;
             }
 
             _state = ContextState.Stopping;
             CancelReceiveTimeout();
-            //this is intentional
 
-            await InvokeUserMessageAsync(Stopping.Instance);
-            await StopAllChildren();
+            return Await(this);
+
+            static async ValueTask Await(ActorContext self)
+            {
+                await self.InvokeUserMessageAsync(Stopping.Instance);
+                await self.StopAllChildren();
+            }
         }
 
         private ValueTask StopAllChildren()
@@ -538,19 +545,14 @@ namespace Proto.Context
             if (_extras?.Children.Count > 0) return default;
 
             CancelReceiveTimeout();
-            return Await(this);
-            
-            static async ValueTask Await(ActorContext self)
+            switch (_state)
             {
-                switch (self._state)
-                {
-                    case ContextState.Restarting:
-                        await self.RestartAsync();
-                        break;
-                    case ContextState.Stopping:
-                        await self.FinalizeStopAsync();
-                        break;
-                }
+                case ContextState.Restarting:
+                    return RestartAsync();
+                case ContextState.Stopping:
+                    return FinalizeStopAsync();
+                default:
+                    return default;
             }
         }
 
