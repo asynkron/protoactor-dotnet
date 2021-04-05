@@ -21,7 +21,7 @@ namespace Proto.Cluster
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
             SetGossipStateKey setState => OnSetGossipStateKey(context, setState),
-            GossipState remoteState    => OnGossipState(remoteState),
+            GossipState remoteState    => OnGossipState(context, remoteState),
             HeartbeatRequest           => OnHeartbeatRequest(context),
             _                          => Task.CompletedTask
         };
@@ -36,11 +36,12 @@ namespace Proto.Cluster
             return Task.CompletedTask;
         }
 
-        private Task OnGossipState(GossipState remoteState)
+        private async Task OnGossipState(IContext context, GossipState remoteState)
         {
             var newState = _state.MergeWith(remoteState);
             _state = newState;
-            return Task.CompletedTask;
+            //TODO: only do if state changed
+            await GossipMyState(context);
         }
 
         private async Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
