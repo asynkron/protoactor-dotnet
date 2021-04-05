@@ -11,16 +11,19 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster
 {
-    public record SetGossipState(string Key, Any value);
+    public record SetGossipStateKey(string Key, Any Value);
+
     public class ClusterHeartBeatActor : IActor
     {
+        private const string ClusterHeartBeatName = "ClusterHeartBeat";
         private GossipState _state = new();
+
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            SetGossipState setState => OnSetGossipState(context, setState),
-            GossipState remoteState => OnGossipState(remoteState),
-            HeartbeatRequest        => OnHeartbeatRequest(context),
-            _                       => Task.CompletedTask
+            SetGossipStateKey setState => OnSetGossipStateKey(context, setState),
+            GossipState remoteState    => OnGossipState(remoteState),
+            HeartbeatRequest           => OnHeartbeatRequest(context),
+            _                          => Task.CompletedTask
         };
 
         private static Task OnHeartbeatRequest(IContext context)
@@ -40,29 +43,49 @@ namespace Proto.Cluster
             return Task.CompletedTask;
         }
 
-        private Task OnSetGossipState(IContext context, SetGossipState setState)
+        private async Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
         {
             var memberId = context.System.Id;
-            var existing = _state.Entries.FirstOrDefault(e => e.Key == setState.Key && e.MemberId == memberId);
+            var entry = _state.Entries.FirstOrDefault(e => e.Key == setStateKey.Key && e.MemberId == memberId);
 
-            if (existing != null)
+            if (entry == null)
             {
-                existing.Version++;
-                existing.Value = setState.value;
-                return Task.CompletedTask;
+                entry = new GossipKeyValue
+                {
+                    MemberId = memberId,
+                    Key = setStateKey.Key,
+                };
+                _state.Entries.Add(entry);
             }
 
-            var newEntry = new GossipKeyValue
+            entry.Version++;
+            entry.Value = setStateKey.Value;
+
+            await GossipMyState(context);
+
+        }
+
+        private async Task GossipMyState(IContext context)
+        {
+            var members = context.System.Cluster().MemberList.GetAllMembers();
+
+            var rnd = new Random();
+            var gossipToMembers =
+                members
+                    .Select(m => (member:m, index:rnd.Next()))
+                    .OrderBy(m => m.index)
+                    .Take(3)
+                    .Select(m => m.member)
+                    .ToList();
+
+            foreach (var member in gossipToMembers)
             {
-                MemberId = memberId,
-                Key = setState.key,
-                Version = 0,
-                Value = setState.value
-            };
-            _state.Entries.Add(newEntry);
-            return Task.CompletedTask;
+                var pid = PID.FromAddress(member.Address, ClusterHeartBeatName);
+                context.Send(pid, _state);
+            }
         }
     }
+
 
     public class ClusterHeartBeat
     {
