@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto.Remote;
+using Proto.Utils.Proto.Utils;
 
 namespace Proto.Cluster.PubSub
 {
@@ -16,6 +17,12 @@ namespace Proto.Cluster.PubSub
     {
         private ImmutableHashSet<SubscriberIdentity> _subscribers = ImmutableHashSet<SubscriberIdentity>.Empty;
         private string _topic = string.Empty;
+        private readonly IKeyValueStore<Subscribers> _subscriptionStore;
+
+        public TopicActor(IKeyValueStore<Subscribers> subscriptionStore)
+        {
+            _subscriptionStore = subscriptionStore;
+        }
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
@@ -29,15 +36,25 @@ namespace Proto.Cluster.PubSub
         private async Task OnProducerBatch(IContext context, ProducerBatch batch)
         {
             var s = context.System.Serialization();
-            var messages = batch.Envelopes.Select(e => s.Deserialize(batch.TypeNames[e.TypeId], e.MessageData, s.DefaultSerializerId)).ToList();
             
+            //deserialize messages in the envelope
+            var messages = batch
+                .Envelopes
+                .Select(e => s
+                    .Deserialize(batch.TypeNames[e.TypeId], e.MessageData, s.DefaultSerializerId))
+                .ToList();
+            
+            //request async all messages to their subscribers
             var tasks =
                 (from sub in _subscribers
                  from message in messages
                  select DeliverMessage(context, message, sub))
                 .ToList();
                         
+            //wait for completion
             await Task.WhenAll(tasks);
+            
+            //ack back to producer
             context.Respond(new PublishResponse());
         }
 
@@ -63,9 +80,18 @@ namespace Proto.Cluster.PubSub
             _subscribers = ImmutableHashSet.CreateRange(subs.Subscribers_);
         }
 
-        protected virtual Task<Subscribers> LoadSubscriptions(string topic) => Task.FromResult(new Subscribers());
+        protected virtual async Task<Subscribers> LoadSubscriptions(string topic)
+        { 
+            //TODO: cancellation token config?
+            var state = await _subscriptionStore.GetAsync(topic, CancellationToken.None);
+            return state;
+        }
 
-        protected virtual Task SaveSubscriptions(string topic, Subscribers subs) => Task.CompletedTask;
+        protected virtual async Task SaveSubscriptions(string topic, Subscribers subs)
+        {
+            //TODO: cancellation token config?
+            await _subscriptionStore.SetAsync(topic, subs, CancellationToken.None);
+        }
 
         private async Task OnUnsubscribe(IContext context, UnsubscribeRequest unsub)
         {
