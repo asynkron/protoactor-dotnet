@@ -4,32 +4,62 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster
 {
+    public record SetGossipState(string Key, Any value);
     public class ClusterHeartBeatActor : IActor
     {
         private GossipState _state = new();
-        public Task ReceiveAsync(IContext context)
+        public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            switch (context.Message)
-            {
-                case GossipState remoteState: {
-                    var newState = _state.MergeWith(remoteState);
-                    _state = newState;
-                    break;
+            SetGossipState setState => OnSetGossipState(context, setState),
+            GossipState remoteState => OnGossipState(remoteState),
+            HeartbeatRequest        => OnHeartbeatRequest(context),
+            _                       => Task.CompletedTask
+        };
+
+        private static Task OnHeartbeatRequest(IContext context)
+        {
+            context.Respond(new HeartbeatResponse
+                {
+                    ActorCount = (uint) context.System.ProcessRegistry.ProcessCount
                 }
-                case HeartbeatRequest:
-                    context.Respond(new HeartbeatResponse
-                        {
-                            ActorCount = (uint) context.System.ProcessRegistry.ProcessCount
-                        }
-                    );
-                    break;
+            );
+            return Task.CompletedTask;
+        }
+
+        private Task OnGossipState(GossipState remoteState)
+        {
+            var newState = _state.MergeWith(remoteState);
+            _state = newState;
+            return Task.CompletedTask;
+        }
+
+        private Task OnSetGossipState(IContext context, SetGossipState setState)
+        {
+            var memberId = context.System.Id;
+            var existing = _state.Entries.FirstOrDefault(e => e.Key == setState.Key && e.MemberId == memberId);
+
+            if (existing != null)
+            {
+                existing.Version++;
+                existing.Value = setState.value;
+                return Task.CompletedTask;
             }
 
+            var newEntry = new GossipKeyValue
+            {
+                MemberId = memberId,
+                Key = setState.key,
+                Version = 0,
+                Value = setState.value
+            };
+            _state.Entries.Add(newEntry);
             return Task.CompletedTask;
         }
     }
