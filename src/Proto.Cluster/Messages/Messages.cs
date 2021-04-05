@@ -58,4 +58,37 @@ namespace Proto.Cluster
             return hash;
         }
     }
+
+    public partial class GossipKeyValue
+    {
+        public string GlobalKey => $"{MemberId}.{Key}";
+    }
+
+    public partial class GossipState
+    {
+        public GossipState MergeWith(GossipState other)
+        {
+            var state =
+                Entries
+                    .ToDictionary(
+                        kvp => kvp.GlobalKey, 
+                        kvp => kvp);
+            
+            foreach (var kvp in Entries)
+            {
+                if (state.TryAdd(kvp.GlobalKey, kvp)) continue;
+
+                var existing = state[kvp.GlobalKey];
+                var highest = kvp.Version > existing.Version ? kvp : existing;
+                state[kvp.GlobalKey] = highest;
+            }
+
+            var newState = new GossipState
+            {
+                Entries = {state.Values}
+            };
+
+            return newState;
+        }
+    }
 }
