@@ -11,15 +11,23 @@ namespace Proto.Cluster
 {
     public class ClusterHeartBeatActor : IActor
     {
+        private GossipState _state = new();
         public Task ReceiveAsync(IContext context)
         {
-            if (context.Message is HeartbeatRequest)
+            switch (context.Message)
             {
-                context.Respond(new HeartbeatResponse
-                    {
-                        ActorCount = (uint) context.System.ProcessRegistry.ProcessCount
-                    }
-                );
+                case GossipState remoteState: {
+                    var newState = _state.MergeWith(remoteState);
+                    _state = newState;
+                    break;
+                }
+                case HeartbeatRequest:
+                    context.Respond(new HeartbeatResponse
+                        {
+                            ActorCount = (uint) context.System.ProcessRegistry.ProcessCount
+                        }
+                    );
+                    break;
             }
 
             return Task.CompletedTask;
