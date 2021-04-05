@@ -66,21 +66,29 @@ namespace Proto.Cluster
 
     public partial class GossipState
     {
-        public GossipState MergeWith(GossipState other)
+        public (bool dirty, GossipState state) MergeWith(GossipState other)
         {
             var state =
                 Entries
                     .ToDictionary(
                         kvp => kvp.GlobalKey, 
                         kvp => kvp);
-            
-            foreach (var kvp in Entries)
+
+            var dirty = false;
+            foreach (var kvp in other.Entries)
             {
-                if (state.TryAdd(kvp.GlobalKey, kvp)) continue;
+                if (state.TryAdd(kvp.GlobalKey, kvp))
+                {
+                    dirty = true;
+                    continue;
+                }
 
                 var existing = state[kvp.GlobalKey];
-                var highest = kvp.Version > existing.Version ? kvp : existing;
-                state[kvp.GlobalKey] = highest;
+
+                if (kvp.Version <= existing.Version) continue;
+
+                dirty = true;
+                state[kvp.GlobalKey] = kvp;
             }
 
             var newState = new GossipState
@@ -88,7 +96,7 @@ namespace Proto.Cluster
                 Entries = {state.Values}
             };
 
-            return newState;
+            return (dirty,newState);
         }
     }
 }

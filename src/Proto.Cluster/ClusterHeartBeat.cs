@@ -38,29 +38,32 @@ namespace Proto.Cluster
 
         private async Task OnGossipState(IContext context, GossipState remoteState)
         {
-            var newState = _state.MergeWith(remoteState);
+            var (dirty,newState) = _state.MergeWith(remoteState);
+            if (!dirty)
+                return;
+            
             _state = newState;
-            //TODO: only do if state changed
             await GossipMyState(context);
         }
 
         private async Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
         {
             var memberId = context.System.Id;
-            var entry = _state.Entries.FirstOrDefault(e => e.Key == setStateKey.Key && e.MemberId == memberId);
+            var (key, value) = setStateKey;
+            var entry = _state.Entries.FirstOrDefault(e => e.Key == key && e.MemberId == memberId);
 
             if (entry == null)
             {
                 entry = new GossipKeyValue
                 {
                     MemberId = memberId,
-                    Key = setStateKey.Key,
+                    Key = key,
                 };
                 _state.Entries.Add(entry);
             }
 
             entry.Version++;
-            entry.Value = setStateKey.Value;
+            entry.Value = value;
 
             await GossipMyState(context);
 
