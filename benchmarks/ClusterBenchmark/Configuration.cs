@@ -110,16 +110,16 @@ namespace ClusterExperiment1
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
                 .WithDeadLetterRequestLogging(false)
             );
-            system.EventStream.Subscribe<ClusterTopology>(e => {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"{system.Id}-ClusterTopology:{e.GetMembershipHashCode()}");
-                Console.ResetColor();
-            });
-            system.EventStream.Subscribe<LeaderElected>(e => {
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"{system.Id}-Leader:{e.Leader.Id}");
-                Console.ResetColor();
-            });
+            // system.EventStream.Subscribe<ClusterTopology>(e => {
+            //     Console.ForegroundColor = ConsoleColor.Yellow;
+            //     Console.WriteLine($"{system.Id}-ClusterTopology:{e.GetMembershipHashCode()}");
+            //     Console.ResetColor();
+            // });
+            // system.EventStream.Subscribe<LeaderElected>(e => {
+            //     Console.ForegroundColor = ConsoleColor.Cyan;
+            //     Console.WriteLine($"{system.Id}-Leader:{e.Leader.Id}");
+            //     Console.ResetColor();
+            // });
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
             
@@ -134,16 +134,16 @@ namespace ClusterExperiment1
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
                 .WithDeadLetterRequestLogging(false)
             );
-            system.EventStream.Subscribe<ClusterTopology>(e => {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"{system.Id}-ClusterTopology:{e.GetMembershipHashCode()}");
-                Console.ResetColor();
-            });
-            system.EventStream.Subscribe<LeaderElected>(e => {
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"{system.Id}-Leader:{e.Leader.Id}");
-                Console.ResetColor();
-            });
+            // system.EventStream.Subscribe<ClusterTopology>(e => {
+            //     Console.ForegroundColor = ConsoleColor.Yellow;
+            //     Console.WriteLine($"{system.Id}-ClusterTopology:{e.GetMembershipHashCode()}");
+            //     Console.ResetColor();
+            // });
+            // system.EventStream.Subscribe<LeaderElected>(e => {
+            //     Console.ForegroundColor = ConsoleColor.Cyan;
+            //     Console.WriteLine($"{system.Id}-Leader:{e.Leader.Id}");
+            //     Console.ResetColor();
+            // });
             var clusterProvider = ClusterProvider();
             var identity = GetIdentityLookup();
             system.WithRemote(GetRemoteConfig()).WithCluster(GetClusterConfig(clusterProvider,identity));

@@ -16,6 +16,7 @@ namespace Proto.Cluster.Gossip
         private GossipState _state = new();
         private readonly Random _rnd = new();
         private readonly Dictionary<string, long> _watermarks = new();
+        private uint _clusterTopologyHash;
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
@@ -31,15 +32,27 @@ namespace Proto.Cluster.Gossip
             {
                 return;
             }
-            
-            // Console.WriteLine();
-            // Console.WriteLine();
-            // Console.WriteLine($"{context.System.Id} got new state: {remoteState}");
-            // Console.WriteLine();
-            // Console.WriteLine();
-            
             _state = newState;
-            GossipStateManagement.ElectLeader(_state);
+            
+            // Console.WriteLine();
+            // Console.WriteLine();
+           // Console.WriteLine($"{context.System.Id} got new state: {remoteState}");
+            // Console.WriteLine();
+            // Console.WriteLine();
+
+
+            var bannedMembers = context.System.Cluster().MemberList.GetBannedMembers();
+            
+            var(consensus, hash)= GossipStateManagement.ElectLeader(_state,context.System.Id, bannedMembers);
+
+            if (consensus)
+            {
+                if (hash != _clusterTopologyHash)
+                {
+                    _clusterTopologyHash = hash;
+                    Console.WriteLine($"CONSSENSUS {context.System.Id} - {_clusterTopologyHash}");
+                }
+            }
         }
         
         private Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
@@ -56,7 +69,7 @@ namespace Proto.Cluster.Gossip
 
             foreach (var member in fanOutMembers)
             {
-                var stateForMember = GossipStateManagement.FilterGossipStateForMember(_state, _watermarks);
+                var stateForMember = _state; //GossipStateManagement.FilterGossipStateForMember(_state, _watermarks);
                 var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
                 context.Send(pid, stateForMember);
             }

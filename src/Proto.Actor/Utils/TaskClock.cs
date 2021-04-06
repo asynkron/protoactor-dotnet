@@ -28,8 +28,15 @@ namespace Proto.Utils
             _ = SafeTask.Run(async () => {
                     while (!_ct.IsCancellationRequested)
                     {
-                        CurrentBucket = Task.Delay(_bucketSize,_ct);
-                        await Task.Delay(_updateInterval,_ct);
+                        try
+                        {
+                            CurrentBucket = Task.Delay(_bucketSize, _ct);
+                            await Task.Delay(_updateInterval, _ct);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            //ignore, expected
+                        }
                     }
                 }
             );

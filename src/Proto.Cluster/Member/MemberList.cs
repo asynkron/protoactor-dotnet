@@ -43,7 +43,7 @@ namespace Proto.Cluster
         private ImmutableDictionary<int, Member> _membersByIndex = ImmutableDictionary<int, Member>.Empty;
 
         private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
-        private readonly ConcurrentSet<string> _bannedMembers = new();
+        private  ImmutableHashSet<string> _bannedMembers = ImmutableHashSet<string>.Empty;
         private int _nextMemberIndex;
 
         public MemberList(Cluster cluster)
@@ -54,6 +54,8 @@ namespace Proto.Cluster
             _eventStream = _system.EventStream;
             _cluster.System.EventStream.Subscribe<ClusterTopologyNotification>(OnClusterTopologyNotification);
         }
+
+        public ImmutableHashSet<string> GetBannedMembers() => _bannedMembers;
 
         public Task TopologyConsensus() => _topologyConsensus.Task;
 
@@ -242,7 +244,7 @@ namespace Proto.Cluster
                     }
                 }
 
-                _bannedMembers.Add(memberThatLeft.Id);
+                _bannedMembers = _bannedMembers.Add(memberThatLeft.Id);
 
                 _members = _members.Remove(memberThatLeft.Id);
                 _membersByIndex = _membersByIndex.Remove(memberThatLeft.Index);

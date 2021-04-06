@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
@@ -122,28 +123,44 @@ namespace Proto.Cluster.Gossip
             return newState;
         }
         
-        public static void ElectLeader(GossipState state)
+        public static (bool, uint) ElectLeader(GossipState state, string myId, ImmutableHashSet<string> bannedMembers)
         {
-            var hashes = new List<uint>();
-            
-            foreach (var (memberId, memberState) in state.Members)
+            try
             {
-                var topology = memberState.GetTopology();
-
-                if (topology == null)
-                {
-                    hashes.Add(0);
-                    continue;
-                }
-            }
-
-            var first = hashes.FirstOrDefault();
-
-            if (hashes.All(h => h == first))
-            {
-                //all members have the same hash
+                var hashes = new List<uint>();
                 
-                Console.WriteLine("Consensus!!!!!!!!");
+                foreach (var (memberId, memberState) in state.Members)
+                {
+                    //skip banned members
+                    if (bannedMembers.Contains(memberId))
+                        continue;
+                    
+                    var topology = memberState.GetTopology();
+
+                    if (topology == null)
+                    {
+                        Console.WriteLine(myId+ " null topology" + memberId);
+                        hashes.Add(0);
+                        continue;
+                    }
+                    hashes.Add(topology.GetMembershipHashCode());
+                }
+
+                var first = hashes.FirstOrDefault();
+
+                if (hashes.All(h => h == first))
+                {
+                    //all members have the same hash
+
+                    return (true, first);
+                }
+
+                return (false, 0);
+            }
+            catch (Exception x)
+            {
+                Console.WriteLine(x);
+                return (false, 0);
             }
 
             // hashes.Add(topology.GetMembershipHashCode());
@@ -187,7 +204,7 @@ namespace Proto.Cluster.Gossip
             //     
             //
             //     Logger.LogDebug("[MemberList] Got ClusterTopologyNotification {ClusterTopologyNotification}, Consensus {Consensus}, Members {Members}", ctn, everyoneInAgreement,_memberState.Count);
-           // }
+            // }
         }
     }
 }
