@@ -45,59 +45,7 @@ namespace Proto.Cluster
     public partial class ClusterTopology
     {
         //this ignores joined and left members, only the actual members are relevant
-        public uint GetMembershipHashCode() => Member.GetMembershipHashCode(Members);
+        public uint GetMembershipHashCode() => MemberList.GetMembershipHashCode(Members);
     }
-
-    public partial class Member
-    {
-        public static uint GetMembershipHashCode(IEnumerable<Member> members)
-        {
-            var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
-            var key = string.Join("", x);
-            var hash = MurmurHash2.Hash(key);
-            return hash;
-        }
-    }
-
-    public partial class GossipKeyValue
-    {
-        public string GlobalKey => $"{MemberId}.{Key}";
-    }
-
-    public partial class GossipState
-    {
-        public (bool dirty, GossipState state) MergeWith(GossipState other)
-        {
-            var state =
-                Entries
-                    .ToDictionary(
-                        kvp => kvp.GlobalKey, 
-                        kvp => kvp);
-
-            var dirty = false;
-            foreach (var kvp in other.Entries)
-            {
-                if (!state.ContainsKey(kvp.GlobalKey))
-                {
-                    state.Add(kvp.GlobalKey, kvp);
-                    dirty = true;
-                    continue;
-                }
-
-                var existing = state[kvp.GlobalKey];
-
-                if (kvp.Version <= existing.Version) continue;
-
-                dirty = true;
-                state[kvp.GlobalKey] = kvp;
-            }
-
-            var newState = new GossipState
-            {
-                Entries = {state.Values}
-            };
-
-            return (dirty,newState);
-        }
-    }
+    
 }

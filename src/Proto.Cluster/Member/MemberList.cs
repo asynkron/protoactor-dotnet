@@ -122,7 +122,7 @@ namespace Proto.Cluster
             lock (this)
             {
                 Logger.LogDebug("[MemberList] Updating Cluster Topology");
-                var topology = new ClusterTopology {EventId = Member.GetMembershipHashCode(statuses)};
+                var topology = new ClusterTopology {EventId = GetMembershipHashCode(statuses)};
 
                 //TLDR:
                 //this method basically filters out any member status in the banned list
@@ -135,7 +135,7 @@ namespace Proto.Cluster
                         .Where(s => !_bannedMembers.Contains(s.Id))
                         .ToArray();
 
-                var newMembershipHashCode = Member.GetMembershipHashCode(nonBannedStatuses);
+                var newMembershipHashCode = GetMembershipHashCode(nonBannedStatuses);
 
                 //same topology, bail out
                 if (newMembershipHashCode == _currentMembershipHashCode)
@@ -335,6 +335,14 @@ namespace Proto.Cluster
             {
                 Console.WriteLine(m);
             }
+        }
+
+        public static uint GetMembershipHashCode(IEnumerable<Member> members)
+        {
+            var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
+            var key = string.Join("", x);
+            var hash = MurmurHash2.Hash(key);
+            return hash;
         }
     }
 }

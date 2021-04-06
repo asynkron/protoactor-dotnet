@@ -87,7 +87,11 @@ message GracefulShutdown {
 //two GossipState objects can be merged
 //key + member_id gets it's own entry, if collision, highest version is selected
 message GossipState {
-  repeated GossipKeyValue entries = 1;  
+  map<string, GossipMemberState>  members = 1;
+}
+
+message GossipMemberState {
+  map<string,GossipKeyValue> values = 1;
 }
 
 //a known key might be heartbeat. if we locally tag each entry with a local timestamp 
@@ -97,10 +101,8 @@ message GossipState {
 //and we can measure time from then til now.
 //
 //if we got a hearbeat from another node, and X seconds pass, we can assume it to be dead
-message GossipKeyValue { 
-  string member_id = 1; //id of the member issuing this value
-  int64 version = 2; //version is local to the owner member
-  string key = 3; //key or state identifier, e.g. "known-members"
+message GossipKeyValue {
+  int64 sequence_number = 2; //version is local to the owner member
   google.protobuf.Any value = 4; //value is any format
 }
 
