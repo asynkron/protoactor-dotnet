@@ -112,7 +112,7 @@ namespace Proto.Future
         public void Dispose()
         {
             System.ProcessRegistry.Remove(Pid);
-            _tcs.Task.Dispose();
+          //  _tcs.Task.Dispose();
             _cts?.Dispose();
         }
     }
