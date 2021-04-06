@@ -51,7 +51,7 @@ namespace Proto.Cluster
             //Console.WriteLine($"{context.System.Id} got new state: {newState} ... old state: {_state}");
             
             _state = newState;
-            await GossipMyState(context);
+           // await GossipMyState(context);
         }
 
         private async Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
@@ -73,7 +73,7 @@ namespace Proto.Cluster
             entry.Version++;
             entry.Value = Any.Pack(value);
 
-            await GossipMyState(context);
+          //  await GossipMyState(context);
 
         }
 
