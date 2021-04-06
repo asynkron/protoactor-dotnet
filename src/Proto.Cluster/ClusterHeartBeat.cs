@@ -13,6 +13,8 @@ namespace Proto.Cluster
 {
     public record SetGossipStateKey(string Key, Any Value);
 
+    public record SendGossipState();
+
     public class ClusterHeartBeatActor : IActor
     {
         private const string ClusterHeartBeatName = "ClusterHeartBeat";
@@ -22,19 +24,22 @@ namespace Proto.Cluster
         {
             SetGossipStateKey setState => OnSetGossipStateKey(context, setState),
             GossipState remoteState    => OnGossipState(context, remoteState),
-            HeartbeatRequest           => OnHeartbeatRequest(context),
+            SendGossipState => OnSendGossipState(context),
+            // HeartbeatRequest           => OnHeartbeatRequest(context),
             _                          => Task.CompletedTask
         };
 
-        private static Task OnHeartbeatRequest(IContext context)
-        {
-            context.Respond(new HeartbeatResponse
-                {
-                    ActorCount = (uint) context.System.ProcessRegistry.ProcessCount
-                }
-            );
-            return Task.CompletedTask;
-        }
+        private async Task OnSendGossipState(IContext context) => await GossipMyState(context);
+
+        // private static Task OnHeartbeatRequest(IContext context)
+        // {
+        //     context.Respond(new HeartbeatResponse
+        //         {
+        //             ActorCount = (uint) context.System.ProcessRegistry.ProcessCount
+        //         }
+        //     );
+        //     return Task.CompletedTask;
+        // }
 
         private async Task OnGossipState(IContext context, GossipState remoteState)
         {
@@ -119,50 +124,17 @@ namespace Proto.Cluster
         private async Task HeartBeatLoop()
         {
             await Task.Yield();
-
+        
             while (!_cluster.System.Shutdown.IsCancellationRequested)
             {
                 try
                 {
                     await Task.Delay(_cluster.Config.HeartBeatInterval);
-                    var members = _cluster.MemberList.GetAllMembers();
-
-                    foreach (var member in members)
-                    {
-                        var pid = PID.FromAddress(member.Address, ClusterHeartBeatName);
-
-                        try
-                        {
-                            await _context.RequestAsync<HeartbeatResponse>(pid, new HeartbeatRequest(),
-                                TimeSpan.FromSeconds(5)
-                            );
-
-                            _logger.LogDebug("Heartbeat request for member id {MemberId} Address {Address} succeeded",
-                                member.Id, member.Address
-                            );
-                        }
-                        catch (TimeoutException)
-                        {
-                            if (_cluster.System.Shutdown.IsCancellationRequested) return;
-
-                            _logger.LogWarning("Heartbeat request for member id {MemberId} Address {Address} timed out",
-                                member.Id, member.Address
-                            );
-                        }
-                        catch (DeadLetterException)
-                        {
-                            if (_cluster.System.Shutdown.IsCancellationRequested) return;
-
-                            _logger.LogWarning(
-                                "Heartbeat request for member id {MemberId} Address {Address} got dead letter response",
-                                member.Id, member.Address
-                            );
-                        }
-                    }
+                    _context.Send(_pid, new SendGossipState());
                 }
                 catch (Exception x)
                 {
-                    _logger.LogError(x, "Heartbeat loop failed");
+                   // _logger.LogError(x, "Heartbeat loop failed");
                 }
             }
         }
