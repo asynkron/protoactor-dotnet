@@ -4,92 +4,67 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 
 namespace Proto.Cluster
 {
     public class GossipActor : IActor
     {
-        private int _localSequenceNo = 0;
+        private long _localSequenceNo;
         private GossipState _state = new();
+        private readonly Random _rnd = new();
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
             SetGossipStateKey setState => OnSetGossipStateKey(context, setState),
             GossipState remoteState    => OnGossipState(context, remoteState),
             SendGossipState            => OnSendGossipState(context),
-            // HeartbeatRequest           => OnHeartbeatRequest(context),
-            _ => Task.CompletedTask
+            _                          => Task.CompletedTask
         };
-
-        // private static Task OnHeartbeatRequest(IContext context)
-        // {
-        //     context.Respond(new HeartbeatResponse
-        //         {
-        //             ActorCount = (uint) context.System.ProcessRegistry.ProcessCount
-        //         }
-        //     );
-        //     return Task.CompletedTask;
-        // }
 
         private async Task OnGossipState(IContext context, GossipState remoteState)
         {
-            var (dirty, newState) = GossipStateManagement.MergeState(_state, remoteState);
-            
-            if (!dirty)
+            if (!GossipStateManagement.MergeState(_state, remoteState, out var newState))
+            {
                 return;
-            
+            }
+
             Console.WriteLine($"{context.System.Id} got new state: {newState} ... old state: {_state}");
             
             _state = newState;
-            // await GossipMyState(context);
         }
-
         
-
         private Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
         {
-            SetKey(context, setStateKey);
+            GossipStateManagement.SetKey(_state, setStateKey.Key,setStateKey.Value  , context.System.Id, ref _localSequenceNo);
 
             return Task.CompletedTask;
-            //  await GossipMyState(context);
         }
 
-        private void SetKey(IContext context, SetGossipStateKey setStateKey)
-        {
-            var memberId = context.System.Id;
-            var (key, value) = setStateKey;
-
-            //if entry does not exist, add it
-            var memberState = GossipStateManagement.EnsureMemberStateExists(_state, memberId);
-            var entry = GossipStateManagement.EnsureEntryExists(memberState, key);
-
-            _localSequenceNo++;
-
-            entry.SequenceNumber = _localSequenceNo;
-            entry.Value = Any.Pack(value);
-        }
-
-        private async Task OnSendGossipState(IContext context)
+        private Task OnSendGossipState(IContext context)
         {
             var members = context.System.Cluster().MemberList.GetOtherMembers();
+            var fanOutMembers = PickRandomFanOutMembers(members,3);
 
-            var rnd = new Random();
-            var gossipToMembers =
-                members
-                    .Select(m => (member:m, index:rnd.Next()))
-                    .OrderBy(m => m.index)
-                    .Take(3)
-                    .Select(m => m.member)
-                    .ToList();
-
-            foreach (var member in gossipToMembers)
+            foreach (var member in fanOutMembers)
             {
                 var pid = PID.FromAddress(member.Address, Gossip.GossipActorName);
                 context.Send(pid, _state);
             }
+
+            return Task.CompletedTask;
         }
+
+        private List<Member>? PickRandomFanOutMembers(Member[] members, int fanOutBy) => 
+            members
+            .Select(m => (member: m, index: _rnd.Next()))
+            .OrderBy(m => m.index)
+            .Take(fanOutBy)
+            .Select(m => m.member)
+            .ToList();
     }
 }

@@ -3,6 +3,9 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
+
 namespace Proto.Cluster
 {
     public static class GossipStateManagement
@@ -29,10 +32,10 @@ namespace Proto.Cluster
             return memberState;
         }
 
-        public static (bool dirty, GossipState newState) MergeState(GossipState state, GossipState remoteState)
+        public static bool MergeState(GossipState state, GossipState remoteState, out  GossipState newState)
         {
-            var newState = state.Clone();
-            bool dirty = false;
+            newState = state.Clone();
+            var dirty = false;
 
             foreach (var (memberId, remoteMemberState) in remoteState.Members)
             {
@@ -68,7 +71,19 @@ namespace Proto.Cluster
                 }
             }
 
-            return (dirty, newState);
+            return dirty;
+        }
+
+        public static void SetKey(GossipState state, string key, IMessage value, string memberId, ref long sequenceNo)
+        {
+            //if entry does not exist, add it
+            var memberState = GossipStateManagement.EnsureMemberStateExists(state, memberId);
+            var entry = GossipStateManagement.EnsureEntryExists(memberState, key);
+
+            sequenceNo++;
+
+            entry.SequenceNumber = sequenceNo;
+            entry.Value = Any.Pack(value);
         }
     }
 }
