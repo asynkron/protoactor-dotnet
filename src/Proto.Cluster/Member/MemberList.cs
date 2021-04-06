@@ -7,11 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Proto.Cluster.Data;
 using Proto.Remote;
 using Proto.Utils;
 

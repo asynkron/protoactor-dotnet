@@ -74,7 +74,7 @@ namespace Proto.Cluster
             Provider = Config.ClusterProvider;
             
             await Provider.StartMemberAsync(this);
-
+            await Gossip.StartAsync();
             Logger.LogInformation("Started as cluster member");
         }
 
@@ -104,7 +104,7 @@ namespace Proto.Cluster
 
             var kinds = GetClusterKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
-            await Gossip.StartAsync();
+  
         }
 
         private void InitClusterKinds()

@@ -22,7 +22,7 @@ namespace Proto.Cluster
             ActorRequestTimeout = TimeSpan.FromSeconds(5);
             MaxNumberOfEventsInRequestLogThrottlePeriod = 3;
             RequestLogThrottlePeriod = TimeSpan.FromSeconds(2);
-            HeartBeatInterval = TimeSpan.FromSeconds(5);
+            HeartBeatInterval = TimeSpan.FromSeconds(1);
             ClusterRequestDeDuplication = true;
             ClusterRequestDeDuplicationWindow = TimeSpan.FromSeconds(30);
             IdentityLookup = identityLookup;

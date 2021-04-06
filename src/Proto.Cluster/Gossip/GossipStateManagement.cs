@@ -3,6 +3,9 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 
@@ -84,6 +87,107 @@ namespace Proto.Cluster.Gossip
 
             entry.SequenceNumber = sequenceNo;
             entry.Value = Any.Pack(value);
+        }
+
+        public static GossipState FilterGossipStateForMember(GossipState state, Dictionary<string, long> watermarks)
+        {
+            var newState = new GossipState();
+
+            //for each member
+            foreach (var (memberId, memberState) in state.Members)
+            {
+                //create an empty state
+                var newMemberState = new GossipMemberState();
+                newState.Members.Add(memberId, newMemberState);
+                
+                //get the watermark 
+                watermarks.TryGetValue(memberId, out long watermark);
+                var newWatermark = watermark;
+
+                //for each value in member state
+                foreach (var (key, value) in memberState.Values)
+                {
+                    if (value.SequenceNumber <= watermark)
+                        continue;
+                    
+                    if (value.SequenceNumber > newWatermark)
+                        newWatermark = value.SequenceNumber;
+                    
+                    newMemberState.Values.Add(key, value);
+                }
+
+                watermarks[memberId] = newWatermark;
+            }
+
+            return newState;
+        }
+        
+        public static void ElectLeader(GossipState state)
+        {
+            var hashes = new List<uint>();
+            
+            foreach (var (memberId, memberState) in state.Members)
+            {
+                var topology = memberState.GetTopology();
+
+                if (topology == null)
+                {
+                    hashes.Add(0);
+                    continue;
+                }
+            }
+
+            var first = hashes.FirstOrDefault();
+
+            if (hashes.All(h => h == first))
+            {
+                //all members have the same hash
+                
+                Console.WriteLine("Consensus!!!!!!!!");
+            }
+
+            // hashes.Add(topology.GetMembershipHashCode());
+            //
+            //     _memberState = _memberState.SetItem(ctn.MemberId, ctn);
+            //     var excludeBannedMembers = _memberState.Keys.Where(k => _bannedMembers.Contains(k));
+            //     _memberState = _memberState.RemoveRange(excludeBannedMembers);
+            //     
+            //     var everyoneInAgreement = _memberState.Values.All(x => x.MembershipHashCode == _currentMembershipHashCode);
+            //
+            //     if (everyoneInAgreement && !_topologyConsensus.Task.IsCompleted)
+            //     {
+            //         //anyone awaiting this instance will now proceed
+            //         Logger.LogInformation("[MemberList] Topology consensus");
+            //         _topologyConsensus.TrySetResult(true);
+            //         var leaderId = LeaderElection.Elect(_memberState);
+            //         var newLeader = _members[leaderId];
+            //         if (!newLeader.Equals(_leader))
+            //         {
+            //             _leader = newLeader;
+            //             _system.EventStream.Publish(new LeaderElected(newLeader));
+            //
+            //             // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
+            //             if (_leader.Id == _system.Id)
+            //             {
+            //                 Logger.LogInformation("[MemberList] I am leader {Id}", _leader.Id);
+            //             }
+            //             else
+            //             {
+            //                 Logger.LogInformation("[MemberList] Member {Id} is leader", _leader.Id);
+            //             }
+            //         }
+            //     }
+            //     else if (!everyoneInAgreement && _topologyConsensus.Task.IsCompleted)
+            //     {
+            //         //we toggled from consensus to not consensus.
+            //         //create a new completion source for new awaiters to await
+            //         _topologyConsensus = new TaskCompletionSource<bool>();
+            //     }
+            //     
+            //     
+            //
+            //     Logger.LogDebug("[MemberList] Got ClusterTopologyNotification {ClusterTopologyNotification}, Consensus {Consensus}, Members {Members}", ctn, everyoneInAgreement,_memberState.Count);
+           // }
         }
     }
 }

@@ -15,6 +15,7 @@ namespace Proto.Cluster.Gossip
         private long _localSequenceNo;
         private GossipState _state = new();
         private readonly Random _rnd = new();
+        private readonly Dictionary<string, long> _watermarks = new();
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
@@ -30,10 +31,15 @@ namespace Proto.Cluster.Gossip
             {
                 return;
             }
-
-            Console.WriteLine($"{context.System.Id} got new state: {newState} ... old state: {_state}");
+            
+            // Console.WriteLine();
+            // Console.WriteLine();
+            // Console.WriteLine($"{context.System.Id} got new state: {remoteState}");
+            // Console.WriteLine();
+            // Console.WriteLine();
             
             _state = newState;
+            GossipStateManagement.ElectLeader(_state);
         }
         
         private Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
@@ -50,8 +56,9 @@ namespace Proto.Cluster.Gossip
 
             foreach (var member in fanOutMembers)
             {
+                var stateForMember = GossipStateManagement.FilterGossipStateForMember(_state, _watermarks);
                 var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
-                context.Send(pid, _state);
+                context.Send(pid, stateForMember);
             }
 
             return Task.CompletedTask;

@@ -29,7 +29,15 @@ namespace Proto.Cluster.Gossip
             _context = _cluster.System.Root;
         }
 
-        public void SetState(string key, IMessage value) => _context.Send(_pid, new SetGossipStateKey(key,value));
+        public void SetState(string key, IMessage value)
+        {
+            if (_pid == null)
+            {
+                return;
+            }
+            
+            _context.Send(_pid, new SetGossipStateKey(key, value));
+        }
 
         internal Task StartAsync()
         {
@@ -61,7 +69,16 @@ namespace Proto.Cluster.Gossip
             }
         }
 
-        private void SendState() => _context.Send(_pid, new SendGossipState());
+        private void SendState()
+        {
+            //just make sure a cluster client cant send
+            if (_pid == null)
+            {
+                return;
+            }
+            
+            _context.Send(_pid, new SendGossipState());
+        }
 
         internal Task ShutdownAsync()
         {
