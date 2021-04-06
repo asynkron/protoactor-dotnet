@@ -223,6 +223,9 @@ namespace Proto.Cluster
                         LeaderId = _leader == null? "": _leader.Id,
                     }, true
                 );
+                
+                _cluster.Gossip.SetState("topology", topology);
+                
             }
 
 

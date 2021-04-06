@@ -70,13 +70,7 @@ message ClusterTopology {
     repeated Member banned = 5;
 }
 
-message HeartbeatRequest {
-}
-
-message HeartbeatResponse {
-  uint32 actor_count = 1;
-  string member_id = 2;
-  uint32 membership_hash_code = 3;
+message MemberHeartbeat {
 }
 
 message ClusterTopologyNotification {

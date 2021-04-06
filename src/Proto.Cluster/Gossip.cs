@@ -16,9 +16,9 @@ namespace Proto.Cluster
 
     public record SendGossipState();
 
-    public class ClusterHeartBeatActor : IActor
+    public class GossipActor : IActor
     {
-        private const string ClusterHeartBeatName = "ClusterHeartBeat";
+        
         private GossipState _state = new();
 
         public Task ReceiveAsync(IContext context) => context.Message switch
@@ -45,10 +45,11 @@ namespace Proto.Cluster
         private async Task OnGossipState(IContext context, GossipState remoteState)
         {
             var (dirty,newState) = _state.MergeWith(remoteState);
+            
             if (!dirty)
                 return;
             
-            //Console.WriteLine($"{context.System.Id} got new state: {newState} ... old state: {_state}");
+            Console.WriteLine($"{context.System.Id} got new state: {newState} ... old state: {_state}");
             
             _state = newState;
            // await GossipMyState(context);
@@ -92,39 +93,41 @@ namespace Proto.Cluster
 
             foreach (var member in gossipToMembers)
             {
-                var pid = PID.FromAddress(member.Address, ClusterHeartBeatName);
+                var pid = PID.FromAddress(member.Address, Gossip.GossipActorName);
                 context.Send(pid, _state);
             }
         }
     }
 
 
-    public class ClusterHeartBeat
+    public class Gossip
     {
-        private const string ClusterHeartBeatName = "ClusterHeartBeat";
+        public const string GossipActorName = "Gossip";
         private readonly Cluster _cluster;
         private readonly RootContext _context;
 
         private ILogger _logger = null!;
         private PID _pid = null!;
 
-        public ClusterHeartBeat(Cluster cluster)
+        public Gossip(Cluster cluster)
         {
             _cluster = cluster;
             _context = _cluster.System.Root;
         }
 
-        public Task StartAsync()
+        public void SetState(string key, IMessage value) => _context.Send(_pid, new SetGossipStateKey(key,value));
+
+        internal Task StartAsync()
         {
-            var props = Props.FromProducer(() => new ClusterHeartBeatActor());
-            _pid = _context.SpawnNamed(props, ClusterHeartBeatName);
+            var props = Props.FromProducer(() => new GossipActor());
+            _pid = _context.SpawnNamed(props, GossipActorName);
             _logger = Log.CreateLogger("ClusterHeartBeat-" + _cluster.LoggerId);
             _logger.LogInformation("Started Cluster Heartbeats");
-            _ = SafeTask.Run(HeartBeatLoop);
+            _ = SafeTask.Run(GossipLoop);
             return Task.CompletedTask;
         }
 
-        private async Task HeartBeatLoop()
+        private async Task GossipLoop()
         {
             await Task.Yield();
         
@@ -132,8 +135,11 @@ namespace Proto.Cluster
             {
                 try
                 {
+                    
                     await Task.Delay(_cluster.Config.HeartBeatInterval);
-                    _context.Send(_pid, new SetGossipStateKey("heartbeat",new HeartbeatRequest()));
+                    SetState("heartbeat", new MemberHeartbeat());
+                    SendState();
+                    
                 }
                 catch (Exception x)
                 {
@@ -142,7 +148,9 @@ namespace Proto.Cluster
             }
         }
 
-        public Task ShutdownAsync()
+        private void SendState() => _context.Send(_pid, new SendGossipState());
+
+        internal Task ShutdownAsync()
         {
             _logger.LogInformation("Shutting down heartbeat");
             _context.Stop(_pid);

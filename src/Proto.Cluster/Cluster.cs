@@ -21,7 +21,7 @@ namespace Proto.Cluster
     [PublicAPI]
     public class Cluster : IActorSystemExtension<Cluster>
     {
-        private ClusterHeartBeat _clusterHeartBeat;
+        
 
         public Cluster(ActorSystem system, ClusterConfig config)
         {
@@ -32,7 +32,7 @@ namespace Proto.Cluster
             Config = config;
             system.Serialization().RegisterFileDescriptor(ProtosReflection.Descriptor);
 
-            _clusterHeartBeat = new ClusterHeartBeat(this);
+            Gossip = new Gossip(this);
             system.EventStream.Subscribe<ClusterTopology>(e => {
                     system.Metrics.Get<ClusterMetrics>().ClusterTopologyEventGauge.Set(e.Members.Count,
                         new[] {System.Id, System.Address, e.GetMembershipHashCode().ToString()}
@@ -45,7 +45,7 @@ namespace Proto.Cluster
                 }
             );
         }
-
+        public Gossip Gossip { get; }
         public ILogger Logger { get; private set; } = null!;
         public IClusterContext ClusterContext { get; private set; } = null!;
 
@@ -103,7 +103,7 @@ namespace Proto.Cluster
 
             var kinds = GetClusterKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
-            await _clusterHeartBeat.StartAsync();
+            await Gossip.StartAsync();
         }
 
         private void InitClusterKinds()
@@ -119,7 +119,7 @@ namespace Proto.Cluster
             await System.ShutdownAsync();
             Logger.LogInformation("Stopping Cluster {Id}", System.Id);
 
-            await _clusterHeartBeat.ShutdownAsync();
+            await Gossip.ShutdownAsync();
             if (graceful) await IdentityLookup!.ShutdownAsync();
             await Config!.ClusterProvider.ShutdownAsync(graceful);
             await Remote.ShutdownAsync(graceful);
