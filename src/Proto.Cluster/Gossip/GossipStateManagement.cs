@@ -6,7 +6,7 @@
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.Gossip
 {
     public static class GossipStateManagement
     {

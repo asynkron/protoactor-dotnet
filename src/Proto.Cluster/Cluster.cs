@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Cluster.Gossip;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Metrics;
 using Proto.Cluster.Partition;
@@ -21,8 +22,6 @@ namespace Proto.Cluster
     [PublicAPI]
     public class Cluster : IActorSystemExtension<Cluster>
     {
-        
-
         public Cluster(ActorSystem system, ClusterConfig config)
         {
             system.Extensions.Register(this);
@@ -32,21 +31,25 @@ namespace Proto.Cluster
             Config = config;
             system.Serialization().RegisterFileDescriptor(ProtosReflection.Descriptor);
 
-            Gossip = new Gossip(this);
-            system.EventStream.Subscribe<ClusterTopology>(e => {
-                    system.Metrics.Get<ClusterMetrics>().ClusterTopologyEventGauge.Set(e.Members.Count,
-                        new[] {System.Id, System.Address, e.GetMembershipHashCode().ToString()}
-                    );
-
-                    foreach (var member in e.Left)
-                    {
-                        PidCache.RemoveByMember(member);
-                    }
-                }
-            );
+            Gossip = new Gossiper(this);
+            MemberList = new MemberList(this);
+            SubscribeToClusterTopology(system);
         }
-        public Gossip Gossip { get; }
-        public ILogger Logger { get; private set; } = null!;
+
+        private void SubscribeToClusterTopology(ActorSystem system) => system.EventStream.Subscribe<ClusterTopology>(e => {
+                system.Metrics.Get<ClusterMetrics>().ClusterTopologyEventGauge.Set(e.Members.Count,
+                    new[] {System.Id, System.Address, e.GetMembershipHashCode().ToString()}
+                );
+
+                foreach (var member in e.Left)
+                {
+                    PidCache.RemoveByMember(member);
+                }
+            }
+        );
+
+        public Gossiper Gossip { get; }
+        public ILogger Logger { get; } = Log.CreateLogger<Cluster>();
         public IClusterContext ClusterContext { get; private set; } = null!;
 
         public ClusterConfig Config { get; }
@@ -55,13 +58,11 @@ namespace Proto.Cluster
 
         public IRemote Remote { get; private set; } = null!;
 
-        public MemberList MemberList { get; private set; } = null!;
+        public MemberList MemberList { get; }
 
         internal IIdentityLookup IdentityLookup { get; set; } = null!;
 
         internal IClusterProvider Provider { get; set; } = null!;
-
-        public string LoggerId => System.Address;
 
         public PidCache PidCache { get; }
 
@@ -96,9 +97,9 @@ namespace Proto.Cluster
             Remote = System.Extensions.Get<IRemote>() ?? throw new NotSupportedException("Remote module must be configured when using cluster");
 
             await Remote.StartAsync();
-            Logger = Log.CreateLogger($"Cluster-{LoggerId}");
+            
             Logger.LogInformation("Starting");
-            MemberList = new MemberList(this);
+
             ClusterContext = Config.ClusterContextProducer(this);
 
             var kinds = GetClusterKinds();

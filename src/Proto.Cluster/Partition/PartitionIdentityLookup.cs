@@ -14,7 +14,7 @@ namespace Proto.Cluster.Partition
     public class PartitionIdentityLookup : IIdentityLookup
     {
         private Cluster _cluster = null!;
-        private ILogger _logger = null!;
+        private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityLookup>();
         private PartitionManager _partitionManager = null!;
         private readonly TimeSpan _identityHandoverTimeout;
         private readonly TimeSpan _getPidTimeout;
@@ -34,7 +34,7 @@ namespace Proto.Cluster.Partition
             ct = CancellationTokens.WithTimeout(_getPidTimeout);
             //Get address to node owning this ID
             var identityOwner = _partitionManager.Selector.GetIdentityOwner(clusterIdentity.Identity);
-            _logger.LogDebug("Identity belongs to {address}", identityOwner);
+            Logger.LogDebug("Identity belongs to {address}", identityOwner);
             if (string.IsNullOrEmpty(identityOwner)) return null;
 
             var remotePid = PartitionManager.RemotePartitionIdentityActor(identityOwner);
@@ -44,7 +44,7 @@ namespace Proto.Cluster.Partition
                 ClusterIdentity = clusterIdentity
             };
 
-            _logger.LogDebug("Requesting remote PID from {Partition}:{Remote} {@Request}", identityOwner, remotePid, req
+            Logger.LogDebug("Requesting remote PID from {Partition}:{Remote} {@Request}", identityOwner, remotePid, req
             );
 
             try
@@ -56,17 +56,17 @@ namespace Proto.Cluster.Partition
             //TODO: decide if we throw or return null
             catch (DeadLetterException)
             {
-                _logger.LogInformation("Remote PID request deadletter {@Request}, identity Owner {Owner}", req,identityOwner);
+                Logger.LogInformation("Remote PID request deadletter {@Request}, identity Owner {Owner}", req,identityOwner);
                 return null;
             }
             catch (TimeoutException)
             {
-                _logger.LogInformation("Remote PID request timeout {@Request}, identity Owner {Owner}", req,identityOwner);
+                Logger.LogInformation("Remote PID request timeout {@Request}, identity Owner {Owner}", req,identityOwner);
                 return null;
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error occured requesting remote PID {@Request}, identity Owner {Owner}", req,identityOwner);
+                Logger.LogError(e, "Error occured requesting remote PID {@Request}, identity Owner {Owner}", req,identityOwner);
                 return null;
             }
         }
@@ -128,7 +128,6 @@ namespace Proto.Cluster.Partition
         {
             _cluster = cluster;
             _partitionManager = new PartitionManager(cluster, isClient, _identityHandoverTimeout);
-            _logger = Log.CreateLogger(nameof(PartitionIdentityLookup) + "-" + _cluster.LoggerId);
             _partitionManager.Setup();
             return Task.CompletedTask;
         }

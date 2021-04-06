@@ -8,22 +8,22 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.Gossip
 {
     public record SetGossipStateKey(string Key, IMessage Value);
 
     public record SendGossipState;
 
-    public class Gossip
+    public class Gossiper
     {
         public const string GossipActorName = "Gossip";
         private readonly Cluster _cluster;
         private readonly RootContext _context;
 
-        private ILogger _logger = Log.CreateLogger<Gossip>();
+        private ILogger _logger = Log.CreateLogger<Gossiper>();
         private PID _pid = null!;
 
-        public Gossip(Cluster cluster)
+        public Gossiper(Cluster cluster)
         {
             _cluster = cluster;
             _context = _cluster.System.Root;

@@ -7,10 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Google.Protobuf;
-using Google.Protobuf.WellKnownTypes;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.Gossip
 {
     public class GossipActor : IActor
     {
@@ -52,7 +50,7 @@ namespace Proto.Cluster
 
             foreach (var member in fanOutMembers)
             {
-                var pid = PID.FromAddress(member.Address, Gossip.GossipActorName);
+                var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
                 context.Send(pid, _state);
             }
 

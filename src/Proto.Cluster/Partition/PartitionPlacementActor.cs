@@ -13,7 +13,7 @@ namespace Proto.Cluster.Partition
     class PartitionPlacementActor : IActor
     {
         private readonly Cluster _cluster;
-        private readonly ILogger _logger;
+        private static readonly ILogger Logger = Log.CreateLogger<PartitionPlacementActor>();
 
         //pid -> the actor that we have created here
         //kind -> the actor kind
@@ -22,7 +22,6 @@ namespace Proto.Cluster.Partition
         public PartitionPlacementActor(Cluster cluster)
         {
             _cluster = cluster;
-            _logger = Log.CreateLogger($"{nameof(PartitionPlacementActor)}-{cluster.LoggerId}");
         }
 
         public Task ReceiveAsync(IContext context) =>
@@ -78,7 +77,7 @@ namespace Proto.Cluster.Partition
                 //this identity is not owned by the requester
                 if (ownerAddress != requestAddress) continue;
 
-                _logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {EventId}", clusterIdentity, ownerAddress,
+                Logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {EventId}", clusterIdentity, ownerAddress,
                     msg.EventId
                 );
 
@@ -90,7 +89,7 @@ namespace Proto.Cluster.Partition
             //always respond, this is request response msg
             context.Respond(response);
 
-            _logger.LogDebug("Transferred {Count} actor ownership to other members", count);
+            Logger.LogDebug("Transferred {Count} actor ownership to other members", count);
             return Task.CompletedTask;
         }
 
