@@ -77,8 +77,9 @@ namespace Proto.Cluster
             var dirty = false;
             foreach (var kvp in other.Entries)
             {
-                if (state.TryAdd(kvp.GlobalKey, kvp))
+                if (!state.ContainsKey(kvp.GlobalKey))
                 {
+                    state.Add(kvp.GlobalKey, kvp);
                     dirty = true;
                     continue;
                 }

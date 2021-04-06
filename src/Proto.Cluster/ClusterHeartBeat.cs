@@ -6,12 +6,13 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster
 {
-    public record SetGossipStateKey(string Key, Any Value);
+    public record SetGossipStateKey(string Key, IMessage Value);
 
     public record SendGossipState();
 
@@ -47,6 +48,8 @@ namespace Proto.Cluster
             if (!dirty)
                 return;
             
+            //Console.WriteLine($"{context.System.Id} got new state: {newState} ... old state: {_state}");
+            
             _state = newState;
             await GossipMyState(context);
         }
@@ -68,7 +71,7 @@ namespace Proto.Cluster
             }
 
             entry.Version++;
-            entry.Value = value;
+            entry.Value = Any.Pack(value);
 
             await GossipMyState(context);
 
@@ -76,7 +79,7 @@ namespace Proto.Cluster
 
         private async Task GossipMyState(IContext context)
         {
-            var members = context.System.Cluster().MemberList.GetAllMembers();
+            var members = context.System.Cluster().MemberList.GetOtherMembers();
 
             var rnd = new Random();
             var gossipToMembers =
@@ -130,7 +133,7 @@ namespace Proto.Cluster
                 try
                 {
                     await Task.Delay(_cluster.Config.HeartBeatInterval);
-                    _context.Send(_pid, new SendGossipState());
+                    _context.Send(_pid, new SetGossipStateKey("heartbeat",new HeartbeatRequest()));
                 }
                 catch (Exception x)
                 {
