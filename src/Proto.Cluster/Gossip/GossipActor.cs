@@ -41,9 +41,9 @@ namespace Proto.Cluster.Gossip
             // Console.WriteLine();
 
 
-            var bannedMembers = context.System.Cluster().MemberList.GetBannedMembers();
+            var allMembers = context.System.Cluster().MemberList.GetMembers();
             
-            var(consensus, hash)= GossipStateManagement.ElectLeader(_state,context.System.Id, bannedMembers);
+            var(consensus, hash)= GossipStateManagement.ElectLeader(_state,context.System.Id, allMembers);
 
             if (consensus)
             {

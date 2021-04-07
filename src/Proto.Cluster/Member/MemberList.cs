@@ -56,6 +56,8 @@ namespace Proto.Cluster
         }
 
         public ImmutableHashSet<string> GetBannedMembers() => _bannedMembers;
+        
+        public ImmutableHashSet<string> GetMembers() => _members.Select(m=>m.Key).ToImmutableHashSet();
 
         public Task TopologyConsensus() => _topologyConsensus.Task;
 

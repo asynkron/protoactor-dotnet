@@ -123,16 +123,16 @@ namespace Proto.Cluster.Gossip
             return newState;
         }
         
-        public static (bool, uint) ElectLeader(GossipState state, string myId, ImmutableHashSet<string> bannedMembers)
+        public static (bool, uint) ElectLeader(GossipState state, string myId, ImmutableHashSet<string> members)
         {
             try
             {
-                var hashes = new List<uint>();
+                var hashes = new List<(string,uint)>();
                 
                 foreach (var (memberId, memberState) in state.Members)
                 {
                     //skip banned members
-                    if (bannedMembers.Contains(memberId))
+                    if (!members.Contains(memberId))
                         continue;
                     
                     var topology = memberState.GetTopology();
@@ -140,20 +140,25 @@ namespace Proto.Cluster.Gossip
                     if (topology == null)
                     {
                         Console.WriteLine(myId+ " null topology" + memberId);
-                        hashes.Add(0);
+                        hashes.Add((memberId,0));
                         continue;
                     }
-                    hashes.Add(topology.MembershipHashCode);
+                    hashes.Add((memberId,topology.MembershipHashCode));
                 }
 
                 var first = hashes.FirstOrDefault();
 
-                if (hashes.All(h => h == first))
+                if (hashes.All(h => h.Item2 == first.Item2))
                 {
                     //all members have the same hash
 
-                    return (true, first);
+                    return (true, first.Item2);
                 }
+
+                // foreach (var h in hashes)
+                // {
+                //     Console.WriteLine($"{myId}-{h.Item1}-{h.Item2}");
+                // }
 
                 return (false, 0);
             }
