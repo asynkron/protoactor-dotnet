@@ -74,13 +74,7 @@ namespace Proto.Cluster.Gossip
         private async Task OnSendGossipState(IContext context)
         {
             var members = context.System.Cluster().MemberList.GetOtherMembers();
-
-            // foreach (Member m in members)
-            // {
-            //     //if we know about members that are not yet in our 
-            //     GossipStateManagement.EnsureMemberStateExists(_state, m.Id);
-            // }
-            var fanOutMembers = PickRandomFanOutMembers(members, 3);
+            var fanOutMembers = PickRandomFanOutMembers(members, context.System.Cluster().Config.GossipFanout);
 
             foreach (var member in fanOutMembers)
             {
@@ -89,7 +83,14 @@ namespace Proto.Cluster.Gossip
                     var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
                     var (pendingOffsets, stateForMember) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, member.Id);
 
-                    var response = await context.RequestAsync<GossipResponse>(pid, new GossipRequest
+                    //if we dont have any state to send, don't send it...
+                    if (pendingOffsets == _committedOffsets)
+                    {
+                        Console.WriteLine("No state to send");
+                        continue;
+                    }
+
+                    await context.RequestAsync<GossipResponse>(pid, new GossipRequest
                         {
                             State = stateForMember,
                         }, CancellationTokens.WithTimeout(500)
@@ -125,7 +126,7 @@ namespace Proto.Cluster.Gossip
             context.Respond(new SendGossipStateResponse());
         }
 
-        private List<Member>? PickRandomFanOutMembers(Member[] members, int fanOutBy) => 
+        private List<Member> PickRandomFanOutMembers(Member[] members, int fanOutBy) => 
             members
             .Select(m => (member: m, index: _rnd.Next()))
             .OrderBy(m => m.index)

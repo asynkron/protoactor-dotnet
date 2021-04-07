@@ -51,7 +51,6 @@ namespace Proto.Cluster.Gossip
 
         private async Task GossipLoop()
         {
-            var rnd = new Random();
             await Task.Yield();
         
             while (!_cluster.System.Shutdown.IsCancellationRequested)
@@ -59,7 +58,7 @@ namespace Proto.Cluster.Gossip
                 try
                 {
                     
-                    await Task.Delay((int)_cluster.Config.HeartBeatInterval.TotalMilliseconds + rnd.Next(0,500));
+                    await Task.Delay((int)_cluster.Config.GossipInterval.TotalMilliseconds);
                     SetState("heartbeat", new MemberHeartbeat());
                     await SendStateAsync();
                     

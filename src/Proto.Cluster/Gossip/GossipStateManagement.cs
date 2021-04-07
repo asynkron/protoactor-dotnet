@@ -106,7 +106,7 @@ namespace Proto.Cluster.Gossip
                 
                 //create an empty state
                 var newMemberState = new GossipMemberState();
-                newState.Members.Add(memberId, newMemberState);
+                
 
                 var watermarkKey = $"{targetMemberId}.{memberId}";
                 //get the watermark 
@@ -123,6 +123,12 @@ namespace Proto.Cluster.Gossip
                         newWatermark = value.SequenceNumber;
                     
                     newMemberState.Values.Add(key, value);
+                }
+
+                //don't send memberStates that we have no new data for 
+                if (newMemberState.Values.Count > 0)
+                {
+                    newState.Members.Add(memberId, newMemberState);
                 }
 
                 pendingOffsets = pendingOffsets.SetItem(watermarkKey, newWatermark);
