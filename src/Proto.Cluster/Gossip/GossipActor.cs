@@ -18,45 +18,42 @@ namespace Proto.Cluster.Gossip
         private readonly Dictionary<string, long> _watermarks = new();
         private uint _clusterTopologyHash;
 
-        public Task ReceiveAsync(IContext context) => context.Message switch
+        public Task ReceiveAsync(IContext context)
         {
-            SetGossipStateKey setState => OnSetGossipStateKey(context, setState),
-            GossipState remoteState    => OnGossipState(context, remoteState),
-            SendGossipState            => OnSendGossipState(context),
-            _                          => Task.CompletedTask
-        };
+            return context.Message switch
+            {
+                SetGossipStateKey setState  => OnSetGossipStateKey(context, setState),
+                GossipRequest gossipRequest => OnGossipRequest(context, gossipRequest),
+                SendGossipStateRequest      => OnSendGossipState(context),
+                _                           => Task.CompletedTask
+            };
+        }
 
-        private async Task OnGossipState(IContext context, GossipState remoteState)
+        private async Task OnGossipRequest(IContext context, GossipRequest gossipRequest)
         {
-            if (!GossipStateManagement.MergeState(_state, remoteState, out var newState))
+            GossipState remoteState = gossipRequest.State;
+            //Console.WriteLine("Got gossip request");
+            //Ack, we got it
+
+            if (GossipStateManagement.MergeState(_state, remoteState, out var newState))
             {
-                return;
-            }
-            _state = newState;
-            
-            // Console.WriteLine();
-            // Console.WriteLine();
-           // Console.WriteLine($"{context.System.Id} got new state: {remoteState}");
-            // Console.WriteLine();
-            // Console.WriteLine();
+                _state = newState;
 
+                var allMembers = context.System.Cluster().MemberList.GetMembers();
 
-            var allMembers = context.System.Cluster().MemberList.GetMembers();
-            
-            var(consensus, hash)= GossipStateManagement.ElectLeader(_state,context.System.Id, allMembers);
+                var (consensus, hash) = GossipStateManagement.ElectLeader(_state, context.System.Id, allMembers);
 
-            if (consensus)
-            {
-                if (hash != _clusterTopologyHash)
+                if (consensus)
                 {
-                    _clusterTopologyHash = hash;
-                    Console.WriteLine($"CONSSENSUS {context.System.Id} - {_clusterTopologyHash}");
+                    if (hash != _clusterTopologyHash)
+                    {
+                        _clusterTopologyHash = hash;
+                        Console.WriteLine($"CONSSENSUS {context.System.Id} - {_clusterTopologyHash}");
+                    }
                 }
             }
-            else
-            {
-             //   Console.WriteLine(_state);
-            }
+           // Console.WriteLine("Gossip request done..");
+            context.Respond(new GossipResponse());
         }
         
         private Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
@@ -66,19 +63,44 @@ namespace Proto.Cluster.Gossip
             return Task.CompletedTask;
         }
 
-        private Task OnSendGossipState(IContext context)
+        private async Task OnSendGossipState(IContext context)
         {
             var members = context.System.Cluster().MemberList.GetOtherMembers();
-            var fanOutMembers = PickRandomFanOutMembers(members,3);
+            var fanOutMembers = PickRandomFanOutMembers(members, 3);
 
             foreach (var member in fanOutMembers)
             {
-                var stateForMember = /*_state; */GossipStateManagement.FilterGossipStateForMember(_state, _watermarks,member.Id);
-                var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
-                context.Send(pid, stateForMember);
-            }
+                try
+                {
+                    var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
+                    var stateForMember = GossipStateManagement.FilterGossipStateForMember(_state, _watermarks, member.Id);
 
-            return Task.CompletedTask;
+                    await context.RequestAsync<GossipResponse>(pid, new GossipRequest
+                        {
+                            State = stateForMember,
+                        }, CancellationTokens.WithTimeout(1000)
+                    );
+                }
+                catch (DeadLetterException)
+                {
+                    
+                }
+                catch (OperationCanceledException)
+                {
+                    
+                }
+                catch (TimeoutException)
+                {
+                    
+                }
+                catch(Exception x)
+                {
+                    //TODO: log
+                    Console.WriteLine(x);
+                }
+            }
+            
+            context.Respond(new SendGossipStateResponse());
         }
 
         private List<Member>? PickRandomFanOutMembers(Member[] members, int fanOutBy) => 

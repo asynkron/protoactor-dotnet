@@ -12,15 +12,16 @@ namespace Proto.Cluster.Gossip
 {
     public record SetGossipStateKey(string Key, IMessage Value);
 
-    public record SendGossipState;
+    public record SendGossipStateRequest;
+    public record SendGossipStateResponse;
 
     public class Gossiper
     {
-        public const string GossipActorName = "Gossip";
+        public const string GossipActorName = "gossip";
         private readonly Cluster _cluster;
         private readonly RootContext _context;
 
-        private ILogger _logger = Log.CreateLogger<Gossiper>();
+        private static readonly ILogger Logger = Log.CreateLogger<Gossiper>();
         private PID _pid = null!;
 
         public Gossiper(Cluster cluster)
@@ -43,7 +44,7 @@ namespace Proto.Cluster.Gossip
         {
             var props = Props.FromProducer(() => new GossipActor());
             _pid = _context.SpawnNamed(props, GossipActorName);
-            _logger.LogInformation("Started Cluster Gossip");
+            Logger.LogInformation("Started Cluster Gossip");
             _ = SafeTask.Run(GossipLoop);
             return Task.CompletedTask;
         }
@@ -59,17 +60,17 @@ namespace Proto.Cluster.Gossip
                     
                     await Task.Delay(_cluster.Config.HeartBeatInterval);
                     SetState("heartbeat", new MemberHeartbeat());
-                    SendState();
+                    await SendStateAsync();
                     
                 }
                 catch (Exception x)
                 {
-                    _logger.LogError(x, "Gossip loop failed");
+                    Logger.LogError(x, "Gossip loop failed");
                 }
             }
         }
 
-        private void SendState()
+        private async Task SendStateAsync()
         {
             //just make sure a cluster client cant send
             if (_pid == null)
@@ -77,14 +78,14 @@ namespace Proto.Cluster.Gossip
                 return;
             }
             
-            _context.Send(_pid, new SendGossipState());
+            await _context.RequestAsync<SendGossipStateResponse>(_pid, new SendGossipStateRequest());
         }
 
         internal Task ShutdownAsync()
         {
-            _logger.LogInformation("Shutting down heartbeat");
+            Logger.LogInformation("Shutting down heartbeat");
             _context.Stop(_pid);
-            _logger.LogInformation("Shut down heartbeat");
+            Logger.LogInformation("Shut down heartbeat");
             return Task.CompletedTask;
         }
     }

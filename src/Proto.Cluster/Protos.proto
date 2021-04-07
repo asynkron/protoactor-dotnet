@@ -84,6 +84,13 @@ message GracefulShutdown {
 }
 
 
+message GossipRequest {
+  GossipState state = 1;
+}
+
+//Ack a gossip request
+message GossipResponse {}
+
 //two GossipState objects can be merged
 //key + member_id gets it's own entry, if collision, highest version is selected
 message GossipState {
