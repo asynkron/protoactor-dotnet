@@ -90,10 +90,11 @@ namespace Proto.Cluster.Gossip
             entry.Value = Any.Pack(value);
         }
 
-        public static GossipState FilterGossipStateForMember(GossipState state, Dictionary<string, long> watermarks, string targetMemberId)
+        public static (ImmutableDictionary<string, long> pendingOffsets, GossipState state) FilterGossipStateForMember(GossipState state, ImmutableDictionary<string, long> offsets, string targetMemberId)
         {
             var newState = new GossipState();
 
+            var pendingOffsets = offsets;
             //for each member
             foreach (var (memberId, memberState) in state.Members)
             {
@@ -103,7 +104,7 @@ namespace Proto.Cluster.Gossip
 
                 var watermarkKey = $"{targetMemberId}.{memberId}";
                 //get the watermark 
-                watermarks.TryGetValue(watermarkKey, out long watermark);
+                offsets.TryGetValue(watermarkKey, out long watermark);
                 var newWatermark = watermark;
 
                 //for each value in member state
@@ -118,10 +119,10 @@ namespace Proto.Cluster.Gossip
                     newMemberState.Values.Add(key, value);
                 }
 
-                watermarks[watermarkKey] = newWatermark;
+                pendingOffsets = pendingOffsets.SetItem(watermarkKey, newWatermark);
             }
 
-            return newState;
+            return (pendingOffsets, newState);
         }
         
         public static (bool, uint) ElectLeader(GossipState state, string myId, ImmutableHashSet<string> members)
@@ -140,7 +141,7 @@ namespace Proto.Cluster.Gossip
 
                     if (topology == null)
                     {
-                        Console.WriteLine(myId+ " null topology" + memberId);
+                        //Console.WriteLine(myId+ " null topology" + memberId);
                         hashes.Add((memberId,0));
                         continue;
                     }
@@ -152,14 +153,8 @@ namespace Proto.Cluster.Gossip
                 if (hashes.All(h => h.Item2 == first.Item2))
                 {
                     //all members have the same hash
-
                     return (true, first.Item2);
                 }
-
-                // foreach (var h in hashes)
-                // {
-                //     Console.WriteLine($"{myId}-{h.Item1}-{h.Item2}");
-                // }
 
                 return (false, 0);
             }

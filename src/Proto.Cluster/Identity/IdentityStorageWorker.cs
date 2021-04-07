@@ -108,8 +108,7 @@ namespace Proto.Cluster.Identity
                 var tries = 0;
                 PID? result = null;
                 SpawnLock? spawnLock = null;
-
-
+                
                 while (result == null && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
                 {
                     try

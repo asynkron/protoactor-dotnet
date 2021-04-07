@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -15,7 +16,7 @@ namespace Proto.Cluster.Gossip
         private long _localSequenceNo;
         private GossipState _state = new();
         private readonly Random _rnd = new();
-        private readonly Dictionary<string, long> _watermarks = new();
+        private ImmutableDictionary<string, long> _committedOffsets = ImmutableDictionary<string, long>.Empty;
         private uint _clusterTopologyHash;
 
         public Task ReceiveAsync(IContext context)
@@ -48,11 +49,12 @@ namespace Proto.Cluster.Gossip
                     if (hash != _clusterTopologyHash)
                     {
                         _clusterTopologyHash = hash;
-                        Console.WriteLine($"CONSSENSUS {context.System.Id} - {_clusterTopologyHash}");
+                        
+                     //   Console.WriteLine($"CONSSENSUS {context.System.Id} - {_clusterTopologyHash}");
                     }
                 }
             }
-           // Console.WriteLine("Gossip request done..");
+            // Console.WriteLine("Gossip request done..");
             context.Respond(new GossipResponse());
         }
         
@@ -66,6 +68,12 @@ namespace Proto.Cluster.Gossip
         private async Task OnSendGossipState(IContext context)
         {
             var members = context.System.Cluster().MemberList.GetOtherMembers();
+
+            // foreach (Member m in members)
+            // {
+            //     //if we know about members that are not yet in our 
+            //     GossipStateManagement.EnsureMemberStateExists(_state, m.Id);
+            // }
             var fanOutMembers = PickRandomFanOutMembers(members, 3);
 
             foreach (var member in fanOutMembers)
@@ -73,13 +81,16 @@ namespace Proto.Cluster.Gossip
                 try
                 {
                     var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
-                    var stateForMember = GossipStateManagement.FilterGossipStateForMember(_state, _watermarks, member.Id);
+                    var (pendingOffsets, stateForMember) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, member.Id);
 
                     await context.RequestAsync<GossipResponse>(pid, new GossipRequest
                         {
                             State = stateForMember,
-                        }, CancellationTokens.WithTimeout(1000)
+                        }, CancellationTokens.WithTimeout(500)
                     );
+
+                    //only commit offsets if successful
+                    _committedOffsets = pendingOffsets;
                 }
                 catch (DeadLetterException)
                 {
