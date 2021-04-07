@@ -37,12 +37,12 @@ namespace Proto.Cluster.Partition
         {
             if (_isClient)
             {
-                var eventId = 0ul;
+                var membershipHashCode = 0ul;
                 //make sure selector is updated first
                 _system.EventStream.Subscribe<ClusterTopology>(e => {
-                        if (e.EventId == eventId) return;
+                        if (e.MembershipHashCode == membershipHashCode) return;
 
-                        eventId = e.EventId;
+                        membershipHashCode = e.MembershipHashCode;
                         Selector.Update(e.Members.ToArray());
                     }
                 );
@@ -60,12 +60,12 @@ namespace Proto.Cluster.Partition
 
                 //synchronous subscribe to keep accurate
 
-                var eventId = 0ul;
+                var membershipHashCode = 0ul;
                 //make sure selector is updated first
                 _system.EventStream.Subscribe<ClusterTopology>(e => {
-                        if (e.EventId == eventId) return;
+                        if (e.MembershipHashCode == membershipHashCode) return;
 
-                        eventId = e.EventId;
+                        membershipHashCode = e.MembershipHashCode;
 
                         Selector.Update(e.Members.ToArray());
                         _context.Send(_partitionIdentityActor, e);

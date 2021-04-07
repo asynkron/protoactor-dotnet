@@ -53,6 +53,10 @@ namespace Proto.Cluster.Gossip
                     Console.WriteLine($"CONSSENSUS {context.System.Id} - {_clusterTopologyHash}");
                 }
             }
+            else
+            {
+             //   Console.WriteLine(_state);
+            }
         }
         
         private Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)

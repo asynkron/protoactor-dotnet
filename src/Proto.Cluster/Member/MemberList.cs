@@ -122,7 +122,7 @@ namespace Proto.Cluster
             lock (this)
             {
                 Logger.LogDebug("[MemberList] Updating Cluster Topology");
-                var topology = new ClusterTopology {EventId = GetMembershipHashCode(statuses)};
+                var topology = new ClusterTopology {MembershipHashCode = GetMembershipHashCode(statuses)};
 
                 //TLDR:
                 //this method basically filters out any member status in the banned list

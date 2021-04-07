@@ -143,7 +143,7 @@ namespace Proto.Cluster.Gossip
                         hashes.Add(0);
                         continue;
                     }
-                    hashes.Add(topology.GetMembershipHashCode());
+                    hashes.Add(topology.MembershipHashCode);
                 }
 
                 var first = hashes.FirstOrDefault();

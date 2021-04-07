@@ -63,7 +63,7 @@ message Member {
 }
 
 message ClusterTopology {
-    uint64 event_id = 1;
+    uint32 membership_hash_code = 1;
     repeated Member members = 2;
     repeated Member joined = 3;
     repeated Member left = 4;
