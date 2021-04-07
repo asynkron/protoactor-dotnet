@@ -78,8 +78,23 @@ namespace Proto.Cluster.Gossip
             {
                 return;
             }
-            
-            await _context.RequestAsync<SendGossipStateResponse>(_pid, new SendGossipStateRequest());
+
+            try
+            {
+                await _context.RequestAsync<SendGossipStateResponse>(_pid, new SendGossipStateRequest(), CancellationTokens.WithTimeout(5000));
+            }
+            catch (DeadLetterException)
+            {
+                
+            }
+            catch (OperationCanceledException)
+            {
+                
+            }
+            catch (Exception x)
+            {
+                //TODO: log
+            }
         }
 
         internal Task ShutdownAsync()

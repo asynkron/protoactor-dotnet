@@ -98,6 +98,12 @@ namespace Proto.Cluster.Gossip
             //for each member
             foreach (var (memberId, memberState) in state.Members)
             {
+                //we dont need to send back state to the owner of the state
+                if (memberId == targetMemberId)
+                {
+                    continue;
+                }
+                
                 //create an empty state
                 var newMemberState = new GossipMemberState();
                 newState.Members.Add(memberId, newMemberState);

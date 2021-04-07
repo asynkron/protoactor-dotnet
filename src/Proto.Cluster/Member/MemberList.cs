@@ -114,7 +114,7 @@ namespace Proto.Cluster
                 if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
                     return memberStrategy.GetActivator(requestSourceAddress);
 
-                Logger.LogError("[MemberList] MemberList did not find any activator for kind '{Kind}'", kind);
+                Logger.LogInformation("MemberList did not find any not find any activator for kind '{Kind}'", kind);
                 return null;
             }
         }

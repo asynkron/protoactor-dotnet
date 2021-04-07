@@ -3,6 +3,8 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <LangVersion>9</LangVersion>
+    <Configurations>Debug;Release;CoreOnly</Configurations>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />

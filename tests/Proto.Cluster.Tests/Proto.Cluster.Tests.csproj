@@ -2,6 +2,8 @@
   <PropertyGroup>
     <LangVersion>9</LangVersion>
     <TargetFrameworks>net5.0;netcoreapp3.1</TargetFrameworks>
+    <Configurations>Debug;Release;CoreOnly</Configurations>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />

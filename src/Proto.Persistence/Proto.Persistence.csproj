@@ -4,5 +4,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>9</LangVersion>
     <TargetFrameworks>netstandard2.1;net5.0</TargetFrameworks>
+    <Configurations>Debug;Release;CoreOnly</Configurations>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 </Project>

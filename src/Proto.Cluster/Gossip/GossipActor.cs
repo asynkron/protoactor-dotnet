@@ -19,16 +19,13 @@ namespace Proto.Cluster.Gossip
         private ImmutableDictionary<string, long> _committedOffsets = ImmutableDictionary<string, long>.Empty;
         private uint _clusterTopologyHash;
 
-        public Task ReceiveAsync(IContext context)
+        public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            return context.Message switch
-            {
-                SetGossipStateKey setState  => OnSetGossipStateKey(context, setState),
-                GossipRequest gossipRequest => OnGossipRequest(context, gossipRequest),
-                SendGossipStateRequest      => OnSendGossipState(context),
-                _                           => Task.CompletedTask
-            };
-        }
+            SetGossipStateKey setState  => OnSetGossipStateKey(context, setState),
+            GossipRequest gossipRequest => OnGossipRequest(context, gossipRequest),
+            SendGossipStateRequest      => OnSendGossipState(context),
+            _                           => Task.CompletedTask
+        };
 
         private async Task OnGossipRequest(IContext context, GossipRequest gossipRequest)
         {
@@ -50,12 +47,21 @@ namespace Proto.Cluster.Gossip
                     {
                         _clusterTopologyHash = hash;
                         
-                     //   Console.WriteLine($"CONSSENSUS {context.System.Id} - {_clusterTopologyHash}");
+                        Console.WriteLine($"CONSSENSUS {context.System.Id} - {_clusterTopologyHash}");
                     }
                 }
             }
+            
+            
+            
+
+            var response = new GossipResponse
+            {
+            //    State = _state.Clone()
+            };
+                
             // Console.WriteLine("Gossip request done..");
-            context.Respond(new GossipResponse());
+            context.Respond(response);
         }
         
         private Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
@@ -83,7 +89,7 @@ namespace Proto.Cluster.Gossip
                     var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
                     var (pendingOffsets, stateForMember) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, member.Id);
 
-                    await context.RequestAsync<GossipResponse>(pid, new GossipRequest
+                    var response = await context.RequestAsync<GossipResponse>(pid, new GossipRequest
                         {
                             State = stateForMember,
                         }, CancellationTokens.WithTimeout(500)
@@ -91,6 +97,11 @@ namespace Proto.Cluster.Gossip
 
                     //only commit offsets if successful
                     _committedOffsets = pendingOffsets;
+
+                    //update our state with the data from the remote node
+                    //TODO: this needs to be improved with filter state on sender side, and then Ack from here
+                    // GossipStateManagement.MergeState(_state, response.State, out var newState);
+                    // _state = newState;
                 }
                 catch (DeadLetterException)
                 {

@@ -5,6 +5,8 @@
         <OutputType>Exe</OutputType>
         <LangVersion>9</LangVersion>
         <RootNamespace>ClusterExperiment1</RootNamespace>
+        <Configurations>Debug;Release;CoreOnly</Configurations>
+        <Platforms>AnyCPU</Platforms>
     </PropertyGroup>
 
     <ItemGroup>
