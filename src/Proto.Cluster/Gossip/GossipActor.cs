@@ -73,7 +73,7 @@ namespace Proto.Cluster.Gossip
 
             foreach (var member in fanOutMembers)
             {
-                var stateForMember = _state; //GossipStateManagement.FilterGossipStateForMember(_state, _watermarks);
+                var stateForMember = /*_state; */GossipStateManagement.FilterGossipStateForMember(_state, _watermarks,member.Id);
                 var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
                 context.Send(pid, stateForMember);
             }

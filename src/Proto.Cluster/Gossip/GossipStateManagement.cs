@@ -90,7 +90,7 @@ namespace Proto.Cluster.Gossip
             entry.Value = Any.Pack(value);
         }
 
-        public static GossipState FilterGossipStateForMember(GossipState state, Dictionary<string, long> watermarks)
+        public static GossipState FilterGossipStateForMember(GossipState state, Dictionary<string, long> watermarks, string targetMemberId)
         {
             var newState = new GossipState();
 
@@ -100,9 +100,10 @@ namespace Proto.Cluster.Gossip
                 //create an empty state
                 var newMemberState = new GossipMemberState();
                 newState.Members.Add(memberId, newMemberState);
-                
+
+                var watermarkKey = $"{targetMemberId}.{memberId}";
                 //get the watermark 
-                watermarks.TryGetValue(memberId, out long watermark);
+                watermarks.TryGetValue(watermarkKey, out long watermark);
                 var newWatermark = watermark;
 
                 //for each value in member state
@@ -117,7 +118,7 @@ namespace Proto.Cluster.Gossip
                     newMemberState.Values.Add(key, value);
                 }
 
-                watermarks[memberId] = newWatermark;
+                watermarks[watermarkKey] = newWatermark;
             }
 
             return newState;
