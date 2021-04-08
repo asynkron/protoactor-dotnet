@@ -137,7 +137,7 @@ namespace Proto.Cluster.Gossip
             return (pendingOffsets, newState);
         }
         
-        public static (bool, uint) ElectLeader(GossipState state, string myId, ImmutableHashSet<string> members)
+        public static (bool, uint) CheckConsensus(GossipState state, string myId, ImmutableHashSet<string> members)
         {
             try
             {

@@ -29,51 +29,50 @@ namespace Proto.Cluster.Gossip
 
         private async Task OnGossipRequest(IContext context, GossipRequest gossipRequest)
         {
-            GossipState remoteState = gossipRequest.State;
+            var remoteState = gossipRequest.State;
             //Console.WriteLine("Got gossip request");
             //Ack, we got it
-
             if (GossipStateManagement.MergeState(_state, remoteState, out var newState))
             {
                 _state = newState;
-
-                var allMembers = context.System.Cluster().MemberList.GetMembers();
-
-                var (consensus, hash) = GossipStateManagement.ElectLeader(_state, context.System.Id, allMembers);
-
-                if (consensus)
-                {
-                    if (hash != _clusterTopologyHash)
-                    {
-                        _clusterTopologyHash = hash;
-                        
-                        Console.WriteLine($"CONSSENSUS {context.System.Id} - {_clusterTopologyHash}");
-                    }
-                }
+                CheckConsensus(context);
             }
-            
-            
-            
 
-            var response = new GossipResponse
-            {
-            //    State = _state.Clone()
-            };
-                
-            // Console.WriteLine("Gossip request done..");
+            var response = new GossipResponse();
             context.Respond(response);
         }
-        
+
+        private void CheckConsensus(IContext context)
+        {
+            var allMembers = context.System.Cluster().MemberList.GetMembers();
+
+            var (consensus, hash) = GossipStateManagement.CheckConsensus(_state, context.System.Id, allMembers);
+
+            if (!consensus) return;
+
+            if (hash == _clusterTopologyHash) return;
+
+            _clusterTopologyHash = hash;
+
+            Console.WriteLine($"CONSSENSUS {context.System.Id} - {_clusterTopologyHash}");
+        }
+
         private Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
         {
             GossipStateManagement.SetKey(_state, setStateKey.Key,setStateKey.Value  , context.System.Id, ref _localSequenceNo);
-
+            //CheckConsensus(context);
             return Task.CompletedTask;
         }
 
         private async Task OnSendGossipState(IContext context)
         {
             var members = context.System.Cluster().MemberList.GetOtherMembers();
+
+            foreach (var member in members)
+            {
+                GossipStateManagement.EnsureMemberStateExists(_state, member.Id);
+            }
+            
             var fanOutMembers = PickRandomFanOutMembers(members, context.System.Cluster().Config.GossipFanout);
 
             foreach (var member in fanOutMembers)
@@ -123,6 +122,7 @@ namespace Proto.Cluster.Gossip
                 }
             }
             
+            CheckConsensus(context);
             context.Respond(new SendGossipStateResponse());
         }
 
