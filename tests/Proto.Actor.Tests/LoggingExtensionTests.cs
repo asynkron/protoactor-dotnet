@@ -68,7 +68,7 @@ namespace Proto.Tests
             var logger = system.Extensions.Get<InstanceLogger>();
 
             var i = 0;
-            logger?.LogDebug("hello", ++i );
+            logger?.LogDebug("hello", ++i ); //we can pass a lot of args, call ToString etc. if logger is not enabled, it will be free
             
             Assert.Equal(0,i);
         }
