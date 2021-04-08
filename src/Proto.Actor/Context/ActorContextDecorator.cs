@@ -78,5 +78,11 @@ namespace Proto
         public void Poison(PID pid) => _context.Poison(pid);
 
         public Task PoisonAsync(PID pid) => _context.PoisonAsync(pid);
+
+        public T? Get<T>() => _context.Get<T>();
+
+        public void Set<T, TI>(TI obj) where TI : T => _context.Set<T, TI>(obj);
+
+        public void Remove<T>() => _context.Remove<T>();
     }
 }

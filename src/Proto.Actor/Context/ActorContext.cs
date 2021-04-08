@@ -106,6 +106,18 @@ namespace Proto.Context
 
         public void Unwatch(PID pid) => pid.SendSystemMessage(System, new Unwatch(Self));
 
+        public void Set<T, TI>(TI obj) where TI : T
+        {
+            if (obj is null) throw new NullReferenceException(nameof(obj));
+
+            EnsureExtras();
+            _extras!.Store.Add<T>(obj);
+        }
+
+        public void Remove<T>() => _extras?.Store.Remove<T>();
+
+        public T? Get<T>() => (T?) _extras?.Store.Get<T>();
+
         public void SetReceiveTimeout(TimeSpan duration)
         {
             if (duration <= TimeSpan.Zero)

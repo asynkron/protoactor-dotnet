@@ -54,5 +54,11 @@ namespace Proto
         public virtual PID? Sender => null;
         public virtual IActor? Actor => null;
         public virtual ActorSystem System => _context.System;
+
+        public virtual T? Get<T>() => _context.Get<T>();
+
+        public virtual void Set<T, TI>(TI obj) where TI : T => _context.Set(obj);
+
+        public virtual void Remove<T>() => _context.Remove<T>();
     }
 }
