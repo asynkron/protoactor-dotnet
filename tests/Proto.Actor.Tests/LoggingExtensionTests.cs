@@ -57,5 +57,20 @@ namespace Proto.Tests
             
             Assert.True(hello.IsBefore(world));
         }
+        
+        [Fact] 
+        public void DoesNotCauseSideEffects()
+        {
+            // this is not really a logging test, its just to highlight that ?. really ignores the right-side if null
+
+            var system = new ActorSystem();
+            //instance logger is null
+            var logger = system.Extensions.Get<InstanceLogger>();
+
+            var i = 0;
+            logger?.LogDebug("hello", ++i );
+            
+            Assert.Equal(0,i);
+        }
     }
 }
