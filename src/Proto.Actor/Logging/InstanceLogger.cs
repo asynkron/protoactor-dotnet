@@ -4,7 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
@@ -14,9 +13,17 @@ using Proto.Extensions;
 namespace Proto.Logging
 {
     [PublicAPI]
-    public record LogStoreEntry(int Index, LogLevel LogLevel, string Template, object[] args)
+    public static class Extensions
+    {
+        public static InstanceLogger? Logger(this IContext context) => context.System.Logger();
+        public static InstanceLogger? Logger(this ActorSystem system) => system.Extensions.Get<InstanceLogger>();
+        
+    }
+    [PublicAPI]
+    public record LogStoreEntry(int Index, LogLevel LogLevel, string Category, string Template, object[] args)
     {
         public bool IsBefore(LogStoreEntry other) => Index < other.Index;
+
         public bool IsAfter(LogStoreEntry other) => Index > other.Index;
     }
 
@@ -25,16 +32,21 @@ namespace Proto.Logging
     {
         private readonly List<LogStoreEntry> _entries = new();
 
-        public void Append(LogLevel logLevel, string format, object[] args)
+        public void Append(LogLevel logLevel, string category, string template, object[] args)
         {
             lock (this)
             {
-                _entries.Add(new LogStoreEntry(_entries.Count, logLevel, format, args));
+                _entries.Add(new LogStoreEntry(_entries.Count, logLevel, category, template, args));
             }
         }
 
-        public IReadOnlyList<LogStoreEntry> GetEntries() => _entries.ToList();
-
+        public IReadOnlyList<LogStoreEntry> GetEntries()
+        {
+            lock (this)
+            {
+                return _entries.ToList();
+            }
+        }
 
         public LogStoreEntry? FindEntry(string partialTemplate)
         {
@@ -44,10 +56,19 @@ namespace Proto.Logging
                 return entry;
             }
         }
-        
-        
-     }
-    
+
+        public LogStoreEntry? FindEntryByCategory(string category, string partialTemplate)
+        {
+            lock (this)
+            {
+                var entry = GetEntries().FirstOrDefault(e => e.Category == category && e.Template.Contains(partialTemplate));
+                return entry;
+            }
+        }
+
+
+    }
+
 
     [PublicAPI]
     public class InstanceLogger : IActorSystemExtension<InstanceLogger>
@@ -55,13 +76,17 @@ namespace Proto.Logging
         private readonly LogLevel _logLevel;
         private readonly ILogger? _logger;
         private readonly LogStore? _logStore;
-        
+        private readonly string _category;
 
-        public InstanceLogger(LogLevel logLevel, LogStore? logStore = null  , ILogger? logger = null)
+        public InstanceLogger BeginScope<T>()  => new(_logLevel, _logStore, _logger, typeof(T).Name);
+        public InstanceLogger BeginScope(string category) => new(_logLevel, _logStore, _logger, category);
+
+        public InstanceLogger(LogLevel logLevel, LogStore? logStore = null, ILogger? logger = null, string category = "default")
         {
             _logLevel = logLevel;
             _logger = logger;
             _logStore = logStore;
+            _category = category;
         }
 
         public void LogDebug(string template, params object[] args)
@@ -70,8 +95,8 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogDebug(template, args);
-            _logStore?.Append(_logLevel,template,args);
-            
+            _logStore?.Append(_logLevel, _category, template, args);
+
         }
 
         public void LogDebug(Exception x, string template, params object[] args)
@@ -80,7 +105,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogDebug(x, template, args);
-            _logStore?.Append(_logLevel,template,args);
+            _logStore?.Append(_logLevel, _category, template, args);
         }
 
         public void LogInformation(string template, params object[] args)
@@ -89,7 +114,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogInformation(template, args);
-            _logStore?.Append(_logLevel,template,args);
+            _logStore?.Append(_logLevel, _category, template, args);
         }
 
         public void LogInformation(Exception x, string template, params object[] args)
@@ -98,7 +123,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogDebug(x, template, args);
-            _logStore?.Append(_logLevel,template,args);
+            _logStore?.Append(_logLevel, _category, template, args);
         }
 
         public void LogWarning(string template, params object[] args)
@@ -107,7 +132,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogWarning(template, args);
-            _logStore?.Append(_logLevel,template,args);
+            _logStore?.Append(_logLevel, _category, template, args);
         }
 
         public void LogWarning(Exception x, string template, params object[] args)
@@ -116,7 +141,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogWarning(x, template, args);
-            _logStore?.Append(_logLevel,template,args);
+            _logStore?.Append(_logLevel, _category, template, args);
         }
 
         public void LogError(string template, params object[] args)
@@ -125,7 +150,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogError(template, args);
-            _logStore?.Append(_logLevel,template,args);
+            _logStore?.Append(_logLevel, _category, template, args);
         }
 
         public void LogError(Exception x, string template, params object[] args)
@@ -134,7 +159,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogError(x, template, args);
-            _logStore?.Append(_logLevel,template,args);
+            _logStore?.Append(_logLevel, _category, template, args);
         }
 
         public void LogCritical(string template, params object[] args)
@@ -143,7 +168,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogCritical(template, args);
-            _logStore?.Append(_logLevel,template,args);
+            _logStore?.Append(_logLevel, _category, template, args);
         }
 
         public void LogCritical(Exception x, string template, params object[] args)
@@ -152,7 +177,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogCritical(x, template, args);
-            _logStore?.Append(_logLevel,template,args);
+            _logStore?.Append(_logLevel, _category, template, args);
         }
     }
 }
