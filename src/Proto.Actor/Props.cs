@@ -35,6 +35,8 @@ namespace Proto
         public ImmutableList<Func<IContext, IContext>> ContextDecorator { get; init; } =
             ImmutableList<Func<IContext, IContext>>.Empty;
 
+        public ImmutableList<Action<IContext>> OnInit { get; init; } = ImmutableList<Action<IContext>>.Empty;
+
         public Func<IContext, IContext>? ContextDecoratorChain { get; init; }
 
         public Spawner Spawner { get; init; } = DefaultSpawner;
@@ -51,11 +53,20 @@ namespace Proto
             if (!absent) throw new ProcessNameExistException(name, self);
 
             var ctx = ActorContext.Setup(system, props, parent, self, mailbox);
+            Initialize(props, ctx);
             mailbox.RegisterHandlers(ctx, dispatcher);
             mailbox.PostSystemMessage(Started.Instance);
             mailbox.Start();
 
             return self;
+        }
+
+        private static void Initialize(Props props, ActorContext ctx)
+        {
+            foreach (var init in props.OnInit)
+            {
+                init(ctx);
+            }
         }
 
         public Props WithProducer(Producer producer) =>
@@ -85,6 +96,11 @@ namespace Proto
                     )
             };
         }
+
+        public Props WithOnInit(params Action<IContext>[] callback) => this with
+        {
+            OnInit = OnInit.AddRange(callback),
+        };
 
         public Props WithGuardianSupervisorStrategy(ISupervisorStrategy guardianStrategy) =>
             this with {GuardianStrategy = guardianStrategy};

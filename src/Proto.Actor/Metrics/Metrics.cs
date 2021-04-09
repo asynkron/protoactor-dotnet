@@ -13,7 +13,7 @@ namespace Proto.Metrics
         internal readonly ActorMetrics InternalActorMetrics;
         public readonly bool IsNoop;
         private IMetricsProvider[] _configurators;
-        private TypeDictionary<object> _knownMetrics = new();
+        private TypeDictionary<object,ProtoMetrics> _knownMetrics = new(10);
         private Ubiquitous.Metrics.Metrics _metrics;
 
         public ProtoMetrics(IMetricsProvider[] configurators)

@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Proto.Future;
+using Proto.Utils;
 
 namespace Proto
 {
@@ -37,6 +38,14 @@ namespace Proto
 
         private Sender? SenderMiddleware { get; init; }
         public ActorSystem System { get; }
+        private TypeDictionary<object, RootContext> Store { get; } = new(0,1);
+
+        public T? Get<T>() => (T?) Store.Get<T>();
+
+        public void Set<T, TI>(TI obj) where TI : T => Store.Add<T>(obj);
+
+        public void Remove<T>() => Store.Remove<T>();
+
         public MessageHeader Headers { get; init; }
 
         public PID? Parent => null;
