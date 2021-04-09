@@ -36,10 +36,12 @@ namespace Proto.Cluster.Tests
             _clusterName = $"test-cluster-{Guid.NewGuid().ToString().Substring(0, 6)}";
         }
 
-        protected virtual ClusterKind[] ClusterKinds => new ClusterKind[]
+        protected virtual ClusterKind[] ClusterKinds => new []
         {
-            new(EchoActor.Kind, EchoActor.Props.WithClusterRequestDeduplication()),
-            new(EchoActor.Kind2, EchoActor.Props)
+            new ClusterKind(EchoActor.Kind, EchoActor.Props.WithClusterRequestDeduplication()),
+            new ClusterKind(EchoActor.Kind2, EchoActor.Props),
+            new ClusterKind(EchoActor.LocalAffinityKind, EchoActor.Props).WithLocalAffinity()
+            
         };
 
         public async Task InitializeAsync() => Members = await SpawnClusterNodes(_clusterSize, _configure).ConfigureAwait(false);

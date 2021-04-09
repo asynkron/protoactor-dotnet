@@ -30,7 +30,7 @@ namespace Proto
         public IContext Context { get; }
         public CancellationTokenSource CancellationTokenSource { get; } = new();
 
-        public TypeDictionary<object, ActorContextExtras> Store { get; } = new(1, 1);
+        public TypeDictionary<object, ActorContextExtras> Store { get; } = new(5, 1);
 
         public void InitReceiveTimeoutTimer(Timer timer) => ReceiveTimeoutTimer = timer;
 

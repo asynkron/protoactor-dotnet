@@ -8,6 +8,7 @@ namespace Proto.Cluster.Tests
     {
         public const string Kind = "echo";
         public const string Kind2 = "echo2";
+        public const string LocalAffinityKind = "echo3";
 
         public static readonly Props Props = Props.FromProducer(() => new EchoActor());
         private static readonly ILogger Logger = Log.CreateLogger<EchoActor>();
@@ -37,9 +38,9 @@ namespace Proto.Cluster.Tests
                     Logger.LogDebug("Received SlowPing, replying Pong after {Delay} ms: {@Pong}", ping.DelayMs, slowPong);
                     context.Respond(slowPong);
                     break;
-                case WhereAreYou _:
+                case WhereAreYou hi:
                     Logger.LogDebug("Responding to location request");
-                    context.Respond(new HereIAm {Address = context.Self!.Address});
+                    context.Respond(new HereIAm {Address = context.Self!.Address, RequestId = hi.RequestId});
                     break;
                 case Die _:
                     Logger.LogDebug("Received termination request, stopping");
