@@ -41,7 +41,7 @@ namespace Proto.Cluster
         /// <param name="throttle">Throttling max relocations per timespan</param>
         /// <param name="hasLocalAffinity">Predicate on message envelope, to have local affinity only on partitioned messages</param>
         /// <returns></returns>
-        internal static Props WithRelocateOnRemoteSender(
+        private static Props WithRelocateOnRemoteSender(
             this Props props,
             ShouldThrottle? throttle = null,
             Predicate<MessageEnvelope>? hasLocalAffinity = null
@@ -60,22 +60,12 @@ namespace Proto.Cluster
                      && throttle?.Invoke() != Throttle.Valve.Closed
                     )
                     {
-                        var id = context.Get<ClusterIdentity>();
-
-                        if (id is null)
-                        {
-                            Logger.LogWarning("{Extension} is only for virtual actors, Props have been misconfigured",
-                                nameof(WithRelocateOnRemoteSender)
-                            );
-                            return task;
-                        }
-
                         var self = context.Self;
                         Logger.LogDebug("Relocating {ActorPid}, because of {MessageType} from {Sender}", context.Self,
                             envelope.Message.GetType(), sender
                         );
                         context.MarkForRelocation();
-                        context.System.Root.PoisonAsync(self).ContinueWith(_ => ActivateByProxy(context, sender!.Address, id, self));
+                        context.System.Root.PoisonAsync(self).ContinueWith(_ => ActivateByProxy(context, sender!.Address, context.Get<ClusterIdentity>()!, self));
                     }
 
                     return task;
