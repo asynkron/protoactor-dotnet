@@ -27,26 +27,30 @@ namespace Proto.Cluster
         public static Cluster Cluster(this IContext context)
             => context.System.Extensions.Get<Cluster>() ?? throw new NotSupportedException("Cluster has not been configured");
 
-        public static Task<T> ClusterRequestAsync<T>(this IContext context, string identity, string kind, object message, CancellationToken ct)
-        {
-            var cluster = context.System.Extensions.Get<Cluster>();
+        public static Task<T> ClusterRequestAsync<T>(this IContext context, string identity, string kind, object message, CancellationToken ct) =>
             //call cluster RequestAsync using actor context
-            return cluster.RequestAsync<T>(identity, kind, message, context, ct);
-        }
+            context.System.Cluster()!.RequestAsync<T>(identity, kind, message, context, ct);
 
-        public static Props WithClusterInit(this Props props, Cluster cluster, ClusterIdentity clusterIdentity, ActivatedClusterKind activatedClusterKind)
+        public static Props WithClusterInit(
+            this Props props,
+            Cluster cluster,
+            ClusterIdentity clusterIdentity,
+            ActivatedClusterKind activatedClusterKind
+        )
         {
-            return props.WithReceiverMiddleware(
-                baseReceive =>
-                    (ctx, env) => {
-                        return env.Message switch
-                        {
-                            Started => HandleStart(baseReceive, ctx, env),
-                            Stopped => HandleStopped(baseReceive, ctx, env),
-                            _       => baseReceive(ctx, env)
-                        };
-                    }
-            );
+            return props
+                .WithOnInit(context => context.Set(clusterIdentity))
+                .WithReceiverMiddleware(
+                    baseReceive =>
+                        (ctx, env) => {
+                            return env.Message switch
+                            {
+                                Started => HandleStart(baseReceive, ctx, env),
+                                Stopped => HandleStopped(baseReceive, ctx, env),
+                                _       => baseReceive(ctx, env)
+                            };
+                        }
+                );
 
             async Task HandleStart(
                 Receiver baseReceive,
@@ -59,20 +63,20 @@ namespace Proto.Cluster
                 var grainInitEnvelope = new MessageEnvelope(grainInit, null);
                 var count = activatedClusterKind.Inc();
                 cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
-                    .Set(count,new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
+                    .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
                 await baseReceive(ctx, grainInitEnvelope);
             }
 
             async Task HandleStopped(
                 Receiver baseReceive,
                 IReceiverContext ctx,
-                MessageEnvelope startEnvelope
+                MessageEnvelope stopEnvelope
             )
             {
                 var count = activatedClusterKind.Dec();
                 cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
                     .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
-                await baseReceive(ctx, startEnvelope);
+                await baseReceive(ctx, stopEnvelope);
             }
         }
 

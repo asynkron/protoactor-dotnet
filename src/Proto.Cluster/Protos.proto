@@ -37,10 +37,14 @@ message ActivationRequest {
     string request_id = 2;
 }
 
+message ProxyActivationRequest {
+  ClusterIdentity cluster_identity = 1;
+  actor.PID replaced_activation = 2;
+}
+
 message ActivationResponse {
     actor.PID pid = 1;
 }
-
 
 message GrainRequest {
     int32 method_index = 1;

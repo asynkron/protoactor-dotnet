@@ -12,21 +12,17 @@ namespace Proto.Cluster
     /// <summary>
     ///     Prioritizes placement on current node, to optimize performance on partitioned workloads
     /// </summary>
-    public class LocalAffinityStrategy : IMemberStrategy
+    class LocalAffinityStrategy : IMemberStrategy
     {
         private readonly Cluster _cluster;
-        private readonly int _localAffinityActorLimit;
         private readonly Rendezvous _rdv;
-        private readonly ProcessRegistry _registry;
         private readonly RoundRobinMemberSelector _rr;
         private Member? _me;
         private ImmutableList<Member> _members = ImmutableList<Member>.Empty;
 
-        public LocalAffinityStrategy(Cluster cluster, int localAffinityActorLimit)
+        public LocalAffinityStrategy(Cluster cluster)
         {
             _cluster = cluster;
-            _registry = cluster.System.ProcessRegistry;
-            _localAffinityActorLimit = localAffinityActorLimit;
             _rdv = new Rendezvous();
             _rr = new RoundRobinMemberSelector(this);
         }
@@ -51,8 +47,7 @@ namespace Proto.Cluster
 
         public Member? GetActivator(string senderAddress)
         {
-            if (_me?.Address.Equals(senderAddress) == true &&
-                _registry.ProcessCount < _localAffinityActorLimit) return _me;
+            if (_me?.Address.Equals(senderAddress) == true) return _me;
 
             var sender = _members.FirstOrDefault(member => member.Address == senderAddress);
             //TODO: Verify that the member is not overloaded already

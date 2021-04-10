@@ -27,10 +27,13 @@ message Pong {
 message Die {
 }
 
-message WhereAreYou {}
+message WhereAreYou {
+  string request_id = 1; 
+}
 
 message HereIAm {
   string address = 1;
+  string request_id = 2;
 }
 
 

@@ -297,7 +297,7 @@ namespace Proto.Context
             }
 
             return Await(this, msg);
-            
+
             //static, don't create a closure
             static async ValueTask Await(ActorContext self, object msg)
             {
@@ -408,7 +408,7 @@ namespace Proto.Context
 
             return _extras;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Task DefaultReceive() =>
             Message switch
@@ -444,7 +444,7 @@ namespace Proto.Context
                     );
             }
         }
-        
+
         private void SendUserMessage(PID target, object message)
         {
             if (_props.SenderMiddlewareChain is null)
@@ -458,7 +458,7 @@ namespace Proto.Context
                 _props.SenderMiddlewareChain(EnsureExtras().Context, target, MessageEnvelope.Wrap(message));
             }
         }
-        
+
         private IActor IncarnateActor()
         {
             _state = ContextState.Alive;
@@ -472,7 +472,6 @@ namespace Proto.Context
             return actor;
         }
 
-        
         private async ValueTask HandleRestartAsync()
         {
             _state = ContextState.Restarting;
@@ -572,7 +571,7 @@ namespace Proto.Context
             if (_extras?.Children.Count > 0) return default;
 
             CancelReceiveTimeout();
-            
+
             //all children are now stopped, should we restart or stop ourselves?
             switch (_state)
             {

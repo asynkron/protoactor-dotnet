@@ -65,13 +65,13 @@ namespace Proto.Cluster
 
         public PidCache PidCache { get; }
 
-        public string[] GetClusterKinds() =>_clusterKinds.Keys.ToArray();
+        public string[] GetClusterKinds() => _clusterKinds.Keys.ToArray();
 
         public async Task StartMemberAsync()
         {
             await BeginStartAsync(false);
             Provider = Config.ClusterProvider;
-            
+
             await Provider.StartMemberAsync(this);
 
             Logger.LogInformation("Started as cluster member");
@@ -103,6 +103,7 @@ namespace Proto.Cluster
 
             var kinds = GetClusterKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
+            InitIdentityProxy();
             await _clusterHeartBeat.StartAsync();
         }
 
@@ -113,6 +114,9 @@ namespace Proto.Cluster
                 _clusterKinds.Add(clusterKind.Name, clusterKind.Build(this));
             }
         }
+
+        private void InitIdentityProxy()
+            => System.Root.SpawnNamed(Props.FromProducer(() => new IdentityActivatorProxy(this)), IdentityActivatorProxy.ActorName);
 
         public async Task ShutdownAsync(bool graceful = true)
         {
@@ -138,8 +142,8 @@ namespace Proto.Cluster
         public Task<T> RequestAsync<T>(string identity, string kind, object message, ISenderContext context, CancellationToken ct) =>
             ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct);
 
-
         private Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
+
         public ActivatedClusterKind GetClusterKind(string kind)
         {
             if (!_clusterKinds.TryGetValue(kind, out var clusterKind))
@@ -147,11 +151,11 @@ namespace Proto.Cluster
 
             return clusterKind;
         }
-        
+
         public ActivatedClusterKind TryGetClusterKind(string kind)
         {
             _clusterKinds.TryGetValue(kind, out var clusterKind);
-            
+
             return clusterKind;
         }
     }
