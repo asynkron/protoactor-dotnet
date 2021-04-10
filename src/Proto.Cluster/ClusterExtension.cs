@@ -31,15 +31,15 @@ namespace Proto.Cluster
             //call cluster RequestAsync using actor context
             context.System.Cluster()!.RequestAsync<T>(identity, kind, message, context, ct);
 
-        public static Props WithClusterInit(
+        public static Props WithClusterIdentity(this Props props, ClusterIdentity clusterIdentity)
+            => props.WithOnInit(context => context.Set(clusterIdentity));
+
+        internal static Props WithClusterKind(
             this Props props,
-            Cluster cluster,
-            ClusterIdentity clusterIdentity,
-            ActivatedClusterKind activatedClusterKind
+            ActivatedClusterKind clusterKind
         )
         {
             return props
-                .WithOnInit(context => context.Set(clusterIdentity))
                 .WithReceiverMiddleware(
                     baseReceive =>
                         (ctx, env) => {
@@ -59,11 +59,13 @@ namespace Proto.Cluster
             )
             {
                 await baseReceive(ctx, startEnvelope);
-                var grainInit = new ClusterInit(clusterIdentity, cluster);
+                var identity = ctx.Get<ClusterIdentity>();
+                var cluster = ctx.System.Cluster();
+                var grainInit = new ClusterInit(identity!, cluster);
                 var grainInitEnvelope = new MessageEnvelope(grainInit, null);
-                var count = activatedClusterKind.Inc();
+                var count = clusterKind.Inc();
                 cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
-                    .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
+                    .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterKind.Name});
                 await baseReceive(ctx, grainInitEnvelope);
             }
 
@@ -73,9 +75,10 @@ namespace Proto.Cluster
                 MessageEnvelope stopEnvelope
             )
             {
-                var count = activatedClusterKind.Dec();
+                var count = clusterKind.Dec();
+                var cluster = ctx.System.Cluster();
                 cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
-                    .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
+                    .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterKind.Name});
                 await baseReceive(ctx, stopEnvelope);
             }
         }

@@ -7,7 +7,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Proto.Logging;
 
 namespace Proto.Cluster.Identity
 {
