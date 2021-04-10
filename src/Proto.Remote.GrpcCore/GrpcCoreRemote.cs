@@ -30,7 +30,7 @@ namespace Proto.Remote.GrpcCore
         {
             System = system;
             _config = config;
-            system.Metrics.RegisterKnownMetrics(new RemoteMetrics(system.Metrics));
+            system.Metrics.Register(new RemoteMetrics(system.Metrics));
             System.Extensions.Register(this);
             System.Extensions.Register(config.Serialization);
         }
