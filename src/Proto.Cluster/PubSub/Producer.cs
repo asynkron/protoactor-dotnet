@@ -7,17 +7,20 @@ using System;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Proto.Remote;
 
 namespace Proto.Cluster.PubSub
 {
-    public record Foo(object Message, TaskCompletionSource<bool> TaskCompletionSource);
+    public record ProduceMessage(object Message, TaskCompletionSource<bool> TaskCompletionSource);
+    
+    [PublicAPI]
     public class Producer
     {
         private readonly Cluster _cluster;
         private ProducerBatchMessage _batch;
         private readonly string _topic;
-        private readonly Channel<Foo> _publisherChannel = Channel.CreateUnbounded<Foo>();
+        private readonly Channel<ProduceMessage> _publisherChannel = Channel.CreateUnbounded<ProduceMessage>();
         
 
         public Producer(Cluster cluster, string topic)
@@ -73,7 +76,7 @@ namespace Proto.Cluster.PubSub
         public Task ProduceAsync(object message)
         {
             var tcs = new TaskCompletionSource<bool>();
-            _publisherChannel.Writer.TryWrite(new Foo(message, tcs));
+            _publisherChannel.Writer.TryWrite(new ProduceMessage(message, tcs));
             return tcs.Task;
         }
     }
