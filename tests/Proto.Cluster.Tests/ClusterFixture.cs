@@ -40,7 +40,7 @@ namespace Proto.Cluster.Tests
         {
             new ClusterKind(EchoActor.Kind, EchoActor.Props.WithClusterRequestDeduplication()),
             new ClusterKind(EchoActor.Kind2, EchoActor.Props),
-            new ClusterKind(EchoActor.LocalAffinityKind, EchoActor.Props).WithLocalAffinity()
+            new ClusterKind(EchoActor.LocalAffinityKind, EchoActor.Props).WithLocalAffinityRelocationStrategy()
             
         };
 

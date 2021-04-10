@@ -16,7 +16,7 @@ namespace Proto.Cluster
     {
         private static readonly ILogger Logger = Log.CreateLogger(nameof(LocalAffinityExtensions));
 
-        public static ClusterKind WithLocalAffinity(this ClusterKind clusterKind, LocalAffinityOptions? options = null)
+        public static ClusterKind WithLocalAffinityRelocationStrategy(this ClusterKind clusterKind, LocalAffinityOptions? options = null)
             => clusterKind with
             {
                 Props = clusterKind.Props.WithRelocateOnRemoteSender(options?.RelocationThroughput?.Create(), options?.TriggersLocalAffinity),
