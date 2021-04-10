@@ -22,10 +22,18 @@ namespace ClusterPubSub
                     l.AddConsole().SetMinimumLevel(LogLevel.Information)
                 )
             );
-            
-            //starting remote node...
-            await RunMember();
-                
+            Console.WriteLine("1) Run local");
+            Console.WriteLine("2) Run remote");
+            var res = Console.ReadLine();
+
+
+
+            if (res == "2")
+            {
+                //starting remote node...
+                await RunMember();
+            }
+
             var remoteConfig = GrpcCoreRemoteConfig
                 .BindToLocalhost()
                 .WithProtoMessages(ClusterPubSub.ProtosReflection.Descriptor);
@@ -33,18 +41,31 @@ namespace ClusterPubSub
             var consulProvider =
                 new ConsulProvider(new ConsulProviderConfig());
 
+//use an empty store, no persistence
+            var store = new EmptyKeyValueStore<Subscribers>();
+
             var clusterConfig =
                 ClusterConfig
                     .Setup("MyCluster", consulProvider, new PartitionIdentityLookup())
-                    .WithPubSubBatchSize(10000);
+                    .WithClusterKind("topic", Props.FromProducer(() => new TopicActor(store)))
+                    .WithPubSubBatchSize(2000);
 
             var system = new ActorSystem()
                 .WithRemote(remoteConfig)
                 .WithCluster(clusterConfig);
 
-            await system
-                .Cluster()
-                .StartClientAsync();
+            if (res == "2")
+            {
+                await system
+                    .Cluster()
+                    .StartClientAsync();
+            }
+            else
+            {
+                await system
+                    .Cluster()
+                    .StartMemberAsync();
+            }
 
             var props = Props.FromFunc(ctx => {
                     if (ctx.Message is SomeMessage s)
@@ -55,14 +76,19 @@ namespace ClusterPubSub
                     return Task.CompletedTask;
                 }
             );
-            
-            var pid1 = system.Root.Spawn(props);
-            var pid2 = system.Root.Spawn(props);
 
-            //subscribe the pid to the my-topic
-            await system.Cluster().Subscribe("my-topic", pid1);
-            await system.Cluster().Subscribe("my-topic", pid2);
-            
+            var subscriberCount = 10;
+
+            for (int j = 0; j < subscriberCount; j++)
+            {
+                var pid1 = system.Root.Spawn(props);
+                // var pid2 = system.Root.Spawn(props);
+
+                //subscribe the pid to the my-topic
+                await system.Cluster().Subscribe("my-topic", pid1);
+                //   await system.Cluster().Subscribe("my-topic", pid2);
+            }
+
             //get hold of a producer that can send messages to the my-topic
             var p = system.Cluster().Producer("my-topic");
 
@@ -81,14 +107,17 @@ namespace ClusterPubSub
                 tasks.Add(t);
             }
 
-            Console.WriteLine("waiting...");
+       
             await Task.WhenAll(tasks);
             tasks.Clear();
             ;
-            Console.WriteLine(sw.Elapsed.TotalMilliseconds);
+            
             sw.Restart();
 
-            for (int i = 0; i < 1_000_000; i++)
+            Console.WriteLine("Running...");
+            var messageCount = 1_000_000;
+
+            for (int i = 0; i < messageCount; i++)
             {
                 tasks.Add(p.ProduceAsync(new SomeMessage
                         {
@@ -98,11 +127,15 @@ namespace ClusterPubSub
                 );
             }
 
-            await Task.WhenAll(tasks);
-            tasks.Clear();
-            Console.WriteLine(sw.Elapsed.TotalMilliseconds);
 
-            Console.ReadLine();
+
+            await Task.WhenAll(tasks);
+            sw.Stop();
+
+            var tps = (messageCount * subscriberCount) / sw.ElapsedMilliseconds * 1000;
+            Console.WriteLine($"Time {sw.Elapsed.TotalMilliseconds}");
+            Console.WriteLine($"Messages per second {tps:N0}");
+            
         }
 
         public static async Task RunMember()
@@ -121,7 +154,7 @@ namespace ClusterPubSub
                 ClusterConfig
                     .Setup("MyCluster", consulProvider, new PartitionIdentityLookup())
                     .WithClusterKind("topic", Props.FromProducer(() => new TopicActor(store)))
-                    .WithPubSubBatchSize(10000);
+                    .WithPubSubBatchSize(2000);
 
             var system = new ActorSystem()
                 .WithRemote(remoteConfig)
