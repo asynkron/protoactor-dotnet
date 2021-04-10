@@ -30,12 +30,11 @@ namespace Proto.Cluster
 
             system.Extensions.Register(this);
             system.Metrics.Register(new ClusterMetrics(system.Metrics));
+            system.Serialization().RegisterFileDescriptor(ClusterContractsReflection.Descriptor);
 
             PidCache = new PidCache();
             ClusterHeartBeat = new ClusterHeartBeat(this);
             PubSub = new PubSubManager(this);
-
-            system.Serialization().RegisterFileDescriptor(ClusterContractsReflection.Descriptor);
 
             SubscribeToTopologyEvents();
         }
@@ -60,7 +59,7 @@ namespace Proto.Cluster
 
         internal IClusterProvider Provider { get; set; } = null!;
 
-        public string LoggerId => System.Address;
+        public string LoggerId => System.Id;
 
         public PidCache PidCache { get; }
 
