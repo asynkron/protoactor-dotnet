@@ -251,9 +251,11 @@ namespace Proto.Context
             if (System.Config.DeveloperSupervisionLogging)
             {
                 Console.WriteLine($"[Supervision] Actor {Self} : {Actor?.GetType().Name} failed with message:{message} exception:{reason}");
-                Logger.LogError("[Supervision] Actor {Self} : {ActorType} failed with message:{Message} exception:{Reason}",Self,Actor?.GetType().Name,message,reason);
-            }    
-            
+                Logger.LogError("[Supervision] Actor {Self} : {ActorType} failed with message:{Message} exception:{Reason}", Self,
+                    Actor?.GetType().Name, message, reason
+                );
+            }
+
             System.Metrics.InternalActorMetrics.ActorFailureCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
             var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
             Self.SendSystemMessage(System, SuspendMailbox.Instance);
@@ -413,9 +415,17 @@ namespace Proto.Context
         private Task DefaultReceive() =>
             Message switch
             {
-                PoisonPill => HandlePoisonPill(),
-                _          => Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this)
+                PoisonPill               => HandlePoisonPill(),
+                IAutoRespond autoRespond => HandleAutoRespond(autoRespond),
+                _                        => Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this)
             };
+
+        private Task HandleAutoRespond(IAutoRespond autoRespond)
+        {
+            var response = autoRespond.GetAutoResponse();
+            Respond(response);
+            return Task.CompletedTask;
+        }
 
         private Task HandlePoisonPill()
         {
