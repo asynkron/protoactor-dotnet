@@ -37,6 +37,12 @@ namespace Proto.Cluster.PubSub
         private async Task OnProducerBatch(IContext context, ProducerBatchMessage batch)
         {
             var topicBatch = new TopicBatchMessage(batch.Envelopes);
+            
+            //TODO: lookup PID for ClusterIdentity subscribers.
+            //group PIDs by address
+            //send the batch to the PubSub delivery actor on each member
+            //await for subscriber responses on in each delivery actor
+            //when done, respond back here
 
             //request async all messages to their subscribers
             var tasks =
@@ -49,12 +55,13 @@ namespace Proto.Cluster.PubSub
             context.Respond(new PublishResponse());
         }
 
-        private static Task DeliverBatch(IContext context, TopicBatchMessage pub, SubscriberIdentity s) => s.IdentityCase switch
-        {
-            SubscriberIdentity.IdentityOneofCase.Pid             => DeliverToPid(context, pub, s.Pid),
-            SubscriberIdentity.IdentityOneofCase.ClusterIdentity => DeliverToClusterIdentity(context, pub, s.ClusterIdentity),
-            _                                                    => Task.CompletedTask
-        };
+        private static Task DeliverBatch(IContext context, TopicBatchMessage pub, SubscriberIdentity s) =>
+            s.IdentityCase switch
+            {
+                SubscriberIdentity.IdentityOneofCase.Pid             => DeliverToPid(context, pub, s.Pid),
+                SubscriberIdentity.IdentityOneofCase.ClusterIdentity => DeliverToClusterIdentity(context, pub, s.ClusterIdentity),
+                _                                                    => Task.CompletedTask
+            };
 
         private static Task DeliverToClusterIdentity(IContext context, TopicBatchMessage pub, ClusterIdentity ci) =>
             //deliver to virtual actor
