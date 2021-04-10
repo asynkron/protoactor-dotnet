@@ -4,13 +4,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using Proto.Utils;
 
 namespace Proto.Cluster
 {
     public sealed record LocalAffinityOptions
     {
-        public int? MaxRelocatedPerPeriod { get; init; }
-        public TimeSpan? RelocationThrottlePeriod { get; init; }
+        public ThrottleOptions? RelocationThroughput { get; init; }
 
         /// <summary>
         /// To prevent non-partitioned messages from triggering relocation of the virtual actor.

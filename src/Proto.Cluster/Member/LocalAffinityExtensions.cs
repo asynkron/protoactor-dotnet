@@ -19,19 +19,10 @@ namespace Proto.Cluster
         public static ClusterKind WithLocalAffinity(this ClusterKind clusterKind, LocalAffinityOptions? options = null)
             => clusterKind with
             {
-                Props = clusterKind.Props.WithRelocateOnRemoteSender(options.GetThrottle(), options?.TriggersLocalAffinity),
+                Props = clusterKind.Props.WithRelocateOnRemoteSender(options?.RelocationThroughput?.Create(), options?.TriggersLocalAffinity),
                 StrategyBuilder = cluster => new LocalAffinityStrategy(cluster)
             };
 
-        private static ShouldThrottle? GetThrottle(this LocalAffinityOptions? options)
-        {
-            if (options?.RelocationThrottlePeriod is not null && options.MaxRelocatedPerPeriod > 0)
-            {
-                return Throttle.Create((int) options.MaxRelocatedPerPeriod, (TimeSpan) options.RelocationThrottlePeriod);
-            }
-
-            return null;
-        }
 
         /// <summary>
         ///     Adds middleware which relocates the virtual actor on remote traffic
