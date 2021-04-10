@@ -15,7 +15,7 @@ namespace Proto.Cluster.PubSub
     public class Producer
     {
         private readonly Cluster _cluster;
-        private ProducerBatch _batch;
+        private ProducerBatchMessage _batch;
         private readonly string _topic;
         private readonly Channel<Foo> _publisherChannel = Channel.CreateUnbounded<Foo>();
         
@@ -24,7 +24,7 @@ namespace Proto.Cluster.PubSub
         {
             _cluster = cluster;
             _topic = topic;
-            _batch = new ProducerBatch();
+            _batch = new ProducerBatchMessage();
             _ = Task.Run(PublisherLoop);
         }
 
@@ -37,24 +37,7 @@ namespace Proto.Cluster.PubSub
                 {
                     var message = foo.Message;
                     var taskCompletionSource = foo.TaskCompletionSource;
-                    
-                    var typeName = s.GetTypeName(message,s.DefaultSerializerId);
-                    var messageData = s.Serialize(message,s.DefaultSerializerId);
-                    var typeIndex = _batch.TypeNames.IndexOf(typeName);
-                    
-                    if (typeIndex == -1)
-                    {
-                        _batch.TypeNames.Add(typeName);
-                        typeIndex = _batch.TypeNames.Count - 1;
-                    }
-
-                    var producerMessage = new ProducerEnvelope
-                    {
-                        MessageData = messageData,
-                        TypeId = typeIndex,
-                    };
-            
-                    _batch.Envelopes.Add(producerMessage);
+                    _batch.Envelopes.Add(message);
                     _batch.DeliveryReports.Add(taskCompletionSource);
                     
                     if (_batch.Envelopes.Count > 2000)
@@ -84,7 +67,7 @@ namespace Proto.Cluster.PubSub
             {
                 tcs.SetResult(true);
             }
-            _batch = new ProducerBatch();
+            _batch = new ProducerBatchMessage();
         }
 
         public Task ProduceAsync(object message)

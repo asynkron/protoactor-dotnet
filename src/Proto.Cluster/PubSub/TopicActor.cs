@@ -26,28 +26,21 @@ namespace Proto.Cluster.PubSub
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            ClusterInit ci           => OnClusterInit(context, ci),
-            SubscribeRequest sub     => OnSubscribe(context, sub),
-            UnsubscribeRequest unsub => OnUnsubscribe(context, unsub),
-            ProducerBatch batch      => OnProducerBatch(context, batch),
-            _                        => Task.CompletedTask,
+            ClusterInit ci             => OnClusterInit(context, ci),
+            SubscribeRequest sub       => OnSubscribe(context, sub),
+            UnsubscribeRequest unsub   => OnUnsubscribe(context, unsub),
+            ProducerBatchMessage batch => OnProducerBatch(context, batch),
+            _                          => Task.CompletedTask,
         };
 
-        private async Task OnProducerBatch(IContext context, ProducerBatch batch)
+        private async Task OnProducerBatch(IContext context, ProducerBatchMessage batch)
         {
-            var s = context.System.Serialization();
-            
-            //deserialize messages in the envelope
-            var messages = batch
-                .Envelopes
-                .Select(e => s
-                    .Deserialize(batch.TypeNames[e.TypeId], e.MessageData, s.DefaultSerializerId))
-                .ToList();
+
             
             //request async all messages to their subscribers
             var tasks =
                 (from sub in _subscribers
-                 from message in messages
+                 from message in batch.Envelopes
                  select DeliverMessage(context, message, sub))
                 .ToList();
                         
