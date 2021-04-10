@@ -11,10 +11,9 @@ using Proto.Remote;
 
 namespace Proto.Cluster
 {
-    public class ProducerBatchMessage : IMessageBatch , IRootSerializable
+    public class ProducerBatchMessage :  IRootSerializable
     {
         public List<object> Envelopes { get; } = new ();
-        public IReadOnlyCollection<object> GetMessages() => Envelopes;
 
         public List<TaskCompletionSource<bool>> DeliveryReports { get; } = new();
 

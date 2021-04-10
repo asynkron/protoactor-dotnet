@@ -18,7 +18,7 @@ namespace Proto.Cluster.PubSub
     public class Producer
     {
         private readonly Cluster _cluster;
-        private ProducerBatchMessage _batch;
+        
         private readonly string _topic;
         private readonly Channel<ProduceMessage> _publisherChannel = Channel.CreateUnbounded<ProduceMessage>();
         
@@ -27,36 +27,34 @@ namespace Proto.Cluster.PubSub
         {
             _cluster = cluster;
             _topic = topic;
-            _batch = new ProducerBatchMessage();
+            
             _ = Task.Run(PublisherLoop);
         }
 
         private async Task PublisherLoop()
         {
-            var s = _cluster.System.Serialization();
+            var batch = new ProducerBatchMessage();
             while (true)
             {
-                if (_publisherChannel.Reader.TryRead(out var foo))
+                if (_publisherChannel.Reader.TryRead(out var produceMessage))
                 {
-                    var message = foo.Message;
-                    var taskCompletionSource = foo.TaskCompletionSource;
-                    _batch.Envelopes.Add(message);
-                    _batch.DeliveryReports.Add(taskCompletionSource);
+                    var message = produceMessage.Message;
+                    var taskCompletionSource = produceMessage.TaskCompletionSource;
+                    batch.Envelopes.Add(message);
+                    batch.DeliveryReports.Add(taskCompletionSource);
+
+                    if (batch.Envelopes.Count < 2000) continue;
                     
-                    if (_batch.Envelopes.Count > 2000)
-                    {
-                        var batch = _batch;
-                        _batch = new ProducerBatchMessage();
-                        await PublishBatch(batch);
-                    }
+                    await PublishBatch(batch);
+                    batch = new ProducerBatchMessage();
+                    
                 }
                 else
                 {
-                    if (_batch.Envelopes.Count > 0)
+                    if (batch.Envelopes.Count > 0)
                     {
-                        var batch = _batch;
-                        _batch = new ProducerBatchMessage();
                         await PublishBatch(batch);
+                        batch = new ProducerBatchMessage();
                     }
 
                     await _publisherChannel.Reader.WaitToReadAsync();
@@ -68,7 +66,7 @@ namespace Proto.Cluster.PubSub
         {
             //TODO: retries etc...
 
-            await _cluster.RequestAsync<PublishResponse>(_topic, "topic", _batch, CancellationToken.None);
+            await _cluster.RequestAsync<PublishResponse>(_topic, "topic", batch, CancellationToken.None);
 
             foreach (var tcs in batch.DeliveryReports)
             {

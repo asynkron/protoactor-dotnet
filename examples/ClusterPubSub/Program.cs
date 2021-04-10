@@ -42,9 +42,8 @@ namespace ClusterPubSub
                         if (ctx.Message is SomeMessage s)
                         {
                             //Console.Write(".");
-                            ctx.Respond(new PublishResponse());
                         }
-
+                       
                         return Task.CompletedTask;
                     }
                 )

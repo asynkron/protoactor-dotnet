@@ -8,7 +8,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Proto.Remote;
 using Proto.Utils.Proto.Utils;
 
 namespace Proto.Cluster.PubSub
@@ -35,15 +34,12 @@ namespace Proto.Cluster.PubSub
 
         private async Task OnProducerBatch(IContext context, ProducerBatchMessage batch)
         {
+            var topicBatch = new TopicBatchMessage(batch.Envelopes);
 
-            
             //request async all messages to their subscribers
             var tasks =
-                (from sub in _subscribers
-                 from message in batch.Envelopes
-                 select DeliverMessage(context, message, sub))
-                .ToList();
-                        
+                _subscribers.Select(sub => DeliverBatch(context, topicBatch, sub));
+
             //wait for completion
             await Task.WhenAll(tasks);
             
@@ -51,20 +47,22 @@ namespace Proto.Cluster.PubSub
             context.Respond(new PublishResponse());
         }
 
-        private static Task DeliverMessage(IContext context, object pub, SubscriberIdentity s) => s.IdentityCase switch
+        private static Task DeliverBatch(IContext context, TopicBatchMessage pub, SubscriberIdentity s) => s.IdentityCase switch
         {
-            SubscriberIdentity.IdentityOneofCase.Pid             => DeliverToPid(context, pub, s),
-            SubscriberIdentity.IdentityOneofCase.ClusterIdentity => DeliverToClusterIdentity(context, pub, s),
+            SubscriberIdentity.IdentityOneofCase.Pid             => DeliverToPid(context, pub, s.Pid),
+            SubscriberIdentity.IdentityOneofCase.ClusterIdentity => DeliverToClusterIdentity(context, pub, s.ClusterIdentity),
             _                                                    => Task.CompletedTask
         };
 
-        private static async Task DeliverToClusterIdentity(IContext context, object pub, SubscriberIdentity s)
-            => await context.ClusterRequestAsync<PublishResponse>(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, pub,
-                CancellationToken.None
-            );
+        private static Task DeliverToClusterIdentity(IContext context, TopicBatchMessage pub, ClusterIdentity ci) =>
+            //deliver to virtual actor
+            context.ClusterRequestAsync<PublishResponse>(ci.Identity,ci.Kind, pub,
+            CancellationToken.None
+        );
 
-        private static async Task DeliverToPid(IContext context, object pub, SubscriberIdentity s)
-            => await context.RequestAsync<PublishResponse>(s.Pid, pub);
+        private static Task DeliverToPid(IContext context, TopicBatchMessage pub, PID pid) =>
+            //deliver to PID
+            context.RequestAsync<PublishResponse>(pid, pub);
 
         private async Task OnClusterInit(IContext context, ClusterInit ci)
         {

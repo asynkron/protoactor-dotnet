@@ -130,6 +130,8 @@ message PublishRequest {
 message PublishResponse {}
 
 
+
+//messages going into the topic actors
 message ProducerBatch {
   repeated string type_names = 1;
   repeated ProducerEnvelope envelopes = 2;
@@ -141,3 +143,14 @@ message ProducerEnvelope {
   int32 serializer_id = 3;
 }
 
+//messages going out of the topic actors
+message TopicBatch {
+  repeated string type_names = 1;
+  repeated TopicEnvelope envelopes = 2;
+}
+
+message TopicEnvelope {
+  int32 type_id = 1;
+  bytes message_data = 2;
+  int32 serializer_id = 3;
+}
