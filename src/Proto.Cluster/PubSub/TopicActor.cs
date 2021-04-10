@@ -8,12 +8,14 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Proto.Utils.Proto.Utils;
+using Proto.Utils;
+using  Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster.PubSub
 {
     public class TopicActor : IActor
     {
+        private static ILogger Logger = Log.CreateLogger<TopicActor>();
         private ImmutableHashSet<SubscriberIdentity> _subscribers = ImmutableHashSet<SubscriberIdentity>.Empty;
         private string _topic = string.Empty;
         private readonly IKeyValueStore<Subscribers> _subscriptionStore;
@@ -69,32 +71,36 @@ namespace Proto.Cluster.PubSub
             _topic = ci.Identity;
             var subs = await LoadSubscriptions(_topic);
             _subscribers = ImmutableHashSet.CreateRange(subs.Subscribers_);
+            Logger.LogInformation("Topic {Topic} started", _topic);
         }
 
         protected virtual async Task<Subscribers> LoadSubscriptions(string topic)
         { 
             //TODO: cancellation token config?
             var state = await _subscriptionStore.GetAsync(topic, CancellationToken.None);
+            Logger.LogInformation("Topic {Topic} loaded subscriptions {Subscriptions}",_topic,state);
             return state;
         }
 
         protected virtual async Task SaveSubscriptions(string topic, Subscribers subs)
         {
             //TODO: cancellation token config?
+            Logger.LogInformation("Topic {Topic} saved subscriptions {Subscriptions}",_topic,subs);
             await _subscriptionStore.SetAsync(topic, subs, CancellationToken.None);
         }
 
         private async Task OnUnsubscribe(IContext context, UnsubscribeRequest unsub)
         {
             _subscribers = _subscribers.Remove(unsub.Subscriber);
+            Logger.LogInformation("Topic {Topic} - {Subscriber} unsubscribed",_topic,unsub);
             await SaveSubscriptions(_topic, new Subscribers() {Subscribers_ = {_subscribers}});
             context.Respond(new UnsubscribeResponse());
         }
 
         private async Task OnSubscribe(IContext context, SubscribeRequest sub)
         {
-            Console.WriteLine($"{_topic} - Subscriber attached {sub.Subscriber}");
             _subscribers = _subscribers.Add(sub.Subscriber);
+            Logger.LogInformation("Topic {Topic} - {Subscriber} subscribed",_topic,sub);
             await SaveSubscriptions(_topic, new Subscribers() {Subscribers_ = {_subscribers}});
             context.Respond(new SubscribeResponse());
         }

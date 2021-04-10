@@ -13,17 +13,6 @@ namespace Proto.Utils
     namespace Proto.Utils
     {
         [PublicAPI]
-        public interface IKeyValueStore<T>
-        {
-            Task<T> GetAsync(string id, CancellationToken ct);
-
-            Task SetAsync(string id, T state, CancellationToken ct);
-
-            Task ClearAsync(string id, CancellationToken ct);
-
-        }
-        
-        [PublicAPI]
         public abstract class ConcurrentKeyValueStore<T> : IKeyValueStore<T>
         {
             private readonly AsyncSemaphore _semaphore;

@@ -9,6 +9,7 @@ using Proto.Cluster.Partition;
 using Proto.Cluster.PubSub;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
+using Proto.Utils;
 
 namespace ClusterPubSub
 {
@@ -23,7 +24,8 @@ namespace ClusterPubSub
             var consulProvider =
                 new ConsulProvider(new ConsulProviderConfig());
 
-            var store = new SubscriptionStore();
+            //use an empty store, no persistence
+            var store = new EmptyKeyValueStore<Subscribers>();
 
             var clusterConfig =
                 ClusterConfig
