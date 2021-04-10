@@ -114,6 +114,10 @@ namespace Proto.Remote
                     {
                         message =
                             _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
+
+                        //translate from on-the-wire representation to in-process representation
+                        //this only applies to root level messages, and never on nested child messages
+                        if (message is IRootSerialized serialized) message = serialized.Deserialize(_system);
                     }
                     catch (Exception)
                     {

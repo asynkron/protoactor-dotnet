@@ -238,7 +238,12 @@ namespace Proto.Remote
                     targetNameList.Add(targetName);
                 }
 
-                var typeName = _remoteConfig.Serialization.GetTypeName(rd.Message, serializerId);
+                var message = rd.Message;
+                //if the message can be translated to a serialization representation, we do this here
+                //this only apply to root level messages and never to nested child objects inside the message
+                if (message is IRootSerializable deserialized) message = deserialized.Serialize(context.System);
+
+                var typeName = _remoteConfig.Serialization.GetTypeName(message, serializerId);
 
                 if (!context.System.Metrics.IsNoop) counter.Inc(new[] {context.System.Id, context.System.Address, typeName});
 
@@ -256,7 +261,7 @@ namespace Proto.Remote
                     header.HeaderData.Add(rd.Header.ToDictionary());
                 }
 
-                var bytes = _remoteConfig.Serialization.Serialize(rd.Message, serializerId);
+                var bytes = _remoteConfig.Serialization.Serialize(message, serializerId);
 
                 var envelope = new MessageEnvelope
                 {
