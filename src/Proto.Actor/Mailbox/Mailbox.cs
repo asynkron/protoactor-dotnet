@@ -85,14 +85,41 @@ namespace Proto.Mailbox
 
         public void PostUserMessage(object msg)
         {
-            _userMailbox.Push(msg);
-
-            foreach (var t in _stats)
+            // if the message is a batch message, we unpack the content as individual messages in the mailbox
+            // feature Aka: Samkuvertering in Swedish...
+            if (msg is IMessageBatch  || msg is MessageEnvelope e && e.Message is IMessageBatch)
             {
-                t.MessagePosted(msg);
-            }
+                var batch = (IMessageBatch)MessageEnvelope.UnwrapMessage(msg)!;
+                var messages = batch.GetMessages();
 
-            Schedule();
+                foreach (var message in messages)
+                {
+                    _userMailbox.Push(message);
+                    foreach (var t in _stats)
+                    {
+                        t.MessagePosted(message);
+                    }
+                }
+                
+                _userMailbox.Push(msg);
+                foreach (var t in _stats)
+                {
+                    t.MessagePosted(msg);
+                }
+
+                Schedule();
+            }
+            else
+            {
+                _userMailbox.Push(msg);
+
+                foreach (var t in _stats)
+                {
+                    t.MessagePosted(msg);
+                }
+
+                Schedule();
+            }
         }
 
         public void PostSystemMessage(object msg)

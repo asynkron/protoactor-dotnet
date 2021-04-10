@@ -7,6 +7,10 @@ using static Proto.TestFixtures.Receivers;
 
 namespace Proto.Tests
 {
+    class MyAutoRespondMessage : IAutoRespond
+    {
+        public object GetAutoResponse() => "hey";
+    }
     public class ActorTests
     {
         private static readonly ActorSystem System = new();
@@ -24,6 +28,17 @@ namespace Proto.Tests
             );
 
             var reply = await Context.RequestAsync<object>(pid, "hello");
+
+            Assert.Equal("hey", reply);
+        }
+        
+        [Fact]
+        public async Task RequestActorAsyncAutoRespond()
+        {
+            //no code...
+            var pid = SpawnActorFromFunc(ctx => Task.CompletedTask);
+
+            var reply = await Context.RequestAsync<object>(pid, new MyAutoRespondMessage());
 
             Assert.Equal("hey", reply);
         }

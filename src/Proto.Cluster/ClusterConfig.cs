@@ -27,6 +27,7 @@ namespace Proto.Cluster
             ClusterRequestDeDuplicationWindow = TimeSpan.FromSeconds(30);
             IdentityLookup = identityLookup;
             MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
+            PubSubBatchSize = 2000;
         }
 
         public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; init; }
@@ -37,6 +38,7 @@ namespace Proto.Cluster
 
         public IClusterProvider ClusterProvider { get; }
 
+        public int PubSubBatchSize { get; init; }
         public TimeSpan TimeoutTimespan { get; init; }
         public TimeSpan ActorRequestTimeout { get; init; }
         public TimeSpan RequestLogThrottlePeriod { get; init; }
@@ -60,6 +62,9 @@ namespace Proto.Cluster
 
         public ClusterConfig WithRequestLogThrottlePeriod(TimeSpan timeSpan) =>
             this with {RequestLogThrottlePeriod = timeSpan};
+        
+        public ClusterConfig WithPubSubBatchSize(int batchSize) =>
+            this with {PubSubBatchSize = batchSize};
 
         public ClusterConfig WithMaxNumberOfEventsInRequestLogThrottlePeriod(int max) =>
             this with {MaxNumberOfEventsInRequestLogThrottlePeriod = max};
