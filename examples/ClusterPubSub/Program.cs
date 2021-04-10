@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
@@ -17,6 +18,14 @@ namespace ClusterPubSub
     {
         static async Task Main(string[] args)
         {
+            Log.SetLoggerFactory(LoggerFactory.Create(l =>
+                    l.AddConsole().SetMinimumLevel(LogLevel.Information)
+                )
+            );
+            
+            //starting remote node...
+            await RunMember();
+                
             var remoteConfig = GrpcCoreRemoteConfig
                 .BindToLocalhost()
                 .WithProtoMessages(ClusterPubSub.ProtosReflection.Descriptor);
@@ -24,13 +33,9 @@ namespace ClusterPubSub
             var consulProvider =
                 new ConsulProvider(new ConsulProviderConfig());
 
-            //use an empty store, no persistence
-            var store = new EmptyKeyValueStore<Subscribers>();
-
             var clusterConfig =
                 ClusterConfig
                     .Setup("MyCluster", consulProvider, new PartitionIdentityLookup())
-                    .WithClusterKind("topic", Props.FromProducer(() => new TopicActor(store)))
                     .WithPubSubBatchSize(10000);
 
             var system = new ActorSystem()
@@ -39,7 +44,7 @@ namespace ClusterPubSub
 
             await system
                 .Cluster()
-                .StartMemberAsync();
+                .StartClientAsync();
 
             var props = Props.FromFunc(ctx => {
                     if (ctx.Message is SomeMessage s)
@@ -98,6 +103,33 @@ namespace ClusterPubSub
             Console.WriteLine(sw.Elapsed.TotalMilliseconds);
 
             Console.ReadLine();
+        }
+
+        public static async Task RunMember()
+        {
+            var remoteConfig = GrpcCoreRemoteConfig
+                .BindToLocalhost()
+                .WithProtoMessages(ClusterPubSub.ProtosReflection.Descriptor);
+
+            var consulProvider =
+                new ConsulProvider(new ConsulProviderConfig());
+
+            //use an empty store, no persistence
+            var store = new EmptyKeyValueStore<Subscribers>();
+
+            var clusterConfig =
+                ClusterConfig
+                    .Setup("MyCluster", consulProvider, new PartitionIdentityLookup())
+                    .WithClusterKind("topic", Props.FromProducer(() => new TopicActor(store)))
+                    .WithPubSubBatchSize(10000);
+
+            var system = new ActorSystem()
+                .WithRemote(remoteConfig)
+                .WithCluster(clusterConfig);
+
+            await system
+                .Cluster()
+                .StartMemberAsync();
         }
     }
 }

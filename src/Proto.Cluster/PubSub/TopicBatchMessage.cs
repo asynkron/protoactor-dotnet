@@ -28,6 +28,7 @@ namespace Proto.Cluster
             var batch = new TopicBatch();
             foreach (var message in Envelopes)
             {
+                
                 var typeName = s.GetTypeName(message, s.DefaultSerializerId);
                 var messageData = s.Serialize(message, s.DefaultSerializerId);
                 var typeIndex = batch.TypeNames.IndexOf(typeName);

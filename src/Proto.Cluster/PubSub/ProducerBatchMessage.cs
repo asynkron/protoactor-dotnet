@@ -58,10 +58,9 @@ namespace Proto.Cluster
                     .Deserialize(TypeNames[e.TypeId], e.MessageData, ser.DefaultSerializerId))
                 .ToList();
 
-            return new ProducerBatchMessage
-            {
-                Envelopes = {messages}
-            };
+            var res = new ProducerBatchMessage();
+            res.Envelopes.AddRange(messages);
+            return res;
         }
     }
 }
