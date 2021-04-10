@@ -10,7 +10,7 @@ using Proto.Remote;
 
 namespace Proto.Cluster.PubSub
 {
-    public static class Extensions
+    public static class PubSubExtensions
     {
         public static Producer Producer(this Cluster cluster,string topic) => new(cluster,topic);
 

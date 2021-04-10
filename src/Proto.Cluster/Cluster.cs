@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Metrics;
 using Proto.Cluster.Partition;
+using Proto.Cluster.PubSub;
 using Proto.Extensions;
 using Proto.Remote;
 
@@ -21,30 +22,38 @@ namespace Proto.Cluster
     [PublicAPI]
     public class Cluster : IActorSystemExtension<Cluster>
     {
-        private ClusterHeartBeat _clusterHeartBeat;
+        private ClusterHeartBeat ClusterHeartBeat { get; }
 
         public Cluster(ActorSystem system, ClusterConfig config)
         {
-            system.Extensions.Register(this);
-            system.Metrics.RegisterKnownMetrics(new ClusterMetrics(system.Metrics));
-            PidCache = new PidCache();
             System = system;
             Config = config;
-            system.Serialization().RegisterFileDescriptor(ProtosReflection.Descriptor);
+            
+            system.Extensions.Register(this);
+            system.Metrics.Register(new ClusterMetrics(system.Metrics));
+            
+            PidCache = new PidCache();
+            ClusterHeartBeat = new ClusterHeartBeat(this);
+            PubSub = new PubSubManager(this);
 
-            _clusterHeartBeat = new ClusterHeartBeat(this);
-            system.EventStream.Subscribe<ClusterTopology>(e => {
-                    system.Metrics.Get<ClusterMetrics>().ClusterTopologyEventGauge.Set(e.Members.Count,
-                        new[] {System.Id, System.Address, e.GetMembershipHashCode().ToString()}
-                    );
+            system.Serialization().RegisterFileDescriptor(ClusterContractsReflection.Descriptor);
 
-                    foreach (var member in e.Left)
-                    {
-                        PidCache.RemoveByMember(member);
-                    }
-                }
-            );
+            SubscribeToTopologyEvents(system);
         }
+
+        private void SubscribeToTopologyEvents(ActorSystem system) => system.EventStream.Subscribe<ClusterTopology>(e => {
+                system.Metrics.Get<ClusterMetrics>().ClusterTopologyEventGauge.Set(e.Members.Count,
+                    new[] {System.Id, System.Address, e.GetMembershipHashCode().ToString()}
+                );
+
+                foreach (var member in e.Left)
+                {
+                    PidCache.RemoveByMember(member);
+                }
+            }
+        );
+
+        public PubSubManager PubSub { get; }
 
         public ILogger Logger { get; private set; } = null!;
         public IClusterContext ClusterContext { get; private set; } = null!;
@@ -70,8 +79,6 @@ namespace Proto.Cluster
         public async Task StartMemberAsync()
         {
             await BeginStartAsync(false);
-            Provider = Config.ClusterProvider;
-
             await Provider.StartMemberAsync(this);
 
             Logger.LogInformation("Started as cluster member");
@@ -80,8 +87,6 @@ namespace Proto.Cluster
         public async Task StartClientAsync()
         {
             await BeginStartAsync(true);
-            Provider = Config.ClusterProvider;
-
             await Provider.StartClientAsync(this);
 
             Logger.LogInformation("Started as cluster client");
@@ -90,6 +95,7 @@ namespace Proto.Cluster
         private async Task BeginStartAsync(bool client)
         {
             InitClusterKinds();
+            Provider = Config.ClusterProvider;
             //default to partition identity lookup
             IdentityLookup = Config.IdentityLookup;
 
@@ -104,7 +110,8 @@ namespace Proto.Cluster
             var kinds = GetClusterKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
             InitIdentityProxy();
-            await _clusterHeartBeat.StartAsync();
+            await ClusterHeartBeat.StartAsync();
+            await PubSub.StartAsync();
         }
 
         private void InitClusterKinds()
@@ -123,7 +130,7 @@ namespace Proto.Cluster
             await System.ShutdownAsync();
             Logger.LogInformation("Stopping Cluster {Id}", System.Id);
 
-            await _clusterHeartBeat.ShutdownAsync();
+            await ClusterHeartBeat.ShutdownAsync();
             if (graceful) await IdentityLookup!.ShutdownAsync();
             await Config!.ClusterProvider.ShutdownAsync(graceful);
             await Remote.ShutdownAsync(graceful);

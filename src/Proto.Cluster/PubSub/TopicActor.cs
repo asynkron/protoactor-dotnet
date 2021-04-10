@@ -13,9 +13,9 @@ using  Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster.PubSub
 {
-    public class TopicActor : IActor
+    public sealed class TopicActor : IActor
     {
-        private static ILogger Logger = Log.CreateLogger<TopicActor>();
+        private static readonly ILogger Logger = Log.CreateLogger<TopicActor>();
         private ImmutableHashSet<SubscriberIdentity> _subscribers = ImmutableHashSet<SubscriberIdentity>.Empty;
         private string _topic = string.Empty;
         private readonly IKeyValueStore<Subscribers> _subscriptionStore;
@@ -74,7 +74,7 @@ namespace Proto.Cluster.PubSub
             Logger.LogInformation("Topic {Topic} started", _topic);
         }
 
-        protected virtual async Task<Subscribers> LoadSubscriptions(string topic)
+        private async Task<Subscribers> LoadSubscriptions(string topic)
         { 
             //TODO: cancellation token config?
             var state = await _subscriptionStore.GetAsync(topic, CancellationToken.None);
@@ -82,7 +82,7 @@ namespace Proto.Cluster.PubSub
             return state;
         }
 
-        protected virtual async Task SaveSubscriptions(string topic, Subscribers subs)
+        private async Task SaveSubscriptions(string topic, Subscribers subs)
         {
             //TODO: cancellation token config?
             Logger.LogInformation("Topic {Topic} saved subscriptions {Subscriptions}",_topic,subs);
