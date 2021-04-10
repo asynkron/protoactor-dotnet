@@ -44,7 +44,8 @@ namespace Proto.Cluster
 
         public PubSubManager PubSub { get; }
 
-        public ILogger Logger { get; private set; } = null!;
+        public static ILogger Logger { get; } = Log.CreateLogger<Cluster>();
+     
         public IClusterContext ClusterContext { get; private set; } = null!;
 
         public ClusterConfig Config { get; }
@@ -104,7 +105,7 @@ namespace Proto.Cluster
             Remote = System.Extensions.Get<IRemote>() ?? throw new NotSupportedException("Remote module must be configured when using cluster");
 
             await Remote.StartAsync();
-            Logger = Log.CreateLogger($"Cluster-{LoggerId}");
+
             Logger.LogInformation("Starting");
             MemberList = new MemberList(this);
             ClusterContext = Config.ClusterContextProducer(this);
