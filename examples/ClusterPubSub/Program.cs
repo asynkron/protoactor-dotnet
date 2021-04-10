@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
 using System.Threading.Tasks;
 using Proto;
 using Proto.Cluster;
@@ -10,19 +9,9 @@ using Proto.Cluster.Partition;
 using Proto.Cluster.PubSub;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
-using Proto.Utils.Proto.Utils;
 
 namespace ClusterPubSub
 {
-    public class SubscriptionStore : IKeyValueStore<Subscribers>
-    {
-        public Task<Subscribers> GetAsync(string id, CancellationToken ct) => Task.FromResult(new Subscribers());
-
-        public Task SetAsync(string id, Subscribers state, CancellationToken ct) => Task.CompletedTask;
-
-        public Task ClearAsync(string id, CancellationToken ct) => Task.CompletedTask;
-    }
-
     class Program
     {
         static async Task Main(string[] args)
@@ -48,12 +37,11 @@ namespace ClusterPubSub
             await system
                 .Cluster()
                 .StartMemberAsync();
-
-
+            
             var pid = system.Root.Spawn(Props.FromFunc(ctx => {
                         if (ctx.Message is SomeMessage s)
                         {
-                            //  Console.Write(".");
+                            //Console.Write(".");
                             ctx.Respond(new PublishResponse());
                         }
 
@@ -62,7 +50,10 @@ namespace ClusterPubSub
                 )
             );
 
+            //subscribe the pid to the my-topic
             await system.Cluster().Subscribe("my-topic", pid);
+            
+            //get hold of a producer that can send messages to the my-topic
             var p = system.Cluster().Producer("my-topic");
 
             Console.WriteLine("starting");
@@ -72,7 +63,7 @@ namespace ClusterPubSub
 
             for (int i = 0; i < 100; i++)
             {
-                var t = p.ProduceAsync(new SomeMessage()
+                var t = p.ProduceAsync(new SomeMessage
                     {
                         Value = i,
                     }
@@ -87,7 +78,7 @@ namespace ClusterPubSub
             Console.WriteLine(sw.Elapsed.TotalMilliseconds);
             sw.Restart();
 
-            for (int i = 0; i < 200000; i++)
+            for (int i = 0; i < 1_000_000; i++)
             {
                 tasks.Add(p.ProduceAsync(new SomeMessage
                         {
