@@ -28,7 +28,8 @@ namespace ClusterPubSub
             var clusterConfig =
                 ClusterConfig
                     .Setup("MyCluster", consulProvider, new PartitionIdentityLookup())
-                    .WithClusterKind("topic", Props.FromProducer(() => new TopicActor(store)));
+                    .WithClusterKind("topic", Props.FromProducer(() => new TopicActor(store)))
+                    .WithPubSubBatchSize(10000);
 
             var system = new ActorSystem()
                 .WithRemote(remoteConfig)
@@ -37,20 +38,23 @@ namespace ClusterPubSub
             await system
                 .Cluster()
                 .StartMemberAsync();
-            
-            var pid = system.Root.Spawn(Props.FromFunc(ctx => {
-                        if (ctx.Message is SomeMessage s)
-                        {
-                            //Console.Write(".");
-                        }
-                       
-                        return Task.CompletedTask;
+
+            var props = Props.FromFunc(ctx => {
+                    if (ctx.Message is SomeMessage s)
+                    {
+                        //Console.Write(".");
                     }
-                )
+
+                    return Task.CompletedTask;
+                }
             );
+            
+            var pid1 = system.Root.Spawn(props);
+            var pid2 = system.Root.Spawn(props);
 
             //subscribe the pid to the my-topic
-            await system.Cluster().Subscribe("my-topic", pid);
+            await system.Cluster().Subscribe("my-topic", pid1);
+            await system.Cluster().Subscribe("my-topic", pid2);
             
             //get hold of a producer that can send messages to the my-topic
             var p = system.Cluster().Producer("my-topic");

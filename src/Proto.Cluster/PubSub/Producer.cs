@@ -21,10 +21,11 @@ namespace Proto.Cluster.PubSub
         
         private readonly string _topic;
         private readonly Channel<ProduceMessage> _publisherChannel = Channel.CreateUnbounded<ProduceMessage>();
-        
+        private readonly int _batchSize;
 
         public Producer(Cluster cluster, string topic)
         {
+            _batchSize = cluster.Config.PubSubBatchSize;
             _cluster = cluster;
             _topic = topic;
             
@@ -43,7 +44,7 @@ namespace Proto.Cluster.PubSub
                     batch.Envelopes.Add(message);
                     batch.DeliveryReports.Add(taskCompletionSource);
 
-                    if (batch.Envelopes.Count < 2000) continue;
+                    if (batch.Envelopes.Count < _batchSize) continue;
                     
                     await PublishBatch(batch);
                     batch = new ProducerBatchMessage();
