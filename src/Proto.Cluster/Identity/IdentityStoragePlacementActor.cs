@@ -98,7 +98,7 @@ namespace Proto.Cluster.Identity
                     //spawn and remember this actor
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
-                    var clusterProps = clusterKind.Props.WithClusterInit(_cluster, msg.ClusterIdentity, clusterKind);
+                    var clusterProps = clusterKind.Props.WithClusterIdentity(msg.ClusterIdentity);
 
                     var sw = Stopwatch.StartNew();
                     var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.ToString());

@@ -17,7 +17,7 @@ namespace Proto.Cluster.Partition
 
         //pid -> the actor that we have created here
         //kind -> the actor kind
-        private readonly Dictionary<ClusterIdentity, PID > _myActors = new();
+        private readonly Dictionary<ClusterIdentity, PID> _myActors = new();
 
         public PartitionPlacementActor(Cluster cluster)
         {
@@ -44,7 +44,7 @@ namespace Proto.Cluster.Partition
                 Pid = pid,
                 ClusterIdentity = clusterIdentity,
             };
-            
+
             _cluster.MemberList.BroadcastEvent(activationTerminated);
 
             // var ownerAddress = _rdv.GetOwnerMemberByIdentity(clusterIdentity.Identity);
@@ -54,8 +54,6 @@ namespace Proto.Cluster.Partition
             _myActors.Remove(clusterIdentity);
             return Task.CompletedTask;
         }
-
-
 
         //this is pure, we do not change any state or actually move anything
         //the requester also provide its own view of the world in terms of members
@@ -116,7 +114,7 @@ namespace Proto.Cluster.Partition
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
 
-                    var clusterProps = clusterKind.Props.WithClusterInit(_cluster, msg.ClusterIdentity, clusterKind);
+                    var clusterProps = clusterKind.Props.WithClusterIdentity(msg.ClusterIdentity);
 
                     var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.Identity);
 
