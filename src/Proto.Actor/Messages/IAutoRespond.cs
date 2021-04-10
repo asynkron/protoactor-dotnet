@@ -3,7 +3,7 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Proto.Mailbox
+namespace Proto
 {
     public interface IAutoRespond
     {

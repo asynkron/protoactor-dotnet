@@ -3,12 +3,9 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using FluentAssertions.Collections;
 using Xunit;
 
 namespace Proto.Mailbox.Tests
@@ -21,9 +18,8 @@ namespace Proto.Mailbox.Tests
         }
 
         [Fact]
-        public async Task CanUnpackMessagesFromBatch()
+        public async Task CanUnpackMessagesFromBatchAndReceiveInOrder()
         {
-            
             var batch = new MyMessageBatch();
 
             var messages = new List<object>();

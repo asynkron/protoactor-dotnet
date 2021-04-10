@@ -5,10 +5,11 @@
 // -----------------------------------------------------------------------
 using System.Collections.Generic;
 
-namespace Proto.Mailbox
+namespace Proto
 {
     public interface IMessageBatch
     {
+        // ReSharper disable once ReturnTypeCanBeEnumerable.Global
         IReadOnlyCollection<object> GetMessages();
     }
 }
