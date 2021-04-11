@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -36,42 +37,53 @@ namespace Proto.Cluster.PubSub
 
         private async Task OnProducerBatch(IContext context, ProducerBatchMessage batch)
         {
-            var topicBatch = new TopicBatchMessage(batch.Envelopes);
-            
             //TODO: lookup PID for ClusterIdentity subscribers.
             //group PIDs by address
             //send the batch to the PubSub delivery actor on each member
             //await for subscriber responses on in each delivery actor
             //when done, respond back here
 
-            //request async all messages to their subscribers
-            var tasks =
-                _subscribers.Select(sub => DeliverBatch(context, topicBatch, sub));
+            var pidTasks =  _subscribers.Select(s => GetPid(context, s)).ToList();
+            var subscribers = await Task.WhenAll(pidTasks);
+            var members = subscribers.GroupBy(subscriber => subscriber.pid.Address);
 
-            //wait for completion
-            await Task.WhenAll(tasks);
-            
+            var acks = 
+                (from member in members
+                        let address = member.Key
+                        let subscribersOnMember = GetSubscribersForAddress(member)
+                        let deliveryMessage = new DeliveryBatchMessage(subscribersOnMember, batch)
+                        let deliveryPid = PID.FromAddress(address, PubSubManager.PubSubDeliveryName)
+                        select context.RequestAsync<PublishResponse>(deliveryPid, deliveryMessage)).Cast<Task>()
+                .ToList();
+
+            await Task.WhenAll(acks);
+
             //ack back to producer
             context.Respond(new PublishResponse());
         }
 
-        private static Task DeliverBatch(IContext context, TopicBatchMessage pub, SubscriberIdentity s) =>
-            s.IdentityCase switch
+        private static Subscribers GetSubscribersForAddress(IGrouping<string, (SubscriberIdentity subscriber, PID pid)> member) => new Subscribers()
+        {
+            Subscribers_ =
             {
-                SubscriberIdentity.IdentityOneofCase.Pid             => DeliverToPid(context, pub, s.Pid),
-                SubscriberIdentity.IdentityOneofCase.ClusterIdentity => DeliverToClusterIdentity(context, pub, s.ClusterIdentity),
-                _                                                    => Task.CompletedTask
-            };
+                member.Select(s => s.subscriber).ToArray()
+            }
+        };
 
-        private static Task DeliverToClusterIdentity(IContext context, TopicBatchMessage pub, ClusterIdentity ci) =>
-            //deliver to virtual actor
-            context.ClusterRequestAsync<PublishResponse>(ci.Identity,ci.Kind, pub,
-            CancellationToken.None
-        );
+        private static Task<(SubscriberIdentity subscriber, PID pid)> GetPid(IContext context, SubscriberIdentity s) => s.IdentityCase switch
+        {
+            SubscriberIdentity.IdentityOneofCase.Pid             => Task.FromResult((s, s.Pid)),
+            SubscriberIdentity.IdentityOneofCase.ClusterIdentity => GetClusterIdentityPid(context, s)!,
+            _                                                    => throw new ArgumentOutOfRangeException()
+        };
 
-        private static Task DeliverToPid(IContext context, TopicBatchMessage pub, PID pid) =>
-            //deliver to PID
-            context.RequestAsync<PublishResponse>(pid, pub);
+        private static async Task<(SubscriberIdentity, PID)> GetClusterIdentityPid(IContext context, SubscriberIdentity s)
+        {
+            var pid = await context.Cluster().GetAsync(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, CancellationToken.None);
+            return (s, pid);
+        }
+
+       
 
         private async Task OnClusterInit(IContext context, ClusterInit ci)
         {
