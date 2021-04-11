@@ -38,6 +38,11 @@ namespace Proto.Cluster.PubSub
         {
             var topicBatch = new TopicBatchMessage(batch.Envelopes);
 
+            var pidTasks =  _subscribers.Select(s => GetPid(context, s)).ToList();
+            var pids = await Task.WhenAll(pidTasks);
+            var members = pids.GroupBy(p => p.Address);
+            
+            
             //request async all messages to their subscribers
             var tasks =
                 _subscribers.Select(sub => DeliverBatch(context, topicBatch, sub));
@@ -48,6 +53,13 @@ namespace Proto.Cluster.PubSub
             //ack back to producer
             context.Respond(new PublishResponse());
         }
+        
+        private static Task<PID> GetPid(IContext context, SubscriberIdentity s) => s.IdentityCase switch
+        {
+            SubscriberIdentity.IdentityOneofCase.Pid             => Task.FromResult(s.Pid),
+            SubscriberIdentity.IdentityOneofCase.ClusterIdentity =>context.Cluster().GetAsync(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, CancellationToken.None)!,
+            _                                                    => throw new ArgumentOutOfRangeException()
+        };
 
         private static Task DeliverBatch(IContext context, TopicBatchMessage pub, SubscriberIdentity s) => s.IdentityCase switch
         {
