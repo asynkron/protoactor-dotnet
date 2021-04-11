@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -48,27 +49,29 @@ namespace Proto.Cluster.PubSub
             var subscribers = await Task.WhenAll(pidTasks);
             var members = subscribers.GroupBy(subscriber => subscriber.pid.Address);
 
-            foreach (var member in members)
-            {
-                var address = member.Key;
-                var subscribersOnMember = new Subscribers()
-                {
-                    Subscribers_ = {member.Select(s => s.subscriber).ToArray()}
-                };
-                
-                var deliveryMessage = new DeliveryBatchMessage(subscribersOnMember, new ProducerBatchMessage());
-            }
-            //request async all messages to their subscribers
-            var tasks =
-                _subscribers.Select(sub => DeliverBatch(context, topicBatch, sub));
+            var acks = 
+                (from member in members
+                        let address = member.Key
+                        let subscribersOnMember = GetSubscribersForAddress(member)
+                        let deliveryMessage = new DeliveryBatchMessage(subscribersOnMember, new ProducerBatchMessage())
+                        let deliveryPid = PID.FromAddress(address, PubSubManager.PubSubDeliveryName)
+                        select context.RequestAsync<PublishResponse>(deliveryPid, deliveryMessage)).Cast<Task>()
+                .ToList();
 
-            //wait for completion
-            await Task.WhenAll(tasks);
-            
+            await Task.WhenAll(acks);
+
             //ack back to producer
             context.Respond(new PublishResponse());
         }
-        
+
+        private static Subscribers GetSubscribersForAddress(IGrouping<string, (SubscriberIdentity subscriber, PID pid)> member) => new Subscribers()
+        {
+            Subscribers_ =
+            {
+                member.Select(s => s.subscriber).ToArray()
+            }
+        };
+
         private static Task<(SubscriberIdentity subscriber, PID pid)> GetPid(IContext context, SubscriberIdentity s) => s.IdentityCase switch
         {
             SubscriberIdentity.IdentityOneofCase.Pid             => Task.FromResult((s, s.Pid)),
@@ -82,23 +85,7 @@ namespace Proto.Cluster.PubSub
             return (s, pid);
         }
 
-        private static Task DeliverBatch(IContext context, TopicBatchMessage pub, SubscriberIdentity s) =>
-            s.IdentityCase switch
-            {
-                SubscriberIdentity.IdentityOneofCase.Pid             => DeliverToPid(context, pub, s.Pid),
-                SubscriberIdentity.IdentityOneofCase.ClusterIdentity => DeliverToClusterIdentity(context, pub, s.ClusterIdentity),
-                _                                                    => Task.CompletedTask
-            };
-
-        private static Task DeliverToClusterIdentity(IContext context, TopicBatchMessage pub, ClusterIdentity ci) =>
-            //deliver to virtual actor
-            context.ClusterRequestAsync<PublishResponse>(ci.Identity,ci.Kind, pub,
-            CancellationToken.None
-        );
-
-        private static Task DeliverToPid(IContext context, TopicBatchMessage pub, PID pid) =>
-            //deliver to PID
-            context.RequestAsync<PublishResponse>(pid, pub);
+       
 
         private async Task OnClusterInit(IContext context, ClusterInit ci)
         {

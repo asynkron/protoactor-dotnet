@@ -8,12 +8,12 @@ using Proto.Remote;
 
 namespace Proto.Cluster
 {
-    public record DeliveryBatchMessage(Subscribers subscribers, ProducerBatchMessage batch) : IRootSerializable
+    public record DeliveryBatchMessage(Subscribers subscribers, ProducerBatchMessage ProducerBatch) : IRootSerializable
     {
         public IRootSerialized Serialize(ActorSystem system) => new DeliveryBatch
         {
             Subscribers = subscribers,
-            Batch = (ProducerBatch)batch.Serialize(system),
+            Batch = (ProducerBatch)ProducerBatch.Serialize(system),
         };
     }
 
