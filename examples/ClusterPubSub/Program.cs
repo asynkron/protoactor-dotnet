@@ -16,6 +16,7 @@ namespace ClusterPubSub
 {
     class Program
     {
+        public static int batchSize = 2000; 
         static async Task Main(string[] args)
         {
             Log.SetLoggerFactory(LoggerFactory.Create(l =>
@@ -140,7 +141,7 @@ namespace ClusterPubSub
                 ClusterConfig
                     .Setup("MyCluster", consulProvider, new PartitionIdentityLookup())
                     .WithClusterKind("topic", Props.FromProducer(() => new TopicActor(store)))
-                    .WithPubSubBatchSize(2000);
+                    .WithPubSubBatchSize(batchSize);
             return clusterConfig;
         }
 
