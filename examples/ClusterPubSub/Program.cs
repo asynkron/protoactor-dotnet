@@ -24,37 +24,24 @@ namespace ClusterPubSub
             );
             Console.WriteLine("1) Run local");
             Console.WriteLine("2) Run remote");
-            var res = Console.ReadLine();
+            var runRemote = Console.ReadLine() == "2";
+            
+            Console.WriteLine("Subscriber Count, default 10");
 
+            if (!int.TryParse(Console.ReadLine(), out var subscriberCount))
+            {
+                subscriberCount = 10;
+            }
 
-
-            if (res == "2")
+            if (runRemote)
             {
                 //starting remote node...
                 await RunMember();
             }
 
-            var remoteConfig = GrpcCoreRemoteConfig
-                .BindToLocalhost()
-                .WithProtoMessages(ClusterPubSub.ProtosReflection.Descriptor);
+            var system = GetSystem();
 
-            var consulProvider =
-                new ConsulProvider(new ConsulProviderConfig());
-
-//use an empty store, no persistence
-            var store = new EmptyKeyValueStore<Subscribers>();
-
-            var clusterConfig =
-                ClusterConfig
-                    .Setup("MyCluster", consulProvider, new PartitionIdentityLookup())
-                    .WithClusterKind("topic", Props.FromProducer(() => new TopicActor(store)))
-                    .WithPubSubBatchSize(2000);
-
-            var system = new ActorSystem()
-                .WithRemote(remoteConfig)
-                .WithCluster(clusterConfig);
-
-            if (res == "2")
+            if (runRemote)
             {
                 await system
                     .Cluster()
@@ -76,8 +63,6 @@ namespace ClusterPubSub
                     return Task.CompletedTask;
                 }
             );
-
-            var subscriberCount = 10;
 
             for (int j = 0; j < subscriberCount; j++)
             {
@@ -127,39 +112,41 @@ namespace ClusterPubSub
                 );
             }
 
-
-
             await Task.WhenAll(tasks);
             sw.Stop();
 
             var tps = (messageCount * subscriberCount) / sw.ElapsedMilliseconds * 1000;
             Console.WriteLine($"Time {sw.Elapsed.TotalMilliseconds}");
             Console.WriteLine($"Messages per second {tps:N0}");
-            
         }
 
-        public static async Task RunMember()
-        {
-            var remoteConfig = GrpcCoreRemoteConfig
-                .BindToLocalhost()
-                .WithProtoMessages(ClusterPubSub.ProtosReflection.Descriptor);
+        private static ActorSystem GetSystem() => new ActorSystem()
+            .WithRemote(GetRemoteConfig())
+            .WithCluster(GetClusterConfig());
 
+        private static GrpcCoreRemoteConfig GetRemoteConfig() => GrpcCoreRemoteConfig
+            .BindToLocalhost()
+            .WithProtoMessages(ClusterPubSub.ProtosReflection.Descriptor);
+
+        private static ClusterConfig GetClusterConfig()
+        {
             var consulProvider =
                 new ConsulProvider(new ConsulProviderConfig());
 
             //use an empty store, no persistence
             var store = new EmptyKeyValueStore<Subscribers>();
-
+            
             var clusterConfig =
                 ClusterConfig
                     .Setup("MyCluster", consulProvider, new PartitionIdentityLookup())
                     .WithClusterKind("topic", Props.FromProducer(() => new TopicActor(store)))
                     .WithPubSubBatchSize(2000);
+            return clusterConfig;
+        }
 
-            var system = new ActorSystem()
-                .WithRemote(remoteConfig)
-                .WithCluster(clusterConfig);
-
+        public static async Task RunMember()
+        {
+            var system = GetSystem();
             await system
                 .Cluster()
                 .StartMemberAsync();
