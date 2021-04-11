@@ -39,10 +39,19 @@ namespace Proto.Cluster.PubSub
             var topicBatch = new TopicBatchMessage(batch.Envelopes);
 
             var pidTasks =  _subscribers.Select(s => GetPid(context, s)).ToList();
-            var pids = await Task.WhenAll(pidTasks);
-            var members = pids.GroupBy(p => p.Address);
-            
-            
+            var subscribers = await Task.WhenAll(pidTasks);
+            var members = subscribers.GroupBy(subscriber => subscriber.pid.Address);
+
+            foreach (var member in members)
+            {
+                var address = member.Key;
+                var subscribersOnMember = new Subscribers()
+                {
+                    Subscribers_ = {member.Select(s => s.subscriber).ToArray()}
+                };
+                
+                var deliveryMessage = new DeliveryBatchMessage(subscribersOnMember, new ProducerBatchMessage());
+            }
             //request async all messages to their subscribers
             var tasks =
                 _subscribers.Select(sub => DeliverBatch(context, topicBatch, sub));
@@ -54,12 +63,18 @@ namespace Proto.Cluster.PubSub
             context.Respond(new PublishResponse());
         }
         
-        private static Task<PID> GetPid(IContext context, SubscriberIdentity s) => s.IdentityCase switch
+        private static Task<(SubscriberIdentity subscriber, PID pid)> GetPid(IContext context, SubscriberIdentity s) => s.IdentityCase switch
         {
-            SubscriberIdentity.IdentityOneofCase.Pid             => Task.FromResult(s.Pid),
-            SubscriberIdentity.IdentityOneofCase.ClusterIdentity =>context.Cluster().GetAsync(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, CancellationToken.None)!,
+            SubscriberIdentity.IdentityOneofCase.Pid             => Task.FromResult((s, s.Pid)),
+            SubscriberIdentity.IdentityOneofCase.ClusterIdentity => GetClusterIdentityPid(context, s)!,
             _                                                    => throw new ArgumentOutOfRangeException()
         };
+
+        private static async Task<(SubscriberIdentity, PID)> GetClusterIdentityPid(IContext context, SubscriberIdentity s)
+        {
+            var pid = await context.Cluster().GetAsync(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, CancellationToken.None);
+            return (s, pid);
+        }
 
         private static Task DeliverBatch(IContext context, TopicBatchMessage pub, SubscriberIdentity s) => s.IdentityCase switch
         {

@@ -129,7 +129,11 @@ message PublishRequest {
 
 message PublishResponse {}
 
-
+//this goes out to the delivery actors
+message DeliveryBatch {
+  Subscribers subscribers = 1;
+  ProducerBatch batch = 2;
+}
 
 //messages going into the topic actors
 message ProducerBatch {
