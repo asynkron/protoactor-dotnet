@@ -16,6 +16,7 @@ namespace Proto.Cluster.PubSub
         {
             if (context.Message is DeliveryBatchMessage deliveryBatch)
             {
+               // Console.WriteLine("got messages " + deliveryBatch.subscribers.Subscribers_.Count);
                 var topicBatch = new TopicBatchMessage(deliveryBatch.ProducerBatch.Envelopes);
                 var tasks =
                     deliveryBatch
@@ -39,8 +40,7 @@ namespace Proto.Cluster.PubSub
 
         private static Task DeliverToClusterIdentity(IContext context, TopicBatchMessage pub, ClusterIdentity ci) =>
             //deliver to virtual actor
-            context.ClusterRequestAsync<PublishResponse>(ci.Identity,ci.Kind, pub,
-                CancellationToken.None
+            context.ClusterRequestAsync<PublishResponse>(ci.Identity,ci.Kind, pub, CancellationToken.None
             );
 
         private static Task DeliverToPid(IContext context, TopicBatchMessage pub, PID pid) =>

@@ -70,7 +70,7 @@ namespace ClusterPubSub
             var props = Props.FromFunc(ctx => {
                     if (ctx.Message is SomeMessage s)
                     {
-                        //Console.Write(".");
+                     //   Console.Write(".");
                     }
 
                     return Task.CompletedTask;

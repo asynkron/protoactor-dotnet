@@ -37,8 +37,6 @@ namespace Proto.Cluster.PubSub
 
         private async Task OnProducerBatch(IContext context, ProducerBatchMessage batch)
         {
-            var topicBatch = new TopicBatchMessage(batch.Envelopes);
-            
             //TODO: lookup PID for ClusterIdentity subscribers.
             //group PIDs by address
             //send the batch to the PubSub delivery actor on each member
@@ -53,7 +51,7 @@ namespace Proto.Cluster.PubSub
                 (from member in members
                         let address = member.Key
                         let subscribersOnMember = GetSubscribersForAddress(member)
-                        let deliveryMessage = new DeliveryBatchMessage(subscribersOnMember, new ProducerBatchMessage())
+                        let deliveryMessage = new DeliveryBatchMessage(subscribersOnMember, batch)
                         let deliveryPid = PID.FromAddress(address, PubSubManager.PubSubDeliveryName)
                         select context.RequestAsync<PublishResponse>(deliveryPid, deliveryMessage)).Cast<Task>()
                 .ToList();
