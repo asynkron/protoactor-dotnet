@@ -19,23 +19,21 @@ namespace Proto.Cluster
 {
     public class DefaultClusterContext : IClusterContext
     {
-        private readonly ClusterContextConfig _config;
         private readonly IIdentityLookup _identityLookup;
-        private readonly ILogger _logger;
+
         private readonly PidCache _pidCache;
         private readonly ShouldThrottle _requestLogThrottle;
         private readonly TaskClock _clock;
-
-        public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ILogger logger, ClusterContextConfig config, CancellationToken killSwitch)
+        private static readonly ILogger Logger = Log.CreateLogger<DefaultClusterContext>();
+        public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ClusterContextConfig config, CancellationToken killSwitch)
         {
             _identityLookup = identityLookup;
             _pidCache = pidCache;
-            _logger = logger;
-            _config = config;
+
             _requestLogThrottle = Throttle.Create(
-                _config.MaxNumberOfEventsInRequestLogThrottlePeriod,
-                _config.RequestLogThrottlePeriod,
-                i => _logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
+                config.MaxNumberOfEventsInRequestLogThrottlePeriod,
+                config.RequestLogThrottlePeriod,
+                i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
             );
             _clock = new TaskClock(config.ActorRequestTimeout, TimeSpan.FromSeconds(1), killSwitch);
             _clock.Start();
@@ -45,7 +43,7 @@ namespace Proto.Cluster
         {
             
             var start = DateTime.UtcNow;
-            _logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
+            Logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
             var i = 0;
 
             var future = new FutureProcess(context.System);
@@ -66,7 +64,7 @@ namespace Proto.Cluster
 
                     if (pid is null)
                     {
-                        _logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup", clusterIdentity);
+                        Logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup", clusterIdentity);
                         await Task.Delay(delay, CancellationToken.None);
                         continue;
                     }
@@ -74,7 +72,7 @@ namespace Proto.Cluster
                     // Ensures that a future is not re-used against another actor.
                     if (lastPid is not null && !pid.Equals(lastPid)) RefreshFuture();
 
-                    _logger.LogDebug("Requesting {ClusterIdentity} - Got PID {Pid} from {Source}", clusterIdentity, pid, source);
+                    Logger.LogDebug("Requesting {ClusterIdentity} - Got PID {Pid} from {Source}", clusterIdentity, pid, source);
                     var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, pid, source, context, future);
 
                     switch (status)
@@ -108,7 +106,7 @@ namespace Proto.Cluster
                 if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
                 {
                     var t = DateTime.UtcNow - start;
-                    _logger.LogWarning("RequestAsync retried but failed for {ClusterIdentity}, elapsed {Time}", clusterIdentity, t);
+                    Logger.LogWarning("RequestAsync retried but failed for {ClusterIdentity}, elapsed {Time}", clusterIdentity, t);
                 }
 
                 return default!;
@@ -161,7 +159,7 @@ namespace Proto.Cluster
                 if (context.System.Shutdown.IsCancellationRequested) return default;
 
                 if (_requestLogThrottle().IsOpen())
-                    _logger.LogWarning(e, "Failed to get PID from IIdentityLookup for {ClusterIdentity}", clusterIdentity);
+                    Logger.LogWarning(e, "Failed to get PID from IIdentityLookup for {ClusterIdentity}", clusterIdentity);
                 return (null, PidSource.Lookup);
             }
         }
@@ -191,7 +189,7 @@ namespace Proto.Cluster
                 }
 
                 if (!context.System.Shutdown.IsCancellationRequested)
-                    _logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
+                    Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
                 _pidCache.RemoveByVal(clusterIdentity, pid);
 
                 return (ResponseStatus.TimedOut, default)!;
@@ -203,7 +201,7 @@ namespace Proto.Cluster
             catch (Exception x)
             {
                 if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
-                    _logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
+                    Logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
                 _pidCache.RemoveByVal(clusterIdentity, pid);
                 return (ResponseStatus.Exception, default)!;
             }
@@ -228,13 +226,13 @@ namespace Proto.Cluster
             {
                 case DeadLetterResponse:
                     if (!context.System.Shutdown.IsCancellationRequested)
-                        _logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
+                        Logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
 
                     return (ResponseStatus.DeadLetter, default)!;
                 case null: return (ResponseStatus.Ok, default);
                 case T t:  return (ResponseStatus.Ok, t);
                 default:
-                    _logger.LogWarning("Unexpected message. Was type {Type} but expected {ExpectedType}", result.GetType(), typeof(T));
+                    Logger.LogWarning("Unexpected message. Was type {Type} but expected {ExpectedType}", result.GetType(), typeof(T));
                     return (ResponseStatus.Exception, default);
             }
         }

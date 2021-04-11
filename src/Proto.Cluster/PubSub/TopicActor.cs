@@ -13,9 +13,9 @@ using  Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster.PubSub
 {
-    public class TopicActor : IActor
+    public sealed class TopicActor : IActor
     {
-        private static ILogger Logger = Log.CreateLogger<TopicActor>();
+        private static readonly ILogger Logger = Log.CreateLogger<TopicActor>();
         private ImmutableHashSet<SubscriberIdentity> _subscribers = ImmutableHashSet<SubscriberIdentity>.Empty;
         private string _topic = string.Empty;
         private readonly IKeyValueStore<Subscribers> _subscriptionStore;
@@ -37,6 +37,12 @@ namespace Proto.Cluster.PubSub
         private async Task OnProducerBatch(IContext context, ProducerBatchMessage batch)
         {
             var topicBatch = new TopicBatchMessage(batch.Envelopes);
+            
+            //TODO: lookup PID for ClusterIdentity subscribers.
+            //group PIDs by address
+            //send the batch to the PubSub delivery actor on each member
+            //await for subscriber responses on in each delivery actor
+            //when done, respond back here
 
             var pidTasks =  _subscribers.Select(s => GetPid(context, s)).ToList();
             var subscribers = await Task.WhenAll(pidTasks);
@@ -76,12 +82,13 @@ namespace Proto.Cluster.PubSub
             return (s, pid);
         }
 
-        private static Task DeliverBatch(IContext context, TopicBatchMessage pub, SubscriberIdentity s) => s.IdentityCase switch
-        {
-            SubscriberIdentity.IdentityOneofCase.Pid             => DeliverToPid(context, pub, s.Pid),
-            SubscriberIdentity.IdentityOneofCase.ClusterIdentity => DeliverToClusterIdentity(context, pub, s.ClusterIdentity),
-            _                                                    => Task.CompletedTask
-        };
+        private static Task DeliverBatch(IContext context, TopicBatchMessage pub, SubscriberIdentity s) =>
+            s.IdentityCase switch
+            {
+                SubscriberIdentity.IdentityOneofCase.Pid             => DeliverToPid(context, pub, s.Pid),
+                SubscriberIdentity.IdentityOneofCase.ClusterIdentity => DeliverToClusterIdentity(context, pub, s.ClusterIdentity),
+                _                                                    => Task.CompletedTask
+            };
 
         private static Task DeliverToClusterIdentity(IContext context, TopicBatchMessage pub, ClusterIdentity ci) =>
             //deliver to virtual actor
@@ -101,7 +108,7 @@ namespace Proto.Cluster.PubSub
             Logger.LogInformation("Topic {Topic} started", _topic);
         }
 
-        protected virtual async Task<Subscribers> LoadSubscriptions(string topic)
+        private async Task<Subscribers> LoadSubscriptions(string topic)
         { 
             //TODO: cancellation token config?
             var state = await _subscriptionStore.GetAsync(topic, CancellationToken.None);
@@ -109,7 +116,7 @@ namespace Proto.Cluster.PubSub
             return state;
         }
 
-        protected virtual async Task SaveSubscriptions(string topic, Subscribers subs)
+        private async Task SaveSubscriptions(string topic, Subscribers subs)
         {
             //TODO: cancellation token config?
             Logger.LogInformation("Topic {Topic} saved subscriptions {Subscriptions}",_topic,subs);

@@ -12,6 +12,6 @@
     <ProjectReference Include="..\Proto.Remote\Proto.Remote.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Protobuf Include="Protos.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
+    <Protobuf Include="ClusterContracts.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
   </ItemGroup>
 </Project>
