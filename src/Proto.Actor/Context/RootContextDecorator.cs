@@ -16,11 +16,7 @@ namespace Proto
 
         protected RootContextDecorator(IRootContext context) => _context = context;
 
-        public virtual PID Spawn(Props props) => _context.Spawn(props);
-
         public virtual PID SpawnNamed(Props props, string name) => _context.SpawnNamed(props, name);
-
-        public virtual PID SpawnPrefix(Props props, string prefix) => _context.SpawnPrefix(props, prefix);
 
         public virtual void Send(PID target, object message) => _context.Send(target, message);
 

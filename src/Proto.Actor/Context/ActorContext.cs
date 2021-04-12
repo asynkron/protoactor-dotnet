@@ -79,18 +79,6 @@ namespace Proto.Context
                 Logger.LogWarning("{Self} Tried to respond but sender is null, with message {Message}", Self, message);
         }
 
-        public PID Spawn(Props props)
-        {
-            var id = System.ProcessRegistry.NextId();
-            return SpawnNamed(props, id);
-        }
-
-        public PID SpawnPrefix(Props props, string prefix)
-        {
-            var name = prefix + System.ProcessRegistry.NextId();
-            return SpawnNamed(props, name);
-        }
-
         public PID SpawnNamed(Props props, string name)
         {
             if (props.GuardianStrategy is not null)
@@ -171,27 +159,6 @@ namespace Proto.Context
             }
         }
 
-        public void Request(PID target, object message)
-        {
-            var messageEnvelope = new MessageEnvelope(message, Self);
-            SendUserMessage(target, messageEnvelope);
-        }
-
-        public void Request(PID target, object message, PID? sender)
-        {
-            var messageEnvelope = new MessageEnvelope(message, sender);
-            SendUserMessage(target, messageEnvelope);
-        }
-
-        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => RequestAsync<T>(target, message, new FutureProcess(System, timeout));
-
-        public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
-
-        public Task<T> RequestAsync<T>(PID target, object message) =>
-            RequestAsync<T>(target, message, new FutureProcess(System));
-
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
             var msg = _messageOrEnvelope;
@@ -239,11 +206,7 @@ namespace Proto.Context
 
             return future.Task;
         }
-
-        public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
-
-        public Task PoisonAsync(PID pid) => RequestAsync<Terminated>(pid, PoisonPill.Instance, CancellationToken.None);
-
+        
         public CancellationTokenSource? CancellationTokenSource => _extras?.CancellationTokenSource;
 
         public void EscalateFailure(Exception reason, object? message)
@@ -433,26 +396,6 @@ namespace Proto.Context
 
             Stop(Self);
             return Task.CompletedTask;
-        }
-
-        private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)
-        {
-            var messageEnvelope = new MessageEnvelope(message, future.Pid);
-            SendUserMessage(target, messageEnvelope);
-            var result = await future.Task;
-
-            switch (result)
-            {
-                case DeadLetterResponse:
-                    throw new DeadLetterException(target);
-                case null:
-                case T:
-                    return (T) result!;
-                default:
-                    throw new InvalidOperationException(
-                        $"Unexpected message. Was type {result?.GetType()} but expected {typeof(T)}"
-                    );
-            }
         }
 
         private void SendUserMessage(PID target, object message)

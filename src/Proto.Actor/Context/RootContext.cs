@@ -53,12 +53,6 @@ namespace Proto
         PID? IInfoContext.Sender => null;
         public IActor? Actor => null;
 
-        public PID Spawn(Props props)
-        {
-            var name = System.ProcessRegistry.NextId();
-            return SpawnNamed(props, name);
-        }
-
         public PID SpawnNamed(Props props, string name)
         {
             var parent = props.GuardianStrategy is not null
@@ -67,32 +61,9 @@ namespace Proto
             return props.Spawn(System, name, parent);
         }
 
-        public PID SpawnPrefix(Props props, string prefix)
-        {
-            var name = prefix + System.ProcessRegistry.NextId();
-            return SpawnNamed(props, name);
-        }
-
         public object? Message => null;
 
         public void Send(PID target, object message) => SendUserMessage(target, message);
-
-        public void Request(PID target, object message) => SendUserMessage(target, message);
-
-        public void Request(PID target, object message, PID? sender)
-        {
-            var envelope = new MessageEnvelope(message, sender);
-            Send(target, envelope);
-        }
-
-        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => RequestAsync<T>(target, message, new FutureProcess(System, timeout));
-
-        public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
-
-        public Task<T> RequestAsync<T>(PID target, object message) =>
-            RequestAsync<T>(target, message, new FutureProcess(System));
 
         public void Stop(PID? pid)
         {
@@ -111,10 +82,6 @@ namespace Proto
 
             return future.Task;
         }
-
-        public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
-
-        public Task PoisonAsync(PID pid) => RequestAsync<Terminated>(pid, PoisonPill.Instance, CancellationToken.None);
 
         public RootContext WithHeaders(MessageHeader headers) =>
             this with {Headers = headers};

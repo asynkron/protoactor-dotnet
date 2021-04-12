@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Future;
 
 // ReSharper disable once CheckNamespace
 namespace Proto
@@ -26,13 +27,20 @@ namespace Proto
         /// <param name="target">The target PID</param>
         /// <param name="message">The message to send</param>
         void Send(PID target, object message);
+    }
 
+    public static class SenderContextExtensions
+    {
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender
         /// </summary>
         /// <param name="target">The target PID</param>
         /// <param name="message">The message to send</param>
-        void Request(PID target, object message);
+        public static  void Request(this ISenderContext self, PID target, object message)
+        {
+            var messageEnvelope = new MessageEnvelope(message, self.Self);
+            self.Send(target, messageEnvelope);
+        }
 
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender
@@ -40,7 +48,11 @@ namespace Proto
         /// <param name="target">The target PID</param>
         /// <param name="message">The message to send</param>
         /// <param name="sender">Message sender</param>
-        void Request(PID target, object message, PID? sender);
+        public static void Request(this ISenderContext self, PID target, object message, PID? sender)
+        {
+            var messageEnvelope = new MessageEnvelope(message, sender);
+            self.Send(target, messageEnvelope);
+        }
 
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
@@ -51,7 +63,8 @@ namespace Proto
         /// <param name="timeout">Timeout for the request</param>
         /// <typeparam name="T">Expected return message type</typeparam>
         /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
-        Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout);
+        public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, TimeSpan timeout)
+            => self.RequestAsync<T>(target, message, new FutureProcess(self.System, timeout));
 
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
@@ -62,7 +75,8 @@ namespace Proto
         /// <param name="cancellationToken">Cancellation token for the request</param>
         /// <typeparam name="T">Expected return message type</typeparam>
         /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
-        Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken);
+        public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, CancellationToken cancellationToken)
+            => self.RequestAsync<T>(target, message, new FutureProcess(self.System, cancellationToken));
 
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
@@ -72,6 +86,38 @@ namespace Proto
         /// <param name="message">The message to send</param>
         /// <typeparam name="T">Expected return message type</typeparam>
         /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
-        Task<T> RequestAsync<T>(PID target, object message);
+        public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message) =>
+            self.RequestAsync<T>(target, message, new FutureProcess(self.System));
+
+        /// <summary>
+        /// Poison will tell actor to stop after processing current user messages in mailbox.
+        /// </summary>
+        public static void Poison(this ISenderContext self, PID pid) => pid.SendUserMessage(self.System, PoisonPill.Instance);
+
+        /// <summary>
+        /// PoisonAsync will tell and wait actor to stop after processing current user messages in mailbox.
+        /// </summary>
+        public static Task PoisonAsync(this ISenderContext self, PID pid) => self.RequestAsync<Terminated>(pid, PoisonPill.Instance, CancellationToken.None);
+
+        
+        private static async Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, FutureProcess future)
+        {
+            var messageEnvelope = new MessageEnvelope(message, future.Pid);
+            self.Send(target, messageEnvelope);
+            var result = await future.Task;
+
+            switch (result)
+            {
+                case DeadLetterResponse:
+                    throw new DeadLetterException(target);
+                case null:
+                case T:
+                    return (T) result!;
+                default:
+                    throw new InvalidOperationException(
+                        $"Unexpected message. Was type {result?.GetType()} but expected {typeof(T)}"
+                    );
+            }
+        }
     }
 }
