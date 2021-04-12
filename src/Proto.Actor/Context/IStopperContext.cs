@@ -8,12 +8,8 @@ using System.Threading.Tasks;
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
-    public interface IStopperContext : ISystemContext
-    {
-        /// <summary> Stop will tell actor to stop immediately, regardless of existing user messages in mailbox. </summary>
-        void Stop(PID pid);
-
-        /// <summary> StopAsync will tell and wait actor to stop immediately, regardless of existing user messages in mailbox. </summary>
-        Task StopAsync(PID pid);
-    }
+    // public interface IStopperContext : ISystemContext
+    // {
+    //
+    // }
 }

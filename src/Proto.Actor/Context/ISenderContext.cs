@@ -36,7 +36,7 @@ namespace Proto
         /// </summary>
         /// <param name="target">The target PID</param>
         /// <param name="message">The message to send</param>
-        public static  void Request(this ISenderContext self, PID target, object message)
+        public static void Request(this ISenderContext self, PID target, object message)
         {
             var messageEnvelope = new MessageEnvelope(message, self.Self);
             self.Send(target, messageEnvelope);
@@ -97,9 +97,10 @@ namespace Proto
         /// <summary>
         /// PoisonAsync will tell and wait actor to stop after processing current user messages in mailbox.
         /// </summary>
-        public static Task PoisonAsync(this ISenderContext self, PID pid) => self.RequestAsync<Terminated>(pid, PoisonPill.Instance, CancellationToken.None);
+        public static Task PoisonAsync(this ISenderContext self, PID pid)
+            => self.RequestAsync<Terminated>(pid, PoisonPill.Instance, CancellationToken.None);
 
-        
+
         private static async Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, FutureProcess future)
         {
             var messageEnvelope = new MessageEnvelope(message, future.Pid);
@@ -118,6 +119,30 @@ namespace Proto
                         $"Unexpected message. Was type {result?.GetType()} but expected {typeof(T)}"
                     );
             }
+        }
+
+        /// <summary>
+        /// Stop will tell actor to stop immediately, regardless of existing user messages in mailbox.
+        /// </summary>
+        public static void Stop(this ISenderContext self, PID? pid)
+        {
+            if (pid is null) return;
+
+            var reff = self.System.ProcessRegistry.Get(pid);
+            reff.Stop(pid);
+        }
+
+        /// <summary>
+        /// StopAsync will tell and wait actor to stop immediately, regardless of existing user messages in mailbox.
+        /// </summary>
+        public static Task StopAsync(this ISenderContext self, PID pid)
+        {
+            var future = new FutureProcess(self.System);
+
+            pid.SendSystemMessage(self.System, new Watch(future.Pid));
+            self.Stop(pid);
+
+            return future.Task;
         }
     }
 }

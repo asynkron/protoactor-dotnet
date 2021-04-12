@@ -186,27 +186,8 @@ namespace Proto.Context
             _messageOrEnvelope = envelope;
             return DefaultReceive();
         }
-
-        public void Stop(PID pid)
-        {
-            if (!System.Metrics.IsNoop)
-            {
-                System.Metrics.InternalActorMetrics.ActorStoppedCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
-            }
-
-            pid.Stop(System);
-        }
-
-        public Task StopAsync(PID pid)
-        {
-            var future = new FutureProcess(System);
-
-            pid.SendSystemMessage(System, new Watch(future.Pid));
-            Stop(pid);
-
-            return future.Task;
-        }
         
+
         public CancellationTokenSource? CancellationTokenSource => _extras?.CancellationTokenSource;
 
         public void EscalateFailure(Exception reason, object? message)
@@ -394,7 +375,7 @@ namespace Proto.Context
         {
             if (Sender != null) HandleWatch(new Watch(Sender));
 
-            Stop(Self);
+            this.Stop(Self);
             return Task.CompletedTask;
         }
 
@@ -553,6 +534,11 @@ namespace Proto.Context
             Parent?.SendSystemMessage(System, Terminated.From(Self, TerminatedReason.Stopped));
 
             _state = ContextState.Stopped;
+            
+            if (!System.Metrics.IsNoop)
+            {
+                System.Metrics.InternalActorMetrics.ActorStoppedCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
+            }
         }
 
         private async ValueTask RestartAsync()

@@ -13,7 +13,7 @@ using Proto.Utils;
 
 namespace Proto
 {
-    public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext
+    public interface IRootContext : ISpawnerContext, ISenderContext
     {
     }
 
@@ -64,25 +64,7 @@ namespace Proto
         public object? Message => null;
 
         public void Send(PID target, object message) => SendUserMessage(target, message);
-
-        public void Stop(PID? pid)
-        {
-            if (pid is null) return;
-
-            var reff = System.ProcessRegistry.Get(pid);
-            reff.Stop(pid);
-        }
-
-        public Task StopAsync(PID pid)
-        {
-            var future = new FutureProcess(System);
-
-            pid.SendSystemMessage(System, new Watch(future.Pid));
-            Stop(pid);
-
-            return future.Task;
-        }
-
+        
         public RootContext WithHeaders(MessageHeader headers) =>
             this with {Headers = headers};
 
@@ -97,28 +79,6 @@ namespace Proto
         {
             target.SendUserMessage(context.System, message);
             return Task.CompletedTask;
-        }
-
-        private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)
-        {
-            if (target is null) throw new ArgumentNullException(nameof(target));
-
-            var messageEnvelope = new MessageEnvelope(message, future.Pid);
-            SendUserMessage(target, messageEnvelope);
-            var result = await future.Task;
-
-            switch (result)
-            {
-                case DeadLetterResponse deadLetterResponse:
-                    throw new DeadLetterException(deadLetterResponse.Target);
-                case null:
-                case T _:
-                    return (T) result!;
-                default:
-                    throw new InvalidOperationException(
-                        $"Unexpected message. Was type {result.GetType()} but expected {typeof(T)}"
-                    );
-            }
         }
 
         private void SendUserMessage(PID target, object message)
