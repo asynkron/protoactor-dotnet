@@ -17,7 +17,7 @@ using Ubiquitous.Metrics.Prometheus;
 
 namespace ActorMetrics
 {
-    public class RunDummyCluster
+    public static class RunDummyCluster
     {
         public static void Run()
         {

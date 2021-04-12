@@ -37,7 +37,6 @@ namespace Proto.Cluster.Consul
         private readonly TimeSpan _serviceTtl; //this is how long the service is healthy without a ttl refresh
 
         private Cluster _cluster;
-        private string _consulLeaderKey;
         private string _consulServiceInstanceId; //the specific instance id of this node in consul
 
         private string _consulServiceName; //name of the custer, in consul this means the name of the service
@@ -111,21 +110,6 @@ namespace Proto.Cluster.Consul
             }
 
             _logger.LogInformation("Shut down consul provider");
-        }
-
-        //TODO: this is never signalled to rest of cluster
-        //it gets hidden until leader blocking wait ends
-        public async Task UpdateClusterState(ClusterState state)
-        {
-            // var json = JsonConvert.SerializeObject(state.BannedMembers);
-            // var kvp = new KVPair($"{_consulServiceName}/banned")
-            // {
-            //     Value = Encoding.UTF8.GetBytes(json)
-            // };
-            //
-            // var updated = await _client.KV.Put(kvp);
-            //
-            // if (!updated.Response) _logger.LogError("Failed to update cluster state");
         }
 
         private void SetState(
