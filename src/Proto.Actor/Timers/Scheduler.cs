@@ -56,24 +56,6 @@ namespace Proto.Timers
             return cts;
         }
 
-        public CancellationTokenSource RequestOnce(TimeSpan delay, PID sender, PID target, object message)
-        {
-            var cts = new CancellationTokenSource();
-
-            _ = SafeTask.Run(async () => {
-                    await Task.Delay(delay, cts.Token);
-
-                    //TODO: allow custom sender
-                    _context.Request(target, message);
-                }, cts.Token
-            );
-
-            return cts;
-        }
-
-        public CancellationTokenSource RequestRepeatedly(TimeSpan interval, PID sender, PID target, object message)
-            => RequestRepeatedly(interval, interval, target, message);
-
         public CancellationTokenSource RequestRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
         {
             var cts = new CancellationTokenSource();

@@ -138,13 +138,13 @@ namespace ClusterExperiment1
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, ActorCount);
-                        semaphore.Wait(() => SendRequest(cluster, id, logger));
+                        semaphore.Wait(() => SendRequest(cluster, id));
                     }
                 }
             );
         }
 
-        private static Task SendRequest(Cluster cluster, string id, ILogger logger)
+        private static Task SendRequest(Cluster cluster, string id)
         {
             Interlocked.Increment(ref RequestCount);
 
@@ -201,7 +201,7 @@ namespace ClusterExperiment1
                             for (var i = 0; i < batchSize; i++)
                             {
                                 var id = "myactor" + rnd.Next(0, ActorCount);
-                                var request = SendRequest(cluster, id, logger);
+                                var request = SendRequest(cluster, id);
 
                                 requests.Add(request);
                             }
@@ -228,7 +228,7 @@ namespace ClusterExperiment1
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, ActorCount);
-                        await SendRequest(cluster, id, logger);
+                        await SendRequest(cluster, id);
                     }
                 }
             );

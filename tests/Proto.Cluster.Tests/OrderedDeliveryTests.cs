@@ -12,7 +12,7 @@ namespace Proto.Cluster.Tests
 {
     public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDeliveryTests.OrderedDeliveryFixture>
     {
-        public OrderedDeliveryTests(ITestOutputHelper testOutputHelper, OrderedDeliveryFixture clusterFixture) : base(
+        public OrderedDeliveryTests( OrderedDeliveryFixture clusterFixture) : base(
             clusterFixture
         )
         {

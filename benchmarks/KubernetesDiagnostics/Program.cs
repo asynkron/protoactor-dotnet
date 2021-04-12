@@ -15,9 +15,9 @@ using Proto.Remote.GrpcNet;
 
 namespace KubernetesDiagnostics
 {
-    public class Program
+    public static class Program
     {
-        public static async Task Main(string[] args)
+        public static async Task Main()
         {
             /*
              *  docker build . -t rogeralsing/kubdiagg   

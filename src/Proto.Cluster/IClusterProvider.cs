@@ -17,7 +17,5 @@ namespace Proto.Cluster
         Task StartClientAsync(Cluster cluster);
 
         Task ShutdownAsync(bool graceful);
-
-        Task UpdateClusterState(ClusterState state);
     }
 }

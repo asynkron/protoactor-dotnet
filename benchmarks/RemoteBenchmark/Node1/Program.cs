@@ -20,7 +20,7 @@ using ProtosReflection = Messages.ProtosReflection;
 
 class Program
 {
-    private static async Task Main(string[] args)
+    private static async Task Main()
     {
         Log.SetLoggerFactory(LoggerFactory.Create(c => c
                 .SetMinimumLevel(LogLevel.Information)

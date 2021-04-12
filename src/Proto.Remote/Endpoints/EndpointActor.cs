@@ -301,7 +301,7 @@ namespace Proto.Remote
             {
                 await _stream.RequestStream.WriteAsync(batch).ConfigureAwait(false);
             }
-            catch (Exception x)
+            catch (Exception)
             {
                 context.Stash();
                 throw;

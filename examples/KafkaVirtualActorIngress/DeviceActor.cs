@@ -28,7 +28,7 @@ namespace KafkaVirtualActorIngress
             //TODO: handle SomeMessage
             _state.IntProperty = sm.IntProperty;
 
-            await EvaluateState(context);
+            await EvaluateState();
             await SaveState();
             context.Respond(new Ack());
         }
@@ -38,12 +38,12 @@ namespace KafkaVirtualActorIngress
             //TODO: handle SomeOtherMessage
             _state.Data = sm.Data;
 
-            await EvaluateState(context);
+            await EvaluateState();
             await SaveState();
             context.Respond(new Ack());
         }
 
-        private Task EvaluateState(IContext context)
+        private Task EvaluateState()
         {
             if (_state.Data != "" && _state.IntProperty > 0)
             {

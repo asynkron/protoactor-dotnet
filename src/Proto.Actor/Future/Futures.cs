@@ -14,7 +14,7 @@ namespace Proto.Future
     {
         private readonly CancellationTokenSource? _cts;
         private readonly TaskCompletionSource<object> _tcs;
-        private readonly ActorMetrics _metrics;
+        private readonly ActorMetrics? _metrics;
         private readonly ActorSystem _system;
 
         internal FutureProcess(ActorSystem system, TimeSpan timeout) : this(system, new CancellationTokenSource(timeout)
@@ -83,7 +83,7 @@ namespace Proto.Future
             {
                 if (!_system.Metrics.IsNoop)
                 {
-                    _metrics.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
+                    _metrics!.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
                 }
                 
                 Stop(Pid);
@@ -103,7 +103,7 @@ namespace Proto.Future
 
             if (!_system.Metrics.IsNoop)
             {
-                _metrics.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
+                _metrics!.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
             }
 
             Stop(pid);
