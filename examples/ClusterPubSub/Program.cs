@@ -17,7 +17,7 @@ namespace ClusterPubSub
     class Program
     {
         public static int batchSize = 2000; 
-        static async Task Main(string[] args)
+        static async Task Main()
         {
             Log.SetLoggerFactory(LoggerFactory.Create(l =>
                     l.AddConsole().SetMinimumLevel(LogLevel.Information)

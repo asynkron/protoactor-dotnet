@@ -8,7 +8,7 @@ namespace EventStream
 
     class Program
     {
-        private static void Main(string[] args)
+        private static void Main()
         {
             var system = new ActorSystem();
 
