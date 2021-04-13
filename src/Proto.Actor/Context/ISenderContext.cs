@@ -81,5 +81,25 @@ namespace Proto
         /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
         public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, TimeSpan timeout)
             => self.RequestAsync<T>(target, message, CancellationTokens.WithTimeout(timeout));
+
+        internal static async Task<T> RequestAsync<T>(this ISenderContext self,  PID target, object message, FutureProcess future)
+        {
+            var messageEnvelope = new MessageEnvelope(message, future.Pid);
+            self.Send(target, messageEnvelope);
+            var result = await future.Task;
+
+            switch (result)
+            {
+                case DeadLetterResponse:
+                    throw new DeadLetterException(target);
+                case null:
+                case T:
+                    return (T) result!;
+                default:
+                    throw new InvalidOperationException(
+                        $"Unexpected message. Was type {result?.GetType()} but expected {typeof(T)}"
+                    );
+            }
+        }
     }
 }

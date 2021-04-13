@@ -166,7 +166,7 @@ namespace Proto.Context
         }
 
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
+            => this.RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
@@ -409,26 +409,6 @@ namespace Proto.Context
 
             Stop(Self);
             return Task.CompletedTask;
-        }
-
-        private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)
-        {
-            var messageEnvelope = new MessageEnvelope(message, future.Pid);
-            SendUserMessage(target, messageEnvelope);
-            var result = await future.Task;
-
-            switch (result)
-            {
-                case DeadLetterResponse:
-                    throw new DeadLetterException(target);
-                case null:
-                case T:
-                    return (T) result!;
-                default:
-                    throw new InvalidOperationException(
-                        $"Unexpected message. Was type {result?.GetType()} but expected {typeof(T)}"
-                    );
-            }
         }
 
         private void SendUserMessage(PID target, object message)

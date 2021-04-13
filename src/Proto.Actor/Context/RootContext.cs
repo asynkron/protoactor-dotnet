@@ -72,7 +72,7 @@ namespace Proto
         }
         
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
+            => this.RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
 
         public void Stop(PID? pid)
         {
@@ -110,28 +110,6 @@ namespace Proto
         {
             target.SendUserMessage(context.System, message);
             return Task.CompletedTask;
-        }
-
-        private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)
-        {
-            if (target is null) throw new ArgumentNullException(nameof(target));
-
-            var messageEnvelope = new MessageEnvelope(message, future.Pid);
-            SendUserMessage(target, messageEnvelope);
-            var result = await future.Task;
-
-            switch (result)
-            {
-                case DeadLetterResponse deadLetterResponse:
-                    throw new DeadLetterException(deadLetterResponse.Target);
-                case null:
-                case T _:
-                    return (T) result!;
-                default:
-                    throw new InvalidOperationException(
-                        $"Unexpected message. Was type {result.GetType()} but expected {typeof(T)}"
-                    );
-            }
         }
 
         private void SendUserMessage(PID target, object message)
