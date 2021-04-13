@@ -45,11 +45,7 @@ namespace Proto
 
         public virtual void Stash() => _context.Stash();
 
-        public virtual PID Spawn(Props props) => _context.Spawn(props);
-
         public virtual PID SpawnNamed(Props props, string name) => _context.SpawnNamed(props, name);
-
-        public virtual PID SpawnPrefix(Props props, string prefix) => _context.SpawnNamed(props, prefix);
 
         public virtual void Watch(PID pid) => _context.Watch(pid);
 
