@@ -317,7 +317,7 @@ namespace Proto.Cluster
 
         public bool ContainsMemberId(string memberId) => _members.ContainsKey(memberId);
 
-        public bool TryGetMember(string memberId, out Member value) => _members.TryGetValue(memberId, out value);
+        public bool TryGetMember(string memberId, out Member? value) => _members.TryGetValue(memberId, out value);
 
         public bool TryGetMemberIndexByAddress(string address, out int value) => _indexByAddress.TryGetValue(address, out value);
 

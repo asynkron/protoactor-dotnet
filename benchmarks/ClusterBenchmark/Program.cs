@@ -20,7 +20,7 @@ namespace ClusterExperiment1
     public static class Program
     {
 
-        private static TaskCompletionSource<bool> _ts;
+        private static TaskCompletionSource<bool> _ts = null!;
         private static int actorCount;
         private static int memberCount;
         private static int killTimeoutSeconds;

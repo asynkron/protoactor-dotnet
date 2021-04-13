@@ -2,6 +2,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Proto.Cluster.Identity.MongoDb
 {
+    [JetBrains.Annotations.UsedImplicitly]
     public class PidLookupEntity
     {
         [BsonId]
