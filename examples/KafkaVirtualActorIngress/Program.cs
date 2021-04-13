@@ -50,6 +50,7 @@ namespace KafkaVirtualActorIngress
                     {
                         MyEnvelope.MessageOneofCase.SomeMessage      => message.SomeMessage,
                         MyEnvelope.MessageOneofCase.SomeOtherMessage => message.SomeOtherMessage,
+                        _                                            => throw new ArgumentOutOfRangeException(nameof(message), "Unknown message case")
                     };
 
                     var task = cluster
@@ -74,24 +75,25 @@ namespace KafkaVirtualActorIngress
             //Fake Kafka consumer message generator
             var messages = new List<MyEnvelope>();
             var rnd = new Random();
+
             for (int i = 0; i < 50; i++)
             {
                 var message = new MyEnvelope
                 {
-                    DeviceId = rnd.Next(1,1000).ToString(),
+                    DeviceId = rnd.Next(1, 1000).ToString(),
                     SomeMessage = new SomeMessage
                     {
                         Data = Guid.NewGuid().ToString()
                     }
                 };
                 messages.Add(message);
-                
+
                 var message2 = new MyEnvelope
                 {
-                    DeviceId = rnd.Next(1,1000).ToString(),
+                    DeviceId = rnd.Next(1, 1000).ToString(),
                     SomeOtherMessage = new SomeOtherMessage
                     {
-                        IntProperty = rnd.Next(1,100000)
+                        IntProperty = rnd.Next(1, 100000)
                     }
                 };
                 messages.Add(message2);
@@ -112,7 +114,7 @@ namespace KafkaVirtualActorIngress
 
         private static GrpcCoreRemoteConfig GetRemoteConfig() => GrpcCoreRemoteConfig
             .BindTo("127.0.0.1")
-         //   .WithAdvertisedHost("the hostname or ip of this pod")
+            //   .WithAdvertisedHost("the hostname or ip of this pod")
             .WithProtoMessages(MyMessagesReflection.Descriptor);
 
         private static ClusterConfig GetClusterConfig(string clusterName) => ClusterConfig

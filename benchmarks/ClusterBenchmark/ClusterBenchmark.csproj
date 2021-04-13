@@ -5,6 +5,7 @@
         <OutputType>Exe</OutputType>
         <LangVersion>9</LangVersion>
         <RootNamespace>ClusterExperiment1</RootNamespace>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>

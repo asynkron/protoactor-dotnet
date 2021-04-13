@@ -48,7 +48,7 @@ namespace Proto.Cluster.Tests
                 new CancellationTokenSource(6000).Token
             );
 
-            res.Message.Should().Be("msg");
+            res!.Message.Should().Be("msg");
             var foundInCache = pidCache.TryGet(clusterIdentity, out var pidInCache);
             foundInCache.Should().BeTrue();
             pidInCache.Should().BeEquivalentTo(alivePid);

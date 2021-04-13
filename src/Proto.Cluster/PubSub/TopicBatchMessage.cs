@@ -9,23 +9,17 @@ using Proto.Remote;
 
 namespace Proto.Cluster
 {
-    public class TopicBatchMessage :  IRootSerializable , IMessageBatch, IAutoRespond
+    public record TopicBatchMessage(IReadOnlyCollection<object> Envelopes) :  IRootSerializable , IMessageBatch, IAutoRespond
     {
         public object GetAutoResponse() => new PublishResponse();
-        public TopicBatchMessage(IReadOnlyCollection<object> envelopes)
-        {
-            Envelopes = envelopes;
-        }
-        public IReadOnlyCollection<object> Envelopes { get; }
-
+        
         public IReadOnlyCollection<object> GetMessages() => Envelopes;
         
-
         public IRootSerialized Serialize(ActorSystem system)
         {
             var s = system.Serialization();
 
-            var batch = new TopicBatch();
+            var batch = new TopicBatchRequest();
             foreach (var message in Envelopes)
             {
                 
@@ -52,7 +46,7 @@ namespace Proto.Cluster
         }
     }
 
-    public partial class TopicBatch : IRootSerialized
+    public partial class TopicBatchRequest : IRootSerialized
     {
         public IRootSerializable Deserialize(ActorSystem system)
         {

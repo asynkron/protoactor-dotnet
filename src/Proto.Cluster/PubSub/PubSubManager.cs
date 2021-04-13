@@ -11,12 +11,9 @@ namespace Proto.Cluster.PubSub
     {
         public const string PubSubDeliveryName = "pubsub-delivery";
         private readonly Cluster _cluster;
-        private PID _pid;
+        private PID? _pid;
 
-        public PubSubManager(Cluster cluster)
-        {
-            _cluster = cluster;
-        }
+        public PubSubManager(Cluster cluster) => _cluster = cluster;
 
         public Task StartAsync()
         {

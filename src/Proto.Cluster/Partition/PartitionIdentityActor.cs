@@ -181,7 +181,7 @@ namespace Proto.Cluster.Partition
             await _cluster.MemberList.TopologyConsensus();
 
             //Get activator
-            var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender.Address)?.Address;
+            var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
 
             //just make the code analyzer understand the address is not null after this block
             if (activatorAddress is null || string.IsNullOrEmpty(activatorAddress))
