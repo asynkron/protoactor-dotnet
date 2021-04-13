@@ -19,8 +19,6 @@ namespace Proto
 
         public virtual void Send(PID target, object message) => _context.Send(target, message);
 
-        public virtual void Request(PID target, object message) => _context.Request(target, message);
-
         public virtual void Request(PID target, object message, PID? sender) =>
             _context.Request(target, message, sender);
 

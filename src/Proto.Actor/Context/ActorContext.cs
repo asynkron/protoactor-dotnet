@@ -158,13 +158,7 @@ namespace Proto.Context
                     break;
             }
         }
-
-        public void Request(PID target, object message)
-        {
-            var messageEnvelope = new MessageEnvelope(message, Self);
-            SendUserMessage(target, messageEnvelope);
-        }
-
+        
         public void Request(PID target, object message, PID? sender)
         {
             var messageEnvelope = new MessageEnvelope(message, sender);

@@ -57,7 +57,7 @@ namespace Proto
         /// <param name="target">The target PID</param>
         /// <param name="message">The message to send</param>
         public static void Request(this ISenderContext self, PID target, object message) =>
-            self.Request(target, message, MessageEnvelope.UnwrapSender(self.Message));
+            self.Request(target, message, self.Self);
 
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.

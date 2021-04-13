@@ -64,9 +64,7 @@ namespace Proto
         public object? Message => null;
 
         public void Send(PID target, object message) => SendUserMessage(target, message);
-
-        public void Request(PID target, object message) => SendUserMessage(target, message);
-
+        
         public void Request(PID target, object message, PID? sender)
         {
             var envelope = new MessageEnvelope(message, sender);
