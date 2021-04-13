@@ -24,13 +24,8 @@ namespace Proto
         public virtual void Request(PID target, object message, PID? sender) =>
             _context.Request(target, message, sender);
 
-        public virtual Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout) =>
-            _context.RequestAsync<T>(target, message, timeout);
-
         public virtual Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => _context.RequestAsync<T>(target, message, cancellationToken);
-
-        public virtual Task<T> RequestAsync<T>(PID target, object message) => _context.RequestAsync<T>(target, message);
 
         public virtual MessageHeader Headers => _context.Headers;
         public virtual object? Message => _context.Message;

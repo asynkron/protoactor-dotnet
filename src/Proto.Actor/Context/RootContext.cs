@@ -52,25 +52,13 @@ namespace Proto
         public PID? Self => null;
         PID? IInfoContext.Sender => null;
         public IActor? Actor => null;
-
-        public PID Spawn(Props props)
-        {
-            var name = System.ProcessRegistry.NextId();
-            return SpawnNamed(props, name);
-        }
-
+        
         public PID SpawnNamed(Props props, string name)
         {
             var parent = props.GuardianStrategy is not null
                 ? System.Guardians.GetGuardianPid(props.GuardianStrategy)
                 : null;
             return props.Spawn(System, name, parent);
-        }
-
-        public PID SpawnPrefix(Props props, string prefix)
-        {
-            var name = prefix + System.ProcessRegistry.NextId();
-            return SpawnNamed(props, name);
         }
 
         public object? Message => null;

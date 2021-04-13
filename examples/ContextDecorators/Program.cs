@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Proto;
 
@@ -15,10 +16,10 @@ namespace ContextDecorators
         {
         }
 
-        public override async Task<T> RequestAsync<T>(PID target, object message)
+        public override async Task<T> RequestAsync<T>(PID target, object message, CancellationToken ct)
         {
             Console.WriteLine("Enter RequestAsync");
-            var res = await base.RequestAsync<T>(target, message);
+            var res = await base.RequestAsync<T>(target, message, ct);
             Console.WriteLine("Exit RequestAsync");
             return res;
         }

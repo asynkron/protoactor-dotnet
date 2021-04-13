@@ -28,14 +28,6 @@ namespace Proto.OpenTracing
         public override void Request(PID target, object message)
             => OpenTracingMethodsDecorators.Request(target, message, _sendSpanSetup, _tracer, () => base.Request(target, message));
 
-        public override Task<T> RequestAsync<T>(PID target, object message)
-            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message));
-
-        public override Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer,
-                () => base.RequestAsync<T>(target, message, timeout)
-            );
-
         public override Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer,
                 () => base.RequestAsync<T>(target, message, cancellationToken)
@@ -69,14 +61,6 @@ namespace Proto.OpenTracing
 
         public override void Request(PID target, object message)
             => OpenTracingMethodsDecorators.Request(target, message, _sendSpanSetup, _tracer, () => base.Request(target, message));
-
-        public override Task<T> RequestAsync<T>(PID target, object message)
-            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer, () => base.RequestAsync<T>(target, message));
-
-        public override Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer,
-                () => base.RequestAsync<T>(target, message, timeout)
-            );
 
         public override Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer,
