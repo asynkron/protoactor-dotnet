@@ -7,7 +7,7 @@ using Proto.Utils;
 
 namespace Proto.Cluster.Identity.MongoDb
 {
-    public class MongoIdentityStorage : IIdentityStorage
+    public sealed class MongoIdentityStorage : IIdentityStorage
     {
         private static readonly ILogger Logger = Log.CreateLogger<MongoIdentityStorage>();
         private readonly AsyncSemaphore _asyncSemaphore;

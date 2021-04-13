@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Proto.Logging
 {
     [PublicAPI]
-    public class NullLoggerFactory : ILoggerFactory
+    public sealed class NullLoggerFactory : ILoggerFactory
     {
         public ILogger CreateLogger(string name) => NullLogger.Instance;
 
