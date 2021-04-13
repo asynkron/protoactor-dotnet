@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Future;
 
 // ReSharper disable once CheckNamespace
 namespace Proto
@@ -32,26 +33,8 @@ namespace Proto
         /// </summary>
         /// <param name="target">The target PID</param>
         /// <param name="message">The message to send</param>
-        void Request(PID target, object message);
-
-        /// <summary>
-        ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender
-        /// </summary>
-        /// <param name="target">The target PID</param>
-        /// <param name="message">The message to send</param>
         /// <param name="sender">Message sender</param>
         void Request(PID target, object message, PID? sender);
-
-        /// <summary>
-        ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
-        ///     This operation can be awaited.
-        /// </summary>
-        /// <param name="target">The target PID</param>
-        /// <param name="message">The message to send</param>
-        /// <param name="timeout">Timeout for the request</param>
-        /// <typeparam name="T">Expected return message type</typeparam>
-        /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
-        Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout);
 
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
@@ -63,6 +46,18 @@ namespace Proto
         /// <typeparam name="T">Expected return message type</typeparam>
         /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
         Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken);
+    }
+
+    public static class SenderContextExtensions
+    {
+
+        /// <summary>
+        ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender
+        /// </summary>
+        /// <param name="target">The target PID</param>
+        /// <param name="message">The message to send</param>
+        public static void Request(this ISenderContext self, PID target, object message) =>
+            self.Request(target, message, MessageEnvelope.UnwrapSender(self.Message));
 
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
@@ -72,6 +67,19 @@ namespace Proto
         /// <param name="message">The message to send</param>
         /// <typeparam name="T">Expected return message type</typeparam>
         /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
-        Task<T> RequestAsync<T>(PID target, object message);
+        public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message) =>
+            self.RequestAsync<T>(target, message, CancellationToken.None);
+
+        /// <summary>
+        ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
+        ///     This operation can be awaited.
+        /// </summary>
+        /// <param name="target">The target PID</param>
+        /// <param name="message">The message to send</param>
+        /// <param name="timeout">Timeout for the request</param>
+        /// <typeparam name="T">Expected return message type</typeparam>
+        /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
+        public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, TimeSpan timeout)
+            => self.RequestAsync<T>(target, message, CancellationTokens.WithTimeout(timeout));
     }
 }

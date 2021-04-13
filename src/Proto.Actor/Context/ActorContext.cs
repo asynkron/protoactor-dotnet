@@ -79,18 +79,6 @@ namespace Proto.Context
                 Logger.LogWarning("{Self} Tried to respond but sender is null, with message {Message}", Self, message);
         }
 
-        public PID Spawn(Props props)
-        {
-            var id = System.ProcessRegistry.NextId();
-            return SpawnNamed(props, id);
-        }
-
-        public PID SpawnPrefix(Props props, string prefix)
-        {
-            var name = prefix + System.ProcessRegistry.NextId();
-            return SpawnNamed(props, name);
-        }
-
         public PID SpawnNamed(Props props, string name)
         {
             if (props.GuardianStrategy is not null)
@@ -183,14 +171,8 @@ namespace Proto.Context
             SendUserMessage(target, messageEnvelope);
         }
 
-        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => RequestAsync<T>(target, message, new FutureProcess(System, timeout));
-
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
-
-        public Task<T> RequestAsync<T>(PID target, object message) =>
-            RequestAsync<T>(target, message, new FutureProcess(System));
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {

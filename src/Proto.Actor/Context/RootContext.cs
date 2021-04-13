@@ -84,15 +84,9 @@ namespace Proto
             var envelope = new MessageEnvelope(message, sender);
             Send(target, envelope);
         }
-
-        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => RequestAsync<T>(target, message, new FutureProcess(System, timeout));
-
+        
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
-
-        public Task<T> RequestAsync<T>(PID target, object message) =>
-            RequestAsync<T>(target, message, new FutureProcess(System));
 
         public void Stop(PID? pid)
         {
