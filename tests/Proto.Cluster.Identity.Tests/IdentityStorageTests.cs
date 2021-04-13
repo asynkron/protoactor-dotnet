@@ -27,7 +27,7 @@ namespace Proto.Cluster.Identity.Tests
             _storage = storageFactory(clusterName);
             _storageInstance2 = storageFactory(clusterName);
         }
-
+        
         public void Dispose()
         {
             _storage?.Dispose();

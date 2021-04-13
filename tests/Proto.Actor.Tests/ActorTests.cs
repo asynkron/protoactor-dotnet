@@ -75,7 +75,7 @@ namespace Proto.Tests
 
             var pid = Context.Spawn(
                 Props.FromFunc(ctx => {
-                            messages.Enqueue(ctx.Message);
+                            messages.Enqueue(ctx.Message!);
                             return Task.CompletedTask;
                         }
                     )

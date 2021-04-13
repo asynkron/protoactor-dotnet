@@ -4,12 +4,16 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;
 
 namespace Proto.Remote.GrpcNet
 {
+    [UsedImplicitly]
+    [SuppressMessage(category:"", checkId:"CA1812")]
     class RemoteHostedService : IHostedService
     {
         private readonly IHostApplicationLifetime _appLifetime;

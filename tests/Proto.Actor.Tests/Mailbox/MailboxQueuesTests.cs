@@ -62,7 +62,7 @@ namespace Proto.Mailbox.Tests
 
             var consumer = new Thread(
                 l => {
-                    var list = (List<int>) l;
+                    var list = (List<int>) l!;
 
                     for (var i = 0; i < msgCount; i++)
                     {

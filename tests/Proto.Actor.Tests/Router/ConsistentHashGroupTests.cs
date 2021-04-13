@@ -32,7 +32,7 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task ConsistentHashGroupRouter_with_MessageHasherFunc_MessageWithSameHashAlwaysGoesToSameRoutee()
         {
-            var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(ActorSystem, x => x.ToString());
+            var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(ActorSystem, x => x.ToString()!);
 
             ActorSystem.Root.Send(router, "message1");
             ActorSystem.Root.Send(router, "message1");

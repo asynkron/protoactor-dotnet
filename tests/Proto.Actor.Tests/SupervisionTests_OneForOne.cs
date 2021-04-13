@@ -248,7 +248,7 @@ namespace Proto.Tests
 
             public ParentActor(Props childProps) => _childProps = childProps;
 
-            public PID Child { get; set; }
+            public PID? Child { get; set; }
 
             public Task ReceiveAsync(IContext context)
             {
@@ -258,7 +258,7 @@ namespace Proto.Tests
                         Child = context.Spawn(_childProps);
                         break;
                     case string _:
-                        context.Forward(Child);
+                        context.Forward(Child!);
                         break;
                 }
 

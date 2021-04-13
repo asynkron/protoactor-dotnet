@@ -62,7 +62,7 @@ namespace Proto.Tests
             var pid = SpawnActorFromFunc(behavior.ReceiveAsync);
 
             var reply = await Context.RequestAsync<string>(pid, "number");
-            var replyAfterPush = await Context.RequestAsync<int>(pid, null);
+            var replyAfterPush = await Context.RequestAsync<int>(pid, null!);
             var replyAfterPop = await Context.RequestAsync<string>(pid, "answertolifetheuniverseandeverything");
 
             Assert.Equal("number42answertolifetheuniverseandeverything", $"{reply}{replyAfterPush}{replyAfterPop}");

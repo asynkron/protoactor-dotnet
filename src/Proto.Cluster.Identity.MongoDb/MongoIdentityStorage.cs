@@ -7,7 +7,7 @@ using Proto.Utils;
 
 namespace Proto.Cluster.Identity.MongoDb
 {
-    public class MongoIdentityStorage : IIdentityStorage
+    public sealed class MongoIdentityStorage : IIdentityStorage
     {
         private static readonly ILogger Logger = Log.CreateLogger<MongoIdentityStorage>();
         private readonly AsyncSemaphore _asyncSemaphore;
@@ -55,8 +55,8 @@ namespace Proto.Cluster.Identity.MongoDb
             //lookup was unlocked, return this pid
             if (pidLookupEntity.LockedBy == null)
             {
-                return new StoredActivation(pidLookupEntity.MemberId,
-                    PID.FromAddress(pidLookupEntity.Address, pidLookupEntity.UniqueIdentity)
+                return new StoredActivation(pidLookupEntity.MemberId!,
+                    PID.FromAddress(pidLookupEntity.Address!, pidLookupEntity.UniqueIdentity!)
                 );
             }
 
@@ -108,7 +108,7 @@ namespace Proto.Cluster.Identity.MongoDb
             var pidLookup = await LookupKey(GetKey(clusterIdentity), ct);
             return pidLookup?.Address == null || pidLookup?.UniqueIdentity == null
                 ? null
-                : new StoredActivation(pidLookup.MemberId,
+                : new StoredActivation(pidLookup.MemberId!,
                     PID.FromAddress(pidLookup.Address, pidLookup.UniqueIdentity)
                 );
         }

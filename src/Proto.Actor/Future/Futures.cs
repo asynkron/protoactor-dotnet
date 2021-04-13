@@ -10,7 +10,7 @@ using Proto.Metrics;
 
 namespace Proto.Future
 {
-    public class FutureProcess : Process, IDisposable
+    public sealed class FutureProcess : Process, IDisposable
     {
         private readonly CancellationTokenSource? _cts;
         private readonly TaskCompletionSource<object> _tcs;
@@ -102,7 +102,6 @@ namespace Proto.Future
         public void Dispose()
         {
             System.ProcessRegistry.Remove(Pid);
-          //  _tcs.Task.Dispose();
             _cts?.Dispose();
         }
     }
