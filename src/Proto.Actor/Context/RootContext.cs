@@ -52,13 +52,7 @@ namespace Proto
         public PID? Self => null;
         PID? IInfoContext.Sender => null;
         public IActor? Actor => null;
-
-        public PID Spawn(Props props)
-        {
-            var name = System.ProcessRegistry.NextId();
-            return SpawnNamed(props, name);
-        }
-
+        
         public PID SpawnNamed(Props props, string name)
         {
             var parent = props.GuardianStrategy is not null
@@ -67,32 +61,18 @@ namespace Proto
             return props.Spawn(System, name, parent);
         }
 
-        public PID SpawnPrefix(Props props, string prefix)
-        {
-            var name = prefix + System.ProcessRegistry.NextId();
-            return SpawnNamed(props, name);
-        }
-
         public object? Message => null;
 
         public void Send(PID target, object message) => SendUserMessage(target, message);
-
-        public void Request(PID target, object message) => SendUserMessage(target, message);
-
+        
         public void Request(PID target, object message, PID? sender)
         {
             var envelope = new MessageEnvelope(message, sender);
             Send(target, envelope);
         }
-
-        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => RequestAsync<T>(target, message, new FutureProcess(System, timeout));
-
+        
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
-
-        public Task<T> RequestAsync<T>(PID target, object message) =>
-            RequestAsync<T>(target, message, new FutureProcess(System));
+            => this.RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
 
         public void Stop(PID? pid)
         {
@@ -130,28 +110,6 @@ namespace Proto
         {
             target.SendUserMessage(context.System, message);
             return Task.CompletedTask;
-        }
-
-        private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)
-        {
-            if (target is null) throw new ArgumentNullException(nameof(target));
-
-            var messageEnvelope = new MessageEnvelope(message, future.Pid);
-            SendUserMessage(target, messageEnvelope);
-            var result = await future.Task;
-
-            switch (result)
-            {
-                case DeadLetterResponse deadLetterResponse:
-                    throw new DeadLetterException(deadLetterResponse.Target);
-                case null:
-                case T _:
-                    return (T) result!;
-                default:
-                    throw new InvalidOperationException(
-                        $"Unexpected message. Was type {result.GetType()} but expected {typeof(T)}"
-                    );
-            }
         }
 
         private void SendUserMessage(PID target, object message)
