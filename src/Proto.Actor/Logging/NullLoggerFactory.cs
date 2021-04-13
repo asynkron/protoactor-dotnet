@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -18,6 +19,7 @@ namespace Proto.Logging
         {
         }
 
+        // ReSharper disable once CA1816
         public void Dispose()
         {
         }

@@ -8,7 +8,7 @@ namespace Proto.Mailbox.Tests
         [Fact]
         public void WhenMailboxOverflows_OverflowActionCalledWithMessage()
         {
-            object overflowMessage = null;
+            object overflowMessage = default!;
             var mailbox = new NonBlockingBoundedMailbox(1, msg => overflowMessage = msg, TimeSpan.FromSeconds(1));
             mailbox.Push("first message");
             Assert.Null(overflowMessage);

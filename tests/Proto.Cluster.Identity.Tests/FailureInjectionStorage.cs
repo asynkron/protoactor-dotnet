@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Proto.Cluster.Identity.Tests
 {
-    public class FailureInjectionStorage : IIdentityStorage
+    public sealed class FailureInjectionStorage : IIdentityStorage
     {
         private const double SuccessRate = 0.8;
         private static readonly Random Mayhem = new();

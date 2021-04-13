@@ -57,7 +57,7 @@ namespace Proto.Tests
         public void Given_Actor_When_ReplyIsNull_Should_Return()
         {
             var pid = Context.Spawn(Props.FromFunc(ctx => {
-                        if (ctx.Message is string) ctx.Respond(null);
+                        if (ctx.Message is string) ctx.Respond(null!);
                         return Task.CompletedTask;
                     }
                 )
@@ -74,7 +74,7 @@ namespace Proto.Tests
                             if (ctx.Message is string msg)
                             {
                                 output.WriteLine("Got Message " + msg);
-                                ctx.Respond(null);
+                                ctx.Respond(null!);
                                 output.WriteLine("Sent Response to " + msg);
                             }
 
@@ -99,7 +99,7 @@ namespace Proto.Tests
                             if (ctx.Message is Tuple<PID, string> msg)
                             {
                                 output.WriteLine("replier Got Message " + msg.Item2);
-                                msg.Item1.SendUserMessage(System, null);
+                                msg.Item1.SendUserMessage(System, null!);
                                 output.WriteLine("replier Sent Response to " + msg.Item2);
                             }
 

@@ -127,18 +127,18 @@ namespace Proto.Router.Tests
             return (router, routee1, routee2, routee3);
         }
 
-        internal class MyTestActor : IActor
+        private class MyTestActor : IActor
         {
-            private string _received;
+            private string? _received;
 
             public async Task ReceiveAsync(IContext context)
             {
                 switch (context.Message)
                 {
-                    case string msg when msg == "received?":
-                        context.Respond(_received);
+                    case "received?":
+                        context.Respond(_received!);
                         break;
-                    case string msg when msg == "go slow":
+                    case "go slow":
                         await Task.Delay(5000);
                         break;
                     case string msg:

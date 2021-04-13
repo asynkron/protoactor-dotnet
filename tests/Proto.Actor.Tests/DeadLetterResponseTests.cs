@@ -44,8 +44,8 @@ namespace Proto.Tests
 
         private class DeadLetterResponseValidationActor : IActor
         {
-            private PID _deadLetterTarget;
-            private PID _sender;
+            private PID? _deadLetterTarget;
+            private PID? _sender;
 
             public async Task ReceiveAsync(IContext context)
             {
@@ -59,7 +59,7 @@ namespace Proto.Tests
                         break;
                     case DeadLetterResponse response: {
                         response.Target.Should().Be(_deadLetterTarget);
-                        context.Send(_sender, "Validated");
+                        context.Send(_sender!, "Validated");
                         break;
                     }
                 }

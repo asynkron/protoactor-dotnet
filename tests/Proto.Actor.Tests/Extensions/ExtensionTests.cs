@@ -10,7 +10,7 @@ namespace Proto.Tests.Extensions
 
     public class ExtensionB : IActorSystemExtension<ExtensionB>
     {
-        public string B { get; set; }
+        public string? B { get; set; }
     }
 
     public class ExtensionTests
