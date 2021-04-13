@@ -398,9 +398,13 @@ namespace Proto.Context
 
         private Task HandleAutoRespond(IAutoRespond autoRespond)
         {
+            // receive normally
+            var res =  Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this);
+            //then respond automatically
             var response = autoRespond.GetAutoResponse();
             Respond(response);
-            return Task.CompletedTask;
+            //return task from receive
+            return res;
         }
 
         private Task HandlePoisonPill()
