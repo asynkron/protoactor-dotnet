@@ -34,7 +34,7 @@ namespace Proto
 
         private Dictionary<TKey,TValue> GetPartition(TKey key)
         {
-            var hash = key.GetHashCode() & HashMask;
+            var hash = key!.GetHashCode() & HashMask;
 
             var p = _partitions[hash];
             return p;
@@ -57,7 +57,7 @@ namespace Proto
         public bool TryGetValue(TKey key, out TValue value)
         {
             var p = GetPartition(key);
-            lock (p) return p.TryGetValue(key, out value);
+            lock (p) return p.TryGetValue(key, out value!);
         }
 
         public void Remove(TKey key)

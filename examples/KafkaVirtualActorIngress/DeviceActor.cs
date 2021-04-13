@@ -45,7 +45,7 @@ namespace KafkaVirtualActorIngress
 
         private Task EvaluateState()
         {
-            if (_state.Data != "" && _state.IntProperty > 0)
+            if (!string.IsNullOrEmpty(_state.Data) && _state.IntProperty > 0)
             {
                 //This saga is completed...
                 //DO stuff

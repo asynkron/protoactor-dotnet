@@ -148,9 +148,13 @@ message ProducerEnvelope {
 }
 
 //messages going out of the topic actors
-message TopicBatch {
+message TopicBatchRequest {
   repeated string type_names = 1;
   repeated TopicEnvelope envelopes = 2;
+}
+
+message TopicBatchResponse {
+  
 }
 
 message TopicEnvelope {

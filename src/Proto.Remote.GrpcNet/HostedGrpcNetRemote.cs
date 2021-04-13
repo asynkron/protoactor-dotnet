@@ -9,6 +9,7 @@ namespace Proto.Remote.GrpcNet
 {
     public class HostedGrpcNetRemote : IRemote
     {
+        private readonly object _lock = new(); 
         private readonly GrpcNetRemoteConfig _config;
         private readonly EndpointManager _endpointManager;
         private readonly ILogger _logger;
@@ -36,7 +37,7 @@ namespace Proto.Remote.GrpcNet
 
         public Task StartAsync()
         {
-            lock (this)
+            lock (_lock)
             {
                 if (Started)
                     return Task.CompletedTask;
@@ -56,7 +57,7 @@ namespace Proto.Remote.GrpcNet
 
         public Task ShutdownAsync(bool graceful = true)
         {
-            lock (this)
+            lock (_lock)
             {
                 if (!Started)
                     return Task.CompletedTask;

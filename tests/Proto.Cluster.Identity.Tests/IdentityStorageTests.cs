@@ -248,8 +248,8 @@ namespace Proto.Cluster.Identity.Tests
 
         private async Task<(Member, ClusterIdentity, PID activation)> GetActivatedClusterIdentity(
             CancellationToken timeout,
-            Member activator = null,
-            ClusterIdentity identity = null
+            Member? activator = null,
+            ClusterIdentity? identity = null
         )
         {
             activator ??= GetFakeActivator();

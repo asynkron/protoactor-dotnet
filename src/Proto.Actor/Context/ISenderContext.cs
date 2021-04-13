@@ -97,7 +97,7 @@ namespace Proto
                     return (T) result!;
                 default:
                     throw new InvalidOperationException(
-                        $"Unexpected message. Was type {result?.GetType()} but expected {typeof(T)}"
+                        $"Unexpected message. Was type {result.GetType()} but expected {typeof(T)}"
                     );
             }
         }

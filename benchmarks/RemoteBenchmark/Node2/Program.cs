@@ -61,7 +61,7 @@ namespace Node2
 
             Console.WriteLine("Enter Advertised Host (Enter = localhost)");
             var advertisedHost = Console.ReadLine().Trim();
-            if (advertisedHost == "")
+            if (string.IsNullOrEmpty(advertisedHost))
                 advertisedHost = "127.0.0.1";
 
             var actorSystemConfig = new ActorSystemConfig()

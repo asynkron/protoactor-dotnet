@@ -20,14 +20,14 @@ namespace ClusterExperiment1
     public static class Program
     {
 
-        private static TaskCompletionSource<bool> _ts;
-        private static int ActorCount;
-        private static int MemberCount;
-        private static int KillTimeoutSeconds;
+        private static TaskCompletionSource<bool> _ts = null!;
+        private static int actorCount;
+        private static int memberCount;
+        private static int killTimeoutSeconds;
 
-        private static int RequestCount;
-        private static int FailureCount;
-        private static int SuccessCount;
+        private static int requestCount;
+        private static int failureCount;
+        private static int successCount;
 
         public static async Task Main(string[] args)
         {
@@ -89,16 +89,16 @@ namespace ClusterExperiment1
             }
 
             Console.WriteLine("Number of virtual actors? default 10000");
-            if (!int.TryParse(Console.ReadLine(), out ActorCount)) ActorCount = 10_000;
-            Console.WriteLine($"Using {ActorCount} actors");
+            if (!int.TryParse(Console.ReadLine(), out actorCount)) actorCount = 10_000;
+            Console.WriteLine($"Using {actorCount} actors");
 
             Console.WriteLine("Number of cluster members? default is 8");
-            if (!int.TryParse(Console.ReadLine(), out MemberCount)) MemberCount = 8;
-            Console.WriteLine($"Using {MemberCount} members");
+            if (!int.TryParse(Console.ReadLine(), out memberCount)) memberCount = 8;
+            Console.WriteLine($"Using {memberCount} members");
 
             Console.WriteLine("Seconds to run before stopping members? default is 30");
-            if (!int.TryParse(Console.ReadLine(), out KillTimeoutSeconds)) KillTimeoutSeconds = 30;
-            Console.WriteLine($"Using {KillTimeoutSeconds} seconds");
+            if (!int.TryParse(Console.ReadLine(), out killTimeoutSeconds)) killTimeoutSeconds = 30;
+            Console.WriteLine($"Using {killTimeoutSeconds} seconds");
 
 
             Action run = clientStrategy switch
@@ -118,11 +118,11 @@ namespace ClusterExperiment1
                 _   => throw new ArgumentOutOfRangeException()
             });
 
-            var tps = RequestCount / elapsed.TotalMilliseconds * 1000;
+            var tps = requestCount / elapsed.TotalMilliseconds * 1000;
             Console.WriteLine();
-            Console.WriteLine($"Requests:\t{RequestCount:N0}");
-            Console.WriteLine($"Successful:\t{SuccessCount:N0}");
-            Console.WriteLine($"Failures:\t{FailureCount:N0}");
+            Console.WriteLine($"Requests:\t{requestCount:N0}");
+            Console.WriteLine($"Successful:\t{successCount:N0}");
+            Console.WriteLine($"Failures:\t{failureCount:N0}");
             Console.WriteLine($"Throughput:\t{tps:N0} msg/sec");
         }
 
@@ -137,7 +137,7 @@ namespace ClusterExperiment1
 
                     while (true)
                     {
-                        var id = "myactor" + rnd.Next(0, ActorCount);
+                        var id = "myactor" + rnd.Next(0, actorCount);
                         semaphore.Wait(() => SendRequest(cluster, id));
                     }
                 }
@@ -146,7 +146,7 @@ namespace ClusterExperiment1
 
         private static Task SendRequest(Cluster cluster, string id)
         {
-            Interlocked.Increment(ref RequestCount);
+            Interlocked.Increment(ref requestCount);
 
             var t = cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
                 CancellationTokens.WithTimeout(20000)
@@ -156,7 +156,7 @@ namespace ClusterExperiment1
             t.ContinueWith(t => {
                     if (t.IsFaulted || t.Result is null)
                     {
-                        Interlocked.Increment(ref FailureCount);
+                        Interlocked.Increment(ref failureCount);
                         
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.Write("X");
@@ -168,7 +168,7 @@ namespace ClusterExperiment1
                     }
                     else
                     {
-                        var res = Interlocked.Increment(ref SuccessCount);
+                        var res = Interlocked.Increment(ref successCount);
                         
                         if (res % 10000 == 0)
                         {
@@ -200,7 +200,7 @@ namespace ClusterExperiment1
                         {
                             for (var i = 0; i < batchSize; i++)
                             {
-                                var id = "myactor" + rnd.Next(0, ActorCount);
+                                var id = "myactor" + rnd.Next(0, actorCount);
                                 var request = SendRequest(cluster, id);
 
                                 requests.Add(request);
@@ -227,7 +227,7 @@ namespace ClusterExperiment1
 
                     while (true)
                     {
-                        var id = "myactor" + rnd.Next(0, ActorCount);
+                        var id = "myactor" + rnd.Next(0, actorCount);
                         await SendRequest(cluster, id);
                     }
                 }
@@ -238,7 +238,7 @@ namespace ClusterExperiment1
         {
             var followers = new List<IRunMember>();
 
-            for (var i = 0; i < MemberCount; i++)
+            for (var i = 0; i < memberCount; i++)
             {
                 var p = memberFactory();
                 await p.Start();
@@ -252,7 +252,7 @@ namespace ClusterExperiment1
 
             var sw = Stopwatch.StartNew();
 
-            await Task.Delay(KillTimeoutSeconds * 1000);
+            await Task.Delay(killTimeoutSeconds * 1000);
             bool first = true;
             foreach (var t in followers)
             {
@@ -262,7 +262,7 @@ namespace ClusterExperiment1
                 }
                 else
                 {
-                    await Task.Delay(KillTimeoutSeconds * 1000);
+                    await Task.Delay(killTimeoutSeconds * 1000);
                 }
 
                 Console.WriteLine("Stopping node...");

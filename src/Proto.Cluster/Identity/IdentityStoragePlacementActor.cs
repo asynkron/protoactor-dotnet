@@ -15,7 +15,7 @@ using Proto.Cluster.Metrics;
 
 namespace Proto.Cluster.Identity
 {
-    class IdentityStoragePlacementActor : IActor, IDisposable
+    class IdentityStoragePlacementActor : IActor
     {
         private const int PersistenceRetries = 3;
         private readonly Cluster _cluster;
@@ -27,7 +27,7 @@ namespace Proto.Cluster.Identity
         //kind -> the actor kind
         //eventId -> the cluster wide eventId when this actor was created
         private readonly Dictionary<ClusterIdentity, PID> _myActors = new();
-        private CancellationTokenSource? _ct;
+        
 
         public IdentityStoragePlacementActor(Cluster cluster, IdentityStorageLookup identityLookup)
         {
@@ -44,8 +44,6 @@ namespace Proto.Cluster.Identity
             ActivationRequest msg => ActivationRequest(context, msg),
             _                     => Task.CompletedTask
         };
-
-        public void Dispose() => _ct?.Dispose();
 
         private Task Stopping(IContext context)
         {

@@ -84,7 +84,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_Props_When_WithProducer_Then_mutate_Producer()
         {
-            static IActor Producer(ActorSystem s) => null;
+            static IActor Producer(ActorSystem s) => null!;
 
             var props = new Props();
             var props2 = props.WithProducer(Producer);

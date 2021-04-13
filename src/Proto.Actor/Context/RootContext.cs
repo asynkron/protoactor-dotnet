@@ -42,7 +42,7 @@ namespace Proto
 
         public T? Get<T>() => (T?) Store.Get<T>();
 
-        public void Set<T, TI>(TI obj) where TI : T => Store.Add<T>(obj);
+        public void Set<T, TI>(TI obj) where TI : T => Store.Add<T>(obj!);
 
         public void Remove<T>() => Store.Remove<T>();
 
