@@ -17,21 +17,7 @@ namespace Proto.Future
         private readonly ActorMetrics? _metrics;
         private readonly ActorSystem _system;
 
-        internal FutureProcess(ActorSystem system, TimeSpan timeout) : this(system, new CancellationTokenSource(timeout)
-        )
-        {
-        }
-
-        internal FutureProcess(ActorSystem system, CancellationToken cancellationToken)
-            : this(system, CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
-        {
-        }
-
-        internal FutureProcess(ActorSystem system) : this(system, null)
-        {
-        }
-
-        private FutureProcess(ActorSystem system, CancellationTokenSource? cts) : base(system)
+        internal FutureProcess(ActorSystem system, CancellationToken cancellationToken = default) : base(system)
         {
             _system = system;
 
@@ -42,7 +28,11 @@ namespace Proto.Future
             }
 
             _tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _cts = cts;
+
+            if (cancellationToken != default)
+            {
+                _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            }
 
             var name = System.ProcessRegistry.NextId();
             var (pid, absent) = System.ProcessRegistry.TryAdd(name, this);
