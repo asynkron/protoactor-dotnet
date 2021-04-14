@@ -30,7 +30,8 @@ namespace Server
         {
             var config =
                 BindToLocalhost(8000)
-                    .WithProtoMessages(ChatReflection.Descriptor);
+                    .WithProtoMessages(ChatReflection.Descriptor)
+                    .WithRemoteDiagnostics(true);
 
             var system
                 = new ActorSystem()

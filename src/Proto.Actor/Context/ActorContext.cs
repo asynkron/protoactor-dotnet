@@ -279,7 +279,8 @@ namespace Proto.Context
             }
             else
             {
-                
+                var res = System.Config.DiagnosticsSerializer(Actor!);
+                diagnosticsString += res;
             }
             
             processDiagnosticsRequest.Result.SetResult(diagnosticsString);
