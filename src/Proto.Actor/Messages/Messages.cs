@@ -122,6 +122,8 @@ namespace Proto
         public Func<Task> Action { get; }
         public object Message { get; }
     }
-    
-    
+
+    public record ProcessDiagnosticsRequest : SystemMessage;
+
+    public record ProcessDiagnosticsResponse(string DiagnosticsString);
 }

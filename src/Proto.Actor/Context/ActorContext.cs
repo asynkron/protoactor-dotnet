@@ -257,6 +257,7 @@ namespace Proto.Context
                     Restart                         => HandleRestartAsync(),
                     SuspendMailbox or ResumeMailbox => default,
                     Continuation cont               => HandleContinuation(cont),
+                    ProcessDiagnosticsRequest       => HandleProcessDiagnosticsRequest(),
                     _                               => HandleUnknownSystemMessage(msg)
                 };
             }
@@ -265,6 +266,14 @@ namespace Proto.Context
                 Logger.LogError(x, "Error handling SystemMessage {Message}", msg);
                 throw;
             }
+        }
+
+        private ValueTask HandleProcessDiagnosticsRequest()
+        {
+            var diagnosticsString = "ActorType:" + Actor?.GetType().Name;
+            var response = new ProcessDiagnosticsResponse(diagnosticsString);
+            Respond(response);
+            return default;
         }
 
         public ValueTask InvokeUserMessageAsync(object msg)
