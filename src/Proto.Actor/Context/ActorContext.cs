@@ -12,6 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Diagnostics;
 using Proto.Future;
 using Proto.Mailbox;
 
@@ -257,7 +258,7 @@ namespace Proto.Context
                     Restart                         => HandleRestartAsync(),
                     SuspendMailbox or ResumeMailbox => default,
                     Continuation cont               => HandleContinuation(cont),
-                    ProcessDiagnosticsRequest       => HandleProcessDiagnosticsRequest(),
+                    ProcessDiagnosticsRequest pdr   => HandleProcessDiagnosticsRequest(pdr),
                     _                               => HandleUnknownSystemMessage(msg)
                 };
             }
@@ -268,11 +269,21 @@ namespace Proto.Context
             }
         }
 
-        private ValueTask HandleProcessDiagnosticsRequest()
+        private ValueTask HandleProcessDiagnosticsRequest(ProcessDiagnosticsRequest processDiagnosticsRequest)
         {
-            var diagnosticsString = "ActorType:" + Actor?.GetType().Name;
-            var response = new ProcessDiagnosticsResponse(diagnosticsString);
-            Respond(response);
+            var diagnosticsString = "ActorType:" + Actor?.GetType().Name + "\n";
+
+            if (Actor is IActorDiagnostics diagnosticsActor)
+            {
+                diagnosticsString += diagnosticsActor.GetDiagnosticsString();
+            }
+            else
+            {
+                
+            }
+            
+            processDiagnosticsRequest.Result.SetResult(diagnosticsString);
+
             return default;
         }
 

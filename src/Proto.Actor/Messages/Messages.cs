@@ -123,7 +123,5 @@ namespace Proto
         public object Message { get; }
     }
 
-    public record ProcessDiagnosticsRequest : SystemMessage;
-
-    public record ProcessDiagnosticsResponse(string DiagnosticsString);
+    public record ProcessDiagnosticsRequest(TaskCompletionSource<string> Result) : SystemMessage;
 }

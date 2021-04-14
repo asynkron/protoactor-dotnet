@@ -13,9 +13,11 @@ namespace Proto.Diagnostics
     {
         public static async Task<string> GetDiagnosticsString(ActorSystem system, PID pid)
         {
-            var request = new ProcessDiagnosticsRequest();
-            var res = await system.Root.RequestAsync<ProcessDiagnosticsResponse>(pid, request);
-            return res.DiagnosticsString;
+            var tcs = new TaskCompletionSource<string>();
+            var request = new ProcessDiagnosticsRequest(tcs);
+            pid.SendSystemMessage(system, request);
+            var res = await tcs.Task;
+            return res;
         }
     }
 }
