@@ -30,6 +30,8 @@ namespace Proto
 
         public static ActorSystemConfig Setup() => new();
 
+        public Func<IActor, string> DiagnosticsSerializer { get; set; } = Diagnostics.DiagnosticsSerializer.Serialize;
+
         public ActorSystemConfig WithDeadLetterThrottleInterval(TimeSpan deadLetterThrottleInterval) =>
             this with {DeadLetterThrottleInterval = deadLetterThrottleInterval};
 
@@ -41,5 +43,7 @@ namespace Proto
         public ActorSystemConfig WithDeveloperSupervisionLogging(bool enabled) => this with {DeveloperSupervisionLogging = enabled};
 
         public ActorSystemConfig WithMetricsProviders(params IMetricsProvider[] providers) => this with {MetricsProviders = providers};
+        
+        public ActorSystemConfig WithDiagnosticsSerializer(Func<IActor, string> serializer) => this with {DiagnosticsSerializer = serializer};
     }
 }
