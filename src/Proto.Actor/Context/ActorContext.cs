@@ -12,6 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Diagnostics;
 using Proto.Future;
 using Proto.Mailbox;
 
@@ -257,6 +258,7 @@ namespace Proto.Context
                     Restart                         => HandleRestartAsync(),
                     SuspendMailbox or ResumeMailbox => default,
                     Continuation cont               => HandleContinuation(cont),
+                    ProcessDiagnosticsRequest pdr   => HandleProcessDiagnosticsRequest(pdr),
                     _                               => HandleUnknownSystemMessage(msg)
                 };
             }
@@ -265,6 +267,24 @@ namespace Proto.Context
                 Logger.LogError(x, "Error handling SystemMessage {Message}", msg);
                 throw;
             }
+        }
+
+        private ValueTask HandleProcessDiagnosticsRequest(ProcessDiagnosticsRequest processDiagnosticsRequest)
+        {
+            var diagnosticsString = "ActorType:" + Actor?.GetType().Name + "\n";
+
+            if (Actor is IActorDiagnostics diagnosticsActor)
+            {
+                diagnosticsString += diagnosticsActor.GetDiagnosticsString();
+            }
+            else
+            {
+                
+            }
+            
+            processDiagnosticsRequest.Result.SetResult(diagnosticsString);
+
+            return default;
         }
 
         public ValueTask InvokeUserMessageAsync(object msg)

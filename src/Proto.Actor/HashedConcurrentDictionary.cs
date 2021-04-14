@@ -3,6 +3,8 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -10,10 +12,10 @@ namespace Proto
 {
     class HashedConcurrentDictionary : HashedConcurrentDictionary<string, Process>
     {
-       
+        
     }
     
-    class HashedConcurrentDictionary<TKey, TValue>
+    class HashedConcurrentDictionary<TKey, TValue> :IEnumerable<(TKey key,TValue value)>
     {
         //power of two
         private const int HashSize = 1024;
@@ -72,5 +74,25 @@ namespace Proto
                 }
             }
         }
+
+        public IEnumerator<(TKey key, TValue value)> GetEnumerator()
+        {
+            foreach (var p in _partitions)
+            {
+                Dictionary<TKey, TValue> copy;
+                //Not a great solution but works for the intended use-case, do not enumerate over lock
+                lock (p)
+                {
+                    copy = new Dictionary<TKey, TValue>(p);
+                }
+                
+                foreach (var (key, value) in copy)
+                {
+                    yield return (key, value);
+                }
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

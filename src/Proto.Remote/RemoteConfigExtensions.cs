@@ -111,5 +111,9 @@ namespace Proto.Remote
         public static TRemoteConfig WithLogLevelForDeserializationErrors<TRemoteConfig>(this TRemoteConfig remoteConfig, LogLevel level)
             where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with {DeserializationErrorLogLevel = level};
+        
+        public static TRemoteConfig WithRemoteDiagnostics<TRemoteConfig>(this TRemoteConfig remoteConfig,bool enabled)
+            where TRemoteConfig : RemoteConfigBase =>
+            remoteConfig with {RemoteDiagnostics = enabled};
     }
 }

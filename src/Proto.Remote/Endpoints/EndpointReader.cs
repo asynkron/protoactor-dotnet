@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using Proto.Diagnostics;
 using Proto.Mailbox;
 using Proto.Remote.Metrics;
 
@@ -175,6 +176,35 @@ namespace Proto.Remote
             if (endpoint is null) return;
 
             _system.Root.Send(endpoint, rt);
+        }
+
+        public override Task<ListProcessesResponse> ListProcesses(ListProcessesRequest request, ServerCallContext context)
+        {
+            if (!_system.Remote().Config.RemoteDiagnostics)
+            {
+                throw new Exception("RemoteDiagnostics is not enabled");
+            }
+            
+            var pids = _system.ProcessRegistry.SearchByName(request.Name).ToArray();
+            return Task.FromResult(new ListProcessesResponse()
+                {
+                    Pids = {pids}
+                }
+            );
+        }
+
+        public override async Task<GetProcessDiagnosticsResponse> GetProcessDiagnostics(GetProcessDiagnosticsRequest request, ServerCallContext context)
+        {
+            if (!_system.Remote().Config.RemoteDiagnostics)
+            {
+                throw new Exception("RemoteDiagnostics is not enabled");
+            }
+            
+            var res = await DiagnosticTools.GetDiagnosticsString(_system, request.Pid);
+            return new GetProcessDiagnosticsResponse()
+            {
+                DiagnosticsString = res
+            };
         }
     }
 }
