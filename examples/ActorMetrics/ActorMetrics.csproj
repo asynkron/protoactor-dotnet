@@ -13,7 +13,7 @@
         <PackageReference Include="prometheus-net.AspNetCore" Version="4.1.1" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.1.2" />
         <PackageReference Include="Ubiquitous.Metrics" Version="0.1.3-alpha.0.3" />
-        <PackageReference Include="Ubiquitous.Metrics.Prometheus" Version="0.1.3-alpha.0.3" />
+        <PackageReference Include="Ubiquitous.Metrics.Prometheus" Version="0.1.3" />
     </ItemGroup>
 
     <ItemGroup>
