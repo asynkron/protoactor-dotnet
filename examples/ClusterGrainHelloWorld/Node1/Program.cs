@@ -19,38 +19,32 @@ class Program
 {
     private static async Task Main()
     {
-        var remoteConfig = GrpcCoreRemoteConfig
-            .BindToLocalhost()
-            .WithProtoMessages(ProtosReflection.Descriptor);
-
-        var consulProvider =
-            new ConsulProvider(new ConsulProviderConfig());
-
-        var clusterConfig =
-            ClusterConfig
-                .Setup("MyCluster", consulProvider, new PartitionIdentityLookup());
-
         var system = new ActorSystem()
-            .WithRemote(remoteConfig)
-            .WithCluster(clusterConfig);
+            .WithRemote(GrpcCoreRemoteConfig
+                .BindToLocalhost()
+                .WithProtoMessages(ProtosReflection.Descriptor))
+            .WithCluster(ClusterConfig
+                .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig()), new PartitionIdentityLookup()));
 
         await system
             .Cluster()
             .StartMemberAsync();
 
         await Task.Delay(2000);
-        
-        var helloGrain = system.Cluster().GetHelloGrain("MyGrain");
-        var res = await helloGrain.SayHello(new HelloRequest(), WithTimeout(5000));
 
+        var helloGrain = system.Cluster().GetHelloGrain("MyGrain");
+        
+        var res = await helloGrain.SayHello(new HelloRequest(), WithTimeout(5000));
         Console.WriteLine(res.Message);
 
         res = await helloGrain.SayHello(new HelloRequest(), WithTimeout(5000));
         Console.WriteLine(res.Message);
+        
         Console.CancelKeyPress += async (e, y) => {
             Console.WriteLine("Shutting Down...");
             await system.Cluster().ShutdownAsync();
         };
+        
         await Task.Delay(-1);
     }
 }

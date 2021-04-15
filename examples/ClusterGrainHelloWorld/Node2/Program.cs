@@ -66,6 +66,7 @@ namespace Node2
                     .Cluster()
                     .ShutdownAsync();
             };
+            
             await Delay(-1);
         }
     }
