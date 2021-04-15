@@ -11,32 +11,30 @@ namespace ProtoBuf
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Google.Protobuf;
 using Proto;
 using Proto.Cluster;
-using Proto.Remote;
 
 namespace {{CsNamespace}}
 {
-    public class Grains
+    public static class Grains
     {
-        public Cluster Cluster { get; }
-
-        public Grains(Cluster cluster) => Cluster = cluster;
-
-		{{#each Services}}	
-        internal Func<string, I{{Name}}> Get{{Name}} { get; private set; }
-
-        public void {{Name}}Factory(Func<string, I{{Name}}> factory) 
+        public static class Factory<T>
         {
-            Get{{Name}} = factory;
-            Cluster.Remote.RegisterKnownKind(""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor(this)));
-        } 
-
-        public void {{Name}}Factory(Func<I{{Name}}> factory) => {{Name}}Factory(id => factory());
-
-        public {{Name}}Client {{Name}}(string id) => new {{Name}}Client(Cluster, id);
-		{{/each}}
+            public static Func<IContext,string,string,T> Create;
+        }
+        
+        public static (string,Props)[] GetClusterKinds()  => new[] { 
+            {{#each Services}}	
+                (""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor())),
+            {{/each}}
+            };
+    }        
+    
+    public static class GrainExtensions
+    {
+        {{#each Services}}
+        public static {{Name}}Client Get{{Name}}(this Proto.Cluster.Cluster cluster, string identity) => new(cluster, identity);
+        {{/each}}
     }
 
 	{{#each Services}}	
@@ -50,111 +48,65 @@ namespace {{CsNamespace}}
     public class {{Name}}Client
     {
         private readonly string _id;
-        private readonly Cluster _cluster;
+        private readonly Proto.Cluster.Cluster _cluster;
 
-        public {{Name}}Client(Cluster cluster, string id)
+        public {{Name}}Client(Proto.Cluster.Cluster cluster, string id)
         {
             _id = id;
             _cluster = cluster;
         }
 
 		{{#each Methods}}
-        public Task<{{OutputName}}> {{Name}}({{InputName}} request) => {{Name}}(request, CancellationToken.None);
-
-        public async Task<{{OutputName}}> {{Name}}({{InputName}} request, CancellationToken ct, GrainCallOptions options = null)
+        public async Task<{{OutputName}}> {{Name}}({{InputName}} request, CancellationToken ct)
         {
-            options ??= GrainCallOptions.Default;
-            
-            var gr = new GrainRequest
+            var gr = new GrainRequestMessage({{Index}}, request);
+            //request the RPC method to be invoked
+            var res = await _cluster.RequestAsync<object>(_id, ""{{../Name}}"", gr, ct);
+
+            return res switch
             {
-                MethodIndex = {{Index}},
-                MessageData = request.ToByteString()
+                // normal response
+                GrainResponseMessage grainResponse => (HelloResponse)grainResponse.ResponseMessage,
+                // error response
+                GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                // unsupported response
+                _ => throw new NotSupportedException()
             };
-
-            async Task<{{OutputName}}> Inner() 
-            {
-                //request the RPC method to be invoked
-                var res = await _cluster.RequestAsync<object>(_id, ""{{../Name}}"", gr, ct);
-
-                return res switch
-                {
-                    // normal response
-                    GrainResponse grainResponse => HelloResponse.Parser.ParseFrom(grainResponse.MessageData),
-                    // error response
-                    GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
-                    // unsupported response
-                    _ => throw new NotSupportedException()
-                };
-            }
-
-            for (int i = 0; i < options.RetryCount; i++)
-            {
-                try
-                {
-                    return await Inner();
-                }
-                catch (Exception)
-                {
-                    if (options.RetryAction != null)
-                    {
-                        await options.RetryAction(i);
-                    }
-                }
-            }
-            return await Inner();
         }
 		{{/each}}
     }
 
-    public class {{Name}}Actor : IActor
+    class {{Name}}Actor : IActor
     {
         private I{{Name}} _inner;
-        private readonly Grains _grains;
-
-        public {{Name}}Actor(Grains grains) => _grains = grains;
-        private string _identity;
-        private string _kind;
-
-        protected string Identity => _identity;
-        protected string Kind => _kind;
 
         public async Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
-                case Started _:
+                case ClusterInit msg: 
                 {
-                    _inner = _grains.Get{{Name}}(context.Self!.Id);
+                    _inner = Grains.Factory<I{{Name}}>.Create(context, msg.Identity, msg.Kind);
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
                     break;
                 }
-                case GrainInit msg: 
-                {
-                    _identity = msg.Identity;
-                    _kind = msg.Kind;
-                    break;
-                }
-                case ReceiveTimeout _:
+                case ReceiveTimeout:
                 {
                     context.Stop(context.Self!);
                     break;
                 }
-                case GrainRequest request:
+                case GrainRequestMessage(var methodIndex, var r):
                 {
-                    switch (request.MethodIndex)
+                    switch (methodIndex)
                     {
 						{{#each Methods}}
                         case {{Index}}:
-                        {
-                            var r = {{InputName}}.Parser.ParseFrom(request.MessageData);
+                        {                            
                             try
                             {
-                                var res = await _inner.{{Name}}(r);
-                                var grainResponse = new GrainResponse
-                                {
-                                    MessageData = res.ToByteString(),
-                                };
-                                context.Respond(grainResponse);
+                                var res = await _inner.{{Name}}(({{InputName}})r);
+                                var response = new GrainResponseMessage(res);                                
+                                context.Respond(response);
                             }
                             catch (Exception x)
                             {

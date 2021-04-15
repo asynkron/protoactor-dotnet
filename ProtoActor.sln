@@ -213,6 +213,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClusterPubSub", "examples\C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ClusterPubSub", "ClusterPubSub", "{8368C8CC-7418-4B9B-B9B3-2011C612CE42}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".meta", ".meta", "{4FE3DA0F-F9C9-4674-90B0-7C21C31C8C34}"
+ProjectSection(SolutionItems) = preProject
+	examples\ClusterGrainHelloWorld\docker-compose.yml = examples\ClusterGrainHelloWorld\docker-compose.yml
+	examples\ClusterGrainHelloWorld\run.sh = examples\ClusterGrainHelloWorld\run.sh
+EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1085,6 +1091,7 @@ Global
 		{C0D710AE-6F79-40A8-8565-3D971E4F067C} = {0F605F4E-8976-4444-81B9-17BFF028DC7E}
 		{8368C8CC-7418-4B9B-B9B3-2011C612CE42} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
 		{F94EA250-F52C-4FF6-A2ED-5B6B390C4A57} = {8368C8CC-7418-4B9B-B9B3-2011C612CE42}
+		{4FE3DA0F-F9C9-4674-90B0-7C21C31C8C34} = {B0563D5E-1900-4562-A7D0-19C50E8256C4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD0D1E44-8118-4682-8793-6B20ABFA824C}
