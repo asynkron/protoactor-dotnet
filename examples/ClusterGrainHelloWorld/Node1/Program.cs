@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Cluster.HelloWorld.Messages;
 using Messages;
@@ -13,6 +14,7 @@ using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
+using static Proto.CancellationTokens;
 using ProtosReflection = Messages.ProtosReflection;
 
 class Program
@@ -41,11 +43,11 @@ class Program
         await Task.Delay(2000);
         
         var helloGrain = system.Cluster().GetHelloGrain("MyGrain");
-        var res = await helloGrain.SayHello(new HelloRequest());
+        var res = await helloGrain.SayHello(new HelloRequest(), WithTimeout(5000));
 
         Console.WriteLine(res.Message);
 
-        res = await helloGrain.SayHello(new HelloRequest());
+        res = await helloGrain.SayHello(new HelloRequest(), WithTimeout(5000));
         Console.WriteLine(res.Message);
         Console.CancelKeyPress += async (e, y) => {
             Console.WriteLine("Shutting Down...");

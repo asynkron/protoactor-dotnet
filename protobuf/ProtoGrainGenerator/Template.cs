@@ -9,10 +9,8 @@ namespace ProtoBuf
     {
         public const string Code = @"
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Google.Protobuf;
 using Messages;
 using Proto;
 using Proto.Cluster;
@@ -23,11 +21,10 @@ namespace {{CsNamespace}}
     {
         public static (string,Props)[] GetClusterKinds()  => new[] { 
             {{#each Services}}	
-                (""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor(null))),
+                (""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor())),
             {{/each}}
             };
     }        
-    
     
     public static class GrainExtensions
     {
@@ -58,13 +55,14 @@ namespace {{CsNamespace}}
 		{{#each Methods}}
         public async Task<{{OutputName}}> {{Name}}({{InputName}} request, CancellationToken ct)
         {
+            var gr = new GrainRequestMessage({{Index}}, request);
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, ""{{../Name}}"", gr, ct);
 
             return res switch
             {
                 // normal response
-                GrainResponse grainResponse => HelloResponse.Parser.ParseFrom(grainResponse.MessageData),
+                GrainResponseMessage grainResponse => (HelloResponse)grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 // unsupported response
@@ -77,52 +75,34 @@ namespace {{CsNamespace}}
     public class {{Name}}Actor : IActor
     {
         private I{{Name}} _inner;
-        private readonly Grains _grains;
-
-        public {{Name}}Actor(Grains grains) => _grains = grains;
-        private string _identity;
-        private string _kind;
-
-        protected string Identity => _identity;
-        protected string Kind => _kind;
 
         public async Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
-                case Started _:
+                case ClusterInit msg: 
                 {
                     _inner = _grains.Get{{Name}}(context.Self!.Id);
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
                     break;
                 }
-                case ClusterInit msg: 
-                {
-                    _identity = msg.Identity;
-                    _kind = msg.Kind;
-                    break;
-                }
-                case ReceiveTimeout _:
+                case ReceiveTimeout:
                 {
                     context.Stop(context.Self!);
                     break;
                 }
-                case GrainRequest request:
+                case GrainRequestMessage(var methodIndex, var r):
                 {
-                    switch (request.MethodIndex)
+                    switch (methodIndex)
                     {
 						{{#each Methods}}
                         case {{Index}}:
-                        {
-                            var r = {{InputName}}.Parser.ParseFrom(request.MessageData);
+                        {                            
                             try
                             {
                                 var res = await _inner.{{Name}}(r);
-                                var grainResponse = new GrainResponse
-                                {
-                                    MessageData = res.ToByteString(),
-                                };
-                                context.Respond(grainResponse);
+                                var response = new GrainResponseMessage(res);                                
+                                context.Respond(response);
                             }
                             catch (Exception x)
                             {
