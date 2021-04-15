@@ -43,28 +43,22 @@ namespace Node2
     {
         private static async Task Main()
         {
-            var remoteConfig = GrpcCoreRemoteConfig
-                .BindToLocalhost()
-                .WithProtoMessages(ProtosReflection.Descriptor);
-
-            var consulProvider =
-                new ConsulProvider(new ConsulProviderConfig());
-
-            var clusterConfig =
-                ClusterConfig
-                    .Setup("MyCluster", consulProvider, new PartitionIdentityLookup())
-                    .WithClusterKinds(Grains.GetClusterKinds());
+            //bind this interface to our concrete implementation
+            Grains.Factory<IHelloGrain>.Create = (ctx, identity, _) => new HelloGrain(ctx, identity);
 
             var system = new ActorSystem()
-                .WithRemote(remoteConfig)
-                .WithCluster(clusterConfig);
+                .WithRemote(GrpcCoreRemoteConfig
+                    .BindToLocalhost()
+                    .WithProtoMessages(ProtosReflection.Descriptor)
+                )
+                .WithCluster(ClusterConfig
+                    .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig()), new PartitionIdentityLookup())
+                    .WithClusterKinds(Grains.GetClusterKinds())
+                );
 
             await system
                 .Cluster()
                 .StartMemberAsync();
-
-            //bind this interface to our concrete implementation
-            Grains.Factory<IHelloGrain>.Create = (ctx,identity,_) => new HelloGrain(ctx, identity);
 
             Console.CancelKeyPress += async (e, y) => {
                 Console.WriteLine("Shutting Down...");
