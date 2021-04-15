@@ -58,7 +58,7 @@ namespace Cluster.HelloWorld.Messages
         }
     }
 
-    public class HelloGrainActor : IActor
+    class HelloGrainActor : IActor
     {
         private IHelloGrain _inner;
 

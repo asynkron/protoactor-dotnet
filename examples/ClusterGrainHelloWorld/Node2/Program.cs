@@ -19,12 +19,15 @@ namespace Node2
 {
     public class HelloGrain : IHelloGrain
     {
-        public Task<HelloResponse> SayHello(HelloRequest request) =>
-            FromResult(new HelloResponse
-                {
-                    Message = "Hello from typed grain"
-                }
-            );
+        public Task<HelloResponse> SayHello(HelloRequest request)
+        {
+            var res = new HelloResponse
+            {
+                Message = "Hello from typed grain"
+            };
+
+            return FromResult(res);
+        }
     }
 
     class Program

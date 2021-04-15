@@ -76,7 +76,7 @@ namespace {{CsNamespace}}
 		{{/each}}
     }
 
-    public class {{Name}}Actor : IActor
+    class {{Name}}Actor : IActor
     {
         private I{{Name}} _inner;
 
