@@ -11,7 +11,6 @@ namespace ProtoBuf
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Messages;
 using Proto;
 using Proto.Cluster;
 
@@ -19,6 +18,11 @@ namespace {{CsNamespace}}
 {
     public static class Grains
     {
+        public static class Factory<T>
+        {
+            public static Func<T> Create;
+        }
+        
         public static (string,Props)[] GetClusterKinds()  => new[] { 
             {{#each Services}}	
                 (""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor())),
@@ -82,7 +86,7 @@ namespace {{CsNamespace}}
             {
                 case ClusterInit msg: 
                 {
-                    _inner = _grains.Get{{Name}}(context.Self!.Id);
+                    _inner = Grains.Factory<I{{Name}}>.Create();
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
                     break;
                 }
@@ -100,7 +104,7 @@ namespace {{CsNamespace}}
                         {                            
                             try
                             {
-                                var res = await _inner.{{Name}}(r);
+                                var res = await _inner.{{Name}}(({{InputName}})r);
                                 var response = new GrainResponseMessage(res);                                
                                 context.Respond(response);
                             }

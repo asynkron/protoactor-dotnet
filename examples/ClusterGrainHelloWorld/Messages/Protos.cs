@@ -2,7 +2,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Messages;
 using Proto;
 using Proto.Cluster;
 
@@ -10,6 +9,11 @@ namespace Cluster.HelloWorld.Messages
 {
     public static class Grains
     {
+        public static class Factory<T>
+        {
+            public static Func<T> Create;
+        }
+        
         public static (string,Props)[] GetClusterKinds()  => new[] { 
                 ("HelloGrain", Props.FromProducer(() => new HelloGrainActor())),
             };
@@ -64,7 +68,7 @@ namespace Cluster.HelloWorld.Messages
             {
                 case ClusterInit msg: 
                 {
-                    _inner = _grains.GetHelloGrain(context.Self!.Id);
+                    _inner = Grains.Factory<IHelloGrain>.Create();
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
                     break;
                 }
@@ -81,7 +85,7 @@ namespace Cluster.HelloWorld.Messages
                         {                            
                             try
                             {
-                                var res = await _inner.SayHello(r);
+                                var res = await _inner.SayHello((HelloRequest)r);
                                 var response = new GrainResponseMessage(res);                                
                                 context.Respond(response);
                             }

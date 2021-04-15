@@ -4,10 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Cluster.HelloWorld.Messages;
-using Messages;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
@@ -15,7 +13,7 @@ using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using static Proto.CancellationTokens;
-using ProtosReflection = Messages.ProtosReflection;
+using ProtosReflection =Cluster.HelloWorld.Messages.ProtosReflection;
 
 class Program
 {

@@ -4,10 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Cluster.HelloWorld.Messages;
-using Messages;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
@@ -15,7 +13,7 @@ using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using static System.Threading.Tasks.Task;
-using ProtosReflection = Messages.ProtosReflection;
+using ProtosReflection =Cluster.HelloWorld.Messages.ProtosReflection;
 
 namespace Node2
 {
@@ -53,8 +51,8 @@ namespace Node2
                 .Cluster()
                 .StartMemberAsync();
 
-            Grains.
-            grains.HelloGrainFactory(() => new HelloGrain());
+            //bind this interface to our concrete implementation
+            Grains.Factory<IHelloGrain>.Create = () => new HelloGrain();
 
             Console.CancelKeyPress += async (e, y) => {
                 Console.WriteLine("Shutting Down...");
