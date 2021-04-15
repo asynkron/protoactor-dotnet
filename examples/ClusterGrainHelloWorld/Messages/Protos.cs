@@ -11,7 +11,7 @@ namespace Cluster.HelloWorld.Messages
     {
         public static class Factory<T>
         {
-            public static Func<T> Create;
+            public static Func<IContext,string,string,T> Create;
         }
         
         public static (string,Props)[] GetClusterKinds()  => new[] { 
@@ -68,7 +68,7 @@ namespace Cluster.HelloWorld.Messages
             {
                 case ClusterInit msg: 
                 {
-                    _inner = Grains.Factory<IHelloGrain>.Create();
+                    _inner = Grains.Factory<IHelloGrain>.Create(context, msg.Identity, msg.Kind);
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
                     break;
                 }

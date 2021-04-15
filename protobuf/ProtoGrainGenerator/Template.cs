@@ -20,7 +20,7 @@ namespace {{CsNamespace}}
     {
         public static class Factory<T>
         {
-            public static Func<T> Create;
+            public static Func<IContext,string,string,T> Create;
         }
         
         public static (string,Props)[] GetClusterKinds()  => new[] { 
@@ -86,7 +86,7 @@ namespace {{CsNamespace}}
             {
                 case ClusterInit msg: 
                 {
-                    _inner = Grains.Factory<I{{Name}}>.Create();
+                    _inner = Grains.Factory<I{{Name}}>.Create(context, msg.Identity, msg.Kind);
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
                     break;
                 }

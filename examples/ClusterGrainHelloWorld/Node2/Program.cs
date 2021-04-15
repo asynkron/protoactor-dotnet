@@ -19,11 +19,20 @@ namespace Node2
 {
     public class HelloGrain : IHelloGrain
     {
+        private readonly IContext _ctx;
+        private readonly string _identity;
+
+        public HelloGrain(IContext ctx, string identity)
+        {
+            _ctx = ctx;
+            _identity = identity;
+        }
+
         public Task<HelloResponse> SayHello(HelloRequest request)
         {
             var res = new HelloResponse
             {
-                Message = "Hello from typed grain"
+                Message = $"Hello from typed grain {_identity}"
             };
 
             return FromResult(res);
@@ -55,7 +64,7 @@ namespace Node2
                 .StartMemberAsync();
 
             //bind this interface to our concrete implementation
-            Grains.Factory<IHelloGrain>.Create = () => new HelloGrain();
+            Grains.Factory<IHelloGrain>.Create = (ctx,identity,_) => new HelloGrain(ctx, identity);
 
             Console.CancelKeyPress += async (e, y) => {
                 Console.WriteLine("Shutting Down...");
