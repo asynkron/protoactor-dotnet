@@ -24,7 +24,7 @@ class Program
             .WithProtoMessages(ProtosReflection.Descriptor);
 
         var consulProvider =
-            new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://consul:8500/"));
+            new ConsulProvider(new ConsulProviderConfig());
 
         var clusterConfig =
             ClusterConfig
