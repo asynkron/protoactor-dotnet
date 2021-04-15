@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Threading.Tasks;
+using Cluster.HelloWorld.Messages;
 using Messages;
 using Proto;
 using Proto.Cluster;
@@ -38,14 +39,13 @@ class Program
             .StartMemberAsync();
 
         await Task.Delay(2000);
+        
+        var helloGrain = system.Cluster().GetHelloGrain("MyGrain");
+        var res = await helloGrain.SayHello(new HelloRequest());
 
-        var grains = new Grains(system.Cluster());
-        var client = grains.HelloGrain("Roger");
-
-        var res = await client.SayHello(new HelloRequest());
         Console.WriteLine(res.Message);
 
-        res = await client.SayHello(new HelloRequest());
+        res = await helloGrain.SayHello(new HelloRequest());
         Console.WriteLine(res.Message);
         Console.CancelKeyPress += async (e, y) => {
             Console.WriteLine("Shutting Down...");

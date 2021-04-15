@@ -4,7 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Cluster.HelloWorld.Messages;
 using Messages;
 using Proto;
 using Proto.Cluster;
@@ -12,6 +14,7 @@ using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
+using static System.Threading.Tasks.Task;
 using ProtosReflection = Messages.ProtosReflection;
 
 namespace Node2
@@ -19,7 +22,7 @@ namespace Node2
     public class HelloGrain : IHelloGrain
     {
         public Task<HelloResponse> SayHello(HelloRequest request) =>
-            Task.FromResult(new HelloResponse
+            FromResult(new HelloResponse
                 {
                     Message = "Hello from typed grain"
                 }
@@ -39,7 +42,8 @@ namespace Node2
 
             var clusterConfig =
                 ClusterConfig
-                    .Setup("MyCluster", consulProvider, new PartitionIdentityLookup());
+                    .Setup("MyCluster", consulProvider, new PartitionIdentityLookup())
+                    .WithClusterKinds(Grains.GetClusterKinds());
 
             var system = new ActorSystem()
                 .WithRemote(remoteConfig)
@@ -49,7 +53,7 @@ namespace Node2
                 .Cluster()
                 .StartMemberAsync();
 
-            var grains = new Grains(system.Cluster());
+            Grains.
             grains.HelloGrainFactory(() => new HelloGrain());
 
             Console.CancelKeyPress += async (e, y) => {
@@ -58,7 +62,7 @@ namespace Node2
                     .Cluster()
                     .ShutdownAsync();
             };
-            await Task.Delay(-1);
+            await Delay(-1);
         }
     }
 }

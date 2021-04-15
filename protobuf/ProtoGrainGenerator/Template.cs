@@ -9,34 +9,31 @@ namespace ProtoBuf
     {
         public const string Code = @"
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using Messages;
 using Proto;
 using Proto.Cluster;
-using Proto.Remote;
 
 namespace {{CsNamespace}}
 {
-    public class Grains
+    public static class Grains
     {
-        public Cluster Cluster { get; }
-
-        public Grains(Cluster cluster) => Cluster = cluster;
-
-		{{#each Services}}	
-        internal Func<string, I{{Name}}> Get{{Name}} { get; private set; }
-
-        public void {{Name}}Factory(Func<string, I{{Name}}> factory) 
-        {
-            Get{{Name}} = factory;
-            Cluster.Remote.RegisterKnownKind(""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor(this)));
-        } 
-
-        public void {{Name}}Factory(Func<I{{Name}}> factory) => {{Name}}Factory(id => factory());
-
-        public {{Name}}Client {{Name}}(string id) => new {{Name}}Client(Cluster, id);
-		{{/each}}
+        public static (string,Props)[] GetClusterKinds()  => new[] { 
+            {{#each Services}}	
+                (""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor(null))),
+            {{/each}}
+            };
+    }        
+    
+    
+    public static class GrainExtensions
+    {
+        {{#each Services}}
+        public static {{Name}}Client Get{{Name}}(this Proto.Cluster.Cluster cluster, string identity) => new(cluster, identity);
+        {{/each}}
     }
 
 	{{#each Services}}	
@@ -50,58 +47,29 @@ namespace {{CsNamespace}}
     public class {{Name}}Client
     {
         private readonly string _id;
-        private readonly Cluster _cluster;
+        private readonly Proto.Cluster.Cluster _cluster;
 
-        public {{Name}}Client(Cluster cluster, string id)
+        public {{Name}}Client(Proto.Cluster.Cluster cluster, string id)
         {
             _id = id;
             _cluster = cluster;
         }
 
 		{{#each Methods}}
-        public Task<{{OutputName}}> {{Name}}({{InputName}} request) => {{Name}}(request, CancellationToken.None);
-
-        public async Task<{{OutputName}}> {{Name}}({{InputName}} request, CancellationToken ct, GrainCallOptions options = null)
+        public async Task<{{OutputName}}> {{Name}}({{InputName}} request, CancellationToken ct)
         {
-            options ??= GrainCallOptions.Default;
-            
-            var gr = new GrainRequest
+            //request the RPC method to be invoked
+            var res = await _cluster.RequestAsync<object>(_id, ""{{../Name}}"", gr, ct);
+
+            return res switch
             {
-                MethodIndex = {{Index}},
-                MessageData = request.ToByteString()
+                // normal response
+                GrainResponse grainResponse => HelloResponse.Parser.ParseFrom(grainResponse.MessageData),
+                // error response
+                GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                // unsupported response
+                _ => throw new NotSupportedException()
             };
-
-            async Task<{{OutputName}}> Inner() 
-            {
-                //request the RPC method to be invoked
-                var res = await _cluster.RequestAsync<object>(_id, ""{{../Name}}"", gr, ct);
-
-                return res switch
-                {
-                    // normal response
-                    GrainResponse grainResponse => HelloResponse.Parser.ParseFrom(grainResponse.MessageData),
-                    // error response
-                    GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
-                    // unsupported response
-                    _ => throw new NotSupportedException()
-                };
-            }
-
-            for (int i = 0; i < options.RetryCount; i++)
-            {
-                try
-                {
-                    return await Inner();
-                }
-                catch (Exception)
-                {
-                    if (options.RetryAction != null)
-                    {
-                        await options.RetryAction(i);
-                    }
-                }
-            }
-            return await Inner();
         }
 		{{/each}}
     }
@@ -128,7 +96,7 @@ namespace {{CsNamespace}}
                     context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
                     break;
                 }
-                case GrainInit msg: 
+                case ClusterInit msg: 
                 {
                     _identity = msg.Identity;
                     _kind = msg.Kind;

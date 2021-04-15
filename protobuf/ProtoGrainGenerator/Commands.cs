@@ -23,7 +23,7 @@ namespace ProtoGrainGenerator
             var rootCommand = new RootCommand
             {
                 new Argument<FileInfo>("input", "Proto file name").ExistingOnly(),
-                new Argument<FileInfo>("output", () => null, "Generated file name"),
+                new Argument<FileInfo>("output", () => null!, "Generated file name"),
                 importPath
             };
             rootCommand.Description = "Generate code from a single proto file";

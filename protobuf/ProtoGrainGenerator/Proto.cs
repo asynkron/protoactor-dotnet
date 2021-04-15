@@ -7,28 +7,28 @@ namespace ProtoBuf
 {
     public class ProtoFile
     {
-        public string PackageName { get; set; }
-        public string CsNamespace { get; set; }
-        public ProtoMessage[] Messages { get; set; }
-        public ProtoService[] Services { get; set; }
+        public string PackageName { get; set; } = null!;
+        public string CsNamespace { get; set; } = null!;
+        public ProtoMessage[] Messages { get; set; } = null!;
+        public ProtoService[] Services { get; set; } = null!;
     }
 
     public class ProtoMessage
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
     }
 
     public class ProtoService
     {
-        public string Name { get; set; }
-        public ProtoMethod[] Methods { get; set; }
+        public string Name { get; set; } = null!;
+        public ProtoMethod[] Methods { get; set; } = null!;
     }
 
     public class ProtoMethod
     {
         public int Index { get; set; }
-        public string Name { get; set; }
-        public string InputName { get; set; }
-        public string OutputName { get; set; }
+        public string Name { get; set; } = null!;
+        public string InputName { get; set; } = null!;
+        public string OutputName { get; set; } = null!;
     }
 }
