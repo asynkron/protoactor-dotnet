@@ -1,5 +1,5 @@
+using System;
 using System.IO;
-using System.Text;
 using Microsoft.Build.Framework;
 using ProtoGrainGenerator;
 using MSBuildTask = Microsoft.Build.Utilities.Task;
@@ -10,12 +10,13 @@ namespace MSBuildTasks
     {
         public override bool Execute()
         {
-            var currentProject = this.BuildEngine.ProjectFileOfTaskNode;
+            var currentProject = BuildEngine.ProjectFileOfTaskNode;
             var dir = Path.GetDirectoryName(currentProject)!;
-            var protoFiles = Directory.GetFiles(dir, "*.proto", new EnumerationOptions()
-            {
-                RecurseSubdirectories = true,
-            })!;
+            var protoFiles = Directory.GetFiles(dir, "*.proto", new EnumerationOptions
+                {
+                    RecurseSubdirectories = true
+                }
+            )!;
 
             foreach (var protoFile in protoFiles)
             {
@@ -25,9 +26,9 @@ namespace MSBuildTasks
 
                 var fiIn = new FileInfo(protoFile);
                 var fiOut = new FileInfo(outputFile);
-                Generator.GenerateOne(fiIn, fiOut, System.Array.Empty<DirectoryInfo>());
+                Generator.GenerateOne(fiIn, fiOut, Array.Empty<DirectoryInfo>());
             }
-            
+
             return true;
         }
     }
