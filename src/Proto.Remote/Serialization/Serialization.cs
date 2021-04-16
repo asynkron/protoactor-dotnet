@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
@@ -14,13 +15,14 @@ namespace Proto.Remote
     public class Serialization : IActorSystemExtension<Serialization>
     {
         private readonly List<ISerializer> _serializers = new();
-        internal readonly Dictionary<string, MessageParser> TypeLookup = new();
+        public IReadOnlyDictionary<string, MessageParser> TypeLookup { get => _typeLookup; }
+        private readonly Dictionary<string, MessageParser> _typeLookup = new();
 
         public Serialization()
         {
             RegisterFileDescriptor(Proto.ProtosReflection.Descriptor);
             RegisterFileDescriptor(ProtosReflection.Descriptor);
-            RegisterSerializer(new ProtobufSerializer(this), true);
+            RegisterSerializer(new DefaultProtobufSerializer(this), true);
             RegisterSerializer(new JsonSerializer(this));
         }
 
@@ -32,11 +34,17 @@ namespace Proto.Remote
             if (makeDefault) DefaultSerializerId = _serializers.Count - 1;
         }
 
+        public void RegisterSerializer(Func<Serialization, ProtobufSerializer> serializerProvider, bool makeDefault = false)
+        {
+            _serializers.Add(serializerProvider.Invoke(this));
+            if (makeDefault) DefaultSerializerId = _serializers.Count - 1;
+        }
+
         public void RegisterFileDescriptor(FileDescriptor fd)
         {
             foreach (var msg in fd.MessageTypes)
             {
-                TypeLookup.Add(msg.FullName, msg.Parser);
+                _typeLookup.Add(msg.FullName, msg.Parser);
             }
         }
 

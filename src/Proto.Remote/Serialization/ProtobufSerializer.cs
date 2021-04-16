@@ -3,36 +3,38 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using Google.Protobuf;
 
 namespace Proto.Remote
 {
-    public class ProtobufSerializer : ISerializer
+    public abstract class ProtobufSerializer : ISerializer
     {
-        private readonly Serialization _serialization;
-
+        protected readonly Serialization _serialization;
         public ProtobufSerializer(Serialization serialization) => _serialization = serialization;
-
-        public ByteString Serialize(object obj)
+        object ISerializer.Deserialize(ByteString bytes, string typeName)
         {
-            var message = obj as IMessage;
-            return message.ToByteString();
+            if (_serialization.TypeLookup.TryGetValue(typeName, out var parser))
+                return parser.ParseFrom(bytes);
+            return Deserialize(bytes, typeName);
         }
 
-        public object Deserialize(ByteString bytes, string typeName)
+        protected abstract object Deserialize(ByteString bytes, string typeName);
+
+        string ISerializer.GetTypeName(object message)
         {
-            var parser = _serialization.TypeLookup[typeName];
-            var o = parser.ParseFrom(bytes);
-            return o;
+            if (message is IMessage protobufMessage && _serialization.TypeLookup.ContainsKey(protobufMessage.Descriptor.FullName))
+                return protobufMessage.Descriptor.FullName;
+            return GetTypeName(message);
+        }
+        protected abstract string GetTypeName(object message);
+
+        ByteString ISerializer.Serialize(object obj)
+        {
+            if (obj is IMessage message && _serialization.TypeLookup.ContainsKey(message.Descriptor.FullName))
+                return message.ToByteString();
+            return Serialize(obj);
         }
 
-        public string GetTypeName(object obj)
-        {
-            if (obj is IMessage message)
-                return message.Descriptor.FullName;
-
-            throw new ArgumentException("obj must be of type IMessage", nameof(obj));
-        }
+        protected abstract ByteString Serialize(object obj);
     }
 }

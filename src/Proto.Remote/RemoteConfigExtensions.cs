@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using Google.Protobuf.Reflection;
 using Grpc.Core;
 using JetBrains.Annotations;
@@ -108,10 +109,30 @@ namespace Proto.Remote
             return remoteConfig;
         }
 
+        public static TRemoteConfig WithSerializer<TRemoteConfig, TSerializer>(this TRemoteConfig remoteConfig, TSerializer serializer, bool makeDefault = false)
+            where TRemoteConfig : RemoteConfigBase
+            where TSerializer : ProtobufSerializer
+        {
+            remoteConfig.Serialization.RegisterSerializer(serializer, makeDefault);
+            return remoteConfig;
+        }
+
+        public static TRemoteConfig WithSerializer<TRemoteConfig, TSerializer>(this TRemoteConfig remoteConfig, Func<Serialization, TSerializer> serializerProvider, bool makeDefault = false)
+            where TRemoteConfig : RemoteConfigBase
+            where TSerializer : ProtobufSerializer
+        {
+            remoteConfig.Serialization.RegisterSerializer(serializerProvider, makeDefault);
+            return remoteConfig;
+        }
+
+        public static TRemoteConfig WithSystemTextJsonSerializer<TRemoteConfig>(this TRemoteConfig remoteConfig, JsonSerializerOptions? options = null, bool makeDefault = false)
+            where TRemoteConfig : RemoteConfigBase
+            => remoteConfig.WithSerializer(s => new SystemTextJsonSerializer(s, options), makeDefault);
+
         public static TRemoteConfig WithLogLevelForDeserializationErrors<TRemoteConfig>(this TRemoteConfig remoteConfig, LogLevel level)
             where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with {DeserializationErrorLogLevel = level};
-        
+
         public static TRemoteConfig WithRemoteDiagnostics<TRemoteConfig>(this TRemoteConfig remoteConfig,bool enabled)
             where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with {RemoteDiagnostics = enabled};
