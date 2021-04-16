@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
   <ItemGroup>
@@ -10,13 +10,13 @@
     <PackageReference Include="Grpc.Tools" Version="2.36.4" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
-    <Protobuf Include="Protos.proto" GrpcServices="Server" ProtoRoot=".; ..\..\..\src" />
+    <Protobuf Include="Protos.proto" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Proto.GrainGenerator" PrivateAssets="All" Version="0.16.1-alpha.0.83" />
+    <PackageReference Include="Proto.GrainGenerator" PrivateAssets="All" Version="0.16.1-alpha.0.84" />
   </ItemGroup>
 
   <Target Name="Generate" BeforeTargets="PrepareForBuild">

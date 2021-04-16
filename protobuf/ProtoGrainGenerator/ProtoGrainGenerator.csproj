@@ -5,10 +5,7 @@
     <AssemblyName>Proto.GrainGenerator</AssemblyName>
     <PackageId>Proto.GrainGenerator</PackageId>
     <LangVersion>9</LangVersion>
-    <PackAsTool>false</PackAsTool>
     <Description>Generate Proto.Actor grains as C# code files from proto RPC contracts.</Description>
-    <DevelopmentDependency>true</DevelopmentDependency>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>http://proto.actor/</PackageProjectUrl>
     
