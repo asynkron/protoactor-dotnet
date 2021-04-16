@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Google.Protobuf.Reflection;
-using GrainGenerator;
 
 namespace Proto.GrainGenerator
 {
@@ -40,7 +39,7 @@ namespace Proto.GrainGenerator
         private static void ProcessAndWriteFiles(FileDescriptorSet set)
         {
             set.Process();
-            var gen = new GrainGen();
+            var gen = new CodeGenerator();
             var res = gen.Generate(set).ToList();
 
             foreach (var x in res)
