@@ -2,8 +2,8 @@
   <PropertyGroup>
     <Authors>Proto.Actor Team</Authors>
     <Company>Proto.Actor Team</Company>
-    <AssemblyName>protograin</AssemblyName>
-    <PackageId>protograin</PackageId>
+    <AssemblyName>Proto.GrainGenerator</AssemblyName>
+    <PackageId>Proto.GrainGenerator</PackageId>
     <LangVersion>9</LangVersion>
     <PackAsTool>false</PackAsTool>
     <Description>Generate Proto.Actor grains as C# code files from proto RPC contracts.</Description>
@@ -11,16 +11,17 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>http://proto.actor/</PackageProjectUrl>
-    <PackageIcon>logo.png</PackageIcon>
+    
     <RepositoryUrl>https://github.com/AsynkronIT/protoactor-dotnet</RepositoryUrl>
     <PackageTags>actors actor model concurrency proto protoactor</PackageTags>
     <TargetFrameworks>net5.0;netstandard2.1</TargetFrameworks>
     <Nullable>enable</Nullable>
-    <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\</PackageOutputPath>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\packages\</PackageOutputPath>
     <!-- Suppresses the warnings about the package not having assemblies in lib/*/.dll.-->
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <!-- Change the default location where NuGet will put the build output -->
     <BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
+    <RootNamespace>Proto.GrainGenerator</RootNamespace>
   </PropertyGroup>
   
   <ItemGroup>
@@ -32,10 +33,6 @@
     <PackageReference Include="Handlebars.Net" Version="2.0.7" />
     <PackageReference Include="protobuf-net" Version="3.0.101" />
     <PackageReference Include="protobuf-net.Reflection" Version="3.0.101" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="$(MSBuildStartupDirectory)\logo.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>

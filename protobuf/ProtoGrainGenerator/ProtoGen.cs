@@ -3,7 +3,7 @@ using System.IO;
 using Microsoft.Build.Framework;
 using MSBuildTask = Microsoft.Build.Utilities.Task;
 
-namespace ProtoGrainGenerator
+namespace Proto.GrainGenerator
 {
     public class ProtoGen : MSBuildTask
     {

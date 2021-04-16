@@ -16,7 +16,7 @@
     <ProjectReference Include="..\..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="protograin" PrivateAssets="All" />
+    <PackageReference Include="Proto.GrainGenerator" PrivateAssets="All" Version="0.16.1-alpha.0.82" />
   </ItemGroup>
 
   <Target Name="ProtoGen" BeforeTargets="PrepareForBuild">

@@ -10,7 +10,7 @@ using System.Linq;
 using Google.Protobuf.Reflection;
 using GrainGenerator;
 
-namespace ProtoGrainGenerator
+namespace Proto.GrainGenerator
 {
     public static class Generator
     {
