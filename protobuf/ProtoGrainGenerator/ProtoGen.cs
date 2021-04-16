@@ -1,9 +1,10 @@
 using System;
 using System.IO;
 using Microsoft.Build.Framework;
+using Proto.GrainGenerator;
 using MSBuildTask = Microsoft.Build.Utilities.Task;
 
-namespace Proto.GrainGenerator
+namespace MSBuildTasks
 {
     public class ProtoGen : MSBuildTask
     {

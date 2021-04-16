@@ -21,7 +21,7 @@ namespace Proto.GrainGenerator
             var defaultOutputName = output?.FullName ?? Path.GetFileNameWithoutExtension(input.Name);
             set.Add(defaultOutputName, true, r);
 
-            ProcessAndWriteFiles(set);
+            ParseAndSaveFiles(set);
         }
 
         private static FileDescriptorSet GetSet(IEnumerable<DirectoryInfo> importPaths)
@@ -36,7 +36,7 @@ namespace Proto.GrainGenerator
             return set;
         }
 
-        private static void ProcessAndWriteFiles(FileDescriptorSet set)
+        private static void ParseAndSaveFiles(FileDescriptorSet set)
         {
             set.Process();
             var gen = new CodeGenerator();

@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.15.7" />
+    <PackageReference Include="ProtoGrainGenerator" Version="0.16.1-alpha.0.85" PrivateAssets="All"  />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <PackageReference Include="Grpc.Tools" Version="2.36.4" PrivateAssets="All" />
   </ItemGroup>
@@ -14,9 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Proto.GrainGenerator" PrivateAssets="All" Version="0.16.1-alpha.0.84" />
   </ItemGroup>
 
   <Target Name="Generate" BeforeTargets="PrepareForBuild">
