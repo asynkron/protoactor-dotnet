@@ -5,7 +5,7 @@
     <AssemblyName>protograin</AssemblyName>
     <PackageId>protograin</PackageId>
     <LangVersion>9</LangVersion>
-    <PackAsTool>true</PackAsTool>
+    <PackAsTool>false</PackAsTool>
     <Description>Generate Proto.Actor grains as C# code files from proto RPC contracts.</Description>
     <DevelopmentDependency>true</DevelopmentDependency>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -16,6 +16,11 @@
     <PackageTags>actors actor model concurrency proto protoactor</PackageTags>
     <TargetFrameworks>net5.0;netstandard2.1</TargetFrameworks>
     <Nullable>enable</Nullable>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\</PackageOutputPath>
+    <!-- Suppresses the warnings about the package not having assemblies in lib/*/.dll.-->
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <!-- Change the default location where NuGet will put the build output -->
+    <BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
   </PropertyGroup>
   
   <ItemGroup>

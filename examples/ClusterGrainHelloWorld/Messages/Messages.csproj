@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    
     <TargetFramework>net5.0</TargetFramework>
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
@@ -16,7 +15,13 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="protograin" PrivateAssets="All" />
+  </ItemGroup>
 
+  <Target Name="ProtoGen" BeforeTargets="PrepareForBuild">
+    <ProtoGen />
+  </Target>
 
   
 </Project>

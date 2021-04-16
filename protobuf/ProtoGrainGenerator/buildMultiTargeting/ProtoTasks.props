@@ -3,5 +3,5 @@
   when it targets multiple frameworks, e.g. <TargetFrameworks>net46;netcoreapp1.0</TargetFrameworks>
 -->
 <Project>
-  <Import Project="..\build\GreetingTasks.props" />
+  <Import Project="..\build\ProtoTasks.props" />
 </Project>
