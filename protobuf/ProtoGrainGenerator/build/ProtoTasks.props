@@ -9,5 +9,5 @@
     <TaskAssembly>$(MSBuildThisFileDirectory)..\tasks\$(TaskFolder)\protograin.dll</TaskAssembly>
   </PropertyGroup>
 
-  <UsingTask TaskName="MSBuildTasks.ProtoGen" AssemblyFile="$(TaskAssembly)" />
+  <UsingTask TaskName="ProtoGrainGenerator.ProtoGen" AssemblyFile="$(TaskAssembly)" />
 </Project>
