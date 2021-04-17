@@ -32,14 +32,29 @@ namespace {{CsNamespace}}
     
     public static class GrainExtensions
     {
+        public static ClusterConfig With{{PackageName}}Kinds(this ClusterConfig config) => 
+         config.WithClusterKinds(Grains.GetClusterKinds());
+    
         {{#each Services}}
         public static {{Name}}Client Get{{Name}}(this Proto.Cluster.Cluster cluster, string identity) => new(cluster, identity);
         {{/each}}
     }
 
 	{{#each Services}}	
-    public interface I{{Name}}
+    public abstract class {{Name}}Base
     {
+        protected IContext Context {get;}
+    
+        protected {{Name}}Base(IContext context)
+        {
+            Context = context;
+        }
+        
+        Task OnStarted() => Task.CompletedTask;
+        Task OnStopping() => Task.CompletedTask;
+        Task OnStopped() => Task.CompletedTask;
+        Task OnReceive() => Task.CompletedTask;
+    
 		{{#each Methods}}
         Task<{{OutputName}}> {{Name}}({{InputName}} request);
 		{{/each}}
@@ -78,7 +93,7 @@ namespace {{CsNamespace}}
 
     class {{Name}}Actor : IActor
     {
-        private I{{Name}} _inner;
+        private {{Name}}Base _inner;
 
         public async Task ReceiveAsync(IContext context)
         {
@@ -86,20 +101,25 @@ namespace {{CsNamespace}}
             {
                 case ClusterInit msg: 
                 {
-                    _inner = Grains.Factory<I{{Name}}>.Create(context, msg.Identity, msg.Kind);
-                    context.SetReceiveTimeout(TimeSpan.FromSeconds(30));
+                    _inner = Grains.Factory<{{Name}}Base>.Create(context, msg.Identity, msg.Kind);
+                    await _inner.OnStarted();
                     break;
                 }
-                case ReceiveTimeout:
+                case Proto.Stopping:
                 {
-                    context.Stop(context.Self!);
+                    await _inner.OnStopping();
                     break;
                 }
+                case Proto.Stopped:
+                {
+                    await _inner.OnStopped();
+                    break;
+                }    
                 case GrainRequestMessage(var methodIndex, var r):
                 {
                     switch (methodIndex)
                     {
-						{{#each Methods}}
+			            {{#each Methods}}
                         case {{Index}}:
                         {                            
                             try
@@ -119,9 +139,14 @@ namespace {{CsNamespace}}
 
                             break;
                         }
-						{{/each}}
+			            {{/each}}
                     }
 
+                    break;
+                }
+                default:
+                {
+                    await _inner.OnReceive();
                     break;
                 }
             }
