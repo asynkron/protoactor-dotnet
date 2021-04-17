@@ -34,7 +34,9 @@ namespace MSBuildTasks
             foreach (var protoFile in protoFiles)
             {
                 Log.LogMessage(MessageImportance.High, $"Processing Proto file: {protoFile}");
-                var outputFile = Path.Combine(BaseIntermediateOutputPath!, $"{protoFile}.cs");
+                var rel = Path.GetRelativePath(projectDirectory, protoFile);
+                var outputFile = Path.Combine(BaseIntermediateOutputPath!, $"{rel}.cs");
+                Log.LogMessage(MessageImportance.High, $"Output file path: {outputFile}");
             
                 var fiIn = new FileInfo(protoFile);
                 var fiOut = new FileInfo(outputFile);
