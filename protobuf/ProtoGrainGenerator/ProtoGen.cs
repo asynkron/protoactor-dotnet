@@ -10,6 +10,10 @@ namespace MSBuildTasks
     public class ProtoGen : Task
     {
 
+        
+        // ReSharper disable once MemberCanBePrivate.Global
+        // ReSharper disable once UnusedAutoPropertyAccessor.Global
+        [Required]
         public string BaseIntermediateOutputPath { get; set; }
         
         public override bool Execute()
@@ -34,7 +38,7 @@ namespace MSBuildTasks
             
                 var fiIn = new FileInfo(protoFile);
                 var fiOut = new FileInfo(outputFile);
-                Generator.Generate(fiIn, fiOut, Array.Empty<DirectoryInfo>(), Log, projectDirectory);
+                Generator.Generate(fiIn, fiOut, Array.Empty<DirectoryInfo>(), Log, BaseIntermediateOutputPath);
             }
 
             return true;
