@@ -24,7 +24,7 @@ namespace Proto.Diagnostics
                 try
                 {
                     var value = field.GetValue(actor);
-                    sb.Append(value.ToString());
+                    sb.Append(value);
                 }
                 catch
                 {
