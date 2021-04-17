@@ -34,11 +34,11 @@ namespace MSBuildTasks
             foreach (var protoFile in protoFiles)
             {
                 Log.LogMessage(MessageImportance.High, $"Processing Proto file: {protoFile}");
-                var outputFile = Path.Combine(projectDirectory!, $"{protoFile}.cs");
+                var outputFile = Path.Combine(BaseIntermediateOutputPath!, $"{protoFile}.cs");
             
                 var fiIn = new FileInfo(protoFile);
                 var fiOut = new FileInfo(outputFile);
-                Generator.Generate(fiIn, fiOut, Array.Empty<DirectoryInfo>(), Log, BaseIntermediateOutputPath);
+                Generator.Generate(fiIn, fiOut, Array.Empty<DirectoryInfo>(), Log, projectDirectory);
             }
 
             return true;
