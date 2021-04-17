@@ -14,7 +14,7 @@ namespace MSBuildTasks
         
         public override bool Execute()
         {
-            Log.LogMessage("Intermediate OutputPath: " + BaseIntermediateOutputPath);
+            Log.LogMessage(MessageImportance.High,"Intermediate OutputPath: " + BaseIntermediateOutputPath);
 
             Log.LogMessage(MessageImportance.High, "Running Proto.GrainGenerator");
 
