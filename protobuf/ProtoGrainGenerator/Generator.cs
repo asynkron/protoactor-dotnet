@@ -22,8 +22,7 @@ namespace Proto.GrainGenerator
             var r = input.OpenText();
             var defaultOutputName = output?.FullName ?? Path.GetFileNameWithoutExtension(input.Name);
             var rel = Path.GetRelativePath(rootPath, defaultOutputName);
-
-            log.LogMessage(MessageImportance.High, $"Proto file path {rel}");
+            
             set.Add(rel, true, r);
 
             set.Process();
