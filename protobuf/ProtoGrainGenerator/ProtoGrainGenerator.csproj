@@ -21,8 +21,15 @@
   
   <ItemGroup>
     <PackageReference Include="Handlebars.Net" Version="2.0.7" IncludeAssets="All" />
-    <PackageReference Include="protobuf-net" Version="3.0.101" IncludeAssets="All"/>
-    <PackageReference Include="protobuf-net.Reflection" Version="3.0.101" IncludeAssets="All"/>
+    <PackageReference Include="protobuf-net" Version="3.0.101" IncludeAssets="All" />
+    <PackageReference Include="protobuf-net.Reflection" Version="3.0.101" IncludeAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="deps\Handlebars.dll" />
+    <EmbeddedResource Include="deps\protobuf-net.dll" />
+    <EmbeddedResource Include="deps\protobuf-net.Core.dll" />
+    <EmbeddedResource Include="deps\protobuf-net.Reflection.dll" />
   </ItemGroup>
 
   <ItemGroup>
