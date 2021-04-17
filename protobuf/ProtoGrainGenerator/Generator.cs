@@ -19,6 +19,7 @@ namespace Proto.GrainGenerator
         {
             var set = GetSet(importPath);
 
+            
             var r = input.OpenText();
             var defaultOutputName = output?.FullName ?? Path.GetFileNameWithoutExtension(input.Name);
             var rel = Path.GetRelativePath(rootPath, defaultOutputName);
