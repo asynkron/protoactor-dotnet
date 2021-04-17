@@ -10,12 +10,17 @@ namespace MSBuildTasks
 {
     public class ProtoGen : MSBuildTask
     {
-       // private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args) => EmbeddedAssembly.Get(args.Name);
+        private Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            Log.LogMessage(MessageImportance.High, $"loading assembly {args.Name}");
+            return EmbeddedAssembly.Get(args.Name);
+        }
 
         public override bool Execute()
         {
             Log.LogMessage(MessageImportance.High, "Running ProtoGen!!!!");
-            // EmbeddedAssembly.Load("ProtoGrainGenerator.deps.Handlebars.dll","Handlebars.dll");
+            EmbeddedAssembly.Load("ProtoGrainGenerator.deps.Handlebars.dll","Handlebars.dll");
+            Log.LogMessage(MessageImportance.High, "Assemblies loaded!!");
             // EmbeddedAssembly.Load("ProtoGrainGenerator.deps.protobuf-net.dll","protobuf-net.dll");
             // EmbeddedAssembly.Load("ProtoGrainGenerator.deps.protobuf-net.Core.dll","protobuf-net.Core.dll");
             // EmbeddedAssembly.Load("ProtoGrainGenerator.deps.protobuf-net.Reflection.dll","protobuf-net.Reflection.dll");
