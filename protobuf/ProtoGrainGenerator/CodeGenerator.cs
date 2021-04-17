@@ -10,11 +10,11 @@ using HandlebarsDotNet;
 using ProtoBuf;
 using ProtoBuf.Reflection;
 
-namespace GrainGenerator
+namespace Proto.GrainGenerator
 {
-    public class GrainGen : CommonCodeGenerator
+    public class CodeGenerator : CommonCodeGenerator
     {
-        public override string Name { get; } = "Proto.Grain";
+        public override string Name => "Proto.Grain";
 
         protected override string DefaultFileExtension => ".cs";
 

@@ -7,37 +7,26 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Google.Protobuf.Reflection;
-using GrainGenerator;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 
-namespace ProtoGrainGenerator
+namespace Proto.GrainGenerator
 {
     public static class Generator
     {
-        internal static Task GenerateOne(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath)
+        internal static void GenerateOne(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath, TaskLoggingHelper log, string rootPath)
         {
             var set = GetSet(importPath);
 
             var r = input.OpenText();
             var defaultOutputName = output?.FullName ?? Path.GetFileNameWithoutExtension(input.Name);
-            set.Add(defaultOutputName, true, r);
+            var rel = Path.GetRelativePath(rootPath, defaultOutputName);
 
-            return ProcessAndWriteFiles(set);
-        }
+            log.LogMessage(MessageImportance.High, $"Proto file path {rel}");
+            set.Add(rel, true, r);
 
-        internal static Task GenerateMany(IEnumerable<FileInfo> input, IEnumerable<DirectoryInfo> importPath)
-        {
-            var set = GetSet(importPath);
-
-            foreach (var proto in input)
-            {
-                var r = proto.OpenText();
-                var defaultOutputName = Path.GetFileNameWithoutExtension(proto.Name);
-                set.Add(defaultOutputName, true, r);
-            }
-
-            return ProcessAndWriteFiles(set);
+            ParseAndSaveFiles(set);
         }
 
         private static FileDescriptorSet GetSet(IEnumerable<DirectoryInfo> importPaths)
@@ -52,19 +41,17 @@ namespace ProtoGrainGenerator
             return set;
         }
 
-        private static Task ProcessAndWriteFiles(FileDescriptorSet set)
+        private static void ParseAndSaveFiles(FileDescriptorSet set)
         {
             set.Process();
-
-            var gen = new GrainGen();
+            var gen = new CodeGenerator();
             var res = gen.Generate(set).ToList();
 
-            return Task.WhenAll(res.Select(x => {
-                        Console.WriteLine($"Writing generated file: {x.Name}");
-                        return File.WriteAllTextAsync(x.Name, x.Text);
-                    }
-                )
-            );
+            foreach (var x in res)
+            {
+                Console.WriteLine($"Writing generated file: {x.Name}");
+                File.WriteAllText(x.Name, x.Text);
+            }
         }
     }
 }
