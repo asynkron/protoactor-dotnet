@@ -25,7 +25,7 @@ namespace MSBuildTasks
             // EmbeddedAssembly.Load("ProtoGrainGenerator.deps.protobuf-net.Core.dll","protobuf-net.Core.dll");
             // EmbeddedAssembly.Load("ProtoGrainGenerator.deps.protobuf-net.Reflection.dll","protobuf-net.Reflection.dll");
             //
-            // AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
+            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
             //
             // var currentProject = BuildEngine.ProjectFileOfTaskNode;
             // var dir = Path.GetDirectoryName(currentProject)!;
