@@ -10,11 +10,7 @@
     <LangVersion>9</LangVersion>
     <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.0-beta-20204-02" PrivateAssets="All" />
-  </ItemGroup>
+
   
   <ItemGroup>
     <Content Include="deps\*.dll">
@@ -29,25 +25,17 @@
   </ItemGroup>
 
   <ItemGroup>
-
+    <PackageReference Include="Handlebars.Net" Version="2.0.7" />
+    <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.0-beta-20204-02" PrivateAssets="All" />
+    <PackageReference Include="protobuf-net" Version="3.0.101" />
+    <PackageReference Include="protobuf-net.Reflection" Version="3.0.101" />
+    
     <PackageReference Include="Microsoft.Build.Framework" Version="15.1.1012" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.1.1012" />
     <!-- Marks all packages as 'local only' so they don't end up in the nuspec. -->
     <PackageReference Update="@(PackageReference)" PrivateAssets="All" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="Handlebars">
-      <HintPath>deps\Handlebars.dll</HintPath>
-    </Reference>
-    <Reference Include="protobuf-net">
-      <HintPath>deps\protobuf-net.dll</HintPath>
-    </Reference>
-    <Reference Include="protobuf-net.Core">
-      <HintPath>deps\protobuf-net.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="protobuf-net.Reflection">
-      <HintPath>deps\protobuf-net.Reflection.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+  
 </Project>

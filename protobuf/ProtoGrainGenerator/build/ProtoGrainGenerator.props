@@ -10,4 +10,8 @@
   </PropertyGroup>
 
   <UsingTask TaskName="MSBuildTasks.ProtoGen" AssemblyFile="$(TaskAssembly)" />
+
+  <Target Name="Generate" BeforeTargets="PrepareForBuild">
+    <ProtoGen />
+  </Target>
 </Project>
