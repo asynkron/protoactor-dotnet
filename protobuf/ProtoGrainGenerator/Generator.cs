@@ -15,15 +15,16 @@ namespace Proto.GrainGenerator
 {
     public static class Generator
     {
-        internal static void GenerateOne(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath, TaskLoggingHelper log)
+        internal static void GenerateOne(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath, TaskLoggingHelper log, string rootPath)
         {
             var set = GetSet(importPath);
 
             var r = input.OpenText();
             var defaultOutputName = output?.FullName ?? Path.GetFileNameWithoutExtension(input.Name);
+            var rel = Path.GetRelativePath(rootPath, defaultOutputName);
 
             log.LogMessage(MessageImportance.High, $"Proto file path {defaultOutputName}");
-            set.Add(defaultOutputName, true, r);
+            set.Add(rel, true, r);
 
             ParseAndSaveFiles(set);
         }
