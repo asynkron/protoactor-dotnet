@@ -11,11 +11,12 @@ namespace MSBuildTasks
 
         public override bool Execute()
         {
-            Log.LogMessage(MessageImportance.High, "Running ProtoGen");
+            Log.LogMessage(MessageImportance.High, "Running Proto.GrainGenerator");
 
-            var currentProject = BuildEngine.ProjectFileOfTaskNode;
-            var dir = Path.GetDirectoryName(currentProject)!;
-            var protoFiles = Directory.GetFiles(dir, "*.proto", new EnumerationOptions
+            var projectFile = BuildEngine.ProjectFileOfTaskNode;
+            Log.LogMessage(MessageImportance.High, $"Processing Project file: {projectFile}");
+            var projectDirectory = Path.GetDirectoryName(projectFile)!;
+            var protoFiles = Directory.GetFiles(projectDirectory, "*.proto", new EnumerationOptions
                 {
                     RecurseSubdirectories = true
                 }
@@ -23,13 +24,12 @@ namespace MSBuildTasks
             
             foreach (var protoFile in protoFiles)
             {
-                Log.LogMessage(MessageImportance.High, $"Protofile! {protoFile}");
-                var protoDir = Path.GetDirectoryName(protoFile);
-                var outputFile = Path.Combine(protoDir!, protoFile + ".cs");
+                Log.LogMessage(MessageImportance.High, $"Processing Proto file: {protoFile}");
+                var outputFile = Path.Combine(projectDirectory!, $"{protoFile}.cs");
             
                 var fiIn = new FileInfo(protoFile);
                 var fiOut = new FileInfo(outputFile);
-                Generator.GenerateOne(fiIn, fiOut, Array.Empty<DirectoryInfo>(), Log, dir);
+                Generator.Generate(fiIn, fiOut, Array.Empty<DirectoryInfo>(), Log, projectDirectory);
             }
 
             return true;

@@ -15,7 +15,7 @@ namespace Proto.GrainGenerator
 {
     public static class Generator
     {
-        internal static void GenerateOne(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath, TaskLoggingHelper log, string rootPath)
+        internal static void Generate(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath, TaskLoggingHelper log, string rootPath)
         {
             var set = GetSet(importPath);
 
@@ -26,7 +26,15 @@ namespace Proto.GrainGenerator
             log.LogMessage(MessageImportance.High, $"Proto file path {rel}");
             set.Add(rel, true, r);
 
-            ParseAndSaveFiles(set);
+            set.Process();
+            var gen = new CodeGenerator();
+            var res = gen.Generate(set).ToList();
+
+            foreach (var x in res)
+            {
+                log.LogMessage(MessageImportance.High, $"Saving generated file {x.Name}");
+                File.WriteAllText(x.Name, x.Text);
+            }
         }
 
         private static FileDescriptorSet GetSet(IEnumerable<DirectoryInfo> importPaths)
@@ -39,19 +47,6 @@ namespace Proto.GrainGenerator
             }
 
             return set;
-        }
-
-        private static void ParseAndSaveFiles(FileDescriptorSet set)
-        {
-            set.Process();
-            var gen = new CodeGenerator();
-            var res = gen.Generate(set).ToList();
-
-            foreach (var x in res)
-            {
-                Console.WriteLine($"Writing generated file: {x.Name}");
-                File.WriteAllText(x.Name, x.Text);
-            }
         }
     }
 }
