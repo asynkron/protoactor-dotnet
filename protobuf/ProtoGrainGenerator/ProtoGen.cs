@@ -10,7 +10,7 @@ namespace MSBuildTasks
 {
     public class ProtoGen : MSBuildTask
     {
-        private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args) => EmbeddedAssembly.Get(args.Name);
+       // private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args) => EmbeddedAssembly.Get(args.Name);
 
         public override bool Execute()
         {
