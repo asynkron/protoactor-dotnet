@@ -54,6 +54,7 @@ namespace Proto.Remote
         public void PostSystemMessage(object msg)
         {
             _systemMessages.Push(msg);
+            
 
             // Logger.LogDebug("[EndpointWriterMailbox] received System Message {@Message}", msg);
             Schedule();

@@ -36,7 +36,7 @@ namespace {{CsNamespace}}
          config.WithClusterKinds(Grains.GetClusterKinds());
     
         {{#each Services}}
-        public static {{Name}}Client Get{{Name}}(this Proto.Cluster.Cluster cluster, string identity) => new(cluster, identity);
+        public static {{Name}}Client Get{{Name}}(this Cluster cluster, string identity) => new(cluster, identity);
         {{/each}}
     }
 
@@ -50,22 +50,22 @@ namespace {{CsNamespace}}
             Context = context;
         }
         
-        Task OnStarted() => Task.CompletedTask;
-        Task OnStopping() => Task.CompletedTask;
-        Task OnStopped() => Task.CompletedTask;
-        Task OnReceive() => Task.CompletedTask;
+        public virtual Task OnStarted() => Task.CompletedTask;
+        public virtual Task OnStopping() => Task.CompletedTask;
+        public virtual Task OnStopped() => Task.CompletedTask;
+        public virtual Task OnReceive() => Task.CompletedTask;
     
 		{{#each Methods}}
-        Task<{{OutputName}}> {{Name}}({{InputName}} request);
+        public abstract Task<{{OutputName}}> {{Name}}({{InputName}} request);
 		{{/each}}
     }
 
     public class {{Name}}Client
     {
         private readonly string _id;
-        private readonly Proto.Cluster.Cluster _cluster;
+        private readonly Cluster _cluster;
 
-        public {{Name}}Client(Proto.Cluster.Cluster cluster, string id)
+        public {{Name}}Client(Cluster cluster, string id)
         {
             _id = id;
             _cluster = cluster;
@@ -105,12 +105,12 @@ namespace {{CsNamespace}}
                     await _inner.OnStarted();
                     break;
                 }
-                case Proto.Stopping:
+                case Stopping:
                 {
                     await _inner.OnStopping();
                     break;
                 }
-                case Proto.Stopped:
+                case Stopped:
                 {
                     await _inner.OnStopped();
                     break;
