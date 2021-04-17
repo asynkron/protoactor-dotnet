@@ -66,7 +66,7 @@ namespace {{CsNamespace}}
             return res switch
             {
                 // normal response
-                GrainResponseMessage grainResponse => (HelloResponse)grainResponse.ResponseMessage,
+                GrainResponseMessage grainResponse => ({{OutputName}})grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 // unsupported response
