@@ -1,7 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- makes this sample work when compiling on macOS and Linux because .NET Framework is not available -->
-    <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\</PackageOutputPath>
     <!-- Suppresses the warnings about the package not having assemblies in lib/*/.dll.-->
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <!-- Change the default location where NuGet will put the build output -->
@@ -10,7 +8,6 @@
     <VersionPrefix>0.1.0</VersionPrefix>
     <VersionSuffix>build$([System.DateTime]::Now.ToString('yyyyMMdd-HHmm'))</VersionSuffix>
     <LangVersion>9</LangVersion>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
   
@@ -19,7 +16,6 @@
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.0-beta-20204-02" PrivateAssets="All" />
   </ItemGroup>
   
-
   <ItemGroup>
     <Content Include="deps\*.dll">
       <PackagePath>tasks\netstandard2.1</PackagePath>
@@ -34,7 +30,6 @@
 
   <ItemGroup>
 
-    
     <PackageReference Include="Microsoft.Build.Framework" Version="15.1.1012" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.1.1012" />
     <!-- Marks all packages as 'local only' so they don't end up in the nuspec. -->
