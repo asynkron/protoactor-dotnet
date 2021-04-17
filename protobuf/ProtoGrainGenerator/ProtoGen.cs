@@ -30,14 +30,14 @@ namespace MSBuildTasks
                     RecurseSubdirectories = true
                 }
             )!;
-            
+
             foreach (var protoFile in protoFiles)
             {
                 Log.LogMessage(MessageImportance.High, $"Processing Proto file: {protoFile}");
                 var rel = Path.GetRelativePath(projectDirectory, protoFile);
-                var outputFile = Path.Combine(BaseIntermediateOutputPath!, $"{rel}.cs");
+                var outputFile = Path.Combine(BaseIntermediateOutputPath!, "protopotato", $"{rel}.cs");
                 Log.LogMessage(MessageImportance.High, $"Output file path: {outputFile}");
-            
+
                 var fiIn = new FileInfo(protoFile);
                 var fiOut = new FileInfo(outputFile);
                 Generator.Generate(fiIn, fiOut, Array.Empty<DirectoryInfo>(), Log, projectDirectory);

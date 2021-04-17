@@ -9,6 +9,10 @@
     <TaskAssembly>$(MSBuildThisFileDirectory)..\tasks\$(TaskFolder)\ProtoGrainGenerator.dll</TaskAssembly>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Include="$(IntermediateOutputPath)\protopotato\*.cs" />
+  </ItemGroup>
+
   <UsingTask TaskName="MSBuildTasks.ProtoGen" AssemblyFile="$(TaskAssembly)" />
 
   <Target Name="Generate" BeforeTargets="PrepareForBuild">
