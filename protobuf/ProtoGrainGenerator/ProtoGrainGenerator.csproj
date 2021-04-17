@@ -10,8 +10,8 @@
     <VersionPrefix>0.1.0</VersionPrefix>
     <VersionSuffix>build$([System.DateTime]::Now.ToString('yyyyMMdd-HHmm'))</VersionSuffix>
     <LangVersion>9</LangVersion>
-    <TargetFrameworks>net5.0;netstandard2.1</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
   
   <ItemGroup>
@@ -19,11 +19,12 @@
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.0-beta-20204-02" PrivateAssets="All" />
   </ItemGroup>
   
+
   <ItemGroup>
-    <EmbeddedResource Include="deps\Handlebars.dll" />
-    <EmbeddedResource Include="deps\protobuf-net.dll" />
-    <EmbeddedResource Include="deps\protobuf-net.Core.dll" />
-    <EmbeddedResource Include="deps\protobuf-net.Reflection.dll" />
+    <Content Include="deps\*.dll">
+      <PackagePath>tasks\netstandard2.1</PackagePath>
+      <Pack>true</Pack>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
