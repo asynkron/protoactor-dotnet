@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using Microsoft.Build.Framework;
+using Proto.GrainGenerator;
 // using Proto.GrainGenerator;
 using ProtoGrainGenerator;
 using MSBuildTask = Microsoft.Build.Utilities.Task;
@@ -26,25 +27,25 @@ namespace MSBuildTasks
             Log.LogMessage(MessageImportance.High, "Assemblies loaded!!");
             //
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
-            //
-            // var currentProject = BuildEngine.ProjectFileOfTaskNode;
-            // var dir = Path.GetDirectoryName(currentProject)!;
-            // var protoFiles = Directory.GetFiles(dir, "*.proto", new EnumerationOptions
-            //     {
-            //         RecurseSubdirectories = true
-            //     }
-            // )!;
-            //
-            // foreach (var protoFile in protoFiles)
-            // {
-            //     Log.LogMessage(MessageImportance.High, $"Protofile! {protoFile}");
-            //     var protoDir = Path.GetDirectoryName(protoFile);
-            //     var outputFile = Path.Combine(protoDir!, protoFile + ".cs");
-            //
-            //     var fiIn = new FileInfo(protoFile);
-            //     var fiOut = new FileInfo(outputFile);
-            //     Generator.GenerateOne(fiIn, fiOut, Array.Empty<DirectoryInfo>());
-            // }
+            
+            var currentProject = BuildEngine.ProjectFileOfTaskNode;
+            var dir = Path.GetDirectoryName(currentProject)!;
+            var protoFiles = Directory.GetFiles(dir, "*.proto", new EnumerationOptions
+                {
+                    RecurseSubdirectories = true
+                }
+            )!;
+            
+            foreach (var protoFile in protoFiles)
+            {
+                Log.LogMessage(MessageImportance.High, $"Protofile! {protoFile}");
+                var protoDir = Path.GetDirectoryName(protoFile);
+                var outputFile = Path.Combine(protoDir!, protoFile + ".cs");
+            
+                var fiIn = new FileInfo(protoFile);
+                var fiOut = new FileInfo(outputFile);
+                Generator.GenerateOne(fiIn, fiOut, Array.Empty<DirectoryInfo>());
+            }
 
             return true;
         }
