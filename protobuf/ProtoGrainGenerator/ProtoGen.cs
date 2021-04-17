@@ -20,10 +20,10 @@ namespace MSBuildTasks
         {
             Log.LogMessage(MessageImportance.High, "Is this right?");
             EmbeddedAssembly.Load("ProtoGrainGenerator.deps.Handlebars.dll","Handlebars.dll");
+            EmbeddedAssembly.Load("ProtoGrainGenerator.deps.protobuf-net.dll","protobuf-net.dll");
+            EmbeddedAssembly.Load("ProtoGrainGenerator.deps.protobuf-net.Core.dll","protobuf-net.Core.dll");
+            EmbeddedAssembly.Load("ProtoGrainGenerator.deps.protobuf-net.Reflection.dll","protobuf-net.Reflection.dll");
             Log.LogMessage(MessageImportance.High, "Assemblies loaded!!");
-            // EmbeddedAssembly.Load("ProtoGrainGenerator.deps.protobuf-net.dll","protobuf-net.dll");
-            // EmbeddedAssembly.Load("ProtoGrainGenerator.deps.protobuf-net.Core.dll","protobuf-net.Core.dll");
-            // EmbeddedAssembly.Load("ProtoGrainGenerator.deps.protobuf-net.Reflection.dll","protobuf-net.Reflection.dll");
             //
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
             //

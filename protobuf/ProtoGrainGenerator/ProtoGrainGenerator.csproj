@@ -32,8 +32,8 @@
   </ItemGroup>
 
   <ItemGroup>
-<!--    <PackageReference Include="protobuf-net" Version="3.0.101" />-->
-<!--    <PackageReference Include="protobuf-net.Reflection" Version="3.0.101"/>-->
+    <PackageReference Include="protobuf-net" Version="3.0.101" />
+    <PackageReference Include="protobuf-net.Reflection" Version="3.0.101"/>
     <PackageReference Include="Handlebars.Net" Version="2.0.7"  />
     
     <PackageReference Include="Microsoft.Build.Framework" Version="15.1.1012" />
