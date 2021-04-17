@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using Microsoft.Build.Framework;
-using Proto.GrainGenerator;
+// using Proto.GrainGenerator;
 using ProtoGrainGenerator;
 using MSBuildTask = Microsoft.Build.Utilities.Task;
 
