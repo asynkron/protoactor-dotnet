@@ -35,7 +35,11 @@ namespace MSBuildTasks
             {
                 Log.LogMessage(MessageImportance.High, $"Processing Proto file: {protoFile}");
                 var rel = Path.GetRelativePath(projectDirectory, protoFile);
-                var outputFile = Path.Combine(BaseIntermediateOutputPath!, "protopotato", $"{rel}.cs");
+
+                var potatoDirectory = Path.Combine(BaseIntermediateOutputPath!, "protopotato");
+                Directory.CreateDirectory(potatoDirectory);
+                
+                var outputFile = Path.Combine(potatoDirectory, $"{rel}.cs");
                 Log.LogMessage(MessageImportance.High, $"Output file path: {outputFile}");
 
                 var fiIn = new FileInfo(protoFile);
