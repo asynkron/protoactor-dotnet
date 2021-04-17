@@ -18,7 +18,7 @@ namespace MSBuildTasks
 
         public override bool Execute()
         {
-            Log.LogMessage(MessageImportance.High, "Running ProtoGen!!!!");
+            Log.LogMessage(MessageImportance.High, "Is this right?");
             EmbeddedAssembly.Load("ProtoGrainGenerator.deps.Handlebars.dll","Handlebars.dll");
             Log.LogMessage(MessageImportance.High, "Assemblies loaded!!");
             // EmbeddedAssembly.Load("ProtoGrainGenerator.deps.protobuf-net.dll","protobuf-net.dll");
