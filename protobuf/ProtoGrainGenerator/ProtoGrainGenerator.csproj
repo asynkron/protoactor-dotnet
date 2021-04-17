@@ -32,13 +32,26 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="protobuf-net" Version="3.0.101" />
-    <PackageReference Include="protobuf-net.Reflection" Version="3.0.101"/>
-    <PackageReference Include="Handlebars.Net" Version="2.0.7"  />
+
     
     <PackageReference Include="Microsoft.Build.Framework" Version="15.1.1012" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.1.1012" />
     <!-- Marks all packages as 'local only' so they don't end up in the nuspec. -->
     <PackageReference Update="@(PackageReference)" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Handlebars">
+      <HintPath>deps\Handlebars.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net">
+      <HintPath>deps\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net.Core">
+      <HintPath>deps\protobuf-net.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net.Reflection">
+      <HintPath>deps\protobuf-net.Reflection.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

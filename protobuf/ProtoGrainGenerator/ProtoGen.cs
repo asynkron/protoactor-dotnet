@@ -19,7 +19,7 @@ namespace MSBuildTasks
 
         public override bool Execute()
         {
-            Log.LogMessage(MessageImportance.High, "nu då?");
+            Log.LogMessage(MessageImportance.High, "testing");
             EmbeddedAssembly.Load("ProtoGrainGenerator.deps.Handlebars.dll","Handlebars.dll");
             EmbeddedAssembly.Load("ProtoGrainGenerator.deps.protobuf-net.dll","protobuf-net.dll");
             EmbeddedAssembly.Load("ProtoGrainGenerator.deps.protobuf-net.Core.dll","protobuf-net.Core.dll");
