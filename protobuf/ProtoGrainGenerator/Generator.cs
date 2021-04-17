@@ -8,17 +8,21 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Google.Protobuf.Reflection;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 
 namespace Proto.GrainGenerator
 {
     public static class Generator
     {
-        internal static void GenerateOne(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath)
+        internal static void GenerateOne(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath, TaskLoggingHelper log)
         {
             var set = GetSet(importPath);
 
             var r = input.OpenText();
             var defaultOutputName = output?.FullName ?? Path.GetFileNameWithoutExtension(input.Name);
+
+            log.LogMessage(MessageImportance.High, $"Proto file path {defaultOutputName}");
             set.Add(defaultOutputName, true, r);
 
             ParseAndSaveFiles(set);

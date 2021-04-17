@@ -29,7 +29,7 @@ namespace MSBuildTasks
             
                 var fiIn = new FileInfo(protoFile);
                 var fiOut = new FileInfo(outputFile);
-                Generator.GenerateOne(fiIn, fiOut, Array.Empty<DirectoryInfo>());
+                Generator.GenerateOne(fiIn, fiOut, Array.Empty<DirectoryInfo>(), Log);
             }
 
             return true;
