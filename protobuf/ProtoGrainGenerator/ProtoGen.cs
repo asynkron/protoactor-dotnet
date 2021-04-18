@@ -54,7 +54,14 @@ namespace MSBuildTasks
                 var importPaths = 
                     AdditionalImportDirs
                         .Split(";", StringSplitOptions.RemoveEmptyEntries)
+                        .Select(p => p.Trim())
+                        .Select(p => Path.GetRelativePath(projectDirectory, p))
                         .Select(p => new DirectoryInfo(p)).ToArray();
+
+                foreach (var importPath in importPaths)
+                {
+                    Log.LogMessage(MessageImportance.High, $"Import path {importPath.FullName}");
+                }
                 
                 Generator.Generate(inputFileInfo, outputFileInfo, importPaths, Log, projectDirectory);
             }
