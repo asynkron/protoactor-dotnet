@@ -19,6 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="Protos.proto" GrpcServices="Server" />
+    <Protobuf Include="ActorContracts.proto" GrpcServices="Server" />
   </ItemGroup>
 </Project>

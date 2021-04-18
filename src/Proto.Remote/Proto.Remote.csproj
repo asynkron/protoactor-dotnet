@@ -14,7 +14,7 @@
     <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Protobuf Include="Protos.proto" GrpcServices="Client;Server" AdditionalImportDirs=".; ..\..\src" />
+    <Protobuf Include="RemoteContracts.proto" GrpcServices="Client;Server" AdditionalImportDirs=".; ..\..\src" />
     <None Remove="HealthCheck.proto" />
   </ItemGroup>
 </Project>

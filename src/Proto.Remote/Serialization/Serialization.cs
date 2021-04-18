@@ -18,8 +18,8 @@ namespace Proto.Remote
 
         public Serialization()
         {
-            RegisterFileDescriptor(Proto.ProtosReflection.Descriptor);
-            RegisterFileDescriptor(ProtosReflection.Descriptor);
+            RegisterFileDescriptor(ActorContractsReflection.Descriptor);
+            RegisterFileDescriptor(RemoteContractsReflection.Descriptor);
             RegisterSerializer(new ProtobufSerializer(this), true);
             RegisterSerializer(new JsonSerializer(this));
         }

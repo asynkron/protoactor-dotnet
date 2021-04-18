@@ -1,0 +1,39 @@
+﻿syntax = "proto3";
+package actor;
+option csharp_namespace = "Proto";
+
+message PID {
+    string Address = 1;
+    string Id = 2;
+}
+
+//user messages
+message PoisonPill {
+}
+
+message DeadLetterResponse {
+    PID Target = 1;
+}
+
+//system messages
+message Watch {
+    PID Watcher = 1;
+}
+
+message Unwatch {
+    PID Watcher = 1;
+}
+
+message Terminated {
+    PID who = 1;
+    TerminatedReason Why = 2;
+}
+
+enum TerminatedReason {
+   Stopped = 0;
+   AddressTerminated = 1;
+   NotFound = 2;
+}
+
+message Stop {
+}

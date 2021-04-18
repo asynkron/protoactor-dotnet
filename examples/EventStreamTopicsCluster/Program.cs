@@ -8,7 +8,6 @@ using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
-using ProtosReflection = Proto.ProtosReflection;
 
 namespace EventStreamTopicsCluster
 {
@@ -25,7 +24,7 @@ namespace EventStreamTopicsCluster
         {
             var remoteConfig = GrpcCoreRemoteConfig
                 .BindToLocalhost()
-                .WithProtoMessages(ProtosReflection.Descriptor);
+                .WithProtoMessages(ActorContractsReflection.Descriptor);
 
             var consulProvider =
                 new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://consul:8500/"));

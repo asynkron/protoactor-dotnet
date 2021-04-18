@@ -1,7 +1,7 @@
 ﻿syntax = "proto3";
 package remote_test_messages;
 option csharp_namespace = "Proto.Remote.Tests.Messages";
-import "Proto.Actor/Protos.proto";
+import "Proto.Actor/ActorContracts.proto";
 
 message Start {}
 message StartRemote {
