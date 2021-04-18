@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Linq;
+using System.Reflection;
 using Google.Protobuf.Reflection;
 using HandlebarsDotNet;
 using ProtoBuf;
@@ -23,7 +24,7 @@ namespace Proto.GrainGenerator
         protected override void WriteFile(GeneratorContext ctx, FileDescriptorProto obj)
         {
             var file = ctx.File;
-
+            
             var ast = new ProtoFile
             {
                 PackageName = file.Package,
@@ -46,10 +47,10 @@ namespace Proto.GrainGenerator
                                     {
                                         Index = i,
                                         Name = m.Name,
-                                        InputName = RemovePackageName(m.InputType),
-                                        OutputName = RemovePackageName(m.OutputType),
-                                        InputNameFull = m.InputType,
-                                        OutputNameFull = m.OutputType,
+                                        InputNameRaw = RemovePackageName(m.InputType),
+                                        OutputNameRaw = RemovePackageName(m.OutputType),
+                                        InputObject = ctx.TryFind<DescriptorProto>(m.InputType),
+                                        OutputObject = ctx.TryFind<DescriptorProto>(m.OutputType),
                                     }
                                 )
                                 .ToArray()
@@ -59,13 +60,22 @@ namespace Proto.GrainGenerator
             };
             var f = Handlebars.Compile(Template.Code);
 
+
+            
             var result = f(ast);
             ctx.WriteLine(result);
 
             static string RemovePackageName(ReadOnlySpan<char> type)
             {
                 var index = type.LastIndexOf('.');
-                return type.Slice(index + 1).ToString();
+                var res = type[(index + 1)..].ToString();
+
+                if (res == "")
+                {
+                    return "MissingName" + type.ToString();
+                }
+
+                return res;
             }
         }
 
