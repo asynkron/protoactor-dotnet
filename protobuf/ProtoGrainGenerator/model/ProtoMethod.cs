@@ -11,5 +11,9 @@ namespace ProtoBuf
         public string Name { get; set; } = null!;
         public string InputName { get; set; } = null!;
         public string OutputName { get; set; } = null!;
+
+        public string InputNameFull { get; set; } = null!;
+        
+        public string OutputNameFull { get; set; } = null!;
     }
 }

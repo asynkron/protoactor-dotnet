@@ -46,8 +46,10 @@ namespace Proto.GrainGenerator
                                     {
                                         Index = i,
                                         Name = m.Name,
-                                        InputName = m.InputType,
-                                        OutputName =m.OutputType
+                                        InputName = RemovePackageName(m.InputType),
+                                        OutputName = RemovePackageName(m.OutputType),
+                                        InputNameFull = m.InputType,
+                                        OutputNameFull = m.OutputType,
                                     }
                                 )
                                 .ToArray()
