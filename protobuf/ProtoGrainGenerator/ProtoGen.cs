@@ -15,6 +15,9 @@ namespace MSBuildTasks
         // ReSharper disable once UnusedAutoPropertyAccessor.Global
         [Required]
         public string BaseIntermediateOutputPath { get; set; }
+
+        [Required]
+        public string MSBuildProjectFullPath { get; set; }
         
         public override bool Execute()
         {
@@ -22,7 +25,7 @@ namespace MSBuildTasks
 
             Log.LogMessage(MessageImportance.High, "Running Proto.GrainGenerator");
 
-            var projectFile = BuildEngine.ProjectFileOfTaskNode;
+            var projectFile = MSBuildProjectFullPath;
             Log.LogMessage(MessageImportance.High, $"Processing Project file: {projectFile}");
             var projectDirectory = Path.GetDirectoryName(projectFile)!;
             var protoFiles = Directory.GetFiles(projectDirectory, "*.proto", new EnumerationOptions

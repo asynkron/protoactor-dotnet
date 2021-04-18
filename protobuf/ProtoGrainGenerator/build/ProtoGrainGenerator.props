@@ -16,6 +16,9 @@
   <UsingTask TaskName="MSBuildTasks.ProtoGen" AssemblyFile="$(TaskAssembly)" />
 
   <Target Name="Generate" BeforeTargets="PrepareForBuild">
-    <ProtoGen BaseIntermediateOutputPath="$(IntermediateOutputPath)" />
+    <ProtoGen 
+            BaseIntermediateOutputPath="$(IntermediateOutputPath)"
+            MSBuildProjectFullPath="$(MSBuildProjectFullPath)"
+    />
   </Target>
 </Project>
