@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 using Proto;
 using Proto.Cluster;
 
-namespace {{CsNamespace}}.Generated
+namespace {{CsNamespace}}
 {
     public static class Grains
     {
