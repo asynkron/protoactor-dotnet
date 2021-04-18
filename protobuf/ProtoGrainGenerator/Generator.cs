@@ -25,15 +25,15 @@ namespace Proto.GrainGenerator
             var rel = Path.GetRelativePath(rootPath, defaultOutputName);
             
             set.Add(rel, true, r);
-
             set.Process();
+            
             var gen = new CodeGenerator();
-            var res = gen.Generate(set).ToList();
+            var codeFiles = gen.Generate(set).ToList();
 
-            foreach (var x in res)
+            foreach (var codeFile in codeFiles)
             {
-                log.LogMessage(MessageImportance.High, $"Saving generated file {x.Name}");
-                File.WriteAllText(x.Name, x.Text);
+                log.LogMessage(MessageImportance.High, $"Saving generated file {codeFile.Name}");
+                File.WriteAllText(codeFile.Name, codeFile.Text);
             }
         }
 
