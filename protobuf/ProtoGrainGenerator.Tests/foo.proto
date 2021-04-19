@@ -1,6 +1,6 @@
 syntax = "proto3";
 package Foo;
-option csharp_namespace = "Acme.Foo";
+option csharp_namespace = "Acme.OtherSystem.Foo";
 import "bar.proto";
 
 service AssetActor {
