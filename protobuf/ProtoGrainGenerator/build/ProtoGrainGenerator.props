@@ -10,7 +10,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!--This one is needed for files to be included on Linux  -->
     <Compile Include="$(IntermediateOutputPath)\protopotato\**.*.cs" />
+    <!--This one is needed to not confuse Rider -->
+    <Compile Include="$(IntermediateOutputPath)\protopotato\*.cs" />
+    <!--Yes, there probably is a better way to do this... -->
   </ItemGroup>
 
   <UsingTask TaskName="MSBuildTasks.ProtoGen" AssemblyFile="$(TaskAssembly)" />
