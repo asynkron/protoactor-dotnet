@@ -21,7 +21,7 @@
 
   <Target Name="Generate" BeforeTargets="PrepareForBuild">
     <ProtoGen 
-            BaseIntermediateOutputPath="$(IntermediateOutputPath)"
+            IntermediateOutputPath="$(IntermediateOutputPath)"
             MSBuildProjectFullPath="$(MSBuildProjectFullPath)"
     />
   </Target>

@@ -7,9 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Google.Protobuf.Reflection;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using ProtoBuf;
 
 namespace Proto.GrainGenerator
 {
@@ -18,16 +20,26 @@ namespace Proto.GrainGenerator
         internal static void Generate(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath, TaskLoggingHelper log, string rootPath, string templatePath)
         {
             var set = GetSet(importPath);
-
             
-            var r = input.OpenText();
+            var inputReader = input.OpenText();
             var defaultOutputName = output?.FullName ?? Path.GetFileNameWithoutExtension(input.Name);
-            var rel = Path.GetRelativePath(rootPath, defaultOutputName);
+            var relativePath = Path.GetRelativePath(rootPath, defaultOutputName);
             
-            set.Add(rel, true, r);
+            set.Add(relativePath, true, inputReader);
             set.Process();
             
-            var gen = new CodeGenerator();
+            
+            var template = Template.DefaultTemplate;
+
+            if (!string.IsNullOrEmpty(templatePath))
+            {
+                var relativeTemplatePath = Path.GetRelativePath(rootPath, templatePath);
+                
+                log.LogMessage(MessageImportance.High, $"Using custom template {relativeTemplatePath}");
+                template = File.ReadAllText(relativeTemplatePath, Encoding.Default);
+            }
+            
+            var gen = new CodeGenerator(template);
             var codeFiles = gen.Generate(set).ToList();
 
             foreach (var codeFile in codeFiles)

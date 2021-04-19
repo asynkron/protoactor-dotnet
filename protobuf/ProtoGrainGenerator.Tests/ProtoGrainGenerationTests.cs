@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Google.Protobuf.Reflection;
+using ProtoBuf;
 using ProtoBuf.Reflection;
 using Xunit;
 using Xunit.Abstractions;
@@ -24,7 +25,7 @@ namespace ProtoGrainGenerator.Tests
             set.AddImportPath(".");
             set.Add("foo.proto", true, r);
             set.Process();
-            var c = new CodeGenerator();
+            var c = new CodeGenerator(Template.DefaultTemplate);
             var res = c.Generate(set, NameNormalizer.Default, new Dictionary<string, string>()).ToArray();
 
             foreach (var codeFile in res)

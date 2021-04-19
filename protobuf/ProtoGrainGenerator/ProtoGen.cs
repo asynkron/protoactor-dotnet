@@ -10,12 +10,10 @@ namespace MSBuildTasks
 {
     public class ProtoGen : Task
     {
-
-        
         // ReSharper disable once MemberCanBePrivate.Global
         // ReSharper disable once UnusedAutoPropertyAccessor.Global
         [Required]
-        public string BaseIntermediateOutputPath { get; set; }
+        public string IntermediateOutputPath { get; set; }
 
         [Required]
         public string MSBuildProjectFullPath { get; set; }
@@ -28,7 +26,7 @@ namespace MSBuildTasks
         {
             AdditionalImportDirs ??= "";
             
-            Log.LogMessage(MessageImportance.High, $"Intermediate OutputPath: {BaseIntermediateOutputPath}");
+            Log.LogMessage(MessageImportance.High, $"Intermediate OutputPath: {IntermediateOutputPath}");
             Log.LogMessage(MessageImportance.High, $"Additional import directories: {AdditionalImportDirs}");
             Log.LogMessage(MessageImportance.High, "Running Proto.GrainGenerator");
 
@@ -46,7 +44,7 @@ namespace MSBuildTasks
                 Log.LogMessage(MessageImportance.High, $"Processing Proto file: {protoFile}");
                 var rel = Path.GetRelativePath(projectDirectory, protoFile);
 
-                var potatoDirectory = Path.Combine(BaseIntermediateOutputPath!, "protopotato");
+                var potatoDirectory = Path.Combine(IntermediateOutputPath!, "protopotato");
                 Directory.CreateDirectory(potatoDirectory);
                 
                 var outputFile = Path.Combine(potatoDirectory, $"{rel}.cs");

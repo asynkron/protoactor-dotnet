@@ -15,6 +15,13 @@ namespace Proto.GrainGenerator
 {
     public class CodeGenerator : CommonCodeGenerator
     {
+        private readonly string _template;
+
+        public CodeGenerator(string template)
+        {
+            _template = template;
+        }
+        
         public override string Name => "Proto.Grain";
 
         protected override string DefaultFileExtension => ".cs";
@@ -59,9 +66,7 @@ namespace Proto.GrainGenerator
                     .ToArray()
             };
 
-            string template = Template.Code;
-
-            var f = Handlebars.Compile(template);
+            var f = Handlebars.Compile(_template);
             
             var result = f(ast);
             ctx.WriteLine(result);

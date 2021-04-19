@@ -7,7 +7,7 @@ namespace ProtoBuf
 {
     public static class Template
     {
-        public const string Code = @"
+        public const string DefaultTemplate = @"
 using System;
 using System.Threading;
 using System.Threading.Tasks;
