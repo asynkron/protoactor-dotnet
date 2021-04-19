@@ -10,14 +10,14 @@ using CodeGenerator = Proto.GrainGenerator.CodeGenerator;
 
 namespace ProtoGrainGenerator.Tests
 {
-    public class UnitTest1
+    public class ProtoGrainGenerationTests
     {
         private readonly ITestOutputHelper _testOutputHelper;
 
-        public UnitTest1(ITestOutputHelper testOutputHelper) => _testOutputHelper = testOutputHelper;
+        public ProtoGrainGenerationTests(ITestOutputHelper testOutputHelper) => _testOutputHelper = testOutputHelper;
 
         [Fact]
-        public void Test1()
+        public void CanFindImportedNamespaces()
         {
             var r = new FileInfo("foo.proto").OpenText();
             var set = new FileDescriptorSet();
