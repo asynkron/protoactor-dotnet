@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="$(IntermediateOutputPath)\protopotato\*.cs" />
+    <Compile Include="$(IntermediateOutputPath)\protopotato\**.*.cs" />
   </ItemGroup>
 
   <UsingTask TaskName="MSBuildTasks.ProtoGen" AssemblyFile="$(TaskAssembly)" />
