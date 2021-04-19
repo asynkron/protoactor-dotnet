@@ -62,6 +62,7 @@ namespace MSBuildTasks
                 {
                     Log.LogMessage(MessageImportance.High, $"Import path {importPath.FullName}");
                 }
+
                 
                 Generator.Generate(inputFileInfo, outputFileInfo, importPaths, Log, projectDirectory);
             }
