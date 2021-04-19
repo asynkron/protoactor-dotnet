@@ -58,9 +58,10 @@ namespace Proto.GrainGenerator
                     )
                     .ToArray()
             };
-            var f = Handlebars.Compile(Template.Code);
 
+            string template = Template.Code;
 
+            var f = Handlebars.Compile(template);
             
             var result = f(ast);
             ctx.WriteLine(result);

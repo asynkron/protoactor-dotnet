@@ -43,7 +43,7 @@ namespace Proto.Tests.Diagnostics
             var pid = Context.Spawn(props);
 
             var res = await DiagnosticTools.GetDiagnosticsString(System, pid);
-            Assert.Contains("Hello World", res);
+            Assert.Contains("Hello World", res, StringComparison.InvariantCulture);
         }
     }
 }

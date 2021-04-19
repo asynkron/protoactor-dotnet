@@ -21,9 +21,13 @@ namespace MSBuildTasks
         public string MSBuildProjectFullPath { get; set; }
 
         public string AdditionalImportDirs { get; set; }
+
+        public string TemplatePath { get; set; }
         
         public override bool Execute()
         {
+            AdditionalImportDirs ??= "";
+            
             Log.LogMessage(MessageImportance.High, $"Intermediate OutputPath: {BaseIntermediateOutputPath}");
             Log.LogMessage(MessageImportance.High, $"Additional import directories: {AdditionalImportDirs}");
             Log.LogMessage(MessageImportance.High, "Running Proto.GrainGenerator");
@@ -63,7 +67,7 @@ namespace MSBuildTasks
                     Log.LogMessage(MessageImportance.High, $"Import path {importPath.FullName}");
                 }
                 
-                Generator.Generate(inputFileInfo, outputFileInfo, importPaths, Log, projectDirectory);
+                Generator.Generate(inputFileInfo, outputFileInfo, importPaths, Log, projectDirectory, TemplatePath);
             }
 
             return true;
