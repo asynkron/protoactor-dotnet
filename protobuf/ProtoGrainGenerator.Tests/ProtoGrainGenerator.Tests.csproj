@@ -1,9 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
 
         <IsPackable>false</IsPackable>
+
+        <TargetFrameworks>net5.0;netstandard2.1</TargetFrameworks>
+
+        <OutputType>Library</OutputType>
     </PropertyGroup>
 
     <ItemGroup>
