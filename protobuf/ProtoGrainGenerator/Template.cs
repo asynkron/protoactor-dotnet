@@ -54,6 +54,21 @@ namespace {{CsNamespace}}
         public virtual Task OnStopping() => Task.CompletedTask;
         public virtual Task OnStopped() => Task.CompletedTask;
         public virtual Task OnReceive() => Task.CompletedTask;
+
+        {{#each Methods}}
+        public virtual async Task {{Name}}({{InputName}} request, Action<{{OutputName}}> respond, Action<string> onError)
+        {
+            try
+            {
+                var res = await {{Name}}(request);
+                respond(res);
+            }
+            catch (Exception x)
+            {
+                onError(x.ToString());
+            }
+        }
+        {{/each}}
     
 		{{#each Methods}}
         public abstract Task<{{OutputName}}> {{Name}}({{InputName}} request);
@@ -117,29 +132,25 @@ namespace {{CsNamespace}}
                 }    
                 case GrainRequestMessage(var methodIndex, var r):
                 {
+                    Action<string> onError = error => context.Respond( new GrainErrorResponse {Err = error } );
+
                     switch (methodIndex)
                     {
 			            {{#each Methods}}
                         case {{Index}}:
-                        {                            
-                            try
-                            {
-                                var res = await _inner.{{Name}}(({{InputName}})r);
-                                var response = new GrainResponseMessage(res);                                
-                                context.Respond(response);
-                            }
-                            catch (Exception x)
-                            {
-                                var grainErrorResponse = new GrainErrorResponse
-                                {
-                                    Err = x.ToString()
-                                };
-                                context.Respond(grainErrorResponse);
+                        {   
+                            if(r is {{InputName}} input){
+                                await _inner.{{Name}}(input, res => context.Respond( new GrainResponseMessage(res) ), onError);
+                            } else {
+                                onError(""Invalid client contract"");
                             }
 
                             break;
                         }
 			            {{/each}}
+                        default:
+                            onError(""Invalid client contract"");
+                            break;
                     }
 
                     break;
