@@ -22,16 +22,16 @@ namespace Proto.Tests
         public async Task RequestActorAsync()
         {
             var pid = SpawnActorFromFunc(ctx => {
-                if (ctx.Message is string) ctx.Respond("hey");
-                return Task.CompletedTask;
-            }
+                    if (ctx.Message is string) ctx.Respond("hey");
+                    return Task.CompletedTask;
+                }
             );
 
             var reply = await Context.RequestAsync<object>(pid, "hello");
 
             Assert.Equal("hey", reply);
         }
-
+        
         [Fact]
         public async Task RequestActorAsyncAutoRespond()
         {
@@ -58,9 +58,9 @@ namespace Proto.Tests
         public async Task RequestActorAsync_should_not_raise_TimeoutException_when_result_is_first()
         {
             var pid = SpawnActorFromFunc(ctx => {
-                if (ctx.Message is string) ctx.Respond("hey");
-                return Task.CompletedTask;
-            }
+                    if (ctx.Message is string) ctx.Respond("hey");
+                    return Task.CompletedTask;
+                }
             );
 
             var reply = await Context.RequestAsync<object>(pid, "hello", TimeSpan.FromMilliseconds(1000));
@@ -75,9 +75,9 @@ namespace Proto.Tests
 
             var pid = Context.Spawn(
                 Props.FromFunc(ctx => {
-                    messages.Enqueue(ctx.Message!);
-                    return Task.CompletedTask;
-                }
+                            messages.Enqueue(ctx.Message!);
+                            return Task.CompletedTask;
+                        }
                     )
                     .WithMailbox(() => new TestMailbox())
             );
@@ -177,15 +177,15 @@ namespace Proto.Tests
         public async Task ForwardActorAsync()
         {
             var pid = SpawnActorFromFunc(ctx => {
-                if (ctx.Message is string) ctx.Respond("hey");
-                return Task.CompletedTask;
-            }
+                    if (ctx.Message is string) ctx.Respond("hey");
+                    return Task.CompletedTask;
+                }
             );
 
             var forwarder = SpawnForwarderFromFunc(ctx => {
-                if (ctx.Message is string) ctx.Forward(pid);
-                return Task.CompletedTask;
-            }
+                    if (ctx.Message is string) ctx.Forward(pid);
+                    return Task.CompletedTask;
+                }
             );
 
             var reply = await Context.RequestAsync<object>(forwarder, "hello");
