@@ -11,8 +11,10 @@ namespace ProtoBuf
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Proto;
 using Proto.Cluster;
+
 
 namespace {{CsNamespace}}
 {
@@ -109,6 +111,7 @@ namespace {{CsNamespace}}
     class {{Name}}Actor : IActor
     {
         private {{Name}}Base _inner;
+        private IContext _context;
 
         public async Task ReceiveAsync(IContext context)
         {
@@ -116,6 +119,7 @@ namespace {{CsNamespace}}
             {
                 case ClusterInit msg: 
                 {
+                    _context = context;
                     _inner = Grains.Factory<{{Name}}Base>.Create(context, msg.Identity, msg.Kind);
                     await _inner.OnStarted();
                     break;
@@ -132,24 +136,22 @@ namespace {{CsNamespace}}
                 }    
                 case GrainRequestMessage(var methodIndex, var r):
                 {
-                    Action<string> onError = error => context.Respond( new GrainErrorResponse {Err = error } );
-
                     switch (methodIndex)
                     {
 			            {{#each Methods}}
                         case {{Index}}:
                         {   
                             if(r is {{InputName}} input){
-                                await _inner.{{Name}}(input, res => context.Respond( new GrainResponseMessage(res) ), onError);
+                                await _inner.{{Name}}(input, Respond, OnError);
                             } else {
-                                onError(""Invalid client contract"");
+                                OnError(""Invalid client contract"");
                             }
 
                             break;
                         }
 			            {{/each}}
                         default:
-                            onError(""Invalid client contract"");
+                            OnError(""Invalid client contract"");
                             break;
                     }
 
@@ -162,6 +164,10 @@ namespace {{CsNamespace}}
                 }
             }
         }
+
+        private void Respond<T>(T response) where T: IMessage => _context.Respond( new GrainResponseMessage(response));
+
+        private void OnError(string error) => _context.Respond( new GrainErrorResponse {Err = error } );
     }
 	{{/each}}	
 }
