@@ -358,7 +358,7 @@ namespace Proto.Context
                 //fast path, 0 alloc invocation of actor receive
             }
 
-            if (t.IsCompleted)
+            if (t.IsCompletedSuccessfully)
             {
                 _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
                 return default;

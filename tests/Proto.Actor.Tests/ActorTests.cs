@@ -94,6 +94,45 @@ namespace Proto.Tests
             Assert.IsType<Stopped>(msgs[3]);
         }
 
+        [Fact]
+        public async Task ActorLifeCycleWhenExceptionIsThrown()
+        {
+            var messages = new Queue<object>();
+            var i = 0;
+            async Task HandleMessage(IContext ctx)
+            {
+                if (ctx.Message is string && i++ == 0)
+                {
+                    ctx.Stash();
+                    throw new Exception("Test");
+                }
+                messages.Enqueue(ctx.Message!);
+                await Task.Yield();
+            };
+            var pid = Context.Spawn(
+                Props.FromFunc(ctx => ctx.Message switch {
+                    object => HandleMessage(ctx),
+                    _ => Task.CompletedTask
+                }
+            )
+            );
+
+            Context.Send(pid, "hello");
+            Context.Send(pid, "hello");
+
+            await Context.PoisonAsync(pid);
+
+            Assert.Equal(7, messages.Count);
+            var msgs = messages.ToArray();
+            Assert.IsType<Started>(msgs[0]);
+            Assert.IsType<Restarting>(msgs[1]);
+            Assert.IsType<Started>(msgs[2]);
+            Assert.IsType<string>(msgs[3]);
+            Assert.IsType<string>(msgs[4]);
+            Assert.IsType<Stopping>(msgs[5]);
+            Assert.IsType<Stopped>(msgs[6]);
+        }
+
         // [Fact(Skip = "fails on CI")]
         // public async Task StopActorWithLongRunningTask()
         // {
