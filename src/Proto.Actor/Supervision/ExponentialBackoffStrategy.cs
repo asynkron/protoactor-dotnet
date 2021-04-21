@@ -36,7 +36,12 @@ namespace Proto
             var backoff = rs.FailureCount * (int) _initialBackoff.TotalMilliseconds;
             var noise = _random.Next(500);
             var duration = TimeSpan.FromMilliseconds(backoff + noise);
-            Task.Delay(duration).ContinueWith(t => supervisor.RestartChildren(reason, child));
+            _ = SafeTask.Run(WaitAndRestart);
+            async Task WaitAndRestart()
+            {
+                await Task.Delay(duration);
+                supervisor.RestartChildren(reason, child);
+            }
         }
     }
 }
