@@ -146,7 +146,7 @@ namespace {{CsNamespace}}
                 }
                 default:
                 {
-                    await _inner.OnReceive();
+                    await _inner?.OnReceive();
                     break;
                 }
             }
