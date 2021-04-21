@@ -15,7 +15,7 @@
       <PackageReference Include="MongoDB.Driver" Version="2.12.1" />
       <PackageReference Include="Proto.Cluster.Identity.MongoDb" Version="0.14.1-alpha.0.1" />
       <PackageReference Include="Proto.Cluster.Kubernetes" Version="0.14.1-alpha.0.1" />
-      <PackageReference Include="Proto.Remote.GrpcNet" Version="0.14.1-alpha.0.1" />
+      <PackageReference Include="Proto.Remote.GrpcNet" Version="0.17.0" />
     </ItemGroup>
 
 </Project>
