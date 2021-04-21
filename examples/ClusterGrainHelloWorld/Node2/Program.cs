@@ -21,9 +21,11 @@ namespace Node2
     {
         private readonly string _identity;
 
-        public HelloGrain(IContext ctx) : base(ctx) => _identity = Context.Get<ClusterIdentity>()!.Identity;
+        public HelloGrain(IContext ctx, string identity) : base(ctx) => _identity = identity;
 
         public override Task<HelloResponse> SayHello(HelloRequest request) {
+            
+            Console.WriteLine("Got request!!");
             var res = new HelloResponse
             {
                 Message = $"Hello from typed grain {_identity}"
@@ -38,9 +40,9 @@ namespace Node2
         private static async Task Main()
         {
             //bind this interface to our concrete implementation
-            Grains.Factory<HelloGrainBase>.Create = (ctx, _, _) => new HelloGrain(ctx);
+            Grains.Factory<HelloGrainBase>.Create = (ctx, identity, _) => new HelloGrain(ctx, identity);
 
-            var system = new ActorSystem()
+            var system = new ActorSystem(new ActorSystemConfig().WithDeveloperSupervisionLogging(true))
                 .WithRemote(GrpcCoreRemoteConfig
                     .BindToLocalhost()
                     .WithProtoMessages(ProtosReflection.Descriptor)
@@ -53,6 +55,8 @@ namespace Node2
             await system
                 .Cluster()
                 .StartMemberAsync();
+            
+            Console.WriteLine("Started...");
 
             Console.CancelKeyPress += async (e, y) => {
                 Console.WriteLine("Shutting Down...");

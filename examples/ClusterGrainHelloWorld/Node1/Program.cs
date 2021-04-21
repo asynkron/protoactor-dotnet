@@ -28,9 +28,11 @@ class Program
 
         await system
             .Cluster()
-            .StartMemberAsync();
+            .StartClientAsync();
 
+        Console.WriteLine("Started");
         await Task.Delay(2000);
+
 
         var helloGrain = system.Cluster().GetHelloGrain("MyGrain");
         
