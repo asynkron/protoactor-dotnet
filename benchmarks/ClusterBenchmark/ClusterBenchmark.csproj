@@ -19,7 +19,7 @@
 
     <ItemGroup>
         <PackageReference Include="DotNet.Testcontainers" Version="1.5.0-beta.20210318.4" />
-        <PackageReference Include="Grpc.Tools" Version="2.36.4" PrivateAssets="All" />
+        <PackageReference Include="Grpc.Tools" Version="2.37.0" PrivateAssets="All" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0" />
         <PackageReference Include="MongoDB.Driver" Version="2.12.1" />
         <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
