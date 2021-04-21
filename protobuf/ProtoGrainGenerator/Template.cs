@@ -117,13 +117,17 @@ namespace {{CsNamespace}}
         {
             switch (context.Message)
             {
-                case ClusterInit msg: 
+                case Started msg: 
                 {
                     _context = context;
-                    _inner = Grains.Factory<{{Name}}Base>.Create(context, msg.Identity, msg.Kind);
+                    var id = context.Get<ClusterIdentity>();
+                    _inner = Grains.Factory<{{Name}}Base>.Create(context, id.Identity, id.Kind);
                     await _inner.OnStarted();
                     break;
                 }
+                case ClusterInit:
+                    //Ignored
+                    break;
                 case Stopping:
                 {
                     await _inner.OnStopping();
@@ -159,7 +163,7 @@ namespace {{CsNamespace}}
                 }
                 default:
                 {
-                    await _inner?.OnReceive();
+                    await _inner.OnReceive();
                     break;
                 }
             }
