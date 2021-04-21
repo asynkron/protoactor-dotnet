@@ -5,7 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Threading.Tasks;
-using Cluster.HelloWorld.Messages;
+using ClusterHelloWorld.Messages;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
@@ -13,23 +13,17 @@ using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using static System.Threading.Tasks.Task;
-using ProtosReflection =Cluster.HelloWorld.Messages.ProtosReflection;
+using ProtosReflection =ClusterHelloWorld.Messages.ProtosReflection;
 
 namespace Node2
 {
-    public class HelloGrain : IHelloGrain
+    public class HelloGrain : HelloGrainBase
     {
-        private readonly IContext _ctx;
         private readonly string _identity;
 
-        public HelloGrain(IContext ctx, string identity)
-        {
-            _ctx = ctx;
-            _identity = identity;
-        }
+        public HelloGrain(IContext ctx) : base(ctx) => _identity = Context.Get<ClusterIdentity>()!.Identity;
 
-        public Task<HelloResponse> SayHello(HelloRequest request)
-        {
+        public override Task<HelloResponse> SayHello(HelloRequest request) {
             var res = new HelloResponse
             {
                 Message = $"Hello from typed grain {_identity}"
@@ -44,7 +38,7 @@ namespace Node2
         private static async Task Main()
         {
             //bind this interface to our concrete implementation
-            Grains.Factory<IHelloGrain>.Create = (ctx, identity, _) => new HelloGrain(ctx, identity);
+            Grains.Factory<HelloGrainBase>.Create = (ctx, _, _) => new HelloGrain(ctx);
 
             var system = new ActorSystem()
                 .WithRemote(GrpcCoreRemoteConfig
@@ -53,7 +47,7 @@ namespace Node2
                 )
                 .WithCluster(ClusterConfig
                     .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig()), new PartitionIdentityLookup())
-                    .WithClusterKinds(Grains.GetClusterKinds())
+                    .WithHelloHelloWorldKinds()
                 );
 
             await system
