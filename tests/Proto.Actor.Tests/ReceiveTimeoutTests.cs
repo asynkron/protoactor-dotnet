@@ -34,7 +34,7 @@ namespace Proto.Tests
             );
             Context.Spawn(props);
 
-            await GetSafeAwaitableTask(receiveTimeoutWaiter);
+            await receiveTimeoutWaiter.Task;
             Assert.True(timeoutReceived);
         }
 
@@ -61,7 +61,7 @@ namespace Proto.Tests
             );
             Context.Spawn(props);
 
-            await GetSafeAwaitableTask(actorStartedWaiter);
+            await actorStartedWaiter.Task;
             Assert.False(timeoutReceived);
         }
 
@@ -92,7 +92,7 @@ namespace Proto.Tests
             Context.Spawn(props);
 
             // this task should auto cancel
-            await GetSafeAwaitableTask(autoExpiringWaiter);
+            await autoExpiringWaiter.Task;
 
             Assert.True(autoExpiringWaiter.Task.IsCanceled);
             Assert.Equal(TimeSpan.Zero, endingTimeout);
@@ -124,7 +124,7 @@ namespace Proto.Tests
             );
             Context.Spawn(props);
 
-            await GetSafeAwaitableTask(receiveTimeoutWaiter);
+            await receiveTimeoutWaiter.Task;
             Assert.True(timeoutReceived);
         }
 
@@ -136,9 +136,5 @@ namespace Proto.Tests
             ct.CancelAfter(timeoutMs);
             return tcs;
         }
-
-        private ConfiguredTaskAwaitable<Task<int>> GetSafeAwaitableTask(TaskCompletionSource<int> tcs) => tcs.Task
-            .ContinueWith(t => t) // suppress any TaskCanceledException
-            .ConfigureAwait(false);
     }
 }

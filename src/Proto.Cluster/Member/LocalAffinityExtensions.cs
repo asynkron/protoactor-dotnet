@@ -55,12 +55,19 @@ namespace Proto.Cluster
                             envelope.Message.GetType(), sender
                         );
                         context.MarkForRelocation();
-                        context.System.Root.PoisonAsync(self).ContinueWith(_ => ActivateByProxy(context, sender!.Address, context.Get<ClusterIdentity>()!, self));
+                        
+                        PoisonThenActivate(context, self, sender);
                     }
 
                     return task;
                 }
             );
+
+            async Task PoisonThenActivate(IReceiverContext context, PID self, PID? sender)
+            {
+                await context.System.Root.PoisonAsync(self);
+                await ActivateByProxy(context, sender!.Address, context.Get<ClusterIdentity>()!, self);
+            }
         }
 
         private static bool IsMarkedForRelocation(this IContextStore context) => context.Get<Tombstone>() is not null;
