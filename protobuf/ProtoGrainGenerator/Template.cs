@@ -11,8 +11,10 @@ namespace ProtoBuf
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Proto;
 using Proto.Cluster;
+
 
 namespace {{CsNamespace}}
 {
@@ -54,6 +56,21 @@ namespace {{CsNamespace}}
         public virtual Task OnStopping() => Task.CompletedTask;
         public virtual Task OnStopped() => Task.CompletedTask;
         public virtual Task OnReceive() => Task.CompletedTask;
+
+        {{#each Methods}}
+        public virtual async Task {{Name}}({{InputName}} request, Action<{{OutputName}}> respond, Action<string> onError)
+        {
+            try
+            {
+                var res = await {{Name}}(request);
+                respond(res);
+            }
+            catch (Exception x)
+            {
+                onError(x.ToString());
+            }
+        }
+        {{/each}}
     
 		{{#each Methods}}
         public abstract Task<{{OutputName}}> {{Name}}({{InputName}} request);
@@ -94,6 +111,7 @@ namespace {{CsNamespace}}
     class {{Name}}Actor : IActor
     {
         private {{Name}}Base _inner;
+        private IContext _context;
 
         public async Task ReceiveAsync(IContext context)
         {
@@ -101,6 +119,7 @@ namespace {{CsNamespace}}
             {
                 case ClusterInit msg: 
                 {
+                    _context = context;
                     _inner = Grains.Factory<{{Name}}Base>.Create(context, msg.Identity, msg.Kind);
                     await _inner.OnStarted();
                     break;
@@ -121,25 +140,19 @@ namespace {{CsNamespace}}
                     {
 			            {{#each Methods}}
                         case {{Index}}:
-                        {                            
-                            try
-                            {
-                                var res = await _inner.{{Name}}(({{InputName}})r);
-                                var response = new GrainResponseMessage(res);                                
-                                context.Respond(response);
-                            }
-                            catch (Exception x)
-                            {
-                                var grainErrorResponse = new GrainErrorResponse
-                                {
-                                    Err = x.ToString()
-                                };
-                                context.Respond(grainErrorResponse);
+                        {   
+                            if(r is {{InputName}} input){
+                                await _inner.{{Name}}(input, Respond, OnError);
+                            } else {
+                                OnError(""Invalid client contract"");
                             }
 
                             break;
                         }
 			            {{/each}}
+                        default:
+                            OnError(""Invalid client contract"");
+                            break;
                     }
 
                     break;
@@ -151,6 +164,10 @@ namespace {{CsNamespace}}
                 }
             }
         }
+
+        private void Respond<T>(T response) where T: IMessage => _context.Respond( new GrainResponseMessage(response));
+
+        private void OnError(string error) => _context.Respond( new GrainErrorResponse {Err = error } );
     }
 	{{/each}}	
 }
