@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using Google.Protobuf;
 using Proto.Remote;
 
@@ -15,8 +16,11 @@ namespace Proto.Cluster
         public IRootSerialized Serialize(ActorSystem system)
         {
             var ser = system.Serialization();
-            var typeName = ser.GetTypeName(RequestMessage, ser.DefaultSerializerId);
-            var data = ser.Serialize(RequestMessage, ser.DefaultSerializerId);
+            var (data, typeName, serializerId) = ser.Serialize(RequestMessage);
+#if DEBUG
+            if (serializerId != Serialization.SERIALIZER_ID_PROTOBUF)
+                throw new Exception($"Grains must use ProtoBuf types: {RequestMessage.GetType().FullName}");
+#endif
             return new GrainRequest
             {
                 MethodIndex = MethodIndex,

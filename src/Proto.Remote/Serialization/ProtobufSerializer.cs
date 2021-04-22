@@ -34,5 +34,7 @@ namespace Proto.Remote
 
             throw new ArgumentException("obj must be of type IMessage", nameof(obj));
         }
+
+        public bool CanSerialize(object obj) => obj is IMessage;
     }
 }
