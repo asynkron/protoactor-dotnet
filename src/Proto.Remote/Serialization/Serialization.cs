@@ -101,7 +101,7 @@ namespace Proto.Remote
             if (_serializerLookup.TryGetValue(type, out serializer))
                 return serializer;
 
-            // Check if the default serializer can serialize this object.
+            // Determine which serializer can serialize this object type.
             foreach (var serializerItem in _serializers)
             {
                 if (serializerItem.Serializer.CanSerialize(message))
