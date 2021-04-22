@@ -30,6 +30,8 @@ namespace Proto.Remote.Tests
 
             public ByteString Serialize(object obj) =>
                 ByteString.CopyFromUtf8(System.Text.Json.JsonSerializer.Serialize(obj));
+
+            public bool CanSerialize(object obj) => true;
         }
 
         public class Fixture : RemoteFixture
@@ -40,10 +42,10 @@ namespace Proto.Remote.Tests
             public Fixture()
             {
                 var clientConfig = ConfigureClientRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost())
-                    .WithSerializer(new CustomSerializer(), true);
+                    .WithSerializer(serializerId: 2, priority: 1000, new CustomSerializer());
                 (_clientHost, Remote) = GetHostedGrpcNetRemote(clientConfig);
                 var serverConfig = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost())
-                    .WithSerializer(new CustomSerializer(), true);
+                    .WithSerializer(serializerId: 2, priority: 1000, new CustomSerializer());
                 (_serverHost, ServerRemote) = GetHostedGrpcNetRemote(serverConfig);
             }
 

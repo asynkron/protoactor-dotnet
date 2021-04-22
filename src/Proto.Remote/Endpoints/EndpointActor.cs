@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Proto.Remote.Metrics;
@@ -214,7 +215,7 @@ namespace Proto.Remote
         public void RemoteDeliver(IContext context, PID pid, object msg)
         {
             var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
-            var env = new RemoteDeliver(header!, message, pid, sender!, -1);
+            var env = new RemoteDeliver(header!, message, pid, sender!);
             context.Send(context.Self!, env);
         }
 
@@ -230,7 +231,6 @@ namespace Proto.Remote
             foreach (var rd in m)
             {
                 var targetName = rd.Target.Id;
-                var serializerId = rd.SerializerId == -1 ? _serializerId : rd.SerializerId;
 
                 if (!targetNames.TryGetValue(targetName, out var targetId))
                 {
@@ -243,7 +243,7 @@ namespace Proto.Remote
                 //this only apply to root level messages and never to nested child objects inside the message
                 if (message is IRootSerializable deserialized) message = deserialized.Serialize(context.System);
 
-                var typeName = _remoteConfig.Serialization.GetTypeName(message, serializerId);
+                (ByteString bytes, string typeName, int serializerId) = _remoteConfig.Serialization.Serialize(rd.Message);
 
                 if (!context.System.Metrics.IsNoop) counter.Inc(new[] {context.System.Id, context.System.Address, typeName});
 
@@ -260,8 +260,6 @@ namespace Proto.Remote
                     header = new MessageHeader();
                     header.HeaderData.Add(rd.Header.ToDictionary());
                 }
-
-                var bytes = _remoteConfig.Serialization.Serialize(message, serializerId);
 
                 var envelope = new MessageEnvelope
                 {

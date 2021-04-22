@@ -24,8 +24,7 @@ namespace Proto.Cluster
             var batch = new ProducerBatch();
             foreach (var message in Envelopes)
             {
-                var typeName = s.GetTypeName(message, s.DefaultSerializerId);
-                var messageData = s.Serialize(message, s.DefaultSerializerId);
+                var (messageData, typeName, serializerId) = s.Serialize(message);
                 var typeIndex = batch.TypeNames.IndexOf(typeName);
 
                 if (typeIndex == -1)
@@ -55,7 +54,7 @@ namespace Proto.Cluster
             //deserialize messages in the envelope
             var messages = Envelopes
                 .Select(e => ser
-                    .Deserialize(TypeNames[e.TypeId], e.MessageData, ser.DefaultSerializerId))
+                    .Deserialize(TypeNames[e.TypeId], e.MessageData, e.SerializerId))
                 .ToList();
 
             var res = new ProducerBatchMessage();
