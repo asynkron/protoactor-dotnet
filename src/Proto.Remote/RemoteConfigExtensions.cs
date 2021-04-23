@@ -108,6 +108,13 @@ namespace Proto.Remote
             return remoteConfig;
         }
 
+        public static TRemoteConfig WithJsonSerializerOptions<TRemoteConfig>(this TRemoteConfig remoteConfig, System.Text.Json.JsonSerializerOptions options)
+            where TRemoteConfig : RemoteConfigBase
+        {
+            remoteConfig.Serialization.JsonSerializerOptions = options;
+            return remoteConfig;
+        }
+
         public static TRemoteConfig WithLogLevelForDeserializationErrors<TRemoteConfig>(this TRemoteConfig remoteConfig, LogLevel level)
             where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with {DeserializationErrorLogLevel = level};

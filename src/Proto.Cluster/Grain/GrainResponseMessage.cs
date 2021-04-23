@@ -17,7 +17,7 @@ namespace Proto.Cluster
             var (data, typeName, serializerId) = ser.Serialize(ResponseMessage);
 #if DEBUG
             if (serializerId != Serialization.SERIALIZER_ID_PROTOBUF)
-                throw new Exception($"Grains must use ProtoBuf types: {RequestMessage.GetType().FullName}");
+                throw new Exception($"Grains must use ProtoBuf types: {ResponseMessage.GetType().FullName}");
 #endif
             return new GrainResponse
             {

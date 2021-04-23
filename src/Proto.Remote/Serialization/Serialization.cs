@@ -8,6 +8,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
 using Proto.Extensions;
@@ -35,6 +36,8 @@ namespace Proto.Remote
 
         public const int SERIALIZER_ID_PROTOBUF = 0;
         public const int SERIALIZER_ID_JSON = 1;
+
+        public JsonSerializerOptions? JsonSerializerOptions { get; internal set; }
 
         public Serialization()
         {

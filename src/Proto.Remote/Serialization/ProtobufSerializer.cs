@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using Google.Protobuf;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
@@ -35,6 +36,15 @@ namespace Proto.Remote
             throw new ArgumentException("obj must be of type IMessage", nameof(obj));
         }
 
-        public bool CanSerialize(object obj) => obj is IMessage;
+        public bool CanSerialize(object obj)
+        {
+            if (obj is IMessage message)
+            {
+                if (_serialization.TypeLookup.ContainsKey(message.Descriptor.FullName))
+                    return true;
+                Log.CreateLogger<Serialization>().LogWarning("Descriptor for message type {descriptor} not registered", message.Descriptor.Name);
+            }
+            return false;
+        }
     }
 }
