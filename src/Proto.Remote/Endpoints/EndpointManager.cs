@@ -129,10 +129,8 @@ namespace Proto.Remote
         private void OnEndpointConnected(EndpointConnectedEvent evt)
         {
             var endpoint = GetEndpoint(evt.Address);
-            if (endpoint is null)
-                return;
 
-            endpoint.SendSystemMessage(_system, evt);
+            endpoint?.SendSystemMessage(_system, ResumeMailbox.Instance);
         }
 
         internal PID? GetEndpoint(string address)
