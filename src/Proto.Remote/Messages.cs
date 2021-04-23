@@ -32,7 +32,7 @@ namespace Proto.Remote
 
     public sealed record RemoteUnwatch(PID Watcher, PID Watchee);
 
-    public sealed record RemoteDeliver (Proto.MessageHeader Header, object Message, PID Target, PID Sender, int SerializerId);
+    public sealed record RemoteDeliver (Proto.MessageHeader Header, object Message, PID Target, PID Sender);
 
     public class JsonMessage
     {

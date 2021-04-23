@@ -49,7 +49,9 @@ namespace Proto.Remote
             return Task.FromResult(
                 new ConnectResponse
                 {
-                    DefaultSerializerId = _serialization.DefaultSerializerId
+                    // NOTE: This is here for backward compatibility. Current version of Serialization
+                    // implementation doesn't utilize the default serializer idea.
+                    DefaultSerializerId = Serialization.SERIALIZER_ID_PROTOBUF,
                 }
             );
         }

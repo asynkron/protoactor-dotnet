@@ -14,5 +14,7 @@ namespace Proto.Remote
         object Deserialize(ByteString bytes, string typeName);
 
         string GetTypeName(object message);
+
+        bool CanSerialize(object obj);
     }
 }

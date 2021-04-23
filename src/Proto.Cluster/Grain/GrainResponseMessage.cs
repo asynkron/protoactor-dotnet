@@ -14,8 +14,11 @@ namespace Proto.Cluster
         public IRootSerialized Serialize(ActorSystem system)
         {
             var ser = system.Serialization();
-            var typeName = ser.GetTypeName(ResponseMessage, ser.DefaultSerializerId);
-            var data = ser.Serialize(ResponseMessage, ser.DefaultSerializerId);
+            var (data, typeName, serializerId) = ser.Serialize(ResponseMessage);
+#if DEBUG
+            if (serializerId != Serialization.SERIALIZER_ID_PROTOBUF)
+                throw new Exception($"Grains must use ProtoBuf types: {RequestMessage.GetType().FullName}");
+#endif
             return new GrainResponse
             {
                 MessageData = data,

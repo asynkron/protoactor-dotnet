@@ -14,7 +14,7 @@ namespace Proto.Cluster
         public IRootSerializable Deserialize(ActorSystem system)
         {
             var ser = system.Serialization();
-            var message = ser.Deserialize(MessageTypeName, MessageData, ser.DefaultSerializerId);
+            var message = ser.Deserialize(MessageTypeName, MessageData, Serialization.SERIALIZER_ID_PROTOBUF);
             return new GrainResponseMessage((IMessage)message);
         }
     }
