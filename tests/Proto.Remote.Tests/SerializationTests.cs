@@ -8,6 +8,7 @@ namespace Proto.Remote.Tests
     {
         public class TestType1 { }
         public class TestType2 { }
+        public record JsonMessage(string Test, int Test2);
 
         public class MockSerializer1 : ISerializer
         {
@@ -56,42 +57,28 @@ namespace Proto.Remote.Tests
 
             // Check if we fallback to JSON.
             {
-                var json = new JsonMessage(
-                    "actor.PID",
-                    "{ \"Address\":\"123\", \"Id\":\"456\"}");
+                var json = new JsonMessage("Test", 10);
                 var (bytes, typeName, serializerId) = serialization.Serialize(json);
-                var deserialized = serialization.Deserialize(typeName, bytes, serializerId) as PID;
+                var deserialized = serialization.Deserialize(typeName, bytes, serializerId) as JsonMessage;
                 Assert.NotNull(deserialized);
-                Assert.Equal("123", deserialized.Address);
+                Assert.Equal(json.Test, deserialized.Test);
+                Assert.Equal(json.Test2, deserialized.Test2);
             }
         }
 
-        [Fact]
-        public void CanSerializeAndDeserializeJsonPid()
-        {
-            var serialization = new Serialization();
-            var json = new JsonMessage(
-                "actor.PID",
-                "{ \"Address\":\"123\", \"Id\":\"456\"}");
-            var (bytes, typeName, serializerId) = serialization.Serialize(json);
-            var deserialized = serialization.Deserialize(typeName, bytes, serializerId) as PID;
-            Assert.NotNull(deserialized);
-            Assert.Equal("123", deserialized.Address);
-            Assert.Equal("456", deserialized.Id);
-        }
+
 
         [Fact]
         public void CanSerializeAndDeserializeJson()
         {
             var serialization = new Serialization();
             serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
-            var json = new JsonMessage(
-                "remote_test_messages.Ping",
-                "{ \"message\":\"Hello\"}");
+            var json = new JsonMessage("Test", 10);
             var (bytes, typeName, serializerId) = serialization.Serialize(json);
-            var deserialized = serialization.Deserialize(typeName, bytes, serializerId) as Ping;
+            var deserialized = serialization.Deserialize(typeName, bytes, serializerId) as JsonMessage;
             Assert.NotNull(deserialized);
-            Assert.Equal("Hello", deserialized.Message);
+            Assert.Equal(json.Test, deserialized.Test);
+            Assert.Equal(json.Test2, deserialized.Test2);
         }
     }
 }
