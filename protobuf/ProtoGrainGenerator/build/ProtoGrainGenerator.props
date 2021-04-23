@@ -11,15 +11,20 @@
 
   <ItemGroup>
     <!--This one is needed for files to be included on Linux  -->
-    <Compile Include="$(IntermediateOutputPath)\protopotato\**.*.cs" />
-    <!--This one is needed to not confuse Rider -->
-    <Compile Include="$(IntermediateOutputPath)\protopotato\*.cs" />
-    <!--Yes, there probably is a better way to do this... -->
+    <Compile Include="$(IntermediateOutputPath)protopotato\**\*.cs" />
   </ItemGroup>
 
-  <UsingTask TaskName="MSBuildTasks.ProtoGen" AssemblyFile="$(TaskAssembly)" />
+  <UsingTask TaskName="MSBuildTasks.ProtoGenTask" AssemblyFile="$(TaskAssembly)" />
+  
+  <ItemDefinitionGroup>
+    <ProtoGen/>
+  </ItemDefinitionGroup>
+  
+  <ItemGroup>
+    <ProtoGen include="$(MSBuildThisFileDirectory)..\tasks\$(TaskFolder)\ProtoGrainGenerator.dll" />
+  </ItemGroup>
 
-  <Target Name="Generate" BeforeTargets="PrepareForBuild">
+  <Target Name="ProtoGenerate" BeforeTargets="PrepareForBuild">
     <ProtoGen 
             IntermediateOutputPath="$(IntermediateOutputPath)"
             MSBuildProjectFullPath="$(MSBuildProjectFullPath)"

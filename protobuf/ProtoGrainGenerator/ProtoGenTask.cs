@@ -8,7 +8,7 @@ using Proto.GrainGenerator;
 
 namespace MSBuildTasks
 {
-    public class ProtoGen : Task
+    public class ProtoGenTask : Task
     {
         // ReSharper disable once MemberCanBePrivate.Global
         // ReSharper disable once UnusedAutoPropertyAccessor.Global
@@ -21,10 +21,24 @@ namespace MSBuildTasks
         public string AdditionalImportDirs { get; set; }
 
         public string TemplatePath { get; set; }
+
+        public ITaskItem[] ProtoGen { get; set; }
         
         public override bool Execute()
         {
             AdditionalImportDirs ??= "";
+
+            if (ProtoGen != null)
+            {
+                foreach (var item in ProtoGen)
+                {
+                    Log.LogMessage(MessageImportance.High, "ProtoGen Item Spec:"+ item.ItemSpec);
+                }
+            }
+            else
+            {
+                Log.LogMessage(MessageImportance.High, "No items in ProtoGen property....");
+            }
             
             Log.LogMessage(MessageImportance.High, $"Intermediate OutputPath: {IntermediateOutputPath}");
             Log.LogMessage(MessageImportance.High, $"Additional import directories: {AdditionalImportDirs}");
