@@ -15,7 +15,7 @@
     <ProtoGrain/>
   </ItemDefinitionGroup>
 
-  <Target Name="ProtoGenerate" BeforeTargets="Compile">
+  <Target Name="ProtoGenerate" BeforeTargets="BeforeBuild">
     <ProtoGenTask 
             IntermediateOutputPath="$(IntermediateOutputPath)"
             MSBuildProjectFullPath="$(MSBuildProjectFullPath)"
@@ -25,7 +25,7 @@
 
   <ItemGroup>
     <!--This one is needed to not confuse Rider -->
-    <Compile Include="$(IntermediateOutputPath)protopotato\*.cs" />
+    <Compile Include="$(IntermediateOutputPath)protopotato\**\*.cs" />
     <!--Yes, there probably is a better way to do this... -->
   </ItemGroup>
 </Project>
