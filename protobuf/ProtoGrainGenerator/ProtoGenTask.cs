@@ -29,7 +29,7 @@ namespace MSBuildTasks
             
             var potatoDirectory = Path.Combine(IntermediateOutputPath!, "protopotato");
             Directory.CreateDirectory(potatoDirectory);
-            (new DirectoryInfo(potatoDirectory)).Delete(true);
+          //  (new DirectoryInfo(potatoDirectory)).Delete(true);
             
             if (ProtoFile.Any())
             {
@@ -48,6 +48,8 @@ namespace MSBuildTasks
             {
                 Log.LogMessage(MessageImportance.High, "No files marked as 'ProtoFile' in project....");
             }
+            
+            Log.LogMessage(MessageImportance.High, "ProtoGen completed successfully");
 
             return true;
         }
