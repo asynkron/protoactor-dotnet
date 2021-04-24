@@ -21,7 +21,7 @@
   </ItemDefinitionGroup>
   
   <ItemGroup>
-    <ProtoGen include="$(MSBuildThisFileDirectory)..\tasks\$(TaskFolder)\ProtoGrainGenerator.dll" />
+    <ProtoGen Include="$(MSBuildThisFileDirectory)..\tasks\$(TaskFolder)\ProtoGrainGenerator.dll" />
   </ItemGroup>
 
   <Target Name="ProtoGenerate" BeforeTargets="PrepareForBuild">
