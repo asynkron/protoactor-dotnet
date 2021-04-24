@@ -71,7 +71,7 @@ namespace MSBuildTasks
                 Log.LogMessage(MessageImportance.High, $"Import path {importPath.FullName}");
             }
 
-            if (!string.IsNullOrEmpty(templateFiles))
+            if (string.IsNullOrEmpty(templateFiles))
             {
                 var outputFile = Path.Combine(objDirectory, $"{protoSourceFile}.cs");
                 Log.LogMessage(MessageImportance.High, $"Output file path: {outputFile}");
