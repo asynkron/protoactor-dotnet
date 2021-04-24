@@ -29,7 +29,7 @@ namespace MSBuildTasks
             
             var potatoDirectory = Path.Combine(IntermediateOutputPath!, "protopotato");
             Directory.CreateDirectory(potatoDirectory);
-            (new DirectoryInfo(potatoDirectory)).Delete(true);
+            //(new DirectoryInfo(potatoDirectory)).Delete(true);
             
             if (ProtoFile.Any())
             {
