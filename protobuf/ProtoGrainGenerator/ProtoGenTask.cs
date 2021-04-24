@@ -64,17 +64,24 @@ namespace MSBuildTasks
             }
         }
 
-        private void ProcessFile(string projectDirectory, string objDirectory, string protoFile, string additionalImportDirs, string templateFiles)
+        private void ProcessFile(string projectDirectory, string objDirectory, string protoFile, string additionalImportDirsString, string templateFilesString)
         {
             Log.LogMessage(MessageImportance.High, $"Processing Proto file: {protoFile}");
             var protoSourceFile = Path.GetRelativePath(projectDirectory, protoFile);
             var inputFileInfo = new FileInfo(protoFile);
             var importPaths = 
-                additionalImportDirs
+                additionalImportDirsString
                     .Split(";", StringSplitOptions.RemoveEmptyEntries)
                     .Select(p => p.Trim())
                     .Select(p => Path.GetRelativePath(projectDirectory, p))
                     .Select(p => new DirectoryInfo(p)).ToArray();
+
+            var templateFilesArr =
+                templateFilesString
+                    .Split(";", StringSplitOptions.RemoveEmptyEntries)
+                    .Select(p => p.Trim())
+                    .Select(p => Path.GetRelativePath(projectDirectory, p))
+                    .ToArray();
 
             foreach (var importPath in importPaths)
             {
@@ -83,7 +90,7 @@ namespace MSBuildTasks
 
             var guidName = Guid.NewGuid().ToString("N");
 
-            if (string.IsNullOrEmpty(templateFiles))
+            if (!templateFilesArr.Any())
             {
                 var outputFile = Path.Combine(objDirectory, $"{guidName}.cs");
                 Log.LogMessage(MessageImportance.High, $"Output file path: {outputFile}");
@@ -93,7 +100,14 @@ namespace MSBuildTasks
             }
             else
             {
+                foreach (var templateFile in templateFilesArr)
+                {
+                    var outputFile = Path.Combine(objDirectory, $"{guidName}.cs");
+                    Log.LogMessage(MessageImportance.High, $"Output file path: {outputFile}");
+                    var outputFileInfo = new FileInfo(outputFile);
                 
+                    Generator.Generate(inputFileInfo, outputFileInfo, importPaths, Log, projectDirectory, templateFile);    
+                }
             }
         }
     }
