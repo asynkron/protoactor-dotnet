@@ -17,7 +17,7 @@ namespace Proto.GrainGenerator
 {
     public static class Generator
     {
-        internal static void Generate(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath, TaskLoggingHelper log, string rootPath, string templatePath)
+        internal static void Generate(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath, TaskLoggingHelper log, string rootPath, string template)
         {
             var set = GetSet(importPath);
             
@@ -27,17 +27,6 @@ namespace Proto.GrainGenerator
             
             set.Add(relativePath, true, inputReader);
             set.Process();
-            
-            
-            var template = Template.DefaultTemplate;
-
-            if (!string.IsNullOrEmpty(templatePath))
-            {
-                var relativeTemplatePath = Path.GetRelativePath(rootPath, templatePath);
-                
-                log.LogMessage(MessageImportance.High, $"Using custom template {relativeTemplatePath}");
-                template = File.ReadAllText(relativeTemplatePath, Encoding.Default);
-            }
             
             var gen = new CodeGenerator(template);
             var codeFiles = gen.Generate(set).ToList();
