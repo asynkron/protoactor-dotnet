@@ -9,23 +9,23 @@
     <TaskAssembly>$(MSBuildThisFileDirectory)..\tasks\$(TaskFolder)\ProtoGrainGenerator.dll</TaskAssembly>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!--This one is needed to not confuse Rider -->
-    <Compile Include="$(IntermediateOutputPath)protopotato\*.cs" />
-    <!--Yes, there probably is a better way to do this... -->
-  </ItemGroup>
-
   <UsingTask TaskName="MSBuildTasks.ProtoGenTask" AssemblyFile="$(TaskAssembly)" />
   
   <ItemDefinitionGroup>
     <ProtoGrain/>
   </ItemDefinitionGroup>
 
-  <Target Name="ProtoGenerate" BeforeTargets="PrepareForBuild">
+  <Target Name="ProtoGenerate" BeforeTargets="Compile">
     <ProtoGenTask 
             IntermediateOutputPath="$(IntermediateOutputPath)"
             MSBuildProjectFullPath="$(MSBuildProjectFullPath)"
             ProtoFile="@(ProtoGrain)"
     />
   </Target>
+
+  <ItemGroup>
+    <!--This one is needed to not confuse Rider -->
+    <Compile Include="$(IntermediateOutputPath)protopotato\*.cs" />
+    <!--Yes, there probably is a better way to do this... -->
+  </ItemGroup>
 </Project>
