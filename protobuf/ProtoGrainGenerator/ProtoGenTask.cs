@@ -45,7 +45,8 @@ namespace MSBuildTasks
             {
                 foreach (var item in ProtoTemplate)
                 {
-                    Log.LogMessage(MessageImportance.High, "ProtoTemplate Item Spec:"+ item.ItemSpec);
+                    var additional = item.GetMetadata("AdditionalImportDirs");
+                    Log.LogMessage(MessageImportance.High, "ProtoTemplate Item Spec:"+ item.ItemSpec + " additionalImports " + additional);
                 }
             }
             else
