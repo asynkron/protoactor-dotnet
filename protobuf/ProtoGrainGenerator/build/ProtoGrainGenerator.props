@@ -15,7 +15,7 @@
     <ProtoGrain/>
   </ItemDefinitionGroup>
 
-  <Target Name="ProtoGenerate" BeforeTargets="BeforeBuild">
+  <Target Name="ProtoGenerate" BeforeTargets="BeforeCompile">
     <ProtoGenTask 
             IntermediateOutputPath="$(IntermediateOutputPath)"
             MSBuildProjectFullPath="$(MSBuildProjectFullPath)"
