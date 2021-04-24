@@ -1,10 +1,11 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Proto.GrainGenerator;
-
+using ProtoBuf;
 
 namespace MSBuildTasks
 {
@@ -67,48 +68,70 @@ namespace MSBuildTasks
         private void ProcessFile(string projectDirectory, string objDirectory, string protoFile, string additionalImportDirsString, string templateFilesString)
         {
             Log.LogMessage(MessageImportance.High, $"Processing Proto file: {protoFile}");
-            var protoSourceFile = Path.GetRelativePath(projectDirectory, protoFile);
             var inputFileInfo = new FileInfo(protoFile);
-            var importPaths = 
+            var importPaths = GetImportPaths(projectDirectory, additionalImportDirsString);
+            var templateFiles = GetTemplatePaths(projectDirectory, templateFilesString);
+
+            
+           
+            
+            if (!templateFiles.Any())
+            {
+                var template = Template.DefaultTemplate;
+                GenerateFile(projectDirectory, objDirectory, inputFileInfo, importPaths, template);
+            }
+            else
+            {
+                foreach (var templateFile in templateFiles)
+                {
+                    var template = File.ReadAllText(templateFile.FullName, Encoding.Default);
+                    GenerateFile(projectDirectory, objDirectory, inputFileInfo, importPaths, template);
+                }
+            }
+        }
+
+        private void GenerateFile(string projectDirectory, string objDirectory, FileInfo inputFileInfo, DirectoryInfo[] importPaths, string template)
+        {
+            var guidName = Guid.NewGuid().ToString("N");
+            var outputFile = Path.Combine(objDirectory, $"{guidName}.cs");
+            Log.LogMessage(MessageImportance.High, $"Output file path: {outputFile}");
+            var outputFileInfo = new FileInfo(outputFile);
+            Generator.Generate(inputFileInfo, outputFileInfo, importPaths, Log, projectDirectory, template);
+        }
+
+        private DirectoryInfo[] GetImportPaths(string projectDirectory, string additionalImportDirsString)
+        {
+            var importPaths =
                 additionalImportDirsString
                     .Split(";", StringSplitOptions.RemoveEmptyEntries)
                     .Select(p => p.Trim())
                     .Select(p => Path.GetRelativePath(projectDirectory, p))
                     .Select(p => new DirectoryInfo(p)).ToArray();
 
-            var templateFilesArr =
-                templateFilesString
-                    .Split(";", StringSplitOptions.RemoveEmptyEntries)
-                    .Select(p => p.Trim())
-                    .Select(p => Path.GetRelativePath(projectDirectory, p))
-                    .ToArray();
-
             foreach (var importPath in importPaths)
             {
                 Log.LogMessage(MessageImportance.High, $"Import path {importPath.FullName}");
             }
 
-            var guidName = Guid.NewGuid().ToString("N");
+            return importPaths;
+        }
 
-            if (!templateFilesArr.Any())
+        private FileInfo[] GetTemplatePaths(string projectDirectory, string templateFilesString)
+        {
+            var templateFilesArr =
+                templateFilesString
+                    .Split(";", StringSplitOptions.RemoveEmptyEntries)
+                    .Select(p => p.Trim())
+                    .Select(p => Path.GetRelativePath(projectDirectory, p))
+                    .Select(p => new FileInfo(p))
+                    .ToArray();
+
+            foreach (var templatePath in templateFilesArr)
             {
-                var outputFile = Path.Combine(objDirectory, $"{guidName}.cs");
-                Log.LogMessage(MessageImportance.High, $"Output file path: {outputFile}");
-                var outputFileInfo = new FileInfo(outputFile);
-                
-                Generator.Generate(inputFileInfo, outputFileInfo, importPaths, Log, projectDirectory);    
+                Log.LogMessage(MessageImportance.High, $"Template path {templatePath.FullName}");
             }
-            else
-            {
-                foreach (var templateFile in templateFilesArr)
-                {
-                    var outputFile = Path.Combine(objDirectory, $"{guidName}.cs");
-                    Log.LogMessage(MessageImportance.High, $"Output file path: {outputFile}");
-                    var outputFileInfo = new FileInfo(outputFile);
-                
-                    Generator.Generate(inputFileInfo, outputFileInfo, importPaths, Log, projectDirectory, templateFile);    
-                }
-            }
+
+            return templateFilesArr;
         }
     }
 }
