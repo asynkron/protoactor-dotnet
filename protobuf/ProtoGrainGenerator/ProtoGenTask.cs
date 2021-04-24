@@ -33,7 +33,8 @@ namespace MSBuildTasks
             {
                 foreach (var item in ProtoFile)
                 {
-                    Log.LogMessage(MessageImportance.High, "ProtoFile Item Spec:"+ item.ItemSpec);
+                    var additional = item.GetMetadata("AdditionalImportDirs");
+                    Log.LogMessage(MessageImportance.High, "ProtoFile Item Spec:"+ item.ItemSpec + " additionalImports " + additional);
                 }
             }
             else
@@ -45,8 +46,8 @@ namespace MSBuildTasks
             {
                 foreach (var item in ProtoTemplate)
                 {
-                    var additional = item.GetMetadata("AdditionalImportDirs");
-                    Log.LogMessage(MessageImportance.High, "ProtoTemplate Item Spec:"+ item.ItemSpec + " additionalImports " + additional);
+                    
+                    Log.LogMessage(MessageImportance.High, "ProtoTemplate Item Spec:"+ item.ItemSpec );
                 }
             }
             else
