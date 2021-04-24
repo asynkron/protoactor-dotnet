@@ -22,22 +22,35 @@ namespace MSBuildTasks
 
         public string TemplatePath { get; set; }
 
-        public ITaskItem[] ProtoGen { get; set; }
+        public ITaskItem[] ProtoFile { get; set; }
+        public ITaskItem[] ProtoTemplate { get; set; }
         
         public override bool Execute()
         {
             AdditionalImportDirs ??= "";
 
-            if (ProtoGen != null)
+            if (ProtoFile != null)
             {
-                foreach (var item in ProtoGen)
+                foreach (var item in ProtoFile)
                 {
-                    Log.LogMessage(MessageImportance.High, "ProtoGen Item Spec:"+ item.ItemSpec);
+                    Log.LogMessage(MessageImportance.High, "ProtoFile Item Spec:"+ item.ItemSpec);
                 }
             }
             else
             {
-                Log.LogMessage(MessageImportance.High, "No items in ProtoGen property....");
+                Log.LogMessage(MessageImportance.High, "No items in ProtoFile property....");
+            }
+            
+            if (ProtoTemplate != null)
+            {
+                foreach (var item in ProtoTemplate)
+                {
+                    Log.LogMessage(MessageImportance.High, "ProtoTemplate Item Spec:"+ item.ItemSpec);
+                }
+            }
+            else
+            {
+                Log.LogMessage(MessageImportance.High, "No items in ProtoTemplate property....");
             }
             
             Log.LogMessage(MessageImportance.High, $"Intermediate OutputPath: {IntermediateOutputPath}");
