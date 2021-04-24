@@ -81,9 +81,11 @@ namespace MSBuildTasks
                 Log.LogMessage(MessageImportance.High, $"Import path {importPath.FullName}");
             }
 
+            var guidName = Guid.NewGuid().ToString("N");
+
             if (string.IsNullOrEmpty(templateFiles))
             {
-                var outputFile = Path.Combine(objDirectory, $"{protoSourceFile}.cs");
+                var outputFile = Path.Combine(objDirectory, $"{guidName}.cs");
                 Log.LogMessage(MessageImportance.High, $"Output file path: {outputFile}");
                 var outputFileInfo = new FileInfo(outputFile);
                 
