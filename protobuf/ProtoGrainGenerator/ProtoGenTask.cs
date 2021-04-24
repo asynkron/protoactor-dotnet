@@ -71,9 +71,6 @@ namespace MSBuildTasks
             var inputFileInfo = new FileInfo(protoFile);
             var importPaths = GetImportPaths(projectDirectory, additionalImportDirsString);
             var templateFiles = GetTemplatePaths(projectDirectory, templateFilesString);
-
-            
-           
             
             if (!templateFiles.Any())
             {
