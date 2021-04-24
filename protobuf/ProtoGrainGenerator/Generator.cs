@@ -17,7 +17,7 @@ namespace Proto.GrainGenerator
 {
     public static class Generator
     {
-        internal static void Generate(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath, TaskLoggingHelper log, string rootPath, string templatePath)
+        internal static void Generate(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath, TaskLoggingHelper log, string rootPath, string? templatePath=null)
         {
             var set = GetSet(importPath);
             

@@ -13,91 +13,74 @@ namespace MSBuildTasks
         // ReSharper disable once MemberCanBePrivate.Global
         // ReSharper disable once UnusedAutoPropertyAccessor.Global
         [Required]
-        public string IntermediateOutputPath { get; set; }
+        public string IntermediateOutputPath { get; set; } = null!;
 
         [Required]
-        public string MSBuildProjectFullPath { get; set; }
+        public string MSBuildProjectFullPath { get; set; } = null!;
 
-        public string AdditionalImportDirs { get; set; }
+        public ITaskItem[] ProtoFile { get; set; } = Array.Empty<ITaskItem>();
 
-        public string TemplatePath { get; set; }
-
-        public ITaskItem[] ProtoFile { get; set; }
-        public ITaskItem[] ProtoTemplate { get; set; }
-        
         public override bool Execute()
         {
-            AdditionalImportDirs ??= "";
-
-            if (ProtoFile != null)
+            var projectFile = MSBuildProjectFullPath;
+            Log.LogMessage(MessageImportance.High, $"Processing Project file: {projectFile}");
+            Log.LogMessage(MessageImportance.High, $"Intermediate OutputPath: {IntermediateOutputPath}");
+            var projectDirectory = Path.GetDirectoryName(projectFile)!;
+            
+            var potatoDirectory = Path.Combine(IntermediateOutputPath!, "protopotato");
+            Directory.CreateDirectory(potatoDirectory);
+            (new DirectoryInfo(potatoDirectory)).Delete(true);
+            
+            if (ProtoFile.Any())
             {
                 foreach (var item in ProtoFile)
                 {
-                    var additional = item.GetMetadata("AdditionalImportDirs");
-                    Log.LogMessage(MessageImportance.High, "ProtoFile Item Spec:"+ item.ItemSpec + " additionalImports " + additional);
+                    var templateFiles = item.GetMetadata("TemplateFiles");
+                    var additionalImportDirs = item.GetMetadata("AdditionalImportDirs");
+                    var protoFile = item.ItemSpec;
+                    Log.LogMessage(MessageImportance.High,
+                        $"ProtoFile Item File:{item.ItemSpec}, Imports:{additionalImportDirs}, Templates:{templateFiles}"
+                    );
+                    ProcessFile(projectDirectory, potatoDirectory,protoFile, additionalImportDirs, templateFiles);
                 }
             }
             else
             {
-                Log.LogMessage(MessageImportance.High, "No items in ProtoFile property....");
-            }
-            
-            if (ProtoTemplate != null)
-            {
-                foreach (var item in ProtoTemplate)
-                {
-                    
-                    Log.LogMessage(MessageImportance.High, "ProtoTemplate Item Spec:"+ item.ItemSpec );
-                }
-            }
-            else
-            {
-                Log.LogMessage(MessageImportance.High, "No items in ProtoTemplate property....");
-            }
-            
-            Log.LogMessage(MessageImportance.High, $"Intermediate OutputPath: {IntermediateOutputPath}");
-            Log.LogMessage(MessageImportance.High, $"Additional import directories: {AdditionalImportDirs}");
-            Log.LogMessage(MessageImportance.High, "Running Proto.GrainGenerator");
-
-            var projectFile = MSBuildProjectFullPath;
-            Log.LogMessage(MessageImportance.High, $"Processing Project file: {projectFile}");
-            var projectDirectory = Path.GetDirectoryName(projectFile)!;
-            var protoFiles = Directory.GetFiles(projectDirectory, "*.proto", new EnumerationOptions
-                {
-                    RecurseSubdirectories = true
-                }
-            )!;
-
-            foreach (var protoFile in protoFiles)
-            {
-                Log.LogMessage(MessageImportance.High, $"Processing Proto file: {protoFile}");
-                var rel = Path.GetRelativePath(projectDirectory, protoFile);
-
-                var potatoDirectory = Path.Combine(IntermediateOutputPath!, "protopotato");
-                Directory.CreateDirectory(potatoDirectory);
-                
-                var outputFile = Path.Combine(potatoDirectory, $"{rel}.cs");
-                Log.LogMessage(MessageImportance.High, $"Output file path: {outputFile}");
-
-                var inputFileInfo = new FileInfo(protoFile);
-                var outputFileInfo = new FileInfo(outputFile);
-
-                var importPaths = 
-                    AdditionalImportDirs
-                        .Split(";", StringSplitOptions.RemoveEmptyEntries)
-                        .Select(p => p.Trim())
-                        .Select(p => Path.GetRelativePath(projectDirectory, p))
-                        .Select(p => new DirectoryInfo(p)).ToArray();
-
-                foreach (var importPath in importPaths)
-                {
-                    Log.LogMessage(MessageImportance.High, $"Import path {importPath.FullName}");
-                }
-                
-                Generator.Generate(inputFileInfo, outputFileInfo, importPaths, Log, projectDirectory, TemplatePath);
+                Log.LogMessage(MessageImportance.High, "No files marked as 'ProtoFile' in project....");
             }
 
             return true;
+        }
+
+        private void ProcessFile(string projectDirectory, string objDirectory, string protoFile, string additionalImportDirs, string templateFiles)
+        {
+            Log.LogMessage(MessageImportance.High, $"Processing Proto file: {protoFile}");
+            var protoSourceFile = Path.GetRelativePath(projectDirectory, protoFile);
+            var inputFileInfo = new FileInfo(protoFile);
+            var importPaths = 
+                additionalImportDirs
+                    .Split(";", StringSplitOptions.RemoveEmptyEntries)
+                    .Select(p => p.Trim())
+                    .Select(p => Path.GetRelativePath(projectDirectory, p))
+                    .Select(p => new DirectoryInfo(p)).ToArray();
+
+            foreach (var importPath in importPaths)
+            {
+                Log.LogMessage(MessageImportance.High, $"Import path {importPath.FullName}");
+            }
+
+            if (!string.IsNullOrEmpty(templateFiles))
+            {
+                var outputFile = Path.Combine(objDirectory, $"{protoSourceFile}.cs");
+                Log.LogMessage(MessageImportance.High, $"Output file path: {outputFile}");
+                var outputFileInfo = new FileInfo(outputFile);
+                
+                Generator.Generate(inputFileInfo, outputFileInfo, importPaths, Log, projectDirectory);    
+            }
+            else
+            {
+                
+            }
         }
     }
 }

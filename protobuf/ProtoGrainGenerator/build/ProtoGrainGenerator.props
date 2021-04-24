@@ -17,19 +17,14 @@
   <UsingTask TaskName="MSBuildTasks.ProtoGenTask" AssemblyFile="$(TaskAssembly)" />
   
   <ItemDefinitionGroup>
-    <ProtoFile/>
-  </ItemDefinitionGroup>
-
-  <ItemDefinitionGroup>
-    <ProtoTemplate/>
+    <ProtoGrain/>
   </ItemDefinitionGroup>
 
   <Target Name="ProtoGenerate" BeforeTargets="PrepareForBuild">
     <ProtoGenTask 
             IntermediateOutputPath="$(IntermediateOutputPath)"
             MSBuildProjectFullPath="$(MSBuildProjectFullPath)"
-            ProtoFile="@(ProtoFile)"
-            ProtoTemplate="@(ProtoTemplate)"
+            ProtoFile="@(ProtoGrain)"
     />
   </Target>
 </Project>
