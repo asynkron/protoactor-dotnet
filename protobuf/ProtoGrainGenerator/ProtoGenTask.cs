@@ -28,9 +28,8 @@ namespace MSBuildTasks
             var projectDirectory = Path.GetDirectoryName(projectFile)!;
             
             var potatoDirectory = Path.Combine(IntermediateOutputPath!, "protopotato");
-            Directory.CreateDirectory(potatoDirectory);
-            //(new DirectoryInfo(potatoDirectory)).Delete(true);
-            
+            EnsureDirExistsAndIsEmpty(potatoDirectory);
+
             if (ProtoFile.Any())
             {
                 foreach (var item in ProtoFile)
@@ -52,6 +51,17 @@ namespace MSBuildTasks
             Log.LogMessage(MessageImportance.High, "ProtoGen completed successfully");
 
             return true;
+        }
+
+        private static void EnsureDirExistsAndIsEmpty(string? potatoDirectory)
+        {
+            Directory.CreateDirectory(potatoDirectory);
+            DirectoryInfo di = new(potatoDirectory);
+
+            foreach (FileInfo file in di.GetFiles())
+            {
+                file.Delete();
+            }
         }
 
         private void ProcessFile(string projectDirectory, string objDirectory, string protoFile, string additionalImportDirs, string templateFiles)
