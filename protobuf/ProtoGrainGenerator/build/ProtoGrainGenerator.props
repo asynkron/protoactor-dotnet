@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <Target Name="ProtoGenerate" BeforeTargets="PrepareForBuild">
-    <ProtoGen 
+    <ProtoGenTask 
             IntermediateOutputPath="$(IntermediateOutputPath)"
             MSBuildProjectFullPath="$(MSBuildProjectFullPath)"
     />
