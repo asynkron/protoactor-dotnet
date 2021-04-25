@@ -140,14 +140,10 @@ namespace Proto.Cluster
             Logger.LogInformation("Stopped Cluster {Id}", System.Id);
         }
 
-        public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct) =>
-            IdentityLookup!.GetAsync(new ClusterIdentity {Identity = identity, Kind = kind}, ct);
+        public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct) => IdentityLookup!.GetAsync(clusterIdentity, ct);
 
-        public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) =>
-            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, System.Root, ct)!;
-
-        public Task<T> RequestAsync<T>(string identity, string kind, object message, ISenderContext context, CancellationToken ct) =>
-            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct)!;
+        public Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct) =>
+            ClusterContext.RequestAsync<T>(clusterIdentity, message, context, ct)!;
 
         public ActivatedClusterKind GetClusterKind(string kind)
         {
