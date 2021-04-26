@@ -80,6 +80,13 @@ namespace Proto.GrainGenerator
                     .ToArray()
             };
 
+            Handlebars.RegisterHelper("if", (output, options, context, arguments) => 
+            {
+                var left = arguments.At<string>(0);
+                var right = arguments.At<string>(1);
+                if (left == right) options.Template(output, context);
+            });
+
             var f = Handlebars.Compile(_template);
             
             var result = f(ast);
