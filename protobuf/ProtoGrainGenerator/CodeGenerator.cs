@@ -48,6 +48,10 @@ namespace Proto.GrainGenerator
                             TypeName = f.TypeName,
                             Name = f.Name,
                             Number = f.Number,
+                            IsRepeated =  f.label == FieldDescriptorProto.Label.LabelRepeated,
+                            OneOfIndex = f.OneofIndex,
+                            Type = f.type,
+                            Object = ctx.TryFind<DescriptorProto>(f.TypeName),
                         }).ToArray()
                     })
                     .ToArray(),
