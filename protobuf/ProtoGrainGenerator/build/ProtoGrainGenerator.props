@@ -27,8 +27,5 @@
       <Compile Include="$(IntermediateOutputPath)protopotato/**/*.cs" />
       <!--Yes, there probably is a better way to do this... -->
     </ItemGroup>
-    
   </Target>
-
-
 </Project>
