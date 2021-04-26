@@ -7,6 +7,7 @@ namespace ProtoBuf
 {
     public class ProtoFile
     {
+        public string Filename { get; set; } = null!;
         public string PackageName { get; set; } = null!;
         public string CsNamespace { get; set; } = null!;
         public ProtoMessage[] Messages { get; set; } = null!;
