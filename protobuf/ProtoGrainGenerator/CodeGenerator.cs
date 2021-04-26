@@ -31,15 +31,25 @@ namespace Proto.GrainGenerator
         protected override void WriteFile(GeneratorContext ctx, FileDescriptorProto obj)
         {
             var file = ctx.File;
-            
+
             var ast = new ProtoFile
             {
+                Filename = file.Name,
                 PackageName = file.Package,
                 CsNamespace = file.Options?.CsharpNamespace ?? file.Package,
                 Messages = file
                     .MessageTypes
                     .ToArray()
-                    .Select(mt => new ProtoMessage {Name = mt.Name})
+                    .Select(mt => new ProtoMessage
+                    {
+                        Name = mt.Name,
+                        Fields = mt.Fields.Select(f => new ProtoField()
+                        {
+                            TypeName = f.TypeName,
+                            Name = f.Name,
+                            Number = f.Number,
+                        }).ToArray()
+                    })
                     .ToArray(),
                 Services = file
                     .Services
