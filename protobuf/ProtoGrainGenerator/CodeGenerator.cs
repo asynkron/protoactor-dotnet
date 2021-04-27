@@ -80,11 +80,17 @@ namespace Proto.GrainGenerator
                     .ToArray()
             };
 
-            Handlebars.RegisterHelper("if", (output, options, context, arguments) => 
+            Handlebars.RegisterHelper("StringEquality", (output, options, context, arguments) => 
             {
+                if (arguments.Length != 2)
+                {
+                    throw new HandlebarsException("{{#StringEquality}} helper must have exactly two arguments");
+                }
+
                 var left = arguments.At<string>(0);
-                var right = arguments.At<string>(1);
+                var right = arguments[1] as string;
                 if (left == right) options.Template(output, context);
+                else options.Inverse(output, context);
             });
 
             var f = Handlebars.Compile(_template);
