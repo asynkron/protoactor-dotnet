@@ -43,6 +43,29 @@ namespace ProtoBuf
             FieldDescriptorProto.Type.TypeSint64   => nameof(Int64),
             _                                      => throw new ArgumentOutOfRangeException()
         };
+        
+        public string TypeKind => Type switch
+        {
+            FieldDescriptorProto.Type.TypeDouble   => "scalar",
+            FieldDescriptorProto.Type.TypeFloat    => "scalar",
+            FieldDescriptorProto.Type.TypeInt64    => "scalar",
+            FieldDescriptorProto.Type.TypeUint64   => "scalar",
+            FieldDescriptorProto.Type.TypeInt32    => "scalar",
+            FieldDescriptorProto.Type.TypeFixed64  => "scalar",
+            FieldDescriptorProto.Type.TypeFixed32  => "scalar",
+            FieldDescriptorProto.Type.TypeBool     => "scalar",
+            FieldDescriptorProto.Type.TypeString   => "string",
+            FieldDescriptorProto.Type.TypeGroup    => "???",
+            FieldDescriptorProto.Type.TypeMessage  => "message",
+            FieldDescriptorProto.Type.TypeBytes    => "bytes",
+            FieldDescriptorProto.Type.TypeUint32   => "scalar",
+            FieldDescriptorProto.Type.TypeEnum     => "enum",
+            FieldDescriptorProto.Type.TypeSfixed32 => "scalar",
+            FieldDescriptorProto.Type.TypeSfixed64 => "scalar",
+            FieldDescriptorProto.Type.TypeSint32   => "scalar",
+            FieldDescriptorProto.Type.TypeSint64   => "scalar",
+            _                                      => throw new ArgumentOutOfRangeException()
+        };
 
         private string GetUserTypeName() => $"{Object.File().Options.CsharpNamespace}.{TypeName}";
     }
