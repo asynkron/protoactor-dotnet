@@ -20,11 +20,12 @@ namespace ClusterExperiment1
             {
                 case Started _:
                     //just to highlight when this happens
-                    
-
                     break;
                 case HelloRequest _:
                     ctx.Respond(new HelloResponse());
+                    break;
+                case HelloRequestPoco _:
+                    ctx.Respond(new HelloResponsePoco());
                     break;
             }
 

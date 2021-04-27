@@ -24,7 +24,7 @@ namespace Proto.Remote
             public ISerializer Serializer;
         }
 
-        struct TypeSerializerItem
+        private struct TypeSerializerItem
         {
             public ISerializer Serializer;
             public int SerializerId;
@@ -100,23 +100,21 @@ namespace Proto.Remote
         TypeSerializerItem FindSerializerToUse(object message)
         {
             var type = message.GetType();
-            TypeSerializerItem serializer;
-            if (_serializerLookup.TryGetValue(type, out serializer))
+            if (_serializerLookup.TryGetValue(type, out var serializer))
                 return serializer;
 
             // Determine which serializer can serialize this object type.
             foreach (var serializerItem in _serializers)
             {
-                if (serializerItem.Serializer.CanSerialize(message))
+                if (!serializerItem.Serializer.CanSerialize(message)) continue;
+
+                var item = new TypeSerializerItem
                 {
-                    var item = new TypeSerializerItem()
-                    {
-                        Serializer = serializerItem.Serializer,
-                        SerializerId = serializerItem.SerializerId,
-                    };
-                    _serializerLookup[type] = item;
-                    return item;
-                }
+                    Serializer = serializerItem.Serializer,
+                    SerializerId = serializerItem.SerializerId,
+                };
+                _serializerLookup[type] = item;
+                return item;
             }
             throw new Exception($"Couldn't find a serializer for {message.GetType()}");
         }
@@ -124,10 +122,13 @@ namespace Proto.Remote
         public object Deserialize(string typeName, ByteString bytes, int serializerId)
         {
             foreach (var serializerItem in _serializers)
+            {
                 if (serializerItem.SerializerId == serializerId)
                     return serializerItem.Serializer.Deserialize(
                         bytes,
                         typeName);
+            }
+
             throw new Exception($"Couldn't find serializerId: {serializerId} for typeName: {typeName}");
         }
     }

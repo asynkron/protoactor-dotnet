@@ -20,7 +20,7 @@ namespace ClusterExperiment1
     public static class Program
     {
 
-        private static TaskCompletionSource<bool> _ts = null!;
+        private static TaskCompletionSource<bool> ts = null!;
         private static int actorCount;
         private static int memberCount;
         private static int killTimeoutSeconds;
@@ -29,10 +29,13 @@ namespace ClusterExperiment1
         private static int failureCount;
         private static int successCount;
 
+        private static object Request = null!;
+
         public static async Task Main(string[] args)
         {
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
         //    ThreadPool.SetMinThreads(500, 500);
+            Request = new HelloRequest();
 
             if (args.Length > 0)
             {
@@ -46,9 +49,9 @@ namespace ClusterExperiment1
 
             Configuration.SetupLogger();
 
-            _ts = new TaskCompletionSource<bool>();
+            ts = new TaskCompletionSource<bool>();
 
-            _ = DockerSupport.Run(_ts.Task);
+            // _ = DockerSupport.Run(ts.Task);
 
             Console.WriteLine("Proto.Cluster chaos benchmark");
             Console.WriteLine();
@@ -70,6 +73,15 @@ namespace ClusterExperiment1
             Console.WriteLine("4) Run multi process");
 
             var memberRunStrategy = Console.ReadLine();
+            
+            Console.WriteLine("1) Protobuf serializer");
+            Console.WriteLine("2) Json serializer");
+
+            if (Console.ReadLine() == "2")
+            {
+                Request = new HelloRequestPoco();
+            }
+            
 
             Console.WriteLine("1) Run single request client");
             Console.WriteLine("2) Run batch requests client");
@@ -148,12 +160,13 @@ namespace ClusterExperiment1
         {
             Interlocked.Increment(ref requestCount);
 
-            var t = cluster.RequestAsync<HelloResponse>(id, "hello", new HelloRequest(),
+            var t = cluster.RequestAsync<object>(id, "hello", Request,
                 CancellationTokens.WithTimeout(20000)
             );
 
        
             t.ContinueWith(t => {
+                    // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                     if (t.IsFaulted || t.Result is null)
                     {
                         Interlocked.Increment(ref failureCount);
