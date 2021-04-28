@@ -116,6 +116,7 @@ namespace Proto.Context
 
             ReceiveTimeout = duration;
 
+            
             EnsureExtras();
             _extras!.StopReceiveTimeoutTimer();
 
