@@ -166,8 +166,10 @@ namespace Proto.Context
             SendUserMessage(target, messageEnvelope);
         }
 
+        //why does this method exist here and not as an extension?
+        //because DecoratorContexts needs to go this way if we want to intercept this method for the context
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => this.RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
+            => SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
