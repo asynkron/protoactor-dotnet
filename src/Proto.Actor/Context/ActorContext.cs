@@ -115,7 +115,6 @@ namespace Proto.Context
             if (duration == ReceiveTimeout) return;
 
             ReceiveTimeout = duration;
-
             
             EnsureExtras();
             _extras!.StopReceiveTimeoutTimer();
@@ -210,13 +209,13 @@ namespace Proto.Context
             pid.Stop(System);
         }
 
-        public async Task StopAsync(PID pid)
+        public Task StopAsync(PID pid)
         {
-            using var future = new FutureProcess(System);
+            var future = new FutureProcess(System);
 
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
-            await future.Task;
+            return future.Task;
         }
 
         public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
