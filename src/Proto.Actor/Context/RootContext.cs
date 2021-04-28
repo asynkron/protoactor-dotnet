@@ -71,8 +71,10 @@ namespace Proto
             Send(target, envelope);
         }
         
+        //why does this method exist here and not as an extension?
+        //because DecoratorContexts needs to go this way if we want to intercept this method for the context
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => this.RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
+            => SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
 
         public void Stop(PID? pid)
         {
@@ -85,7 +87,6 @@ namespace Proto
         public Task StopAsync(PID pid)
         {
             var future = new FutureProcess(System);
-
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
 
