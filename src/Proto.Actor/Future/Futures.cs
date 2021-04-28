@@ -89,7 +89,7 @@ namespace Proto.Future
                 return;
             }
 
-            if (!_ct.IsCancellationRequested) _tcs.TrySetResult(default!);
+            if (_ct == default || !_ct.IsCancellationRequested) _tcs.TrySetResult(default!);
 
             if (!_system.Metrics.IsNoop)
             {
