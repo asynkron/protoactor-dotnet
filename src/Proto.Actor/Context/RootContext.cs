@@ -84,14 +84,13 @@ namespace Proto
             reff.Stop(pid);
         }
 
-        public Task StopAsync(PID pid)
+        public async Task StopAsync(PID pid)
         {
-            var future = new FutureProcess(System);
-
+            using var future = new FutureProcess(System);
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
 
-            return future.Task;
+            await future.Task;
         }
 
         public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
