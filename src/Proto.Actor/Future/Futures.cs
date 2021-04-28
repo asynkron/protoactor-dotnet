@@ -15,6 +15,7 @@ namespace Proto.Future
         private readonly TaskCompletionSource<object> _tcs;
         private readonly ActorMetrics? _metrics;
         private readonly ActorSystem _system;
+        private readonly CancellationToken _ct;
 
         internal FutureProcess(ActorSystem system) : base(system)
         {
@@ -30,6 +31,7 @@ namespace Proto.Future
 
             var name = System.ProcessRegistry.NextId();
             var (pid, absent) = System.ProcessRegistry.TryAdd(name, this);
+
             if (!absent) throw new ProcessNameExistException(name, pid);
 
             Pid = pid;
