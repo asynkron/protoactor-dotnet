@@ -212,9 +212,9 @@ namespace ClusterExperiment1
                         try
                         {
                             
+                            var ct = CancellationTokens.FromSeconds(20);
                             for (var i = 0; i < batchSize; i++)
                             {
-                                var ct = CancellationTokens.FromSeconds(20);
                                 var id = "myactor" + rnd.Next(0, actorCount);
                                 var request = SendRequest(cluster, id, ct);
 
