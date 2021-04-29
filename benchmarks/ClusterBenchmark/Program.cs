@@ -150,18 +150,18 @@ namespace ClusterExperiment1
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, actorCount);
-                        semaphore.Wait(() => SendRequest(cluster, id));
+                        semaphore.Wait(() => SendRequest(cluster, id, CancellationTokens.WithTimeout(20_000)));
                     }
                 }
             );
         }
 
-        private static Task SendRequest(Cluster cluster, string id)
+        private static Task SendRequest(Cluster cluster, string id, CancellationToken cancellationToken)
         {
             Interlocked.Increment(ref requestCount);
 
             var t = cluster.RequestAsync<object>(id, "hello", Request,
-                CancellationTokens.WithTimeout(20000)
+                cancellationToken
             );
 
        
@@ -211,10 +211,11 @@ namespace ClusterExperiment1
 
                         try
                         {
+                            var ct = CancellationTokens.WithTimeout(20_000);
                             for (var i = 0; i < batchSize; i++)
                             {
                                 var id = "myactor" + rnd.Next(0, actorCount);
-                                var request = SendRequest(cluster, id);
+                                var request = SendRequest(cluster, id, ct);
 
                                 requests.Add(request);
                             }
@@ -241,7 +242,8 @@ namespace ClusterExperiment1
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, actorCount);
-                        await SendRequest(cluster, id);
+                        var ct = CancellationTokens.WithTimeout(20_000);
+                        await SendRequest(cluster, id, ct);
                     }
                 }
             );
