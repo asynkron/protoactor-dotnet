@@ -156,44 +156,47 @@ namespace ClusterExperiment1
             );
         }
 
-        private static Task SendRequest(Cluster cluster, string id, CancellationToken cancellationToken)
+        private static async Task SendRequest(Cluster cluster, string id, CancellationToken cancellationToken)
         {
             Interlocked.Increment(ref requestCount);
 
-            var t = cluster.RequestAsync<object>(id, "hello", Request,
-                cancellationToken
-            );
+            try
+            {
+                var x = await cluster.RequestAsync<object>(id, "hello", Request, cancellationToken);
 
-       
-            t.ContinueWith(t => {
-                    // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-                    if (t.IsFaulted || t.Result is null)
+                if (x != null)
+                {
+                    var res = Interlocked.Increment(ref successCount);
+
+                    if (res % 10000 == 0)
                     {
-                        Interlocked.Increment(ref failureCount);
-                        
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.Write("X");
+                        Console.ForegroundColor = ConsoleColor.DarkGreen;
+                        Console.Write(".");
                         Console.ResetColor();
-                        
-                        var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
-            
-                        il?.DumpState(ClusterIdentity.Create(id, "hello"));
                     }
-                    else
-                    {
-                        var res = Interlocked.Increment(ref successCount);
-                        
-                        if (res % 10000 == 0)
-                        {
-                            Console.ForegroundColor = ConsoleColor.DarkGreen;
-                            Console.Write(".");
-                            Console.ResetColor();
-                        }
-                    }
+
+                    return;
                 }
-            );
-            
-            return t;
+
+                OnError();
+            }
+            catch
+            {
+                OnError();
+            }
+
+            void OnError()
+            {
+                Interlocked.Increment(ref failureCount);
+
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write("X");
+                Console.ResetColor();
+
+                var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
+
+                il?.DumpState(ClusterIdentity.Create(id, "hello"));
+            }
         }
 
 
