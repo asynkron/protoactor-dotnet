@@ -17,7 +17,7 @@ namespace Proto.Future
         private readonly ActorSystem _system;
         private readonly CancellationToken _ct;
 
-        internal FutureProcess(ActorSystem system, CancellationToken cancellationToken = default) : base(system)
+        internal FutureProcess(ActorSystem system) : base(system)
         {
             _system = system;
 
@@ -35,34 +35,32 @@ namespace Proto.Future
             if (!absent) throw new ProcessNameExistException(name, pid);
 
             Pid = pid;
-            
-            if (cancellationToken != default)
-            {
-                cancellationToken.Register(() => {
-                        if (_tcs.Task.IsCompleted) return;
-
-                        _tcs.TrySetException(
-                            new TimeoutException("Request didn't receive any Response within the expected time.")
-                        );
-
-                        if (!system.Metrics.IsNoop)
-                        {
-                            _metrics!.FuturesTimedOutCount.Inc(new[] {System.Id, system.Address});
-                        }
-
-                        Stop(pid);
-                    }
-                    , false
-                );
-            }
-
-            _ct = cancellationToken;
-
-            Task = _tcs.Task;
         }
 
         public PID Pid { get; }
-        public Task<object> Task { get; }
+               
+        public Task<object> GetTask() => _tcs.Task;
+
+        public async Task<object> GetTask(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await using (cancellationToken.Register(() => _tcs.TrySetCanceled()))
+                {
+                    return await _tcs.Task;
+                }
+            }
+            catch
+            {
+                if (!_system.Metrics.IsNoop)
+                {
+                    _metrics!.FuturesTimedOutCount.Inc(new[] {System.Id, _system.Address});
+                }
+
+                Stop(Pid!);
+                throw new TimeoutException("Request didn't receive any Response within the expected time.");
+            }
+        }
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
@@ -89,7 +87,7 @@ namespace Proto.Future
                 return;
             }
 
-            if (_ct == default || !_ct.IsCancellationRequested) _tcs.TrySetResult(default!);
+            _tcs.TrySetResult(default!);
 
             if (!_system.Metrics.IsNoop)
             {

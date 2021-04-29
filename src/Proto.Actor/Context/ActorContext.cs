@@ -215,7 +215,8 @@ namespace Proto.Context
 
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
-            return future.Task;
+            // ReSharper disable once MethodSupportsCancellation
+            return future.GetTask();
         }
 
         public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);

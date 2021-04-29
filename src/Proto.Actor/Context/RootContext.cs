@@ -90,7 +90,7 @@ namespace Proto
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
 
-            return future.Task;
+            return future.GetTask();
         }
 
         public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);

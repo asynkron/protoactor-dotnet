@@ -177,14 +177,13 @@ namespace Proto.Cluster
 
             try
             {
-                if (future.Task.IsCompleted) return ToResult<T>(source, context, future.Task.Result);
+                context.Request(pid, message, future.Pid);
+                var task = future.GetTask();
+                await Task.WhenAny(task, _clock.CurrentBucket);
 
-                context.Send(pid, new MessageEnvelope(message, future.Pid));
-                await Task.WhenAny(future.Task, _clock.CurrentBucket);
-
-                if (future.Task.IsCompleted)
+                if (task.IsCompleted)
                 {
-                    var res = future.Task.Result;
+                    var res = task.Result;
 
                     return ToResult<T>(source, context, res);
                 }
