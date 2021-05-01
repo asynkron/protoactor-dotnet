@@ -211,7 +211,6 @@ namespace Proto.Cluster
             {
                 newMember.Index = _nextMemberIndex++;
                 
-                _members = _members.Add(newMember.Id, newMember);
                 _membersByIndex = _membersByIndex.Add(newMember.Index, newMember);
                 _indexByAddress = _indexByAddress.Add(newMember.Address, newMember.Index);
 
