@@ -191,22 +191,34 @@ namespace Proto.Future
                 Dispose();
                 return;
             }
+            
+            var index = ToIndex(pid.RequestId);
 
-            foreach (var tcs in _completionSources)
+            if (index == -1)
             {
-                if (tcs != default && !tcs.Task.IsCompleted)
+                //Out of bounds, could be late arriving. Log?
+                return;
+            }
+
+            var tcs = _completionSources[index];
+            if (tcs == default) return;
+
+            try
+            {
+                tcs.TrySetResult(default!);
+                _completionSources[index] = default;
+                Interlocked.Increment(ref _completedRequests);
+            }
+            finally
+            {
+                if (!_system.Metrics.IsNoop)
                 {
-                    tcs.TrySetResult(default!);
+                    _metrics!.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
                 }
-            }
-            // if (_ct == default || !_ct.IsCancellationRequested) tcs.TrySetResult(default!);
 
-            if (!_system.Metrics.IsNoop)
-            {
-                _metrics!.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
+                if (Exhausted && RequestsInFlight == 0)
+                    _onCompleted(this);
             }
-
-            Stop(pid);
         }
 
         public void Dispose()
@@ -233,7 +245,7 @@ namespace Proto.Future
             }
         }
 
-        internal void Cancel(uint requestId)
+        private void Cancel(uint requestId)
         {
             var index = ToIndex(requestId);
 
