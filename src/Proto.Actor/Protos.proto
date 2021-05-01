@@ -5,6 +5,7 @@ option csharp_namespace = "Proto";
 message PID {
     string Address = 1;
     string Id = 2;
+    uint32 request_id = 3;
 }
 
 //user messages

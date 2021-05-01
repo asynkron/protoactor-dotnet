@@ -4,9 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -46,11 +43,9 @@ namespace Proto.Cluster
             Logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
             var i = 0;
 
-            var future = new FutureProcess(context.System);
+            var future = context.System.Future.GetHandle();
             PID? lastPid = null;
 
-            try
-            {
                 while (!ct.IsCancellationRequested)
                 {
                     if (context.System.Shutdown.IsCancellationRequested) return default;
@@ -110,16 +105,12 @@ namespace Proto.Cluster
                 }
 
                 return default!;
-            }
-            finally
-            {
-                future.Dispose();
-            }
 
             void RefreshFuture()
             {
+                // future.Dispose();
                 future.Dispose();
-                future = new FutureProcess(context.System);
+                future = context.System.Future.GetHandle();
                 lastPid = null;
             }
         }
@@ -170,21 +161,21 @@ namespace Proto.Cluster
             PID pid,
             PidSource source,
             ISenderContext context,
-            FutureProcess future
+            IFuture sharedFuture
         )
         {
             var t = DateTimeOffset.UtcNow;
 
             try
             {
-                if (future.Task.IsCompleted) return ToResult<T>(source, context, future.Task.Result);
+                if (sharedFuture.Task.IsCompleted) return ToResult<T>(source, context, sharedFuture.Task.Result);
 
-                context.Send(pid, new MessageEnvelope(message, future.Pid));
-                await Task.WhenAny(future.Task, _clock.CurrentBucket);
+                context.Send(pid, new MessageEnvelope(message, sharedFuture.Pid));
+                await Task.WhenAny(sharedFuture.Task, _clock.CurrentBucket);
 
-                if (future.Task.IsCompleted)
+                if (sharedFuture.Task.IsCompleted)
                 {
-                    var res = future.Task.Result;
+                    var res = sharedFuture.Task.Result;
 
                     return ToResult<T>(source, context, res);
                 }

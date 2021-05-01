@@ -34,7 +34,7 @@ namespace Proto.Future
 
             if (!absent) throw new ProcessNameExistException(name, pid);
 
-            Pid = pid;
+            Pid = pid.WithRequestId(1); // To mark it as a specific request
             
             if (cancellationToken != default)
             {

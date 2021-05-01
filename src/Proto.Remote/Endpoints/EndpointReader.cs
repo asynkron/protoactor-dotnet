@@ -97,7 +97,9 @@ namespace Proto.Remote
 
                 for (var i = 0; i < batch.TargetNames.Count; i++)
                 {
-                    targets[i] = PID.FromAddress(_system.Address, batch.TargetNames[i]);
+                    var pid = PID.FromAddress(_system.Address, batch.TargetNames[i]);
+                    pid.Ref(_system);
+                    targets[i] = pid;
                 }
 
                 var typeNames = batch.TypeNames.ToArray();
@@ -107,6 +109,11 @@ namespace Proto.Remote
                 foreach (var envelope in batch.Envelopes)
                 {
                     var target = targets[envelope.Target];
+
+                    if (envelope.RequestId != default)
+                    {
+                        target = target.WithRequestId(envelope.RequestId);
+                    }
                     var typeName = typeNames[envelope.TypeId];
 
                     if (!_system.Metrics.IsNoop) m.Inc(new[] {_system.Id, _system.Address, typeName});

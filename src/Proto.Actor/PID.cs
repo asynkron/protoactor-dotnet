@@ -58,5 +58,13 @@ namespace Proto
             var reff = _process ?? system.ProcessRegistry.Get(this);
             reff.Stop(this);
         }
+
+        public PID WithRequestId(uint requestId) => new()
+        {
+            Id = Id,
+            Address = Address,
+            _process = _process,
+            RequestId = requestId
+        };
     }
 }

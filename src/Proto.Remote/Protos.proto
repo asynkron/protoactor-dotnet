@@ -18,6 +18,7 @@ message MessageEnvelope {
   actor.PID sender = 4;
   int32 serializer_id = 5;
   MessageHeader message_header = 6;
+  uint32 request_id = 7;
 }
 
 message MessageHeader {

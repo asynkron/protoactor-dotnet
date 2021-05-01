@@ -82,10 +82,11 @@ namespace Proto
         public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, TimeSpan timeout)
             => self.RequestAsync<T>(target, message, CancellationTokens.WithTimeout(timeout));
 
-        internal static async Task<T> RequestAsync<T>(this ISenderContext self,  PID target, object message, CancellationToken cancellationToken)
+        internal static async Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, CancellationToken cancellationToken)
         {
-            using var future = new FutureProcess(self.System, cancellationToken);
+            using var future = self.System.Future.GetHandle();
             var messageEnvelope = new MessageEnvelope(message, future.Pid);
+            cancellationToken.ThrowIfCancellationRequested();
             self.Send(target, messageEnvelope);
             var result = await future.Task;
 
