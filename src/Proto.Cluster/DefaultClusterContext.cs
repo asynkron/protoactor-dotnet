@@ -43,7 +43,7 @@ namespace Proto.Cluster
             Logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
             var i = 0;
 
-            var future = context.System.Future.GetHandle();
+            var future = context.System.Future.GetHandle(ct);
             PID? lastPid = null;
 
                 while (!ct.IsCancellationRequested)
@@ -108,9 +108,8 @@ namespace Proto.Cluster
 
             void RefreshFuture()
             {
-                // future.Dispose();
                 future.Dispose();
-                future = context.System.Future.GetHandle();
+                future = context.System.Future.GetHandle(ct);
                 lastPid = null;
             }
         }

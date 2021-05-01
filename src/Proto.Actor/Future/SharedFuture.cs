@@ -7,6 +7,8 @@ using System;
 using System.Buffers;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto;
+using Proto.Future;
 using Proto.Metrics;
 
 namespace Proto.Future
@@ -18,7 +20,7 @@ namespace Proto.Future
         public FutureFactory(ActorSystem system, CancellationToken cancellationToken = default)
         {
             _system = system;
-            Future = new ThreadLocal<SharedFutureProcess>(() => new SharedFutureProcess(_system, 100));
+            Future = new ThreadLocal<SharedFutureProcess>(() => new SharedFutureProcess(_system, 1000));
             cancellationToken.Register(() => {
                     foreach (var process in Future.Values)
                     {
@@ -30,16 +32,16 @@ namespace Proto.Future
 
         private ThreadLocal<SharedFutureProcess> Future { get; }
 
-        public IFuture GetHandle()
+        public IFuture GetHandle(CancellationToken ct)
         {
-            // return new FutureHandle(new FutureProcess(_system));
-            var process = Future.Value!;
-            var future = process.TryCreateHandle();
-            
-            if (future != default) return future;
-            
-            Future.Value = process = new SharedFutureProcess(_system, 1000);
-            return process.TryCreateHandle()!;
+            //return new FutureHandle(new FutureProcess(_system,ct));
+             var process = Future.Value!;
+             var future = process.TryCreateHandle(ct);
+             
+             if (future != default) return future;
+             
+             Future.Value = process = new SharedFutureProcess(_system, 1000);
+             return process.TryCreateHandle(ct)!;
         }
     }
 
@@ -65,23 +67,7 @@ namespace Proto.Future
         }
     };
 
-    public sealed class SharedFutureHandle : IFuture
-    {
-        private readonly SharedFutureProcess _process;
-        private readonly uint _requestId;
-
-        public SharedFutureHandle(SharedFutureProcess process, uint requestId, Task<object> task)
-        {
-            _process = process;
-            _requestId = requestId;
-            Pid = process.Pid.WithRequestId(requestId);
-            Task = task;
-        }
-
-        public PID Pid { get; }
-        public Task<object> Task { get; }
-
-        public void Dispose() => _process.Cancel(_requestId);
+    
     };
 
     public sealed class SharedFutureProcess : Process, IDisposable
@@ -121,7 +107,7 @@ namespace Proto.Future
 
         public int RequestsInFlight => _prevIndex + 1 - _completedRequests;
 
-        public SharedFutureHandle? TryCreateHandle()
+        public IFuture? TryCreateHandle(CancellationToken ct)
         {
             if (Exhausted) return default;
 
@@ -137,7 +123,7 @@ namespace Proto.Future
                 Exhausted = true;
             }
 
-            return new SharedFutureHandle(this, (uint) (index + 1 + _prevCreatedRequests), tcs.Task);
+            return new SharedFutureHandle(this, ToRequestId(index), tcs, ct);
 
             // if (cancellationToken != default)
             // {
@@ -169,9 +155,9 @@ namespace Proto.Future
                 return;
             }
 
-            var index = Index(pid.RequestId);
+            var index = ToIndex(pid.RequestId);
 
-            if (index < 0 || index >= _completionSources.Length)
+            if (index == -1)
             {
                 //Out of bounds, could be late arriving. Log?
                 return;
@@ -213,7 +199,7 @@ namespace Proto.Future
                     tcs.TrySetResult(default!);
                 }
             }
-            // if (_ct == default || !_ct.IsCancellationRequested) _tcs.TrySetResult(default!);
+            // if (_ct == default || !_ct.IsCancellationRequested) tcs.TrySetResult(default!);
 
             if (!_system.Metrics.IsNoop)
             {
@@ -247,9 +233,9 @@ namespace Proto.Future
             }
         }
 
-        public void Cancel(uint requestId)
+        internal void Cancel(uint requestId)
         {
-            var index = Index(requestId);
+            var index = ToIndex(requestId);
 
             if (index < 0 || index >= _completionSources.Length)
             {
@@ -268,6 +254,53 @@ namespace Proto.Future
             }
         }
 
-        private int Index(uint requestId) => (int) (requestId - 1 - _prevCreatedRequests);
+        private int ToIndex(uint requestId)
+        {
+            var index = (int) (requestId - 1 - _prevCreatedRequests);
+            if (index < 0 || index >= _completionSources.Length) return -1;
+
+            return index;
+        }
+        
+        private uint ToRequestId(int index) => (uint) (index + 1 + _prevCreatedRequests);
+        
+        private sealed class SharedFutureHandle : IFuture
+        {
+            private readonly SharedFutureProcess _process;
+            private readonly CancellationTokenRegistration _timeout;
+            private readonly uint _requestId;
+
+            public SharedFutureHandle(SharedFutureProcess process, uint requestId, TaskCompletionSource<object> tcs, CancellationToken ct)
+            {
+                _process = process;
+                _requestId = requestId;
+                Pid = process.Pid.WithRequestId(requestId);
+                Task = tcs.Task;
+                _timeout = ct.Register(() => {
+                        if (tcs.Task.IsCompleted) return;
+
+                        tcs.TrySetException(
+                            new TimeoutException("Request didn't receive any Response within the expected time.")
+                        );
+                        if (!_process._system.Metrics.IsNoop)
+                        {
+                            _process._metrics!.FuturesTimedOutCount.Inc(new[] {_process._system.Id, _process._system.Address});
+                        }
+                        
+                        Interlocked.Increment(ref _process._completedRequests);
+                        if (_process.Exhausted && _process.RequestsInFlight == 0)
+                            _process._onCompleted(_process);
+                    }
+                );
+            }
+
+            public PID Pid { get; }
+            public Task<object> Task { get; }
+
+            public void Dispose()
+            {
+                _process.Cancel(_requestId);
+                _timeout.Dispose();
+            }
     }
 }

@@ -84,7 +84,7 @@ namespace Proto
 
         internal static async Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, CancellationToken cancellationToken)
         {
-            using var future = self.System.Future.GetHandle();
+            using var future = self.System.Future.GetHandle(cancellationToken);
             var messageEnvelope = new MessageEnvelope(message, future.Pid);
             cancellationToken.ThrowIfCancellationRequested();
             self.Send(target, messageEnvelope);
