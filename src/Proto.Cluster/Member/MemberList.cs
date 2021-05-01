@@ -43,7 +43,7 @@ namespace Proto.Cluster
         private ImmutableDictionary<int, Member> _membersByIndex = ImmutableDictionary<int, Member>.Empty;
 
         private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
-        private readonly ConcurrentSet<string> _bannedMembers = new();
+        private ImmutableHashSet<string> _bannedMembers = ImmutableHashSet<string>.Empty;
         private int _nextMemberIndex;
 
         public MemberList(Cluster cluster)
@@ -137,27 +137,51 @@ namespace Proto.Cluster
                     return;
                 }
                 _currentTopologyHash = newMembershipHashCode;
+
+                //these are the member IDs hashset of currently active members
+                var memberIds =
+                    activeMembers
+                    .Select(s => s.Id)
+                    .ToImmutableHashSet();
+            
+                var left = _members
+                    .Where(m => !memberIds.Contains(m.Key))
+                    .Select(m => m.Value)
+                    .ToArray();
+            
+                var joined = activeMembers
+                    .Where(m => !_members.ContainsKey(m.Id))
+                    .ToArray();
+
+                _bannedMembers = _bannedMembers.Union(left.Select(m => m.Id).ToImmutableHashSet());
+                _members = activeMembers.ToImmutableDictionary(m => m.Id);
                 
-                var topology = MemberListFunctions.GetNewTopology(_currentTopologyHash, activeMembers, _members, _bannedMembers.ToArray())!;
-
-                Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
-
-                if (topology.Joined.Count > 0) Logger.LogInformation("[MemberList] Cluster members joined {MembersJoined}", topology.Joined);
-
-                if (topology.Left.Count > 0) Logger.LogInformation("[MemberList] Cluster members left {MembersJoined}", topology.Left);
-
                 //notify that these members left
-                foreach (var memberThatLeft in topology.Left)
+                foreach (var memberThatLeft in left)
                 {
                     MemberLeave(memberThatLeft);
                     TerminateMember(memberThatLeft);
                 }
                 
                 //notify that these members joined
-                foreach (var memberThatJoined in topology.Joined)
+                foreach (var memberThatJoined in joined)
                 {
                     MemberJoin(memberThatJoined);
                 }
+                
+                var topology = new ClusterTopology
+                {
+                    TopologyHash = _currentTopologyHash,
+                    Members = {activeMembers},
+                    Left = {left},
+                    Joined = {joined}
+                };
+                
+                Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
+                
+                if (topology.Joined.Count > 0) Logger.LogInformation("[MemberList] Cluster members joined {MembersJoined}", topology.Joined);
+
+                if (topology.Left.Count > 0) Logger.LogInformation("[MemberList] Cluster members left {MembersJoined}", topology.Left);
                 
                 _eventStream.Publish(topology);
 
@@ -199,9 +223,6 @@ namespace Proto.Cluster
                     }
                 }
 
-                _bannedMembers.Add(memberThatLeft.Id);
-
-                _members = _members.Remove(memberThatLeft.Id);
                 _membersByIndex = _membersByIndex.Remove(memberThatLeft.Index);
 
                 if (_indexByAddress.TryGetValue(memberThatLeft.Address, out _))
@@ -212,7 +233,6 @@ namespace Proto.Cluster
             {
                 newMember.Index = _nextMemberIndex++;
                 
-                _members = _members.Add(newMember.Id, newMember);
                 _membersByIndex = _membersByIndex.Add(newMember.Index, newMember);
                 _indexByAddress = _indexByAddress.Add(newMember.Address, newMember.Index);
 
