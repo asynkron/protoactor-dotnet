@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
+using Proto.Utils;
 
 namespace Proto.Cluster
 {
@@ -8,8 +9,7 @@ namespace Proto.Cluster
         public static ClusterTopology GetNewTopology(
             uint topologyHash,
             Member[] members,
-            ImmutableDictionary<string, Member> oldMembers,
-            string[] banned
+            ImmutableDictionary<string, Member> oldMembers
         )
         {
             //these are the member IDs hashset of currently active members
@@ -32,9 +32,6 @@ namespace Proto.Cluster
                 TopologyHash = topologyHash,
                 Members = {
                     members
-                },
-                Banned = {
-                    banned
                 },
                 Left = {
                     left
