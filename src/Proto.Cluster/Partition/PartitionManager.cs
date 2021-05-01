@@ -40,9 +40,9 @@ namespace Proto.Cluster.Partition
                 var eventId = 0ul;
                 //make sure selector is updated first
                 _system.EventStream.Subscribe<ClusterTopology>(e => {
-                        if (e.EventId == eventId) return;
+                        if (e.TopologyHash == eventId) return;
 
-                        eventId = e.EventId;
+                        eventId = e.TopologyHash;
                         Selector.Update(e.Members.ToArray());
                     }
                 );
@@ -60,12 +60,12 @@ namespace Proto.Cluster.Partition
 
                 //synchronous subscribe to keep accurate
 
-                var eventId = 0ul;
+                var topologyHash = 0ul;
                 //make sure selector is updated first
                 _system.EventStream.Subscribe<ClusterTopology>(e => {
-                        if (e.EventId == eventId) return;
+                        if (e.TopologyHash == topologyHash) return;
 
-                        eventId = e.EventId;
+                        topologyHash = e.TopologyHash;
 
                         Selector.Update(e.Members.ToArray());
                         _context.Send(_partitionIdentityActor, e);
