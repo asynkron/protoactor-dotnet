@@ -67,7 +67,7 @@ namespace Proto.Cluster
                 var excludeBannedMembers = _memberState.Keys.Where(k => _bannedMembers.Contains(k));
                 _memberState = _memberState.RemoveRange(excludeBannedMembers);
                 
-                var everyoneInAgreement = _memberState.Values.All(x => x.MembershipHashCode == _currentTopologyHash);
+                var everyoneInAgreement = _memberState.Values.All(x => x.TopologyHash == _currentTopologyHash);
 
                 if (everyoneInAgreement && !_topologyConsensus.Task.IsCompleted)
                 {
@@ -226,7 +226,7 @@ namespace Proto.Cluster
                 BroadcastEvent(new ClusterTopologyNotification
                     {
                         MemberId = _cluster.System.Id,
-                        MembershipHashCode = _currentTopologyHash,
+                        TopologyHash = _currentTopologyHash,
                         LeaderId = _leader == null? "": _leader.Id,
                     }, true
                 );
