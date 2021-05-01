@@ -7,11 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Proto.Cluster.Data;
 using Proto.Remote;
 using Proto.Utils;
 
@@ -27,7 +25,7 @@ namespace Proto.Cluster
         private readonly Cluster _cluster;
         private readonly EventStream _eventStream;
         private static readonly ILogger Logger = Log.CreateLogger<MemberList>();
-        private uint _currentMembershipHashCode = uint.MinValue;
+        private uint _currentTopologyHash = uint.MinValue;
 
         private readonly IRootContext _root;
         private readonly ActorSystem _system;
@@ -67,7 +65,7 @@ namespace Proto.Cluster
                 var excludeBannedMembers = _memberState.Keys.Where(k => _bannedMembers.Contains(k));
                 _memberState = _memberState.RemoveRange(excludeBannedMembers);
                 
-                var everyoneInAgreement = _memberState.Values.All(x => x.MembershipHashCode == _currentMembershipHashCode);
+                var everyoneInAgreement = _memberState.Values.All(x => x.TopologyHash == _currentTopologyHash);
 
                 if (everyoneInAgreement && !_topologyConsensus.Task.IsCompleted)
                 {
@@ -117,83 +115,30 @@ namespace Proto.Cluster
             }
         }
 
-        public void UpdateClusterTopology(IReadOnlyCollection<Member> statuses)
+        public void UpdateClusterTopology(IReadOnlyCollection<Member> members)
         {
             lock (this)
             {
                 Logger.LogDebug("[MemberList] Updating Cluster Topology");
-                var topology = new ClusterTopology {EventId = Member.GetMembershipHashCode(statuses)};
 
                 //TLDR:
                 //this method basically filters out any member status in the banned list
                 //then makes a delta between new and old members
                 //notifying the cluster accordingly which members left or joined
-
-                //these are all members that are currently active
-                var nonBannedStatuses =
-                    statuses
+                
+                var activeMembers =
+                    members
                         .Where(s => !_bannedMembers.Contains(s.Id))
                         .ToArray();
 
-                var newMembershipHashCode = Member.GetMembershipHashCode(nonBannedStatuses);
-
-                //same topology, bail out
-                if (newMembershipHashCode == _currentMembershipHashCode)
+                var newMembershipHashCode = Member.GetMembershipHashCode(activeMembers);
+                if (newMembershipHashCode == _currentTopologyHash)
                 {
                     return;
                 }
-
-                _currentMembershipHashCode = newMembershipHashCode;
-
-                //these are the member IDs hashset of currently active members
-                var newMemberIds =
-                    nonBannedStatuses
-                        .Select(s => s.Id)
-                        .ToImmutableHashSet();
-
-                //these are all members that existed before, but are not in the current nonBannedMemberStatuses
-                var membersThatLeft =
-                    _members
-                        .Where(m => !newMemberIds.Contains(m.Key))
-                        .Select(m => m.Value)
-                        .ToArray();
-
-                //notify that these members left
-                foreach (var memberThatLeft in membersThatLeft)
-                {
-                    MemberLeave(memberThatLeft);
-                    topology.Left.Add(new Member
-                        {
-                            Host = memberThatLeft.Host,
-                            Port = memberThatLeft.Port,
-                            Id = memberThatLeft.Id,
-                            Index = memberThatLeft.Index
-                        }
-                    );
-                }
-
-                //these are all members that are new and did not exist before
-                var membersThatJoined =
-                    nonBannedStatuses
-                        .Where(m => !_members.ContainsKey(m.Id))
-                        .ToArray();
-
-                //notify that these members joined
-                foreach (var memberThatJoined in membersThatJoined)
-                {
-                    // Node local short identifier
-                    MemberJoin(memberThatJoined);
-                    topology.Joined.Add(new Member
-                        {
-                            Host = memberThatJoined.Host,
-                            Port = memberThatJoined.Port,
-                            Id = memberThatJoined.Id,
-                            Index = memberThatJoined.Index
-                        }
-                    );
-                }
-
-                topology.Members.AddRange(_members.Values);
+                _currentTopologyHash = newMembershipHashCode;
+                
+                var topology = MemberListFunctions.GetNewTopology(_currentTopologyHash, activeMembers, _members, _bannedMembers.ToArray())!;
 
                 Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
 
@@ -201,6 +146,19 @@ namespace Proto.Cluster
 
                 if (topology.Left.Count > 0) Logger.LogInformation("[MemberList] Cluster members left {MembersJoined}", topology.Left);
 
+                //notify that these members left
+                foreach (var memberThatLeft in topology.Left)
+                {
+                    MemberLeave(memberThatLeft);
+                    TerminateMember(memberThatLeft);
+                }
+                
+                //notify that these members joined
+                foreach (var memberThatJoined in topology.Joined)
+                {
+                    MemberJoin(memberThatJoined);
+                }
+                
                 _eventStream.Publish(topology);
 
                 foreach (var m in topology.Members)
@@ -219,7 +177,7 @@ namespace Proto.Cluster
                 BroadcastEvent(new ClusterTopologyNotification
                     {
                         MemberId = _cluster.System.Id,
-                        MembershipHashCode = _currentMembershipHashCode,
+                        TopologyHash = _currentTopologyHash,
                         LeaderId = _leader == null? "": _leader.Id,
                     }, true
                 );
@@ -248,10 +206,6 @@ namespace Proto.Cluster
 
                 if (_indexByAddress.TryGetValue(memberThatLeft.Address, out _))
                     _indexByAddress = _indexByAddress.Remove(memberThatLeft.Address);
-
-                var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
-                Logger.LogDebug("[MemberList] Published event {@EndpointTerminated}", endpointTerminated);
-                _cluster.System.EventStream.Publish(endpointTerminated);
             }
 
             void MemberJoin(Member newMember)
@@ -274,7 +228,13 @@ namespace Proto.Cluster
             }
         }
 
-        //
+        private void TerminateMember(Member memberThatLeft)
+        {
+            var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
+            Logger.LogDebug("[MemberList] Published event {@EndpointTerminated}", endpointTerminated);
+            _cluster.System.EventStream.Publish(endpointTerminated);
+        }
+
         private IMemberStrategy GetMemberStrategyByKind(string kind)
         {
             //Try get the cluster kind
