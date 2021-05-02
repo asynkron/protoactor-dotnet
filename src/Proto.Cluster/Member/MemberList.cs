@@ -122,24 +122,19 @@ namespace Proto.Cluster
             {
                 Logger.LogDebug("[MemberList] Updating Cluster Topology");
 
-                var memberSet = new ImmutableMemberSet(members);
                 //TLDR:
                 //this method basically filters out any member status in the banned list
                 //then makes a delta between new and old members
                 //notifying the cluster accordingly which members left or joined
 
-                var activeMembers = memberSet.Except(_bannedMembers);
-
-                
-                if (activeMembers.TopologyHash == _members.TopologyHash)
+                var activeMembers = new ImmutableMemberSet(members).Except(_bannedMembers);
+                if (activeMembers.Equals(_members))
                 {
                     return;
                 }
 
                 var left = _members.Except(activeMembers);
-
                 var joined = activeMembers.Except(_members);
-
                 _bannedMembers = _bannedMembers.Union(left);
                 _members = activeMembers;
                 
@@ -166,9 +161,9 @@ namespace Proto.Cluster
                 
                 Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
                 
-                if (topology.Joined.Count > 0) Logger.LogInformation("[MemberList] Cluster members joined {MembersJoined}", topology.Joined);
+                if (topology.Joined.Any()) Logger.LogInformation("[MemberList] Cluster members joined {MembersJoined}", topology.Joined);
 
-                if (topology.Left.Count > 0) Logger.LogInformation("[MemberList] Cluster members left {MembersJoined}", topology.Left);
+                if (topology.Left.Any()) Logger.LogInformation("[MemberList] Cluster members left {MembersJoined}", topology.Left);
                 
                 _eventStream.Publish(topology);
 

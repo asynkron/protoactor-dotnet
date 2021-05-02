@@ -10,8 +10,21 @@ using System.Linq;
 
 namespace Proto.Cluster
 {
-    public class ImmutableMemberSet
+    public sealed class ImmutableMemberSet
     {
+        private bool Equals(ImmutableMemberSet other) => TopologyHash == other.TopologyHash;
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+
+            return Equals((ImmutableMemberSet) obj);
+        }
+
+        public override int GetHashCode() => (int) TopologyHash;
+
         public static readonly ImmutableMemberSet Empty = new(Array.Empty<Member>());
         
         public uint TopologyHash { get; }
