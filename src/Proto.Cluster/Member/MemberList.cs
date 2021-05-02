@@ -25,7 +25,6 @@ namespace Proto.Cluster
         private readonly Cluster _cluster;
         private readonly EventStream _eventStream;
         private static readonly ILogger Logger = Log.CreateLogger<MemberList>();
-        private uint _currentTopologyHash = uint.MinValue;
 
         private readonly IRootContext _root;
         private readonly ActorSystem _system;
@@ -39,11 +38,13 @@ namespace Proto.Cluster
         //The partition lookup broadcasts and use broadcasted information
         //meaning the partition infra might be ahead of this list.
         //come up with a good solution to keep all this in sync
-        private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
+        private ImmutableMemberSet _members = ImmutableMemberSet.Empty;
+        private ImmutableMemberSet _bannedMembers = ImmutableMemberSet.Empty;
+        
         private ImmutableDictionary<int, Member> _membersByIndex = ImmutableDictionary<int, Member>.Empty;
 
         private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
-        private ImmutableHashSet<string> _bannedMembers = ImmutableHashSet<string>.Empty;
+
         private int _nextMemberIndex;
 
         public MemberList(Cluster cluster)
@@ -65,7 +66,7 @@ namespace Proto.Cluster
                 var excludeBannedMembers = _memberState.Keys.Where(k => _bannedMembers.Contains(k));
                 _memberState = _memberState.RemoveRange(excludeBannedMembers);
                 
-                var everyoneInAgreement = _memberState.Values.All(x => x.TopologyHash == _currentTopologyHash);
+                var everyoneInAgreement = _memberState.Values.All(x => x.TopologyHash == _members.TopologyHash);
 
                 if (everyoneInAgreement && !_topologyConsensus.Task.IsCompleted)
                 {
@@ -73,7 +74,7 @@ namespace Proto.Cluster
                     Logger.LogInformation("[MemberList] Topology consensus");
                     _topologyConsensus.TrySetResult(true);
                     var leaderId = LeaderElection.Elect(_memberState);
-                    var newLeader = _members[leaderId];
+                    var newLeader = _members.GetById(leaderId);
                     if (!newLeader.Equals(_leader))
                     {
                         _leader = newLeader;
@@ -125,86 +126,46 @@ namespace Proto.Cluster
                 //this method basically filters out any member status in the banned list
                 //then makes a delta between new and old members
                 //notifying the cluster accordingly which members left or joined
-                
-                var activeMembers =
-                    members
-                        .Where(s => !_bannedMembers.Contains(s.Id))
-                        .ToArray();
 
-                var newMembershipHashCode = Member.GetMembershipHashCode(activeMembers);
-                if (newMembershipHashCode == _currentTopologyHash)
+                var activeMembers = new ImmutableMemberSet(members).Except(_bannedMembers);
+                if (activeMembers.Equals(_members))
                 {
                     return;
                 }
-                _currentTopologyHash = newMembershipHashCode;
 
-                //these are the member IDs hashset of currently active members
-                var memberIds =
-                    activeMembers
-                    .Select(s => s.Id)
-                    .ToImmutableHashSet();
-            
-                var left = _members
-                    .Where(m => !memberIds.Contains(m.Key))
-                    .Select(m => m.Value)
-                    .ToArray();
-            
-                var joined = activeMembers
-                    .Where(m => !_members.ContainsKey(m.Id))
-                    .ToArray();
-
-                _bannedMembers = _bannedMembers.Union(left.Select(m => m.Id).ToImmutableHashSet());
-                _members = activeMembers.ToImmutableDictionary(m => m.Id);
+                var left = _members.Except(activeMembers);
+                var joined = activeMembers.Except(_members);
+                _bannedMembers = _bannedMembers.Union(left);
+                _members = activeMembers;
                 
                 //notify that these members left
-                foreach (var memberThatLeft in left)
+                foreach (var memberThatLeft in left.Members)
                 {
                     MemberLeave(memberThatLeft);
                     TerminateMember(memberThatLeft);
                 }
                 
                 //notify that these members joined
-                foreach (var memberThatJoined in joined)
+                foreach (var memberThatJoined in joined.Members)
                 {
                     MemberJoin(memberThatJoined);
                 }
                 
                 var topology = new ClusterTopology
                 {
-                    TopologyHash = _currentTopologyHash,
-                    Members = {activeMembers},
-                    Left = {left},
-                    Joined = {joined}
+                    TopologyHash = activeMembers.TopologyHash,
+                    Members = {activeMembers.Members},
+                    Left = {left.Members},
+                    Joined = {joined.Members}
                 };
                 
                 Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
                 
-                if (topology.Joined.Count > 0) Logger.LogInformation("[MemberList] Cluster members joined {MembersJoined}", topology.Joined);
+                if (topology.Joined.Any()) Logger.LogInformation("[MemberList] Cluster members joined {MembersJoined}", topology.Joined);
 
-                if (topology.Left.Count > 0) Logger.LogInformation("[MemberList] Cluster members left {MembersJoined}", topology.Left);
+                if (topology.Left.Any()) Logger.LogInformation("[MemberList] Cluster members left {MembersJoined}", topology.Left);
                 
-                _eventStream.Publish(topology);
-
-                foreach (var m in topology.Members)
-                {
-                    //add any missing member to the hashcode dict
-                    if (!_memberState.ContainsKey(m.Id))
-                    {
-                        _memberState = _memberState.Add(m.Id,new ClusterTopologyNotification()
-                        {
-                            MemberId = m.Id
-                        });
-                    }
-                }
-
-                //Notify other members...
-                BroadcastEvent(new ClusterTopologyNotification
-                    {
-                        MemberId = _cluster.System.Id,
-                        TopologyHash = _currentTopologyHash,
-                        LeaderId = _leader == null? "": _leader.Id,
-                    }, true
-                );
+                BroadcastTopologyChanges(topology);
             }
 
 
@@ -248,6 +209,32 @@ namespace Proto.Cluster
             }
         }
 
+        private void BroadcastTopologyChanges(ClusterTopology topology)
+        {
+            _eventStream.Publish(topology);
+            foreach (var m in topology.Members)
+            {
+                //add any missing member to the hashcode dict
+                if (!_memberState.ContainsKey(m.Id))
+                {
+                    _memberState = _memberState.Add(m.Id, new ClusterTopologyNotification()
+                        {
+                            MemberId = m.Id
+                        }
+                    );
+                }
+            }
+
+            //Notify other members...
+            BroadcastEvent(new ClusterTopologyNotification
+                {
+                    MemberId = _cluster.System.Id,
+                    TopologyHash = _members.TopologyHash,
+                    LeaderId = _leader == null ? "" : _leader.Id,
+                }, true
+            );
+        }
+
         private void TerminateMember(Member memberThatLeft)
         {
             var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
@@ -278,7 +265,7 @@ namespace Proto.Cluster
         /// <param name="includeSelf"></param>
         public void BroadcastEvent(object message, bool includeSelf = true)
         {
-            foreach (var (id, member) in _members)
+            foreach (var (id, member) in _members.Lookup)
             {
                 if (!includeSelf && id == _cluster.System.Id) continue;
 
@@ -295,19 +282,19 @@ namespace Proto.Cluster
             }
         }
 
-        public bool ContainsMemberId(string memberId) => _members.ContainsKey(memberId);
+        public bool ContainsMemberId(string memberId) => _members.Contains(memberId);
 
-        public bool TryGetMember(string memberId, out Member? value) => _members.TryGetValue(memberId, out value);
+        public bool TryGetMember(string memberId, out Member? value) => _members.Lookup.TryGetValue(memberId, out value);
 
         public bool TryGetMemberIndexByAddress(string address, out int value) => _indexByAddress.TryGetValue(address, out value);
 
         public bool TryGetMemberByIndex(int memberIndex, out Member? value) => _membersByIndex.TryGetValue(memberIndex, out value);
 
-        public Member[] GetAllMembers() => _members.Values.ToArray();
+        public Member[] GetAllMembers() => _members.Members.ToArray();
 
         public void DumpState()
         {
-            foreach (var m in _members)
+            foreach (var m in _members.Members)
             {
                 Console.WriteLine(m);
             }
