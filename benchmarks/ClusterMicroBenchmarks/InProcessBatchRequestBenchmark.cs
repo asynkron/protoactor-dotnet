@@ -25,7 +25,7 @@ namespace ClusterMicroBenchmarks
         
 
         [GlobalSetup]
-        public async Task Setup()
+        public void Setup()
         {
             var echoProps = Props.FromFunc(ctx => {
                     if (ctx.Sender is not null) ctx.Respond(ctx.Message!);
@@ -43,22 +43,22 @@ namespace ClusterMicroBenchmarks
         // [Benchmark]
         // public Task ClusterRequestAsync() => _cluster.RequestAsync<int>(_id.Identity, _id.Kind, 1, CancellationToken.None);
 
-        // [Benchmark]
-        // public Task RequestAsync()
-        // {
-        //     var tasks = new Task<object>[BatchSize];
-        //     var cancellationToken = CancellationTokens.WithTimeout(TimeSpan.FromSeconds(2));
-        //
-        //     for (int i = 0; i < tasks.Length; i++)
-        //     {
-        //         tasks[i] = System.Root.RequestAsync<object>(pid, 1, cancellationToken);
-        //     }
-        //
-        //     return Task.WhenAll(tasks);
-        // }
+        [Benchmark]
+        public async Task RequestAsync()
+        {
+            var tasks = new Task<object>[BatchSize];
+            var cancellationToken = CancellationTokens.WithTimeout(TimeSpan.FromSeconds(2));
+        
+            for (int i = 0; i < tasks.Length; i++)
+            {
+                tasks[i] = System.Root.RequestAsync<object>(pid, 1, cancellationToken);
+            }
+        
+            await Task.WhenAll(tasks);
+        }
 
         [Benchmark]
-        public Task RequestAsyncBatchFuture()
+        public async Task RequestAsyncBatchFuture()
         {
             var cancellationToken = CancellationTokens.WithTimeout(TimeSpan.FromSeconds(2));
             using var batch = new FutureBatchProcess(System, BatchSize, cancellationToken);
@@ -69,7 +69,7 @@ namespace ClusterMicroBenchmarks
                 System.Root.Request(pid, 1, future.Pid);
             }
 
-            return Task.WhenAll(futures.Select(f => f.Task));
+            await Task.WhenAll(futures.Select(f => f.Task));
         }
         
     }

@@ -14,13 +14,10 @@ namespace Proto.Future
     {
         private readonly TaskCompletionSource<object> _tcs;
         private readonly ActorMetrics? _metrics;
-        private readonly ActorSystem _system;
         private readonly CancellationToken _ct;
 
         internal FutureProcess(ActorSystem system, CancellationToken cancellationToken = default) : base(system)
         {
-            _system = system;
-
             if (!system.Metrics.IsNoop)
             {
                 _metrics = system.Metrics.Get<ActorMetrics>();
@@ -72,7 +69,7 @@ namespace Proto.Future
             }
             finally
             {
-                if (!_system.Metrics.IsNoop)
+                if (!System.Metrics.IsNoop)
                 {
                     _metrics!.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
                 }
@@ -91,7 +88,7 @@ namespace Proto.Future
 
             if (_ct == default || !_ct.IsCancellationRequested) _tcs.TrySetResult(default!);
 
-            if (!_system.Metrics.IsNoop)
+            if (!System.Metrics.IsNoop)
             {
                 _metrics!.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
             }
