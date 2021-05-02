@@ -165,28 +165,7 @@ namespace Proto.Cluster
 
                 if (topology.Left.Any()) Logger.LogInformation("[MemberList] Cluster members left {MembersJoined}", topology.Left);
                 
-                _eventStream.Publish(topology);
-
-                foreach (var m in topology.Members)
-                {
-                    //add any missing member to the hashcode dict
-                    if (!_memberState.ContainsKey(m.Id))
-                    {
-                        _memberState = _memberState.Add(m.Id,new ClusterTopologyNotification()
-                        {
-                            MemberId = m.Id
-                        });
-                    }
-                }
-
-                //Notify other members...
-                BroadcastEvent(new ClusterTopologyNotification
-                    {
-                        MemberId = _cluster.System.Id,
-                        TopologyHash = _members.TopologyHash,
-                        LeaderId = _leader == null? "": _leader.Id,
-                    }, true
-                );
+                BroadcastTopologyChanges(topology);
             }
 
 
@@ -228,6 +207,32 @@ namespace Proto.Cluster
                     _memberStrategyByKind[kind].AddMember(newMember);
                 }
             }
+        }
+
+        private void BroadcastTopologyChanges(ClusterTopology topology)
+        {
+            _eventStream.Publish(topology);
+            foreach (var m in topology.Members)
+            {
+                //add any missing member to the hashcode dict
+                if (!_memberState.ContainsKey(m.Id))
+                {
+                    _memberState = _memberState.Add(m.Id, new ClusterTopologyNotification()
+                        {
+                            MemberId = m.Id
+                        }
+                    );
+                }
+            }
+
+            //Notify other members...
+            BroadcastEvent(new ClusterTopologyNotification
+                {
+                    MemberId = _cluster.System.Id,
+                    TopologyHash = _members.TopologyHash,
+                    LeaderId = _leader == null ? "" : _leader.Id,
+                }, true
+            );
         }
 
         private void TerminateMember(Member memberThatLeft)
