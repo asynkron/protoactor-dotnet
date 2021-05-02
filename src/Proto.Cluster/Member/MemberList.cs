@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Remote;
-using Proto.Utils;
 
 namespace Proto.Cluster
 {
@@ -31,6 +30,7 @@ namespace Proto.Cluster
         private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
         private ImmutableDictionary<string, ClusterTopologyNotification> _memberState = ImmutableDictionary<string, ClusterTopologyNotification>.Empty;
         private TaskCompletionSource<bool> _topologyConsensus = new ();
+        private ImmutableDictionary<string,MetaMember> _metaMembers = ImmutableDictionary<string, MetaMember>.Empty;
 
         private Member? _leader;
 
@@ -184,18 +184,25 @@ namespace Proto.Cluster
                     }
                 }
 
-                _membersByIndex = _membersByIndex.Remove(memberThatLeft.Index);
+                if (_metaMembers.TryGetValue(memberThatLeft.Id, out var meta))
+                {
+                    _membersByIndex = _membersByIndex.Remove(meta.Index);
 
-                if (_indexByAddress.TryGetValue(memberThatLeft.Address, out _))
-                    _indexByAddress = _indexByAddress.Remove(memberThatLeft.Address);
+                    if (_indexByAddress.TryGetValue(memberThatLeft.Address, out _))
+                        _indexByAddress = _indexByAddress.Remove(memberThatLeft.Address);
+                }
+                else
+                {
+                    //Log?
+                }
             }
 
             void MemberJoin(Member newMember)
             {
-                newMember.Index = _nextMemberIndex++;
-                
-                _membersByIndex = _membersByIndex.Add(newMember.Index, newMember);
-                _indexByAddress = _indexByAddress.Add(newMember.Address, newMember.Index);
+                var index = _nextMemberIndex++;
+                _metaMembers = _metaMembers.Add(newMember.Id, new MetaMember(newMember, index));
+                _membersByIndex = _membersByIndex.Add(index, newMember);
+                _indexByAddress = _indexByAddress.Add(newMember.Address, index);
 
                 foreach (var kind in newMember.Kinds)
                 {
@@ -207,6 +214,12 @@ namespace Proto.Cluster
                     _memberStrategyByKind[kind].AddMember(newMember);
                 }
             }
+        }
+
+        public MetaMember? GetMetaMember(string memberId)
+        {
+            _metaMembers.TryGetValue(memberId, out var meta);
+            return meta;
         }
 
         private void BroadcastTopologyChanges(ClusterTopology topology)
