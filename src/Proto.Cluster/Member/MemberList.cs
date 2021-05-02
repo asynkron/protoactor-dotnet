@@ -31,6 +31,7 @@ namespace Proto.Cluster
         private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
         private ImmutableDictionary<string, ClusterTopologyNotification> _memberState = ImmutableDictionary<string, ClusterTopologyNotification>.Empty;
         private TaskCompletionSource<bool> _topologyConsensus = new ();
+        private ImmutableDictionary<string,int> _indexById = ImmutableDictionary<string, int>.Empty;
 
         private Member? _leader;
 
@@ -184,18 +185,25 @@ namespace Proto.Cluster
                     }
                 }
 
-                _membersByIndex = _membersByIndex.Remove(memberThatLeft.Index);
+                if (_indexById.TryGetValue(memberThatLeft.Id, out var index))
+                {
+                    _membersByIndex = _membersByIndex.Remove(index);
 
-                if (_indexByAddress.TryGetValue(memberThatLeft.Address, out _))
-                    _indexByAddress = _indexByAddress.Remove(memberThatLeft.Address);
+                    if (_indexByAddress.TryGetValue(memberThatLeft.Address, out _))
+                        _indexByAddress = _indexByAddress.Remove(memberThatLeft.Address);
+                }
+                else
+                {
+                    //Log?
+                }
             }
 
             void MemberJoin(Member newMember)
             {
-                newMember.Index = _nextMemberIndex++;
-                
-                _membersByIndex = _membersByIndex.Add(newMember.Index, newMember);
-                _indexByAddress = _indexByAddress.Add(newMember.Address, newMember.Index);
+                var index = _nextMemberIndex++;
+                _indexById = _indexById.Add(newMember.Id, index);
+                _membersByIndex = _membersByIndex.Add(index, newMember);
+                _indexByAddress = _indexByAddress.Add(newMember.Address, index);
 
                 foreach (var kind in newMember.Kinds)
                 {
@@ -207,6 +215,12 @@ namespace Proto.Cluster
                     _memberStrategyByKind[kind].AddMember(newMember);
                 }
             }
+        }
+
+        public int GetIndexByMemberId(string memberId)
+        {
+            _indexById.TryGetValue(memberId, out var index);
+            return index;
         }
 
         private void BroadcastTopologyChanges(ClusterTopology topology)

@@ -12,11 +12,6 @@ namespace Proto.Cluster
     {
         public string Address => Host + ":" + Port;
 
-        /// <summary>
-        ///     Node local index
-        /// </summary>
-        public int Index { get; internal set; }
-
         public string ToLogString() => $"Member Address:{Address} ID:{Id}";
     }
 }
