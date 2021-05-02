@@ -44,7 +44,7 @@ namespace Proto.Cluster
         private ImmutableDictionary<int, Member> _membersByIndex = ImmutableDictionary<int, Member>.Empty;
 
         private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
-        
+
         private int _nextMemberIndex;
 
         public MemberList(Cluster cluster)
