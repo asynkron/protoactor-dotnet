@@ -43,9 +43,9 @@ namespace Proto.Cluster.Cache
                 Pid = activation
             };
             var remotesToInvalidate = Cluster.MemberList.GetAllMembers()
-                .Select(m => (member: m, index: Cluster.MemberList.GetIndexByMemberId(m.Id)))
-                .Where(t => activeRemotes.Length > t.index && activeRemotes[t.index])
-                .Select(t => t.member.Address);
+                .Select(m => Cluster.MemberList.GetMetaMember(m.Id))
+                .Where(m => activeRemotes.Length > m.Index && activeRemotes[m.Index])
+                .Select(m => m.Member.Address);
 
             foreach (var address in remotesToInvalidate)
             {

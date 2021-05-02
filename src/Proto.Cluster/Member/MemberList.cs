@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Remote;
-using Proto.Utils;
 
 namespace Proto.Cluster
 {
@@ -31,7 +30,7 @@ namespace Proto.Cluster
         private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
         private ImmutableDictionary<string, ClusterTopologyNotification> _memberState = ImmutableDictionary<string, ClusterTopologyNotification>.Empty;
         private TaskCompletionSource<bool> _topologyConsensus = new ();
-        private ImmutableDictionary<string,int> _indexById = ImmutableDictionary<string, int>.Empty;
+        private ImmutableDictionary<string,MetaMember> _metaMembers = ImmutableDictionary<string, MetaMember>.Empty;
 
         private Member? _leader;
 
@@ -185,9 +184,9 @@ namespace Proto.Cluster
                     }
                 }
 
-                if (_indexById.TryGetValue(memberThatLeft.Id, out var index))
+                if (_metaMembers.TryGetValue(memberThatLeft.Id, out var meta))
                 {
-                    _membersByIndex = _membersByIndex.Remove(index);
+                    _membersByIndex = _membersByIndex.Remove(meta.Index);
 
                     if (_indexByAddress.TryGetValue(memberThatLeft.Address, out _))
                         _indexByAddress = _indexByAddress.Remove(memberThatLeft.Address);
@@ -201,7 +200,7 @@ namespace Proto.Cluster
             void MemberJoin(Member newMember)
             {
                 var index = _nextMemberIndex++;
-                _indexById = _indexById.Add(newMember.Id, index);
+                _metaMembers = _metaMembers.Add(newMember.Id, new MetaMember(newMember, index));
                 _membersByIndex = _membersByIndex.Add(index, newMember);
                 _indexByAddress = _indexByAddress.Add(newMember.Address, index);
 
@@ -217,10 +216,10 @@ namespace Proto.Cluster
             }
         }
 
-        public int GetIndexByMemberId(string memberId)
+        public MetaMember? GetMetaMember(string memberId)
         {
-            _indexById.TryGetValue(memberId, out var index);
-            return index;
+            _metaMembers.TryGetValue(memberId, out var meta);
+            return meta;
         }
 
         private void BroadcastTopologyChanges(ClusterTopology topology)
