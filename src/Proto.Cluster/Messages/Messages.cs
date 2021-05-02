@@ -45,12 +45,12 @@ namespace Proto.Cluster
     public partial class ClusterTopology
     {
         //this ignores joined and left members, only the actual members are relevant
-        public uint GetMembershipHashCode() => Member.GetMembershipHashCode(Members);
+        public uint GetMembershipHashCode() => Member.TopologyHash(Members);
     }
 
     public partial class Member
     {
-        public static uint GetMembershipHashCode(IEnumerable<Member> members)
+        public static uint TopologyHash(IEnumerable<Member> members)
         {
             var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
             var key = string.Join("", x);
