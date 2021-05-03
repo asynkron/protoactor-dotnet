@@ -5,92 +5,12 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto.Metrics;
 
 namespace Proto.Future
 {
-    public sealed class FutureFactory
-    {
-        private readonly ActorSystem System;
-
-        public FutureFactory(ActorSystem system, CancellationToken cancellationToken = default)
-        {
-            System = system;
-            Future = new ThreadLocal<SharedFutureProcess>(() => new SharedFutureProcess(System, 1000));
-            cancellationToken.Register(() => {
-                    foreach (var process in Future.Values)
-                    {
-                        process.Stop(process.Pid);
-                    }
-                }
-            );
-        }
-
-        private ThreadLocal<SharedFutureProcess> Future { get; }
-
-        // public IFuture GetHandle(CancellationToken ct) => SingleProcessHandle();
-
-        public IFuture SingleProcessHandle() => new FutureProcess(System);
-
-        // private IFuture SharedHandle(CancellationToken ct)
-        // {
-        //     var process = Future.Value!;
-        //     var future = process.TryCreateHandle(ct);
-        //
-        //     if (future != default) return future;
-        //
-        //     Future.Value = process = new SharedFutureProcess(System, 1000);
-        //     return process.TryCreateHandle(ct)!;
-        // }
-    }
-
-    public interface IFuture : IDisposable
-    {
-        public PID Pid { get; }
-        public Task<object> Task { get; }
-
-        public Task<object> GetTask(CancellationToken cancellationToken);
-    }
-
-    sealed class SimpleFutureHandle : IFuture
-    {
-        private readonly Action _onTimeout;
-        private readonly TaskCompletionSource<object> _tcs;
-
-        public SimpleFutureHandle(PID pid, TaskCompletionSource<object> tcs, Action onTimeout)
-        {
-            _onTimeout = onTimeout;
-            Pid = pid;
-            _tcs = tcs;
-        }
-
-        public PID Pid { get; }
-        public Task<object> Task => _tcs.Task;
-
-        public async Task<object> GetTask(CancellationToken cancellationToken)
-        {
-            try
-            {
-                await using (cancellationToken.Register(() => _tcs.TrySetCanceled()))
-                {
-                    return await _tcs.Task;
-                }
-            }
-            catch
-            {
-                _onTimeout();
-                throw new TimeoutException("Request didn't receive any Response within the expected time.");
-            }
-        }
-
-        public void Dispose()
-        {
-        }
-    }
-
     public sealed class SharedFutureProcess : Process, IDisposable
     {
         private readonly TaskCompletionSource<object>?[] _completionSources;
@@ -125,24 +45,24 @@ namespace Proto.Future
 
         public int RequestsInFlight => _prevIndex + 1 - _completedRequests;
 
-        // public IFuture? TryCreateHandle(CancellationToken ct)
-        // {
-        //     if (Exhausted) return default;
-        //
-        //     var index = Interlocked.Increment(ref _prevIndex);
-        //
-        //     if (index >= _completionSources.Length) return default;
-        //
-        //     var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-        //     _completionSources[index] = tcs;
-        //
-        //     if (index == _completionSources.Length - 1)
-        //     {
-        //         Exhausted = true;
-        //     }
-        //
-        //     return new SharedFutureHandle(this, ToRequestId(index), tcs, ct);
-        // }
+        public IFuture? TryCreateHandle()
+        {
+            if (Exhausted) return default;
+        
+            var index = Interlocked.Increment(ref _prevIndex);
+        
+            if (index >= _completionSources.Length) return default;
+        
+            var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _completionSources[index] = tcs;
+        
+            if (index == _completionSources.Length - 1)
+            {
+                Exhausted = true;
+            }
+        
+            return new SharedFutureHandle(this, ToRequestId(index), tcs);
+        }
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
@@ -245,174 +165,46 @@ namespace Proto.Future
 
         private uint ToRequestId(int index) => (uint) (index + 1 + _prevCreatedRequests);
 
-        // private sealed class SharedFutureHandle : IFuture
-        // {
-        //     private readonly SharedFutureProcess _process;
-        //     private readonly CancellationTokenRegistration _timeout;
-        //     private readonly uint _requestId;
-        //
-        //     public SharedFutureHandle(SharedFutureProcess process, uint requestId, TaskCompletionSource<object> tcs, CancellationToken ct)
-        //     {
-        //         _process = process;
-        //         _requestId = requestId;
-        //         Pid = process.Pid.WithRequestId(requestId);
-        //         Task = tcs.Task;
-        //         _timeout = ct.Register(() => {
-        //                 if (tcs.Task.IsCompleted) return;
-        //
-        //                 tcs.TrySetException(
-        //                     new TimeoutException("Request didn't receive any Response within the expected time.")
-        //                 );
-        //
-        //                 if (!_process.System.Metrics.IsNoop)
-        //                 {
-        //                     _process._metrics!.FuturesTimedOutCount.Inc(new[] {_process.System.Id, _process.System.Address});
-        //                 }
-        //
-        //                 Interlocked.Increment(ref _process._completedRequests);
-        //                 if (_process.Exhausted && _process.RequestsInFlight == 0)
-        //                     _process._onCompleted(_process);
-        //             }
-        //         );
-        //     }
-        //
-        //     public PID Pid { get; }
-        //     public Task<object> Task { get; }
-        //
-        //     public void Dispose()
-        //     {
-        //         _process.Cancel(_requestId);
-        //         _timeout.Dispose();
-        //     }
-        // }
-    }
-
-    /// <summary>
-    /// Intended for a single batch with a common CancellationToken.
-    /// </summary>
-    public sealed class FutureBatchProcess : Process, IDisposable
-    {
-        private readonly TaskCompletionSource<object>?[] _completionSources;
-        private readonly ActorMetrics? _metrics;
-        private readonly CancellationTokenRegistration _cancellation;
-        private readonly Action _onTimeout;
-
-        public FutureBatchProcess(ActorSystem system, int size, CancellationToken ct) : base(system)
+        private sealed class SharedFutureHandle : IFuture
         {
-            var name = System.ProcessRegistry.NextId();
-            var (pid, absent) = System.ProcessRegistry.TryAdd(name, this);
+            private readonly SharedFutureProcess _process;
+            private readonly uint _requestId;
+            private readonly TaskCompletionSource<object> _tcs;
 
-            if (!absent) throw new ProcessNameExistException(name, pid);
-
-            Pid = pid;
-
-            _completionSources = ArrayPool<TaskCompletionSource<object>>.Shared.Rent(size);
-
-            if (!system.Metrics.IsNoop)
+            public SharedFutureHandle(SharedFutureProcess process, uint requestId, TaskCompletionSource<object> tcs)
             {
-                _metrics = system.Metrics.Get<ActorMetrics>();
-                _onTimeout = () => _metrics.FuturesTimedOutCount.Inc(new[] {System.Id, System.Address});
+                _process = process;
+                _requestId = requestId;
+                Pid = process.Pid.WithRequestId(requestId);
+                _tcs = tcs;
+
             }
-            else
-            {
-                _onTimeout = () => { };
-            }
+        
+            public PID Pid { get; }
+            public Task<object> Task => _tcs.Task;
 
-            if (ct != default)
+            public async Task<object> GetTask(CancellationToken cancellationToken)
             {
-                _cancellation = ct.Register(() => {
-                        foreach (var tcs in _completionSources)
-                        {
-                            if (tcs?.TrySetException(
-                                new TimeoutException("Request didn't receive any Response within the expected time.")
-                            ) == true)
-                            {
-                                _onTimeout();
-                            }
-                        }
+                try
+                {
+                    await using (cancellationToken.Register(() => _tcs.TrySetCanceled()))
+                    {
+                        return await _tcs.Task;
                     }
-                );
+                }
+                catch
+                {
+                    throw new TimeoutException("Request didn't receive any Response within the expected time.");
+                }
+                finally
+                {
+                    Interlocked.Increment(ref _process._completedRequests);
+                    if (_process.Exhausted && _process.RequestsInFlight == 0)
+                        _process._onCompleted(_process);
+                }
             }
 
-            Futures = GetFutures();
-        }
-
-        public PID Pid { get; }
-
-        public IEnumerable<IFuture> Futures { get; }
-
-        private IEnumerable<IFuture> GetFutures()
-        {
-            for (var i = 0; i < _completionSources.Length; i++)
-            {
-                var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-                _completionSources[i] = tcs;
-                _metrics?.FuturesStartedCount.Inc(new[] {System.Id, System.Address});
-                yield return new SimpleFutureHandle(Pid.WithRequestId(ToRequestId(i)), tcs, _onTimeout);
-            }
-        }
-
-        protected internal override void SendUserMessage(PID pid, object message)
-        {
-            if (!TryGetTaskCompletionSource(pid.RequestId, out var index, out var tcs)) return;
-
-            try
-            {
-                tcs.TrySetResult(MessageEnvelope.UnwrapMessage(message)!);
-                _completionSources[index] = default;
-            }
-            finally
-            {
-                _metrics?.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
-            }
-        }
-
-        protected internal override void SendSystemMessage(PID pid, object message)
-        {
-            if (message is Stop)
-            {
-                Dispose();
-                return;
-            }
-
-            if (!TryGetTaskCompletionSource(pid.RequestId, out var index, out var tcs)) return;
-
-            try
-            {
-                tcs.TrySetResult(default!);
-                _completionSources[index] = default;
-            }
-            finally
-            {
-                _metrics?.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
-            }
-        }
-
-        public void Dispose()
-        {
-            _cancellation.Dispose();
-            ArrayPool<TaskCompletionSource<object>?>.Shared.Return(_completionSources, true);
-            System.ProcessRegistry.Remove(Pid);
-        }
-
-        private bool TryGetIndex(uint requestId, out int index)
-        {
-            index = (int) (requestId - 1);
-            return index >= 0 && index < _completionSources.Length;
-        }
-
-        private uint ToRequestId(int index) => (uint) (index + 1);
-
-        private bool TryGetTaskCompletionSource(uint requestId, out int index, out TaskCompletionSource<object> tcs)
-        {
-            if (!TryGetIndex(requestId, out index))
-            {
-                tcs = default!;
-                return false;
-            }
-
-            tcs = _completionSources[index]!;
-            return tcs != default!;
+            public void Dispose() => _process.Cancel(_requestId);
         }
     }
 }
