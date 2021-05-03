@@ -14,7 +14,7 @@ namespace Proto.Future
     {
         private readonly TaskCompletionSource<object> _tcs;
         private readonly ActorMetrics? _metrics;
-
+        
         internal FutureProcess(ActorSystem system) : base(system)
         {
             if (!system.Metrics.IsNoop)

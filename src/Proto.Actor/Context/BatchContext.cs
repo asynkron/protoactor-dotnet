@@ -61,7 +61,7 @@ namespace Proto.Context
                 return _futures.Current!;
             }
             _futuresCreated++;
-            return new FutureProcess(System);
+            return System.Future.SingleProcessHandle();
         }
 
         public T? Get<T>() => _context.Get<T>();

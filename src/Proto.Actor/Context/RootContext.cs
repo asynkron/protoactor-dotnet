@@ -86,7 +86,7 @@ namespace Proto
 
         public Task StopAsync(PID pid)
         {
-            var future = new FutureProcess(System);
+            var future = GetFuture();
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
 
@@ -129,6 +129,6 @@ namespace Proto
             }
         }
         
-        public IFuture GetFuture() => new FutureProcess(System);
+        public IFuture GetFuture() => System.Future.SingleProcessHandle();
     }
 }
