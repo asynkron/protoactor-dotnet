@@ -178,7 +178,7 @@ namespace Proto.Cluster
             try
             {
                 context.Request(pid, message, future.Pid);
-                var task = future.GetTask();
+                var task = future.Task;
                 await Task.WhenAny(task, _clock.CurrentBucket);
 
                 if (task.IsCompleted)

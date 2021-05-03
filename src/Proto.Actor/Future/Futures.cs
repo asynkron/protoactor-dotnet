@@ -34,9 +34,8 @@ namespace Proto.Future
         }
 
         public PID Pid { get; }
-               
-        public Task<object> GetTask() => _tcs.Task;
-
+        public Task<object> Task => _tcs.Task;
+        
         public async Task<object> GetTask(CancellationToken cancellationToken)
         {
             try

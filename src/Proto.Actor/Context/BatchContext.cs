@@ -12,7 +12,7 @@ using Proto.Future;
 
 namespace Proto.Context
 {
-    public class BatchContext : ISenderContext, IDisposable
+    public sealed class BatchContext : ISenderContext, IDisposable
     {
         private static readonly ILogger Logger = Log.CreateLogger<BatchContext>();
 
@@ -21,7 +21,7 @@ namespace Proto.Context
         private readonly FutureBatchProcess _batchProcess;
         private readonly IEnumerator<IFuture> _futures;
 
-        private int _futuresCreated = 0;
+        private int _futuresCreated;
 
         public BatchContext(ISenderContext contextContext, int batchSize, CancellationToken ct)
         {
@@ -31,14 +31,13 @@ namespace Proto.Context
             _futures = _batchProcess.Futures.GetEnumerator();
         }
 
-        public async Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
+        public async Task<T> RequestAsync<T>(PID target, object message, CancellationToken ct)
         {
             using var future = GetFuture();
             var messageEnvelope = new MessageEnvelope(message, future.Pid);
-            cancellationToken.ThrowIfCancellationRequested();
+            ct.ThrowIfCancellationRequested();
             _context.Send(target, messageEnvelope);
-            var task = future.Task;
-            // var task = cancellationToken == default || cancellationToken == _ct ? future.Task : future.Task;
+            var task = ct == default || ct == _ct ? future.Task : future.GetTask(ct);
             var result = await task;
 
             switch (result)
