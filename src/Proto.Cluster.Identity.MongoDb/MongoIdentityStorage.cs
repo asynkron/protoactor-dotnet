@@ -117,7 +117,12 @@ namespace Proto.Cluster.Identity.MongoDb
         {
         }
 
-        public Task Init() => _pids.Indexes.CreateOneAsync(new CreateIndexModel<PidLookupEntity>("{ MemberId: 1 }"));
+        public async Task Init()
+        {
+            await _pids.Indexes.CreateOneAsync(new CreateIndexModel<PidLookupEntity>("{ MemberId: 1 }"));
+            await _pids.Indexes.CreateOneAsync(new CreateIndexModel<PidLookupEntity>("{ _id: 1, LockedBy: 1, Revision: 1 }"));
+            await _pids.Indexes.CreateOneAsync(new CreateIndexModel<PidLookupEntity>("{ UniqueIdentity: 1 }"));
+        }
 
         private async Task<bool> TryAcquireLockAsync(
             ClusterIdentity clusterIdentity,
