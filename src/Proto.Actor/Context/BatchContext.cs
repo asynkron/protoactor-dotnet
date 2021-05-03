@@ -12,7 +12,7 @@ using Proto.Future;
 
 namespace Proto.Context
 {
-    public class BatchContext: ISenderContext, IDisposable
+    public class BatchContext : ISenderContext, IDisposable
     {
         private static readonly ILogger Logger = Log.CreateLogger<BatchContext>();
 
@@ -20,6 +20,8 @@ namespace Proto.Context
         private readonly CancellationToken _ct;
         private readonly FutureBatchProcess _batchProcess;
         private readonly IEnumerator<IFuture> _futures;
+
+        private int _futuresCreated = 0;
 
         public BatchContext(ISenderContext contextContext, int batchSize, CancellationToken ct)
         {
@@ -59,11 +61,10 @@ namespace Proto.Context
             {
                 return _futures.Current!;
             }
-            Logger.LogWarning("Batch request got more calls than provisioned");
+            _futuresCreated++;
             return new FutureProcess(System);
         }
 
-        
         public T? Get<T>() => _context.Get<T>();
 
         public void Set<T, TI>(TI obj) where TI : T => _context.Set<T, TI>(obj);
@@ -84,6 +85,11 @@ namespace Proto.Context
 
         public void Dispose()
         {
+            if (_futuresCreated > 0)
+            {
+                Logger.LogWarning("Batch request got {AdditionalCalls} more calls than provisioned", _futuresCreated);
+            }
+
             _futures.Dispose();
             _batchProcess.Dispose();
         }

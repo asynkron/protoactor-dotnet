@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Context;
 using Proto.Future;
 
 // ReSharper disable once CheckNamespace
@@ -50,6 +51,16 @@ namespace Proto
 
     public static class SenderContextExtensions
     {
+        /// <summary>
+        /// Creates a batch context for sending a set of requests from the same thread context.
+        /// More efficient than the default sender-context, but not thread safe.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="size">The number of requests to send. The batch context will pre-allocate resources for this</param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public static BatchContext Batch(this ISenderContext context, int size, CancellationToken ct) => new(context, size, ct);
+
 
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender

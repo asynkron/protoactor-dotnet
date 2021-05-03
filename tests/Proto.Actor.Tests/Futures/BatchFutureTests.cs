@@ -52,7 +52,7 @@ namespace Proto.Tests
             var reply = await future.Task;
             reply.Should().BeNull();
         }
-        
+
         [Fact]
         public async Task Futures_should_map_to_correct_response()
         {
@@ -75,7 +75,7 @@ namespace Proto.Tests
 
             replies.Should().BeInAscendingOrder().And.HaveCount(1000);
         }
-        
+
         [Fact]
         public void Timeouts_should_give_timeout_exception()
         {
@@ -97,10 +97,34 @@ namespace Proto.Tests
                 Context.Request(pid, i, futures[i].Pid);
             }
 
-            futures.Invoking(async f => {
-                    await Task.WhenAll(f.Select(future => future.Task));
-                }
+            futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.Task)); }
             ).Should().Throw<TimeoutException>();
+        }
+
+        [Fact]
+        public async Task Batch_contexts_handles_batch_correctly()
+        {
+            var pid = Context.Spawn(Props.FromFunc(ctx => {
+                        if (ctx.Sender is not null) ctx.Respond(ctx.Message!);
+                        return Task.CompletedTask;
+                    }
+                )
+            );
+            const int size = 1000;
+
+            var cancellationToken = CancellationTokens.WithTimeout(1000);
+            using var batchContext = System.Root.Batch(size, cancellationToken);
+
+            var tasks = new Task<object>[size];
+
+            for (int i = 0; i < size; i++)
+            {
+                tasks[i] = batchContext.RequestAsync<object>(pid, i, cancellationToken);
+            }
+
+            var replies = await Task.WhenAll(tasks);
+
+            replies.Should().BeInAscendingOrder().And.HaveCount(1000);
         }
     }
 }

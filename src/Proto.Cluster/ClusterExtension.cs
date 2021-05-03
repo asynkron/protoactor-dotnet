@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Proto.Cluster.Metrics;
+using Proto.Context;
 using Proto.Deduplication;
 
 namespace Proto.Cluster
@@ -108,7 +109,7 @@ namespace Proto.Cluster
                         if (pid is not null && pid.RequestId > 0 && int.TryParse(pid.Id[1..], out var id) &&
                             memberList.TryGetMemberIndexByAddress(pid.Address, out var memberId))
                         {
-                            pidRef = new PidRef(memberId, id,pid.RequestId);
+                            pidRef = new PidRef(memberId, id, pid.RequestId);
                             return true;
                         }
 
