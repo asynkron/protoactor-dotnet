@@ -47,6 +47,13 @@ namespace Proto
         /// <typeparam name="T">Expected return message type</typeparam>
         /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
         Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Get a future handle, to be able to receive a response to requests.
+        /// Dispose when response is received
+        /// </summary>
+        /// <returns></returns>
+        IFuture GetFuture();
     }
 
     public static class SenderContextExtensions
@@ -95,7 +102,7 @@ namespace Proto
 
         internal static async Task<T> RequestAsync<T>(this ISenderContext self,  PID target, object message, CancellationToken cancellationToken)
         {
-            using var future = new FutureProcess(self.System);
+            using var future = self.GetFuture();
             var messageEnvelope = new MessageEnvelope(message, future.Pid);
             self.Send(target, messageEnvelope);
             var result = await future.GetTask(cancellationToken);

@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Future;
 
 // ReSharper disable once CheckNamespace
 namespace Proto
@@ -51,5 +52,7 @@ namespace Proto
         public virtual void Set<T, TI>(TI obj) where TI : T => _context.Set(obj);
 
         public virtual void Remove<T>() => _context.Remove<T>();
+
+        public IFuture GetFuture() => _context.GetFuture();
     }
 }

@@ -149,20 +149,20 @@ namespace ClusterExperiment1
 
                     while (true)
                     {
-                        var id = "myactor" + rnd.Next(0, actorCount);
-                        semaphore.Wait(() => SendRequest(cluster, id, CancellationTokens.WithTimeout(20_000)));
+                        var id = ClusterIdentity.Create("myactor" + rnd.Next(0, actorCount),"hello"); 
+                        semaphore.Wait(() => SendRequest(cluster, id, CancellationTokens.FromSeconds(20)));
                     }
                 }
             );
         }
 
-        private static async Task SendRequest(Cluster cluster, string id, CancellationToken cancellationToken)
+        private static async Task SendRequest(Cluster cluster, ClusterIdentity id, CancellationToken cancellationToken, ISenderContext? context = null)
         {
             Interlocked.Increment(ref requestCount);
 
             try
             {
-                var x = await cluster.RequestAsync<object>(id, "hello", Request, cancellationToken);
+                var x = await cluster.RequestAsync<object>(id, Request,context ?? cluster.System.Root, cancellationToken);
 
                 if (x != null)
                 {
@@ -195,7 +195,7 @@ namespace ClusterExperiment1
 
                 var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
 
-                il?.DumpState(ClusterIdentity.Create(id, "hello"));
+                il?.DumpState(id);
             }
         }
 
@@ -216,10 +216,11 @@ namespace ClusterExperiment1
                         {
                             
                             var ct = CancellationTokens.FromSeconds(20);
+                            using var batch = cluster.System.Root.Batch(batchSize, ct);
                             for (var i = 0; i < batchSize; i++)
                             {
-                                var id = "myactor" + rnd.Next(0, actorCount);
-                                var request = SendRequest(cluster, id, ct);
+                                var id = ClusterIdentity.Create("myactor" + rnd.Next(0, actorCount), "hello");
+                                var request = SendRequest(cluster, id, ct, batch);
 
                                 requests.Add(request);
                             }
@@ -245,8 +246,8 @@ namespace ClusterExperiment1
 
                     while (true)
                     {
-                        var id = "myactor" + rnd.Next(0, actorCount);
-                        var ct = CancellationTokens.WithTimeout(20_000);
+                        var id = ClusterIdentity.Create("myactor" + rnd.Next(0, actorCount),"hello");
+                        var ct = CancellationTokens.FromSeconds(20);
                         await SendRequest(cluster, id, ct);
                     }
                 }

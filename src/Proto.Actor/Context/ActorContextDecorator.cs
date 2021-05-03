@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Future;
 
 // ReSharper disable once CheckNamespace
 namespace Proto
@@ -17,6 +18,7 @@ namespace Proto
 
         protected ActorContextDecorator(IContext context) =>
             _context = context;
+
         public virtual MessageHeader Headers => _context.Headers;
         public virtual object? Message => _context.Message;
         public virtual PID? Parent => _context.Parent;
@@ -27,7 +29,7 @@ namespace Proto
         public virtual TimeSpan ReceiveTimeout => _context.ReceiveTimeout;
         public virtual IReadOnlyCollection<PID> Children => _context.Children;
         public CancellationToken CancellationToken => _context.CancellationToken;
-        
+
         public virtual void Send(PID target, object message) =>
             _context.Send(target, message);
 
@@ -36,7 +38,7 @@ namespace Proto
 
         public virtual Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => _context.RequestAsync<T>(target, message, cancellationToken);
-        
+
         public virtual Task Receive(MessageEnvelope envelope) =>
             _context.Receive(envelope);
 
@@ -83,5 +85,7 @@ namespace Proto
         public void Set<T, TI>(TI obj) where TI : T => _context.Set<T, TI>(obj);
 
         public void Remove<T>() => _context.Remove<T>();
+
+        public IFuture GetFuture() => _context.GetFuture();
     }
 }

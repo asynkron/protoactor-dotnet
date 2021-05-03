@@ -128,5 +128,7 @@ namespace Proto
                 target.SendUserMessage(System, message);
             }
         }
+        
+        public IFuture GetFuture() => new FutureProcess(System);
     }
 }

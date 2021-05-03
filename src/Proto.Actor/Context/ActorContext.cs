@@ -637,5 +637,7 @@ namespace Proto.Context
 
             SendUserMessage(Self, Proto.ReceiveTimeout.Instance);
         }
+
+        public IFuture GetFuture() => new FutureProcess(System);
     }
 }

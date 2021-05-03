@@ -4,9 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -46,7 +43,7 @@ namespace Proto.Cluster
             Logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
             var i = 0;
 
-            var future = new FutureProcess(context.System);
+            var future = context.GetFuture();
             PID? lastPid = null;
 
             try
@@ -119,7 +116,7 @@ namespace Proto.Cluster
             void RefreshFuture()
             {
                 future.Dispose();
-                future = new FutureProcess(context.System);
+                future = context.GetFuture();
                 lastPid = null;
             }
         }
@@ -170,7 +167,7 @@ namespace Proto.Cluster
             PID pid,
             PidSource source,
             ISenderContext context,
-            FutureProcess future
+            IFuture future
         )
         {
             var t = DateTimeOffset.UtcNow;

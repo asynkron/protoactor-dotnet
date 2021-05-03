@@ -54,7 +54,7 @@ namespace Proto.Context
             }
         }
 
-        private IFuture GetFuture()
+        public IFuture GetFuture()
         {
             if (_futures.MoveNext())
             {

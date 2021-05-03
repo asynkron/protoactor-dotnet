@@ -16,7 +16,7 @@ namespace ClusterMicroBenchmarks
     [MemoryDiagnoser, InProcess]
     public class InProcessRequestAsyncBenchmark
     {
-        [Params(2000)]
+        [Params(1000,5000,10000)]
         public int BatchSize { get; set; }
         
         private ActorSystem System;
@@ -43,34 +43,34 @@ namespace ClusterMicroBenchmarks
         // [Benchmark]
         // public Task ClusterRequestAsync() => _cluster.RequestAsync<int>(_id.Identity, _id.Kind, 1, CancellationToken.None);
 
-        [Benchmark]
-        public async Task RequestAsync()
-        {
-            var tasks = new Task<object>[BatchSize];
-            var cancellationToken = CancellationTokens.WithTimeout(TimeSpan.FromSeconds(2));
-        
-            for (int i = 0; i < tasks.Length; i++)
-            {
-                tasks[i] = System.Root.RequestAsync<object>(pid, 1, cancellationToken);
-            }
-        
-            await Task.WhenAll(tasks);
-        }
-
-        [Benchmark]
-        public async Task FutureBatchRequest()
-        {
-            var cancellationToken = CancellationTokens.WithTimeout(TimeSpan.FromSeconds(2));
-            using var batch = new FutureBatchProcess(System, BatchSize, cancellationToken);
-            var futures = batch.Futures.Take(BatchSize).ToArray();
-
-            foreach (var future in futures)
-            {
-                System.Root.Request(pid, 1, future.Pid);
-            }
-
-            await Task.WhenAll(futures.Select(f => f.Task));
-        }
+        // [Benchmark]
+        // public async Task RequestAsync()
+        // {
+        //     var tasks = new Task<object>[BatchSize];
+        //     var cancellationToken = CancellationTokens.WithTimeout(TimeSpan.FromSeconds(2));
+        //
+        //     for (int i = 0; i < tasks.Length; i++)
+        //     {
+        //         tasks[i] = System.Root.RequestAsync<object>(pid, 1, cancellationToken);
+        //     }
+        //
+        //     await Task.WhenAll(tasks);
+        // }
+        //
+        // [Benchmark]
+        // public async Task FutureBatchRequest()
+        // {
+        //     var cancellationToken = CancellationTokens.WithTimeout(TimeSpan.FromSeconds(2));
+        //     using var batch = new FutureBatchProcess(System, BatchSize, cancellationToken);
+        //     var futures = batch.Futures.Take(BatchSize).ToArray();
+        //
+        //     foreach (var future in futures)
+        //     {
+        //         System.Root.Request(pid, 1, future.Pid);
+        //     }
+        //
+        //     await Task.WhenAll(futures.Select(f => f.Task));
+        // }
         
         [Benchmark]
         public async Task BatchContextRequestAsync()
