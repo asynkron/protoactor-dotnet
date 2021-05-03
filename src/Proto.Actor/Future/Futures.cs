@@ -10,7 +10,7 @@ using Proto.Metrics;
 
 namespace Proto.Future
 {
-    public sealed class FutureProcess : Process, IDisposable
+    public sealed class FutureProcess : Process, IFuture
     {
         private readonly TaskCompletionSource<object> _tcs;
         private readonly ActorMetrics? _metrics;

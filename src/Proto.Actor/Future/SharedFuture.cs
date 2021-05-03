@@ -33,11 +33,7 @@ namespace Proto.Future
 
         public IFuture GetHandle(CancellationToken ct) => SingleProcessHandle(ct);
 
-        private IFuture SingleProcessHandle(CancellationToken ct)
-        {
-            var future = new FutureProcess(System, ct);
-            return new SimpleFutureHandle(future.Pid, future.Task);
-        }
+        private IFuture SingleProcessHandle(CancellationToken ct) => new FutureProcess(System, ct);
 
         private IFuture SharedHandle(CancellationToken ct)
         {
