@@ -28,12 +28,15 @@ namespace Proto.Future
                 }
             );
         }
+        
+        
 
         private ThreadLocal<SharedFutureProcess> Future { get; }
 
         // public IFuture GetHandle(CancellationToken ct) => SingleProcessHandle();
 
-        private IFuture SingleProcessHandle() => new FutureProcess(System);
+        public IFuture GetFuture() => new FutureProcess(System);
+
 
         // private IFuture SharedHandle(CancellationToken ct)
         // {

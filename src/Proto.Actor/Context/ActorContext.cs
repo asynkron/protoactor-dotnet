@@ -211,7 +211,7 @@ namespace Proto.Context
 
         public Task StopAsync(PID pid)
         {
-            var future = new FutureProcess(System);
+            var future = System.Future.GetFuture();
 
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);

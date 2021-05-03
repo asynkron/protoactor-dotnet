@@ -46,7 +46,7 @@ namespace Proto.Cluster
             Logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
             var i = 0;
 
-            var future = new FutureProcess(context.System);
+            var future = context.System.Future.GetFuture();
             PID? lastPid = null;
 
             try
@@ -119,7 +119,7 @@ namespace Proto.Cluster
             void RefreshFuture()
             {
                 future.Dispose();
-                future = new FutureProcess(context.System);
+                future = context.System.Future.GetFuture();
                 lastPid = null;
             }
         }
@@ -170,7 +170,7 @@ namespace Proto.Cluster
             PID pid,
             PidSource source,
             ISenderContext context,
-            FutureProcess future
+            IFuture future
         )
         {
             var t = DateTimeOffset.UtcNow;
