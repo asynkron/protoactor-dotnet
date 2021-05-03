@@ -28,7 +28,7 @@ namespace Proto.Tests
             );
 
             using var batch = new FutureBatchProcess(System, 1, CancellationTokens.WithTimeout(1000));
-            var future = batch.Futures.Take(1).Single();
+            if (!batch.TryGetFuture(out var future)) throw new Exception("Not able to get future");
             Context.Request(pid, "hello", future.Pid);
 
             var reply = await future.Task;
@@ -46,7 +46,7 @@ namespace Proto.Tests
             );
 
             using var batch = new FutureBatchProcess(System, 1, CancellationTokens.WithTimeout(1000));
-            var future = batch.Futures.Take(1).Single();
+            if (!batch.TryGetFuture(out var future)) throw new Exception("Not able to get future");
             Context.Request(pid, "hello", future.Pid);
 
             var reply = await future.Task;
@@ -63,17 +63,20 @@ namespace Proto.Tests
                 )
             );
 
-            using var batch = new FutureBatchProcess(System, 1000, CancellationTokens.WithTimeout(1000));
-            var futures = batch.Futures.Take(1000).ToArray();
-
-            for (int i = 0; i < futures.Length; i++)
+            var batchSize = 1000;
+            using var batch = new FutureBatchProcess(System, batchSize, CancellationTokens.WithTimeout(batchSize));
+            var futures = new IFuture[batchSize];
+            for (int i = 0; i < batchSize; i++)
             {
-                Context.Request(pid, i, futures[i].Pid);
+                if (!batch.TryGetFuture(out var future)) throw new Exception("Not able to get future");
+
+                Context.Request(pid, i, future.Pid);
+                futures[i] = future;
             }
 
             var replies = await Task.WhenAll(futures.Select(future => future.Task));
 
-            replies.Should().BeInAscendingOrder().And.HaveCount(1000);
+            replies.Should().BeInAscendingOrder().And.HaveCount(batchSize);
         }
 
         [Fact]
@@ -89,12 +92,16 @@ namespace Proto.Tests
                 )
             );
 
-            using var batch = new FutureBatchProcess(System, 1000, CancellationTokens.WithTimeout(50));
-            var futures = batch.Futures.Take(1000).ToArray();
+            var batchSize = 1000;
+            using var batch = new FutureBatchProcess(System, batchSize, CancellationTokens.WithTimeout(50));
+            var futures = new IFuture[batchSize];
 
-            for (int i = 0; i < futures.Length; i++)
+            for (int i = 0; i < batchSize; i++)
             {
-                Context.Request(pid, i, futures[i].Pid);
+                if (!batch.TryGetFuture(out var future)) throw new Exception("Not able to get future");
+
+                futures[i] = future;
+                Context.Request(pid, i, future.Pid);
             }
 
             futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.Task)); }

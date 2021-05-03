@@ -296,6 +296,7 @@ namespace Proto.Future
         private readonly ActorMetrics? _metrics;
         private readonly CancellationTokenRegistration _cancellation;
         private readonly Action _onTimeout;
+        private int _prevIndex = -1;
 
         public FutureBatchProcess(ActorSystem system, int size, CancellationToken ct) : base(system)
         {
@@ -333,23 +334,25 @@ namespace Proto.Future
                     }
                 );
             }
-
-            Futures = GetFutures();
         }
 
         public PID Pid { get; }
 
-        public IEnumerable<IFuture> Futures { get; }
-
-        private IEnumerable<IFuture> GetFutures()
+        public bool TryGetFuture(out IFuture future)
         {
-            for (var i = 0; i < _completionSources.Length; i++)
+            var index = Interlocked.Increment(ref _prevIndex);
+
+            if (index < _completionSources.Length)
             {
                 var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-                _completionSources[i] = tcs;
+                _completionSources[index] = tcs;
                 _metrics?.FuturesStartedCount.Inc(new[] {System.Id, System.Address});
-                yield return new SimpleFutureHandle(Pid.WithRequestId(ToRequestId(i)), tcs, _onTimeout);
+                future = new SimpleFutureHandle(Pid.WithRequestId(ToRequestId(index)), tcs, _onTimeout);
+                return true;
             }
+
+            future = default!;
+            return false;
         }
 
         protected internal override void SendUserMessage(PID pid, object message)

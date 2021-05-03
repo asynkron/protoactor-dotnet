@@ -60,7 +60,6 @@ namespace Proto
     {
         /// <summary>
         /// Creates a batch context for sending a set of requests from the same thread context.
-        /// More efficient than the default sender-context, but not thread safe.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="size">The number of requests to send. The batch context will pre-allocate resources for this</param>

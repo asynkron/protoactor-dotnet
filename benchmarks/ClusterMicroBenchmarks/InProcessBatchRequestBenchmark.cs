@@ -43,34 +43,47 @@ namespace ClusterMicroBenchmarks
         // [Benchmark]
         // public Task ClusterRequestAsync() => _cluster.RequestAsync<int>(_id.Identity, _id.Kind, 1, CancellationToken.None);
 
-        // [Benchmark]
-        // public async Task RequestAsync()
-        // {
-        //     var tasks = new Task<object>[BatchSize];
-        //     var cancellationToken = CancellationTokens.WithTimeout(TimeSpan.FromSeconds(2));
-        //
-        //     for (int i = 0; i < tasks.Length; i++)
-        //     {
-        //         tasks[i] = System.Root.RequestAsync<object>(pid, 1, cancellationToken);
-        //     }
-        //
-        //     await Task.WhenAll(tasks);
-        // }
-        //
-        // [Benchmark]
-        // public async Task FutureBatchRequest()
-        // {
-        //     var cancellationToken = CancellationTokens.WithTimeout(TimeSpan.FromSeconds(2));
-        //     using var batch = new FutureBatchProcess(System, BatchSize, cancellationToken);
-        //     var futures = batch.Futures.Take(BatchSize).ToArray();
-        //
-        //     foreach (var future in futures)
-        //     {
-        //         System.Root.Request(pid, 1, future.Pid);
-        //     }
-        //
-        //     await Task.WhenAll(futures.Select(f => f.Task));
-        // }
+        [Benchmark]
+        public async Task RequestAsync()
+        {
+            var tasks = new Task<object>[BatchSize];
+            var cancellationToken = CancellationTokens.WithTimeout(TimeSpan.FromSeconds(2));
+        
+            for (int i = 0; i < tasks.Length; i++)
+            {
+                tasks[i] = System.Root.RequestAsync<object>(pid, 1, cancellationToken);
+            }
+        
+            await Task.WhenAll(tasks);
+        }
+        
+        [Benchmark]
+        public async Task FutureBatchRequest()
+        {
+            var cancellationToken = CancellationTokens.WithTimeout(TimeSpan.FromSeconds(2));
+            using var batch = new FutureBatchProcess(System, BatchSize, cancellationToken);
+
+            var futures = new IFuture[BatchSize];
+
+            for (var i = 0; i < BatchSize; i++)
+            {
+                batch.TryGetFuture(out var future);
+                futures[i] = future;
+                System.Root.Request(pid, 1, future.Pid);
+            }
+
+            try
+            {
+                await Task.WhenAll(futures.Select(f => f.Task));
+            }
+            finally
+            {
+                foreach (var future in futures)
+                {
+                    future.Dispose();;
+                }
+            }
+        }
         
         [Benchmark]
         public async Task BatchContextRequestAsync()

@@ -4,7 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -19,7 +18,6 @@ namespace Proto.Context
         private readonly ISenderContext _context;
         private readonly CancellationToken _ct;
         private readonly FutureBatchProcess _batchProcess;
-        private readonly IEnumerator<IFuture> _futures;
 
         private int _futuresCreated;
 
@@ -28,7 +26,6 @@ namespace Proto.Context
             _context = contextContext;
             _ct = ct;
             _batchProcess = new FutureBatchProcess(contextContext.System, batchSize, ct);
-            _futures = _batchProcess.Futures.GetEnumerator();
         }
 
         public async Task<T> RequestAsync<T>(PID target, object message, CancellationToken ct)
@@ -56,9 +53,9 @@ namespace Proto.Context
 
         public IFuture GetFuture()
         {
-            if (_futures.MoveNext())
+            if (_batchProcess.TryGetFuture(out var future))
             {
-                return _futures.Current!;
+                return future;
             }
             _futuresCreated++;
             return new FutureProcess(System);
@@ -89,7 +86,6 @@ namespace Proto.Context
                 Logger.LogWarning("Batch request got {AdditionalCalls} more calls than provisioned", _futuresCreated);
             }
 
-            _futures.Dispose();
             _batchProcess.Dispose();
         }
     }
