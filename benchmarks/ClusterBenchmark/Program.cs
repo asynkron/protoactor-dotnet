@@ -216,11 +216,11 @@ namespace ClusterExperiment1
                         {
                             
                             var ct = CancellationTokens.FromSeconds(20);
-                            using var batch = cluster.System.Root.Batch(batchSize, ct);
+                 
                             for (var i = 0; i < batchSize; i++)
                             {
                                 var id = ClusterIdentity.Create("myactor" + rnd.Next(0, actorCount), "hello");
-                                var request = SendRequest(cluster, id, ct, batch);
+                                var request = SendRequest(cluster, id, ct);
 
                                 requests.Add(request);
                             }

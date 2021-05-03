@@ -14,29 +14,26 @@ namespace Proto.Future
         public FutureFactory(ActorSystem system, CancellationToken cancellationToken = default)
         {
             System = system;
-            Future = new ThreadLocal<SharedFutureProcess>(() => new SharedFutureProcess(System, 1000));
+            Future = new SharedFutureProcess(System, 10000);
             cancellationToken.Register(() => {
-                    foreach (var process in Future.Values)
-                    {
-                        process.Stop(process.Pid);
-                    }
+                    Future.Stop(Future.Pid);
                 }
             );
         }
 
-        private ThreadLocal<SharedFutureProcess> Future { get; }
+        private SharedFutureProcess Future { get; set; }
 
         // public IFuture GetHandle(CancellationToken ct) => SingleProcessHandle();
 
         public IFuture SingleProcessHandle()
         {
-            var f = Future.Value.TryCreateHandle();
+            var f = Future.TryCreateHandle();
 
             if (f == default)
             {
-                var shared = new SharedFutureProcess(System, 1000);
+                var shared = new SharedFutureProcess(System, 10000);
                 f = shared.TryCreateHandle();
-                Future.Value = shared;
+                Future = shared;
             }
 
             return f!;
