@@ -76,8 +76,8 @@ namespace Proto.Cluster.Partition
                 //this identity is not owned by the requester
                 if (ownerAddress != requestAddress) continue;
 
-                _logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {EventId}", clusterIdentity, ownerAddress,
-                    msg.EventId
+                _logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {TopologyHash}", clusterIdentity, ownerAddress,
+                    msg.TopologyHash
                 );
 
                 var actor = new Activation {ClusterIdentity = clusterIdentity, Pid = pid};

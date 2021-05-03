@@ -30,7 +30,7 @@ namespace Proto.Cluster.Partition
 
         private readonly Dictionary<ClusterIdentity, Task<ActivationResponse>> _spawns = new();
 
-        private ulong _eventId;
+        private ulong _topologyHash;
         private readonly TimeSpan _identityHandoverTimeout;
 
         public PartitionIdentityActor(Cluster cluster, TimeSpan identityHandoverTimeout)
@@ -64,9 +64,9 @@ namespace Proto.Cluster.Partition
         private async Task OnClusterTopology(ClusterTopology msg, IContext context)
         {
             await _cluster.MemberList.TopologyConsensus();
-            if (_eventId == msg.EventId) return;
+            if (_topologyHash == msg.TopologyHash) return;
 
-            _eventId = msg.EventId;
+            _topologyHash = msg.TopologyHash;
             var members = msg.Members.ToArray();
 
             _rdv.UpdateMembers(members);
@@ -77,7 +77,7 @@ namespace Proto.Cluster.Partition
             var requests = new List<Task<IdentityHandoverResponse>>();
             var requestMsg = new IdentityHandoverRequest
             {
-                EventId = _eventId,
+                TopologyHash = _topologyHash,
                 Address = _myAddress
             };
 
@@ -97,7 +97,7 @@ namespace Proto.Cluster.Partition
 
                 //built in timeout on each request above
                 var responses = await Task.WhenAll(requests);
-                Logger.LogDebug("Got ownerships {EventId}", _eventId);
+                Logger.LogDebug("Got ownerships {EventId}", _topologyHash);
 
                 foreach (var response in responses)
                 {

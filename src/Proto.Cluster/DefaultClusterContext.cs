@@ -4,6 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -43,9 +46,11 @@ namespace Proto.Cluster
             Logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
             var i = 0;
 
-            var future = context.System.Future.GetHandle(ct);
+            var future = new FutureProcess(context.System);
             PID? lastPid = null;
 
+            try
+            {
                 while (!ct.IsCancellationRequested)
                 {
                     if (context.System.Shutdown.IsCancellationRequested) return default;
@@ -105,11 +110,16 @@ namespace Proto.Cluster
                 }
 
                 return default!;
+            }
+            finally
+            {
+                future.Dispose();
+            }
 
             void RefreshFuture()
             {
                 future.Dispose();
-                future = context.System.Future.GetHandle(ct);
+                future = new FutureProcess(context.System);
                 lastPid = null;
             }
         }
@@ -160,21 +170,20 @@ namespace Proto.Cluster
             PID pid,
             PidSource source,
             ISenderContext context,
-            IFuture sharedFuture
+            FutureProcess future
         )
         {
             var t = DateTimeOffset.UtcNow;
 
             try
             {
-                if (sharedFuture.Task.IsCompleted) return ToResult<T>(source, context, sharedFuture.Task.Result);
+                context.Request(pid, message, future.Pid);
+                var task = future.GetTask();
+                await Task.WhenAny(task, _clock.CurrentBucket);
 
-                context.Send(pid, new MessageEnvelope(message, sharedFuture.Pid));
-                await Task.WhenAny(sharedFuture.Task, _clock.CurrentBucket);
-
-                if (sharedFuture.Task.IsCompleted)
+                if (task.IsCompleted)
                 {
-                    var res = sharedFuture.Task.Result;
+                    var res = task.Result;
 
                     return ToResult<T>(source, context, res);
                 }
