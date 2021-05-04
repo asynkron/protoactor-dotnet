@@ -135,7 +135,7 @@ namespace ClusterExperiment1
             Console.WriteLine($"Requests:\t{requestCount:N0}");
             Console.WriteLine($"Successful:\t{successCount:N0}");
             Console.WriteLine($"Failures:\t{failureCount:N0}");
-            Console.WriteLine($"Throughput:\t{tps:N0} msg/sec");
+            Console.WriteLine($"Throughput:\t{tps:N0} requests/sec -> {(tps*2):N0} msg/sec");
         }
 
         private static void RunFireForgetClient()
@@ -149,20 +149,20 @@ namespace ClusterExperiment1
 
                     while (true)
                     {
-                        var id = ClusterIdentity.Create("myactor" + rnd.Next(0, actorCount),"hello"); 
-                        semaphore.Wait(() => SendRequest(cluster, id, CancellationTokens.FromSeconds(20)));
+                        var id = "myactor" + rnd.Next(0, actorCount);
+                        semaphore.Wait(() => SendRequest(cluster, id, CancellationTokens.WithTimeout(20_000)));
                     }
                 }
             );
         }
 
-        private static async Task SendRequest(Cluster cluster, ClusterIdentity id, CancellationToken cancellationToken, ISenderContext? context = null)
+        private static async Task SendRequest(Cluster cluster, string id, CancellationToken cancellationToken)
         {
             Interlocked.Increment(ref requestCount);
 
             try
             {
-                var x = await cluster.RequestAsync<object>(id, Request,context ?? cluster.System.Root, cancellationToken);
+                var x = await cluster.RequestAsync<object>(id, "hello", Request, cancellationToken);
 
                 if (x != null)
                 {
@@ -195,7 +195,7 @@ namespace ClusterExperiment1
 
                 var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
 
-                il?.DumpState(id);
+                il?.DumpState(ClusterIdentity.Create(id, "hello"));
             }
         }
 
@@ -207,33 +207,39 @@ namespace ClusterExperiment1
             _ = SafeTask.Run(async () => {
                     var cluster = await Configuration.SpawnClient();
                     var rnd = new Random();
-
+                    var semaphore = new AsyncSemaphore(5);
+                    
                     while (true)
                     {
-                        var requests = new List<Task>();
-
-                        try
-                        {
-                            
-                            var ct = CancellationTokens.FromSeconds(20);
-                            using var batch = cluster.System.Root.Batch(batchSize, ct);
-                            for (var i = 0; i < batchSize; i++)
-                            {
-                                var id = ClusterIdentity.Create("myactor" + rnd.Next(0, actorCount), "hello");
-                                var request = SendRequest(cluster, id, ct, batch);
-
-                                requests.Add(request);
-                            }
-
-                            await Task.WhenAll(requests);
-                        }
-                        catch (Exception x)
-                        {
-                            logger.LogError(x, "Error...");
-                        }
+                        semaphore.Wait(() => RunBatch(rnd, cluster) );
                     }
                 }
             );
+
+            async Task RunBatch(Random? rnd, Cluster cluster)
+            {
+
+                var requests = new List<Task>();
+
+                try
+                {
+                    var ct = CancellationTokens.FromSeconds(20);
+
+                    for (var i = 0; i < batchSize; i++)
+                    {
+                        var id = "myactor" + rnd.Next(0, actorCount);
+                        var request = SendRequest(cluster, id, ct);
+
+                        requests.Add(request);
+                    }
+
+                    await Task.WhenAll(requests);
+                }
+                catch (Exception x)
+                {
+                    logger.LogError(x, "Error...");
+                }
+            }
         }
 
         private static void RunClient()
@@ -246,8 +252,8 @@ namespace ClusterExperiment1
 
                     while (true)
                     {
-                        var id = ClusterIdentity.Create("myactor" + rnd.Next(0, actorCount),"hello");
-                        var ct = CancellationTokens.FromSeconds(20);
+                        var id = "myactor" + rnd.Next(0, actorCount);
+                        var ct = CancellationTokens.WithTimeout(20_000);
                         await SendRequest(cluster, id, ct);
                     }
                 }

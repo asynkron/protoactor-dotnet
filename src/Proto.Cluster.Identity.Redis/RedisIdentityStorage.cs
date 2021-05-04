@@ -137,11 +137,9 @@ namespace Proto.Cluster.Identity.Redis
             if (!executed) throw new LockNotFoundException($"Failed to store activation of {pid}");
         }
 
-        public Task RemoveActivation(PID pid, CancellationToken ct)
+        public Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)
         {
-            Logger.LogDebug("Removing activation: {@PID}", pid);
-            var key = IdKeyFromPidId(pid.Id);
-            if (key == NoKey) return Task.CompletedTask;
+            Logger.LogDebug("Removing activation: {ClusterIdentity} {@PID}", clusterIdentity, pid);
 
             const string removePid = "local pidEntry = redis.call('HMGET', KEYS[1], 'pid', 'adr', 'mid');\n" +
                                      "if pidEntry[1]~=ARGV[1] or pidEntry[2]~=ARGV[2] then return 0 end;\n" + // id / address matches
@@ -149,8 +147,12 @@ namespace Proto.Cluster.Identity.Redis
                                      "redis.call('SREM', memberKey, KEYS[1] .. '');" +
                                      "return redis.call('DEL', KEYS[1]);";
 
+            var key = IdKey(clusterIdentity);
             return _asyncSemaphore.WaitAsync(()
-                => GetDb().ScriptEvaluateAsync(removePid, new[] {key}, new RedisValue[] {pid.Id, pid.Address, _memberKey.ToString()})
+                    => {
+                    return GetDb().ScriptEvaluateAsync(removePid, new[] {key}, new RedisValue[] {pid.Id, pid.Address, _memberKey.ToString()}
+                    );
+                }
             );
         }
 
@@ -225,14 +227,7 @@ namespace Proto.Cluster.Identity.Redis
             }
         }
 
-        private RedisKey IdKey(ClusterIdentity clusterIdentity) => IdKey(clusterIdentity.ToString());
-
-        private RedisKey IdKeyFromPidId(string pidId)
-            => IdentityStorageLookup.TryGetClusterIdentityShortString(pidId, out var clusterId)
-                ? IdKey(clusterId!)
-                : NoKey;
-
-        private RedisKey IdKey(string clusterIdentity) => _clusterIdentityKey.Append(clusterIdentity);
+        private RedisKey IdKey(ClusterIdentity clusterIdentity) => _clusterIdentityKey.Append(clusterIdentity.ToString());
 
         private RedisKey MemberKey(string memberId) => _memberKey.Append(memberId);
 

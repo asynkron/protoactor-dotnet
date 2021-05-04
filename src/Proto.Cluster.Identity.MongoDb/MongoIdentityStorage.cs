@@ -91,10 +91,12 @@ namespace Proto.Cluster.Identity.MongoDb
                 throw new LockNotFoundException($"Failed to store activation of {pid}");
         }
 
-        public async Task RemoveActivation(PID pid, CancellationToken ct)
+        public async Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)
         {
-            Logger.LogDebug("Removing activation: {@PID}", pid);
-            await _asyncSemaphore.WaitAsync(() => _pids.DeleteManyAsync(p => p.UniqueIdentity == pid.Id, ct));
+            Logger.LogDebug("Removing activation: {ClusterIdentity} {@PID}", clusterIdentity, pid);
+
+            var key = GetKey(clusterIdentity);
+            await _asyncSemaphore.WaitAsync(() => _pids.DeleteManyAsync(p => p.Key == key && p.UniqueIdentity == pid.Id, ct));
         }
 
         public Task RemoveMember(string memberId, CancellationToken ct)
