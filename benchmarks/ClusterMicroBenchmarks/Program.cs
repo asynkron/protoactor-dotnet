@@ -1,10 +1,9 @@
-﻿using System;
-using BenchmarkDotNet.Running;
+﻿using BenchmarkDotNet.Running;
 
 namespace ClusterMicroBenchmarks
 {
     class Program
     {
-        static void Main() => BenchmarkRunner.Run<InProcessRequestAsyncBenchmark>();
+        static void Main() => BenchmarkRunner.Run<InProcessClusterBatchRequestBenchmark>();
     }
 }
