@@ -135,7 +135,7 @@ namespace ClusterExperiment1
             Console.WriteLine($"Requests:\t{requestCount:N0}");
             Console.WriteLine($"Successful:\t{successCount:N0}");
             Console.WriteLine($"Failures:\t{failureCount:N0}");
-            Console.WriteLine($"Throughput:\t{tps:N0} msg/sec");
+            Console.WriteLine($"Throughput:\t{tps:N0} requests/sec -> {(tps*2):N0} msg/sec");
         }
 
         private static void RunFireForgetClient()
