@@ -121,7 +121,7 @@ namespace Proto.Cluster
             }
         }
 
-        private async Task RemoveFromSource(ClusterIdentity clusterIdentity, PidSource source, PID pid)
+        private async ValueTask RemoveFromSource(ClusterIdentity clusterIdentity, PidSource source, PID pid)
         {
             if (source == PidSource.Lookup) await _identityLookup.RemovePidAsync(clusterIdentity, pid, CancellationToken.None);
 
@@ -206,7 +206,7 @@ namespace Proto.Cluster
             }
         }
 
-        private (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
+        private static (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
         {
             switch (result)
             {
