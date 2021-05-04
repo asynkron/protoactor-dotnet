@@ -20,6 +20,8 @@ namespace Proto.Cluster
             Identity = identity,
             Kind = kind
         };
+
+        internal PID? CachedPid { get; set; }
     }
 
     public sealed partial class ActivationRequest
