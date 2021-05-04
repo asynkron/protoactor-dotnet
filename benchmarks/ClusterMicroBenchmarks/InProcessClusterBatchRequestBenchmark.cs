@@ -19,12 +19,15 @@ namespace ClusterMicroBenchmarks
     {
         private const string Kind = "echo";
 
-        [Params(1000, 5000, 10000)]
+        [Params(1000, 5000)]
         public int BatchSize { get; set; }
         
         [Params(10000)]
         public int Identities { get; set; }
 
+        [Params(true, false)]
+        public bool ExperimentalContext { get; set; }
+        
         private Cluster _cluster;
         private ClusterIdentity[] _ids;
 
@@ -59,26 +62,36 @@ namespace ClusterMicroBenchmarks
             }
         }
 
-        private static ClusterConfig ClusterConfig() => Proto.Cluster.ClusterConfig.Setup("testcluster",
-            new TestProvider(new TestProviderOptions(), new InMemAgent()),
-            new PartitionIdentityLookup()
-        );
+        private  ClusterConfig ClusterConfig()
+        {
+            var config = Proto.Cluster.ClusterConfig.Setup("testcluster",
+                new TestProvider(new TestProviderOptions(), new InMemAgent()),
+                new PartitionIdentityLookup()
+            );
+
+            if (ExperimentalContext)
+            {
+                config = config.WithClusterContextProducer(cluster => new OptimizedClusterContext(cluster));
+            }
+
+            return config;
+        }
 
         [GlobalCleanup]
         public Task Cleanup() => _cluster.ShutdownAsync();
 
-        [Benchmark]
-        public async Task ClusterRequestAsync()
-        {
-            var tasks = new Task[BatchSize];
-            for (var i = 0; i < BatchSize; i++)
-            {
-                var id = _ids[i];
-                tasks[i] = _cluster.RequestAsync<int>(id, i, CancellationToken.None);
-            }
-
-            await Task.WhenAll(tasks);
-        }
+        // [Benchmark]
+        // public async Task ClusterRequestAsync()
+        // {
+        //     var tasks = new Task[BatchSize];
+        //     for (var i = 0; i < BatchSize; i++)
+        //     {
+        //         var id = _ids[i];
+        //         tasks[i] = _cluster.RequestAsync<int>(id, i, CancellationToken.None);
+        //     }
+        //
+        //     await Task.WhenAll(tasks);
+        // }
 
         [Benchmark]
         public async Task ClusterRequestAsyncBatch()
