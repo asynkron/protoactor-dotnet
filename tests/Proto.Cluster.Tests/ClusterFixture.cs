@@ -36,12 +36,11 @@ namespace Proto.Cluster.Tests
             _clusterName = $"test-cluster-{Guid.NewGuid().ToString().Substring(0, 6)}";
         }
 
-        protected virtual ClusterKind[] ClusterKinds => new []
+        protected virtual ClusterKind[] ClusterKinds => new[]
         {
             new ClusterKind(EchoActor.Kind, EchoActor.Props.WithClusterRequestDeduplication()),
             new ClusterKind(EchoActor.Kind2, EchoActor.Props),
             new ClusterKind(EchoActor.LocalAffinityKind, EchoActor.Props).WithLocalAffinityRelocationStrategy()
-            
         };
 
         public async Task InitializeAsync() => Members = await SpawnClusterNodes(_clusterSize, _configure).ConfigureAwait(false);
@@ -139,6 +138,16 @@ namespace Proto.Cluster.Tests
     public class InMemoryClusterFixture : BaseInMemoryClusterFixture
     {
         public InMemoryClusterFixture() : base(3, config => config.WithActorRequestTimeout(TimeSpan.FromSeconds(4)))
+        {
+        }
+    }
+
+    public class InMemoryClusterFixtureAlternativeClusterContext : BaseInMemoryClusterFixture
+    {
+        public InMemoryClusterFixtureAlternativeClusterContext() : base(3, config => config
+            .WithActorRequestTimeout(TimeSpan.FromSeconds(4))
+            .WithClusterContextProducer(cluster => new ExperimentalClusterContext(cluster))
+        )
         {
         }
     }

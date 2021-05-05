@@ -19,15 +19,18 @@ namespace ClusterMicroBenchmarks
     {
         private const string Kind = "echo";
 
-        [Params(1000, 5000)]
+        [Params(1000)]
         public int BatchSize { get; set; }
-        
+
         [Params(10000)]
         public int Identities { get; set; }
 
         [Params(true, false)]
         public bool ExperimentalContext { get; set; }
-        
+
+        [Params(true, false)]
+        public bool PassCancellationToken { get; set; }
+
         private Cluster _cluster;
         private ClusterIdentity[] _ids;
 
@@ -55,6 +58,7 @@ namespace ClusterMicroBenchmarks
             {
                 _ids[i] = ClusterIdentity.Create(i.ToString(), Kind);
             }
+
             // Activate identities
             foreach (var clusterIdentity in _ids)
             {
@@ -62,7 +66,7 @@ namespace ClusterMicroBenchmarks
             }
         }
 
-        private  ClusterConfig ClusterConfig()
+        private ClusterConfig ClusterConfig()
         {
             var config = Proto.Cluster.ClusterConfig.Setup("testcluster",
                 new TestProvider(new TestProviderOptions(), new InMemAgent()),
@@ -71,7 +75,7 @@ namespace ClusterMicroBenchmarks
 
             if (ExperimentalContext)
             {
-                config = config.WithClusterContextProducer(cluster => new OptimizedClusterContext(cluster));
+                config = config.WithClusterContextProducer(cluster => new ExperimentalClusterContext(cluster));
             }
 
             return config;
@@ -80,28 +84,65 @@ namespace ClusterMicroBenchmarks
         [GlobalCleanup]
         public Task Cleanup() => _cluster.ShutdownAsync();
 
-        // [Benchmark]
-        // public async Task ClusterRequestAsync()
-        // {
-        //     var tasks = new Task[BatchSize];
-        //     for (var i = 0; i < BatchSize; i++)
-        //     {
-        //         var id = _ids[i];
-        //         tasks[i] = _cluster.RequestAsync<int>(id, i, CancellationToken.None);
-        //     }
-        //
-        //     await Task.WhenAll(tasks);
-        // }
-
         [Benchmark]
-        public async Task ClusterRequestAsyncBatch()
+        public async Task ClusterRequestAsync()
         {
-            using var batch = _cluster.System.Root.Batch(BatchSize, CancellationToken.None);
+            var ct = PassCancellationToken ? CancellationTokens.FromSeconds(10) : CancellationToken.None;
+
             var tasks = new Task[BatchSize];
+
             for (var i = 0; i < BatchSize; i++)
             {
                 var id = _ids[i];
-                tasks[i] = _cluster.RequestAsync<int>(id, i, batch,  CancellationToken.None);
+                tasks[i] = _cluster.RequestAsync<int>(id.Identity, id.Kind, i, ct);
+            }
+
+            await Task.WhenAll(tasks);
+        }
+
+        [Benchmark]
+        public async Task ClusterRequestBatchAsync()
+        {
+            var ct = PassCancellationToken ? CancellationTokens.FromSeconds(10) : CancellationToken.None;
+            using var batch = _cluster.System.Root.Batch(BatchSize, ct);
+            var tasks = new Task[BatchSize];
+
+            for (var i = 0; i < BatchSize; i++)
+            {
+                var id = _ids[i];
+                tasks[i] = _cluster.RequestAsync<int>(id.Identity, id.Kind, i, batch, ct);
+            }
+
+            await Task.WhenAll(tasks);
+        }
+
+        [Benchmark]
+        public async Task ClusterRequestAsyncBatchReuseIdentity()
+        {
+            var ct = PassCancellationToken ? CancellationTokens.FromSeconds(10) : CancellationToken.None;
+            using var batch = _cluster.System.Root.Batch(BatchSize, ct);
+            var tasks = new Task[BatchSize];
+
+            for (var i = 0; i < BatchSize; i++)
+            {
+                var id = _ids[i];
+                tasks[i] = _cluster.RequestAsync<int>(id, i, batch, ct);
+            }
+
+            await Task.WhenAll(tasks);
+        }
+
+        [Benchmark]
+        public async Task ClusterRequestAsyncReuseIdentity()
+        {
+            var ct = PassCancellationToken ? CancellationTokens.FromSeconds(10) : CancellationToken.None;
+
+            var tasks = new Task[BatchSize];
+
+            for (var i = 0; i < BatchSize; i++)
+            {
+                var id = _ids[i];
+                tasks[i] = _cluster.RequestAsync<int>(id, i, ct);
             }
 
             await Task.WhenAll(tasks);
