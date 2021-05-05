@@ -179,8 +179,20 @@ namespace Proto.Cluster
             {
                 context.Request(pid, message, future.Pid);
                 var task = future.Task;
-                var res = await task;
-                return ToResult<T>(source, context, res);
+                await Task.WhenAny(task, _clock.CurrentBucket);
+
+                if (task.IsCompleted)
+                {
+                    var res = task.Result;
+
+                    return ToResult<T>(source, context, res);
+                }
+
+                if (!context.System.Shutdown.IsCancellationRequested)
+                    Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
+                _pidCache.RemoveByVal(clusterIdentity, pid);
+
+                return (ResponseStatus.TimedOut, default)!;
             }
             catch (TimeoutException)
             {
