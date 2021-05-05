@@ -27,10 +27,10 @@ namespace Proto.Cluster
 
             if (clusterIdentity.CachedPid is { } identityCachedPid)
             {
+                //If the PID is already cached using ClusterIdentity, we can skip the lookup altogether
                 pid = identityCachedPid;
                 return true;
             }
-
             return _cacheDict.TryGetValue(clusterIdentity, out pid);
         }
 

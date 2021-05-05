@@ -44,7 +44,7 @@ namespace Proto.Cluster
         public PubSubManager PubSub { get; }
 
         public static ILogger Logger { get; } = Log.CreateLogger<Cluster>();
-     
+
         public IClusterContext ClusterContext { get; private set; } = null!;
 
         public ClusterConfig Config { get; }
@@ -158,6 +158,22 @@ namespace Proto.Cluster
             _clusterKinds.TryGetValue(kind, out var clusterKind);
 
             return clusterKind;
+        }
+
+        public ClusterIdentity GetIdentity(string identity, string kind)
+        {
+            var id = new ClusterIdentity
+            {
+                Identity = identity,
+                Kind = kind
+            };
+
+            if (PidCache.TryGet(id, out var pid))
+            {
+                id.CachedPid = pid;
+            }
+
+            return id;
         }
     }
 }
