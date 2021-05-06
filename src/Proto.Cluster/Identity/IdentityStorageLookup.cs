@@ -28,14 +28,15 @@ namespace Proto.Cluster.Identity
             return res?.Pid;
         }
 
-        public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
+        public async Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
         {
             Cluster = cluster;
             _system = cluster.System;
             _memberId = cluster.System.Id;
             MemberList = cluster.MemberList;
             _isClient = isClient;
-            
+            await Storage.Init();
+
             cluster.System.Metrics.Register(new IdentityMetrics(cluster.System.Metrics));
 
             var workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
@@ -52,12 +53,10 @@ namespace Proto.Cluster.Identity
                 }
             );
 
-            if (isClient) return Task.CompletedTask;
+            if (isClient) return;
 
             var props = Props.FromProducer(() => new IdentityStoragePlacementActor(Cluster, this));
             _placementActor = _system.Root.SpawnNamed(props, PlacementActorName);
-
-            return Task.CompletedTask;
         }
 
         public async Task ShutdownAsync()
@@ -72,27 +71,11 @@ namespace Proto.Cluster.Identity
         {
             if (_system.Shutdown.IsCancellationRequested) return Task.CompletedTask;
 
-            return Storage.RemoveActivation(pid, ct);
+            return Storage.RemoveActivation(clusterIdentity, pid, ct);
         }
 
         internal Task RemoveMemberAsync(string memberId) => Storage.RemoveMember(memberId, CancellationToken.None);
 
         internal PID RemotePlacementActor(string address) => PID.FromAddress(address, PlacementActorName);
-
-        public static bool TryGetClusterIdentityShortString(string pidId, out string? clusterIdentity)
-        {
-            var idIndex = pidId.LastIndexOf("$", StringComparison.Ordinal);
-
-            if (idIndex > PidClusterIdentityStartIndex)
-            {
-                clusterIdentity = pidId.Substring(PidClusterIdentityStartIndex,
-                    idIndex - PidClusterIdentityStartIndex
-                );
-                return true;
-            }
-
-            clusterIdentity = default;
-            return false;
-        }
     }
 }

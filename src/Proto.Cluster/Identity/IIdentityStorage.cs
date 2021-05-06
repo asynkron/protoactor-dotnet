@@ -30,7 +30,7 @@ namespace Proto.Cluster.Identity
 
         public Task StoreActivation(string memberId, SpawnLock spawnLock, PID pid, CancellationToken ct);
 
-        public Task RemoveActivation(PID pid, CancellationToken ct);
+        public Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct);
 
         public Task RemoveMember(string memberId, CancellationToken ct);
 

@@ -135,7 +135,7 @@ namespace ClusterExperiment1
             Console.WriteLine($"Requests:\t{requestCount:N0}");
             Console.WriteLine($"Successful:\t{successCount:N0}");
             Console.WriteLine($"Failures:\t{failureCount:N0}");
-            Console.WriteLine($"Throughput:\t{tps:N0} msg/sec");
+            Console.WriteLine($"Throughput:\t{tps:N0} requests/sec -> {(tps*2):N0} msg/sec");
         }
 
         private static void RunFireForgetClient()
@@ -207,32 +207,39 @@ namespace ClusterExperiment1
             _ = SafeTask.Run(async () => {
                     var cluster = await Configuration.SpawnClient();
                     var rnd = new Random();
-
+                    var semaphore = new AsyncSemaphore(5);
+                    
                     while (true)
                     {
-                        var requests = new List<Task>();
-
-                        try
-                        {
-                            
-                            var ct = CancellationTokens.FromSeconds(20);
-                            for (var i = 0; i < batchSize; i++)
-                            {
-                                var id = "myactor" + rnd.Next(0, actorCount);
-                                var request = SendRequest(cluster, id, ct);
-
-                                requests.Add(request);
-                            }
-
-                            await Task.WhenAll(requests);
-                        }
-                        catch (Exception x)
-                        {
-                            logger.LogError(x, "Error...");
-                        }
+                        semaphore.Wait(() => RunBatch(rnd, cluster) );
                     }
                 }
             );
+
+            async Task RunBatch(Random? rnd, Cluster cluster)
+            {
+
+                var requests = new List<Task>();
+
+                try
+                {
+                    var ct = CancellationTokens.FromSeconds(20);
+
+                    for (var i = 0; i < batchSize; i++)
+                    {
+                        var id = "myactor" + rnd.Next(0, actorCount);
+                        var request = SendRequest(cluster, id, ct);
+
+                        requests.Add(request);
+                    }
+
+                    await Task.WhenAll(requests);
+                }
+                catch (Exception x)
+                {
+                    logger.LogError(x, "Error...");
+                }
+            }
         }
 
         private static void RunClient()
