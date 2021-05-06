@@ -6,8 +6,8 @@
     <TargetFrameworks>netstandard2.1;net5.0</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Grpc.Core" Version="2.37.0" />
-    <PackageReference Include="Grpc.HealthCheck" Version="2.37.0" />
+    <PackageReference Include="Grpc.Core" Version="2.37.1" />
+    <PackageReference Include="Grpc.HealthCheck" Version="2.37.1" />
     <PackageReference Include="Grpc.Tools" Version="2.37.0" PrivateAssets="All" />
     <PackageReference Include="System.Text.Json" Version="5.0.2" />
   </ItemGroup>
