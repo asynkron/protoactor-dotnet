@@ -24,11 +24,10 @@ namespace Saga
             var busyProbability = 0.01;
             var verbose = false;
 
-            var props = Props.FromProducer(() => new Runner(numberOfTransfers, intervalBetweenConsoleUpdates, uptime,
-                        refusalProbability, busyProbability, retryAttempts, verbose
-                    )
+            var props = Props.FromProducer(() =>
+                    new Runner(numberOfTransfers, intervalBetweenConsoleUpdates, uptime, refusalProbability, busyProbability, retryAttempts, verbose)
                 )
-                .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart,
+                .WithChildSupervisorStrategy(new OneForOneStrategy((_, _) => SupervisorDirective.Restart,
                         retryAttempts, null
                     )
                 );
