@@ -2,8 +2,9 @@ pull_request_rules:
   - name: Automatic merge on approval
     conditions:
       - author~=^dependabot(|-preview)\[bot\]$
-      - check-success=Build and test PRs / test (pull_request)
       - check-success=license/cla
+      - check-success="test"
+
     actions:
       merge:
         method: merge
