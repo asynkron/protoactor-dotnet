@@ -5,8 +5,9 @@
 // -----------------------------------------------------------------------
 using System;
 using Google.Protobuf.Reflection;
+using ProtoBuf;
 
-namespace ProtoBuf
+namespace Proto.Cluster.CodeGen.model
 {
     public class ProtoField
     {

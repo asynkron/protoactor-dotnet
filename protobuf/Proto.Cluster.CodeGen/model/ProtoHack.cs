@@ -7,7 +7,7 @@ using System;
 using System.Reflection;
 using Google.Protobuf.Reflection;
 
-namespace ProtoBuf
+namespace Proto.Cluster.CodeGen.model
 {
     public static class ProtoHack
     {

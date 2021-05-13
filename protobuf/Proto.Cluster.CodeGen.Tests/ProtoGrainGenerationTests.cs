@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Google.Protobuf.Reflection;
+using Proto.Cluster.CodeGen;
 using ProtoBuf;
 using ProtoBuf.Reflection;
 using Xunit;
 using Xunit.Abstractions;
-using CodeGenerator = Proto.GrainGenerator.CodeGenerator;
+using CodeGenerator = Proto.Cluster.CodeGen.CodeGenerator;
 
-namespace ProtoGrainGenerator.Tests
+namespace Proto.Cluster.CodeGen.Tests
 {
     public class ProtoGrainGenerationTests
     {

@@ -5,13 +5,12 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Linq;
-using System.Reflection;
 using Google.Protobuf.Reflection;
 using HandlebarsDotNet;
-using ProtoBuf;
+using Proto.Cluster.CodeGen.model;
 using ProtoBuf.Reflection;
 
-namespace Proto.GrainGenerator
+namespace Proto.Cluster.CodeGen
 {
     public class CodeGenerator : CommonCodeGenerator
     {

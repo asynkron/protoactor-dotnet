@@ -67,7 +67,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Remote.Tests", "tests
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "protobuf", "protobuf", "{6D996E5A-5A15-4A5D-97F6-C01F619E3177}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProtoGrainGenerator", "protobuf\ProtoGrainGenerator\ProtoGrainGenerator.csproj", "{E686C93C-5853-44CC-A331-958396DADF64}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Cluster.CodeGen", "protobuf\Proto.Cluster.CodeGen\Proto.Cluster.CodeGen.csproj", "{E686C93C-5853-44CC-A331-958396DADF64}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EscalateSupervision", "examples\EscalateSupervision\EscalateSupervision.csproj", "{837CDD41-BEA3-4C7D-957F-3B4AFE3B14DB}"
 EndProject
@@ -205,7 +205,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClusterPubSub", "examples\C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ClusterPubSub", "ClusterPubSub", "{8368C8CC-7418-4B9B-B9B3-2011C612CE42}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtoGrainGenerator.Tests", "protobuf\ProtoGrainGenerator.Tests\ProtoGrainGenerator.Tests.csproj", "{1AD0DE77-6878-4213-B68C-B2148D7F0D2C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.CodeGen.Tests", "protobuf\Proto.Cluster.CodeGen.Tests\Proto.Cluster.CodeGen.Tests.csproj", "{1AD0DE77-6878-4213-B68C-B2148D7F0D2C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClusterMicroBenchmarks", "benchmarks\ClusterMicroBenchmarks\ClusterMicroBenchmarks.csproj", "{94C40B92-893D-4013-9FA7-5FFA24F24714}"
 EndProject
