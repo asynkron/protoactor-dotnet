@@ -3,17 +3,14 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Google.Protobuf.Reflection;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using ProtoBuf;
 
-namespace Proto.GrainGenerator
+namespace Proto.Cluster.CodeGen
 {
     public static class Generator
     {

@@ -6,7 +6,7 @@
   <PropertyGroup>
     <TaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netstandard2.1</TaskFolder>
     <TaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net5.0</TaskFolder>
-    <TaskAssembly>$(MSBuildThisFileDirectory)..\tasks\$(TaskFolder)\ProtoGrainGenerator.dll</TaskAssembly>
+    <TaskAssembly>$(MSBuildThisFileDirectory)..\tasks\$(TaskFolder)\Proto.Cluster.CodeGen.dll</TaskAssembly>
   </PropertyGroup>
 
   <UsingTask TaskName="MSBuildTasks.ProtoGenTask" AssemblyFile="$(TaskAssembly)" />

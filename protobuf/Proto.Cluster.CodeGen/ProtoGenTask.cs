@@ -4,10 +4,8 @@ using System.Linq;
 using System.Text;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using Proto.GrainGenerator;
-using ProtoBuf;
 
-namespace MSBuildTasks
+namespace Proto.Cluster.CodeGen
 {
     public class ProtoGenTask : Task
     {

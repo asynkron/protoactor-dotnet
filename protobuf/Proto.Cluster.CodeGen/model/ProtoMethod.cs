@@ -5,7 +5,7 @@
 // -----------------------------------------------------------------------
 using Google.Protobuf.Reflection;
 
-namespace ProtoBuf
+namespace Proto.Cluster.CodeGen.model
 {
     public class ProtoMethod
     {

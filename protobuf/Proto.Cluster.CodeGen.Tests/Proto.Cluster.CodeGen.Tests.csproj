@@ -22,7 +22,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\ProtoGrainGenerator\ProtoGrainGenerator.csproj" />
+      <ProjectReference Include="..\Proto.Cluster.CodeGen\Proto.Cluster.CodeGen.csproj" />
     </ItemGroup>
 
     <ItemGroup>
