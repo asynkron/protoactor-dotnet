@@ -18,6 +18,7 @@ namespace Proto.Cluster.CodeGen.Tests
 
         public ProtoGrainGenerationTests(ITestOutputHelper testOutputHelper) => _testOutputHelper = testOutputHelper;
 
+        
         [Fact]
         public void CanFindImportedNamespaces()
         {
