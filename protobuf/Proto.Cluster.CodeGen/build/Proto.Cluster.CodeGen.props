@@ -9,7 +9,7 @@
     <TaskAssembly>$(MSBuildThisFileDirectory)..\tasks\$(TaskFolder)\Proto.Cluster.CodeGen.dll</TaskAssembly>
   </PropertyGroup>
 
-  <UsingTask TaskName="MSBuildTasks.ProtoGenTask" AssemblyFile="$(TaskAssembly)" />
+  <UsingTask TaskName="Proto.Cluster.CodeGen.ProtoGenTask" AssemblyFile="$(TaskAssembly)" />
   
   <ItemDefinitionGroup>
     <ProtoGrain/>
