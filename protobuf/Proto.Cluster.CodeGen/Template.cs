@@ -25,7 +25,9 @@ namespace {{CsNamespace}}
             public static Func<IContext,string,string,T> Create;
         }
         
-        public static (string,Props)[] GetClusterKinds()  => new[] { 
+        public static (string,Props)[] GetClusterKinds()  => 
+            new (string,Props)[] 
+            { 
             {{#each Services}}	
                 (""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor())),
             {{/each}}
