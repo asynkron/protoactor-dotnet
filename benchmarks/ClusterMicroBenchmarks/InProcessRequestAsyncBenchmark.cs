@@ -38,7 +38,7 @@ namespace ClusterMicroBenchmarks
 
             System = new ActorSystem(new ActorSystemConfig
             {
-                UseSharedFutures = UseSharedFutures
+                SharedFutures = UseSharedFutures
             });
             pid = System.Root.SpawnNamed(echoProps, "thing");
         }

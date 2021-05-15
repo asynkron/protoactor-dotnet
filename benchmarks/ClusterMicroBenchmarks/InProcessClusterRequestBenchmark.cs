@@ -56,7 +56,7 @@ namespace ClusterMicroBenchmarks
 
             var sys = new ActorSystem(new ActorSystemConfig
                     {
-                        UseSharedFutures = SharedFutures
+                        SharedFutures = SharedFutures
                     }
                 )
                 .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(9090))

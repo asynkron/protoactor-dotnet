@@ -28,7 +28,7 @@ namespace Proto
         public bool DeadLetterRequestLogging { get; set; } = true;
         public bool DeveloperSupervisionLogging { get; init; }
 
-        public bool UseSharedFutures { get; init; } = true;
+        public bool SharedFutures { get; init; }
         public int SharedFutureSize { get; init; } = 5000;
 
         public static ActorSystemConfig Setup() => new();
@@ -42,6 +42,10 @@ namespace Proto
             this with {DeadLetterThrottleCount = deadLetterThrottleCount};
 
         public ActorSystemConfig WithDeadLetterRequestLogging(bool enabled) => this with {DeadLetterRequestLogging = enabled};
+
+        public ActorSystemConfig WithSharedFutureSize(int size) => this with {SharedFutureSize = size};
+
+        public ActorSystemConfig WithSharedFutures(bool enabled = true) => this with {SharedFutures = enabled};
 
         public ActorSystemConfig WithDeveloperSupervisionLogging(bool enabled) => this with {DeveloperSupervisionLogging = enabled};
 
