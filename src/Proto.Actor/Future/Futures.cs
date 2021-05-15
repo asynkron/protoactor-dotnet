@@ -47,7 +47,11 @@ namespace Proto.Future
             }
             catch
             {
-                _metrics?.FuturesTimedOutCount.Inc(new[] {System.Id, System.Address});
+                if (!System.Metrics.IsNoop)
+                {
+                    _metrics!.FuturesTimedOutCount.Inc(new[] {System.Id, System.Address});
+                }
+                
 
                 Stop(Pid!);
                 throw new TimeoutException("Request didn't receive any Response within the expected time.");
@@ -77,8 +81,11 @@ namespace Proto.Future
             }
 
             _tcs.TrySetResult(default!);
-
-            _metrics?.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
+            if (!System.Metrics.IsNoop)
+            {
+                _metrics!.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
+            }
+            
 
             Stop(pid);
         }
