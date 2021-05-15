@@ -38,7 +38,7 @@ namespace Proto
             Metrics = new ProtoMetrics(config.MetricsProviders);
             ProcessRegistry.TryAdd("eventstream", new EventStreamProcess(this));
             Extensions = new ActorSystemExtensions(this);
-            Future = new FutureFactory(this);
+            Future = new FutureFactory(this, config.UseSharedFutures, config.SharedFutureSize);
 
             RunThreadPoolStats();
         }

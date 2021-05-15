@@ -16,13 +16,16 @@ namespace ClusterMicroBenchmarks
     [MemoryDiagnoser, InProcess]
     public class InProcessRequestAsyncBenchmark
     {
-        [Params(1000,5000,10000)]
+        [Params(1000)]
         public int BatchSize { get; set; }
-        
+
+        [Params(true, false)]
+
+        public bool UseSharedFutures { get; set; }
+
         private ActorSystem System;
 
         private PID pid;
-        
 
         [GlobalSetup]
         public void Setup()
@@ -33,7 +36,10 @@ namespace ClusterMicroBenchmarks
                 }
             );
 
-            System = new ActorSystem(new ActorSystemConfig());
+            System = new ActorSystem(new ActorSystemConfig
+            {
+                UseSharedFutures = UseSharedFutures
+            });
             pid = System.Root.SpawnNamed(echoProps, "thing");
         }
 
@@ -48,15 +54,15 @@ namespace ClusterMicroBenchmarks
         {
             var tasks = new Task<object>[BatchSize];
             var cancellationToken = CancellationTokens.WithTimeout(TimeSpan.FromSeconds(2));
-        
+
             for (int i = 0; i < tasks.Length; i++)
             {
                 tasks[i] = System.Root.RequestAsync<object>(pid, 1, cancellationToken);
             }
-        
+
             await Task.WhenAll(tasks);
         }
-        
+
         [Benchmark]
         public async Task FutureBatchRequest()
         {
@@ -67,7 +73,8 @@ namespace ClusterMicroBenchmarks
 
             for (var i = 0; i < BatchSize; i++)
             {
-                batch.TryGetFuture(out var future);
+                var future = batch.TryGetFuture() ?? throw new Exception("Unable to get future");
+
                 futures[i] = future;
                 System.Root.Request(pid, 1, future.Pid);
             }
@@ -80,11 +87,12 @@ namespace ClusterMicroBenchmarks
             {
                 foreach (var future in futures)
                 {
-                    future.Dispose();;
+                    future.Dispose();
+                    ;
                 }
             }
         }
-        
+
         [Benchmark]
         public async Task BatchContextRequestAsync()
         {
@@ -96,9 +104,8 @@ namespace ClusterMicroBenchmarks
             {
                 tasks[i] = batch.RequestAsync<object>(pid, 1, cancellationToken);
             }
-            await Task.WhenAll(tasks);
 
+            await Task.WhenAll(tasks);
         }
-        
     }
 }

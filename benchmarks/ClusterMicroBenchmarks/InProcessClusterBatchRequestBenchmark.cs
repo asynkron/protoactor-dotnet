@@ -19,13 +19,13 @@ namespace ClusterMicroBenchmarks
     {
         private const string Kind = "echo";
 
-        [Params(1000)]
+        [Params(2000)]
         public int BatchSize { get; set; }
 
         [Params(10000)]
         public int Identities { get; set; }
 
-        [Params(true, false)]
+        [Params(true)]
         public bool ExperimentalContext { get; set; }
 
         [Params(true, false)]
@@ -84,37 +84,37 @@ namespace ClusterMicroBenchmarks
         [GlobalCleanup]
         public Task Cleanup() => _cluster.ShutdownAsync();
 
-        [Benchmark]
-        public async Task ClusterRequestAsync()
-        {
-            var ct = PassCancellationToken ? CancellationTokens.FromSeconds(10) : CancellationToken.None;
-
-            var tasks = new Task[BatchSize];
-
-            for (var i = 0; i < BatchSize; i++)
-            {
-                var id = _ids[i];
-                tasks[i] = _cluster.RequestAsync<int>(id.Identity, id.Kind, i, ct);
-            }
-
-            await Task.WhenAll(tasks);
-        }
-
-        [Benchmark]
-        public async Task ClusterRequestBatchAsync()
-        {
-            var ct = PassCancellationToken ? CancellationTokens.FromSeconds(10) : CancellationToken.None;
-            using var batch = _cluster.System.Root.Batch(BatchSize, ct);
-            var tasks = new Task[BatchSize];
-
-            for (var i = 0; i < BatchSize; i++)
-            {
-                var id = _ids[i];
-                tasks[i] = _cluster.RequestAsync<int>(id.Identity, id.Kind, i, batch, ct);
-            }
-
-            await Task.WhenAll(tasks);
-        }
+        // [Benchmark]
+        // public async Task ClusterRequestAsync()
+        // {
+        //     var ct = PassCancellationToken ? CancellationTokens.FromSeconds(10) : CancellationToken.None;
+        //
+        //     var tasks = new Task[BatchSize];
+        //
+        //     for (var i = 0; i < BatchSize; i++)
+        //     {
+        //         var id = _ids[i];
+        //         tasks[i] = _cluster.RequestAsync<int>(id.Identity, id.Kind, i, ct);
+        //     }
+        //
+        //     await Task.WhenAll(tasks);
+        // }
+        //
+        // [Benchmark]
+        // public async Task ClusterRequestBatchAsync()
+        // {
+        //     var ct = PassCancellationToken ? CancellationTokens.FromSeconds(10) : CancellationToken.None;
+        //     using var batch = _cluster.System.Root.Batch(BatchSize, ct);
+        //     var tasks = new Task[BatchSize];
+        //
+        //     for (var i = 0; i < BatchSize; i++)
+        //     {
+        //         var id = _ids[i];
+        //         tasks[i] = _cluster.RequestAsync<int>(id.Identity, id.Kind, i, batch, ct);
+        //     }
+        //
+        //     await Task.WhenAll(tasks);
+        // }
 
         [Benchmark]
         public async Task ClusterRequestAsyncBatchReuseIdentity()
@@ -131,6 +131,7 @@ namespace ClusterMicroBenchmarks
 
             await Task.WhenAll(tasks);
         }
+        
 
         [Benchmark]
         public async Task ClusterRequestAsyncReuseIdentity()

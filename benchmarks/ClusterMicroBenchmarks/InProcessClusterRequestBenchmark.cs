@@ -24,8 +24,11 @@ namespace ClusterMicroBenchmarks
         private ClusterIdentity _id;
         private PID pid;
 
-        [Params( false)]
+        [Params(false)]
         public bool LocalAffinity { get; set; }
+
+        [Params(true, false)]
+        public bool SharedFutures { get; set; }
 
         [Params(false)]
         public bool RequestDeduplication { get; set; }
@@ -51,11 +54,15 @@ namespace ClusterMicroBenchmarks
                 echoKind.WithLocalAffinityRelocationStrategy();
             }
 
-            var sys = new ActorSystem(new ActorSystemConfig())
+            var sys = new ActorSystem(new ActorSystemConfig
+                    {
+                        UseSharedFutures = SharedFutures
+                    }
+                )
                 .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(9090))
                 .WithCluster(ClusterConfig().WithClusterKind(echoKind));
 
-            pid = sys.Root.SpawnNamed(echoProps,"thing");
+            pid = sys.Root.SpawnNamed(echoProps, "thing");
 
             _cluster = sys.Cluster();
             await _cluster.StartMemberAsync();

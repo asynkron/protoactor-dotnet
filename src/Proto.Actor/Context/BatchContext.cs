@@ -53,10 +53,9 @@ namespace Proto.Context
 
         public IFuture GetFuture()
         {
-            if (_batchProcess.TryGetFuture(out var future))
-            {
-                return future;
-            }
+            var future = _batchProcess.TryGetFuture();
+            if (future is not null) return future;
+
             _futuresCreated++;
             return new FutureProcess(System);
         }

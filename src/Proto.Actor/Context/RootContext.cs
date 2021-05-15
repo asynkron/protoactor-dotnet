@@ -38,7 +38,7 @@ namespace Proto
 
         private Sender? SenderMiddleware { get; init; }
         public ActorSystem System { get; }
-        private TypeDictionary<object, RootContext> Store { get; } = new(0,1);
+        private TypeDictionary<object, RootContext> Store { get; } = new(0, 1);
 
         public T? Get<T>() => (T?) Store.Get<T>();
 
@@ -52,7 +52,7 @@ namespace Proto
         public PID? Self => null;
         PID? IInfoContext.Sender => null;
         public IActor? Actor => null;
-        
+
         public PID SpawnNamed(Props props, string name)
         {
             var parent = props.GuardianStrategy is not null
@@ -64,13 +64,13 @@ namespace Proto
         public object? Message => null;
 
         public void Send(PID target, object message) => SendUserMessage(target, message);
-        
+
         public void Request(PID target, object message, PID? sender)
         {
             var envelope = new MessageEnvelope(message, sender);
             Send(target, envelope);
         }
-        
+
         //why does this method exist here and not as an extension?
         //because DecoratorContexts needs to go this way if we want to intercept this method for the context
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
@@ -86,7 +86,7 @@ namespace Proto
 
         public Task StopAsync(PID pid)
         {
-            var future = new FutureProcess(System);
+            var future = System.Future.Get();
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
 
@@ -128,7 +128,7 @@ namespace Proto
                 target.SendUserMessage(System, message);
             }
         }
-        
-        public IFuture GetFuture() => new FutureProcess(System);
+
+        public IFuture GetFuture() => System.Future.Get();
     }
 }

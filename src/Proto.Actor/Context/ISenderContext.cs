@@ -67,7 +67,6 @@ namespace Proto
         /// <returns></returns>
         public static BatchContext Batch(this ISenderContext context, int size, CancellationToken ct) => new(context, size, ct);
 
-
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender
         /// </summary>

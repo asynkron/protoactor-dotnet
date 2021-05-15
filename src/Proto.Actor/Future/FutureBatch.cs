@@ -21,6 +21,7 @@ namespace Proto.Future
         private readonly CancellationTokenRegistration _cancellation;
         private readonly Action? _onTimeout;
         private int _prevIndex = -1;
+        private readonly string[]? _metricLabels;
 
         public FutureBatchProcess(ActorSystem system, int size, CancellationToken ct) : base(system)
         {
@@ -36,7 +37,8 @@ namespace Proto.Future
             if (!system.Metrics.IsNoop)
             {
                 _metrics = system.Metrics.Get<ActorMetrics>();
-                _onTimeout = () => _metrics.FuturesTimedOutCount.Inc(new[] {System.Id, System.Address});
+                _metricLabels = new[] {System.Id, System.Address};
+                _onTimeout = () => _metrics.FuturesTimedOutCount.Inc(_metricLabels);
             }
             else
             {
@@ -62,7 +64,7 @@ namespace Proto.Future
 
         public PID Pid { get; }
 
-        public bool TryGetFuture(out IFuture future)
+        public IFuture? TryGetFuture()
         {
             var index = Interlocked.Increment(ref _prevIndex);
 
@@ -70,13 +72,11 @@ namespace Proto.Future
             {
                 var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
                 _completionSources[index] = tcs;
-                _metrics?.FuturesStartedCount.Inc(new[] {System.Id, System.Address});
-                future = new SimpleFutureHandle(Pid.WithRequestId(ToRequestId(index)), tcs, _onTimeout);
-                return true;
+                _metrics?.FuturesStartedCount.Inc(_metricLabels);
+                return new SimpleFutureHandle(Pid.WithRequestId(ToRequestId(index)), tcs, _onTimeout);
             }
 
-            future = default!;
-            return false;
+            return null;
         }
 
         protected internal override void SendUserMessage(PID pid, object message)
@@ -90,7 +90,7 @@ namespace Proto.Future
             }
             finally
             {
-                _metrics?.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
+                _metrics?.FuturesCompletedCount.Inc(_metricLabels);
             }
         }
 
@@ -111,7 +111,7 @@ namespace Proto.Future
             }
             finally
             {
-                _metrics?.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
+                _metrics?.FuturesCompletedCount.Inc(_metricLabels);
             }
         }
 
@@ -128,7 +128,7 @@ namespace Proto.Future
             return index >= 0 && index < _completionSources.Length;
         }
 
-        private uint ToRequestId(int index) => (uint) (index + 1);
+        private static uint ToRequestId(int index) => (uint) (index + 1);
 
         private bool TryGetTaskCompletionSource(uint requestId, out int index, out TaskCompletionSource<object> tcs)
         {
@@ -140,6 +140,42 @@ namespace Proto.Future
 
             tcs = _completionSources[index]!;
             return tcs != default!;
+        }
+
+        sealed class SimpleFutureHandle : IFuture
+        {
+            private readonly Action? _onTimeout;
+            internal TaskCompletionSource<object> Tcs { get; }
+
+            public SimpleFutureHandle(PID pid, TaskCompletionSource<object> tcs, Action? onTimeout)
+            {
+                _onTimeout = onTimeout;
+                Pid = pid;
+                Tcs = tcs;
+            }
+
+            public PID Pid { get; }
+            public Task<object> Task => Tcs.Task;
+
+            public async Task<object> GetTask(CancellationToken cancellationToken)
+            {
+                try
+                {
+                    await using (cancellationToken.Register(() => Tcs.TrySetCanceled()))
+                    {
+                        return await Tcs.Task;
+                    }
+                }
+                catch
+                {
+                    _onTimeout?.Invoke();
+                    throw new TimeoutException("Request didn't receive any Response within the expected time.");
+                }
+            }
+
+            public void Dispose()
+            {
+            }
         }
     }
 }
