@@ -174,16 +174,14 @@ namespace Proto.Cluster
             _pidCache.RemoveByVal(clusterIdentity, pid);
         }
 
+
         private PID? GetCachedPid(ClusterIdentity clusterIdentity)
         {
             var pid = clusterIdentity.CachedPid;
 
-            if (pid is null)
+            if (pid is null && _pidCache.TryGet(clusterIdentity, out pid))
             {
-                if (_pidCache.TryGet(clusterIdentity, out var cachedPid))
-                {
-                    clusterIdentity.CachedPid = cachedPid;
-                }
+                clusterIdentity.CachedPid = pid;
             }
 
             return pid;

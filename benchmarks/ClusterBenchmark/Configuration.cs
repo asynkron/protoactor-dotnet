@@ -36,6 +36,7 @@ namespace ClusterExperiment1
             var helloProps = Props.FromProducer(() => new WorkerActor());
             return ClusterConfig
                 .Setup("mycluster", clusterProvider, identityLookup)
+                .WithClusterContextProducer(cluster => new ExperimentalClusterContext(cluster))
                 .WithClusterKind("hello", helloProps);
         }
 
