@@ -88,7 +88,6 @@ namespace ClusterMicroBenchmarks
                 foreach (var future in futures)
                 {
                     future.Dispose();
-                    ;
                 }
             }
         }

@@ -70,7 +70,7 @@ namespace ClusterExperiment1
             }
         }
 
-        public static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
+        public static IIdentityLookup GetIdentityLookup() => GetMongoIdentityLookup();// new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
 
         private static IIdentityLookup GetRedisIdentityLookup()
         {
@@ -107,7 +107,9 @@ namespace ClusterExperiment1
 
         public static async Task<Cluster> SpawnMember()
         {
-            var system = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3)
+            var system = new ActorSystem(new ActorSystemConfig()
+                .WithSharedFutures()
+                .WithDeadLetterThrottleCount(3)
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
                 .WithDeadLetterRequestLogging(false)
             );

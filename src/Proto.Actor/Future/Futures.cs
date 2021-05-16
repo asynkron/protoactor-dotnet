@@ -10,6 +10,31 @@ using Proto.Metrics;
 
 namespace Proto.Future
 {
+    public interface IFuture : IDisposable
+    {
+        public PID Pid { get; }
+        public Task<object> Task { get; }
+
+        public Task<object> GetTask(CancellationToken cancellationToken);
+    }
+    
+    public sealed class FutureFactory
+    {
+        private ActorSystem System { get; }
+        private readonly SharedFutureProcess? _sharedFutureProcess;
+
+        public FutureFactory(ActorSystem system, bool useSharedFutures, int sharedFutureSize)
+        {
+            System = system;
+
+            _sharedFutureProcess = useSharedFutures ? new SharedFutureProcess(system, sharedFutureSize) : null;
+        }
+
+        public IFuture Get() => _sharedFutureProcess?.TryCreateHandle() ?? SingleProcessHandle();
+
+        private IFuture SingleProcessHandle() => new FutureProcess(System);
+    }
+
     public sealed class FutureProcess : Process, IFuture
     {
         private readonly TaskCompletionSource<object> _tcs;
@@ -35,7 +60,7 @@ namespace Proto.Future
 
         public PID Pid { get; }
         public Task<object> Task => _tcs.Task;
-        
+
         public async Task<object> GetTask(CancellationToken cancellationToken)
         {
             try
@@ -51,7 +76,6 @@ namespace Proto.Future
                 {
                     _metrics!.FuturesTimedOutCount.Inc(new[] {System.Id, System.Address});
                 }
-                
 
                 Stop(Pid!);
                 throw new TimeoutException("Request didn't receive any Response within the expected time.");
@@ -67,7 +91,7 @@ namespace Proto.Future
             finally
             {
                 _metrics?.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
-                
+
                 Stop(Pid);
             }
         }
@@ -81,11 +105,11 @@ namespace Proto.Future
             }
 
             _tcs.TrySetResult(default!);
+
             if (!System.Metrics.IsNoop)
             {
                 _metrics!.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
             }
-            
 
             Stop(pid);
         }

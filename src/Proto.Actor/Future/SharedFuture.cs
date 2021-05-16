@@ -11,52 +11,26 @@ using Proto.Metrics;
 
 namespace Proto.Future
 {
-    public sealed class FutureFactory
-    {
-        private ActorSystem System { get; }
-        private readonly SharedFutureProcess? _sharedFutureProcess;
-
-        public FutureFactory(ActorSystem system, bool useSharedFutures, int sharedFutureSize)
-        {
-            System = system;
-
-            _sharedFutureProcess = useSharedFutures ? new SharedFutureProcess(system, sharedFutureSize) : null;
-        }
-
-        public IFuture Get() => _sharedFutureProcess?.TryCreateHandle() ?? SingleProcessHandle();
-
-        private IFuture SingleProcessHandle() => new FutureProcess(System);
-    }
-
-    public interface IFuture : IDisposable
-    {
-        public PID Pid { get; }
-        public Task<object> Task { get; }
-
-        public Task<object> GetTask(CancellationToken cancellationToken);
-    }
-
     public sealed class SharedFutureProcess : Process, IDisposable
     {
         private readonly FutureHandle[] _slots;
-        private readonly ChannelWriter<FutureHandle> _finishedFutures;
+        private readonly ChannelWriter<FutureHandle> _completedFutures;
         private readonly ChannelReader<FutureHandle> _availableFutures;
-        private readonly ActorMetrics? _metrics;
 
         private long _createdRequests;
         private long _completedRequests;
 
         /// <summary>
-        /// Highest request-id allowed before it wraps around. limited to int32 instead of uint32 to use unboxed CAS
+        /// Highest request-id allowed before it wraps around.
         /// </summary>
         private readonly int _maxRequestId;
 
-        private readonly Action<SharedFutureProcess> _onCompleted;
+        private readonly ActorMetrics? _metrics;
         private readonly string[]? _metricLabels;
         private readonly Action? _onTimeout;
         private readonly Action? _onStarted;
 
-        internal SharedFutureProcess(ActorSystem system, int size, Action<SharedFutureProcess>? onCompleted = null) : base(system)
+        internal SharedFutureProcess(ActorSystem system, int size) : base(system)
         {
             var name = System.ProcessRegistry.NextId();
             var (pid, absent) = System.ProcessRegistry.TryAdd(name, this);
@@ -64,8 +38,6 @@ namespace Proto.Future
             if (!absent) throw new ProcessNameExistException(name, pid);
 
             Pid = pid;
-
-            _onCompleted = onCompleted ?? (process => Stop(process.Pid));
 
             if (!system.Metrics.IsNoop)
             {
@@ -82,39 +54,28 @@ namespace Proto.Future
 
             _slots = new FutureHandle[size];
 
-            var channel = Channel.CreateBounded<FutureHandle>(new BoundedChannelOptions(size)
-                {
-                    SingleReader = false,
-                    SingleWriter = false
-                }
-            );
-            _finishedFutures = channel.Writer;
+            Channel<FutureHandle> channel = Channel.CreateUnbounded<FutureHandle>();
             _availableFutures = channel.Reader;
+            _completedFutures = channel.Writer;
 
             for (var i = 0; i < _slots.Length; i++)
             {
                 var requestSlot = new FutureHandle(this, ToRequestId(i));
                 _slots[i] = requestSlot;
-
-                if (!_finishedFutures.TryWrite(requestSlot))
-                {
-                    throw new Exception("Channel full!");
-                }
+                _completedFutures.TryWrite(requestSlot);
             }
 
             _maxRequestId = (int.MaxValue - (int.MaxValue % size));
         }
 
         private PID Pid { get; }
-        public bool Draining { get; private set; }
+        public bool Stopping { get; private set; }
 
         public int RequestsInFlight => (int) (_createdRequests - _completedRequests);
 
         public IFuture? TryCreateHandle()
         {
-            if (Draining) return default;
-
-            if (!_availableFutures.TryRead(out var requestSlot)) return null;
+            if (Stopping || !_availableFutures.TryRead(out var requestSlot)) return default;
 
             var pid = requestSlot.Init();
             Interlocked.Increment(ref _createdRequests);
@@ -160,19 +121,13 @@ namespace Proto.Future
         {
             if (slot.TryComplete((int) requestId))
             {
-                var ok = _finishedFutures.TryWrite(slot);
-
-                if (!ok)
-                {
-                    global::System.Console.WriteLine("This should never happen");
-                    _finishedFutures.WriteAsync(slot).GetAwaiter().GetResult();
-                }
+                _completedFutures.TryWrite(slot);
 
                 Interlocked.Increment(ref _completedRequests);
                 _metrics?.FuturesCompletedCount.Inc(_metricLabels);
 
-                if (Draining && RequestsInFlight == 0)
-                    _onCompleted(this);
+                if (Stopping && RequestsInFlight == 0)
+                    Stop(Pid);
             }
         }
 
@@ -186,11 +141,33 @@ namespace Proto.Future
             }
         }
 
+        public void Stop()
+        {
+            Stopping = true;
+            _completedFutures.TryComplete();
+
+            while (_availableFutures.TryRead(out _))
+            {
+            }
+
+            if (RequestsInFlight == 0)
+            {
+                Stop(Pid);
+            }
+        }
+
         private void Cancel(uint requestId)
         {
             if (!TryGetRequestSlot(requestId, out var slot)) return;
 
-            Complete(requestId, slot);
+            try
+            {
+                slot.CompletionSource?.TrySetCanceled();
+            }
+            finally
+            {
+                Complete(requestId, slot);
+            }
         }
 
         private int GetIndex(uint requestId) => (int) (requestId - 1) % _slots.Length;

@@ -25,21 +25,23 @@ namespace Proto.Tests
             // first test should use all available futures, and should return them when done
             await Futures_should_map_to_correct_response();
 
-            //After they are returned, they should be available for the second test.
+            //After they are returned, they should be available for re-use.
+            await Futures_should_map_to_correct_response();
+            await Futures_should_map_to_correct_response();
             await Futures_should_map_to_correct_response();
         }
 
         [Fact]
         public void Should_not_give_out_more_futures_than_size_allows()
         {
-            using var process = new SharedFutureProcess(System, 5);
-
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < BatchSize; i++)
             {
-                process.TryCreateHandle().Should().NotBeNull();
+                GetFuture().Should().NotBeNull();
             }
 
-            process.TryCreateHandle().Should().BeNull();
+            this.Invoking(it => it.GetFuture()).Should().Throw<Exception>();
         }
+        
+        
     }
 }

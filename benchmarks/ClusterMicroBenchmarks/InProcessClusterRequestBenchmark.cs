@@ -79,6 +79,9 @@ namespace ClusterMicroBenchmarks
         [GlobalCleanup]
         public Task Cleanup() => _cluster.ShutdownAsync();
 
+        // [Benchmark]
+        // public Task RequestAsync() => _cluster.System.Root.RequestAsync<object>(pid, 1, CancellationToken.None);
+
         [Benchmark]
         public Task ClusterRequestAsync() => _cluster.RequestAsync<int>(_id.Identity, _id.Kind, 1, CancellationToken.None);
 
