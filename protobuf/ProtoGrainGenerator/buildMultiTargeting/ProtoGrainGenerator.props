@@ -1,7 +1,0 @@
-<!-- 
-  This file is automatically imported by NuGet into a user's project
-  when it targets multiple frameworks, e.g. <TargetFrameworks>net46;netcoreapp1.0</TargetFrameworks>
--->
-<Project>
-  <Import Project="..\build\ProtoGrainGenerator.props" />
-</Project>

@@ -1,0 +1,31 @@
+<!-- 
+  This file is automatically imported by NuGet into a user's project
+  when it targets a single framework, or in classic (pre 2017) csproj projects.
+-->
+<Project TreatAsLocalProperty="TaskFolder;TaskAssembly">
+  <PropertyGroup>
+    <TaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netstandard2.1</TaskFolder>
+    <TaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net5.0</TaskFolder>
+    <TaskAssembly>$(MSBuildThisFileDirectory)..\tasks\$(TaskFolder)\Proto.Cluster.CodeGen.dll</TaskAssembly>
+  </PropertyGroup>
+
+  <UsingTask TaskName="MSBuildTasks.ProtoGenTask" AssemblyFile="$(TaskAssembly)" />
+  
+  <ItemDefinitionGroup>
+    <ProtoGrain/>
+  </ItemDefinitionGroup>
+
+  <Target Name="ProtoGenerate" BeforeTargets="PrepareForBuild">
+    <ProtoGenTask 
+            IntermediateOutputPath="$(IntermediateOutputPath)"
+            MSBuildProjectFullPath="$(MSBuildProjectFullPath)"
+            ProtoFile="@(ProtoGrain)"
+    />
+
+    <ItemGroup>
+      <!--This one is needed to not confuse Rider -->
+      <Compile Include="$(IntermediateOutputPath)protopotato/**/*.cs" />
+      <!--Yes, there probably is a better way to do this... -->
+    </ItemGroup>
+  </Target>
+</Project>
