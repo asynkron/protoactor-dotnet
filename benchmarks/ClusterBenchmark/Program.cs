@@ -165,13 +165,18 @@ namespace ClusterExperiment1
             );
         }
 
-        private static async Task SendRequest(Cluster cluster, string id, CancellationToken cancellationToken)
+        private static async Task SendRequest(Cluster cluster, string id, CancellationToken cancellationToken, ISenderContext? context = null)
         {
             Interlocked.Increment(ref requestCount);
 
+            if (context == null)
+            {
+                context = cluster.System.Root;
+            }
+
             try
             {
-                var x = await cluster.RequestAsync<object>(id, "hello", Request, cancellationToken);
+                var x = await cluster.RequestAsync<object>(id, "hello", Request,context, cancellationToken);
 
                 if (x != null)
                 {
@@ -212,6 +217,7 @@ namespace ClusterExperiment1
         {
             var logger = Log.CreateLogger(nameof(Program));
 
+            
             _ = SafeTask.Run(async () => {
                     var cluster = await Configuration.SpawnClient();
                     var rnd = new Random();
@@ -228,14 +234,16 @@ namespace ClusterExperiment1
             {
                 var requests = new List<Task>();
 
+                
                 try
                 {
                     var ct = CancellationTokens.FromSeconds(20);
 
+                    var ctx = cluster.System.Root.Batch(batchSize,ct);
                     for (var i = 0; i < batchSize; i++)
                     {
                         var id = "myactor" + rnd.Next(0, actorCount);
-                        var request = SendRequest(cluster, id, ct);
+                        var request = SendRequest(cluster, id, ct , ctx);
 
                         requests.Add(request);
                     }
