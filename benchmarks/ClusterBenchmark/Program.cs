@@ -243,7 +243,7 @@ namespace ClusterExperiment1
                     for (var i = 0; i < batchSize; i++)
                     {
                         var id = "myactor" + rnd.Next(0, actorCount);
-                        var request = SendRequest(cluster, id, ct , ctx);
+                        var request = SendRequest(cluster, id, CancellationToken.None , ctx);
 
                         requests.Add(request);
                     }
