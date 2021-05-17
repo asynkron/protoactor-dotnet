@@ -243,7 +243,7 @@ namespace Proto.Remote
                 //this only apply to root level messages and never to nested child objects inside the message
                 if (message is IRootSerializable deserialized) message = deserialized.Serialize(context.System);
 
-                (ByteString bytes, string typeName, int serializerId) = _remoteConfig.Serialization.Serialize(rd.Message);
+                (ByteString bytes, string typeName, int serializerId) = _remoteConfig.Serialization.Serialize(message);
 
                 if (!context.System.Metrics.IsNoop) counter.Inc(new[] {context.System.Id, context.System.Address, typeName});
 
