@@ -55,7 +55,8 @@ namespace Proto.Future
 
             if (!absent) throw new ProcessNameExistException(name, pid);
 
-            Pid = pid.WithRequestId(1);
+            pid.RequestId = 1;
+            Pid = pid;
         }
 
         public PID Pid { get; }

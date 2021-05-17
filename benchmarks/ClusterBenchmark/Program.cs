@@ -78,7 +78,7 @@ namespace ClusterExperiment1
 
             if (memberRunStrategy == "5")
             {
-                memberRunStrategy = "1";
+                memberRunStrategy = "3";
                 actorCount = 10;
                 killTimeoutSeconds = 60;
                 memberCount = 1;
