@@ -314,4 +314,15 @@ namespace Proto.Cluster.Tests
         {
         }
     }
+    
+    // ReSharper disable once UnusedType.Global
+    public class InMemoryClusterTestsSharedFutures : ClusterTests, IClassFixture<InMemoryClusterFixtureSharedFutures>
+    {
+        // ReSharper disable once SuggestBaseTypeForParameter
+        public InMemoryClusterTestsSharedFutures(ITestOutputHelper testOutputHelper, InMemoryClusterFixtureSharedFutures clusterFixture) : base(
+            testOutputHelper, clusterFixture
+        )
+        {
+        }
+    }
 }
