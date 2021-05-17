@@ -43,9 +43,7 @@ namespace Proto
 
         public ActorSystemConfig WithDeadLetterRequestLogging(bool enabled) => this with {DeadLetterRequestLogging = enabled};
 
-        public ActorSystemConfig WithSharedFutureSize(int size) => this with {SharedFutureSize = size};
-
-        public ActorSystemConfig WithSharedFutures(bool enabled = true) => this with {SharedFutures = enabled};
+        public ActorSystemConfig WithSharedFutures(int size = 5000) => this with {SharedFutures = true, SharedFutureSize = size};
 
         public ActorSystemConfig WithDeveloperSupervisionLogging(bool enabled) => this with {DeveloperSupervisionLogging = enabled};
 
