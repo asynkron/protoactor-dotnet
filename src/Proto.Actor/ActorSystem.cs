@@ -38,7 +38,7 @@ namespace Proto
             Metrics = new ProtoMetrics(config.MetricsProviders);
             ProcessRegistry.TryAdd("eventstream", new EventStreamProcess(this));
             Extensions = new ActorSystemExtensions(this);
-            Future = new FutureFactory(this, config.SharedFutures, config.SharedFutureSize);
+            DeferredFuture = new Lazy<FutureFactory>(() => new FutureFactory(this, config.SharedFutures, config.SharedFutureSize));
 
             RunThreadPoolStats();
         }
@@ -63,7 +63,9 @@ namespace Proto
 
         public ActorSystemExtensions Extensions { get; }
 
-        internal FutureFactory Future { get; }
+        private Lazy<FutureFactory> DeferredFuture { get; }
+
+        internal FutureFactory Future => DeferredFuture.Value;
 
         public CancellationToken Shutdown => _cts.Token;
 
