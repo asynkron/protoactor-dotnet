@@ -6,7 +6,6 @@
 using System.Collections.Concurrent;
 using System.Threading.Channels;
 using BenchmarkDotNet.Attributes;
-using Microsoft.Extensions.ObjectPool;
 
 namespace ClusterMicroBenchmarks
 {
@@ -16,7 +15,6 @@ namespace ClusterMicroBenchmarks
         [Params(1000, 5000)]
         public int Items { get; set; }
 
-        private DefaultObjectPool<object> Default { get; set; }
         private ConcurrentBag<object> Bag { get; set; }
         private ChannelWriter<object> ChannelWriter { get; set; }
         private ChannelReader<object> ChannelReader { get; set; }
@@ -25,7 +23,6 @@ namespace ClusterMicroBenchmarks
         [GlobalSetup]
         public void Setup()
         {
-            Default = new DefaultObjectPool<object>(new DefaultPooledObjectPolicy<object>(), Items);
             Bag = new ConcurrentBag<object>();
             Objects = new object[Items];
             var channel = System.Threading.Channels.Channel.CreateUnbounded<object>();
@@ -35,7 +32,6 @@ namespace ClusterMicroBenchmarks
             for (var i = 0; i < Items; i++)
             {
                 object obj = new();
-                Default.Return(obj);
                 Bag.Add(obj);
                 ChannelWriter.TryWrite(obj);
             }

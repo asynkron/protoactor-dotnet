@@ -34,8 +34,6 @@ namespace ClusterMicroBenchmarks
         private Cluster _cluster;
         private ClusterIdentity[] _ids;
 
-        private PID pid;
-
         [GlobalSetup]
         public async Task Setup()
         {

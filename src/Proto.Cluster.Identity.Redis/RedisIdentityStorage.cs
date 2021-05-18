@@ -17,7 +17,6 @@ namespace Proto.Cluster.Identity.Redis
     public class RedisIdentityStorage : IIdentityStorage
     {
         private static readonly ILogger Logger = Log.CreateLogger<RedisIdentityStorage>();
-        private static readonly RedisKey NoKey = new();
 
         private static readonly RedisValue UniqueIdentity = "pid";
         private static readonly RedisValue Address = "adr";
