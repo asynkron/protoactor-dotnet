@@ -36,12 +36,11 @@ namespace Proto.Cluster.Tests
             _clusterName = $"test-cluster-{Guid.NewGuid().ToString().Substring(0, 6)}";
         }
 
-        protected virtual ClusterKind[] ClusterKinds => new []
+        protected virtual ClusterKind[] ClusterKinds => new[]
         {
             new ClusterKind(EchoActor.Kind, EchoActor.Props.WithClusterRequestDeduplication()),
             new ClusterKind(EchoActor.Kind2, EchoActor.Props),
             new ClusterKind(EchoActor.LocalAffinityKind, EchoActor.Props).WithLocalAffinityRelocationStrategy()
-            
         };
 
         public async Task InitializeAsync() => Members = await SpawnClusterNodes(_clusterSize, _configure).ConfigureAwait(false);
@@ -101,7 +100,8 @@ namespace Proto.Cluster.Tests
                 .WithClusterKinds(ClusterKinds);
 
             config = configure?.Invoke(config) ?? config;
-            var system = new ActorSystem();
+
+            var system = new ActorSystem(GetActorSystemConfig());
 
             var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
             var _ = new GrpcCoreRemote(system, remoteConfig);
@@ -111,6 +111,8 @@ namespace Proto.Cluster.Tests
             await cluster.StartMemberAsync();
             return cluster;
         }
+
+        protected virtual ActorSystemConfig GetActorSystemConfig() => ActorSystemConfig.Setup();
 
         protected abstract IClusterProvider GetClusterProvider();
 
@@ -141,5 +143,27 @@ namespace Proto.Cluster.Tests
         public InMemoryClusterFixture() : base(3, config => config.WithActorRequestTimeout(TimeSpan.FromSeconds(4)))
         {
         }
+    }
+
+    public class InMemoryClusterFixtureAlternativeClusterContext : BaseInMemoryClusterFixture
+    {
+        public InMemoryClusterFixtureAlternativeClusterContext() : base(3, config => config
+            .WithActorRequestTimeout(TimeSpan.FromSeconds(4))
+            .WithClusterContextProducer(cluster => new ExperimentalClusterContext(cluster))
+        )
+        {
+        }
+    }
+
+    public class InMemoryClusterFixtureSharedFutures : BaseInMemoryClusterFixture
+    {
+        public InMemoryClusterFixtureSharedFutures() : base(3, config => config
+            .WithActorRequestTimeout(TimeSpan.FromSeconds(4))
+            .WithClusterContextProducer(cluster => new ExperimentalClusterContext(cluster))
+        )
+        {
+        }
+
+        protected override ActorSystemConfig GetActorSystemConfig() => ActorSystemConfig.Setup().WithSharedFutures();
     }
 }

@@ -28,10 +28,18 @@ namespace Proto.Cluster.Identity.Tests
             _storageInstance2 = storageFactory(clusterName);
         }
 
-        public void Dispose()
+        protected virtual void Dispose(bool disposing)
         {
+            if (!disposing) return;
+
             _storage?.Dispose();
             _storageInstance2?.Dispose();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         [Fact]

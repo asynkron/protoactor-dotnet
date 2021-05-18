@@ -3,8 +3,6 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using System.Threading.Tasks;
 using Google.Protobuf;
 
 namespace Proto
@@ -58,5 +56,13 @@ namespace Proto
             var reff = _process ?? system.ProcessRegistry.Get(this);
             reff.Stop(this);
         }
+
+        public PID WithRequestId(uint requestId) => new()
+        {
+            Id = Id,
+            Address = Address,
+            _process = _process,
+            RequestId = requestId
+        };
     }
 }

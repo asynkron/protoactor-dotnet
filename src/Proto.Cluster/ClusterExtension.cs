@@ -105,10 +105,10 @@ namespace Proto.Cluster
                     {
                         var pid = envelope.Sender;
 
-                        if (pid is not null && int.TryParse(pid.Id[1..], out var id) &&
+                        if (pid is not null && pid.RequestId > 0 && int.TryParse(pid.Id[1..], out var id) &&
                             memberList.TryGetMemberIndexByAddress(pid.Address, out var memberId))
                         {
-                            pidRef = new PidRef(memberId, id);
+                            pidRef = new PidRef(memberId, id, pid.RequestId);
                             return true;
                         }
 
@@ -122,18 +122,20 @@ namespace Proto.Cluster
         {
             public int MemberId { get; }
             public int Id { get; }
+            public uint RequestId { get; }
 
-            public PidRef(int memberId, int id)
+            public PidRef(int memberId, int id, uint requestId)
             {
                 MemberId = memberId;
                 Id = id;
+                RequestId = requestId;
             }
 
-            public bool Equals(PidRef other) => MemberId == other.MemberId && Id == other.Id;
+            public bool Equals(PidRef other) => MemberId == other.MemberId && Id == other.Id && RequestId == other.RequestId;
 
             public override bool Equals(object? obj) => obj is PidRef other && Equals(other);
 
-            public override int GetHashCode() => HashCode.Combine(MemberId, Id);
+            public override int GetHashCode() => HashCode.Combine(MemberId, Id, RequestId);
         }
     }
 }

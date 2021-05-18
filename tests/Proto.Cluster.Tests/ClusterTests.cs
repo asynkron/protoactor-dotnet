@@ -303,4 +303,26 @@ namespace Proto.Cluster.Tests
         {
         }
     }
+    
+    // ReSharper disable once UnusedType.Global
+    public class InMemoryClusterTestsAlternativeClusterContext : ClusterTests, IClassFixture<InMemoryClusterFixtureAlternativeClusterContext>
+    {
+        // ReSharper disable once SuggestBaseTypeForParameter
+        public InMemoryClusterTestsAlternativeClusterContext(ITestOutputHelper testOutputHelper, InMemoryClusterFixtureAlternativeClusterContext clusterFixture) : base(
+            testOutputHelper, clusterFixture
+        )
+        {
+        }
+    }
+    
+    // ReSharper disable once UnusedType.Global
+    public class InMemoryClusterTestsSharedFutures : ClusterTests, IClassFixture<InMemoryClusterFixtureSharedFutures>
+    {
+        // ReSharper disable once SuggestBaseTypeForParameter
+        public InMemoryClusterTestsSharedFutures(ITestOutputHelper testOutputHelper, InMemoryClusterFixtureSharedFutures clusterFixture) : base(
+            testOutputHelper, clusterFixture
+        )
+        {
+        }
+    }
 }

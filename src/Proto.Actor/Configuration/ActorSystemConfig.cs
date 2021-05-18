@@ -28,6 +28,9 @@ namespace Proto
         public bool DeadLetterRequestLogging { get; set; } = true;
         public bool DeveloperSupervisionLogging { get; init; }
 
+        public bool SharedFutures { get; init; }
+        public int SharedFutureSize { get; init; } = 5000;
+
         public static ActorSystemConfig Setup() => new();
 
         public Func<IActor, string> DiagnosticsSerializer { get; set; } = Diagnostics.DiagnosticsSerializer.Serialize;
@@ -40,10 +43,12 @@ namespace Proto
 
         public ActorSystemConfig WithDeadLetterRequestLogging(bool enabled) => this with {DeadLetterRequestLogging = enabled};
 
+        public ActorSystemConfig WithSharedFutures(int size = 5000) => this with {SharedFutures = true, SharedFutureSize = size};
+
         public ActorSystemConfig WithDeveloperSupervisionLogging(bool enabled) => this with {DeveloperSupervisionLogging = enabled};
 
         public ActorSystemConfig WithMetricsProviders(params IMetricsProvider[] providers) => this with {MetricsProviders = providers};
-        
+
         public ActorSystemConfig WithDiagnosticsSerializer(Func<IActor, string> serializer) => this with {DiagnosticsSerializer = serializer};
     }
 }

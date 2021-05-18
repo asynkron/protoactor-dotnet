@@ -268,7 +268,8 @@ namespace Proto.Remote
                     Target = targetId,
                     TypeId = typeId,
                     SerializerId = serializerId,
-                    MessageHeader = header
+                    MessageHeader = header,
+                    RequestId = rd.Target.RequestId
                 };
 
                 envelopes.Add(envelope);

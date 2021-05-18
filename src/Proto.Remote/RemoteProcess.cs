@@ -18,9 +18,9 @@ namespace Proto.Remote
             _pid = pid;
         }
 
-        protected override void SendUserMessage(PID _, object message) => Send(message);
+        protected internal override void SendUserMessage(PID _, object message) => Send(message);
 
-        protected override void SendSystemMessage(PID _, object message) => Send(message);
+        protected internal override void SendSystemMessage(PID _, object message) => Send(message);
 
         private void Send(object msg)
         {

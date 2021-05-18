@@ -22,11 +22,15 @@ namespace ClusterMicroBenchmarks
         private const string Kind = "echo";
 
         private ClusterIdentity _id;
+        private PID pid;
 
-        [Params(true, false)]
+        [Params(false)]
         public bool LocalAffinity { get; set; }
 
         [Params(true, false)]
+        public bool SharedFutures { get; set; }
+
+        [Params(false)]
         public bool RequestDeduplication { get; set; }
 
         [GlobalSetup]
@@ -50,9 +54,15 @@ namespace ClusterMicroBenchmarks
                 echoKind.WithLocalAffinityRelocationStrategy();
             }
 
-            var sys = new ActorSystem(new ActorSystemConfig())
+            var sys = new ActorSystem(new ActorSystemConfig
+                    {
+                        SharedFutures = SharedFutures
+                    }
+                )
                 .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(9090))
                 .WithCluster(ClusterConfig().WithClusterKind(echoKind));
+
+            pid = sys.Root.SpawnNamed(echoProps, "thing");
 
             _cluster = sys.Cluster();
             await _cluster.StartMemberAsync();
@@ -68,6 +78,9 @@ namespace ClusterMicroBenchmarks
 
         [GlobalCleanup]
         public Task Cleanup() => _cluster.ShutdownAsync();
+
+        [Benchmark]
+        public Task RequestAsync() => _cluster.System.Root.RequestAsync<object>(pid, 1, CancellationToken.None);
 
         [Benchmark]
         public Task ClusterRequestAsync() => _cluster.RequestAsync<int>(_id.Identity, _id.Kind, 1, CancellationToken.None);

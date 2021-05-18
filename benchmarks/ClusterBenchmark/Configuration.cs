@@ -35,6 +35,7 @@ namespace ClusterExperiment1
             var helloProps = Props.FromProducer(() => new WorkerActor());
             return ClusterConfig
                 .Setup("mycluster", clusterProvider, identityLookup)
+                .WithClusterContextProducer(cluster => new ExperimentalClusterContext(cluster))
                 .WithClusterKind("hello", helloProps);
         }
 
@@ -69,7 +70,7 @@ namespace ClusterExperiment1
             }
         }
 
-        public static IIdentityLookup GetIdentityLookup() => GetMongoIdentityLookup();//  GetRedisIdentityLookup();// new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
+        public static IIdentityLookup GetIdentityLookup() => GetMongoIdentityLookup();// new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
 
         private static IIdentityLookup GetRedisIdentityLookup()
         {
@@ -106,7 +107,9 @@ namespace ClusterExperiment1
 
         public static async Task<Cluster> SpawnMember()
         {
-            var system = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3)
+            var system = new ActorSystem(new ActorSystemConfig()
+                .WithSharedFutures()
+                .WithDeadLetterThrottleCount(3)
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
                 .WithDeadLetterRequestLogging(false)
             );
@@ -131,6 +134,7 @@ namespace ClusterExperiment1
         public static async Task<Cluster> SpawnClient()
         {
             var system = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3)
+                .WithSharedFutures()
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
                 .WithDeadLetterRequestLogging(false)
             );

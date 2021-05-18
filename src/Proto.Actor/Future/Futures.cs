@@ -10,16 +10,38 @@ using Proto.Metrics;
 
 namespace Proto.Future
 {
-    public sealed class FutureProcess : Process, IDisposable
+    public interface IFuture : IDisposable
+    {
+        public PID Pid { get; }
+        public Task<object> Task { get; }
+
+        public Task<object> GetTask(CancellationToken cancellationToken);
+    }
+    
+    public sealed class FutureFactory
+    {
+        private ActorSystem System { get; }
+        private readonly SharedFutureProcess? _sharedFutureProcess;
+
+        public FutureFactory(ActorSystem system, bool useSharedFutures, int sharedFutureSize)
+        {
+            System = system;
+
+            _sharedFutureProcess = useSharedFutures ? new SharedFutureProcess(system, sharedFutureSize) : null;
+        }
+
+        public IFuture Get() => _sharedFutureProcess?.TryCreateHandle() ?? SingleProcessHandle();
+
+        private IFuture SingleProcessHandle() => new FutureProcess(System);
+    }
+
+    public sealed class FutureProcess : Process, IFuture
     {
         private readonly TaskCompletionSource<object> _tcs;
         private readonly ActorMetrics? _metrics;
-        private readonly ActorSystem _system;
 
         internal FutureProcess(ActorSystem system) : base(system)
         {
-            _system = system;
-
             if (!system.Metrics.IsNoop)
             {
                 _metrics = system.Metrics.Get<ActorMetrics>();
@@ -33,17 +55,22 @@ namespace Proto.Future
 
             if (!absent) throw new ProcessNameExistException(name, pid);
 
+            pid.RequestId = 1;
             Pid = pid;
         }
 
         public PID Pid { get; }
-               
-        public Task<object> GetTask() => _tcs.Task;
+        public Task<object> Task => _tcs.Task;
 
         public async Task<object> GetTask(CancellationToken cancellationToken)
         {
             try
             {
+                if (cancellationToken == default)
+                {
+                    return await _tcs.Task;
+                }
+
                 await using (cancellationToken.Register(() => _tcs.TrySetCanceled()))
                 {
                     return await _tcs.Task;
@@ -51,9 +78,9 @@ namespace Proto.Future
             }
             catch
             {
-                if (!_system.Metrics.IsNoop)
+                if (!System.Metrics.IsNoop)
                 {
-                    _metrics!.FuturesTimedOutCount.Inc(new[] {System.Id, _system.Address});
+                    _metrics!.FuturesTimedOutCount.Inc(new[] {System.Id, System.Address});
                 }
 
                 Stop(Pid!);
@@ -69,11 +96,8 @@ namespace Proto.Future
             }
             finally
             {
-                if (!_system.Metrics.IsNoop)
-                {
-                    _metrics!.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
-                }
-                
+                _metrics?.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
+
                 Stop(Pid);
             }
         }
@@ -88,7 +112,7 @@ namespace Proto.Future
 
             _tcs.TrySetResult(default!);
 
-            if (!_system.Metrics.IsNoop)
+            if (!System.Metrics.IsNoop)
             {
                 _metrics!.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
             }

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Extensions;
+using Proto.Future;
 using Proto.Metrics;
 using Proto.Utils;
 
@@ -37,6 +38,7 @@ namespace Proto
             Metrics = new ProtoMetrics(config.MetricsProviders);
             ProcessRegistry.TryAdd("eventstream", new EventStreamProcess(this));
             Extensions = new ActorSystemExtensions(this);
+            DeferredFuture = new Lazy<FutureFactory>(() => new FutureFactory(this, config.SharedFutures, config.SharedFutureSize));
 
             RunThreadPoolStats();
         }
@@ -60,6 +62,10 @@ namespace Proto
         public ProtoMetrics Metrics { get; }
 
         public ActorSystemExtensions Extensions { get; }
+
+        private Lazy<FutureFactory> DeferredFuture { get; }
+
+        internal FutureFactory Future => DeferredFuture.Value;
 
         public CancellationToken Shutdown => _cts.Token;
 
