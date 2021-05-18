@@ -117,7 +117,7 @@ namespace Proto.Tests
             const int size = 1000;
 
             var cancellationToken = CancellationTokens.WithTimeout(1000);
-            using var batchContext = System.Root.Batch(size, cancellationToken);
+            using var batchContext = System.Root.CreateBatchContext(size, cancellationToken);
 
             var tasks = new Task<object>[size];
 

@@ -292,7 +292,7 @@ namespace ClusterExperiment1
                 {
                     var ct = CancellationTokens.FromSeconds(20);
 
-                    var ctx = cluster.System.Root.Batch(batchSize,ct);
+                    var ctx = cluster.System.Root.CreateBatchContext(batchSize,ct);
                     for (var i = 0; i < batchSize; i++)
                     {
                         var id = identities![rnd!.Next(0, actorCount)];

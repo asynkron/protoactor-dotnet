@@ -96,7 +96,7 @@ namespace ClusterMicroBenchmarks
         public async Task BatchContextRequestAsync()
         {
             var cancellationToken = CancellationTokens.WithTimeout(TimeSpan.FromSeconds(2));
-            using var batch = System.Root.Batch(BatchSize, cancellationToken);
+            using var batch = System.Root.CreateBatchContext(BatchSize, cancellationToken);
             var tasks = new Task<object>[BatchSize];
 
             for (int i = 0; i < tasks.Length; i++)

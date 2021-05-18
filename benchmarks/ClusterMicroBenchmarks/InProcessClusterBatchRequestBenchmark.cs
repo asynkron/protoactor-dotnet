@@ -118,7 +118,7 @@ namespace ClusterMicroBenchmarks
         public async Task ClusterRequestAsyncBatchReuseIdentity()
         {
             var ct = PassCancellationToken ? CancellationTokens.FromSeconds(10) : CancellationToken.None;
-            using var batch = _cluster.System.Root.Batch(BatchSize, ct);
+            using var batch = _cluster.System.Root.CreateBatchContext(BatchSize, ct);
             var tasks = new Task[BatchSize];
 
             for (var i = 0; i < BatchSize; i++)

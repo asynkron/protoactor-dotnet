@@ -60,12 +60,16 @@ namespace Proto
     {
         /// <summary>
         /// Creates a batch context for sending a set of requests from the same thread context.
+        /// This is useful if you have several messages which shares a cancellation scope (same cancellationToken).
+        /// It will pre-allocate the number of futures specified and is slightly more efficient on resources than default futures.
+        /// If more than the pre-allocated futures are used it will fall back to the default system futures.
+        /// Dispose to release the resources used.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="size">The number of requests to send. The batch context will pre-allocate resources for this</param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public static BatchContext Batch(this ISenderContext context, int size, CancellationToken ct) => new(context, size, ct);
+        public static BatchContext CreateBatchContext(this ISenderContext context, int size, CancellationToken ct) => new(context, size, ct);
 
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender
