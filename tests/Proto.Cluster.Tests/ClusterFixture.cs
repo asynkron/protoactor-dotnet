@@ -100,7 +100,8 @@ namespace Proto.Cluster.Tests
                 .WithClusterKinds(ClusterKinds);
 
             config = configure?.Invoke(config) ?? config;
-            var system = new ActorSystem();
+
+            var system = new ActorSystem(GetActorSystemConfig());
 
             var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
             var _ = new GrpcCoreRemote(system, remoteConfig);
@@ -110,6 +111,8 @@ namespace Proto.Cluster.Tests
             await cluster.StartMemberAsync();
             return cluster;
         }
+
+        protected virtual ActorSystemConfig GetActorSystemConfig() => ActorSystemConfig.Setup();
 
         protected abstract IClusterProvider GetClusterProvider();
 
@@ -150,5 +153,17 @@ namespace Proto.Cluster.Tests
         )
         {
         }
+    }
+
+    public class InMemoryClusterFixtureSharedFutures : BaseInMemoryClusterFixture
+    {
+        public InMemoryClusterFixtureSharedFutures() : base(3, config => config
+            .WithActorRequestTimeout(TimeSpan.FromSeconds(4))
+            .WithClusterContextProducer(cluster => new ExperimentalClusterContext(cluster))
+        )
+        {
+        }
+
+        protected override ActorSystemConfig GetActorSystemConfig() => ActorSystemConfig.Setup().WithSharedFutures();
     }
 }

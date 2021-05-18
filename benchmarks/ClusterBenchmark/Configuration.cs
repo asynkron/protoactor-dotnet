@@ -16,7 +16,6 @@ using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
 using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.Kubernetes;
-using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using Serilog;
@@ -135,6 +134,7 @@ namespace ClusterExperiment1
         public static async Task<Cluster> SpawnClient()
         {
             var system = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3)
+                .WithSharedFutures()
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
                 .WithDeadLetterRequestLogging(false)
             );

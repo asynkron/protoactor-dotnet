@@ -78,7 +78,7 @@ namespace ClusterExperiment1
 
             if (memberRunStrategy == "5")
             {
-                memberRunStrategy = "1";
+                memberRunStrategy = "3";
                 actorCount = 10;
                 killTimeoutSeconds = 60;
                 memberCount = 1;
@@ -165,13 +165,66 @@ namespace ClusterExperiment1
             );
         }
 
-        private static async Task SendRequest(Cluster cluster, string id, CancellationToken cancellationToken)
+        private static async Task SendRequest(Cluster cluster, ClusterIdentity id, CancellationToken cancellationToken, ISenderContext? context = null)
         {
             Interlocked.Increment(ref requestCount);
 
+            if (context == null)
+            {
+                context = cluster.System.Root;
+            }
+
             try
             {
-                var x = await cluster.RequestAsync<object>(id, "hello", Request, cancellationToken);
+                var x = await cluster.RequestAsync<object>(id, Request, context, cancellationToken);
+
+                if (x != null)
+                {
+                    var res = Interlocked.Increment(ref successCount);
+
+                    if (res % 10000 == 0)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkGreen;
+                        Console.Write(".");
+                        Console.ResetColor();
+                    }
+
+                    return;
+                }
+
+                OnError();
+            }
+            catch
+            {
+                OnError();
+            }
+
+            void OnError()
+            {
+                Interlocked.Increment(ref failureCount);
+
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write("X");
+                Console.ResetColor();
+
+                var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
+
+                il?.DumpState(id);
+            }
+        }
+        
+        private static async Task SendRequest(Cluster cluster, string id, CancellationToken cancellationToken, ISenderContext? context = null)
+        {
+            Interlocked.Increment(ref requestCount);
+
+            if (context == null)
+            {
+                context = cluster.System.Root;
+            }
+
+            try
+            {
+                var x = await cluster.RequestAsync<object>(id, "hello", Request, context, cancellationToken);
 
                 if (x != null)
                 {
@@ -210,6 +263,13 @@ namespace ClusterExperiment1
 
         private static void RunBatchClient(int batchSize)
         {
+            var identities = new ClusterIdentity[actorCount];
+            for (var i = 0; i < actorCount; i++)
+            {
+                var id = "myactor" + i;
+                identities[i] = ClusterIdentity.Create(id,"hello");
+            }
+            
             var logger = Log.CreateLogger(nameof(Program));
 
             _ = SafeTask.Run(async () => {
@@ -232,10 +292,11 @@ namespace ClusterExperiment1
                 {
                     var ct = CancellationTokens.FromSeconds(20);
 
+                    var ctx = cluster.System.Root.Batch(batchSize,ct);
                     for (var i = 0; i < batchSize; i++)
                     {
-                        var id = "myactor" + rnd.Next(0, actorCount);
-                        var request = SendRequest(cluster, id, ct);
+                        var id = identities![rnd!.Next(0, actorCount)];
+                        var request = SendRequest(cluster, id, CancellationToken.None, ctx);
 
                         requests.Add(request);
                     }

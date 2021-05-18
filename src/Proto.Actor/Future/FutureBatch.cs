@@ -161,6 +161,11 @@ namespace Proto.Future
             {
                 try
                 {
+                    if (cancellationToken == default)
+                    {
+                        return await Tcs.Task;
+                    }
+                    
                     await using (cancellationToken.Register(() => Tcs.TrySetCanceled()))
                     {
                         return await Tcs.Task;
