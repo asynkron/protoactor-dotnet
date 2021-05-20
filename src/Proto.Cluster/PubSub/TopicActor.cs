@@ -55,10 +55,8 @@ namespace Proto.Cluster.PubSub
                         let deliveryPid = PID.FromAddress(address, PubSubManager.PubSubDeliveryName)
                         select context.RequestAsync<PublishResponse>(deliveryPid, deliveryMessage)).Cast<Task>()
                 .ToList();
-
-            Console.WriteLine("Sent batch");
+            
             await Task.WhenAll(acks);
-            Console.WriteLine("Acked batch");
 
             //ack back to producer
             context.Respond(new PublishResponse());
