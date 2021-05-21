@@ -7,14 +7,14 @@ using Proto;
 
 namespace Saga.Messages
 {
-    abstract record Result(PID Pid)
+    public abstract record Result(PID Pid)
     {
         public record SuccessResult(PID Pid) : Result(Pid);
         public record FailedAndInconsistent(PID Pid) : Result(Pid);
         public record FailedButConsistentResult(PID Pid) : Result(Pid);
     }
 
-    abstract record ChangeBalance(decimal Amount, PID ReplyTo)
+    public abstract record ChangeBalance(decimal Amount, PID ReplyTo)
     {
         public record Credit(decimal Amount, PID ReplyTo) : ChangeBalance(Amount, ReplyTo);
         public record Debit(decimal Amount, PID ReplyTo) : ChangeBalance(Amount, ReplyTo);

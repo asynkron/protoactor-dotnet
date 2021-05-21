@@ -16,7 +16,7 @@ namespace Proto.Cluster.PubSub
         {
             if (context.Message is DeliveryBatchMessage deliveryBatch)
             {
-               // Console.WriteLine("got messages " + deliveryBatch.subscribers.Subscribers_.Count);
+                // Console.WriteLine("got messages " + deliveryBatch.subscribers.Subscribers_.Count);
                 var topicBatch = new TopicBatchMessage(deliveryBatch.ProducerBatch.Envelopes);
                 var tasks =
                     deliveryBatch
