@@ -170,7 +170,7 @@ namespace Proto.Cluster.Identity
 
         private Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity)
         {
-            async Task<SpawnLock?> Inner() => await _storage.TryAcquireLock(clusterIdentity, CancellationTokens.FromSeconds(5));
+            Task<SpawnLock?> Inner() => _storage.TryAcquireLock(clusterIdentity, CancellationTokens.FromSeconds(5));
 
             return Metrics.TryAcquireLockHistogram.Observe(Inner, _cluster.System.Id, _cluster.System.Address, clusterIdentity.Kind);
         }
