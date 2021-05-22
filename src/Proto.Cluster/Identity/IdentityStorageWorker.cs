@@ -243,7 +243,7 @@ namespace Proto.Cluster.Identity
         {
             if (activation?.Pid == null) return null;
 
-            var memberExists = activation.MemberId == null || _memberList.ContainsMemberId(activation.MemberId);
+            var memberExists = _memberList.ContainsMemberId(activation.MemberId);
             if (memberExists) return activation.Pid;
 
             if (StaleMembers.TryAdd(activation.MemberId!))
