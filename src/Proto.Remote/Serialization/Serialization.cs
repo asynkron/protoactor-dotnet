@@ -4,7 +4,11 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
 using Proto.Extensions;
@@ -13,23 +17,67 @@ namespace Proto.Remote
 {
     public class Serialization : IActorSystemExtension<Serialization>
     {
-        private readonly List<ISerializer> _serializers = new();
+        struct SerializerItem
+        {
+            public int SerializerId;
+            public int PriorityValue;
+            public ISerializer Serializer;
+        }
+
+        private struct TypeSerializerItem
+        {
+            public ISerializer Serializer;
+            public int SerializerId;
+        }
+
+        private List<SerializerItem> _serializers = new();
+        private readonly ConcurrentDictionary<Type, TypeSerializerItem> _serializerLookup = new();
         internal readonly Dictionary<string, MessageParser> TypeLookup = new();
+
+        public const int SERIALIZER_ID_PROTOBUF = 0;
+        public const int SERIALIZER_ID_JSON = 1;
+
+        public JsonSerializerOptions? JsonSerializerOptions { get; internal set; }
 
         public Serialization()
         {
             RegisterFileDescriptor(Proto.ProtosReflection.Descriptor);
             RegisterFileDescriptor(ProtosReflection.Descriptor);
-            RegisterSerializer(new ProtobufSerializer(this), true);
-            RegisterSerializer(new JsonSerializer(this));
+            RegisterSerializer(
+                SERIALIZER_ID_PROTOBUF,
+                priority: 0,
+                new ProtobufSerializer(this));
+            RegisterSerializer(
+                SERIALIZER_ID_JSON,
+                priority: -1000,
+                new JsonSerializer(this));
         }
 
-        public int DefaultSerializerId { get; set; }
-
-        public void RegisterSerializer(ISerializer serializer, bool makeDefault = false)
+        /// <summary>
+        /// Registers a new serializer with this Serialization instance.
+        /// SerializerId must correspond to the same serializer on all remote nodes (cluster members).
+        /// ProtoBufSerializer's id is 0, JsonSerializer's is 1 by default.
+        /// Priority defined in which order Serializers should be considered to be the serializer for a given type.
+        /// ProtoBufSerializer has priority of 0, and JsonSerializer has priority of -1000.
+        /// </summary>
+        public void RegisterSerializer(
+            int serializerId,
+            int priority,
+            ISerializer serializer)
         {
-            _serializers.Add(serializer);
-            if (makeDefault) DefaultSerializerId = _serializers.Count - 1;
+            if (_serializers.Any(v => v.SerializerId == serializerId))
+                throw new Exception($"Already registered serializer id: {serializerId} = {_serializers[serializerId].GetType()}");
+
+            _serializers.Add(new SerializerItem()
+            {
+                SerializerId = serializerId,
+                PriorityValue = priority,
+                Serializer = serializer,
+            });
+            // Sort by PriorityValue, from highest to lowest.
+            _serializers = _serializers
+                .OrderByDescending(v => v.PriorityValue)
+                .ToList();
         }
 
         public void RegisterFileDescriptor(FileDescriptor fd)
@@ -40,11 +88,48 @@ namespace Proto.Remote
             }
         }
 
-        public ByteString Serialize(object message, int serializerId) => _serializers[serializerId].Serialize(message);
+        public (ByteString bytes, string typename, int serializerId) Serialize(object message)
+        {
+            var serializer = FindSerializerToUse(message);
+            var typename = serializer.Serializer.GetTypeName(message);
+            var serializerId = serializer.SerializerId;
+            var bytes = serializer.Serializer.Serialize(message);
+            return (bytes, typename, serializerId);
+        }
 
-        public string GetTypeName(object message, int serializerId) => _serializers[serializerId].GetTypeName(message);
+        TypeSerializerItem FindSerializerToUse(object message)
+        {
+            var type = message.GetType();
+            if (_serializerLookup.TryGetValue(type, out var serializer))
+                return serializer;
 
-        public object Deserialize(string typeName, ByteString bytes, int serializerId) =>
-            _serializers[serializerId].Deserialize(bytes, typeName);
+            // Determine which serializer can serialize this object type.
+            foreach (var serializerItem in _serializers)
+            {
+                if (!serializerItem.Serializer.CanSerialize(message)) continue;
+
+                var item = new TypeSerializerItem
+                {
+                    Serializer = serializerItem.Serializer,
+                    SerializerId = serializerItem.SerializerId,
+                };
+                _serializerLookup[type] = item;
+                return item;
+            }
+            throw new Exception($"Couldn't find a serializer for {message.GetType()}");
+        }
+
+        public object Deserialize(string typeName, ByteString bytes, int serializerId)
+        {
+            foreach (var serializerItem in _serializers)
+            {
+                if (serializerItem.SerializerId == serializerId)
+                    return serializerItem.Serializer.Deserialize(
+                        bytes,
+                        typeName);
+            }
+
+            throw new Exception($"Couldn't find serializerId: {serializerId} for typeName: {typeName}");
+        }
     }
 }

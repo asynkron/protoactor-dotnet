@@ -13,7 +13,7 @@ namespace Proto.Metrics
         internal readonly ActorMetrics InternalActorMetrics;
         public readonly bool IsNoop;
         private IMetricsProvider[] _configurators;
-        private TypeDictionary<object> _knownMetrics = new();
+        private TypeDictionary<object,ProtoMetrics> _knownMetrics = new(10);
         private Ubiquitous.Metrics.Metrics _metrics;
 
         public ProtoMetrics(IMetricsProvider[] configurators)
@@ -23,10 +23,10 @@ namespace Proto.Metrics
             _metrics = Ubiquitous.Metrics.Metrics.CreateUsing(configurators);
             _configurators = configurators;
             InternalActorMetrics = new ActorMetrics(this);
-            RegisterKnownMetrics(InternalActorMetrics);
+            Register(InternalActorMetrics);
         }
 
-        public void RegisterKnownMetrics<T>(T instance) => _knownMetrics.Add<T>(instance!);
+        public void Register<T>(T instance) => _knownMetrics.Add<T>(instance!);
 
         public T Get<T>() => (T) _knownMetrics.Get<T>()!;
 

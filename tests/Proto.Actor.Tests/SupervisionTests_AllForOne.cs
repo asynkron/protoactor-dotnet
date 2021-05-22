@@ -137,8 +137,8 @@ namespace Proto.Tests
                 _child2Props = child2Props;
             }
 
-            public PID Child1 { get; set; }
-            public PID Child2 { get; set; }
+            private PID? Child1 { get; set; }
+            private PID? Child2 { get; set; }
 
             public Task ReceiveAsync(IContext context)
             {
@@ -151,7 +151,7 @@ namespace Proto.Tests
                 if (context.Message is string)
                 {
                     // only tell one child
-                    context.Forward(Child1);
+                    context.Forward(Child1!);
                 }
 
                 return Task.CompletedTask;

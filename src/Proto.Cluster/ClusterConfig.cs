@@ -28,6 +28,7 @@ namespace Proto.Cluster
             ClusterRequestDeDuplicationWindow = TimeSpan.FromSeconds(30);
             IdentityLookup = identityLookup;
             MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
+            PubSubBatchSize = 2000;
         }
 
         public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; init; }
@@ -38,6 +39,7 @@ namespace Proto.Cluster
 
         public IClusterProvider ClusterProvider { get; }
 
+        public int PubSubBatchSize { get; init; }
         public TimeSpan TimeoutTimespan { get; init; }
         public TimeSpan ActorRequestTimeout { get; init; }
         public TimeSpan RequestLogThrottlePeriod { get; init; }
@@ -53,7 +55,7 @@ namespace Proto.Cluster
         public TimeSpan ClusterRequestDeDuplicationWindow { get; init; }
 
         public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } =
-            c => new DefaultClusterContext(c.IdentityLookup, c.PidCache, c.Logger, c.Config.ToClusterContextConfig(),c.System.Shutdown);
+            c => new DefaultClusterContext(c.IdentityLookup, c.PidCache, c.Config.ToClusterContextConfig(),c.System.Shutdown);
 
         public ClusterConfig WithTimeout(TimeSpan timeSpan) =>
             this with {TimeoutTimespan = timeSpan};
@@ -63,6 +65,9 @@ namespace Proto.Cluster
 
         public ClusterConfig WithRequestLogThrottlePeriod(TimeSpan timeSpan) =>
             this with {RequestLogThrottlePeriod = timeSpan};
+        
+        public ClusterConfig WithPubSubBatchSize(int batchSize) =>
+            this with {PubSubBatchSize = batchSize};
 
         public ClusterConfig WithMaxNumberOfEventsInRequestLogThrottlePeriod(int max) =>
             this with {MaxNumberOfEventsInRequestLogThrottlePeriod = max};

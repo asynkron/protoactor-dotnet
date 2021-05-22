@@ -15,7 +15,7 @@ namespace Saga
     public class InMemoryProvider : IProvider
     {
         public readonly ConcurrentDictionary<string, Dictionary<long, object>> Events =
-            new ConcurrentDictionary<string, Dictionary<long, object>>();
+            new();
 
         public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName) =>
             Task.FromResult(((object) default(Snapshot), 0L));

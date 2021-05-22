@@ -10,7 +10,7 @@ namespace Proto.Tests.Extensions
 
     public class ExtensionB : IActorSystemExtension<ExtensionB>
     {
-        public string B { get; set; }
+        public string? B { get; set; }
     }
 
     public class ExtensionTests
@@ -33,8 +33,8 @@ namespace Proto.Tests.Extensions
                 }
             );
 
-            Assert.Equal(123, system.Extensions.Get<ExtensionA>().A);
-            Assert.Equal("Hello", system.Extensions.Get<ExtensionB>().B);
+            Assert.Equal(123, system.Extensions.Get<ExtensionA>()?.A);
+            Assert.Equal("Hello", system.Extensions.Get<ExtensionB>()?.B);
         }
     }
 }

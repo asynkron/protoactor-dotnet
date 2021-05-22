@@ -101,15 +101,26 @@ namespace Proto.Remote
                 remoteConfig.RemoteKinds.AddRange(knownKinds.Select(kk => new KeyValuePair<string, Props>(kk.kind, kk.prop)))
             };
 
-        public static TRemoteConfig WithSerializer<TRemoteConfig>(this TRemoteConfig remoteConfig, ISerializer serializer, bool makeDefault = false)
+        public static TRemoteConfig WithSerializer<TRemoteConfig>(this TRemoteConfig remoteConfig, int serializerId, int priority, ISerializer serializer)
             where TRemoteConfig : RemoteConfigBase
         {
-            remoteConfig.Serialization.RegisterSerializer(serializer, makeDefault);
+            remoteConfig.Serialization.RegisterSerializer(serializerId, priority, serializer);
+            return remoteConfig;
+        }
+
+        public static TRemoteConfig WithJsonSerializerOptions<TRemoteConfig>(this TRemoteConfig remoteConfig, System.Text.Json.JsonSerializerOptions options)
+            where TRemoteConfig : RemoteConfigBase
+        {
+            remoteConfig.Serialization.JsonSerializerOptions = options;
             return remoteConfig;
         }
 
         public static TRemoteConfig WithLogLevelForDeserializationErrors<TRemoteConfig>(this TRemoteConfig remoteConfig, LogLevel level)
             where TRemoteConfig : RemoteConfigBase =>
             remoteConfig with {DeserializationErrorLogLevel = level};
+        
+        public static TRemoteConfig WithRemoteDiagnostics<TRemoteConfig>(this TRemoteConfig remoteConfig,bool enabled)
+            where TRemoteConfig : RemoteConfigBase =>
+            remoteConfig with {RemoteDiagnostics = enabled};
     }
 }

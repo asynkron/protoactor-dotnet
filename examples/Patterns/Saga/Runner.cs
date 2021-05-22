@@ -21,7 +21,7 @@ namespace Saga
         private readonly int _numberOfIterations;
         private readonly double _refusalProbability;
         private readonly int _retryAttempts;
-        private readonly HashSet<PID> _transfers = new HashSet<PID>();
+        private readonly HashSet<PID> _transfers = new();
         private readonly double _uptime;
         private readonly bool _verbose;
         private int _failedAndInconsistentResults;
@@ -53,7 +53,7 @@ namespace Saga
         {
             switch (context.Message)
             {
-                case SuccessResult msg:
+                case Result.SuccessResult msg:
                     _successResults++;
                     CheckForCompletion(msg.Pid);
                     break;
@@ -61,11 +61,11 @@ namespace Saga
                     _unknownResults++;
                     CheckForCompletion(msg.Pid);
                     break;
-                case FailedAndInconsistent msg:
+                case Result.FailedAndInconsistent msg:
                     _failedAndInconsistentResults++;
                     CheckForCompletion(msg.Pid);
                     break;
-                case FailedButConsistentResult msg:
+                case Result.FailedButConsistentResult msg:
                     _failedButConsistentResults++;
                     CheckForCompletion(msg.Pid);
                     break;
@@ -79,14 +79,14 @@ namespace Saga
                             var fromAccount = CreateAccount(context, $"FromAccount{j}", random);
                             var toAccount = CreateAccount(context, $"ToAccount{j}", random);
                             var actorName = $"Transfer Process {j}";
-                            var persistanceID = $"Transfer Process {j}";
+                            var persistenceId = $"Transfer Process {j}";
                             var factory = new TransferFactory(context, _inMemoryProvider, random, _uptime,
                                 _retryAttempts
                             );
-                            var transfer = factory.CreateTransfer(actorName, fromAccount, toAccount, 10, persistanceID);
+                            var transfer = factory.CreateTransfer(actorName, fromAccount, toAccount, 10, persistenceId);
                             _transfers.Add(transfer);
                             if (i == _numberOfIterations && !nth)
-                                Console.WriteLine($"Started {j}/{_numberOfIterations} proesses");
+                                Console.WriteLine($"Started {j}/{_numberOfIterations} processes");
                         }
                     );
                     break;
@@ -142,17 +142,16 @@ namespace Saga
                     $"{AsPercentage(_numberOfIterations, _unknownResults)}% ({_unknownResults}/{_numberOfIterations}) unknown results"
                 );
 
-                if (_verbose)
-                {
-                    foreach (var stream in _inMemoryProvider.Events)
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine($"Event log for {stream.Key}");
+                if (!_verbose) return;
 
-                        foreach (var @event in stream.Value)
-                        {
-                            Console.WriteLine(@event.Value);
-                        }
+                foreach (var (id, events) in _inMemoryProvider.Events)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine($"Event log for {id}");
+
+                    foreach (var @event in events)
+                    {
+                        Console.WriteLine(@event.Value);
                     }
                 }
             }

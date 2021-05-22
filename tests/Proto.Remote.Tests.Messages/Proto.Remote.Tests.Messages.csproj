@@ -7,7 +7,7 @@
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Grpc.Tools" Version="2.36.4" PrivateAssets="All" />
+    <PackageReference Include="Grpc.Tools" Version="2.37.1" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Remove="AutoFixture.Xunit2" />

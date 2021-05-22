@@ -24,22 +24,21 @@ namespace Saga.Internal
 
         public void EveryNth(Action<int> everyNthAction, Action<int, bool> everyAction)
         {
-            bool mustRunNth(int current)
-            {
-                if (current == 0 && _runOnStart) return true;
-                if (current == 0) return false;
-
-                return current % _everyNth == 0;
-            }
-
             for (var i = 1; i < _total + 1; i++)
             {
-                var must = mustRunNth(i);
+                var must = MustRunNth(i);
                 if (must) everyNthAction(i);
                 if (must && !_runBothOnEvery) continue;
 
                 everyAction(i, must);
             }
+            
+            bool MustRunNth(int current) => current switch
+            {
+                0 when _runOnStart => true,
+                0                  => false,
+                _                  => current % _everyNth == 0
+            };
         }
     }
 }

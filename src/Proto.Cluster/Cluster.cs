@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 using Proto.Cluster.Gossip;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Metrics;
-using Proto.Cluster.Partition;
+using Proto.Cluster.PubSub;
 using Proto.Extensions;
 using Proto.Remote;
 
@@ -22,57 +22,66 @@ namespace Proto.Cluster
     [PublicAPI]
     public class Cluster : IActorSystemExtension<Cluster>
     {
+        private Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
+
         public Cluster(ActorSystem system, ClusterConfig config)
         {
-            system.Extensions.Register(this);
-            system.Metrics.RegisterKnownMetrics(new ClusterMetrics(system.Metrics));
-            PidCache = new PidCache();
             System = system;
             Config = config;
-            system.Serialization().RegisterFileDescriptor(ProtosReflection.Descriptor);
+
+            system.Extensions.Register(this);
+            system.Metrics.Register(new ClusterMetrics(system.Metrics));
+            system.Serialization().RegisterFileDescriptor(ClusterContractsReflection.Descriptor);
 
             Gossip = new Gossiper(this);
-            MemberList = new MemberList(this);
-            SubscribeToClusterTopology(system);
+            PidCache = new PidCache();
+            PubSub = new PubSubManager(this);
+
+            SubscribeToTopologyEvents();
         }
 
-        private void SubscribeToClusterTopology(ActorSystem system) => system.EventStream.Subscribe<ClusterTopology>(e => {
-                system.Metrics.Get<ClusterMetrics>().ClusterTopologyEventGauge.Set(e.Members.Count,
-                    new[] {System.Id, System.Address, e.GetMembershipHashCode().ToString()}
-                );
+        public PubSubManager PubSub { get; }
 
-                foreach (var member in e.Left)
-                {
-                    PidCache.RemoveByMember(member);
-                }
-            }
-        );
+        public static ILogger Logger { get; } = Log.CreateLogger<Cluster>();
 
-        public Gossiper Gossip { get; }
-        public ILogger Logger { get; } = Log.CreateLogger<Cluster>();
         public IClusterContext ClusterContext { get; private set; } = null!;
 
+        public Gossiper Gossip { get; }
+        
         public ClusterConfig Config { get; }
 
         public ActorSystem System { get; }
 
         public IRemote Remote { get; private set; } = null!;
 
-        public MemberList MemberList { get; }
+        public MemberList MemberList { get; private set; } = null!;
 
         internal IIdentityLookup IdentityLookup { get; set; } = null!;
 
         internal IClusterProvider Provider { get; set; } = null!;
 
+        public string LoggerId => System.Id;
+
         public PidCache PidCache { get; }
 
-        public string[] GetClusterKinds() =>_clusterKinds.Keys.ToArray();
+        private void SubscribeToTopologyEvents() =>
+            System.EventStream.Subscribe<ClusterTopology>(e => {
+                    System.Metrics.Get<ClusterMetrics>().ClusterTopologyEventGauge.Set(e.Members.Count,
+                        new[] {System.Id, System.Address, e.GetMembershipHashCode().ToString()}
+                    );
+
+                    foreach (var member in e.Left)
+                    {
+                        PidCache.RemoveByMember(member);
+                    }
+                }
+            );
+
+        public string[] GetClusterKinds() => _clusterKinds.Keys.ToArray();
 
         public async Task StartMemberAsync()
         {
             await BeginStartAsync(false);
-            Provider = Config.ClusterProvider;
-            
             await Provider.StartMemberAsync(this);
             await Gossip.StartAsync();
             Logger.LogInformation("Started as cluster member");
@@ -81,8 +90,6 @@ namespace Proto.Cluster
         public async Task StartClientAsync()
         {
             await BeginStartAsync(true);
-            Provider = Config.ClusterProvider;
-
             await Provider.StartClientAsync(this);
 
             Logger.LogInformation("Started as cluster client");
@@ -91,20 +98,22 @@ namespace Proto.Cluster
         private async Task BeginStartAsync(bool client)
         {
             InitClusterKinds();
+            Provider = Config.ClusterProvider;
             //default to partition identity lookup
             IdentityLookup = Config.IdentityLookup;
 
             Remote = System.Extensions.Get<IRemote>() ?? throw new NotSupportedException("Remote module must be configured when using cluster");
 
             await Remote.StartAsync();
-            
-            Logger.LogInformation("Starting");
 
+            Logger.LogInformation("Starting");
+            MemberList = new MemberList(this);
             ClusterContext = Config.ClusterContextProducer(this);
 
             var kinds = GetClusterKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
-  
+            InitIdentityProxy();
+            await PubSub.StartAsync();
         }
 
         private void InitClusterKinds()
@@ -114,6 +123,9 @@ namespace Proto.Cluster
                 _clusterKinds.Add(clusterKind.Name, clusterKind.Build(this));
             }
         }
+
+        private void InitIdentityProxy()
+            => System.Root.SpawnNamed(Props.FromProducer(() => new IdentityActivatorProxy(this)), IdentityActivatorProxy.ActorName);
 
         public async Task ShutdownAsync(bool graceful = true)
         {
@@ -128,19 +140,11 @@ namespace Proto.Cluster
             Logger.LogInformation("Stopped Cluster {Id}", System.Id);
         }
 
-        public Task<PID?> GetAsync(string identity, string kind) => GetAsync(identity, kind, CancellationToken.None);
+        public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct) => IdentityLookup!.GetAsync(clusterIdentity, ct);
 
-        public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct) =>
-            IdentityLookup!.GetAsync(new ClusterIdentity {Identity = identity, Kind = kind}, ct);
+        public Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct) =>
+            ClusterContext.RequestAsync<T>(clusterIdentity, message, context, ct)!;
 
-        public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) =>
-            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, System.Root, ct);
-
-        public Task<T> RequestAsync<T>(string identity, string kind, object message, ISenderContext context, CancellationToken ct) =>
-            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct);
-
-
-        private Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
         public ActivatedClusterKind GetClusterKind(string kind)
         {
             if (!_clusterKinds.TryGetValue(kind, out var clusterKind))
@@ -148,12 +152,28 @@ namespace Proto.Cluster
 
             return clusterKind;
         }
-        
+
         public ActivatedClusterKind TryGetClusterKind(string kind)
         {
             _clusterKinds.TryGetValue(kind, out var clusterKind);
-            
+
             return clusterKind;
+        }
+
+        public ClusterIdentity GetIdentity(string identity, string kind)
+        {
+            var id = new ClusterIdentity
+            {
+                Identity = identity,
+                Kind = kind
+            };
+
+            if (PidCache.TryGet(id, out var pid))
+            {
+                id.CachedPid = pid;
+            }
+
+            return id;
         }
     }
 }

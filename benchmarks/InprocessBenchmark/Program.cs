@@ -14,7 +14,7 @@ using Proto.Mailbox;
 
 public class Program
 {
-    private static async Task Main(string[] args)
+    private static async Task Main()
     {
         var context = new RootContext(new ActorSystem());
         Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");

@@ -20,7 +20,7 @@ using ProtosReflection = Messages.ProtosReflection;
 
 class Program
 {
-    private static async Task Main(string[] args)
+    private static async Task Main()
     {
         Log.SetLoggerFactory(LoggerFactory.Create(c => c
                 .SetMinimumLevel(LogLevel.Information)
@@ -40,13 +40,13 @@ class Program
 
         Console.WriteLine("Enter client advertised host (Enter = localhost)");
         var advertisedHost = Console.ReadLine().Trim();
-        if (advertisedHost == "")
+        if (string.IsNullOrEmpty(advertisedHost))
             advertisedHost = "127.0.0.1";
 
         Console.WriteLine("Enter remote advertised host (Enter = localhost)");
         var remoteAddress = Console.ReadLine().Trim();
 
-        if (remoteAddress == "") remoteAddress = "127.0.0.1";
+        if (string.IsNullOrEmpty(remoteAddress)) remoteAddress = "127.0.0.1";
 
         var actorSystemConfig = new ActorSystemConfig()
             .WithDeadLetterThrottleCount(10)

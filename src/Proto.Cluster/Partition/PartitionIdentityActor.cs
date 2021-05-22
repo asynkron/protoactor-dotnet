@@ -30,7 +30,7 @@ namespace Proto.Cluster.Partition
 
         private readonly Dictionary<ClusterIdentity, Task<ActivationResponse>> _spawns = new();
 
-        private ulong _membershipHashCode;
+        private ulong _topologyHash;
         private readonly TimeSpan _identityHandoverTimeout;
 
         public PartitionIdentityActor(Cluster cluster, TimeSpan identityHandoverTimeout)
@@ -64,9 +64,9 @@ namespace Proto.Cluster.Partition
         private async Task OnClusterTopology(ClusterTopology msg, IContext context)
         {
             await _cluster.MemberList.TopologyConsensus();
-            if (_membershipHashCode == msg.MembershipHashCode) return;
+            if (_topologyHash == msg.TopologyHash) return;
 
-            _membershipHashCode = msg.MembershipHashCode;
+            _topologyHash = msg.TopologyHash;
             var members = msg.Members.ToArray();
 
             _rdv.UpdateMembers(members);
@@ -77,7 +77,7 @@ namespace Proto.Cluster.Partition
             var requests = new List<Task<IdentityHandoverResponse>>();
             var requestMsg = new IdentityHandoverRequest
             {
-                EventId = _membershipHashCode,
+                TopologyHash = _topologyHash,
                 Address = _myAddress
             };
 
@@ -97,7 +97,7 @@ namespace Proto.Cluster.Partition
 
                 //built in timeout on each request above
                 var responses = await Task.WhenAll(requests);
-                Logger.LogDebug("Got ownerships {EventId}", _membershipHashCode);
+                Logger.LogDebug("Got ownerships {EventId}", _topologyHash);
 
                 foreach (var response in responses)
                 {
@@ -181,7 +181,7 @@ namespace Proto.Cluster.Partition
             await _cluster.MemberList.TopologyConsensus();
 
             //Get activator
-            var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender.Address)?.Address;
+            var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
 
             //just make the code analyzer understand the address is not null after this block
             if (activatorAddress is null || string.IsNullOrEmpty(activatorAddress))

@@ -25,6 +25,12 @@ namespace Proto.Cluster
         {
             if (clusterIdentity is null) throw new ArgumentNullException(nameof(clusterIdentity));
 
+            if (clusterIdentity.CachedPid is { } identityCachedPid)
+            {
+                //If the PID is already cached using ClusterIdentity, we can skip the lookup altogether
+                pid = identityCachedPid;
+                return true;
+            }
             return _cacheDict.TryGetValue(clusterIdentity, out pid);
         }
 
@@ -34,7 +40,10 @@ namespace Proto.Cluster
 
             if (pid is null) throw new ArgumentNullException(nameof(pid));
 
-            return _cacheDict.TryAdd(clusterIdentity, pid);
+            if (!_cacheDict.TryAdd(clusterIdentity, pid)) return false;
+
+            clusterIdentity.CachedPid = pid;
+            return true;
         }
 
         public bool TryUpdate(ClusterIdentity clusterIdentity, PID newPid, PID existingPid)
@@ -45,22 +54,30 @@ namespace Proto.Cluster
 
             if (existingPid is null) throw new ArgumentNullException(nameof(existingPid));
 
-            return _cacheDict.TryUpdate(clusterIdentity, newPid, existingPid);
+            if (!_cacheDict.TryUpdate(clusterIdentity, newPid, existingPid)) return false;
+
+            clusterIdentity.CachedPid = newPid;
+            return true;
         }
 
         public bool TryRemove(ClusterIdentity clusterIdentity)
         {
             if (clusterIdentity is null) throw new ArgumentNullException(nameof(clusterIdentity));
 
+            clusterIdentity.CachedPid = null;
             return _cacheDict.TryRemove(clusterIdentity, out _);
         }
 
         public bool RemoveByVal(ClusterIdentity clusterIdentity, PID pid)
         {
-            var key = clusterIdentity;
-            if (_cacheDict.TryGetValue(key, out var existingPid) && existingPid.Id == pid.Id &&
+            if (clusterIdentity.CachedPid?.Equals(pid) == true)
+            {
+                clusterIdentity.CachedPid = null;
+            }
+
+            if (_cacheDict.TryGetValue(clusterIdentity, out var existingPid) && existingPid.Id == pid.Id &&
                 existingPid.Address == pid.Address)
-                return _cacheCollection.Remove(new KeyValuePair<ClusterIdentity, PID>(key, existingPid));
+                return _cacheCollection.Remove(new KeyValuePair<ClusterIdentity, PID>(clusterIdentity, existingPid));
 
             return false;
         }
@@ -74,6 +91,7 @@ namespace Proto.Cluster
 
             foreach (var item in toBeRemoved)
             {
+                item.Key.CachedPid = null;
                 _cacheCollection.Remove(item);
             }
         }

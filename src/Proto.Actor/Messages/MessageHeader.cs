@@ -31,7 +31,7 @@ namespace Proto
         public bool ContainsKey(string key) => Inner.ContainsKey(key);
 
         public bool TryGetValue(string key, out string value) =>
-            Inner.TryGetValue(key, out value);
+            Inner.TryGetValue(key, out value!);
 
         public string this[string key] => Inner[key];
 

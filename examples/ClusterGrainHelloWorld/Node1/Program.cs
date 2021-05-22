@@ -5,52 +5,48 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Threading.Tasks;
-using Messages;
+using ClusterHelloWorld.Messages;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
-using ProtosReflection = Messages.ProtosReflection;
+using static Proto.CancellationTokens;
+using ProtosReflection =ClusterHelloWorld.Messages.ProtosReflection;
 
 class Program
 {
-    private static async Task Main(string[] args)
+    private static async Task Main()
     {
-        var remoteConfig = GrpcCoreRemoteConfig
-            .BindToLocalhost()
-            .WithProtoMessages(ProtosReflection.Descriptor);
-
-        var consulProvider =
-            new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://consul:8500/"));
-
-        var clusterConfig =
-            ClusterConfig
-                .Setup("MyCluster", consulProvider, new PartitionIdentityLookup());
-
         var system = new ActorSystem()
-            .WithRemote(remoteConfig)
-            .WithCluster(clusterConfig);
+            .WithRemote(GrpcCoreRemoteConfig
+                .BindToLocalhost()
+                .WithProtoMessages(ProtosReflection.Descriptor))
+            .WithCluster(ClusterConfig
+                .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig()), new PartitionIdentityLookup()));
 
         await system
             .Cluster()
-            .StartMemberAsync();
+            .StartClientAsync();
 
+        Console.WriteLine("Started");
         await Task.Delay(2000);
 
-        var grains = new Grains(system.Cluster());
-        var client = grains.HelloGrain("Roger");
 
-        var res = await client.SayHello(new HelloRequest());
+        var helloGrain = system.Cluster().GetHelloGrain("MyGrain");
+        
+        var res = await helloGrain.SayHello(new HelloRequest(), WithTimeout(5000));
         Console.WriteLine(res.Message);
 
-        res = await client.SayHello(new HelloRequest());
+        res = await helloGrain.SayHello(new HelloRequest(), WithTimeout(5000));
         Console.WriteLine(res.Message);
+        
         Console.CancelKeyPress += async (e, y) => {
             Console.WriteLine("Shutting Down...");
             await system.Cluster().ShutdownAsync();
         };
+        
         await Task.Delay(-1);
     }
 }

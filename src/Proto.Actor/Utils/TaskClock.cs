@@ -14,7 +14,7 @@ namespace Proto.Utils
         private readonly TimeSpan _bucketSize;
         private readonly TimeSpan _updateInterval;
         private readonly CancellationToken _ct;
-        public Task CurrentBucket { get; private set; }
+        public Task CurrentBucket { get; private set; } = Task.CompletedTask;
         public TaskClock(TimeSpan timeout, TimeSpan updateInterval, CancellationToken ct)
         {
             _bucketSize = timeout + updateInterval;
@@ -35,7 +35,7 @@ namespace Proto.Utils
                         }
                         catch (OperationCanceledException)
                         {
-                            //ignore, expected
+                            //pass, expected
                         }
                     }
                 }

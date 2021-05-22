@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -213,6 +214,53 @@ namespace Proto.Cluster.Tests
                 $"Spawned, killed and spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}"
             );
         }
+        
+        [Fact]
+        public async Task LocalAffinityMovesActivationsOnRemoteSender()
+        {
+            var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+            var firstNode = Members[0];
+            var secondNode = Members[1];
+
+            await PingAndVerifyLocality(firstNode, timeout, "1:1",firstNode.System.Address, "Local affinity to sending node means that actors should spawn there");
+            LogProcessCounts();
+            await PingAndVerifyLocality(secondNode, timeout, "2:1",firstNode.System.Address, "As the current instances exist on the 'wrong' node, these should respond before being moved"
+            );
+            LogProcessCounts();
+
+            _testOutputHelper.WriteLine("Allowing time for actors to respawn..");
+            await Task.Delay(100, timeout);
+            LogProcessCounts();
+
+            await PingAndVerifyLocality(secondNode, timeout, "2.2", secondNode.System.Address, "Relocation should be triggered, and the actors should be respawned on the local node");
+            LogProcessCounts();
+
+            void LogProcessCounts() => _testOutputHelper.WriteLine(
+                $"Processes: {firstNode.System.Address}: {firstNode.System.ProcessRegistry.ProcessCount}, {secondNode.System.Address}: {secondNode.System.ProcessRegistry.ProcessCount}"
+            );
+        }
+        
+        private async Task PingAndVerifyLocality(Cluster cluster, CancellationToken token, string requestId, string expectResponseFrom = null, string because = null)
+        {
+            _testOutputHelper.WriteLine("Sending requests from " + cluster.System.Address);
+                
+            await Task.WhenAll(
+                Enumerable.Range(0, 1000).Select(async i => {
+                        var response = await cluster.RequestAsync<HereIAm>(CreateIdentity(i.ToString()), EchoActor.LocalAffinityKind, new WhereAreYou
+                        {
+                            RequestId = requestId
+                        }, token);
+
+                        response.Should().NotBeNull();
+
+                        if (expectResponseFrom != null)
+                        {
+                            response.Address.Should().Be(expectResponseFrom, because);
+                        }
+                    }
+                )
+            );
+        }
 
         private async Task PingPong(
             Cluster cluster,
@@ -250,6 +298,28 @@ namespace Proto.Cluster.Tests
     {
         // ReSharper disable once SuggestBaseTypeForParameter
         public InMemoryClusterTests(ITestOutputHelper testOutputHelper, InMemoryClusterFixture clusterFixture) : base(
+            testOutputHelper, clusterFixture
+        )
+        {
+        }
+    }
+    
+    // ReSharper disable once UnusedType.Global
+    public class InMemoryClusterTestsAlternativeClusterContext : ClusterTests, IClassFixture<InMemoryClusterFixtureAlternativeClusterContext>
+    {
+        // ReSharper disable once SuggestBaseTypeForParameter
+        public InMemoryClusterTestsAlternativeClusterContext(ITestOutputHelper testOutputHelper, InMemoryClusterFixtureAlternativeClusterContext clusterFixture) : base(
+            testOutputHelper, clusterFixture
+        )
+        {
+        }
+    }
+    
+    // ReSharper disable once UnusedType.Global
+    public class InMemoryClusterTestsSharedFutures : ClusterTests, IClassFixture<InMemoryClusterFixtureSharedFutures>
+    {
+        // ReSharper disable once SuggestBaseTypeForParameter
+        public InMemoryClusterTestsSharedFutures(ITestOutputHelper testOutputHelper, InMemoryClusterFixtureSharedFutures clusterFixture) : base(
             testOutputHelper, clusterFixture
         )
         {

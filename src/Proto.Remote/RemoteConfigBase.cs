@@ -70,5 +70,7 @@ namespace Proto.Remote
         public Serialization Serialization { get; init; } = new();
 
         public TimeSpan? WaitAfterEndpointTerminationTimeSpan { get; init; } = TimeSpan.FromSeconds(3);
+
+        public bool RemoteDiagnostics { get; set; }
     }
 }

@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Concurrent;
 using Google.Protobuf;
 
 namespace Proto.Remote
@@ -11,36 +12,28 @@ namespace Proto.Remote
     public class JsonSerializer : ISerializer
     {
         private readonly Serialization _serialization;
+        private readonly ConcurrentDictionary<string, Type> _jsonTypes = new ConcurrentDictionary<string, Type>();
 
         public JsonSerializer(Serialization serialization) => _serialization = serialization;
 
         public ByteString Serialize(object obj)
         {
-            if (obj is JsonMessage jsonMessage) return ByteString.CopyFromUtf8(jsonMessage.Json);
-
-            var message = obj as IMessage;
-            var json = JsonFormatter.Default.Format(message);
-            return ByteString.CopyFromUtf8(json);
+            return ByteString.CopyFromUtf8(System.Text.Json.JsonSerializer.Serialize(obj, _serialization.JsonSerializerOptions));
         }
 
         public object Deserialize(ByteString bytes, string typeName)
         {
             var json = bytes.ToStringUtf8();
-            var parser = _serialization.TypeLookup[typeName];
-
-            var o = parser.ParseJson(json);
-            return o;
+            var returnType = _jsonTypes.GetOrAdd(typeName, Type.GetType(typeName) ?? throw new Exception($"Type with the specified name {typeName} not found"));
+            var message = System.Text.Json.JsonSerializer.Deserialize(json, returnType, _serialization.JsonSerializerOptions) ?? throw new Exception($"Unable to deserialize message with type {typeName}");
+            return message;
         }
 
         public string GetTypeName(object obj)
         {
-            if (obj is JsonMessage jsonMessage)
-                return jsonMessage.TypeName;
-
-            if (obj is IMessage message)
-                return message.Descriptor.FullName;
-
-            throw new ArgumentException("obj must be of type IMessage", nameof(obj));
+            return obj?.GetType()?.AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(obj));
         }
+
+        public bool CanSerialize(object obj) => true;
     }
 }

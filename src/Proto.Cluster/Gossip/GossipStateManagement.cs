@@ -137,11 +137,11 @@ namespace Proto.Cluster.Gossip
             return (pendingOffsets, newState);
         }
         
-        public static (bool, uint) CheckConsensus(GossipState state, string myId, ImmutableHashSet<string> members)
+        public static (bool, ulong) CheckConsensus(GossipState state, string myId, ImmutableHashSet<string> members)
         {
             try
             {
-                var hashes = new List<(string,uint)>();
+                var hashes = new List<(string,ulong)>();
                 
                 foreach (var (memberId, memberState) in state.Members)
                 {
@@ -157,7 +157,7 @@ namespace Proto.Cluster.Gossip
                         hashes.Add((memberId,0));
                         continue;
                     }
-                    hashes.Add((memberId,topology.MembershipHashCode));
+                    hashes.Add((memberId,topology.TopologyHash));
                 }
 
                 var first = hashes.FirstOrDefault();

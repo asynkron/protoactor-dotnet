@@ -12,6 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Diagnostics;
 using Proto.Future;
 using Proto.Mailbox;
 
@@ -79,18 +80,6 @@ namespace Proto.Context
                 Logger.LogWarning("{Self} Tried to respond but sender is null, with message {Message}", Self, message);
         }
 
-        public PID Spawn(Props props)
-        {
-            var id = System.ProcessRegistry.NextId();
-            return SpawnNamed(props, id);
-        }
-
-        public PID SpawnPrefix(Props props, string prefix)
-        {
-            var name = prefix + System.ProcessRegistry.NextId();
-            return SpawnNamed(props, name);
-        }
-
         public PID SpawnNamed(Props props, string name)
         {
             if (props.GuardianStrategy is not null)
@@ -106,6 +95,18 @@ namespace Proto.Context
 
         public void Unwatch(PID pid) => pid.SendSystemMessage(System, new Unwatch(Self));
 
+        public void Set<T, TI>(TI obj) where TI : T
+        {
+            if (obj is null) throw new NullReferenceException(nameof(obj));
+
+            EnsureExtras();
+            _extras!.Store.Add<T>(obj);
+        }
+
+        public void Remove<T>() => _extras?.Store.Remove<T>();
+
+        public T? Get<T>() => (T?) _extras?.Store.Get<T>();
+
         public void SetReceiveTimeout(TimeSpan duration)
         {
             if (duration <= TimeSpan.Zero)
@@ -114,7 +115,7 @@ namespace Proto.Context
             if (duration == ReceiveTimeout) return;
 
             ReceiveTimeout = duration;
-
+            
             EnsureExtras();
             _extras!.StopReceiveTimeoutTimer();
 
@@ -158,27 +159,17 @@ namespace Proto.Context
                     break;
             }
         }
-
-        public void Request(PID target, object message)
-        {
-            var messageEnvelope = new MessageEnvelope(message, Self);
-            SendUserMessage(target, messageEnvelope);
-        }
-
+        
         public void Request(PID target, object message, PID? sender)
         {
             var messageEnvelope = new MessageEnvelope(message, sender);
             SendUserMessage(target, messageEnvelope);
         }
 
-        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => RequestAsync<T>(target, message, new FutureProcess(System, timeout));
-
+        //why does this method exist here and not as an extension?
+        //because DecoratorContexts needs to go this way if we want to intercept this method for the context
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
-
-        public Task<T> RequestAsync<T>(PID target, object message) =>
-            RequestAsync<T>(target, message, new FutureProcess(System));
+            => SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
@@ -220,11 +211,11 @@ namespace Proto.Context
 
         public Task StopAsync(PID pid)
         {
-            var future = new FutureProcess(System);
+            var future = System.Future.Get();
 
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
-
+            // ReSharper disable once MethodSupportsCancellation
             return future.Task;
         }
 
@@ -239,9 +230,11 @@ namespace Proto.Context
             if (System.Config.DeveloperSupervisionLogging)
             {
                 Console.WriteLine($"[Supervision] Actor {Self} : {Actor?.GetType().Name} failed with message:{message} exception:{reason}");
-                Logger.LogError("[Supervision] Actor {Self} : {ActorType} failed with message:{Message} exception:{Reason}",Self,Actor?.GetType().Name,message,reason);
-            }    
-            
+                Logger.LogError("[Supervision] Actor {Self} : {ActorType} failed with message:{Message} exception:{Reason}", Self,
+                    Actor?.GetType().Name, message, reason
+                );
+            }
+
             System.Metrics.InternalActorMetrics.ActorFailureCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
             var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
             Self.SendSystemMessage(System, SuspendMailbox.Instance);
@@ -267,6 +260,7 @@ namespace Proto.Context
                     Restart                         => HandleRestartAsync(),
                     SuspendMailbox or ResumeMailbox => default,
                     Continuation cont               => HandleContinuation(cont),
+                    ProcessDiagnosticsRequest pdr   => HandleProcessDiagnosticsRequest(pdr),
                     _                               => HandleUnknownSystemMessage(msg)
                 };
             }
@@ -277,6 +271,25 @@ namespace Proto.Context
             }
         }
 
+        private ValueTask HandleProcessDiagnosticsRequest(ProcessDiagnosticsRequest processDiagnosticsRequest)
+        {
+            var diagnosticsString = "ActorType:" + Actor?.GetType().Name + "\n";
+
+            if (Actor is IActorDiagnostics diagnosticsActor)
+            {
+                diagnosticsString += diagnosticsActor.GetDiagnosticsString();
+            }
+            else
+            {
+                var res = System.Config.DiagnosticsSerializer(Actor!);
+                diagnosticsString += res;
+            }
+            
+            processDiagnosticsRequest.Result.SetResult(diagnosticsString);
+
+            return default;
+        }
+
         public ValueTask InvokeUserMessageAsync(object msg)
         {
             if (System.Metrics.IsNoop)
@@ -285,7 +298,7 @@ namespace Proto.Context
             }
 
             return Await(this, msg);
-            
+
             //static, don't create a closure
             static async ValueTask Await(ActorContext self, object msg)
             {
@@ -347,7 +360,7 @@ namespace Proto.Context
                 //fast path, 0 alloc invocation of actor receive
             }
 
-            if (t.IsCompleted)
+            if (t.IsCompletedSuccessfully)
             {
                 _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
                 return default;
@@ -396,14 +409,26 @@ namespace Proto.Context
 
             return _extras;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Task DefaultReceive() =>
             Message switch
             {
-                PoisonPill => HandlePoisonPill(),
-                _          => Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this)
+                PoisonPill               => HandlePoisonPill(),
+                IAutoRespond autoRespond => HandleAutoRespond(autoRespond),
+                _                        => Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this)
             };
+
+        private Task HandleAutoRespond(IAutoRespond autoRespond)
+        {
+            // receive normally
+            var res =  Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this);
+            //then respond automatically
+            var response = autoRespond.GetAutoResponse();
+            Respond(response);
+            //return task from receive
+            return res;
+        }
 
         private Task HandlePoisonPill()
         {
@@ -413,26 +438,6 @@ namespace Proto.Context
             return Task.CompletedTask;
         }
 
-        private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)
-        {
-            var messageEnvelope = new MessageEnvelope(message, future.Pid);
-            SendUserMessage(target, messageEnvelope);
-            var result = await future.Task;
-
-            switch (result)
-            {
-                case DeadLetterResponse:
-                    throw new DeadLetterException(target);
-                case null:
-                case T:
-                    return (T) result!;
-                default:
-                    throw new InvalidOperationException(
-                        $"Unexpected message. Was type {result?.GetType()} but expected {typeof(T)}"
-                    );
-            }
-        }
-        
         private void SendUserMessage(PID target, object message)
         {
             if (_props.SenderMiddlewareChain is null)
@@ -446,7 +451,7 @@ namespace Proto.Context
                 _props.SenderMiddlewareChain(EnsureExtras().Context, target, MessageEnvelope.Wrap(message));
             }
         }
-        
+
         private IActor IncarnateActor()
         {
             _state = ContextState.Alive;
@@ -460,7 +465,6 @@ namespace Proto.Context
             return actor;
         }
 
-        
         private async ValueTask HandleRestartAsync()
         {
             _state = ContextState.Restarting;
@@ -560,7 +564,7 @@ namespace Proto.Context
             if (_extras?.Children.Count > 0) return default;
 
             CancelReceiveTimeout();
-            
+
             //all children are now stopped, should we restart or stop ourselves?
             switch (_state)
             {
@@ -633,5 +637,7 @@ namespace Proto.Context
 
             SendUserMessage(Self, Proto.ReceiveTimeout.Instance);
         }
+
+        public IFuture GetFuture() => System.Future.Get();
     }
 }

@@ -13,15 +13,16 @@ namespace Proto.Cluster.Partition
     class PartitionPlacementActor : IActor
     {
         private readonly Cluster _cluster;
-        private static readonly ILogger Logger = Log.CreateLogger<PartitionPlacementActor>();
+        private readonly ILogger _logger;
 
         //pid -> the actor that we have created here
         //kind -> the actor kind
-        private readonly Dictionary<ClusterIdentity, PID > _myActors = new();
+        private readonly Dictionary<ClusterIdentity, PID> _myActors = new();
 
         public PartitionPlacementActor(Cluster cluster)
         {
             _cluster = cluster;
+            _logger = Log.CreateLogger($"{nameof(PartitionPlacementActor)}-{cluster.LoggerId}");
         }
 
         public Task ReceiveAsync(IContext context) =>
@@ -43,7 +44,7 @@ namespace Proto.Cluster.Partition
                 Pid = pid,
                 ClusterIdentity = clusterIdentity,
             };
-            
+
             _cluster.MemberList.BroadcastEvent(activationTerminated);
 
             // var ownerAddress = _rdv.GetOwnerMemberByIdentity(clusterIdentity.Identity);
@@ -53,8 +54,6 @@ namespace Proto.Cluster.Partition
             _myActors.Remove(clusterIdentity);
             return Task.CompletedTask;
         }
-
-
 
         //this is pure, we do not change any state or actually move anything
         //the requester also provide its own view of the world in terms of members
@@ -77,8 +76,8 @@ namespace Proto.Cluster.Partition
                 //this identity is not owned by the requester
                 if (ownerAddress != requestAddress) continue;
 
-                Logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {EventId}", clusterIdentity, ownerAddress,
-                    msg.EventId
+                _logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {TopologyHash}", clusterIdentity, ownerAddress,
+                    msg.TopologyHash
                 );
 
                 var actor = new Activation {ClusterIdentity = clusterIdentity, Pid = pid};
@@ -89,7 +88,7 @@ namespace Proto.Cluster.Partition
             //always respond, this is request response msg
             context.Respond(response);
 
-            Logger.LogDebug("Transferred {Count} actor ownership to other members", count);
+            _logger.LogDebug("Transferred {Count} actor ownership to other members", count);
             return Task.CompletedTask;
         }
 
@@ -115,7 +114,7 @@ namespace Proto.Cluster.Partition
                     //as this id is unique for this activation (id+counter)
                     //we cannot get ProcessNameAlreadyExists exception here
 
-                    var clusterProps = clusterKind.Props.WithClusterInit(_cluster, msg.ClusterIdentity, clusterKind);
+                    var clusterProps = clusterKind.Props.WithClusterIdentity(msg.ClusterIdentity);
 
                     var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.Identity);
 

@@ -90,7 +90,7 @@ namespace Proto.Cluster.Gossip
             {
                 
             }
-            catch (Exception x)
+            catch (Exception)
             {
                 //TODO: log
             }

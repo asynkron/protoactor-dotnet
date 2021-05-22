@@ -40,12 +40,12 @@ namespace Saga.Factories
             string persistenceId
         )
         {
-            var transferProps = Props.FromProducer(() =>
-                    new TransferProcess(fromAccount, toAccount, amount, _provider, persistenceId, _random, _availability
-                    )
+            var transferProps = 
+                Props.FromProducer(() =>
+                    new TransferProcess(fromAccount, toAccount, amount, _provider, persistenceId, _random, _availability)
                 )
                 .WithChildSupervisorStrategy(
-                    new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, _retryAttempts, null)
+                    new OneForOneStrategy((_, _) => SupervisorDirective.Restart, _retryAttempts, null)
                 );
             var transfer = _context.SpawnNamed(transferProps, actorName);
             return transfer;

@@ -37,7 +37,6 @@ namespace Proto.Cluster.Consul
         private readonly TimeSpan _serviceTtl; //this is how long the service is healthy without a ttl refresh
 
         private Cluster _cluster;
-        private string _consulLeaderKey;
         private string _consulServiceInstanceId; //the specific instance id of this node in consul
 
         private string _consulServiceName; //name of the custer, in consul this means the name of the service

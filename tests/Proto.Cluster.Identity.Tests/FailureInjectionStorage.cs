@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Proto.Cluster.Identity.Tests
 {
-    public class FailureInjectionStorage : IIdentityStorage
+    public sealed class FailureInjectionStorage : IIdentityStorage
     {
         private const double SuccessRate = 0.8;
         private static readonly Random Mayhem = new();
@@ -53,9 +53,9 @@ namespace Proto.Cluster.Identity.Tests
             return _identityStorageImplementation.StoreActivation(memberId, spawnLock, pid, ct);
         }
 
-        public Task RemoveActivation(PID pid, CancellationToken ct) =>
+        public Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct) =>
             // MaybeFail();
-            _identityStorageImplementation.RemoveActivation(pid, ct);
+            _identityStorageImplementation.RemoveActivation(clusterIdentity, pid, ct);
 
         public Task RemoveMember(string memberId, CancellationToken ct) => _identityStorageImplementation.RemoveMember(memberId, ct);
 

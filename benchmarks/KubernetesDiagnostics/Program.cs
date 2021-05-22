@@ -17,7 +17,7 @@ namespace KubernetesDiagnostics
 {
     public static class Program
     {
-        public static async Task Main(string[] args)
+        public static async Task Main()
         {
             /*
              *  docker build . -t rogeralsing/kubdiagg   

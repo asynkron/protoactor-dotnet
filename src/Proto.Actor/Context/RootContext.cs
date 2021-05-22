@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Proto.Future;
+using Proto.Utils;
 
 namespace Proto
 {
@@ -37,18 +38,20 @@ namespace Proto
 
         private Sender? SenderMiddleware { get; init; }
         public ActorSystem System { get; }
+        private TypeDictionary<object, RootContext> Store { get; } = new(0, 1);
+
+        public T? Get<T>() => (T?) Store.Get<T>();
+
+        public void Set<T, TI>(TI obj) where TI : T => Store.Add<T>(obj!);
+
+        public void Remove<T>() => Store.Remove<T>();
+
         public MessageHeader Headers { get; init; }
 
         public PID? Parent => null;
         public PID? Self => null;
         PID? IInfoContext.Sender => null;
         public IActor? Actor => null;
-
-        public PID Spawn(Props props)
-        {
-            var name = System.ProcessRegistry.NextId();
-            return SpawnNamed(props, name);
-        }
 
         public PID SpawnNamed(Props props, string name)
         {
@@ -58,17 +61,9 @@ namespace Proto
             return props.Spawn(System, name, parent);
         }
 
-        public PID SpawnPrefix(Props props, string prefix)
-        {
-            var name = prefix + System.ProcessRegistry.NextId();
-            return SpawnNamed(props, name);
-        }
-
         public object? Message => null;
 
         public void Send(PID target, object message) => SendUserMessage(target, message);
-
-        public void Request(PID target, object message) => SendUserMessage(target, message);
 
         public void Request(PID target, object message, PID? sender)
         {
@@ -76,14 +71,10 @@ namespace Proto
             Send(target, envelope);
         }
 
-        public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout)
-            => RequestAsync<T>(target, message, new FutureProcess(System, timeout));
-
+        //why does this method exist here and not as an extension?
+        //because DecoratorContexts needs to go this way if we want to intercept this method for the context
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-            => RequestAsync<T>(target, message, new FutureProcess(System, cancellationToken));
-
-        public Task<T> RequestAsync<T>(PID target, object message) =>
-            RequestAsync<T>(target, message, new FutureProcess(System));
+            => SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
 
         public void Stop(PID? pid)
         {
@@ -95,8 +86,7 @@ namespace Proto
 
         public Task StopAsync(PID pid)
         {
-            var future = new FutureProcess(System);
-
+            var future = System.Future.Get();
             pid.SendSystemMessage(System, new Watch(future.Pid));
             Stop(pid);
 
@@ -123,28 +113,6 @@ namespace Proto
             return Task.CompletedTask;
         }
 
-        private async Task<T> RequestAsync<T>(PID target, object message, FutureProcess future)
-        {
-            if (target is null) throw new ArgumentNullException(nameof(target));
-
-            var messageEnvelope = new MessageEnvelope(message, future.Pid);
-            SendUserMessage(target, messageEnvelope);
-            var result = await future.Task;
-
-            switch (result)
-            {
-                case DeadLetterResponse deadLetterResponse:
-                    throw new DeadLetterException(deadLetterResponse.Target);
-                case null:
-                case T _:
-                    return (T) result!;
-                default:
-                    throw new InvalidOperationException(
-                        $"Unexpected message. Was type {result.GetType()} but expected {typeof(T)}"
-                    );
-            }
-        }
-
         private void SendUserMessage(PID target, object message)
         {
             if (target is null) throw new ArgumentNullException(nameof(target));
@@ -160,5 +128,7 @@ namespace Proto
                 target.SendUserMessage(System, message);
             }
         }
+
+        public IFuture GetFuture() => System.Future.Get();
     }
 }

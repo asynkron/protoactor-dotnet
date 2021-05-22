@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using Proto.Diagnostics;
 using Proto.Mailbox;
 using Proto.Remote.Metrics;
 
@@ -48,7 +49,9 @@ namespace Proto.Remote
             return Task.FromResult(
                 new ConnectResponse
                 {
-                    DefaultSerializerId = _serialization.DefaultSerializerId
+                    // NOTE: This is here for backward compatibility. Current version of Serialization
+                    // implementation doesn't utilize the default serializer idea.
+                    DefaultSerializerId = Serialization.SERIALIZER_ID_PROTOBUF,
                 }
             );
         }
@@ -94,7 +97,9 @@ namespace Proto.Remote
 
                 for (var i = 0; i < batch.TargetNames.Count; i++)
                 {
-                    targets[i] = PID.FromAddress(_system.Address, batch.TargetNames[i]);
+                    var pid = PID.FromAddress(_system.Address, batch.TargetNames[i]);
+                    pid.Ref(_system);
+                    targets[i] = pid;
                 }
 
                 var typeNames = batch.TypeNames.ToArray();
@@ -104,6 +109,11 @@ namespace Proto.Remote
                 foreach (var envelope in batch.Envelopes)
                 {
                     var target = targets[envelope.Target];
+
+                    if (envelope.RequestId != default)
+                    {
+                        target = target.WithRequestId(envelope.RequestId);
+                    }
                     var typeName = typeNames[envelope.TypeId];
 
                     if (!_system.Metrics.IsNoop) m.Inc(new[] {_system.Id, _system.Address, typeName});
@@ -114,6 +124,10 @@ namespace Proto.Remote
                     {
                         message =
                             _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
+
+                        //translate from on-the-wire representation to in-process representation
+                        //this only applies to root level messages, and never on nested child messages
+                        if (message is IRootSerialized serialized) message = serialized.Deserialize(_system);
                     }
                     catch (Exception)
                     {
@@ -171,6 +185,35 @@ namespace Proto.Remote
             if (endpoint is null) return;
 
             _system.Root.Send(endpoint, rt);
+        }
+
+        public override Task<ListProcessesResponse> ListProcesses(ListProcessesRequest request, ServerCallContext context)
+        {
+            if (!_system.Remote().Config.RemoteDiagnostics)
+            {
+                throw new Exception("RemoteDiagnostics is not enabled");
+            }
+            
+            var pids = _system.ProcessRegistry.SearchByName(request.Name).ToArray();
+            return Task.FromResult(new ListProcessesResponse()
+                {
+                    Pids = {pids}
+                }
+            );
+        }
+
+        public override async Task<GetProcessDiagnosticsResponse> GetProcessDiagnostics(GetProcessDiagnosticsRequest request, ServerCallContext context)
+        {
+            if (!_system.Remote().Config.RemoteDiagnostics)
+            {
+                throw new Exception("RemoteDiagnostics is not enabled");
+            }
+            
+            var res = await DiagnosticTools.GetDiagnosticsString(_system, request.Pid);
+            return new GetProcessDiagnosticsResponse()
+            {
+                DiagnosticsString = res
+            };
         }
     }
 }

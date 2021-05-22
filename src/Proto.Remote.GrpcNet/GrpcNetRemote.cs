@@ -16,6 +16,7 @@ namespace Proto.Remote.GrpcNet
 {
     public class GrpcNetRemote : IRemote
     {
+        private readonly object _lock = new(); 
         private readonly GrpcNetRemoteConfig _config;
         private readonly ILogger _logger = Log.CreateLogger<GrpcNetRemote>();
         private EndpointManager _endpointManager = null!;
@@ -27,7 +28,7 @@ namespace Proto.Remote.GrpcNet
         {
             System = system;
             _config = config;
-            system.Metrics.RegisterKnownMetrics(new RemoteMetrics(system.Metrics));
+            system.Metrics.Register(new RemoteMetrics(system.Metrics));
             System.Extensions.Register(this);
             System.Extensions.Register(config.Serialization);
         }
@@ -38,7 +39,7 @@ namespace Proto.Remote.GrpcNet
 
         public Task StartAsync()
         {
-            lock (this)
+            lock (_lock)
             {
                 if (Started)
                     return Task.CompletedTask;
@@ -106,7 +107,7 @@ namespace Proto.Remote.GrpcNet
 
         public async Task ShutdownAsync(bool graceful = true)
         {
-            lock (this)
+            lock (_lock)
             {
                 if (!Started)
                     return;

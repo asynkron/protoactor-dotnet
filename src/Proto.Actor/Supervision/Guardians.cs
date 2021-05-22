@@ -53,11 +53,11 @@ namespace Proto
             throw new InvalidOperationException("Guardian cannot escalate failure.");
 
         public void RestartChildren(Exception reason, params PID[] pids) =>
-            pids?.SendSystemMessage(new Restart(reason), System);
+            pids.SendSystemMessage(new Restart(reason), System);
 
-        public void StopChildren(params PID[] pids) => pids?.Stop(System);
+        public void StopChildren(params PID[] pids) => pids.Stop(System);
 
-        public void ResumeChildren(params PID[] pids) => pids?.SendSystemMessage(ResumeMailbox.Instance, System);
+        public void ResumeChildren(params PID[] pids) => pids.SendSystemMessage(ResumeMailbox.Instance, System);
 
         protected internal override void SendUserMessage(PID pid, object message)
             => throw new InvalidOperationException("Guardian actor cannot receive any user messages.");

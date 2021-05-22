@@ -54,6 +54,7 @@ namespace Proto.Remote
         public void PostSystemMessage(object msg)
         {
             _systemMessages.Push(msg);
+            
 
             // Logger.LogDebug("[EndpointWriterMailbox] received System Message {@Message}", msg);
             Schedule();
@@ -101,6 +102,9 @@ namespace Proto.Remote
                         case EndpointErrorEvent e:
                             if (!_suspended) // Since it's already stopped, there is no need to throw the error
                                 await _invoker!.InvokeUserMessageAsync(sys);
+                            break;
+                        case EndpointConnectedEvent:
+                            //endpoint connected event is not a real system message, do not pass it to the invoker
                             break;
                         default:
                             await _invoker!.InvokeSystemMessageAsync(sys);

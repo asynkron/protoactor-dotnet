@@ -25,24 +25,24 @@ namespace Saga
         {
             switch (context.Message)
             {
-                case Started _:
+                case Started:
                     // imagine this is some sort of remote call rather than a local actor call
                     context.Send(_target, _createMessage(context.Self));
                     context.SetReceiveTimeout(TimeSpan.FromMilliseconds(100));
                     break;
                 case OK msg:
                     context.CancelReceiveTimeout();
-                    context.Send(context.Parent, msg);
+                    context.Send(context.Parent!, msg);
                     break;
                 case Refused msg:
                     context.CancelReceiveTimeout();
-                    context.Send(context.Parent, msg);
+                    context.Send(context.Parent!, msg);
                     break;
                 // This emulates a failed remote call
-                case InsufficientFunds _:
-                case InternalServerError _:
-                case ReceiveTimeout _:
-                case ServiceUnavailable _: //TODO - this gives us more information than a failure
+                case InsufficientFunds:
+                case InternalServerError:
+                case ReceiveTimeout:
+                case ServiceUnavailable: //TODO - this gives us more information than a failure
                     throw new Exception();
             }
 

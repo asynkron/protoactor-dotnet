@@ -17,7 +17,7 @@ namespace Proto.Cluster.Gossip
         private GossipState _state = new();
         private readonly Random _rnd = new();
         private ImmutableDictionary<string, long> _committedOffsets = ImmutableDictionary<string, long>.Empty;
-        private uint _clusterTopologyHash;
+        private ulong _clusterTopologyHash;
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
@@ -27,7 +27,7 @@ namespace Proto.Cluster.Gossip
             _                           => Task.CompletedTask
         };
 
-        private async Task OnGossipRequest(IContext context, GossipRequest gossipRequest)
+        private Task OnGossipRequest(IContext context, GossipRequest gossipRequest)
         {
             var remoteState = gossipRequest.State;
             //Console.WriteLine("Got gossip request");
@@ -40,6 +40,7 @@ namespace Proto.Cluster.Gossip
 
             var response = new GossipResponse();
             context.Respond(response);
+            return Task.CompletedTask;
         }
 
         private void CheckConsensus(IContext context)

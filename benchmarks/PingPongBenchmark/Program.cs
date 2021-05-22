@@ -8,7 +8,7 @@ namespace LocalPingPong
 {
     class Program
     {
-        private static async Task Main(string[] args)
+        private static async Task Main()
         {
             const int messageCount = 1000000;
             const int batchSize = 100;

@@ -27,26 +27,30 @@ namespace Proto.Cluster
         public static Cluster Cluster(this IContext context)
             => context.System.Extensions.Get<Cluster>() ?? throw new NotSupportedException("Cluster has not been configured");
 
-        public static Task<T> ClusterRequestAsync<T>(this IContext context, string identity, string kind, object message, CancellationToken ct)
-        {
-            var cluster = context.System.Extensions.Get<Cluster>();
+        public static Task<T> ClusterRequestAsync<T>(this IContext context, string identity, string kind, object message, CancellationToken ct) =>
             //call cluster RequestAsync using actor context
-            return cluster.RequestAsync<T>(identity, kind, message, context, ct);
-        }
+            context.System.Cluster()!.RequestAsync<T>(identity, kind, message, context, ct);
 
-        public static Props WithClusterInit(this Props props, Cluster cluster, ClusterIdentity clusterIdentity, ActivatedClusterKind activatedClusterKind)
+        public static Props WithClusterIdentity(this Props props, ClusterIdentity clusterIdentity)
+            => props.WithOnInit(context => context.Set(clusterIdentity));
+
+        internal static Props WithClusterKind(
+            this Props props,
+            ActivatedClusterKind clusterKind
+        )
         {
-            return props.WithReceiverMiddleware(
-                baseReceive =>
-                    (ctx, env) => {
-                        return env.Message switch
-                        {
-                            Started => HandleStart(baseReceive, ctx, env),
-                            Stopped => HandleStopped(baseReceive, ctx, env),
-                            _       => baseReceive(ctx, env)
-                        };
-                    }
-            );
+            return props
+                .WithReceiverMiddleware(
+                    baseReceive =>
+                        (ctx, env) => {
+                            return env.Message switch
+                            {
+                                Started => HandleStart(baseReceive, ctx, env),
+                                Stopped => HandleStopped(baseReceive, ctx, env),
+                                _       => baseReceive(ctx, env)
+                            };
+                        }
+                );
 
             async Task HandleStart(
                 Receiver baseReceive,
@@ -55,24 +59,27 @@ namespace Proto.Cluster
             )
             {
                 await baseReceive(ctx, startEnvelope);
-                var grainInit = new ClusterInit(clusterIdentity, cluster);
+                var identity = ctx.Get<ClusterIdentity>();
+                var cluster = ctx.System.Cluster();
+                var grainInit = new ClusterInit(identity!, cluster);
                 var grainInitEnvelope = new MessageEnvelope(grainInit, null);
-                var count = activatedClusterKind.Inc();
+                var count = clusterKind.Inc();
                 cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
-                    .Set(count,new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
+                    .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterKind.Name});
                 await baseReceive(ctx, grainInitEnvelope);
             }
 
             async Task HandleStopped(
                 Receiver baseReceive,
                 IReceiverContext ctx,
-                MessageEnvelope startEnvelope
+                MessageEnvelope stopEnvelope
             )
             {
-                var count = activatedClusterKind.Dec();
+                var count = clusterKind.Dec();
+                var cluster = ctx.System.Cluster();
                 cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
-                    .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterIdentity.Kind});
-                await baseReceive(ctx, startEnvelope);
+                    .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterKind.Name});
+                await baseReceive(ctx, stopEnvelope);
             }
         }
 
@@ -98,10 +105,10 @@ namespace Proto.Cluster
                     {
                         var pid = envelope.Sender;
 
-                        if (pid is not null && int.TryParse(pid.Id[1..], out var id) &&
+                        if (pid is not null && pid.RequestId > 0 && int.TryParse(pid.Id[1..], out var id) &&
                             memberList.TryGetMemberIndexByAddress(pid.Address, out var memberId))
                         {
-                            pidRef = new PidRef(memberId, id);
+                            pidRef = new PidRef(memberId, id, pid.RequestId);
                             return true;
                         }
 
@@ -115,18 +122,20 @@ namespace Proto.Cluster
         {
             public int MemberId { get; }
             public int Id { get; }
+            public uint RequestId { get; }
 
-            public PidRef(int memberId, int id)
+            public PidRef(int memberId, int id, uint requestId)
             {
                 MemberId = memberId;
                 Id = id;
+                RequestId = requestId;
             }
 
-            public bool Equals(PidRef other) => MemberId == other.MemberId && Id == other.Id;
+            public bool Equals(PidRef other) => MemberId == other.MemberId && Id == other.Id && RequestId == other.RequestId;
 
             public override bool Equals(object? obj) => obj is PidRef other && Equals(other);
 
-            public override int GetHashCode() => HashCode.Combine(MemberId, Id);
+            public override int GetHashCode() => HashCode.Combine(MemberId, Id, RequestId);
         }
     }
 }
