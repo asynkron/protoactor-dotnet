@@ -4,8 +4,6 @@
     <IsPackable>true</IsPackable>
     <Nullable>enable</Nullable>
     <LangVersion>9</LangVersion>
-    <Configurations>Debug;Release;CoreOnly</Configurations>
-    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
