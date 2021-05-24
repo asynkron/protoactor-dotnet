@@ -7,6 +7,6 @@
     <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotnet" Version="0.12.1" />
+    <PackageReference Include="BenchmarkDotnet" Version="0.13.0" />
   </ItemGroup>
 </Project>
