@@ -74,31 +74,29 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine("All responses OK. Terminating fixture");
         }
 
-        // [Fact]
-        // public async Task HandlesLosingANodeWhileProcessing()
-        // {
-        //     var ingressNodes = new[] {Members[0], Members[1]};
-        //     var victim = Members[2];
-        //     var ids = Enumerable.Range(1, 200).Select(id => id.ToString()).ToList();
-        //
-        //     var cts = new CancellationTokenSource();
-        //
-        //     var worker = Task.Run(async () => {
-        //             while (!cts.IsCancellationRequested)
-        //             {
-        //                 await CanGetResponseFromAllIdsOnAllNodes(ids, ingressNodes, 10000);
-        //             }
-        //         }
-        //     );
-        //     await Task.Delay(200);
-        //     await ClusterFixture.RemoveNode(victim);
-        //     await ClusterFixture.SpawnNode();
-        //     await Task.Delay(1000);
-        //     cts.Cancel();
-        //     await worker;
-        //
-        //     //Repair cluster..
-        // }
+        [Fact]
+        public async Task HandlesLosingANodeWhileProcessing()
+        {
+            var ingressNodes = new[] {Members[0], Members[1]};
+            var victim = Members[2];
+            var ids = Enumerable.Range(1, 200).Select(id => id.ToString()).ToList();
+        
+            var cts = new CancellationTokenSource();
+        
+            var worker = Task.Run(async () => {
+                    while (!cts.IsCancellationRequested)
+                    {
+                        await CanGetResponseFromAllIdsOnAllNodes(ids, ingressNodes, 10000);
+                    }
+                }
+            );
+            await Task.Delay(200);
+            await ClusterFixture.RemoveNode(victim);
+            await ClusterFixture.SpawnNode();
+            await Task.Delay(1000);
+            cts.Cancel();
+            await worker;
+        }
 
         private async Task CanGetResponseFromAllIdsOnAllNodes(IEnumerable<string> actorIds, IList<Cluster> nodes, int timeoutMs)
         {
@@ -320,6 +318,17 @@ namespace Proto.Cluster.Tests
     {
         // ReSharper disable once SuggestBaseTypeForParameter
         public InMemoryClusterTestsSharedFutures(ITestOutputHelper testOutputHelper, InMemoryClusterFixtureSharedFutures clusterFixture) : base(
+            testOutputHelper, clusterFixture
+        )
+        {
+        }
+    }
+    
+    // ReSharper disable once UnusedType.Global
+    public class InMemoryClusterTestsPidCacheInvalidation : ClusterTests, IClassFixture<InMemoryPidCacheInvalidationClusterFixture>
+    {
+        // ReSharper disable once SuggestBaseTypeForParameter
+        public InMemoryClusterTestsPidCacheInvalidation(ITestOutputHelper testOutputHelper, InMemoryPidCacheInvalidationClusterFixture clusterFixture) : base(
             testOutputHelper, clusterFixture
         )
         {
