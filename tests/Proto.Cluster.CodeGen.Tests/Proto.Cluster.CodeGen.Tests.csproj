@@ -21,9 +21,7 @@
         </PackageReference>
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Proto.Cluster.CodeGen\Proto.Cluster.CodeGen.csproj" />
-    </ItemGroup>
+
 
     <ItemGroup>
       <None Remove="foo.proto" />
@@ -34,6 +32,12 @@
       <Content Include="bar.proto">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
+    </ItemGroup>
+
+
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Proto.Cluster.CodeGen\Proto.Cluster.CodeGen.csproj" />
     </ItemGroup>
 
 </Project>
