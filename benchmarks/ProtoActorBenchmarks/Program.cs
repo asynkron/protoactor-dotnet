@@ -7,8 +7,8 @@ using BenchmarkDotNet.Running;
 
 namespace ProtoActorBenchmarks
 {
-    public class Program
+    public static class Program
     {
-        public static void Main(string[] args) => BenchmarkRunner.Run<ShortBenchmark>();
+        public static void Main() => BenchmarkRunner.Run<SkyNetBenchmark>();
     }
 }
