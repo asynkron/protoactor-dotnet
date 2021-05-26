@@ -170,7 +170,7 @@ namespace Proto.Cluster.Identity
 
         private Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity)
         {
-            async Task<SpawnLock?> Inner() => await _storage.TryAcquireLock(clusterIdentity, CancellationTokens.FromSeconds(5));
+            Task<SpawnLock?> Inner() => _storage.TryAcquireLock(clusterIdentity, CancellationTokens.FromSeconds(5));
 
             return Metrics.TryAcquireLockHistogram.Observe(Inner, _cluster.System.Id, _cluster.System.Address, clusterIdentity.Kind);
         }
@@ -243,7 +243,7 @@ namespace Proto.Cluster.Identity
         {
             if (activation?.Pid == null) return null;
 
-            var memberExists = activation.MemberId == null || _memberList.ContainsMemberId(activation.MemberId);
+            var memberExists = _memberList.ContainsMemberId(activation.MemberId);
             if (memberExists) return activation.Pid;
 
             if (StaleMembers.TryAdd(activation.MemberId!))
