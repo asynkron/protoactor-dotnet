@@ -15,13 +15,14 @@ using Google.Protobuf;
 using Proto;
 using Proto.Cluster;
 
-
 namespace {{CsNamespace}}
 {
     public static class GrainExtensions
     {
         {{#each Services}}
         public static {{Name}}Client Get{{Name}}(this Cluster cluster, string identity) => new(cluster, identity);
+
+        public static {{Name}}Client Get{{Name}}(this IContext context, string identity) => new(context.System.Cluster(), identity);
         {{/each}}
     }
 
@@ -29,6 +30,8 @@ namespace {{CsNamespace}}
     public abstract class {{Name}}Base
     {
         protected IContext Context {get;}
+        protected ActorSystem System => Context.System;
+        protected Cluster Cluster => Context.System.Cluster();
     
         protected {{Name}}Base(IContext context)
         {
@@ -112,7 +115,7 @@ namespace {{CsNamespace}}
     {
         private {{Name}}Base _inner;
         private IContext _context;
-        private Func<IContext, string, string, {{Name}}Base> _innerFactory;
+        private Func<IContext, string, string, {{Name}}Base> _innerFactory;        
     
         public {{Name}}Actor(Func<IContext, string, string, {{Name}}Base> innerFactory)
         {
