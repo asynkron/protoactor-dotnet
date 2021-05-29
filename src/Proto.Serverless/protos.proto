@@ -16,6 +16,20 @@ message ReceiveResponse {
   google.protobuf.Any response = 2;
 }
 
-service Serverless {
+service Receiver {
   rpc Receive(ReceiveRequest) returns (ReceiveResponse) {}
+}
+
+message SendRequest {
+  string identity = 1;
+  string kind = 2;
+  google.protobuf.Any request = 3;
+}
+
+message SendResponse {
+  google.protobuf.Any response = 1;
+}
+
+service Sender {
+  rpc Send(SendRequest) returns (SendResponse) {}
 }

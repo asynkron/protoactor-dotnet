@@ -3,24 +3,27 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Proto.Cluster;
+using Proto.Utils;
 
 namespace Proto.Serverless
 {
-    public class ServerlessActor : IActor
+    public class ShapelessActor : IActor
     {
         private string _kind;
         private string _identity;
         private Any _state = null;
-        private readonly Serverless.ServerlessClient _client;
+        private readonly Receiver.ReceiverClient _client;
+        private readonly IKeyValueStore<Any> _store;
+        private string _key;
 
-        public ServerlessActor(Serverless.ServerlessClient client)
+        public ShapelessActor(Receiver.ReceiverClient client, IKeyValueStore<Any> store)
         {
             _client = client;
+            _store = store;
         }
 
         public Task ReceiveAsync(IContext context) => context.Message switch
@@ -42,19 +45,21 @@ namespace Proto.Serverless
             );
 
             _state = response.State;
+            await _store.SetAsync(_key, _state, CancellationTokens.FromSeconds(5));
             var r = response.Response;
             //How to handle here?
 
             context.Respond(r);
         }
 
-        private Task OnStarted(IContext context)
+        private async Task OnStarted(IContext context)
         {
             var ci = context.Get<ClusterIdentity>()!;
             _identity = ci.Identity;
             _kind = ci.Kind;
+            _key = ci.ToDiagnosticString();
 
-            return Task.CompletedTask;
+            _state = await _store.GetAsync(_key, CancellationTokens.FromSeconds(5));
         }
     }
 }
