@@ -2,16 +2,18 @@
 syntax = "proto3";
 package serverless;
 option csharp_namespace = "Proto.Serverless";
+import "google/protobuf/any.proto";
 
 message ReceiveRequest {
   string identity = 1;
   string kind = 2;
-  bytes state = 3;
-  bytes message = 4;
+  google.protobuf.Any state = 3;
+  google.protobuf.Any request = 4;
 }
 
 message ReceiveResponse {
-  bytes state = 1;
+  google.protobuf.Any state = 1;
+  google.protobuf.Any response = 2;
 }
 
 service Serverless {
