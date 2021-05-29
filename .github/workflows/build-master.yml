@@ -33,7 +33,7 @@ jobs:
           dotnet-version: '3.1.x'
 
       - name: Build
-        run: dotnet build -c Release
+        run: dotnet build ProtoActor.sln -c Release
 
       - name: Run tests netcoreapp3.1
         env:
@@ -49,7 +49,6 @@ jobs:
         run: |
           dotnet test ProtoActor.sln -c Release --framework net5.0 --no-build
 
-        
   nuget:
     runs-on: ubuntu-latest
     needs: [test]
