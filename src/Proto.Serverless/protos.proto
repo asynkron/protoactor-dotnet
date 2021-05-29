@@ -1,0 +1,19 @@
+
+syntax = "proto3";
+package serverless;
+option csharp_namespace = "Proto.Serverless";
+
+message ReceiveRequest {
+  string identity = 1;
+  string kind = 2;
+  bytes state = 3;
+  bytes message = 4;
+}
+
+message ReceiveResponse {
+  bytes state = 1;
+}
+
+service Serverless {
+  rpc Receive(ReceiveRequest) returns (ReceiveResponse) {}
+}
