@@ -75,19 +75,22 @@ namespace Proto.Cluster
                     _topologyConsensus.TrySetResult(true);
                     var leaderId = LeaderElection.Elect(_memberState);
                     var newLeader = _members.GetById(leaderId);
-                    if (!newLeader.Equals(_leader))
+                    if (newLeader != null)
                     {
-                        _leader = newLeader;
-                        _system.EventStream.Publish(new LeaderElected(newLeader));
+                        if (!newLeader.Equals(_leader))
+                        {
+                            _leader = newLeader;
+                            _system.EventStream.Publish(new LeaderElected(newLeader));
 
-                        // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
-                        if (_leader.Id == _system.Id)
-                        {
-                            Logger.LogInformation("[MemberList] I am leader {Id}", _leader.Id);
-                        }
-                        else
-                        {
-                            Logger.LogInformation("[MemberList] Member {Id} is leader", _leader.Id);
+                            // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
+                            if (_leader.Id == _system.Id)
+                            {
+                                Logger.LogInformation("[MemberList] I am leader {Id}", _leader.Id);
+                            }
+                            else
+                            {
+                                Logger.LogInformation("[MemberList] Member {Id} is leader", _leader.Id);
+                            }
                         }
                     }
                 }
