@@ -15,32 +15,14 @@ using Google.Protobuf;
 using Proto;
 using Proto.Cluster;
 
-
 namespace {{CsNamespace}}
 {
-    public static class Grains
-    {
-        public static class Factory<T>
-        {
-            public static Func<IContext,string,string,T> Create;
-        }
-        
-        public static (string,Props)[] GetClusterKinds()  => 
-            new (string,Props)[] 
-            { 
-            {{#each Services}}	
-                (""{{Name}}"", Props.FromProducer(() => new {{Name}}Actor())),
-            {{/each}}
-            };
-    }        
-    
     public static class GrainExtensions
     {
-        public static ClusterConfig With{{PackageName}}Kinds(this ClusterConfig config) => 
-         config.WithClusterKinds(Grains.GetClusterKinds());
-    
         {{#each Services}}
         public static {{Name}}Client Get{{Name}}(this Cluster cluster, string identity) => new(cluster, identity);
+
+        public static {{Name}}Client Get{{Name}}(this IContext context, string identity) => new(context.System.Cluster(), identity);
         {{/each}}
     }
 
@@ -48,6 +30,8 @@ namespace {{CsNamespace}}
     public abstract class {{Name}}Base
     {
         protected IContext Context {get;}
+        protected ActorSystem System => Context.System;
+        protected Cluster Cluster => Context.System.Cluster();
     
         protected {{Name}}Base(IContext context)
         {
@@ -107,6 +91,23 @@ namespace {{CsNamespace}}
                 _ => throw new NotSupportedException()
             };
         }
+        
+        public async Task<{{OutputName}}> {{Name}}({{InputName}} request, ISenderContext context, CancellationToken ct)
+        {
+            var gr = new GrainRequestMessage({{Index}}, request);
+            //request the RPC method to be invoked
+            var res = await _cluster.RequestAsync<object>(_id, ""{{../Name}}"", gr,context, ct);
+
+            return res switch
+            {
+                // normal response
+                GrainResponseMessage grainResponse => ({{OutputName}})grainResponse.ResponseMessage,
+                // error response
+                GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                // unsupported response
+                _ => throw new NotSupportedException()
+            };
+        }
 		{{/each}}
     }
 
@@ -114,6 +115,12 @@ namespace {{CsNamespace}}
     {
         private {{Name}}Base _inner;
         private IContext _context;
+        private Func<IContext, string, string, {{Name}}Base> _innerFactory;        
+    
+        public {{Name}}Actor(Func<IContext, string, string, {{Name}}Base> innerFactory)
+        {
+            _innerFactory = innerFactory;
+        }
 
         public async Task ReceiveAsync(IContext context)
         {
@@ -123,7 +130,7 @@ namespace {{CsNamespace}}
                 {
                     _context = context;
                     var id = context.Get<ClusterIdentity>();
-                    _inner = Grains.Factory<{{Name}}Base>.Create(context, id.Identity, id.Kind);
+                    _inner = _innerFactory(context, id.Identity, id.Kind);
                     await _inner.OnStarted();
                     break;
                 }

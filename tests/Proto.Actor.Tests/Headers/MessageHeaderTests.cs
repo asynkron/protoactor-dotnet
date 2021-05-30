@@ -9,7 +9,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
-using Proto.Interactive;
 using Proto.Utils;
 using Xunit;
 using Xunit.Abstractions;
