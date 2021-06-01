@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
+      <ProjectReference Include="..\..\src\Proto.Cluster.Identity.Redis\Proto.Cluster.Identity.Redis.csproj" />
+      <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Google.Protobuf" Version="3.17.2" />
+      <PackageReference Include="Grpc.Tools" Version="2.38.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0-preview.3.21201.4" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Protobuf Include="protos.proto" />
+    </ItemGroup>
+
+</Project>

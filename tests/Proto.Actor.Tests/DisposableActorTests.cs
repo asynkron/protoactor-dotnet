@@ -132,7 +132,7 @@ namespace Proto.Tests
         private class SupervisingActor : IActor
         {
             private readonly Props _childProps;
-            private PID _childPid;
+            private PID? _childPid;
 
             public SupervisingActor(Props childProps) => _childProps = childProps;
 
@@ -141,7 +141,7 @@ namespace Proto.Tests
                 if (context.Message is Started)
                     _childPid = context.Spawn(_childProps);
                 if (context.Message is string)
-                    context.Send(_childPid, context.Message);
+                    context.Send(_childPid!, context.Message);
                 return Task.CompletedTask;
             }
         }
@@ -201,8 +201,8 @@ namespace Proto.Tests
                 _child2Props = child2Props;
             }
 
-            private PID Child1 { get; set; }
-            private PID Child2 { get; set; }
+            private PID? Child1 { get; set; }
+            private PID? Child2 { get; set; }
 
             public Task ReceiveAsync(IContext context)
             {
@@ -213,7 +213,7 @@ namespace Proto.Tests
                         Child2 = context.Spawn(_child2Props);
                         break;
                     case string _:
-                        context.Send(Child1, context.Message);
+                        context.Send(Child1!, context.Message);
                         break;
                 }
 

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
 using Proto.Cluster.Identity;
-using Proto.Cluster.Testing;
+using Proto.Cluster.Metrics;
 using Xunit;
 
 namespace Proto.Cluster.Tests
@@ -17,7 +17,7 @@ namespace Proto.Cluster.Tests
 
         public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct) => Task.FromResult(_pid)!;
 
-        public Task RemovePidAsync(PID pid, CancellationToken ct) => Task.CompletedTask;
+        public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct) => Task.CompletedTask;
 
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient) => Task.CompletedTask;
 
@@ -30,6 +30,7 @@ namespace Proto.Cluster.Tests
         public async Task PurgesPidCacheOnNullResponse()
         {
             var system = new ActorSystem();
+            system.Metrics.Register(new ClusterMetrics(system.Metrics));
             var props = Props.FromProducer(() => new EchoActor());
             var deadPid = system.Root.SpawnNamed(props, "stopped");
             var alivePid = system.Root.SpawnNamed(props, "alive");
@@ -41,13 +42,13 @@ namespace Proto.Cluster.Tests
             var logger = Log.CreateLogger("dummylog");
             var clusterIdentity = new ClusterIdentity {Identity = "identity", Kind = "kind"};
             pidCache.TryAdd(clusterIdentity, deadPid);
-            var requestAsyncStrategy = new DefaultClusterContext(dummyIdentityLookup, pidCache, logger, new ClusterContextConfig());
+            var requestAsyncStrategy = new DefaultClusterContext(dummyIdentityLookup, pidCache, new ClusterContextConfig(), system.Shutdown);
 
             var res = await requestAsyncStrategy.RequestAsync<Pong>(clusterIdentity, new Ping {Message = "msg"}, system.Root,
                 new CancellationTokenSource(6000).Token
             );
 
-            res.Message.Should().Be("msg");
+            res!.Message.Should().Be("msg");
             var foundInCache = pidCache.TryGet(clusterIdentity, out var pidInCache);
             foundInCache.Should().BeTrue();
             pidInCache.Should().BeEquivalentTo(alivePid);

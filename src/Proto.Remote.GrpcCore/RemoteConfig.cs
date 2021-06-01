@@ -26,7 +26,7 @@ namespace Proto.Remote.GrpcCore
         /// </summary>
         public ServerCredentials ServerCredentials { get; init; } = ServerCredentials.Insecure;
 
-        public static GrpcCoreRemoteConfig BindToAllInterfaces(string advertisedHost, int port = 0) =>
+        public static GrpcCoreRemoteConfig BindToAllInterfaces(string? advertisedHost = null, int port = 0) =>
             new GrpcCoreRemoteConfig(AllInterfaces, port).WithAdvertisedHost(advertisedHost);
 
         public static GrpcCoreRemoteConfig BindToLocalhost(int port = 0) => new(Localhost, port);

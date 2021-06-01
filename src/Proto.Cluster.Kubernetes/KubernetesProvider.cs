@@ -83,8 +83,6 @@ namespace Proto.Cluster.Kubernetes
             await _cluster.System.Root.StopAsync(_clusterMonitor);
         }
 
-        public Task UpdateClusterState(ClusterState state) => Task.CompletedTask;
-
         public async Task RegisterMemberAsync()
         {
             Logger.LogInformation("Registering service {PodName} on {PodIp}", _podName, _address);

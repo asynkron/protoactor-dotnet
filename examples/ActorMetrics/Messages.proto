@@ -1,0 +1,11 @@
+syntax = "proto3";
+package messages;
+option csharp_namespace = "Some.Namespace";
+
+message SomeRequest
+{
+}
+
+message SomeResponse
+{
+}

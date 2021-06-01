@@ -47,7 +47,7 @@ namespace Proto.Cluster.Kubernetes
         {
             var patch = new JsonPatchDocument<V1Pod>();
             patch.Replace(x => x.Metadata.Labels, labels);
-            return kubernetes.PatchNamespacedPodAsync(new V1Patch(patch,V1Patch.PatchType.JsonPatch), podName, podNamespace);
+            return kubernetes.PatchNamespacedPodAsync(new V1Patch(patch, V1Patch.PatchType.JsonPatch), podName, podNamespace);
         }
 
         /// <summary>

@@ -4,15 +4,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.IO;
 using System.Threading.Tasks;
-using DotNet.Testcontainers.Containers.Builders;
-using DotNet.Testcontainers.Containers.Modules;
-using DotNet.Testcontainers.Containers.WaitStrategies;
 
 namespace ClusterExperiment1
 {
-    public class DockerSupport
+    public static  class DockerSupport
     {
         public static async Task Run(Task done)
         {

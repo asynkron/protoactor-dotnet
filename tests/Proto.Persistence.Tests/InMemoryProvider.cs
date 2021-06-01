@@ -30,15 +30,17 @@ namespace Proto.Persistence.Tests
 
         public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
+            var lastIndex = 0L;
             if (_events.TryGetValue(actorName, out var events))
             {
                 foreach (var e in events.Where(e => e.Key >= indexStart && e.Key <= indexEnd))
                 {
+                    lastIndex = e.Key;
                     callback(e.Value);
                 }
             }
 
-            return Task.FromResult(0L);
+            return Task.FromResult(lastIndex);
         }
 
         public Task<long> PersistEventAsync(string actorName, long index, object @event)
@@ -47,7 +49,9 @@ namespace Proto.Persistence.Tests
 
             events.Add(index, @event);
 
-            return Task.FromResult(0L);
+            long max = events.Max(x => x.Key);
+
+            return Task.FromResult(max);
         }
 
         public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
@@ -58,7 +62,7 @@ namespace Proto.Persistence.Tests
 
             snapshots.Add(index, copy);
 
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
 
         public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
@@ -72,7 +76,7 @@ namespace Proto.Persistence.Tests
 
             eventsToRemove.ForEach(key => events.Remove(key));
 
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
 
         public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
@@ -86,7 +90,7 @@ namespace Proto.Persistence.Tests
 
             snapshotsToRemove.ForEach(key => snapshots.Remove(key));
 
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
 
         public Dictionary<long, object> GetSnapshots(string actorId) => _snapshots[actorId];

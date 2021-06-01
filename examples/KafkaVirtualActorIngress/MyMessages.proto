@@ -1,0 +1,26 @@
+syntax = "proto3";
+package messages;
+option csharp_namespace = "KafkaVirtualActorIngress.Messages";
+
+message MyEnvelope {
+  string device_id = 1;
+  oneof message {
+    SomeMessage some_message = 2;
+    SomeOtherMessage some_other_message = 3;
+  }
+}
+message SomeMessage {
+  string data = 1;
+}
+
+message SomeOtherMessage {
+  int32 int_property = 1;
+}
+
+//Confirm completion
+message Ack {}
+
+message DeviceState {
+  string data = 1;
+  int32 int_property = 2;
+}

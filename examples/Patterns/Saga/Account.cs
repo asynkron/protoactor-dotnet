@@ -16,7 +16,7 @@ namespace Saga
     {
         private readonly double _busyProbability;
         private readonly string _name;
-        private readonly Dictionary<PID, object> _processedMessages = new Dictionary<PID, object>();
+        private readonly Dictionary<PID, object> _processedMessages = new();
         private readonly Random _random;
         private readonly double _refusalProbability;
         private readonly double _serviceUptime;
@@ -41,18 +41,18 @@ namespace Saga
         {
             switch (context.Message)
             {
-                case Credit msg when AlreadyProcessed(msg.ReplyTo):
-                    return Reply(msg.ReplyTo);
-                case Credit msg:
-                    return AdjustBalance(context, msg.ReplyTo, msg.Amount);
-                case Debit msg when AlreadyProcessed(msg.ReplyTo):
-                    return Reply(msg.ReplyTo);
-                case Debit msg when msg.Amount + _balance >= 0:
-                    return AdjustBalance(context, msg.ReplyTo, msg.Amount);
-                case Debit msg:
+                case ChangeBalance.Credit(_, var replyTo) when AlreadyProcessed(replyTo):
+                    return Reply(replyTo);
+                case ChangeBalance.Credit(var amount, var replyTo):
+                    return AdjustBalance(context, replyTo, amount);
+                case ChangeBalance.Debit(_, var replyTo) when AlreadyProcessed(replyTo):
+                    return Reply(replyTo);
+                case ChangeBalance.Debit(var amount, var replyTo) when amount + _balance >= 0:
+                    return AdjustBalance(context, replyTo, amount);
+                case ChangeBalance.Debit msg:
                     context.Send(msg.ReplyTo, new InsufficientFunds());
                     break;
-                case GetBalance _:
+                case GetBalance:
                     context.Respond(_balance);
                     break;
             }
@@ -67,7 +67,7 @@ namespace Saga
         }
 
         /// <summary>
-        ///     we want to simulate the following:
+        ///     We want to simulate the following:
         ///     * permanent refusals to process the message
         ///     * temporary refusals to process the message
         ///     * failures before updating the balance

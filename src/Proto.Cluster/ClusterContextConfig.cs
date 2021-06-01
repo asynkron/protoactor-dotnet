@@ -10,15 +10,16 @@ namespace Proto.Cluster
 {
     public record ClusterContextConfig
     {
-        public TimeSpan ActorRequestTimeout { get; init; }
-        public TimeSpan RequestLogThrottlePeriod { get; init; }
-        public int MaxNumberOfEventsInRequestLogThrottlePeriod { get; init; }
         public ClusterContextConfig()
         {
             ActorRequestTimeout = TimeSpan.FromSeconds(5);
             MaxNumberOfEventsInRequestLogThrottlePeriod = 3;
             RequestLogThrottlePeriod = TimeSpan.FromSeconds(2);
         }
+
+        public TimeSpan ActorRequestTimeout { get; init; }
+        public TimeSpan RequestLogThrottlePeriod { get; init; }
+        public int MaxNumberOfEventsInRequestLogThrottlePeriod { get; init; }
     }
 
     public static class ClusterConfigExtensions

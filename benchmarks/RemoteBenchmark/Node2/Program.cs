@@ -4,7 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.IO.Compression;
 using System.Threading.Tasks;
+using Grpc.Net.Client;
+using Grpc.Net.Compression;
 using Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
@@ -39,7 +42,7 @@ namespace Node2
 
     class Program
     {
-        private static async Task Main(string[] args)
+        private static async Task Main()
         {
             Log.SetLoggerFactory(LoggerFactory.Create(c => c
                     .SetMinimumLevel(LogLevel.Information)
@@ -56,6 +59,11 @@ namespace Node2
             if (!int.TryParse(Console.ReadLine(), out var provider))
                 provider = 0;
 
+            Console.WriteLine("Enter Advertised Host (Enter = localhost)");
+            var advertisedHost = Console.ReadLine().Trim();
+            if (string.IsNullOrEmpty(advertisedHost))
+                advertisedHost = "127.0.0.1";
+
             var actorSystemConfig = new ActorSystemConfig()
                 .WithDeadLetterThrottleCount(10)
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(2));
@@ -66,7 +74,7 @@ namespace Node2
             if (provider == 0)
             {
                 var remoteConfig = GrpcCoreRemoteConfig
-                    .BindToLocalhost(12000)
+                    .BindTo(advertisedHost, 12000)
                     .WithProtoMessages(ProtosReflection.Descriptor)
                     .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
                 remote = new GrpcCoreRemote(system, remoteConfig);
@@ -74,7 +82,15 @@ namespace Node2
             else
             {
                 var remoteConfig = GrpcNetRemoteConfig
-                    .BindToLocalhost(12000)
+                    .BindTo(advertisedHost, 12000)
+                    .WithChannelOptions(new GrpcChannelOptions
+                        {
+                            CompressionProviders = new[]
+                            {
+                                new GzipCompressionProvider(CompressionLevel.Fastest)
+                            }
+                        }
+                    )
                     .WithProtoMessages(ProtosReflection.Descriptor)
                     .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
                 remote = new GrpcNetRemote(system, remoteConfig);

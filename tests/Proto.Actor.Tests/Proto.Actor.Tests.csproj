@@ -4,6 +4,7 @@
     <LangVersion>9</LangVersion>
     <OutputType>Library</OutputType>
     <TargetFrameworks>net5.0;netcoreapp3.1</TargetFrameworks>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />

@@ -4,13 +4,15 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Identity;
-using Proto.Cluster.Partition;
+using Proto.Cluster.Metrics;
+using Proto.Cluster.PubSub;
 using Proto.Extensions;
 using Proto.Remote;
 
@@ -19,27 +21,30 @@ namespace Proto.Cluster
     [PublicAPI]
     public class Cluster : IActorSystemExtension<Cluster>
     {
-        private ClusterHeartBeat _clusterHeartBeat;
+        private Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
 
         public Cluster(ActorSystem system, ClusterConfig config)
         {
-            system.Extensions.Register(this);
-            PidCache = new PidCache();
             System = system;
             Config = config;
-            system.Serialization().RegisterFileDescriptor(ProtosReflection.Descriptor);
 
-            _clusterHeartBeat = new ClusterHeartBeat(this);
-            system.EventStream.Subscribe<ClusterTopology>(e => {
-                    foreach (var member in e.Left)
-                    {
-                        PidCache.RemoveByMember(member);
-                    }
-                }
-            );
+            system.Extensions.Register(this);
+            system.Metrics.Register(new ClusterMetrics(system.Metrics));
+            system.Serialization().RegisterFileDescriptor(ClusterContractsReflection.Descriptor);
+
+            PidCache = new PidCache();
+            ClusterHeartBeat = new ClusterHeartBeat(this);
+            PubSub = new PubSubManager(this);
+
+            SubscribeToTopologyEvents();
         }
 
-        public ILogger Logger { get; private set; } = null!;
+        private ClusterHeartBeat ClusterHeartBeat { get; }
+
+        public PubSubManager PubSub { get; }
+
+        public static ILogger Logger { get; } = Log.CreateLogger<Cluster>();
+
         public IClusterContext ClusterContext { get; private set; } = null!;
 
         public ClusterConfig Config { get; }
@@ -54,17 +59,28 @@ namespace Proto.Cluster
 
         internal IClusterProvider Provider { get; set; } = null!;
 
-        public string LoggerId => System.Address;
+        public string LoggerId => System.Id;
 
         public PidCache PidCache { get; }
 
-        public string[] GetClusterKinds() => Config.ClusterKinds.Keys.ToArray();
+        private void SubscribeToTopologyEvents() =>
+            System.EventStream.Subscribe<ClusterTopology>(e => {
+                    System.Metrics.Get<ClusterMetrics>().ClusterTopologyEventGauge.Set(e.Members.Count,
+                        new[] {System.Id, System.Address, e.GetMembershipHashCode().ToString()}
+                    );
+
+                    foreach (var member in e.Left)
+                    {
+                        PidCache.RemoveByMember(member);
+                    }
+                }
+            );
+
+        public string[] GetClusterKinds() => _clusterKinds.Keys.ToArray();
 
         public async Task StartMemberAsync()
         {
             await BeginStartAsync(false);
-            Provider = Config.ClusterProvider;
-            var kinds = GetClusterKinds();
             await Provider.StartMemberAsync(this);
 
             Logger.LogInformation("Started as cluster member");
@@ -73,8 +89,6 @@ namespace Proto.Cluster
         public async Task StartClientAsync()
         {
             await BeginStartAsync(true);
-            Provider = Config.ClusterProvider;
-
             await Provider.StartClientAsync(this);
 
             Logger.LogInformation("Started as cluster client");
@@ -82,26 +96,43 @@ namespace Proto.Cluster
 
         private async Task BeginStartAsync(bool client)
         {
+            InitClusterKinds();
+            Provider = Config.ClusterProvider;
             //default to partition identity lookup
-            IdentityLookup = Config.IdentityLookup ?? new PartitionIdentityLookup();
-            Remote = System.Extensions.Get<IRemote>();
+            IdentityLookup = Config.IdentityLookup;
+
+            Remote = System.Extensions.Get<IRemote>() ?? throw new NotSupportedException("Remote module must be configured when using cluster");
+
             await Remote.StartAsync();
-            Logger = Log.CreateLogger($"Cluster-{LoggerId}");
+
             Logger.LogInformation("Starting");
             MemberList = new MemberList(this);
             ClusterContext = Config.ClusterContextProducer(this);
 
             var kinds = GetClusterKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
-            await _clusterHeartBeat.StartAsync();
+            InitIdentityProxy();
+            await ClusterHeartBeat.StartAsync();
+            await PubSub.StartAsync();
         }
+
+        private void InitClusterKinds()
+        {
+            foreach (var clusterKind in Config.ClusterKinds)
+            {
+                _clusterKinds.Add(clusterKind.Name, clusterKind.Build(this));
+            }
+        }
+
+        private void InitIdentityProxy()
+            => System.Root.SpawnNamed(Props.FromProducer(() => new IdentityActivatorProxy(this)), IdentityActivatorProxy.ActorName);
 
         public async Task ShutdownAsync(bool graceful = true)
         {
             await System.ShutdownAsync();
             Logger.LogInformation("Stopping Cluster {Id}", System.Id);
 
-            await _clusterHeartBeat.ShutdownAsync();
+            await ClusterHeartBeat.ShutdownAsync();
             if (graceful) await IdentityLookup!.ShutdownAsync();
             await Config!.ClusterProvider.ShutdownAsync(graceful);
             await Remote.ShutdownAsync(graceful);
@@ -109,23 +140,40 @@ namespace Proto.Cluster
             Logger.LogInformation("Stopped Cluster {Id}", System.Id);
         }
 
-        public Task<PID?> GetAsync(string identity, string kind) => GetAsync(identity, kind, CancellationToken.None);
+        public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct) => IdentityLookup!.GetAsync(clusterIdentity, ct);
 
-        public Task<PID?> GetAsync(string identity, string kind, CancellationToken ct) =>
-            IdentityLookup!.GetAsync(new ClusterIdentity {Identity = identity, Kind = kind}, ct);
+        public Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct) =>
+            ClusterContext.RequestAsync<T>(clusterIdentity, message, context, ct)!;
 
-        public Task<T> RequestAsync<T>(string identity, string kind, object message, CancellationToken ct) =>
-            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, System.Root, ct);
-
-        public Task<T> RequestAsync<T>(string identity, string kind, object message, ISenderContext context, CancellationToken ct) =>
-            ClusterContext.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct);
-
-        public Props GetClusterKind(string kind)
+        public ActivatedClusterKind GetClusterKind(string kind)
         {
-            if (!Config.ClusterKinds.TryGetValue(kind, out var props))
-                throw new ArgumentException($"No Props found for kind '{kind}'");
+            if (!_clusterKinds.TryGetValue(kind, out var clusterKind))
+                throw new ArgumentException($"No cluster kind '{kind}' was not found");
 
-            return props;
+            return clusterKind;
+        }
+
+        public ActivatedClusterKind TryGetClusterKind(string kind)
+        {
+            _clusterKinds.TryGetValue(kind, out var clusterKind);
+
+            return clusterKind;
+        }
+
+        public ClusterIdentity GetIdentity(string identity, string kind)
+        {
+            var id = new ClusterIdentity
+            {
+                Identity = identity,
+                Kind = kind
+            };
+
+            if (PidCache.TryGet(id, out var pid))
+            {
+                id.CachedPid = pid;
+            }
+
+            return id;
         }
     }
 }

@@ -19,7 +19,6 @@ namespace Proto.Cluster.Testing
         private readonly TestProviderOptions _options;
         private string _clusterName;
 
-        private ulong _eventId;
         private string _id;
         private MemberList _memberList;
         private ActorSystem _system;
@@ -103,7 +102,7 @@ namespace Proto.Cluster.Testing
                     )
                     .ToList();
 
-            _memberList.UpdateClusterTopology(memberStatuses, ++_eventId);
+            _memberList.UpdateClusterTopology(memberStatuses);
         }
 
         private void StartTtlTimer()

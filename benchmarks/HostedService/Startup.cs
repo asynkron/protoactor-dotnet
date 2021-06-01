@@ -36,7 +36,9 @@ namespace HostedService
             // settings.MinConnectionPoolSize = 10;
             // settings.MaxConnectionPoolSize = 100;
             settings.WaitQueueTimeout = TimeSpan.FromSeconds(10);
+#pragma warning disable 618
             settings.WaitQueueSize = 10000;
+#pragma warning restore 618
 
             var mongoClient = new MongoClient(settings);
 

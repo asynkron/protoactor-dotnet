@@ -17,6 +17,8 @@ namespace Proto.Mailbox
 
     public interface IMailbox
     {
+        int UserMessageCount { get; }
+
         void PostUserMessage(object msg);
 
         void PostSystemMessage(object msg);
@@ -38,7 +40,7 @@ namespace Proto.Mailbox
             new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue(), stats);
     }
 
-    public class DefaultMailbox : IMailbox
+    public sealed class DefaultMailbox : IMailbox
     {
         private readonly IMailboxStatistics[] _stats;
         private readonly IMailboxQueue _systemMessages;
@@ -48,7 +50,20 @@ namespace Proto.Mailbox
 
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
-        private long _systemMessageCount;
+        private volatile bool _hasSystemMessages;
+
+        public DefaultMailbox(
+            IMailboxQueue systemMessages,
+            IMailboxQueue userMailbox
+        )
+        {
+            _systemMessages = systemMessages;
+            _userMailbox = userMailbox;
+            _stats = Array.Empty<IMailboxStatistics>();
+
+            _dispatcher = NoopDispatcher.Instance;
+            _invoker = NoopInvoker.Instance;
+        }
 
         public DefaultMailbox(
             IMailboxQueue systemMessages,
@@ -58,7 +73,7 @@ namespace Proto.Mailbox
         {
             _systemMessages = systemMessages;
             _userMailbox = userMailbox;
-            _stats = stats ?? new IMailboxStatistics[0];
+            _stats = stats;
 
             _dispatcher = NoopDispatcher.Instance;
             _invoker = NoopInvoker.Instance;
@@ -66,24 +81,54 @@ namespace Proto.Mailbox
 
         public int Status => _status;
 
+        public int UserMessageCount => _userMailbox.Length;
+
         public void PostUserMessage(object msg)
         {
-            _userMailbox.Push(msg);
-
-            foreach (var t in _stats)
+            // if the message is a batch message, we unpack the content as individual messages in the mailbox
+            // feature Aka: Samkuvertering in Swedish...
+            if (msg is IMessageBatch  || msg is MessageEnvelope e && e.Message is IMessageBatch)
             {
-                t.MessagePosted(msg);
-            }
+                var batch = (IMessageBatch)MessageEnvelope.UnwrapMessage(msg)!;
+                var messages = batch.GetMessages();
 
-            Schedule();
+                foreach (var message in messages)
+                {
+                    _userMailbox.Push(message);
+                    foreach (var t in _stats)
+                    {
+                        t.MessagePosted(message);
+                    }
+                }
+                
+                _userMailbox.Push(msg);
+                foreach (var t in _stats)
+                {
+                    t.MessagePosted(msg);
+                }
+
+                Schedule();
+            }
+            else
+            {
+                _userMailbox.Push(msg);
+
+                foreach (var t in _stats)
+                {
+                    t.MessagePosted(msg);
+                }
+
+                Schedule();
+            }
         }
 
         public void PostSystemMessage(object msg)
         {
             _systemMessages.Push(msg);
+            _hasSystemMessages = true;
+            
             if (msg is Stop)
                 _invoker?.CancellationTokenSource?.Cancel();
-            Interlocked.Increment(ref _systemMessageCount);
 
             foreach (var t in _stats)
             {
@@ -109,11 +154,12 @@ namespace Proto.Mailbox
 
         private Task RunAsync()
         {
-            var done = ProcessMessages();
+            var task = ProcessMessages();
 
-            if (!done)
-                // mailbox is halted, awaiting completion of a message task, upon which mailbox will be rescheduled
-                return Task.CompletedTask;
+            if (!task.IsCompletedSuccessfully)
+            {
+                return Await(this, task);
+            }
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
@@ -128,9 +174,26 @@ namespace Proto.Mailbox
             }
 
             return Task.CompletedTask;
+
+            static async Task Await(DefaultMailbox self, ValueTask task)
+            {
+                await task;
+                
+                Interlocked.Exchange(ref self._status, MailboxStatus.Idle);
+
+                if (self._systemMessages.HasMessages || !self._suspended && self._userMailbox.HasMessages)
+                    self.Schedule();
+                else
+                {
+                    foreach (var t in self._stats)
+                    {
+                        t.MailboxEmpty();
+                    }
+                }
+            }
         }
 
-        private bool ProcessMessages()
+        private ValueTask ProcessMessages()
         {
             object? msg = null;
 
@@ -138,68 +201,48 @@ namespace Proto.Mailbox
             {
                 for (var i = 0; i < _dispatcher.Throughput; i++)
                 {
-                    if (Interlocked.Read(ref _systemMessageCount) > 0 && (msg = _systemMessages.Pop()) is not null)
+                    if (_hasSystemMessages)
                     {
-                        Interlocked.Decrement(ref _systemMessageCount);
+                        msg = _systemMessages.Pop();
 
-                        _suspended = msg switch
+                        if (msg is not null)
                         {
-                            SuspendMailbox _ => true,
-                            ResumeMailbox _  => false,
-                            _                => _suspended
-                        };
-                        var t = _invoker.InvokeSystemMessageAsync(msg);
+                            _suspended = msg switch
+                            {
+                                SuspendMailbox => true,
+                                ResumeMailbox  => false,
+                                _              => _suspended
+                            };
 
-                        if (t.IsFaulted)
-                        {
-                            _invoker.EscalateFailure(t.Exception, msg);
+                            var t = _invoker.InvokeSystemMessageAsync(msg);
+                            if (!t.IsCompletedSuccessfully)
+                            {
+                                return Await(msg, t, this);
+                            }
+
+                            foreach (var t1 in _stats)
+                            {
+                                t1.MessageReceived(msg);
+                            }
+
                             continue;
                         }
 
-                        if (t.IsCanceled)
-                        {
-                            _invoker.EscalateFailure(new TaskCanceledException(), msg);
-                            continue;
-                        }
-
-                        if (!t.IsCompleted)
-                        {
-                            // if task didn't complete immediately, halt processing and reschedule a new run when task completes
-                            t.ContinueWith(RescheduleOnTaskComplete, msg);
-                            return false;
-                        }
-
-                        foreach (var t1 in _stats)
-                        {
-                            t1.MessageReceived(msg);
-                        }
-
-                        continue;
+                        //race here, but that's ok, we process it next round in the loop
+                        _hasSystemMessages = false;
                     }
 
                     if (_suspended) break;
 
-                    if ((msg = _userMailbox.Pop()) is not null)
+                    msg = _userMailbox.Pop();
+
+                    if (msg is not null)
                     {
-                        var t = _invoker.InvokeUserMessageAsync(msg);
+                        var t= _invoker.InvokeUserMessageAsync(msg);
 
-                        if (t.IsFaulted)
+                        if (!t.IsCompletedSuccessfully)
                         {
-                            _invoker.EscalateFailure(t.Exception, msg);
-                            continue;
-                        }
-
-                        if (t.IsCanceled)
-                        {
-                            _invoker.EscalateFailure(new TaskCanceledException(), msg);
-                            continue;
-                        }
-
-                        if (!t.IsCompleted)
-                        {
-                            // if task didn't complete immediately, halt processing and reschedule a new run when task completes
-                            t.ContinueWith(RescheduleOnTaskComplete, msg);
-                            return false;
+                            return Await(msg, t, this);
                         }
 
                         foreach (var t1 in _stats)
@@ -215,28 +258,26 @@ namespace Proto.Mailbox
             {
                 _invoker.EscalateFailure(e, msg);
             }
+            return default;
 
-            return true;
-        }
-
-        private void RescheduleOnTaskComplete(Task task, object message)
-        {
-            if (task.IsFaulted)
-                _invoker.EscalateFailure(task.Exception, message);
-            else if (task.IsCanceled)
-                _invoker.EscalateFailure(new TaskCanceledException(), message);
-            else
+            static async ValueTask Await(object msg, ValueTask task, DefaultMailbox self)
             {
-                foreach (var t in _stats)
+                try
                 {
-                    t.MessageReceived(message);
+                    await task;
+                    foreach (var t1 in self._stats)
+                    {
+                        t1.MessageReceived(msg);
+                    }
+                }
+                catch (Exception e)
+                {
+                    self._invoker.EscalateFailure(e, msg);
                 }
             }
-
-            _dispatcher.Schedule(RunAsync);
         }
 
-        protected void Schedule()
+        private void Schedule()
         {
             if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
                 _dispatcher.Schedule(RunAsync);

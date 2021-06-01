@@ -8,8 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using Proto.Remote.Metrics;
 
 namespace Proto.Remote
 {
@@ -70,7 +72,7 @@ namespace Proto.Remote
             }
             catch (Exception e)
             {
-                Logger.LogError(e, "[EndpointActor] Error connecting to {_address}.", _address);
+                Logger.LogWarning(e, "[EndpointActor] Error connecting to {Address}", _address);
                 throw;
             }
 
@@ -84,7 +86,8 @@ namespace Proto.Remote
 
             Logger.LogDebug("[EndpointActor] Connected client for address {Address}", _address);
 
-            _ = Task.Run(
+
+            _ = SafeTask.Run(
                 async () => {
                     try
                     {
@@ -95,6 +98,16 @@ namespace Proto.Remote
                             Address = _address
                         };
                         context.System.EventStream.Publish(terminated);
+                    }
+                    catch (RpcException x) when (x.StatusCode == StatusCode.Unavailable)
+                    {
+                        Logger.LogWarning( "[EndpointActor] Lost connection to address {Address}, address is unavailable", _address);
+                        var endpointError = new EndpointErrorEvent
+                        {
+                            Address = _address,
+                            Exception = x
+                        };
+                        context.System.EventStream.Publish(endpointError);
                     }
                     catch (Exception x)
                     {
@@ -202,7 +215,7 @@ namespace Proto.Remote
         public void RemoteDeliver(IContext context, PID pid, object msg)
         {
             var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
-            var env = new RemoteDeliver(header!, message, pid, sender!, -1);
+            var env = new RemoteDeliver(header!, message, pid, sender!);
             context.Send(context.Self!, env);
         }
 
@@ -213,11 +226,11 @@ namespace Proto.Remote
             var targetNames = new Dictionary<string, int>();
             var typeNameList = new List<string>();
             var targetNameList = new List<string>();
+            var counter = context.System.Metrics.Get<RemoteMetrics>().RemoteSerializedMessageCount;
 
             foreach (var rd in m)
             {
                 var targetName = rd.Target.Id;
-                var serializerId = rd.SerializerId == -1 ? _serializerId : rd.SerializerId;
 
                 if (!targetNames.TryGetValue(targetName, out var targetId))
                 {
@@ -225,7 +238,14 @@ namespace Proto.Remote
                     targetNameList.Add(targetName);
                 }
 
-                var typeName = _remoteConfig.Serialization.GetTypeName(rd.Message, serializerId);
+                var message = rd.Message;
+                //if the message can be translated to a serialization representation, we do this here
+                //this only apply to root level messages and never to nested child objects inside the message
+                if (message is IRootSerializable deserialized) message = deserialized.Serialize(context.System);
+
+                (ByteString bytes, string typeName, int serializerId) = _remoteConfig.Serialization.Serialize(message);
+
+                if (!context.System.Metrics.IsNoop) counter.Inc(new[] {context.System.Id, context.System.Address, typeName});
 
                 if (!typeNames.TryGetValue(typeName, out var typeId))
                 {
@@ -241,8 +261,6 @@ namespace Proto.Remote
                     header.HeaderData.Add(rd.Header.ToDictionary());
                 }
 
-                var bytes = _remoteConfig.Serialization.Serialize(rd.Message, serializerId);
-
                 var envelope = new MessageEnvelope
                 {
                     MessageData = bytes,
@@ -250,7 +268,8 @@ namespace Proto.Remote
                     Target = targetId,
                     TypeId = typeId,
                     SerializerId = serializerId,
-                    MessageHeader = header
+                    MessageHeader = header,
+                    RequestId = rd.Target.RequestId
                 };
 
                 envelopes.Add(envelope);
@@ -279,15 +298,10 @@ namespace Proto.Remote
 
             try
             {
-                // Logger.LogDebug("[EndpointActor] Writing batch to {Address}", _address);
-
                 await _stream.RequestStream.WriteAsync(batch).ConfigureAwait(false);
             }
-            catch (Exception x)
+            catch (Exception)
             {
-                Logger.LogError(x, "[EndpointActor] gRPC Failed to send to address {Address}, reason {Message}", _address,
-                    x.Message
-                );
                 context.Stash();
                 throw;
             }

@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Proto;
 using Proto.Cluster;
 
 namespace HostedService
@@ -24,7 +25,7 @@ namespace HostedService
         public Task StartAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Starting cluster...");
-            _appLifetime.ApplicationStarted.Register(() => Task.Run(RunRequestLoop, _appLifetime.ApplicationStopping));
+            _appLifetime.ApplicationStarted.Register(() => SafeTask.Run(RunRequestLoop, _appLifetime.ApplicationStopping));
             _appLifetime.ApplicationStopping.Register(OnStopping);
             return Task.CompletedTask;
         }

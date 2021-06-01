@@ -17,19 +17,18 @@ namespace Proto.Cluster.Identity.Redis
     public class RedisIdentityStorage : IIdentityStorage
     {
         private static readonly ILogger Logger = Log.CreateLogger<RedisIdentityStorage>();
-        private static readonly RedisKey NoKey = new();
 
         private static readonly RedisValue UniqueIdentity = "pid";
         private static readonly RedisValue Address = "adr";
         private static readonly RedisValue MemberId = "mid";
         private static readonly RedisValue LockId = "lid";
+        private readonly AsyncSemaphore _asyncSemaphore;
 
         private readonly RedisKey _clusterIdentityKey;
 
         private readonly IConnectionMultiplexer _connections;
         private readonly TimeSpan _maxLockTime;
         private readonly RedisKey _memberKey;
-        private readonly AsyncSemaphore _asyncSemaphore;
 
         public RedisIdentityStorage(
             string clusterName,
@@ -71,12 +70,10 @@ namespace Proto.Cluster.Identity.Redis
                 //There is an active lock on the pid, spin wait
                 var i = 1;
 
-                do
-                {
-                    await Task.Delay(20 * i++, ct);
-                } while (!ct.IsCancellationRequested
-                      && _maxLockTime > timer.Elapsed
-                      && (activationStatus = await LookupKey(db, key).ConfigureAwait(false))?.ActiveLockId == lockId
+                do await Task.Delay(20 * i++, ct);
+                while (!ct.IsCancellationRequested
+                    && _maxLockTime > timer.Elapsed
+                    && (activationStatus = await LookupKey(db, key).ConfigureAwait(false))?.ActiveLockId == lockId
                 );
             }
 
@@ -139,19 +136,23 @@ namespace Proto.Cluster.Identity.Redis
             if (!executed) throw new LockNotFoundException($"Failed to store activation of {pid}");
         }
 
-        public Task RemoveActivation(PID pid, CancellationToken ct)
+        public Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)
         {
-            Logger.LogDebug("Removing activation: {@PID}", pid);
-            var key = IdKeyFromPidId(pid.Id);
-            if (key == NoKey) return Task.CompletedTask;
+            Logger.LogDebug("Removing activation: {ClusterIdentity} {@PID}", clusterIdentity, pid);
 
             const string removePid = "local pidEntry = redis.call('HMGET', KEYS[1], 'pid', 'adr', 'mid');\n" +
-                            "if pidEntry[1]~=ARGV[1] or pidEntry[2]~=ARGV[2] then return 0 end;\n" + // id / address matches
-                            "local memberKey = ARGV[3] .. pidEntry[3];\n" +
-                            "redis.call('SREM', memberKey, KEYS[1] .. '');" +
-                            "return redis.call('DEL', KEYS[1]);";
+                                     "if pidEntry[1]~=ARGV[1] or pidEntry[2]~=ARGV[2] then return 0 end;\n" + // id / address matches
+                                     "local memberKey = ARGV[3] .. pidEntry[3];\n" +
+                                     "redis.call('SREM', memberKey, KEYS[1] .. '');" +
+                                     "return redis.call('DEL', KEYS[1]);";
 
-            return _asyncSemaphore.WaitAsync(() => GetDb().ScriptEvaluateAsync(removePid, new[] {key}, new RedisValue[] {pid.Id, pid.Address, _memberKey.ToString()}));
+            var key = IdKey(clusterIdentity);
+            return _asyncSemaphore.WaitAsync(()
+                    => {
+                    return GetDb().ScriptEvaluateAsync(removePid, new[] {key}, new RedisValue[] {pid.Id, pid.Address, _memberKey.ToString()}
+                    );
+                }
+            );
         }
 
         public Task RemoveMember(string memberId, CancellationToken ct)
@@ -225,14 +226,7 @@ namespace Proto.Cluster.Identity.Redis
             }
         }
 
-        private RedisKey IdKey(ClusterIdentity clusterIdentity) => IdKey(clusterIdentity.ToString());
-
-        private RedisKey IdKeyFromPidId(string pidId)
-            => IdentityStorageLookup.TryGetClusterIdentityShortString(pidId, out var clusterId)
-                ? IdKey(clusterId!)
-                : NoKey;
-
-        private RedisKey IdKey(string clusterIdentity) => _clusterIdentityKey.Append(clusterIdentity);
+        private RedisKey IdKey(ClusterIdentity clusterIdentity) => _clusterIdentityKey.Append(clusterIdentity.ToString());
 
         private RedisKey MemberKey(string memberId) => _memberKey.Append(memberId);
 

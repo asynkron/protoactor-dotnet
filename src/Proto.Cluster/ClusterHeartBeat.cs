@@ -47,7 +47,7 @@ namespace Proto.Cluster
             _pid = _context.SpawnNamed(props, ClusterHeartBeatName);
             _logger = Log.CreateLogger("ClusterHeartBeat-" + _cluster.LoggerId);
             _logger.LogInformation("Started Cluster Heartbeats");
-            _ = Task.Run(HeartBeatLoop);
+            _ = SafeTask.Run(HeartBeatLoop);
             return Task.CompletedTask;
         }
 

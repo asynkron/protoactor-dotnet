@@ -9,6 +9,8 @@ namespace Proto.Mailbox
     {
         bool HasMessages { get; }
 
+        int Length { get; }
+
         void Push(object message);
 
         object? Pop();

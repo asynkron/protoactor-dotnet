@@ -11,8 +11,10 @@ using Proto.Mailbox;
 namespace Proto
 {
     //messages with this marker interface should not be deadletter logged
-    public interface IIgnoreDeadLetterLogging {}
-    
+    public interface IIgnoreDeadLetterLogging
+    {
+    }
+
     public sealed partial class Terminated : SystemMessage
     {
     }
@@ -26,7 +28,7 @@ namespace Proto
         }
     }
 
-    public sealed partial class PoisonPill:IIgnoreDeadLetterLogging
+    public sealed partial class PoisonPill : IIgnoreDeadLetterLogging
     {
         public static readonly PoisonPill Instance = new();
     }
@@ -120,4 +122,6 @@ namespace Proto
         public Func<Task> Action { get; }
         public object Message { get; }
     }
+
+    public record ProcessDiagnosticsRequest(TaskCompletionSource<string> Result) : SystemMessage;
 }

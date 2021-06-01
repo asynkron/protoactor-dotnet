@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net5.0</TargetFramework>
+        <LangVersion>9</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BenchmarkDotNet" Version="0.13.0" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj" />
+      <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
+      <ProjectReference Include="..\..\src\Proto.Remote.GrpcNet\Proto.Remote.GrpcNet.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -12,12 +12,14 @@ using Grpc.Health.V1;
 using Grpc.HealthCheck;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Remote.Metrics;
 
 namespace Proto.Remote.GrpcCore
 {
     [PublicAPI]
     public class GrpcCoreRemote : IRemote
     {
+        private readonly object _lock = new();
         private static readonly ILogger Logger = Log.CreateLogger<GrpcCoreRemote>();
         private readonly GrpcCoreRemoteConfig _config;
         private EndpointManager _endpointManager = null!;
@@ -29,6 +31,7 @@ namespace Proto.Remote.GrpcCore
         {
             System = system;
             _config = config;
+            system.Metrics.Register(new RemoteMetrics(system.Metrics));
             System.Extensions.Register(this);
             System.Extensions.Register(config.Serialization);
         }
@@ -39,7 +42,7 @@ namespace Proto.Remote.GrpcCore
 
         public Task StartAsync()
         {
-            lock (this)
+            lock (_lock)
             {
                 if (Started)
                     return Task.CompletedTask;
@@ -74,7 +77,7 @@ namespace Proto.Remote.GrpcCore
 
         public async Task ShutdownAsync(bool graceful = true)
         {
-            lock (this)
+            lock (_lock)
             {
                 if (!Started)
                     return;

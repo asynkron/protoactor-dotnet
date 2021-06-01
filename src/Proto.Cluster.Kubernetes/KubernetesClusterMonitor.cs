@@ -28,7 +28,6 @@ namespace Proto.Cluster.Kubernetes
         private string _address;
 
         private string _clusterName;
-        private string _memberId;
         private string _podName;
         private bool _stopping;
         private Watcher<V1Pod> _watcher;
@@ -45,8 +44,8 @@ namespace Proto.Cluster.Kubernetes
         {
             RegisterMember cmd       => Register(cmd),
             StartWatchingCluster cmd => StartWatchingCluster(cmd.ClusterName, context),
-            DeregisterMember _       => StopWatchingCluster(),
-            Stopping _               => StopWatchingCluster(),
+            DeregisterMember         => StopWatchingCluster(),
+            Stopping                 => StopWatchingCluster(),
             _                        => Task.CompletedTask
         };
 
@@ -55,7 +54,6 @@ namespace Proto.Cluster.Kubernetes
             _clusterName = cmd.ClusterName;
             _address = cmd.Address;
             _podName = KubernetesExtensions.GetPodName();
-            _memberId = cmd.MemberId;
             return Task.CompletedTask;
         }
 
@@ -64,7 +62,9 @@ namespace Proto.Cluster.Kubernetes
             // ReSharper disable once InvertIf
             if (_watching)
             {
-                Logger.LogInformation("[Cluster] Stopping monitoring for {PodName} with ip {PodIp}", _podName, _address
+                Logger.LogInformation(
+                    "[Cluster] Stopping monitoring for {PodName} with ip {PodIp}",
+                    _podName, _address
                 );
 
                 _stopping = true;
@@ -125,14 +125,17 @@ namespace Proto.Cluster.Kubernetes
 
             if (!podLabels.TryGetValue(LabelCluster, out var podClusterName))
             {
-                Logger.LogInformation("[Cluster] The pod {PodName} is not a Proto.Cluster node", eventPod.Metadata.Name
+                Logger.LogInformation(
+                    "[Cluster] The pod {PodName} is not a Proto.Cluster node",
+                    eventPod.Metadata.Name
                 );
                 return;
             }
 
             if (_clusterName != podClusterName)
             {
-                Logger.LogInformation("[Cluster] The pod {PodName} is from another cluster {Cluster}",
+                Logger.LogInformation(
+                    "[Cluster] The pod {PodName} is from another cluster {Cluster}",
                     eventPod.Metadata.Name, _clusterName
                 );
                 return;
@@ -150,9 +153,7 @@ namespace Proto.Cluster.Kubernetes
                 .Select(x => x.Status)
                 .ToList();
 
-            _cluster.MemberList.UpdateClusterTopology(memberStatuses, 0ul);
-            var topology = new ClusterTopologyEvent(memberStatuses);
-            _cluster.System.EventStream.Publish(topology);
+            _cluster.MemberList.UpdateClusterTopology(memberStatuses);
         }
     }
 }

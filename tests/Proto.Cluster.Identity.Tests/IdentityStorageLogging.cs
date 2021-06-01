@@ -45,7 +45,8 @@ namespace Proto.Cluster.Identity
                 nameof(StoreActivation), spawnLock.ClusterIdentity.ToString()
             );
 
-        public Task RemoveActivation(PID pid, CancellationToken ct) => LogCall(() => _storage.RemoveActivation(pid, ct),
+        public Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct) => LogCall(
+            () => _storage.RemoveActivation(clusterIdentity, pid, ct),
             nameof(RemoveActivation), pid.ToString()
         );
 

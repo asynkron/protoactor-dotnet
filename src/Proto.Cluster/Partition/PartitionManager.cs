@@ -3,7 +3,9 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Proto.Cluster.Partition
 {
@@ -16,15 +18,17 @@ namespace Proto.Cluster.Partition
         private readonly IRootContext _context;
         private readonly bool _isClient;
         private readonly ActorSystem _system;
-        private PID _partitionActivator = null!;
-        private PID _partitionActor = null!;
+        private PID _partitionPlacementActor = null!;
+        private PID _partitionIdentityActor = null!;
+        private readonly TimeSpan _identityHandoverTimeout;
 
-        internal PartitionManager(Cluster cluster, bool isClient)
+        internal PartitionManager(Cluster cluster, bool isClient, TimeSpan identityHandoverTimeout)
         {
             _cluster = cluster;
             _system = cluster.System;
             _context = _system.Root;
             _isClient = isClient;
+            _identityHandoverTimeout = identityHandoverTimeout;
         }
 
         internal PartitionMemberSelector Selector { get; } = new();
@@ -36,39 +40,36 @@ namespace Proto.Cluster.Partition
                 var eventId = 0ul;
                 //make sure selector is updated first
                 _system.EventStream.Subscribe<ClusterTopology>(e => {
-                        if (e.EventId > eventId)
-                        {
-                            eventId = e.EventId;
-                            Selector.Update(e.Members.ToArray());
-                        }
+                        if (e.TopologyHash == eventId) return;
+
+                        eventId = e.TopologyHash;
+                        Selector.Update(e.Members.ToArray());
                     }
                 );
             }
             else
             {
                 var partitionActorProps = Props
-                    .FromProducer(() => new PartitionIdentityActor(_cluster))
+                    .FromProducer(() => new PartitionIdentityActor(_cluster, _identityHandoverTimeout))
                     .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-                _partitionActor = _context.SpawnNamed(partitionActorProps, PartitionIdentityActorName);
+                _partitionIdentityActor = _context.SpawnNamed(partitionActorProps, PartitionIdentityActorName);
 
                 var partitionActivatorProps =
                     Props.FromProducer(() => new PartitionPlacementActor(_cluster));
-                _partitionActivator = _context.SpawnNamed(partitionActivatorProps, PartitionPlacementActorName);
+                _partitionPlacementActor = _context.SpawnNamed(partitionActivatorProps, PartitionPlacementActorName);
 
                 //synchronous subscribe to keep accurate
 
-                var eventId = 0ul;
+                var topologyHash = 0ul;
                 //make sure selector is updated first
                 _system.EventStream.Subscribe<ClusterTopology>(e => {
-                        if (e.EventId > eventId)
-                        {
-                            eventId = e.EventId;
-                            _cluster.MemberList.BroadcastEvent(e);
+                        if (e.TopologyHash == topologyHash) return;
 
-                            Selector.Update(e.Members.ToArray());
-                            _context.Send(_partitionActor, e);
-                            _context.Send(_partitionActivator, e);
-                        }
+                        topologyHash = e.TopologyHash;
+
+                        Selector.Update(e.Members.ToArray());
+                        _context.Send(_partitionIdentityActor, e);
+                        _context.Send(_partitionPlacementActor, e);
                     }
                 );
             }
@@ -81,8 +82,8 @@ namespace Proto.Cluster.Partition
             }
             else
             {
-                _context.Stop(_partitionActor);
-                _context.Stop(_partitionActivator);
+                _context.Stop(_partitionIdentityActor);
+                _context.Stop(_partitionPlacementActor);
             }
         }
 
@@ -92,4 +93,5 @@ namespace Proto.Cluster.Partition
         public static PID RemotePartitionPlacementActor(string address) =>
             PID.FromAddress(address, PartitionPlacementActorName);
     }
+    
 }

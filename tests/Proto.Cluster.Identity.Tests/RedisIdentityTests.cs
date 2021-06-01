@@ -24,7 +24,7 @@ namespace Proto.Cluster.Identity.Tests
             var identity = new IdentityStorageLookup(new RedisIdentityStorage(clusterName, RedisFixture.Multiplexer));
             return identity;
         }
-        
+
         public class RedisClusterTests : ClusterTests, IClassFixture<RedisIdentityClusterFixture>
         {
             // ReSharper disable once SuggestBaseTypeForParameter
@@ -49,8 +49,6 @@ namespace Proto.Cluster.Identity.Tests
             return identity;
         }
 
-        
-
         public class ResilienceRedisClusterTests : ClusterTests, IClassFixture<ChaosMonkeyRedisIdentityClusterFixture>
         {
             // ReSharper disable once SuggestBaseTypeForParameter
@@ -66,25 +64,25 @@ namespace Proto.Cluster.Identity.Tests
 
     static class RedisFixture
     {
-        static RedisFixture() => ThreadPool.SetMinThreads(250, 250);
-
-        private static readonly Lazy<ConnectionMultiplexer> LazyConnection = new(() 
+        private static readonly Lazy<ConnectionMultiplexer> LazyConnection = new(()
             => ConnectionMultiplexer.Connect(TestConfig.Configuration.GetConnectionString("Redis")));
+
+        static RedisFixture() => ThreadPool.SetMinThreads(250, 250);
 
         public static ConnectionMultiplexer Multiplexer => LazyConnection.Value;
     }
-    
-    public class RedisStorageTests : IdentityStorageTests
-        {
-            public RedisStorageTests(ITestOutputHelper testOutputHelper) : base(Init, testOutputHelper)
-            {
-            }
 
-            private static IIdentityStorage Init(string clusterName)
-                =>
-                    new RedisIdentityStorage(clusterName,
-                        RedisFixture.Multiplexer,
-                        TimeSpan.FromMilliseconds(1500)
-                    );
+    public class RedisStorageTests : IdentityStorageTests
+    {
+        public RedisStorageTests(ITestOutputHelper testOutputHelper) : base(Init, testOutputHelper)
+        {
         }
+
+        private static IIdentityStorage Init(string clusterName)
+            =>
+                new RedisIdentityStorage(clusterName,
+                    RedisFixture.Multiplexer,
+                    TimeSpan.FromMilliseconds(1500)
+                );
+    }
 }

@@ -5,8 +5,11 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Net.Client;
+using Grpc.Net.Compression;
 using Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
@@ -17,7 +20,7 @@ using ProtosReflection = Messages.ProtosReflection;
 
 class Program
 {
-    private static async Task Main(string[] args)
+    private static async Task Main()
     {
         Log.SetLoggerFactory(LoggerFactory.Create(c => c
                 .SetMinimumLevel(LogLevel.Information)
@@ -35,6 +38,16 @@ class Program
         if (!int.TryParse(Console.ReadLine(), out var provider))
             provider = 0;
 
+        Console.WriteLine("Enter client advertised host (Enter = localhost)");
+        var advertisedHost = Console.ReadLine().Trim();
+        if (string.IsNullOrEmpty(advertisedHost))
+            advertisedHost = "127.0.0.1";
+
+        Console.WriteLine("Enter remote advertised host (Enter = localhost)");
+        var remoteAddress = Console.ReadLine().Trim();
+
+        if (string.IsNullOrEmpty(remoteAddress)) remoteAddress = "127.0.0.1";
+
         var actorSystemConfig = new ActorSystemConfig()
             .WithDeadLetterThrottleCount(10)
             .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(2));
@@ -46,14 +59,22 @@ class Program
         if (provider == 0)
         {
             var remoteConfig = GrpcCoreRemoteConfig
-                .BindToLocalhost()
+                .BindTo(advertisedHost)
                 .WithProtoMessages(ProtosReflection.Descriptor);
             remote = new GrpcCoreRemote(system, remoteConfig);
         }
         else
         {
             var remoteConfig = GrpcNetRemoteConfig
-                .BindToLocalhost()
+                .BindTo(advertisedHost)
+                .WithChannelOptions(new GrpcChannelOptions
+                    {
+                        CompressionProviders = new[]
+                        {
+                            new GzipCompressionProvider(CompressionLevel.Fastest)
+                        }
+                    }
+                )
                 .WithProtoMessages(ProtosReflection.Descriptor);
             remote = new GrpcNetRemote(system, remoteConfig);
         }
@@ -62,7 +83,7 @@ class Program
 
         var messageCount = 1000000;
         var cancellationTokenSource = new CancellationTokenSource();
-        _ = Task.Run(async () => {
+        _ = SafeTask.Run(async () => {
                 while (!cancellationTokenSource.IsCancellationRequested)
                 {
                     var semaphore = new SemaphoreSlim(0);
@@ -73,7 +94,7 @@ class Program
                     try
                     {
                         var actorPidResponse =
-                            await remote.SpawnAsync("127.0.0.1:12000", "echo", TimeSpan.FromSeconds(1));
+                            await remote.SpawnAsync($"{remoteAddress}:12000", "echo", TimeSpan.FromSeconds(1));
 
                         if (actorPidResponse.StatusCode == (int) ResponseStatusCode.OK)
                         {

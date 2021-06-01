@@ -12,7 +12,7 @@ namespace Proto.Cluster.Tests
 {
     public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDeliveryTests.OrderedDeliveryFixture>
     {
-        public OrderedDeliveryTests(ITestOutputHelper testOutputHelper, OrderedDeliveryFixture clusterFixture) : base(
+        public OrderedDeliveryTests( OrderedDeliveryFixture clusterFixture) : base(
             clusterFixture
         )
         {
@@ -140,14 +140,14 @@ namespace Proto.Cluster.Tests
             {
             }
 
-            protected override (string, Props)[] ClusterKinds {
+            protected override ClusterKind[] ClusterKinds {
                 get {
                     var senderProps = Props.FromProducer(() => new SenderActor());
                     var aggProps = Props.FromProducer(() => new VerifyOrderActor());
-                    return base.ClusterKinds.Concat(new[]
+                    return base.ClusterKinds.Concat(new ClusterKind[]
                         {
-                            (SenderActor.Kind, senderProps),
-                            (VerifyOrderActor.Kind, aggProps)
+                            new (SenderActor.Kind, senderProps),
+                            new (VerifyOrderActor.Kind, aggProps)
                         }
                     ).ToArray();
                 }

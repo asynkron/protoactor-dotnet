@@ -12,8 +12,11 @@ namespace Proto.Mailbox
     {
         private readonly Channel<object> _messages;
         private volatile bool _hasMessages;
+        private int _length;
 
         public BoundedMailboxQueue(int size) => _messages = Channel.CreateBounded<object>(size);
+
+        public int Length => _length;
 
         public void Push(object message)
         {
@@ -22,12 +25,18 @@ namespace Proto.Mailbox
                 Thread.Sleep(50);
             }
 
-            _hasMessages = true;
+            Interlocked.Increment(ref _length);
         }
 
         public object? Pop()
         {
-            _hasMessages = _messages.Reader.TryRead(out var message);
+            if (_messages.Reader.TryRead(out var message))
+            {
+                Interlocked.Decrement(ref _length);
+                _hasMessages = true;
+            }
+            else _hasMessages = false;
+
             return message;
         }
 

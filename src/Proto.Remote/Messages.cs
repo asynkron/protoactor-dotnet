@@ -32,19 +32,6 @@ namespace Proto.Remote
 
     public sealed record RemoteUnwatch(PID Watcher, PID Watchee);
 
-    public sealed record RemoteDeliver (Proto.MessageHeader Header, object Message, PID Target, PID Sender, int SerializerId);
+    public sealed record RemoteDeliver (Proto.MessageHeader Header, object Message, PID Target, PID Sender);
 
-    public class JsonMessage
-    {
-        //NOTE: typename should not be checked against available typenames on send
-        //as the message might only exist on the receiveing side
-        public JsonMessage(string typeName, string json)
-        {
-            TypeName = typeName ?? throw new ArgumentNullException(nameof(typeName));
-            Json = json ?? throw new ArgumentNullException(nameof(json));
-        }
-
-        public string Json { get; set; }
-        public string TypeName { get; set; }
-    }
 }

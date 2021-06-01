@@ -7,7 +7,11 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 using Proto.Extensions;
+using Proto.Future;
+using Proto.Metrics;
+using Proto.Utils;
 
 namespace Proto
 {
@@ -30,10 +34,13 @@ namespace Proto
             Root = new RootContext(this);
             DeadLetter = new DeadLetterProcess(this);
             Guardians = new Guardians(this);
-            EventStream = new EventStream(config.DeadLetterThrottleInterval, config.DeadLetterThrottleCount, Shutdown);
-            var eventStreamProcess = new EventStreamProcess(this);
-            ProcessRegistry.TryAdd("eventstream", eventStreamProcess);
+            EventStream = new EventStream(this);
+            Metrics = new ProtoMetrics(config.MetricsProviders);
+            ProcessRegistry.TryAdd("eventstream", new EventStreamProcess(this));
             Extensions = new ActorSystemExtensions(this);
+            DeferredFuture = new Lazy<FutureFactory>(() => new FutureFactory(this, config.SharedFutures, config.SharedFutureSize));
+
+            RunThreadPoolStats();
         }
 
         public string Id { get; } = Guid.NewGuid().ToString("N");
@@ -52,9 +59,29 @@ namespace Proto
 
         public EventStream EventStream { get; }
 
+        public ProtoMetrics Metrics { get; }
+
         public ActorSystemExtensions Extensions { get; }
 
+        private Lazy<FutureFactory> DeferredFuture { get; }
+
+        internal FutureFactory Future => DeferredFuture.Value;
+
         public CancellationToken Shutdown => _cts.Token;
+
+        private void RunThreadPoolStats()
+        {
+            var logger = Log.CreateLogger(nameof(ThreadPoolStats));
+            _ = ThreadPoolStats.Run(TimeSpan.FromSeconds(5),
+                t => {
+                    //collect the latency metrics
+                    Metrics.InternalActorMetrics.ThreadPoolLatencyHistogram.Observe(t, new[] {Id, Address});
+
+                    //does it take longer than 1 sec for a task to start executing?
+                    if (t > TimeSpan.FromSeconds(1)) logger.LogWarning("ThreadPool is running hot, Threadpool latency {ThreadPoolLatency}", t);
+                }, _cts.Token
+            );
+        }
 
         public Task ShutdownAsync()
         {

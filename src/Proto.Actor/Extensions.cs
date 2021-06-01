@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using Proto.Mailbox;
 
 namespace Proto
@@ -33,6 +34,7 @@ namespace Proto
             }
         }
 
+        [UsedImplicitly]
         public static void Deconstruct<TKey, TValue>(
             //DONT TOUCH THIS, it tries to deconstruct the deconstruct method...
             // ReSharper disable once UseDeconstructionOnParameter

@@ -15,7 +15,7 @@ namespace Proto.Remote.Tests
     {
         private readonly IRemoteFixture _fixture;
 
-        public RemoteTests(IRemoteFixture fixture) => _fixture = fixture;
+        protected RemoteTests(IRemoteFixture fixture) => _fixture = fixture;
 
         private ActorSystem System => _fixture.ActorSystem;
         private IRemote Remote => _fixture.Remote;

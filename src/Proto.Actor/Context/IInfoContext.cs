@@ -7,7 +7,7 @@
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
-    public interface IInfoContext
+    public interface IInfoContext: IContextStore, ISystemContext
     {
         /// <summary>
         ///     Gets the PID for the parent of the current actor.
@@ -17,7 +17,7 @@ namespace Proto
         /// <summary>
         ///     Gets the PID for the current actor.
         /// </summary>
-        PID? Self { get; }
+        PID Self { get; }
 
         /// <summary>
         ///     Gets the PID of the actor that sent the currently processed message.
@@ -27,11 +27,6 @@ namespace Proto
         /// <summary>
         ///     Gets the actor associated with this context.
         /// </summary>
-        IActor? Actor { get; }
-
-        /// <summary>
-        ///     Gets the actor system this actor was spawned in.
-        /// </summary>
-        ActorSystem System { get; }
+        IActor Actor { get; }
     }
 }

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
+using Proto.Utils;
 
 // ReSharper disable once CheckNamespace
 namespace Proto
@@ -28,6 +29,8 @@ namespace Proto
         public ImmutableHashSet<PID> Watchers { get; private set; } = ImmutableHashSet<PID>.Empty;
         public IContext Context { get; }
         public CancellationTokenSource CancellationTokenSource { get; } = new();
+
+        public TypeDictionary<object, ActorContextExtras> Store { get; } = new(5, 1);
 
         public void InitReceiveTimeoutTimer(Timer timer) => ReceiveTimeoutTimer = timer;
 

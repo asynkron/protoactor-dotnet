@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Future;
 
 // ReSharper disable once CheckNamespace
 namespace Proto
@@ -16,11 +17,7 @@ namespace Proto
 
         protected RootContextDecorator(IRootContext context) => _context = context;
 
-        public virtual PID Spawn(Props props) => _context.Spawn(props);
-
         public virtual PID SpawnNamed(Props props, string name) => _context.SpawnNamed(props, name);
-
-        public virtual PID SpawnPrefix(Props props, string prefix) => _context.SpawnPrefix(props, prefix);
 
         public virtual void Send(PID target, object message) => _context.Send(target, message);
 
@@ -29,13 +26,8 @@ namespace Proto
         public virtual void Request(PID target, object message, PID? sender) =>
             _context.Request(target, message, sender);
 
-        public virtual Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeout) =>
-            _context.RequestAsync<T>(target, message, timeout);
-
         public virtual Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken) =>
             _context.RequestAsync<T>(target, message, cancellationToken);
-
-        public virtual Task<T> RequestAsync<T>(PID target, object message) => _context.RequestAsync<T>(target, message);
 
         public virtual MessageHeader Headers => _context.Headers;
 
@@ -54,5 +46,13 @@ namespace Proto
         public virtual PID? Sender => null;
         public virtual IActor? Actor => null;
         public virtual ActorSystem System => _context.System;
+
+        public virtual T? Get<T>() => _context.Get<T>();
+
+        public virtual void Set<T, TI>(TI obj) where TI : T => _context.Set(obj);
+
+        public virtual void Remove<T>() => _context.Remove<T>();
+
+        public IFuture GetFuture() => _context.GetFuture();
     }
 }

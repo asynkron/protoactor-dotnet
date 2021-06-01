@@ -4,10 +4,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Identity;
+using Proto.Cluster.Metrics;
+using Proto.Future;
 using Proto.Utils;
 
 namespace Proto.Cluster
@@ -15,146 +18,250 @@ namespace Proto.Cluster
     public class DefaultClusterContext : IClusterContext
     {
         private readonly IIdentityLookup _identityLookup;
-        private readonly ILogger _logger;
-        private readonly ClusterContextConfig _config;
+
         private readonly PidCache _pidCache;
         private readonly ShouldThrottle _requestLogThrottle;
+        private readonly TaskClock _clock;
+        private static readonly ILogger Logger = Log.CreateLogger<DefaultClusterContext>();
 
-        public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ILogger logger, ClusterContextConfig config)
+        public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ClusterContextConfig config, CancellationToken killSwitch)
         {
             _identityLookup = identityLookup;
             _pidCache = pidCache;
-            _logger = logger;
-            _config = config;
+
             _requestLogThrottle = Throttle.Create(
-                _config.MaxNumberOfEventsInRequestLogThrottlePeriod,
-                _config.RequestLogThrottlePeriod,
-                i => _logger.LogInformation("Throttled {LogCount} TryRequestAsync logs.", i)
+                config.MaxNumberOfEventsInRequestLogThrottlePeriod,
+                config.RequestLogThrottlePeriod,
+                i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
             );
+            _clock = new TaskClock(config.ActorRequestTimeout, TimeSpan.FromSeconds(1), killSwitch);
+            _clock.Start();
         }
 
         public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
         {
-            _logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
+            var start = Stopwatch.StartNew();
+            Logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
             var i = 0;
 
-            while (!ct.IsCancellationRequested)
+            var future = context.GetFuture();
+            PID? lastPid = null;
+
+            try
             {
-                if (context.System.Shutdown.IsCancellationRequested) return default;
-
-                if (_pidCache.TryGet(clusterIdentity, out var cachedPid))
+                while (!ct.IsCancellationRequested)
                 {
-                    _logger.LogDebug("Requesting {Identity}-{Kind} Message {Message} - Got PID {Pid} from PidCache",
-                        clusterIdentity.Identity, clusterIdentity.Kind, message, cachedPid
-                    );
-                    var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, cachedPid, "PidCache", context);
-                    if (status == ResponseStatus.Ok) return res;
-                }
+                    if (context.System.Shutdown.IsCancellationRequested) return default;
 
-                var delay = i * 20;
-                i++;
+                    var source = PidSource.Cache;
+                    var pid = GetCachedPid(clusterIdentity);
 
-                //try get a pid from id lookup
-                try
-                {
-                    var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
-
+                    if (pid is null)
+                    {
+                        source = PidSource.Lookup;
+                        pid = await GetPidFromLookup(clusterIdentity, context, ct);
+                    }
+                    
                     if (context.System.Shutdown.IsCancellationRequested) return default;
 
                     if (pid is null)
                     {
-                        _logger.LogDebug(
-                            "Requesting {Identity}-{Kind} Message {Message} - Did not get PID from IdentityLookup",
-                            clusterIdentity.Identity, clusterIdentity.Kind, message
-                        );
-                        await Task.Delay(delay, CancellationToken.None);
+                        Logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup", clusterIdentity);
+                        await Task.Delay(++i * 20, CancellationToken.None);
                         continue;
                     }
 
-                    //got one, update cache
-                    _pidCache.TryAdd(clusterIdentity, pid);
+                    // Ensures that a future is not re-used against another actor.
+                    if (lastPid is not null && !pid.Equals(lastPid)) RefreshFuture();
 
-                    _logger.LogDebug(
-                        "Requesting {Identity}-{Kind} Message {Message} - Got PID {PID} from IdentityLookup",
-                        clusterIdentity.Identity, clusterIdentity.Kind, message, pid
-                    );
-
-                    if (context.System.Shutdown.IsCancellationRequested) return default;
-
-                    var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, pid, "IIdentityLookup", context);
+                    // Logger.LogDebug("Requesting {ClusterIdentity} - Got PID {Pid} from {Source}", clusterIdentity, pid, source);
+                    var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, pid, source, context, future);
 
                     switch (status)
                     {
                         case ResponseStatus.Ok:
                             return res;
-                        case ResponseStatus.TimedOutOrException:
-                            await Task.Delay(delay, CancellationToken.None);
+
+                        case ResponseStatus.Exception:
+                            RefreshFuture();
+                            await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
+                            await Task.Delay(++i * 20, CancellationToken.None);
                             break;
                         case ResponseStatus.DeadLetter:
+                            RefreshFuture();
+                            await RemoveFromSource(clusterIdentity, source, pid);
+                            break;
+                        case ResponseStatus.TimedOut:
+                            lastPid = pid;
+                            await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
                             break;
                     }
+
+                    if (!context.System.Metrics.IsNoop)
+                    {
+                        context.System.Metrics.Get<ClusterMetrics>().ClusterRequestRetryCount.Inc(new[]
+                            {context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name}
+                        );
+                    }
                 }
-                catch
+
+                if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
                 {
-                    if (context.System.Shutdown.IsCancellationRequested) return default;
-
-                    if (_requestLogThrottle().IsOpen())
-                        _logger.LogWarning("Failed to get PID from IIdentityLookup");
-                    await Task.Delay(delay, CancellationToken.None);
+                    var t = start.Elapsed;
+                    Logger.LogWarning("RequestAsync retried but failed for {ClusterIdentity}, elapsed {Time}", clusterIdentity, t);
                 }
-            }
-            
-            if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
-                _logger.LogWarning("RequestAsync retried but failed for ClusterIdentity {ClusterIdentity}", clusterIdentity);
 
-            return default!;
+                return default!;
+            }
+            finally
+            {
+                future.Dispose();
+            }
+
+            void RefreshFuture()
+            {
+                future.Dispose();
+                future = context.GetFuture();
+                lastPid = null;
+            }
         }
-        
-        private async Task<(ResponseStatus ok, T res)> TryRequestAsync<T>(
-            ClusterIdentity clusterIdentity,
-            object message,
-            PID cachedPid,
-            string source,
-            ISenderContext context
-        )
+
+        private async ValueTask RemoveFromSource(ClusterIdentity clusterIdentity, PidSource source, PID pid)
+        {
+            if (source == PidSource.Lookup) await _identityLookup.RemovePidAsync(clusterIdentity, pid, CancellationToken.None);
+
+            _pidCache.RemoveByVal(clusterIdentity, pid);
+        }
+
+        private async Task<PID?> GetPidFromLookup(ClusterIdentity clusterIdentity, ISenderContext context, CancellationToken ct)
         {
             try
             {
-                var res = await context.RequestAsync<T>(cachedPid, message, _config.ActorRequestTimeout);
+                if (!context.System.Metrics.IsNoop)
+                {
+                    var pid = await context.System.Metrics.Get<ClusterMetrics>().ClusterResolvePidHistogram
+                        .Observe(async () => await _identityLookup.GetAsync(clusterIdentity, ct), context.System.Id, context.System.Address,
+                            clusterIdentity.Kind
+                        );
 
-                if (res is not null) return (ResponseStatus.Ok, res);
+                    if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
+                    return pid;
+                }
+                else
+                {
+                    var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
+                    if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
+                    return pid;
+                }
             }
-            catch (DeadLetterException)
+            catch (Exception e)
             {
-                if (!context.System.Shutdown.IsCancellationRequested)
-                    _logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
+                if (context.System.Shutdown.IsCancellationRequested) return default;
 
-                await _identityLookup.RemovePidAsync(cachedPid, CancellationToken.None);
-                _pidCache.RemoveByVal(clusterIdentity, cachedPid);
-                
-                return (ResponseStatus.DeadLetter, default)!;
+                if (_requestLogThrottle().IsOpen())
+                    Logger.LogWarning(e, "Failed to get PID from IIdentityLookup for {ClusterIdentity}", clusterIdentity);
+                return null;
+            }
+        }
+
+        private async ValueTask<(ResponseStatus Ok, T?)> TryRequestAsync<T>(
+            ClusterIdentity clusterIdentity,
+            object message,
+            PID pid,
+            PidSource source,
+            ISenderContext context,
+            IFuture future
+        )
+        {
+            var t = Stopwatch.StartNew();
+
+            try
+            {
+                context.Request(pid, message, future.Pid);
+                var task = future.Task;
+                await Task.WhenAny(task, _clock.CurrentBucket);
+
+                if (task.IsCompleted)
+                {
+                    var res = task.Result;
+
+                    return ToResult<T>(source, context, res);
+                }
+
+                if (!context.System.Shutdown.IsCancellationRequested)
+                    Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
+                _pidCache.RemoveByVal(clusterIdentity, pid);
+
+                return (ResponseStatus.TimedOut, default)!;
             }
             catch (TimeoutException)
             {
-                if (!context.System.Shutdown.IsCancellationRequested)
-                    _logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
+                return (ResponseStatus.TimedOut, default)!;
             }
             catch (Exception x)
             {
                 if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
-                    _logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
+                    Logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
+                _pidCache.RemoveByVal(clusterIdentity, pid);
+                return (ResponseStatus.Exception, default)!;
+            }
+            finally
+            {
+                if (!context.System.Metrics.IsNoop)
+                {
+                    var elapsed = t.Elapsed;
+                    context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram
+                        .Observe(elapsed, new[]
+                            {
+                                context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name,
+                                source == PidSource.Cache ? "PidCache" : "IIdentityLookup"
+                            }
+                        );
+                }
+            }
+        }
+
+        private PID? GetCachedPid(ClusterIdentity clusterIdentity)
+        {
+            var pid = clusterIdentity.CachedPid;
+
+            if (pid is null && _pidCache.TryGet(clusterIdentity, out pid))
+            {
+                clusterIdentity.CachedPid = pid;
             }
 
-            _pidCache.RemoveByVal(clusterIdentity, cachedPid);
+            return pid;
+        }
+        
+        private static (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
+        {
+            switch (result)
+            {
+                case DeadLetterResponse:
+                    if (!context.System.Shutdown.IsCancellationRequested)
+                        Logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
 
-            return (ResponseStatus.TimedOutOrException, default)!;
+                    return (ResponseStatus.DeadLetter, default)!;
+                case null: return (ResponseStatus.Ok, default);
+                case T t:  return (ResponseStatus.Ok, t);
+                default:
+                    Logger.LogWarning("Unexpected message. Was type {Type} but expected {ExpectedType}", result.GetType(), typeof(T));
+                    return (ResponseStatus.Exception, default);
+            }
         }
 
         private enum ResponseStatus
         {
             Ok,
-            TimedOutOrException,
+            TimedOut,
+            Exception,
             DeadLetter
+        }
+
+        private enum PidSource
+        {
+            Cache,
+            Lookup
         }
     }
 }

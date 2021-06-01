@@ -1,0 +1,66 @@
+version: "3.6"
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    networks:
+      - "twitch"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  grafana:
+    image: grafana/grafana:latest
+    networks:
+      - "twitch"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/prometheus.yaml
+      - ./grafana/dashboards:/dashboards
+
+  consul-agent-1: &consul-agent
+    image: consul:latest
+    networks:
+      - consul
+    command: "agent -retry-join consul-server-bootstrap -client 0.0.0.0"
+
+  consul-agent-2:
+    <<: *consul-agent
+
+  consul-agent-3:
+    <<: *consul-agent
+
+  consul-server-1: &consul-server
+    <<: *consul-agent
+    command: "agent -server -retry-join consul-server-bootstrap -client 0.0.0.0"
+
+  consul-server-2:
+    <<: *consul-server
+
+  consul-server-bootstrap:
+    <<: *consul-agent
+    ports:
+      - "8400:8400"
+      - "8500:8500"
+      - "8600:8600"
+      - "8600:8600/udp"
+    command: "agent -server -bootstrap-expect 3 -ui -client 0.0.0.0"
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - 127.0.0.1:27017:27017
+    volumes:
+      - mongodb_data:/data/db
+
+  redis:
+    image: redis:latest
+    ports:
+      - 127.0.0.1:6379:6379
+
+networks:
+  twitch:
+  consul:
+
+volumes:
+  mongodb_data:

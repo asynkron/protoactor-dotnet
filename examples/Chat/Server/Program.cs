@@ -30,7 +30,8 @@ namespace Server
         {
             var config =
                 BindToLocalhost(8000)
-                    .WithProtoMessages(ChatReflection.Descriptor);
+                    .WithProtoMessages(ChatReflection.Descriptor)
+                    .WithRemoteDiagnostics(true);
 
             var system
                 = new ActorSystem()
@@ -54,9 +55,9 @@ namespace Server
                         {
                             case Connect connect:
                                 Console.WriteLine($"Client {connect.Sender} connected");
-                                
+
                                 clients.Add(connect.Sender);
-                                
+
                                 ctx.Send(
                                     connect.Sender,
                                     new Connected

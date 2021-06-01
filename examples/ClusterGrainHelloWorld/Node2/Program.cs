@@ -5,52 +5,58 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Threading.Tasks;
-using Messages;
+using ClusterHelloWorld.Messages;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
-using ProtosReflection = Messages.ProtosReflection;
+using static System.Threading.Tasks.Task;
+using ProtosReflection =ClusterHelloWorld.Messages.ProtosReflection;
 
 namespace Node2
 {
-    public class HelloGrain : IHelloGrain
+    public class HelloGrain : HelloGrainBase
     {
-        public Task<HelloResponse> SayHello(HelloRequest request) =>
-            Task.FromResult(new HelloResponse
-                {
-                    Message = "Hello from typed grain"
-                }
-            );
+        private readonly string _identity;
+
+        public HelloGrain(IContext ctx, string identity) : base(ctx) => _identity = identity;
+
+        public override Task<HelloResponse> SayHello(HelloRequest request) {
+            
+            Console.WriteLine("Got request!!");
+            var res = new HelloResponse
+            {
+                Message = $"Hello from typed grain {_identity}"
+            };
+
+            return FromResult(res);
+        }
     }
 
     class Program
     {
-        private static async Task Main(string[] args)
+        private static async Task Main()
         {
-            var remoteConfig = GrpcCoreRemoteConfig
-                .BindToLocalhost()
-                .WithProtoMessages(ProtosReflection.Descriptor);
+            //bind this interface to our concrete implementation
+            Grains.Factory<HelloGrainBase>.Create = (ctx, identity, _) => new HelloGrain(ctx, identity);
 
-            var consulProvider =
-                new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://consul:8500/"));
-
-            var clusterConfig =
-                ClusterConfig
-                    .Setup("MyCluster", consulProvider, new PartitionIdentityLookup());
-
-            var system = new ActorSystem()
-                .WithRemote(remoteConfig)
-                .WithCluster(clusterConfig);
+            var system = new ActorSystem(new ActorSystemConfig().WithDeveloperSupervisionLogging(true))
+                .WithRemote(GrpcCoreRemoteConfig
+                    .BindToLocalhost()
+                    .WithProtoMessages(ProtosReflection.Descriptor)
+                )
+                .WithCluster(ClusterConfig
+                    .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig()), new PartitionIdentityLookup())
+                    .WithHelloHelloWorldKinds()
+                );
 
             await system
                 .Cluster()
                 .StartMemberAsync();
-
-            var grains = new Grains(system.Cluster());
-            grains.HelloGrainFactory(() => new HelloGrain());
+            
+            Console.WriteLine("Started...");
 
             Console.CancelKeyPress += async (e, y) => {
                 Console.WriteLine("Shutting Down...");
@@ -58,7 +64,8 @@ namespace Node2
                     .Cluster()
                     .ShutdownAsync();
             };
-            await Task.Delay(-1);
+            
+            await Delay(-1);
         }
     }
 }

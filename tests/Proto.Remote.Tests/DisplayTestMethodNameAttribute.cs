@@ -2,7 +2,7 @@ using Xunit.Sdk;
 
 namespace Proto.Remote.Tests
 {
-    public class DisplayTestMethodNameAttribute : BeforeAfterTestAttribute
+    public sealed class DisplayTestMethodNameAttribute : BeforeAfterTestAttribute
     {
         // public override void Before(MethodInfo methodUnderTest)
         // {

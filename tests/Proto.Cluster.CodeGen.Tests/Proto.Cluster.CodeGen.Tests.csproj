@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+
+        <IsPackable>false</IsPackable>
+
+        <TargetFrameworks>net5.0;netstandard2.1</TargetFrameworks>
+
+        <OutputType>Library</OutputType>
+
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Handlebars.Net" Version="2.0.7" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
+        <PackageReference Include="protobuf-net.Reflection" Version="3.0.101" />
+        <PackageReference Include="xunit" Version="2.4.1" />
+        <PackageReference Include="coverlet.collector" Version="3.0.3">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+    </ItemGroup>
+
+
+
+    <ItemGroup>
+      <None Remove="foo.proto" />
+      <Content Include="foo.proto">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="bar.proto" />
+      <Content Include="bar.proto">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Proto.Cluster.CodeGen\Proto.Cluster.CodeGen.csproj" />
+    </ItemGroup>
+
+</Project>

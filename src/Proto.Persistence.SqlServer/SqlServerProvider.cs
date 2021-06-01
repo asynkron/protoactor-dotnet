@@ -37,6 +37,7 @@ namespace Proto.Persistence.SqlServer
 
             if (autoCreateTables)
             {
+                if (!_tableSchema.Equals("dbo", StringComparison.OrdinalIgnoreCase)) CreateCustomSchema();
                 CreateSnapshotTable();
                 CreateEventTable();
             }
@@ -161,6 +162,18 @@ namespace Proto.Persistence.SqlServer
             );
         }
 
+        private void CreateCustomSchema()
+        {
+            var sql = $@"
+            IF NOT EXISTS ( SELECT * FROM sys.schemas WHERE name = N'{_tableSchema}' )
+            BEGIN
+                EXEC('CREATE SCHEMA [{_tableSchema}]');
+            END
+            ";
+
+            ExecuteNonQuery(sql);
+        }
+
         private void CreateSnapshotTable()
         {
             var sql = $@"
@@ -233,6 +246,8 @@ namespace Proto.Persistence.SqlServer
             using var connection = new SqlConnection(_connectionString);
 
             using var command = new SqlCommand(sql, connection);
+
+            connection.Open();
 
             command.ExecuteNonQuery();
         }

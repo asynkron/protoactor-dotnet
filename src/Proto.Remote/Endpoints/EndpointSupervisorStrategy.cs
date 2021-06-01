@@ -7,6 +7,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
@@ -42,8 +43,8 @@ namespace Proto.Remote
         {
             if (ShouldStop(rs))
             {
-                Logger.LogError(reason,
-                    "Stopping connection to address {Address} after retries expired because of {Reason}",
+                Logger.LogError(
+                    "[EndpointSupervisor] Stopping connection to address {Address} after retries expired because of {Reason}",
                     _address, reason.GetType().Name
                 );
                 _cancelFutureRetries.Cancel();
@@ -56,12 +57,24 @@ namespace Proto.Remote
                 var noise = _random.Next(500);
                 var duration = TimeSpan.FromMilliseconds(backoff + noise);
 
-                _ = Task.Run(async () => {
+                _ = SafeTask.Run(async () => {
                         await Task.Delay(duration);
-                        Logger.LogWarning(reason,
-                            "Restarting {Actor} after {Duration} because of {Reason}",
-                            child, duration, reason.GetType().Name
-                        );
+
+                        if (reason is RpcException rpc && rpc.StatusCode == StatusCode.Unavailable)
+                        {
+                            Logger.LogWarning(
+                                "[EndpointSupervisor] Restarting {Actor} after {Duration} because endpoint is unavailable",
+                                child, duration
+                            );
+                        }
+                        else
+                        {
+                            Logger.LogWarning(reason,
+                                "[EndpointSupervisor] Restarting {Actor} after {Duration} because of {Reason}",
+                                child, duration, reason.GetType().Name
+                            );
+                        }
+                   
                         supervisor.RestartChildren(reason, child);
                     }
                     , _cancelFutureRetries.Token

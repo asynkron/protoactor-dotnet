@@ -1,0 +1,1653 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "$$hashKey": "object:636",
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "iteration": 1586724089619,
+  "links": [],
+  "panels": [
+    {
+      "cacheTimeout": null,
+      "datasource": null,
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "id": 20,
+      "links": [],
+      "options": {
+        "colorMode": "value",
+        "fieldOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "defaults": {
+            "mappings": [
+              {
+                "$$hashKey": "object:4271",
+                "id": 0,
+                "op": "=",
+                "text": "N/A",
+                "type": 1,
+                "value": "null"
+              }
+            ],
+            "nullValueMode": "connected",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "none"
+          },
+          "overrides": [],
+          "values": false
+        },
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal"
+      },
+      "pluginVersion": "6.7.2",
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total[5m])",
+          "interval": "",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "CPU",
+      "type": "stat"
+    },
+    {
+      "dashboardFilter": "",
+      "dashboardTags": [],
+      "datasource": null,
+      "folderId": -1,
+      "gridPos": {
+        "h": 8,
+        "w": 5,
+        "x": 4,
+        "y": 0
+      },
+      "id": 24,
+      "limit": 10,
+      "nameFilter": "",
+      "onlyAlertsOnDashboard": false,
+      "show": "current",
+      "sortOrder": 1,
+      "stateFilter": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Alerts",
+      "type": "alertlist"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 9,
+        "y": 0
+      },
+      "hiddenSeries": false,
+      "id": 22,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "6.7.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "process_working_set_bytes",
+          "interval": "",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Memory",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:4320",
+          "format": "decbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:4321",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 7,
+        "x": 15,
+        "y": 0
+      },
+      "hiddenSeries": false,
+      "id": 26,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "mt_activity_in_progress",
+          "interval": "",
+          "legendFormat": "{{consumer_type}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Activity Execution",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 18,
+      "panels": [],
+      "title": "Consume",
+      "type": "row"
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                5
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "avg"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "5m",
+        "frequency": "1m",
+        "handler": 1,
+        "name": "Consume Duration alert",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 11,
+        "w": 11,
+        "x": 0,
+        "y": 9
+      },
+      "hiddenSeries": false,
+      "id": 6,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(mt_consume_duration_seconds_bucket[5m])) by (message_type,le))  ",
+          "interval": "",
+          "legendFormat": "{{message_type}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 5
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Consume Duration",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:3916",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:3917",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                42
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "10s",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "avg"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "10s",
+        "frequency": "5s",
+        "handler": 1,
+        "name": "Delivery Duration Long",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 11,
+        "w": 11,
+        "x": 11,
+        "y": 9
+      },
+      "hiddenSeries": false,
+      "id": 8,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(mt_delivery_duration_seconds_bucket[5m])) by (message_type,le))",
+          "interval": "",
+          "legendFormat": "{{message_type}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [
+        {
+          "$$hashKey": "object:5930",
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 62,
+          "yaxis": "left"
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Delivery Duration",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:703",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:704",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "datasource": null,
+      "gridPos": {
+        "h": 8,
+        "w": 7,
+        "x": 0,
+        "y": 20
+      },
+      "id": 29,
+      "options": {
+        "displayMode": "lcd",
+        "fieldOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 10
+                }
+              ]
+            },
+            "title": "",
+            "unit": "none"
+          },
+          "overrides": [],
+          "values": false
+        },
+        "orientation": "horizontal",
+        "showUnfilled": true
+      },
+      "pluginVersion": "6.7.2",
+      "targets": [
+        {
+          "expr": "rate(mt_consume_total{message_type=~\"[[SagaMessageType]]\"}[5m])",
+          "interval": "",
+          "legendFormat": "{{consumer_type}}/{{message_type}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Saga Message Rate",
+      "type": "bargauge"
+    },
+    {
+      "cacheTimeout": null,
+      "datasource": null,
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 7,
+        "y": 20
+      },
+      "id": 31,
+      "links": [],
+      "options": {
+        "colorMode": "value",
+        "fieldOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "defaults": {
+            "mappings": [
+              {
+                "$$hashKey": "object:7339",
+                "id": 0,
+                "op": "=",
+                "text": "N/A",
+                "type": 1,
+                "value": "null"
+              }
+            ],
+            "nullValueMode": "connected",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "yellow",
+                  "value": null
+                },
+                {
+                  "color": "green",
+                  "value": 300
+                }
+              ]
+            },
+            "unit": "none"
+          },
+          "overrides": [],
+          "values": false
+        },
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal"
+      },
+      "pluginVersion": "6.7.2",
+      "targets": [
+        {
+          "expr": "mt_consume_total{message_type=\"RoutingSlipCompleted\"}",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Fulfilled Orders",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "id": 16,
+      "panels": [],
+      "title": "Publish",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 29
+      },
+      "hiddenSeries": false,
+      "id": 12,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "rate(mt_publish_total{message_type=~\"[[PublishMessageTypes]]\"}[5m])",
+          "interval": "",
+          "legendFormat": "{{message_type}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Publish Rate",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:1183",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:1184",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 7,
+        "x": 8,
+        "y": 29
+      },
+      "hiddenSeries": false,
+      "id": 13,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "rate(mt_send_total{message_type=~\"[[SendMessageTypes]]\"}[5m])",
+          "interval": "",
+          "legendFormat": "{{message_type}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Send Rate",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:1183",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:1184",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 7,
+        "x": 15,
+        "y": 29
+      },
+      "hiddenSeries": false,
+      "id": 14,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "hideEmpty": true,
+        "hideZero": true,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "rate(mt_receive_total[5m])",
+          "interval": "",
+          "legendFormat": "{{endpoint_address}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Receive Rate",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:1183",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:1184",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 22,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "$$hashKey": "object:1733",
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "prometheus",
+        "definition": "label_values(consumer_type)",
+        "hide": 0,
+        "includeAll": true,
+        "index": -1,
+        "label": null,
+        "multi": false,
+        "name": "ConsumerType",
+        "options": [
+          {
+            "$$hashKey": "object:1733",
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "$$hashKey": "object:1734",
+            "selected": false,
+            "text": "AllocateInventoryActivity",
+            "value": "AllocateInventoryActivity"
+          },
+          {
+            "$$hashKey": "object:1735",
+            "selected": false,
+            "text": "AllocateInventoryConsumer",
+            "value": "AllocateInventoryConsumer"
+          },
+          {
+            "$$hashKey": "object:1736",
+            "selected": false,
+            "text": "AllocationState",
+            "value": "AllocationState"
+          },
+          {
+            "$$hashKey": "object:1737",
+            "selected": false,
+            "text": "CancelScheduledMessageConsumer",
+            "value": "CancelScheduledMessageConsumer"
+          },
+          {
+            "$$hashKey": "object:1738",
+            "selected": false,
+            "text": "FulfillOrderConsumer",
+            "value": "FulfillOrderConsumer"
+          },
+          {
+            "$$hashKey": "object:1739",
+            "selected": false,
+            "text": "InventoryAllocated_",
+            "value": "InventoryAllocated_"
+          },
+          {
+            "$$hashKey": "object:1740",
+            "selected": false,
+            "text": "OrderState",
+            "value": "OrderState"
+          },
+          {
+            "$$hashKey": "object:1741",
+            "selected": false,
+            "text": "PaymentActivity",
+            "value": "PaymentActivity"
+          },
+          {
+            "$$hashKey": "object:1742",
+            "selected": false,
+            "text": "RoutingSlipBatchEventConsumer",
+            "value": "RoutingSlipBatchEventConsumer"
+          },
+          {
+            "$$hashKey": "object:1743",
+            "selected": false,
+            "text": "RoutingSlipCompleted_",
+            "value": "RoutingSlipCompleted_"
+          },
+          {
+            "$$hashKey": "object:1744",
+            "selected": false,
+            "text": "RoutingSlipEventConsumer",
+            "value": "RoutingSlipEventConsumer"
+          },
+          {
+            "$$hashKey": "object:1745",
+            "selected": false,
+            "text": "ScheduleMessageConsumer",
+            "value": "ScheduleMessageConsumer"
+          },
+          {
+            "$$hashKey": "object:1746",
+            "selected": false,
+            "text": "SubmitOrderConsumer",
+            "value": "SubmitOrderConsumer"
+          }
+        ],
+        "query": "label_values(consumer_type)",
+        "refresh": 0,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 5,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "$$hashKey": "object:1623",
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "prometheus",
+        "definition": "label_values(message_type)",
+        "hide": 0,
+        "includeAll": true,
+        "index": -1,
+        "label": null,
+        "multi": false,
+        "name": "MessageType",
+        "options": [
+          {
+            "$$hashKey": "object:1623",
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "$$hashKey": "object:1624",
+            "selected": false,
+            "text": "AllocateInventory",
+            "value": "AllocateInventory"
+          },
+          {
+            "$$hashKey": "object:1625",
+            "selected": false,
+            "text": "AllocateInventoryArguments",
+            "value": "AllocateInventoryArguments"
+          },
+          {
+            "$$hashKey": "object:1626",
+            "selected": false,
+            "text": "AllocateInventoryLog",
+            "value": "AllocateInventoryLog"
+          },
+          {
+            "$$hashKey": "object:1627",
+            "selected": false,
+            "text": "AllocationCreated",
+            "value": "AllocationCreated"
+          },
+          {
+            "$$hashKey": "object:1628",
+            "selected": false,
+            "text": "AllocationHoldDurationExpired",
+            "value": "AllocationHoldDurationExpired"
+          },
+          {
+            "$$hashKey": "object:1629",
+            "selected": false,
+            "text": "AllocationReleaseRequested",
+            "value": "AllocationReleaseRequested"
+          },
+          {
+            "$$hashKey": "object:1630",
+            "selected": false,
+            "text": "Batch`1",
+            "value": "Batch`1"
+          },
+          {
+            "$$hashKey": "object:1631",
+            "selected": false,
+            "text": "CancelScheduledMessage",
+            "value": "CancelScheduledMessage"
+          },
+          {
+            "$$hashKey": "object:1632",
+            "selected": false,
+            "text": "CheckOrder",
+            "value": "CheckOrder"
+          },
+          {
+            "$$hashKey": "object:1633",
+            "selected": false,
+            "text": "FulfillOrder",
+            "value": "FulfillOrder"
+          },
+          {
+            "$$hashKey": "object:1634",
+            "selected": false,
+            "text": "InventoryAllocated",
+            "value": "InventoryAllocated"
+          },
+          {
+            "$$hashKey": "object:1635",
+            "selected": false,
+            "text": "OrderAccepted",
+            "value": "OrderAccepted"
+          },
+          {
+            "$$hashKey": "object:1636",
+            "selected": false,
+            "text": "OrderFulfillmentCompleted",
+            "value": "OrderFulfillmentCompleted"
+          },
+          {
+            "$$hashKey": "object:1637",
+            "selected": false,
+            "text": "OrderFulfillmentFaulted",
+            "value": "OrderFulfillmentFaulted"
+          },
+          {
+            "$$hashKey": "object:1638",
+            "selected": false,
+            "text": "OrderNotFound",
+            "value": "OrderNotFound"
+          },
+          {
+            "$$hashKey": "object:1639",
+            "selected": false,
+            "text": "OrderStatus",
+            "value": "OrderStatus"
+          },
+          {
+            "$$hashKey": "object:1640",
+            "selected": false,
+            "text": "OrderSubmissionAccepted",
+            "value": "OrderSubmissionAccepted"
+          },
+          {
+            "$$hashKey": "object:1641",
+            "selected": false,
+            "text": "OrderSubmitted",
+            "value": "OrderSubmitted"
+          },
+          {
+            "$$hashKey": "object:1642",
+            "selected": false,
+            "text": "PaymentArguments",
+            "value": "PaymentArguments"
+          },
+          {
+            "$$hashKey": "object:1766",
+            "selected": false,
+            "text": "RoutingSlip",
+            "value": "RoutingSlip"
+          },
+          {
+            "$$hashKey": "object:1767",
+            "selected": false,
+            "text": "RoutingSlipActivityCompensated",
+            "value": "RoutingSlipActivityCompensated"
+          },
+          {
+            "$$hashKey": "object:1768",
+            "selected": false,
+            "text": "RoutingSlipActivityCompleted",
+            "value": "RoutingSlipActivityCompleted"
+          },
+          {
+            "$$hashKey": "object:1769",
+            "selected": false,
+            "text": "RoutingSlipActivityFaulted",
+            "value": "RoutingSlipActivityFaulted"
+          },
+          {
+            "$$hashKey": "object:1770",
+            "selected": false,
+            "text": "RoutingSlipCompleted",
+            "value": "RoutingSlipCompleted"
+          },
+          {
+            "$$hashKey": "object:1771",
+            "selected": false,
+            "text": "RoutingSlipFaulted",
+            "value": "RoutingSlipFaulted"
+          },
+          {
+            "$$hashKey": "object:1772",
+            "selected": false,
+            "text": "Scheduled",
+            "value": "Scheduled"
+          },
+          {
+            "$$hashKey": "object:1773",
+            "selected": false,
+            "text": "ScheduleMessage",
+            "value": "ScheduleMessage"
+          },
+          {
+            "$$hashKey": "object:1774",
+            "selected": false,
+            "text": "ScheduleMessage`1",
+            "value": "ScheduleMessage`1"
+          },
+          {
+            "$$hashKey": "object:1775",
+            "selected": false,
+            "text": "SubmitOrder",
+            "value": "SubmitOrder"
+          }
+        ],
+        "query": "label_values(message_type)",
+        "refresh": 0,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 5,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "$$hashKey": "object:3123",
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "prometheus",
+        "definition": "label_values(mt_publish_total,message_type)",
+        "hide": 0,
+        "includeAll": true,
+        "index": -1,
+        "label": null,
+        "multi": false,
+        "name": "PublishMessageTypes",
+        "options": [
+          {
+            "$$hashKey": "object:3123",
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "$$hashKey": "object:3124",
+            "selected": false,
+            "text": "OrderSubmitted",
+            "value": "OrderSubmitted"
+          },
+          {
+            "$$hashKey": "object:3125",
+            "selected": false,
+            "text": "AllocateInventory",
+            "value": "AllocateInventory"
+          },
+          {
+            "$$hashKey": "object:3126",
+            "selected": false,
+            "text": "RoutingSlipActivityCompleted",
+            "value": "RoutingSlipActivityCompleted"
+          },
+          {
+            "$$hashKey": "object:3127",
+            "selected": false,
+            "text": "AllocationCreated",
+            "value": "AllocationCreated"
+          },
+          {
+            "$$hashKey": "object:3128",
+            "selected": false,
+            "text": "RoutingSlipCompleted",
+            "value": "RoutingSlipCompleted"
+          },
+          {
+            "$$hashKey": "object:3129",
+            "selected": false,
+            "text": "RoutingSlipActivityFaulted",
+            "value": "RoutingSlipActivityFaulted"
+          },
+          {
+            "$$hashKey": "object:3130",
+            "selected": false,
+            "text": "AllocationReleaseRequested",
+            "value": "AllocationReleaseRequested"
+          },
+          {
+            "$$hashKey": "object:3131",
+            "selected": false,
+            "text": "RoutingSlipFaulted",
+            "value": "RoutingSlipFaulted"
+          },
+          {
+            "$$hashKey": "object:3132",
+            "selected": false,
+            "text": "RoutingSlipActivityCompensated",
+            "value": "RoutingSlipActivityCompensated"
+          }
+        ],
+        "query": "label_values(mt_publish_total,message_type)",
+        "refresh": 0,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "$$hashKey": "object:3040",
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "prometheus",
+        "definition": "label_values(mt_send_total,message_type)",
+        "hide": 0,
+        "includeAll": true,
+        "index": -1,
+        "label": null,
+        "multi": false,
+        "name": "SendMessageTypes",
+        "options": [
+          {
+            "$$hashKey": "object:3040",
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "$$hashKey": "object:3041",
+            "selected": false,
+            "text": "OrderSubmissionAccepted",
+            "value": "OrderSubmissionAccepted"
+          },
+          {
+            "$$hashKey": "object:3042",
+            "selected": false,
+            "text": "FulfillOrder",
+            "value": "FulfillOrder"
+          },
+          {
+            "$$hashKey": "object:3043",
+            "selected": false,
+            "text": "OrderStatus",
+            "value": "OrderStatus"
+          },
+          {
+            "$$hashKey": "object:3044",
+            "selected": false,
+            "text": "RoutingSlip",
+            "value": "RoutingSlip"
+          },
+          {
+            "$$hashKey": "object:3045",
+            "selected": false,
+            "text": "ScheduleMessage`1",
+            "value": "ScheduleMessage`1"
+          },
+          {
+            "$$hashKey": "object:3046",
+            "selected": false,
+            "text": "InventoryAllocated",
+            "value": "InventoryAllocated"
+          },
+          {
+            "$$hashKey": "object:3047",
+            "selected": false,
+            "text": "RoutingSlipCompleted",
+            "value": "RoutingSlipCompleted"
+          },
+          {
+            "$$hashKey": "object:3048",
+            "selected": false,
+            "text": "RoutingSlipFaulted",
+            "value": "RoutingSlipFaulted"
+          },
+          {
+            "$$hashKey": "object:3049",
+            "selected": false,
+            "text": "CancelScheduledMessage",
+            "value": "CancelScheduledMessage"
+          },
+          {
+            "$$hashKey": "object:3050",
+            "selected": false,
+            "text": "Scheduled",
+            "value": "Scheduled"
+          },
+          {
+            "$$hashKey": "object:3051",
+            "selected": false,
+            "text": "OrderNotFound",
+            "value": "OrderNotFound"
+          }
+        ],
+        "query": "label_values(mt_send_total,message_type)",
+        "refresh": 0,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "$$hashKey": "object:6865",
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "prometheus",
+        "definition": "label_values(mt_saga_in_progress,consumer_type)",
+        "hide": 0,
+        "includeAll": true,
+        "index": -1,
+        "label": null,
+        "multi": false,
+        "name": "SagaType",
+        "options": [
+          {
+            "$$hashKey": "object:6865",
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "$$hashKey": "object:6866",
+            "selected": false,
+            "text": "OrderState",
+            "value": "OrderState"
+          },
+          {
+            "$$hashKey": "object:6867",
+            "selected": false,
+            "text": "AllocationState",
+            "value": "AllocationState"
+          }
+        ],
+        "query": "label_values(mt_saga_in_progress,consumer_type)",
+        "refresh": 0,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "$$hashKey": "object:6579",
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "prometheus",
+        "definition": "label_values(mt_saga_in_progress,message_type)",
+        "hide": 0,
+        "includeAll": true,
+        "index": -1,
+        "label": null,
+        "multi": false,
+        "name": "SagaMessageType",
+        "options": [
+          {
+            "$$hashKey": "object:6579",
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "$$hashKey": "object:6580",
+            "selected": false,
+            "text": "OrderSubmitted",
+            "value": "OrderSubmitted"
+          },
+          {
+            "$$hashKey": "object:6581",
+            "selected": false,
+            "text": "CheckOrder",
+            "value": "CheckOrder"
+          },
+          {
+            "$$hashKey": "object:6582",
+            "selected": false,
+            "text": "OrderAccepted",
+            "value": "OrderAccepted"
+          },
+          {
+            "$$hashKey": "object:6583",
+            "selected": false,
+            "text": "AllocationCreated",
+            "value": "AllocationCreated"
+          },
+          {
+            "$$hashKey": "object:6584",
+            "selected": false,
+            "text": "OrderFulfillmentCompleted",
+            "value": "OrderFulfillmentCompleted"
+          },
+          {
+            "$$hashKey": "object:6585",
+            "selected": false,
+            "text": "OrderFulfillmentFaulted",
+            "value": "OrderFulfillmentFaulted"
+          },
+          {
+            "$$hashKey": "object:6586",
+            "selected": false,
+            "text": "AllocationReleaseRequested",
+            "value": "AllocationReleaseRequested"
+          },
+          {
+            "$$hashKey": "object:6587",
+            "selected": false,
+            "text": "AllocationHoldDurationExpired",
+            "value": "AllocationHoldDurationExpired"
+          }
+        ],
+        "query": "label_values(mt_saga_in_progress,message_type)",
+        "refresh": 0,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "MassTransit Sample",
+  "uid": "vOtk-UjWz",
+  "variables": {
+    "list": []
+  },
+  "version": 1
+}

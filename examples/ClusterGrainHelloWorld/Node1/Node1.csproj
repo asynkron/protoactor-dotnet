@@ -4,6 +4,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <LangVersion>9</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
@@ -11,6 +12,6 @@
     <ProjectReference Include="..\..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0-preview.2.21154.6" />
   </ItemGroup>
 </Project>

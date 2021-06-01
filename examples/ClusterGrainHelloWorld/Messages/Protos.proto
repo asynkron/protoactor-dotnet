@@ -1,6 +1,8 @@
 ﻿syntax = "proto3";
-package messages;
-option csharp_namespace = "Messages";
+package HelloHelloWorld;
+option csharp_namespace = "ClusterHelloWorld.Messages";
+
+//dotnet run -p ../../../protobuf/ProtoGrainGenerator/ProtoGrainGenerator.csproj --framework net5.0 many *.proto
 
 message HelloRequest {}
 message HelloResponse {

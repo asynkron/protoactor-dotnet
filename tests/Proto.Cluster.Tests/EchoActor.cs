@@ -8,6 +8,7 @@ namespace Proto.Cluster.Tests
     {
         public const string Kind = "echo";
         public const string Kind2 = "echo2";
+        public const string LocalAffinityKind = "echo3";
 
         public static readonly Props Props = Props.FromProducer(() => new EchoActor());
         private static readonly ILogger Logger = Log.CreateLogger<EchoActor>();
@@ -15,12 +16,12 @@ namespace Proto.Cluster.Tests
         private string _identity;
         private string _initKind;
 
-        public Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
                 case Started _:
-                    Logger.LogDebug($"{context.Self}");
+                    Logger.LogDebug("{Context}", context.Self);
                     break;
                 case ClusterInit init:
                     _identity = init.Identity;
@@ -31,9 +32,15 @@ namespace Proto.Cluster.Tests
                     Logger.LogDebug("Received Ping, replying Pong: {@Pong}", pong);
                     context.Respond(pong);
                     break;
-                case WhereAreYou _:
+                case SlowPing ping:
+                    await Task.Delay(ping.DelayMs);
+                    var slowPong = new Pong {Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? ""};
+                    Logger.LogDebug("Received SlowPing, replying Pong after {Delay} ms: {@Pong}", ping.DelayMs, slowPong);
+                    context.Respond(slowPong);
+                    break;
+                case WhereAreYou hi:
                     Logger.LogDebug("Responding to location request");
-                    context.Respond(new HereIAm {Address = context.Self!.Address});
+                    context.Respond(new HereIAm {Address = context.Self!.Address, RequestId = hi.RequestId});
                     break;
                 case Die _:
                     Logger.LogDebug("Received termination request, stopping");
@@ -44,8 +51,6 @@ namespace Proto.Cluster.Tests
                     Logger.LogDebug(context.Message?.GetType().Name);
                     break;
             }
-
-            return Task.CompletedTask;
         }
     }
 }

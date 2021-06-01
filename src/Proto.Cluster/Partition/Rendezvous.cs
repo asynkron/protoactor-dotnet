@@ -77,5 +77,13 @@ namespace Proto.Cluster.Partition
             public Member Info { get; }
             public byte[] Hash { get; }
         }
+
+        public void Debug()
+        {
+            foreach (var m in _members)
+            {
+                Console.WriteLine(m.Info);
+            }
+        }
     }
 }

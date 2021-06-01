@@ -19,26 +19,26 @@ namespace ClusterExperiment1
 
     public class RunMemberInProcGraceful : IRunMember
     {
-        private Cluster _cluster;
+        private Cluster? _cluster;
 
         public async Task Start() => _cluster = await Configuration.SpawnMember();
 
-        public async Task Kill() => await _cluster.ShutdownAsync();
+        public async Task Kill() => await _cluster!.ShutdownAsync();
     }
 
     public class RunMemberInProc : IRunMember
     {
-        private Cluster _cluster;
+        private Cluster? _cluster;
 
         public async Task Start() => _cluster = await Configuration.SpawnMember();
 
-        public async Task Kill() => await _cluster.ShutdownAsync(false);
+        public async Task Kill() => await _cluster!.ShutdownAsync(false);
     }
 
     public class RunMemberExternalProcGraceful : IRunMember
     {
         public static readonly string SelfPath = typeof(Program).Assembly.Location;
-        private Process _process;
+        private Process? _process;
 
         public Task Start()
         {
@@ -53,7 +53,7 @@ namespace ClusterExperiment1
         public Task Kill()
         {
             Console.WriteLine("Killing external worker");
-            Process.Start("kill", $"-s TERM {_process.Id}");
+            Process.Start("kill", $"-s TERM {_process?.Id}");
             //_process.Kill(false);
             return Task.CompletedTask;
         }
@@ -62,7 +62,7 @@ namespace ClusterExperiment1
     public class RunMemberExternalProc : IRunMember
     {
         public static readonly string SelfPath = typeof(Program).Assembly.Location;
-        private Process _process;
+        private Process? _process;
 
         public Task Start()
         {
@@ -77,7 +77,7 @@ namespace ClusterExperiment1
         public Task Kill()
         {
             Console.WriteLine("Killing external worker");
-            _process.Kill(true);
+            _process?.Kill(true);
             return Task.CompletedTask;
         }
     }

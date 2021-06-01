@@ -18,6 +18,16 @@ namespace Proto
         private readonly HashedConcurrentDictionary _localProcesses = new();
         private int _sequenceId;
 
+        public IEnumerable<PID> SearchByName(string name)
+        {
+            var res = _localProcesses.Where(kvp => kvp.key.Contains(name, StringComparison.InvariantCultureIgnoreCase));
+
+            foreach (var (id, process) in res)
+            {
+                yield return new PID(System.Address, id, process);
+            }
+        }
+
         public ProcessRegistry(ActorSystem system) => System = system;
 
         private ActorSystem System { get; }
@@ -31,7 +41,6 @@ namespace Proto
         public Process Get(PID pid)
         {
             if (pid.Address == ActorSystem.NoHost || pid.Address == System.Address)
-
             {
                 if (_localProcesses.TryGetValue(pid.Id, out var process)) return process;
 

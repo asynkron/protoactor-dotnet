@@ -34,6 +34,8 @@ namespace Proto.Utils
             Action<int>? throttledCallBack = null
         )
         {
+            if (maxEventsInPeriod == 0) return () => Valve.Closed;
+
             if (period == TimeSpan.Zero || maxEventsInPeriod < 1 || maxEventsInPeriod == int.MaxValue)
                 return () => Valve.Open;
 
@@ -47,7 +49,7 @@ namespace Proto.Utils
                 return tries > maxEventsInPeriod ? Valve.Closed : Valve.Open;
             };
 
-            void StartTimer(Action<int>? callBack) => _ = Task.Run(async () => {
+            void StartTimer(Action<int>? callBack) => _ = SafeTask.Run(async () => {
                     await Task.Delay(period);
                     var timesCalled = Interlocked.Exchange(ref currentEvents, 0);
                     if (timesCalled > maxEventsInPeriod) callBack?.Invoke(timesCalled - maxEventsInPeriod);
@@ -55,6 +57,15 @@ namespace Proto.Utils
             );
         }
 
+        public static ShouldThrottle Create(
+            this ThrottleOptions options,
+            Action<int>? throttledCallBack = null
+        ) => Create(options.MaxEventsInPeriod, options.Period, throttledCallBack);
+
         public static bool IsOpen(this Valve valve) => valve != Valve.Closed;
+    }
+
+    public record ThrottleOptions(int MaxEventsInPeriod, TimeSpan Period)
+    {
     }
 }
