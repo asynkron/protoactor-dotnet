@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using Microsoft.Extensions.Logging;
+using Proto.Cluster.Cache;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Testing;
@@ -165,5 +166,22 @@ namespace Proto.Cluster.Tests
         }
 
         protected override ActorSystemConfig GetActorSystemConfig() => ActorSystemConfig.Setup().WithSharedFutures();
+    }
+
+    public class InMemoryPidCacheInvalidationClusterFixture : BaseInMemoryClusterFixture
+    {
+        public InMemoryPidCacheInvalidationClusterFixture() : base(3, config => config
+            .WithActorRequestTimeout(TimeSpan.FromSeconds(4))
+        )
+        {
+        }
+
+        protected override ClusterKind[] ClusterKinds => base.ClusterKinds.Select(ck => ck.WithPidCacheInvalidation()).ToArray();
+
+        protected override async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig> configure)
+        {
+            var cluster = await base.SpawnClusterMember(configure);
+            return cluster.WithPidCacheInvalidation();
+        }
     }
 }
