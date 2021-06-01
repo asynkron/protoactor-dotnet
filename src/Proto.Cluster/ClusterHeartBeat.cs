@@ -69,7 +69,7 @@ namespace Proto.Cluster
                         try
                         {
                             await _context.RequestAsync<HeartbeatResponse>(pid, new HeartbeatRequest(),
-                                TimeSpan.FromSeconds(5)
+                                _cluster.Config.HeartBeatTimeout
                             );
 
                             _logger.LogDebug("Heartbeat request for member id {MemberId} Address {Address} succeeded",
