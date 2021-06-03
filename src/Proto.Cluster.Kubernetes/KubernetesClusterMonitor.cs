@@ -65,7 +65,7 @@ namespace Proto.Cluster.Kubernetes
             if (_watching)
             {
                 Logger.LogInformation(
-                    "[Cluster] Stopping monitoring for {PodName} with ip {PodIp}",
+                    "[Cluster][KubernetesProvider] Stopping monitoring for {PodName} with ip {PodIp}",
                     _podName, _address
                 );
 
@@ -83,7 +83,7 @@ namespace Proto.Cluster.Kubernetes
         {
             var selector = $"{LabelCluster}={clusterName}";
             
-            Logger.Log(_config.DebugLogLevel, "[Cluster] Starting to watch pods with {Selector}", selector);
+            Logger.Log(_config.DebugLogLevel, "[Cluster][KubernetesProvider] Starting to watch pods with {Selector}", selector);
 
             _watcherTask = _kubernetes.ListNamespacedPodWithHttpMessagesAsync(
                 KubernetesExtensions.GetKubeNamespace(),
@@ -101,7 +101,7 @@ namespace Proto.Cluster.Kubernetes
                 if (_stopping) return;
 
                 // We log it and attempt to watch again, overcome transient issues
-                Logger.LogWarning("[Cluster] Unable to watch the cluster status: {Error}", ex.Message);
+                Logger.LogWarning("[Cluster][KubernetesProvider] Unable to watch the cluster status: {Error}", ex.Message);
                 Restart();
             }
 
@@ -111,7 +111,7 @@ namespace Proto.Cluster.Kubernetes
                 // If we are already in stopping state, just ignore it
                 if (_stopping) return;
                 
-                Logger.Log(_config.DebugLogLevel, "[Cluster] Watcher has closed, restarting");
+                Logger.Log(_config.DebugLogLevel, "[Cluster][KubernetesProvider] Watcher has closed, restarting");
 
                 Restart();
             }
@@ -134,7 +134,7 @@ namespace Proto.Cluster.Kubernetes
             if (!podLabels.TryGetValue(LabelCluster, out var podClusterName))
             {
                 Logger.LogInformation(
-                    "[Cluster] The pod {PodName} is not a Proto.Cluster node",
+                    "[Cluster][KubernetesProvider] The pod {PodName} is not a Proto.Cluster node",
                     eventPod.Metadata.Name
                 );
                 return;
@@ -143,7 +143,7 @@ namespace Proto.Cluster.Kubernetes
             if (_clusterName != podClusterName)
             {
                 Logger.LogInformation(
-                    "[Cluster] The pod {PodName} is from another cluster {Cluster}",
+                    "[Cluster][KubernetesProvider] The pod {PodName} is from another cluster {Cluster}",
                     eventPod.Metadata.Name, _clusterName
                 );
                 return;
@@ -160,6 +160,8 @@ namespace Proto.Cluster.Kubernetes
                 .Where(x => x.IsCandidate)
                 .Select(x => x.Status)
                 .ToList();
+            
+            Logger.Log(_config.DebugLogLevel, "[Cluster][KubernetesProvider] Topology received from Kubernetes {Members}", memberStatuses);
 
             _cluster.MemberList.UpdateClusterTopology(memberStatuses);
         }

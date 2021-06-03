@@ -91,18 +91,18 @@ namespace Proto.Cluster.Kubernetes
 
         public async Task RegisterMemberAsync()
         {
-            Logger.LogInformation("Registering service {PodName} on {PodIp}", _podName, _address);
+            Logger.LogInformation("[Cluster][KubernetesProvider] Registering service {PodName} on {PodIp}", _podName, _address);
 
             var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace());
             if (pod is null) throw new ApplicationException($"Unable to get own pod information for {_podName}");
 
-            Logger.LogInformation("Using Kubernetes namespace: " + pod.Namespace());
+            Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes namespace: " + pod.Namespace());
 
             var matchingPort = pod.FindPort(_port);
 
-            if (matchingPort is null) Logger.LogWarning("Registration port doesn't match any of the container ports");
+            if (matchingPort is null) Logger.LogWarning("[Cluster][KubernetesProvider] Registration port doesn't match any of the container ports");
 
-            Logger.LogInformation("Using Kubernetes port: " + _port);
+            Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes port: " + _port);
 
             var existingLabels = pod.Metadata.Labels;
 
@@ -131,7 +131,7 @@ namespace Proto.Cluster.Kubernetes
             }
             catch (HttpOperationException e)
             {
-                Logger.LogError(e, "Unable to update pod labels, registration failed");
+                Logger.LogError(e, "[Cluster][KubernetesProvider] Unable to update pod labels, registration failed");
                 throw;
             }
         }
@@ -160,7 +160,7 @@ namespace Proto.Cluster.Kubernetes
 
         public async Task DeregisterMemberAsync(Cluster cluster)
         {
-            Logger.LogInformation("Unregistering service {PodName} on {PodIp}", _podName, _address);
+            Logger.LogInformation("[Cluster][KubernetesProvider] Unregistering service {PodName} on {PodIp}", _podName, _address);
 
             var kubeNamespace = KubernetesExtensions.GetKubeNamespace();
 
@@ -175,7 +175,7 @@ namespace Proto.Cluster.Kubernetes
                 }
                 catch (Exception x)
                 {
-                    Logger.LogError(x, "Failed to remove label");
+                    Logger.LogError(x, "[Cluster][KubernetesProvider] Failed to remove label");
                 }
             }
 
