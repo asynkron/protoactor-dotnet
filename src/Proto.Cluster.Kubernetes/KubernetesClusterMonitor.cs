@@ -33,11 +33,13 @@ namespace Proto.Cluster.Kubernetes
         private Watcher<V1Pod> _watcher;
         private Task<HttpOperationResponse<V1PodList>> _watcherTask;
         private bool _watching;
+        private readonly TimeSpan _watchTimeout;
 
-        public KubernetesClusterMonitor(Cluster cluster, IKubernetes kubernetes)
+        public KubernetesClusterMonitor(Cluster cluster, IKubernetes kubernetes,TimeSpan watchTimeout)
         {
             _cluster = cluster;
             _kubernetes = kubernetes;
+            _watchTimeout = watchTimeout;
         }
 
         public Task ReceiveAsync(IContext context) => context.Message switch
@@ -83,7 +85,8 @@ namespace Proto.Cluster.Kubernetes
             _watcherTask = _kubernetes.ListNamespacedPodWithHttpMessagesAsync(
                 KubernetesExtensions.GetKubeNamespace(),
                 labelSelector: selector,
-                watch: true
+                watch: true,
+                timeoutSeconds:(int)_watchTimeout.TotalSeconds
             );
             _watcher = _watcherTask.Watch<V1Pod, V1PodList>(Watch, Error, Closed);
             _watching = true;

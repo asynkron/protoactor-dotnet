@@ -34,12 +34,18 @@ namespace Proto.Cluster.Kubernetes
         private MemberList _memberList;
         private string _podName;
         private int _port;
+        private readonly TimeSpan _watchTimeout;
 
-        public KubernetesProvider(IKubernetes kubernetes)
+        public KubernetesProvider(IKubernetes kubernetes) : this(kubernetes, TimeSpan.FromSeconds(30))
+        {
+        }
+
+        public KubernetesProvider(IKubernetes kubernetes, TimeSpan watchTimeout)
         {
             if (KubernetesExtensions.GetKubeNamespace() is null)
                 throw new InvalidOperationException("The application doesn't seem to be running in Kubernetes");
 
+            _watchTimeout = watchTimeout;
             _kubernetes = kubernetes;
         }
 
@@ -133,7 +139,7 @@ namespace Proto.Cluster.Kubernetes
         private void StartClusterMonitor()
         {
             var props = Props
-                .FromProducer(() => new KubernetesClusterMonitor(_cluster, _kubernetes))
+                .FromProducer(() => new KubernetesClusterMonitor(_cluster, _kubernetes,_watchTimeout))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
                 .WithDispatcher(Dispatchers.SynchronousDispatcher);
             _clusterMonitor = _cluster.System.Root.SpawnNamed(props, "ClusterMonitor");
