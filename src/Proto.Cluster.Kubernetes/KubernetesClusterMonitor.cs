@@ -33,13 +33,13 @@ namespace Proto.Cluster.Kubernetes
         private Watcher<V1Pod> _watcher;
         private Task<HttpOperationResponse<V1PodList>> _watcherTask;
         private bool _watching;
-        private readonly TimeSpan _watchTimeout;
+        private readonly KubernetesProviderConfig _config;
 
-        public KubernetesClusterMonitor(Cluster cluster, IKubernetes kubernetes,TimeSpan watchTimeout)
+        public KubernetesClusterMonitor(Cluster cluster, IKubernetes kubernetes,KubernetesProviderConfig config)
         {
             _cluster = cluster;
             _kubernetes = kubernetes;
-            _watchTimeout = watchTimeout;
+            _config = config;
         }
 
         public Task ReceiveAsync(IContext context) => context.Message switch
@@ -76,18 +76,22 @@ namespace Proto.Cluster.Kubernetes
 
             return Task.CompletedTask;
         }
+        
+        
 
         private Task StartWatchingCluster(string clusterName, ISenderContext context)
         {
             var selector = $"{LabelCluster}={clusterName}";
-            Logger.LogDebug("[Cluster] Starting to watch pods with {Selector}", selector);
+            
+            Logger.Log(_config.DebugLogLevel, "[Cluster] Starting to watch pods with {Selector}", selector);
 
             _watcherTask = _kubernetes.ListNamespacedPodWithHttpMessagesAsync(
                 KubernetesExtensions.GetKubeNamespace(),
                 labelSelector: selector,
                 watch: true,
-                timeoutSeconds:(int)_watchTimeout.TotalSeconds
+                timeoutSeconds:_config.WatchTimeoutSeconds
             );
+            
             _watcher = _watcherTask.Watch<V1Pod, V1PodList>(Watch, Error, Closed);
             _watching = true;
 
@@ -106,8 +110,9 @@ namespace Proto.Cluster.Kubernetes
             {
                 // If we are already in stopping state, just ignore it
                 if (_stopping) return;
+                
+                Logger.Log(_config.DebugLogLevel, "[Cluster] Watcher has closed, restarting");
 
-                Logger.LogDebug("[Cluster] Watcher has closed, restarting");
                 Restart();
             }
 

@@ -18,6 +18,20 @@ using static Proto.Cluster.Kubernetes.ProtoLabels;
 
 namespace Proto.Cluster.Kubernetes
 {
+    public record KubernetesProviderConfig
+    {
+        public int WatchTimeoutSeconds { get; }
+        private bool DeveloperLogging { get; }
+
+        public KubernetesProviderConfig(int watchTimeoutSeconds = 30, bool developerLogging = false)
+        {
+            WatchTimeoutSeconds = watchTimeoutSeconds;
+            DeveloperLogging = developerLogging;
+        }
+        
+        internal LogLevel DebugLogLevel => DeveloperLogging ? LogLevel.Information : LogLevel.Debug;
+    }
+
     [PublicAPI]
     public class KubernetesProvider : IClusterProvider
     {
@@ -34,18 +48,18 @@ namespace Proto.Cluster.Kubernetes
         private MemberList _memberList;
         private string _podName;
         private int _port;
-        private readonly TimeSpan _watchTimeout;
+        private readonly KubernetesProviderConfig _config;
 
-        public KubernetesProvider(IKubernetes kubernetes) : this(kubernetes, TimeSpan.FromSeconds(30))
+        public KubernetesProvider(IKubernetes kubernetes) : this(kubernetes, new KubernetesProviderConfig())
         {
         }
 
-        public KubernetesProvider(IKubernetes kubernetes, TimeSpan watchTimeout)
+        public KubernetesProvider(IKubernetes kubernetes, KubernetesProviderConfig config)
         {
             if (KubernetesExtensions.GetKubeNamespace() is null)
                 throw new InvalidOperationException("The application doesn't seem to be running in Kubernetes");
 
-            _watchTimeout = watchTimeout;
+            _config = config;
             _kubernetes = kubernetes;
         }
 
@@ -139,7 +153,7 @@ namespace Proto.Cluster.Kubernetes
         private void StartClusterMonitor()
         {
             var props = Props
-                .FromProducer(() => new KubernetesClusterMonitor(_cluster, _kubernetes,_watchTimeout))
+                .FromProducer(() => new KubernetesClusterMonitor(_cluster, _kubernetes,_config))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
                 .WithDispatcher(Dispatchers.SynchronousDispatcher);
             _clusterMonitor = _cluster.System.Root.SpawnNamed(props, "ClusterMonitor");
