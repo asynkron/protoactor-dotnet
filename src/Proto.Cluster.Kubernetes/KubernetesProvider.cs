@@ -18,20 +18,6 @@ using static Proto.Cluster.Kubernetes.ProtoLabels;
 
 namespace Proto.Cluster.Kubernetes
 {
-    public record KubernetesProviderConfig
-    {
-        public int WatchTimeoutSeconds { get; }
-        private bool DeveloperLogging { get; }
-
-        public KubernetesProviderConfig(int watchTimeoutSeconds = 30, bool developerLogging = false)
-        {
-            WatchTimeoutSeconds = watchTimeoutSeconds;
-            DeveloperLogging = developerLogging;
-        }
-        
-        internal LogLevel DebugLogLevel => DeveloperLogging ? LogLevel.Information : LogLevel.Debug;
-    }
-
     [PublicAPI]
     public class KubernetesProvider : IClusterProvider
     {
