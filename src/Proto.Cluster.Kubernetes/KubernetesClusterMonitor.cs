@@ -101,7 +101,7 @@ namespace Proto.Cluster.Kubernetes
                 if (_stopping) return;
 
                 // We log it and attempt to watch again, overcome transient issues
-                Logger.LogInformation("[Cluster] Unable to watch the cluster status: {Error}", ex.Message);
+                Logger.LogWarning("[Cluster] Unable to watch the cluster status: {Error}", ex.Message);
                 Restart();
             }
 
