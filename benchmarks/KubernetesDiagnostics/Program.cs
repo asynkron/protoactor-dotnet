@@ -28,7 +28,7 @@ namespace KubernetesDiagnostics
              * 
              */
 
-            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Error));
+            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
             var log = Log.CreateLogger("main");
 
@@ -46,7 +46,7 @@ namespace KubernetesDiagnostics
             log.LogInformation("Advertised Host {advertisedHost}", advertisedHost);
 
             var kubernetes = new Kubernetes(KubernetesClientConfiguration.InClusterConfig());
-            var clusterprovider = new KubernetesProvider(kubernetes);
+            var clusterprovider = new KubernetesProvider(kubernetes, new KubernetesProviderConfig(10,true));
 
             var system = new ActorSystem()
                 .WithRemote(GrpcNetRemoteConfig
@@ -59,18 +59,18 @@ namespace KubernetesDiagnostics
                 );
 
             system.EventStream.Subscribe<ClusterTopology>(e => {
-                var members = e.Members;
-                var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
-                var key = string.Join("", x);
-                var hash = MurmurHash2.Hash(key);
+                    var members = e.Members;
+                    var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
+                    var key = string.Join("", x);
+                    var hash = MurmurHash2.Hash(key);
 
-                Console.WriteLine("My members " + hash);
+                    Console.WriteLine("My members " + hash);
 
-                foreach (var member in members.OrderBy(m => m.Id))
-                {
-                    Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds);
+                    foreach (var member in members.OrderBy(m => m.Id))
+                    {
+                        Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds);
+                    }
                 }
-            }
             );
 
             await system
