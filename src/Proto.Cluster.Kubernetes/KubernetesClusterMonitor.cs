@@ -163,7 +163,15 @@ namespace Proto.Cluster.Kubernetes
             
             Logger.Log(_config.DebugLogLevel, "[Cluster][KubernetesProvider] Topology received from Kubernetes {Members}", memberStatuses);
 
-            _cluster.MemberList.UpdateClusterTopology(memberStatuses);
+            try
+            {
+                _cluster.MemberList.UpdateClusterTopology(memberStatuses);
+            }
+            catch (Exception x)
+            {
+                Logger.LogError(x,"[Cluster][KubernetesProvider] Error updating MemberList with members data {Members}", memberStatuses);
+                throw;
+            }
         }
     }
 }
