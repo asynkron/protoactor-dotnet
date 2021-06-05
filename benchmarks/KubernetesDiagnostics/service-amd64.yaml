@@ -28,8 +28,8 @@ spec:
     spec:
       containers:
         - name: kubdiag
-          image: rogeralsing/kubdiagg
-          imagePullPolicy: Never
+          image: rogeralsing/kubdiagg:amd64
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
@@ -42,4 +42,4 @@ spec:
             - name: "PROTOHOSTPUBLIC"
               valueFrom:
                 fieldRef:
-                  fieldPath: status.podIP            
+                  fieldPath: status.podIP
