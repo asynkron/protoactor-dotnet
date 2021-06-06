@@ -78,6 +78,19 @@ namespace KubernetesDiagnostics
                 .Cluster()
                 .StartMemberAsync();
 
+            _ = Task.Run(async () => {
+
+                    while (true)
+                    {
+                        await Task.Delay(5000);
+                        await system.Cluster().MemberList.TopologyConsensus();
+                        Console.WriteLine("Consensus reached "+system.Cluster().MemberList.GetAllMembers().Length );
+
+                    }
+
+                }
+            );
+
             Thread.Sleep(Timeout.Infinite);
         }
 
