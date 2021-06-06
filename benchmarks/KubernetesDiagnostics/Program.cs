@@ -22,7 +22,7 @@ namespace KubernetesDiagnostics
         public static async Task Main()
         {
             Console.WriteLine("Starting...");
-            Console.WriteLine("Using RedisLookup 123");
+            Console.WriteLine("Using RedisLookup 222");
             /*
              *  docker build . -t rogeralsing/kubdiagg   
              *  kubectl apply --filename service.yaml    
@@ -34,8 +34,7 @@ namespace KubernetesDiagnostics
             var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Error));
             Log.SetLoggerFactory(l);
             var log = Log.CreateLogger("main");
-
-            //  var db = GetMongo();
+            
             var identity = new IdentityStorageLookup(GetRedisId("MyCluster"));
 
             var port = int.Parse(Environment.GetEnvironmentVariable("PROTOPORT")!);
@@ -100,30 +99,14 @@ namespace KubernetesDiagnostics
 
         private static IIdentityStorage GetRedisId(string clusterName)
         {
-            var options = new ConfigurationOptions()
-            {
-                
-            };
-
-            var multiplexer = ConnectionMultiplexer.Connect(options);
+            var connectionString =
+                Environment.GetEnvironmentVariable("REDIS");
+            
+            Console.WriteLine("REDIS " + connectionString);
+            
+            var multiplexer = ConnectionMultiplexer.Connect(connectionString);
             var identity = new RedisIdentityStorage(clusterName, multiplexer);
             return identity;
-        }
-
-        private static IMongoDatabase GetMongo()
-        {
-            var connectionString =
-                Environment.GetEnvironmentVariable("MONGO");
-            var url = MongoUrl.Create(connectionString);
-            var settings = MongoClientSettings.FromUrl(url);
-            // settings.WaitQueueSize = 10000;
-            // settings.WaitQueueTimeout = TimeSpan.FromSeconds(10);
-            //
-            // settings.WriteConcern = WriteConcern.WMajority;
-            // settings.ReadConcern = ReadConcern.Majority;
-            var client = new MongoClient(settings);
-            var database = client.GetDatabase("ProtoMongo");
-            return database;
         }
     }
 }

@@ -14,7 +14,7 @@ namespace Proto.Cluster.Gossip
 {
     public class GossipActor : IActor
     {
-        private static ILogger Logger = Proto.Log.CreateLogger<GossipActor>();
+        private static readonly ILogger Logger = Proto.Log.CreateLogger<GossipActor>();
         private long _localSequenceNo;
         private GossipState _state = new();
         private readonly Random _rnd = new();
@@ -32,7 +32,6 @@ namespace Proto.Cluster.Gossip
         private Task OnGossipRequest(IContext context, GossipRequest gossipRequest)
         {
             var remoteState = gossipRequest.State;
-            //Console.WriteLine("Got gossip request");
             //Ack, we got it
             if (GossipStateManagement.MergeState(_state, remoteState, out var newState))
             {

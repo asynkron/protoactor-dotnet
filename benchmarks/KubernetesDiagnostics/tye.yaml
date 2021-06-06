@@ -1,4 +1,0 @@
-name: microservice
-services:
-  - name: frontend
-    project: KubernetesDiagnostics.csproj

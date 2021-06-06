@@ -70,10 +70,12 @@ spec:
         - name: kubdiag
           # there is nothing sensitive in here, its just a diagnostics app
           image: rogeralsing/kubdiagg:default
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
+            - name: "REDIS"
+              value: "redis://redis"
             - name: PROTOPORT
               value: "8080"
             - name: PROTOHOST
