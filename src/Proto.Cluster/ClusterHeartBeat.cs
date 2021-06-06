@@ -4,6 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -28,6 +30,7 @@ namespace Proto.Cluster
 
     public class ClusterHeartBeat
     {
+        private readonly Random _rnd = new();
         private const string ClusterHeartBeatName = "ClusterHeartBeat";
         private readonly Cluster _cluster;
         private readonly RootContext _context;
@@ -50,6 +53,14 @@ namespace Proto.Cluster
             _ = SafeTask.Run(HeartBeatLoop);
             return Task.CompletedTask;
         }
+        
+        private List<Member> PickRandomFanOutMembers(Member[] members, int fanOutBy) => 
+            members
+                .Select(m => (member: m, index: _rnd.Next()))
+                .OrderBy(m => m.index)
+                .Take(fanOutBy)
+                .Select(m => m.member)
+                .ToList();
 
         private async Task HeartBeatLoop()
         {
@@ -61,8 +72,9 @@ namespace Proto.Cluster
                 {
                     await Task.Delay(_cluster.Config.HeartBeatInterval);
                     var members = _cluster.MemberList.GetAllMembers();
+                    var fanOutMembers = PickRandomFanOutMembers(members, _cluster.Config.HeartBeatFanOut);
 
-                    foreach (var member in members)
+                    foreach (var member in fanOutMembers)
                     {
                         var pid = PID.FromAddress(member.Address, ClusterHeartBeatName);
 
