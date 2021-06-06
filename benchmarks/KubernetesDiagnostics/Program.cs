@@ -28,7 +28,7 @@ namespace KubernetesDiagnostics
              * 
              */
 
-            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
+            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Error));
             Log.SetLoggerFactory(l);
             var log = Log.CreateLogger("main");
 
@@ -46,7 +46,8 @@ namespace KubernetesDiagnostics
             log.LogInformation("Advertised Host {advertisedHost}", advertisedHost);
 
             var kubernetes = new Kubernetes(KubernetesClientConfiguration.InClusterConfig());
-            var clusterprovider = new KubernetesProvider(kubernetes, new KubernetesProviderConfig(10,true));
+            //, new KubernetesProviderConfig(10,true)
+            var clusterprovider = new KubernetesProvider(kubernetes);
 
             var system = new ActorSystem()
                 .WithRemote(GrpcNetRemoteConfig
