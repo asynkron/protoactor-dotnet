@@ -9,9 +9,11 @@ using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
+using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.Kubernetes;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using StackExchange.Redis;
 
 namespace KubernetesDiagnostics
 {
@@ -20,6 +22,7 @@ namespace KubernetesDiagnostics
         public static async Task Main()
         {
             Console.WriteLine("Starting...");
+            Console.WriteLine("Using RedisLookup 123");
             /*
              *  docker build . -t rogeralsing/kubdiagg   
              *  kubectl apply --filename service.yaml    
@@ -33,9 +36,7 @@ namespace KubernetesDiagnostics
             var log = Log.CreateLogger("main");
 
             //  var db = GetMongo();
-            var identity = new Proto.Cluster.Partition.PartitionIdentityLookup();
-
-
+            var identity = new IdentityStorageLookup(GetRedisId("MyCluster"));
 
             var port = int.Parse(Environment.GetEnvironmentVariable("PROTOPORT")!);
             var host = Environment.GetEnvironmentVariable("PROTOHOST");
@@ -79,19 +80,34 @@ namespace KubernetesDiagnostics
                 .StartMemberAsync();
 
             _ = Task.Run(async () => {
-
                     while (true)
                     {
                         await Task.Delay(5000);
-                        await system.Cluster().MemberList.TopologyConsensus();
-                        Console.WriteLine("Consensus reached "+system.Cluster().MemberList.GetAllMembers().Length );
 
+                        var t1 = system.Cluster().MemberList.TopologyConsensus();
+                        var t2 = Task.Delay(5000);
+                        await Task.WhenAny(t1, t2);
+                        if (t1.IsCompleted)
+                            Console.WriteLine("Consensus reached " + system.Cluster().MemberList.GetAllMembers().Length);
+                        else
+                            Console.WriteLine("Consensus timeout...");
                     }
-
                 }
             );
 
             Thread.Sleep(Timeout.Infinite);
+        }
+
+        private static IIdentityStorage GetRedisId(string clusterName)
+        {
+            var options = new ConfigurationOptions()
+            {
+                
+            };
+
+            var multiplexer = ConnectionMultiplexer.Connect(options);
+            var identity = new RedisIdentityStorage(clusterName, multiplexer);
+            return identity;
         }
 
         private static IMongoDatabase GetMongo()
