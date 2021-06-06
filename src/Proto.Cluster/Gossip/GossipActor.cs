@@ -8,11 +8,13 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster.Gossip
 {
     public class GossipActor : IActor
     {
+        private static ILogger Logger = Proto.Log.CreateLogger<GossipActor>();
         private long _localSequenceNo;
         private GossipState _state = new();
         private readonly Random _rnd = new();
@@ -55,7 +57,8 @@ namespace Proto.Cluster.Gossip
 
             _clusterTopologyHash = hash;
 
-            Console.WriteLine($"CONSSENSUS {context.System.Id} - {_clusterTopologyHash}");
+            
+           // Console.WriteLine($"CONSSENSUS {context.System.Id} - {_clusterTopologyHash}");
         }
 
         private Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
@@ -118,8 +121,7 @@ namespace Proto.Cluster.Gossip
                 }
                 catch(Exception x)
                 {
-                    //TODO: log
-                    Console.WriteLine(x);
+                    Logger.LogError(x, "OnSendGossipState failed");
                 }
             }
             

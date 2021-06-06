@@ -9,11 +9,13 @@ using System.Collections.Immutable;
 using System.Linq;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster.Gossip
 {
     public static class GossipStateManagement
     {
+        private static ILogger Logger = Proto.Log.CreateLogger("GossipStateManagement");
         public static GossipKeyValue EnsureEntryExists(GossipMemberState memberState, string key)
         {
             if (!memberState.Values.TryGetValue(key,out var value))
@@ -172,6 +174,8 @@ namespace Proto.Cluster.Gossip
             }
             catch (Exception x)
             {
+                Logger.LogError(x, "Check Consensus failed");
+                
                 Console.WriteLine(x);
                 return (false, 0);
             }
