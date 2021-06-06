@@ -69,8 +69,8 @@ spec:
       containers:
         - name: kubdiag
           # there is nothing sensitive in here, its just a diagnostics app
-          image: rogeralsing/kubdiagg:default
-          imagePullPolicy: IfNotPresent
+          image: rogeralsing/kubdiagg:amd64
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:

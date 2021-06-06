@@ -24,6 +24,8 @@ namespace Proto.Cluster
             RequestLogThrottlePeriod = TimeSpan.FromSeconds(2);
             GossipInterval = TimeSpan.FromMilliseconds(300);
             GossipFanout = 3;
+            // HeartBeatInterval = TimeSpan.FromSeconds(30);
+            // HeartBeatTimeout = TimeSpan.FromSeconds(5);
             ClusterRequestDeDuplication = true;
             ClusterRequestDeDuplicationWindow = TimeSpan.FromSeconds(30);
             IdentityLookup = identityLookup;
@@ -49,6 +51,9 @@ namespace Proto.Cluster
 
         public IIdentityLookup IdentityLookup { get; }
         public TimeSpan GossipInterval { get; init; }
+        public TimeSpan HeartBeatInterval { get; init; }
+        public TimeSpan HeartBeatTimeout { get; init; }
+        public int HeartBeatFanOut { get; init; }
 
         public bool ClusterRequestDeDuplication { get; init; }
 
@@ -65,7 +70,16 @@ namespace Proto.Cluster
 
         public ClusterConfig WithRequestLogThrottlePeriod(TimeSpan timeSpan) =>
             this with {RequestLogThrottlePeriod = timeSpan};
+
+        public ClusterConfig WithHeartBeatInterval(TimeSpan timeSpan) =>
+            this with { HeartBeatInterval = timeSpan };
+
+        public ClusterConfig WithHeartBeatTimeout(TimeSpan timeSpan) =>
+            this with { HeartBeatTimeout = timeSpan };
         
+        public ClusterConfig WithHeartBeatFanOut(int fanOut) =>
+            this with { HeartBeatFanOut = fanOut };
+
         public ClusterConfig WithPubSubBatchSize(int batchSize) =>
             this with {PubSubBatchSize = batchSize};
 

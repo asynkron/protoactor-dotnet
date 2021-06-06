@@ -96,8 +96,6 @@ namespace Proto.Cluster.Tests
         //     await Task.Delay(1000);
         //     cts.Cancel();
         //     await worker;
-        //
-        //     //Repair cluster..
         // }
 
         private async Task CanGetResponseFromAllIdsOnAllNodes(IEnumerable<string> actorIds, IList<Cluster> nodes, int timeoutMs)
@@ -320,6 +318,17 @@ namespace Proto.Cluster.Tests
     {
         // ReSharper disable once SuggestBaseTypeForParameter
         public InMemoryClusterTestsSharedFutures(ITestOutputHelper testOutputHelper, InMemoryClusterFixtureSharedFutures clusterFixture) : base(
+            testOutputHelper, clusterFixture
+        )
+        {
+        }
+    }
+    
+    // ReSharper disable once UnusedType.Global
+    public class InMemoryClusterTestsPidCacheInvalidation : ClusterTests, IClassFixture<InMemoryPidCacheInvalidationClusterFixture>
+    {
+        // ReSharper disable once SuggestBaseTypeForParameter
+        public InMemoryClusterTestsPidCacheInvalidation(ITestOutputHelper testOutputHelper, InMemoryPidCacheInvalidationClusterFixture clusterFixture) : base(
             testOutputHelper, clusterFixture
         )
         {
