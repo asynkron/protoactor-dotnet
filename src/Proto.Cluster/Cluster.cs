@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Cluster.Gossip;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Metrics;
 using Proto.Cluster.PubSub;
@@ -32,14 +33,12 @@ namespace Proto.Cluster
             system.Metrics.Register(new ClusterMetrics(system.Metrics));
             system.Serialization().RegisterFileDescriptor(ClusterContractsReflection.Descriptor);
 
+            Gossip = new Gossiper(this);
             PidCache = new PidCache();
-            ClusterHeartBeat = new ClusterHeartBeat(this);
             PubSub = new PubSubManager(this);
 
             SubscribeToTopologyEvents();
         }
-
-        private ClusterHeartBeat ClusterHeartBeat { get; }
 
         public PubSubManager PubSub { get; }
 
@@ -47,6 +46,8 @@ namespace Proto.Cluster
 
         public IClusterContext ClusterContext { get; private set; } = null!;
 
+        public Gossiper Gossip { get; }
+        
         public ClusterConfig Config { get; }
 
         public ActorSystem System { get; }
@@ -82,7 +83,7 @@ namespace Proto.Cluster
         {
             await BeginStartAsync(false);
             await Provider.StartMemberAsync(this);
-
+            await Gossip.StartAsync();
             Logger.LogInformation("Started as cluster member");
         }
 
@@ -112,7 +113,6 @@ namespace Proto.Cluster
             var kinds = GetClusterKinds();
             await IdentityLookup.SetupAsync(this, kinds, client);
             InitIdentityProxy();
-            await ClusterHeartBeat.StartAsync();
             await PubSub.StartAsync();
         }
 
@@ -132,7 +132,7 @@ namespace Proto.Cluster
             await System.ShutdownAsync();
             Logger.LogInformation("Stopping Cluster {Id}", System.Id);
 
-            await ClusterHeartBeat.ShutdownAsync();
+            await Gossip.ShutdownAsync();
             if (graceful) await IdentityLookup!.ShutdownAsync();
             await Config!.ClusterProvider.ShutdownAsync(graceful);
             await Remote.ShutdownAsync(graceful);

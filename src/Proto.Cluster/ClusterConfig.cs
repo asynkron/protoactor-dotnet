@@ -22,9 +22,10 @@ namespace Proto.Cluster
             ActorRequestTimeout = TimeSpan.FromSeconds(5);
             MaxNumberOfEventsInRequestLogThrottlePeriod = 3;
             RequestLogThrottlePeriod = TimeSpan.FromSeconds(2);
-            HeartBeatInterval = TimeSpan.FromSeconds(30);
-            HeartBeatTimeout = TimeSpan.FromSeconds(5);
-            HeartBeatFanOut = 5;
+            GossipInterval = TimeSpan.FromMilliseconds(300);
+            GossipFanout = 3;
+            // HeartBeatInterval = TimeSpan.FromSeconds(30);
+            // HeartBeatTimeout = TimeSpan.FromSeconds(5);
             ClusterRequestDeDuplication = true;
             ClusterRequestDeDuplicationWindow = TimeSpan.FromSeconds(30);
             IdentityLookup = identityLookup;
@@ -46,7 +47,10 @@ namespace Proto.Cluster
         public TimeSpan RequestLogThrottlePeriod { get; init; }
         public int MaxNumberOfEventsInRequestLogThrottlePeriod { get; init; }
 
+        public int GossipFanout { get; init;  }
+
         public IIdentityLookup IdentityLookup { get; }
+        public TimeSpan GossipInterval { get; init; }
         public TimeSpan HeartBeatInterval { get; init; }
         public TimeSpan HeartBeatTimeout { get; init; }
         public int HeartBeatFanOut { get; init; }
@@ -104,6 +108,13 @@ namespace Proto.Cluster
 
         public ClusterConfig WithClusterContextProducer(Func<Cluster, IClusterContext> producer) =>
             this with {ClusterContextProducer = producer};
+        
+        public ClusterConfig WithGossipInterval(TimeSpan interval) =>
+            this with {GossipInterval = interval};
+        
+        public ClusterConfig WithGossipFanOut(int fanout) =>
+            this with {GossipFanout = fanout};
+        
 
         public static ClusterConfig Setup(
             string clusterName,

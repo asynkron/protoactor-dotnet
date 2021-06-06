@@ -56,6 +56,10 @@ namespace Proto.Cluster
             _cluster.System.EventStream.Subscribe<ClusterTopologyNotification>(OnClusterTopologyNotification);
         }
 
+        
+        
+        public ImmutableHashSet<string> GetMembers() => _members.Members.Select(m=>m.Id).ToImmutableHashSet();
+
         public Task TopologyConsensus() => _topologyConsensus.Task;
 
         private void OnClusterTopologyNotification(ClusterTopologyNotification ctn)
@@ -75,7 +79,7 @@ namespace Proto.Cluster
                     _topologyConsensus.TrySetResult(true);
                     var leaderId = LeaderElection.Elect(_memberState);
                     var newLeader = _members.GetById(leaderId);
-                    if (newLeader != null)
+                    if (newLeader is not null)
                     {
                         if (!newLeader.Equals(_leader))
                         {
@@ -114,7 +118,7 @@ namespace Proto.Cluster
                 if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
                     return memberStrategy.GetActivator(requestSourceAddress);
 
-                Logger.LogWarning("[MemberList] MemberList did not find any activator for kind '{Kind}'", kind);
+                Logger.LogInformation("MemberList did not find any not find any activator for kind '{Kind}'", kind);
                 return null;
             }
         }
@@ -249,6 +253,8 @@ namespace Proto.Cluster
                     LeaderId = _leader == null ? "" : _leader.Id,
                 }, true
             );
+            
+            _cluster.Gossip.SetState("topology", topology);
         }
 
         private void TerminateMember(Member memberThatLeft)
@@ -307,7 +313,7 @@ namespace Proto.Cluster
         public bool TryGetMemberByIndex(int memberIndex, out Member? value) => _membersByIndex.TryGetValue(memberIndex, out value);
 
         public Member[] GetAllMembers() => _members.Members.ToArray();
-
+        public Member[] GetOtherMembers() => _members.Members.Where(m => m.Id != _system.Id).ToArray();
         public void DumpState()
         {
             foreach (var m in _members.Members)
