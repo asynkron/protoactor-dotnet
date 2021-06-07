@@ -102,23 +102,65 @@ namespace Proto
         public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, TimeSpan timeout)
             => self.RequestAsync<T>(target, message, CancellationTokens.WithTimeout(timeout));
 
-        internal static async Task<T> RequestAsync<T>(this ISenderContext self,  PID target, object message, CancellationToken cancellationToken)
+        /// <summary>
+        ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
+        ///     This operation can be awaited.
+        /// </summary>
+        /// <param name="self">Calling context</param>
+        /// <param name="target">The target PID</param>
+        /// <param name="message">The message to send</param>
+        /// <param name="headers">Optional headers</param>
+        /// <param name="cancellationToken">Optional CancellationToken</param>
+        /// <typeparam name="T">Expected return message type</typeparam>
+        /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
+        public static async Task<(T message, MessageHeader header)> RequestWithHeadersAsync<T>(
+            this ISenderContext self,
+            PID target,
+            object message,
+            MessageHeader? headers = null,
+            CancellationToken cancellationToken = default
+        )
         {
             using var future = self.GetFuture();
-            var messageEnvelope = new MessageEnvelope(message, future.Pid);
+            var messageEnvelope = new MessageEnvelope(message, future.Pid, headers);
             self.Send(target, messageEnvelope);
             var result = await future.GetTask(cancellationToken);
 
-            switch (result)
+            var messageResult = MessageEnvelope.UnwrapMessage(result);
+
+            switch (messageResult)
             {
                 case DeadLetterResponse:
                     throw new DeadLetterException(target);
                 case null:
                 case T:
-                    return (T) result!;
+                    return ((T) messageResult!, MessageEnvelope.UnwrapHeader(result));
                 default:
                     throw new InvalidOperationException(
-                        $"Unexpected message. Was type {result.GetType()} but expected {typeof(T)}"
+                        $"Unexpected message. Was type {messageResult.GetType()} but expected {typeof(T)}"
+                    );
+            }
+        }
+
+        internal static async Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, CancellationToken cancellationToken)
+        {
+            using var future = self.GetFuture();
+            var messageEnvelope = message is MessageEnvelope envelope ? envelope.WithSender(future.Pid) : new MessageEnvelope(message, future.Pid);
+            self.Send(target, messageEnvelope);
+            var result = await future.GetTask(cancellationToken);
+
+            var messageResult = MessageEnvelope.UnwrapMessage(result);
+
+            switch (messageResult)
+            {
+                case DeadLetterResponse:
+                    throw new DeadLetterException(target);
+                case null:
+                case T:
+                    return (T) messageResult!;
+                default:
+                    throw new InvalidOperationException(
+                        $"Unexpected message. Was type {messageResult.GetType()} but expected {typeof(T)}"
                     );
             }
         }

@@ -220,7 +220,8 @@ namespace Proto.Cluster
 
         private static (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
         {
-            switch (result)
+            var message = MessageEnvelope.UnwrapMessage(result);
+            switch (message)
             {
                 case DeadLetterResponse:
                     if (!context.System.Shutdown.IsCancellationRequested)
@@ -230,7 +231,7 @@ namespace Proto.Cluster
                 case null: return (ResponseStatus.Ok, default);
                 case T t:  return (ResponseStatus.Ok, t);
                 default:
-                    Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}", result.GetType(), typeof(T));
+                    Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}", message.GetType(), typeof(T));
                     return (ResponseStatus.InvalidResponse, default);
             }
         }

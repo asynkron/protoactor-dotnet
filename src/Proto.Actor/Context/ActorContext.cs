@@ -65,6 +65,8 @@ namespace Proto.Context
             if (_messageOrEnvelope is not null) EnsureExtras().Stash.Push(_messageOrEnvelope);
         }
 
+        public void Respond(object message, MessageHeader header) => Respond(new MessageEnvelope(message, null, header));
+        
         public void Respond(object message)
         {
             if (Sender is not null)
@@ -115,7 +117,7 @@ namespace Proto.Context
             if (duration == ReceiveTimeout) return;
 
             ReceiveTimeout = duration;
-            
+
             EnsureExtras();
             _extras!.StopReceiveTimeoutTimer();
 
@@ -159,7 +161,7 @@ namespace Proto.Context
                     break;
             }
         }
-        
+
         public void Request(PID target, object message, PID? sender)
         {
             var messageEnvelope = new MessageEnvelope(message, sender);
@@ -284,7 +286,7 @@ namespace Proto.Context
                 var res = System.Config.DiagnosticsSerializer(Actor!);
                 diagnosticsString += res;
             }
-            
+
             processDiagnosticsRequest.Result.SetResult(diagnosticsString);
 
             return default;
@@ -422,7 +424,7 @@ namespace Proto.Context
         private Task HandleAutoRespond(IAutoRespond autoRespond)
         {
             // receive normally
-            var res =  Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this);
+            var res = Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this);
             //then respond automatically
             var response = autoRespond.GetAutoResponse();
             Respond(response);
