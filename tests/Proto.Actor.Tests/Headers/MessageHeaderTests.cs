@@ -113,5 +113,28 @@ namespace Proto.Tests.Headers
             msg.Should().Be(message);
             header["foo"].Should().Be("bar");
         }
+
+        [Fact]
+        public async Task RequestAsync_honors_message_envelopes()
+        {
+            var system = new ActorSystem();
+            var echo = Props.FromFunc(ctx => {
+                    if (ctx.Sender is not null && ctx.Headers.Count == 1)
+                    {
+                        ctx.Respond(ctx.Headers["foo"]);
+                    }
+
+                    return Task.CompletedTask;
+                }
+            );
+            var pid = system.Root.Spawn(echo);
+
+            var wrongPid = PID.FromAddress("some-incorrect-address", "some-id");
+            var response = await system.Root.RequestAsync<string>(pid, new MessageEnvelope(1, wrongPid, MessageHeader.Empty.With("foo", "bar")),
+                CancellationTokens.FromSeconds(1)
+            );
+
+            response.Should().Be("bar");
+        }
     }
 }
