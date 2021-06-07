@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Grpc.Core" Version="2.38.0" />
-    <PackageReference Include="Grpc.HealthCheck" Version="2.37.1" />
+    <PackageReference Include="Grpc.HealthCheck" Version="2.38.0" />
     <PackageReference Include="Grpc.Tools" Version="2.38.0" PrivateAssets="All" />
     <PackageReference Include="System.Text.Json" Version="5.0.2" />
   </ItemGroup>
