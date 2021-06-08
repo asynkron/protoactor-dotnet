@@ -48,21 +48,25 @@ namespace Proto.Cluster.Gossip
         {
             var allMembers = context.System.Cluster().MemberList.GetMembers();
 
-            var (consensus, hash) = GossipStateManagement.CheckConsensus(_state, context.System.Id, allMembers);
+            var (consensus, hash) = GossipStateManagement.CheckConsensus(_state, allMembers);
 
-            if (!consensus) return;
-
-            if (hash == _clusterTopologyHash)
+            if (!consensus)
             {
                 context.Cluster().MemberList.TryResetTopologyConsensus();
                 return;
             }
-
-            _clusterTopologyHash = hash;
-
+            
+            Console.WriteLine($"Consensus {context.System.Id} - {hash}");
+            
+            //safe to call many times
             context.Cluster().MemberList.TrySetTopologyConsensus();
 
-            // Console.WriteLine($"CONSSENSUS {context.System.Id} - {_clusterTopologyHash}");
+            if (hash != _clusterTopologyHash)
+            {
+                //reached consensus
+                _clusterTopologyHash = hash;
+            }
+            
         }
 
         private Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)

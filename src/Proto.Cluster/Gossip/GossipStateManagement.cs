@@ -82,8 +82,8 @@ namespace Proto.Cluster.Gossip
         public static void SetKey(GossipState state, string key, IMessage value, string memberId, ref long sequenceNo)
         {
             //if entry does not exist, add it
-            var memberState = GossipStateManagement.EnsureMemberStateExists(state, memberId);
-            var entry = GossipStateManagement.EnsureEntryExists(memberState, key);
+            var memberState = EnsureMemberStateExists(state, memberId);
+            var entry = EnsureEntryExists(memberState, key);
 
             sequenceNo++;
 
@@ -107,7 +107,6 @@ namespace Proto.Cluster.Gossip
                 
                 //create an empty state
                 var newMemberState = new GossipMemberState();
-                
 
                 var watermarkKey = $"{targetMemberId}.{memberId}";
                 //get the watermark 
@@ -138,7 +137,7 @@ namespace Proto.Cluster.Gossip
             return (pendingOffsets, newState);
         }
         
-        public static (bool Consensus, ulong TopologyHash) CheckConsensus(GossipState state, string myId, ImmutableHashSet<string> members)
+        public static (bool Consensus, ulong TopologyHash) CheckConsensus(GossipState state, ImmutableHashSet<string> members)
         {
             try
             {
@@ -163,7 +162,7 @@ namespace Proto.Cluster.Gossip
 
                 var first = hashes.FirstOrDefault();
 
-                if (hashes.All(h => h.TopologyHash == first.TopologyHash))
+                if (hashes.All(h => h.TopologyHash == first.TopologyHash) && first.TopologyHash != 0)
                 {
                     //all members have the same hash
                     return (true, first.TopologyHash);
