@@ -158,7 +158,7 @@ namespace Proto.Cluster.Gossip
                         continue;
                     }
                     hashes.Add((memberId,topology.TopologyHash));
-                    Console.WriteLine($"{myId} - {memberId} - {topology.TopologyHash} - {topology.Members.Count}");
+                    //Console.WriteLine($"{myId} - {memberId} - {topology.TopologyHash} - {topology.Members.Count}");
                 }
 
                 var first = hashes.FirstOrDefault();
@@ -174,8 +174,6 @@ namespace Proto.Cluster.Gossip
             catch (Exception x)
             {
                 Logger.LogError(x, "Check Consensus failed");
-                
-                Console.WriteLine(x);
                 return (false, 0);
             }
 

@@ -180,7 +180,7 @@ namespace Proto.Cluster
         {
             _eventStream.Publish(topology);
             _cluster.Gossip.SetState("topology", topology);
-            Console.WriteLine($"{_system.Id} Broadcasting {topology.TopologyHash} - {topology.Members.Count}");
+            //Console.WriteLine($"{_system.Id} Broadcasting {topology.TopologyHash} - {topology.Members.Count}");
         }
 
         private void TerminateMember(Member memberThatLeft)

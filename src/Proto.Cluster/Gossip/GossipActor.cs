@@ -61,7 +61,7 @@ namespace Proto.Cluster.Gossip
                 //safe to call many times
                 context.Cluster().MemberList.TrySetTopologyConsensus();
                 
-                Console.WriteLine($"Consensus {context.System.Id} - {hash}");
+                //Console.WriteLine($"Consensus {context.System.Id} - {hash}");
                 //reached consensus
                 _clusterTopologyHash = hash;
             }
