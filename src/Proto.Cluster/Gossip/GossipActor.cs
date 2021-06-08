@@ -48,7 +48,7 @@ namespace Proto.Cluster.Gossip
         {
             var allMembers = context.System.Cluster().MemberList.GetMembers();
 
-            var (consensus, hash) = GossipStateManagement.CheckConsensus(_state, allMembers);
+            var (consensus, hash) = GossipStateManagement.CheckConsensus(_state, context.System.Id, allMembers);
 
             if (!consensus)
             {
@@ -56,13 +56,12 @@ namespace Proto.Cluster.Gossip
                 return;
             }
             
-            Console.WriteLine($"Consensus {context.System.Id} - {hash}");
-            
-            //safe to call many times
-            context.Cluster().MemberList.TrySetTopologyConsensus();
-
             if (hash != _clusterTopologyHash)
             {
+                //safe to call many times
+                context.Cluster().MemberList.TrySetTopologyConsensus();
+                
+                Console.WriteLine($"Consensus {context.System.Id} - {hash}");
                 //reached consensus
                 _clusterTopologyHash = hash;
             }

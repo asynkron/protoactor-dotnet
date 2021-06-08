@@ -206,10 +206,6 @@ namespace ClusterExperiment1
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.Write("X");
                 Console.ResetColor();
-
-                var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
-
-                il?.DumpState(id);
             }
         }
         
@@ -254,10 +250,6 @@ namespace ClusterExperiment1
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.Write("X");
                 Console.ResetColor();
-
-                var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
-
-                il?.DumpState(ClusterIdentity.Create(id, "hello"));
             }
         }
 

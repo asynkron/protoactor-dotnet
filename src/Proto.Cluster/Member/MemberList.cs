@@ -28,7 +28,6 @@ namespace Proto.Cluster
         private readonly IRootContext _root;
         private readonly ActorSystem _system;
         private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
-        private ImmutableDictionary<string, ClusterTopologyNotification> _memberState = ImmutableDictionary<string, ClusterTopologyNotification>.Empty;
         private TaskCompletionSource<bool> _topologyConsensus = new ();
         private ImmutableDictionary<string,MetaMember> _metaMembers = ImmutableDictionary<string, MetaMember>.Empty;
 
@@ -180,19 +179,6 @@ namespace Proto.Cluster
         private void BroadcastTopologyChanges(ClusterTopology topology)
         {
             _eventStream.Publish(topology);
-            foreach (var m in topology.Members)
-            {
-                //add any missing member to the hashcode dict
-                if (!_memberState.ContainsKey(m.Id))
-                {
-                    _memberState = _memberState.Add(m.Id, new ClusterTopologyNotification()
-                        {
-                            MemberId = m.Id
-                        }
-                    );
-                }
-            }
-
             _cluster.Gossip.SetState("topology", topology);
         }
 
@@ -253,14 +239,7 @@ namespace Proto.Cluster
 
         public Member[] GetAllMembers() => _members.Members.ToArray();
         public Member[] GetOtherMembers() => _members.Members.Where(m => m.Id != _system.Id).ToArray();
-        public void DumpState()
-        {
-            foreach (var m in _members.Members)
-            {
-                Console.WriteLine(m);
-            }
-        }
-        
+
         internal void TrySetTopologyConsensus()
         {
             //if not set, set it, if already set, keep it set

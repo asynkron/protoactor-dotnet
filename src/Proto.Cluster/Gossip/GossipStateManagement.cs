@@ -137,7 +137,7 @@ namespace Proto.Cluster.Gossip
             return (pendingOffsets, newState);
         }
         
-        public static (bool Consensus, ulong TopologyHash) CheckConsensus(GossipState state, ImmutableHashSet<string> members)
+        public static (bool Consensus, ulong TopologyHash) CheckConsensus(GossipState state, string myId, ImmutableHashSet<string> members)
         {
             try
             {
@@ -158,10 +158,11 @@ namespace Proto.Cluster.Gossip
                         continue;
                     }
                     hashes.Add((memberId,topology.TopologyHash));
+                    Console.WriteLine($"{myId} - {memberId} - {topology.TopologyHash} - {topology.Members.Count}");
                 }
 
                 var first = hashes.FirstOrDefault();
-
+                
                 if (hashes.All(h => h.TopologyHash == first.TopologyHash) && first.TopologyHash != 0)
                 {
                     //all members have the same hash
