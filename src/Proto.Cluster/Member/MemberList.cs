@@ -53,63 +53,11 @@ namespace Proto.Cluster
             _system = _cluster.System;
             _root = _system.Root;
             _eventStream = _system.EventStream;
-            _cluster.System.EventStream.Subscribe<ClusterTopologyNotification>(OnClusterTopologyNotification);
         }
 
-        
-        
         public ImmutableHashSet<string> GetMembers() => _members.Members.Select(m=>m.Id).ToImmutableHashSet();
 
         public Task TopologyConsensus() => _topologyConsensus.Task;
-
-        private void OnClusterTopologyNotification(ClusterTopologyNotification ctn)
-        {
-            lock (this)
-            {
-                _memberState = _memberState.SetItem(ctn.MemberId, ctn);
-                var excludeBannedMembers = _memberState.Keys.Where(k => _bannedMembers.Contains(k));
-                _memberState = _memberState.RemoveRange(excludeBannedMembers);
-                
-                var everyoneInAgreement = _memberState.Values.All(x => x.TopologyHash == _members.TopologyHash);
-
-                if (everyoneInAgreement && !_topologyConsensus.Task.IsCompleted)
-                {
-                    //anyone awaiting this instance will now proceed
-                    Logger.LogInformation("[MemberList] Topology consensus");
-                    _topologyConsensus.TrySetResult(true);
-                    var leaderId = LeaderElection.Elect(_memberState);
-                    var newLeader = _members.GetById(leaderId);
-                    if (newLeader is not null)
-                    {
-                        if (!newLeader.Equals(_leader))
-                        {
-                            _leader = newLeader;
-                            _system.EventStream.Publish(new LeaderElected(newLeader));
-
-                            // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
-                            if (_leader.Id == _system.Id)
-                            {
-                                Logger.LogInformation("[MemberList] I am leader {Id}", _leader.Id);
-                            }
-                            else
-                            {
-                                Logger.LogInformation("[MemberList] Member {Id} is leader", _leader.Id);
-                            }
-                        }
-                    }
-                }
-                else if (!everyoneInAgreement && _topologyConsensus.Task.IsCompleted)
-                {
-                    //we toggled from consensus to not consensus.
-                    //create a new completion source for new awaiters to await
-                    _topologyConsensus = new TaskCompletionSource<bool>();
-                }
-                
-                
-
-                Logger.LogDebug("[MemberList] Got ClusterTopologyNotification {ClusterTopologyNotification}, Consensus {Consensus}, Members {Members}", ctn, everyoneInAgreement,_memberState.Count);
-            }
-        }
 
         public Member? GetActivator(string kind, string requestSourceAddress)
         {
@@ -245,15 +193,6 @@ namespace Proto.Cluster
                 }
             }
 
-            //Notify other members...
-            BroadcastEvent(new ClusterTopologyNotification
-                {
-                    MemberId = _cluster.System.Id,
-                    TopologyHash = _members.TopologyHash,
-                    LeaderId = _leader == null ? "" : _leader.Id,
-                }, true
-            );
-            
             _cluster.Gossip.SetState("topology", topology);
         }
 
@@ -319,6 +258,21 @@ namespace Proto.Cluster
             foreach (var m in _members.Members)
             {
                 Console.WriteLine(m);
+            }
+        }
+        
+        internal void TrySetTopologyConsensus()
+        {
+            //if not set, set it, if already set, keep it set
+            _topologyConsensus.TrySetResult(true);
+        }
+
+        public void TryResetTopologyConsensus()
+        {
+            //only replace if the task is completed
+            if (_topologyConsensus.Task.IsCompleted)
+            {
+                _topologyConsensus = new TaskCompletionSource<bool>();
             }
         }
     }

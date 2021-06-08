@@ -31,7 +31,7 @@ namespace KubernetesDiagnostics
              * 
              */
 
-            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Error));
+            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
             var log = Log.CreateLogger("main");
 
@@ -46,8 +46,8 @@ namespace KubernetesDiagnostics
             log.LogInformation("Advertised Host {advertisedHost}", advertisedHost);
 
             var kubernetes = new Kubernetes(KubernetesClientConfiguration.InClusterConfig());
-            //, new KubernetesProviderConfig(10,true)
-            var clusterprovider = new KubernetesProvider(kubernetes);
+            //
+            var clusterprovider = new KubernetesProvider(kubernetes, new KubernetesProviderConfig(10,false));
 
             var system = new ActorSystem()
                 .WithRemote(GrpcNetRemoteConfig
@@ -67,32 +67,16 @@ namespace KubernetesDiagnostics
 
                 Console.WriteLine("My members " + hash);
 
-                foreach (var member in members.OrderBy(m => m.Id))
-                {
-                    Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds);
-                }
+                // foreach (var member in members.OrderBy(m => m.Id))
+                // {
+                //     Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds);
+                // }
             }
             );
 
             await system
                 .Cluster()
                 .StartMemberAsync();
-
-            _ = Task.Run(async () => {
-                while (true)
-                {
-                    await Task.Delay(5000);
-
-                    var t1 = system.Cluster().MemberList.TopologyConsensus();
-                    var t2 = Task.Delay(5000);
-                    await Task.WhenAny(t1, t2);
-                    if (t1.IsCompleted)
-                        Console.WriteLine("Consensus reached " + system.Cluster().MemberList.GetAllMembers().Length);
-                    else
-                        Console.WriteLine("Consensus timeout...");
-                }
-            }
-            );
 
             Thread.Sleep(Timeout.Infinite);
         }

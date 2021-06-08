@@ -14,7 +14,7 @@ namespace Proto.Cluster.Gossip
 {
     public class GossipActor : IActor
     {
-        private static readonly ILogger Logger = Proto.Log.CreateLogger<GossipActor>();
+        private static readonly ILogger Logger = Log.CreateLogger<GossipActor>();
         private long _localSequenceNo;
         private GossipState _state = new();
         private readonly Random _rnd = new();
@@ -52,18 +52,22 @@ namespace Proto.Cluster.Gossip
 
             if (!consensus) return;
 
-            if (hash == _clusterTopologyHash) return;
+            if (hash == _clusterTopologyHash)
+            {
+                context.Cluster().MemberList.TryResetTopologyConsensus();
+                return;
+            }
 
             _clusterTopologyHash = hash;
 
-            
-           // Console.WriteLine($"CONSSENSUS {context.System.Id} - {_clusterTopologyHash}");
+            context.Cluster().MemberList.TrySetTopologyConsensus();
+
+            // Console.WriteLine($"CONSSENSUS {context.System.Id} - {_clusterTopologyHash}");
         }
 
         private Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
         {
             GossipStateManagement.SetKey(_state, setStateKey.Key,setStateKey.Value  , context.System.Id, ref _localSequenceNo);
-            //CheckConsensus(context);
             return Task.CompletedTask;
         }
 
@@ -88,14 +92,13 @@ namespace Proto.Cluster.Gossip
                     //if we dont have any state to send, don't send it...
                     if (pendingOffsets == _committedOffsets)
                     {
-                        Console.WriteLine("No state to send");
                         continue;
                     }
 
                     await context.RequestAsync<GossipResponse>(pid, new GossipRequest
                         {
                             State = stateForMember,
-                        }, CancellationTokens.WithTimeout(500)
+                        }, CancellationTokens.FromSeconds(5)
                     );
 
                     //only commit offsets if successful
