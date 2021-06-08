@@ -98,10 +98,11 @@ namespace Proto.Cluster.Gossip
                         continue;
                     }
 
+                    //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
                     await context.RequestAsync<GossipResponse>(pid, new GossipRequest
                         {
                             State = stateForMember,
-                        }, CancellationTokens.FromSeconds(5)
+                        }, CancellationTokens.WithTimeout(500)
                     );
 
                     //only commit offsets if successful
