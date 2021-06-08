@@ -34,7 +34,7 @@ namespace KubernetesDiagnostics
             var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Error));
             Log.SetLoggerFactory(l);
             var log = Log.CreateLogger("main");
-            
+
             var identity = new IdentityStorageLookup(GetRedisId("MyCluster"));
 
             var port = int.Parse(Environment.GetEnvironmentVariable("PROTOPORT")!);
@@ -60,18 +60,18 @@ namespace KubernetesDiagnostics
                 );
 
             system.EventStream.Subscribe<ClusterTopology>(e => {
-                    var members = e.Members;
-                    var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
-                    var key = string.Join("", x);
-                    var hash = MurmurHash2.Hash(key);
+                var members = e.Members;
+                var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
+                var key = string.Join("", x);
+                var hash = MurmurHash2.Hash(key);
 
-                    Console.WriteLine("My members " + hash);
+                Console.WriteLine("My members " + hash);
 
-                    foreach (var member in members.OrderBy(m => m.Id))
-                    {
-                        Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds);
-                    }
+                foreach (var member in members.OrderBy(m => m.Id))
+                {
+                    Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds);
                 }
+            }
             );
 
             await system
@@ -79,19 +79,19 @@ namespace KubernetesDiagnostics
                 .StartMemberAsync();
 
             _ = Task.Run(async () => {
-                    while (true)
-                    {
-                        await Task.Delay(5000);
+                while (true)
+                {
+                    await Task.Delay(5000);
 
-                        var t1 = system.Cluster().MemberList.TopologyConsensus();
-                        var t2 = Task.Delay(5000);
-                        await Task.WhenAny(t1, t2);
-                        if (t1.IsCompleted)
-                            Console.WriteLine("Consensus reached " + system.Cluster().MemberList.GetAllMembers().Length);
-                        else
-                            Console.WriteLine("Consensus timeout...");
-                    }
+                    var t1 = system.Cluster().MemberList.TopologyConsensus();
+                    var t2 = Task.Delay(5000);
+                    await Task.WhenAny(t1, t2);
+                    if (t1.IsCompleted)
+                        Console.WriteLine("Consensus reached " + system.Cluster().MemberList.GetAllMembers().Length);
+                    else
+                        Console.WriteLine("Consensus timeout...");
                 }
+            }
             );
 
             Thread.Sleep(Timeout.Infinite);
@@ -101,9 +101,9 @@ namespace KubernetesDiagnostics
         {
             var connectionString =
                 Environment.GetEnvironmentVariable("REDIS");
-            
+
             Console.WriteLine("REDIS " + connectionString);
-            
+
             var multiplexer = ConnectionMultiplexer.Connect(connectionString);
             var identity = new RedisIdentityStorage(clusterName, multiplexer);
             return identity;
