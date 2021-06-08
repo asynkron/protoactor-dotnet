@@ -19,6 +19,27 @@ namespace Proto.Cluster.Tests
             : base(clusterFixture) => _testOutputHelper = testOutputHelper;
 
         [Fact]
+        public void ClusterMembersMatch()
+        {
+            var memberSet = Members.First().MemberList.GetMembers();
+
+            memberSet.Should().NotBeEmpty();
+
+            Members.Skip(1).Select(member => member.MemberList.GetMembers()).Should().AllBeEquivalentTo(memberSet);
+        }
+
+        [Fact]
+        public async Task TopologiesShouldHaveConsensus()
+        {
+            var timeout = Task.Delay(3000);
+
+            var consensus = Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus()));
+
+            await Task.WhenAny(timeout, consensus);
+            timeout.IsCompleted.Should().BeFalse();
+        }
+        
+        [Fact]
         public async Task HandlesSlowResponsesCorrectly()
         {
             var timeout = new CancellationTokenSource(8000).Token;
