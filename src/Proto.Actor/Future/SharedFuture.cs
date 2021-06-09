@@ -89,7 +89,7 @@ namespace Proto.Future
 
             try
             {
-                slot.CompletionSource!.TrySetResult(MessageEnvelope.UnwrapMessage(message)!);
+                slot.CompletionSource!.TrySetResult(message);
             }
             finally
             {
