@@ -33,6 +33,13 @@ namespace Proto
         /// </summary>
         /// <param name="message">The message to send</param>
         void Respond(object message);
+        
+        /// <summary>
+        ///     Sends a response to the current Sender, including message header
+        /// </summary>
+        /// <param name="message">The message to send</param>
+        /// <param name="header"></param>
+        void Respond(object message, MessageHeader header) => Respond(new MessageEnvelope(message, null, header));
 
         /// <summary>
         ///     Stashes the current message on a stack for re-processing when the actor restarts.

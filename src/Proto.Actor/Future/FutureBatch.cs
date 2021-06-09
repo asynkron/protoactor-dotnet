@@ -85,7 +85,7 @@ namespace Proto.Future
 
             try
             {
-                tcs.TrySetResult(MessageEnvelope.UnwrapMessage(message)!);
+                tcs.TrySetResult(message);
                 _completionSources[index] = default;
             }
             finally

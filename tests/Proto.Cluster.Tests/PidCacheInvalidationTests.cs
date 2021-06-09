@@ -58,7 +58,7 @@ namespace Proto.Cluster.Tests
                 var response = await member.RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), CancellationToken.None);
 
                 // Get the first member which does not have the activation local to it.
-                if (!response.Address.Equals(member.System.Address)) return member;
+                if (!response.Address.Equals(member.System.Address, StringComparison.OrdinalIgnoreCase)) return member;
             }
 
             throw new Exception("Something wrong here..");
