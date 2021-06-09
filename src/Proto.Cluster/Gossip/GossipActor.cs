@@ -52,14 +52,14 @@ namespace Proto.Cluster.Gossip
 
             if (!consensus)
             {
-                context.Cluster().MemberList.TryResetTopologyConsensus();
+           //     context.Cluster().MemberList.TryResetTopologyConsensus();
                 return;
             }
             
             if (hash != _clusterTopologyHash)
             {
                 //safe to call many times
-                context.Cluster().MemberList.TrySetTopologyConsensus();
+             //   context.Cluster().MemberList.TrySetTopologyConsensus();
                 
                 //Console.WriteLine($"Consensus {context.System.Id} - {hash}");
                 //reached consensus

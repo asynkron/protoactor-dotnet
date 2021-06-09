@@ -63,7 +63,7 @@ namespace Proto.Cluster.Partition
 
         private async Task OnClusterTopology(ClusterTopology msg, IContext context)
         {
-            await _cluster.MemberList.TopologyConsensus();
+         //   await _cluster.MemberList.TopologyConsensus();
             if (_topologyHash == msg.TopologyHash) return;
 
             _topologyHash = msg.TopologyHash;
@@ -178,7 +178,7 @@ namespace Proto.Cluster.Partition
             }
             
             //only activate members when we are all in sync
-            await _cluster.MemberList.TopologyConsensus();
+        //    await _cluster.MemberList.TopologyConsensus();
 
             //Get activator
             var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;

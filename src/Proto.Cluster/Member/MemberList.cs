@@ -56,8 +56,6 @@ namespace Proto.Cluster
 
         public ImmutableHashSet<string> GetMembers() => _members.Members.Select(m=>m.Id).ToImmutableHashSet();
 
-        public Task TopologyConsensus() => _topologyConsensus.Task;
-
         public Member? GetActivator(string kind, string requestSourceAddress)
         {
             lock (this)
@@ -240,20 +238,5 @@ namespace Proto.Cluster
 
         public Member[] GetAllMembers() => _members.Members.ToArray();
         public Member[] GetOtherMembers() => _members.Members.Where(m => m.Id != _system.Id).ToArray();
-
-        internal void TrySetTopologyConsensus()
-        {
-            //if not set, set it, if already set, keep it set
-            _topologyConsensus.TrySetResult(true);
-        }
-
-        public void TryResetTopologyConsensus()
-        {
-            //only replace if the task is completed
-            if (_topologyConsensus.Task.IsCompleted)
-            {
-                _topologyConsensus = new TaskCompletionSource<bool>();
-            }
-        }
     }
 }
