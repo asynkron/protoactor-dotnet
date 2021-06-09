@@ -31,7 +31,7 @@ namespace Proto.Cluster
         private TaskCompletionSource<bool> _topologyConsensus = new ();
         private ImmutableDictionary<string,MetaMember> _metaMembers = ImmutableDictionary<string, MetaMember>.Empty;
 
-        private Member? _leader;
+       // private Member? _leader;
 
         //TODO: the members here are only from the cluster provider
         //The partition lookup broadcasts and use broadcasted information

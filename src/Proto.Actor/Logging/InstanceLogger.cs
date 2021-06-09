@@ -19,6 +19,7 @@ namespace Proto.Logging
         public static InstanceLogger? Logger(this ActorSystem system) => system.Extensions.Get<InstanceLogger>();
         
     }
+    
     [PublicAPI]
     public record LogStoreEntry(int Index, LogLevel LogLevel, string Category, string Template, object[] args)
     {
@@ -30,11 +31,12 @@ namespace Proto.Logging
     [PublicAPI]
     public class LogStore
     {
+        private readonly object _lock = new();
         private readonly List<LogStoreEntry> _entries = new();
 
         public void Append(LogLevel logLevel, string category, string template, object[] args)
         {
-            lock (this)
+            lock (_lock)
             {
                 _entries.Add(new LogStoreEntry(_entries.Count, logLevel, category, template, args));
             }
@@ -42,7 +44,7 @@ namespace Proto.Logging
 
         public IReadOnlyList<LogStoreEntry> GetEntries()
         {
-            lock (this)
+            lock (_lock)
             {
                 return _entries.ToList();
             }
@@ -50,23 +52,21 @@ namespace Proto.Logging
 
         public LogStoreEntry? FindEntry(string partialTemplate)
         {
-            lock (this)
+            lock (_lock)
             {
-                var entry = GetEntries().FirstOrDefault(e => e.Template.Contains(partialTemplate));
+                var entry = GetEntries().FirstOrDefault(e => e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
                 return entry;
             }
         }
 
         public LogStoreEntry? FindEntryByCategory(string category, string partialTemplate)
         {
-            lock (this)
+            lock (_lock)
             {
-                var entry = GetEntries().FirstOrDefault(e => e.Category == category && e.Template.Contains(partialTemplate));
+                var entry = GetEntries().FirstOrDefault(e => e.Category == category && e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
                 return entry;
             }
         }
-
-
     }
 
 

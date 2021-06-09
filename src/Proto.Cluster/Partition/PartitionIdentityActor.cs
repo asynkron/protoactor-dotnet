@@ -153,7 +153,7 @@ namespace Proto.Cluster.Partition
             _partitionLookup[msg.ClusterIdentity] = msg.Pid;
         }
 
-        private async Task OnActivationRequest(ActivationRequest msg, IContext context)
+        private Task OnActivationRequest(ActivationRequest msg, IContext context)
         {
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
 
@@ -163,7 +163,7 @@ namespace Proto.Cluster.Partition
                 Logger.LogWarning("Tried to spawn on wrong node, forwarding");
                 context.Forward(ownerPid);
 
-                return;
+                return Task.CompletedTask;
             }
 
             //Check if exist in current partition dictionary
@@ -174,7 +174,7 @@ namespace Proto.Cluster.Partition
                     Logger.LogError("Null PID for ClusterIdentity {ClusterIdentity}",msg.ClusterIdentity);
                 }
                 context.Respond(new ActivationResponse {Pid = pid});
-                return;
+                return Task.CompletedTask;
             }
             
             //only activate members when we are all in sync
@@ -189,7 +189,7 @@ namespace Proto.Cluster.Partition
                 //No activator currently available, return unavailable
                 Logger.LogWarning("No members currently available for kind {Kind}", msg.Kind);
                 context.Respond(new ActivationResponse {Pid = null});
-                return;
+                return Task.CompletedTask;
             }
 
             //What is this?
@@ -260,6 +260,8 @@ namespace Proto.Cluster.Partition
                     return Task.CompletedTask;
                 }
             );
+            
+            return Task.CompletedTask;
         }
 
         private async Task<ActivationResponse> SpawnRemoteActor(ActivationRequest req, string activator)

@@ -50,10 +50,10 @@ namespace Proto.Tests
             logger?.LogDebug("...123....Hello...456...");
             logger?.LogDebug("...789....World...012...");
 
-            var hello = logStore.FindEntry("Hello");
+            var hello = logStore.FindEntry("Hello")!;
             Assert.NotNull(hello);
             
-            var world = logStore.FindEntry("World");
+            var world = logStore.FindEntry("World")!;
             Assert.NotNull(world);
             
             Assert.True(hello.IsBefore(world));
@@ -85,7 +85,7 @@ namespace Proto.Tests
 
             logger?.LogDebug("....Hello..123");
 
-            var hello = logStore.FindEntryByCategory("ActorContext", "Hello");
+            var hello = logStore.FindEntryByCategory("ActorContext", "Hello")!;
 
             Assert.NotNull(hello);
             Assert.Equal("ActorContext", hello.Category);

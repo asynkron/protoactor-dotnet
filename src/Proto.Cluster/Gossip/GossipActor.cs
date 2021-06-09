@@ -9,6 +9,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
@@ -48,24 +49,25 @@ namespace Proto.Cluster.Gossip
         {
             var allMembers = context.System.Cluster().MemberList.GetMembers();
 
-            var (consensus, hash) = GossipStateManagement.CheckConsensus(_state, context.System.Id, allMembers);
+            var (consensus, hash) = GossipStateManagement.CheckConsensus(context, _state, context.System.Id, allMembers);
 
             if (!consensus)
             {
+                context.Logger()?.LogDebug("No consensus {MemberId} - {State} - ", context.System.Id, _state);
                 context.Cluster().MemberList.TryResetTopologyConsensus();
                 return;
             }
-            
+
             if (hash != _clusterTopologyHash)
             {
                 //safe to call many times
                 context.Cluster().MemberList.TrySetTopologyConsensus();
                 
-                //Console.WriteLine($"Consensus {context.System.Id} - {hash}");
+                context.Logger()?.LogDebug("Consensus {MemberId} - {TopologyHash} - {State}", context.System.Id, hash, _state);
                 //reached consensus
                 _clusterTopologyHash = hash;
             }
-            
+
         }
 
         private Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)

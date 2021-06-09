@@ -8,6 +8,7 @@ using Proto.Cluster.Cache;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Testing;
+using Proto.Logging;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using Xunit;
@@ -103,6 +104,7 @@ namespace Proto.Cluster.Tests
             config = configure?.Invoke(config) ?? config;
 
             var system = new ActorSystem(GetActorSystemConfig());
+            system.Extensions.Register(new InstanceLogger(LogLevel.Debug));
 
             var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
             var _ = new GrpcCoreRemote(system, remoteConfig);

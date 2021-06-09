@@ -10,6 +10,7 @@ using System.Linq;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
@@ -137,7 +138,7 @@ namespace Proto.Cluster.Gossip
             return (pendingOffsets, newState);
         }
         
-        public static (bool Consensus, ulong TopologyHash) CheckConsensus(GossipState state, string myId, ImmutableHashSet<string> members)
+        public static (bool Consensus, ulong TopologyHash) CheckConsensus(IContext ctx,  GossipState state, string myId, ImmutableHashSet<string> members)
         {
             try
             {
@@ -158,7 +159,7 @@ namespace Proto.Cluster.Gossip
                         continue;
                     }
                     hashes.Add((memberId,topology.TopologyHash));
-                    //Console.WriteLine($"{myId} - {memberId} - {topology.TopologyHash} - {topology.Members.Count}");
+                    ctx.Logger()?.LogDebug("{MemberId} - {OtherMemberId} - {OtherTopologyHash} - {OtherMemberCount}", myId, memberId, topology.TopologyHash, topology.Members.Count);
                 }
 
                 var first = hashes.FirstOrDefault();
