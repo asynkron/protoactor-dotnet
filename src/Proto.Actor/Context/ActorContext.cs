@@ -65,8 +65,6 @@ namespace Proto.Context
             if (_messageOrEnvelope is not null) EnsureExtras().Stash.Push(_messageOrEnvelope);
         }
 
-        public void Respond(object message, MessageHeader header) => Respond(new MessageEnvelope(message, null, header));
-        
         public void Respond(object message)
         {
             if (Sender is not null)

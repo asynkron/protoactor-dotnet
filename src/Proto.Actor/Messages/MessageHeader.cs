@@ -48,5 +48,17 @@ namespace Proto
 
         public MessageHeader With(IEnumerable<KeyValuePair<string, string>> items) =>
             this with {Inner = Inner.SetItems(items)};
+
+        public MessageHeader With(MessageHeader header)
+        {
+            if (header.Count == 0)
+            {
+                return this;
+            }
+
+            if (Count == 0) return header;
+
+            return this with {Inner = Inner.SetItems(header.Inner)};
+        }
     }
 }

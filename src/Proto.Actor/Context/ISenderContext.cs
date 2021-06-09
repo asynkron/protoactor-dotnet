@@ -121,17 +121,13 @@ namespace Proto
             CancellationToken cancellationToken = default
         )
         {
-            using var future = self.GetFuture();
-            var messageEnvelope = new MessageEnvelope(message, future.Pid, headers);
-            self.Send(target, messageEnvelope);
-            var result = await future.GetTask(cancellationToken);
+            var request = headers is null ? message : MessageEnvelope.Wrap(message, headers);
+            var result = await self.RequestAsync<MessageEnvelope>(target, request, cancellationToken);
 
             var messageResult = MessageEnvelope.UnwrapMessage(result);
 
             switch (messageResult)
             {
-                case DeadLetterResponse:
-                    throw new DeadLetterException(target);
                 case null:
                 case T:
                     return ((T) messageResult!, MessageEnvelope.UnwrapHeader(result));
@@ -159,6 +155,11 @@ namespace Proto
                 case T:
                     return (T) messageResult!;
                 default:
+                    if (typeof(T) == typeof(MessageEnvelope))
+                    {
+                        return (T) (object) MessageEnvelope.Wrap(result);
+                    }
+
                     throw new InvalidOperationException(
                         $"Unexpected message. Was type {messageResult.GetType()} but expected {typeof(T)}"
                     );
