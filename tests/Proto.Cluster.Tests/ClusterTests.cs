@@ -28,16 +28,16 @@ namespace Proto.Cluster.Tests
             Members.Skip(1).Select(member => member.MemberList.GetMembers()).Should().AllBeEquivalentTo(memberSet);
         }
 
-        // [Fact]
-        // public async Task TopologiesShouldHaveConsensus()
-        // {
-        //     var timeout = Task.Delay(10000);
-        //
-        //     var consensus = Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus()));
-        //
-        //     await Task.WhenAny(timeout, consensus);
-        //     timeout.IsCompleted.Should().BeFalse();
-        // }
+        [Fact]
+        public async Task TopologiesShouldHaveConsensus()
+        {
+            var timeout = Task.Delay(10000);
+        
+            var consensus = Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus()));
+        
+            await Task.WhenAny(timeout, consensus);
+            timeout.IsCompleted.Should().BeFalse();
+        }
 
         [Fact]
         public async Task HandlesSlowResponsesCorrectly()
