@@ -35,18 +35,9 @@ namespace Proto.Cluster.Gossip
             var logger = context.Logger()?.BeginScope<GossipActor>();
             logger?.LogDebug("Gossip Request {Sender}", context.Sender!);
             var remoteState = gossipRequest.State;
-            
-            var iExist = _state.Members.ContainsKey(context.System.Id);
-            
-            logger?.LogDebug("Do I exist {Exists}", iExist);
-            
             if (GossipStateManagement.MergeState(_state, remoteState, out var newState))
             {
                 _state = newState;
-                
-                iExist = _state.Members.ContainsKey(context.System.Id);
-                logger?.LogDebug("Do I still exist {Exists}", iExist);
-
                 CheckConsensus(context);
             }
 
