@@ -21,7 +21,7 @@ namespace Proto.Logging
     }
     
     [PublicAPI]
-    public record LogStoreEntry(int Index, LogLevel LogLevel, string Category, string Template, object[] args)
+    public record LogStoreEntry(int Index, DateTimeOffset Timestamp , LogLevel LogLevel, string Category, string Template, object[] args)
     {
         public bool IsBefore(LogStoreEntry other) => Index < other.Index;
 
@@ -38,7 +38,7 @@ namespace Proto.Logging
         {
             lock (_lock)
             {
-                _entries.Add(new LogStoreEntry(_entries.Count, logLevel, category, template, args));
+                _entries.Add(new LogStoreEntry(_entries.Count, DateTimeOffset.Now, logLevel, category, template, args));
             }
         }
 

@@ -61,7 +61,7 @@ namespace Proto.Cluster.Tests
 
                 }
                 
-                _testOutputHelper.WriteLine($"[{entry.Category}][{entry.LogLevel}] {entry.Template} {args}");
+                _testOutputHelper.WriteLine($"[{entry.Timestamp:hh:mm:ss.fff}] [{entry.Category}][{entry.LogLevel}] {entry.Template} {args}");
             }
         }
 
