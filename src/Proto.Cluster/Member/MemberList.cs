@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Remote;
 
 namespace Proto.Cluster
@@ -178,8 +179,11 @@ namespace Proto.Cluster
 
         private void BroadcastTopologyChanges(ClusterTopology topology)
         {
-            _eventStream.Publish(topology);
+            
+            _system.Logger()?.LogDebug("MemberList sending state");
             _cluster.Gossip.SetState("topology", topology);
+            _eventStream.Publish(topology);
+        
             //Console.WriteLine($"{_system.Id} Broadcasting {topology.TopologyHash} - {topology.Members.Count}");
         }
 

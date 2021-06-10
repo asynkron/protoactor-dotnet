@@ -7,6 +7,7 @@ using System;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
@@ -32,6 +33,7 @@ namespace Proto.Cluster.Gossip
 
         public void SetState(string key, IMessage value)
         {
+            _context.System.Logger()?.LogDebug("Gossiper setting state to {Pid}", _pid);
             if (_pid == null)
             {
                 return;
