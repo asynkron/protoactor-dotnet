@@ -111,9 +111,7 @@ namespace Proto.Cluster.Tests
             system.Extensions.Register(new InstanceLogger(LogLevel.Debug,LogStore,category:system.Id));
 
             var logger = system.Logger()?.BeginScope<EventStream>();
-            system.EventStream.Subscribe<object>(e => {
-                    logger?.LogDebug("EventStream {Message}",e);
-                }
+            system.EventStream.Subscribe<object>(e => { logger?.LogDebug("EventStream {MessageType}:{Message}", e.GetType().Name, e); }
             );
 
             var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);

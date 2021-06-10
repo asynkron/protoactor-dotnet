@@ -79,7 +79,15 @@ namespace Proto.Cluster.Gossip
 
         private Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
         {
+            var logger = context.Logger()?.BeginMethodScope();
+            
             GossipStateManagement.SetKey(_state, setStateKey.Key,setStateKey.Value  , context.System.Id, ref _localSequenceNo);
+            logger?.LogDebug("Setting state key {Key} - {Value} - {State}", setStateKey.Key, setStateKey.Value, _state);
+
+            if (!_state.Members.ContainsKey(context.System.Id))
+            {
+                logger?.LogCritical("State corrupt");
+            }
             return Task.CompletedTask;
         }
 
@@ -157,9 +165,6 @@ namespace Proto.Cluster.Gossip
                         Logger.LogError(x, "OnSendGossipState failed");
                     }
                 });
-
-                //only commit offsets if successful
-                
 
                 //update our state with the data from the remote node
                 //TODO: this needs to be improved with filter state on sender side, and then Ack from here
