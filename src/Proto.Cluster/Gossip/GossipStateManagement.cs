@@ -140,9 +140,15 @@ namespace Proto.Cluster.Gossip
         
         public static (bool Consensus, ulong TopologyHash) CheckConsensus(IContext ctx,  GossipState state, string myId, ImmutableHashSet<string> members)
         {
+            
             try
             {
                 var hashes = new List<(string MemberId,ulong TopologyHash)>();
+
+                if (state.Members.Count == 0)
+                {
+                    ctx.Logger()?.LogDebug("No members found for consensus check");
+                }
                 
                 foreach (var (memberId, memberState) in state.Members)
                 {
@@ -159,7 +165,7 @@ namespace Proto.Cluster.Gossip
                         continue;
                     }
                     hashes.Add((memberId,topology.TopologyHash));
-                    ctx.Logger()?.LogDebug("{MemberId} - {OtherMemberId} - {OtherTopologyHash} - {OtherMemberCount}", myId, memberId, topology.TopologyHash, topology.Members.Count);
+                    ctx.Logger()?.LogDebug("Remote: {OtherMemberId} - {OtherTopologyHash} - {OtherMemberCount}", memberId, topology.TopologyHash, topology.Members.Count);
                 }
 
                 var first = hashes.FirstOrDefault();
@@ -174,6 +180,7 @@ namespace Proto.Cluster.Gossip
             }
             catch (Exception x)
             {
+                ctx.Logger()?.LogError(x, "Check Consensus failed");
                 Logger.LogError(x, "Check Consensus failed");
                 return (false, 0);
             }

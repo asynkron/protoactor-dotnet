@@ -28,16 +28,42 @@ namespace Proto.Cluster.Tests
             Members.Skip(1).Select(member => member.MemberList.GetMembers()).Should().AllBeEquivalentTo(memberSet);
         }
 
-        // [Fact]
-        // public async Task TopologiesShouldHaveConsensus()
-        // {
-        //     var timeout = Task.Delay(10000);
-        //
-        //     var consensus = Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus()));
-        //
-        //     await Task.WhenAny(timeout, consensus);
-        //     timeout.IsCompleted.Should().BeFalse();
-        // }
+        [Fact]
+        public async Task TopologiesShouldHaveConsensus()
+        {
+            var timeout = Task.Delay(5000);
+        
+            var consensus = Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus()));
+
+            
+        
+            await Task.WhenAny(timeout, consensus);
+            DumpLog();
+            timeout.IsCompleted.Should().BeFalse();
+        }
+
+        private void DumpLog()
+        {
+            var entries = LogStore.GetEntries();
+
+            foreach (var entry in entries)
+            {
+                
+
+                var args = "";
+                foreach (var arg in entry.args)
+                {
+                    var str = arg?.ToString() ?? "";
+                    if (str.Length > 100)
+                        str = str.Substring(0, 100) + "...";
+
+                    args += ", " + str;
+
+                }
+                
+                _testOutputHelper.WriteLine($"[{entry.Category}][{entry.LogLevel}] {entry.Template} {args}");
+            }
+        }
 
         [Fact]
         public async Task HandlesSlowResponsesCorrectly()

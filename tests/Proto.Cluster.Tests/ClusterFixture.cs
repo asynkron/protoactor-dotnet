@@ -20,6 +20,8 @@ namespace Proto.Cluster.Tests
         IList<Cluster> Members { get; }
 
         public Task<Cluster> SpawnNode();
+        
+        LogStore LogStore { get; }
 
         Task RemoveNode(Cluster member, bool graceful = true);
     }
@@ -46,6 +48,8 @@ namespace Proto.Cluster.Tests
         };
 
         public async Task InitializeAsync() => Members = await SpawnClusterNodes(_clusterSize, _configure).ConfigureAwait(false);
+
+        public LogStore LogStore { get; } = new();
 
         public async Task DisposeAsync()
         {
@@ -104,7 +108,7 @@ namespace Proto.Cluster.Tests
             config = configure?.Invoke(config) ?? config;
 
             var system = new ActorSystem(GetActorSystemConfig());
-            system.Extensions.Register(new InstanceLogger(LogLevel.Debug));
+            system.Extensions.Register(new InstanceLogger(LogLevel.Debug,LogStore,category:system.Id));
 
             var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
             var _ = new GrpcCoreRemote(system, remoteConfig);

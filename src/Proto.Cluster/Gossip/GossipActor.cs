@@ -32,6 +32,7 @@ namespace Proto.Cluster.Gossip
 
         private Task OnGossipRequest(IContext context, GossipRequest gossipRequest)
         {
+            context.Logger()?.LogDebug("Gossip Request {Sender}", context.Sender!);
             var remoteState = gossipRequest.State;
             //Ack, we got it
             if (GossipStateManagement.MergeState(_state, remoteState, out var newState))
@@ -53,7 +54,7 @@ namespace Proto.Cluster.Gossip
 
             if (!consensus)
             {
-                context.Logger()?.LogDebug("No consensus {MemberId} - {State} - ", context.System.Id, _state);
+                context.Logger()?.LogDebug("No consensus {State} - ", _state);
                 context.Cluster().MemberList.TryResetTopologyConsensus();
                 return;
             }
@@ -63,7 +64,7 @@ namespace Proto.Cluster.Gossip
                 //safe to call many times
                 context.Cluster().MemberList.TrySetTopologyConsensus();
                 
-                context.Logger()?.LogDebug("Consensus {MemberId} - {TopologyHash} - {State}", context.System.Id, hash, _state);
+                context.Logger()?.LogDebug("Consensus {TopologyHash} - {State}", hash, _state);
                 //reached consensus
                 _clusterTopologyHash = hash;
             }
