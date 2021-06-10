@@ -36,10 +36,11 @@ namespace Proto.Cluster.Tests
             var consensus = Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus()));
         
             await Task.WhenAny(timeout, consensus);
-
+            timeout.IsCompleted.Should().BeFalse();
+            
             _testOutputHelper.WriteLine(LogStore.ToFormattedString());
             
-            timeout.IsCompleted.Should().BeFalse();
+            
         }
 
         [Fact]
