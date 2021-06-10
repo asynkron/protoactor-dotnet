@@ -59,9 +59,9 @@ namespace Proto.Cluster.Gossip
                 return;
             }
 
+            context.Cluster().MemberList.TrySetTopologyConsensus();
             if (hash != _clusterTopologyHash)
             {
-                context.Cluster().MemberList.TrySetTopologyConsensus();
                 //reached consensus
                 _clusterTopologyHash = hash;
             }

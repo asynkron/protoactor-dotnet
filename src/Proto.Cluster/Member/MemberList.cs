@@ -29,7 +29,7 @@ namespace Proto.Cluster
         private readonly IRootContext _root;
         private readonly ActorSystem _system;
         private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
-        private TaskCompletionSource<bool> _topologyConsensus = new ();
+        private TaskCompletionSource<bool> _topologyConsensus = new (TaskCreationOptions.RunContinuationsAsynchronously);
         private ImmutableDictionary<string,MetaMember> _metaMembers = ImmutableDictionary<string, MetaMember>.Empty;
 
        // private Member? _leader;
@@ -256,7 +256,7 @@ namespace Proto.Cluster
             //only replace if the task is completed
             if (_topologyConsensus.Task.IsCompleted)
             {
-                _topologyConsensus = new TaskCompletionSource<bool>();
+                _topologyConsensus = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             }
         }
     }
