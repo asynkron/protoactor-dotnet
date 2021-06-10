@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Extensions;
@@ -18,8 +19,9 @@ namespace Proto.Logging
         private readonly LogStore? _logStore;
         private readonly string _category;
 
-        public InstanceLogger BeginScope<T>()  => new(_logLevel, _logStore, _logger, typeof(T).Name);
-        public InstanceLogger BeginScope(string category) => new(_logLevel, _logStore, _logger, category);
+        public InstanceLogger BeginMethodScope([CallerMemberName]string caller="")  => new(_logLevel, _logStore, _logger, $"{_category}/{caller}");
+        public InstanceLogger BeginScope<T>([CallerMemberName]string caller="")  => new(_logLevel, _logStore, _logger, $"{_category}/{typeof(T).Name}.{caller}");
+        public InstanceLogger BeginScope(string category) => new(_logLevel, _logStore, _logger, $"{_category}/{category}");
 
         public InstanceLogger(LogLevel logLevel, LogStore? logStore = null, ILogger? logger = null, string category = "default")
         {

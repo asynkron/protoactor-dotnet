@@ -42,12 +42,30 @@ namespace Proto.Logging
                 return entry;
             }
         }
-
-        public LogStoreEntry? FindEntryByCategory(string category, string partialTemplate)
+        
+        public LogStoreEntry? FindLastEntry(string partialTemplate)
         {
             lock (_lock)
             {
-                var entry = GetEntries().FirstOrDefault(e => e.Category == category && e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+                var entry = GetEntries().LastOrDefault(e => e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+                return entry;
+            }
+        }
+
+        public LogStoreEntry? FindEntryByCategory(string partialCategory, string partialTemplate)
+        {
+            lock (_lock)
+            {
+                var entry = GetEntries().FirstOrDefault(e => e.Category.Contains(partialCategory, StringComparison.InvariantCulture) && e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+                return entry;
+            }
+        }
+        
+        public LogStoreEntry? FindLastEntryByCategory(string partialCategory, string partialTemplate)
+        {
+            lock (_lock)
+            {
+                var entry = GetEntries().LastOrDefault(e => e.Category.Contains(partialCategory, StringComparison.InvariantCulture) && e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
                 return entry;
             }
         }
@@ -59,10 +77,8 @@ namespace Proto.Logging
 
             foreach (var entry in entries)
             {
-                var formatter = new LogValuesFormatter(entry.Template);
-                var str = formatter.Format(entry.args);
-
-                sb.AppendLine($"[{entry.Timestamp:hh:mm:ss.fff}] [{entry.Category}][{entry.LogLevel}] {str}");
+                var str = entry.ToFormattedString();
+                sb.AppendLine(str);
             }
 
             return sb.ToString();

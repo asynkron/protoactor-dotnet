@@ -19,7 +19,7 @@ namespace Proto.Logging.Formatting
         private const string NullValue = "(null)";
         private static readonly char[] FormatDelimiters = {',', ':'};
         private readonly string _format;
-        private readonly List<string> _valueNames = new List<string>();
+        private readonly List<string> _valueNames = new();
 
         public LogValuesFormatter(string format)
         {

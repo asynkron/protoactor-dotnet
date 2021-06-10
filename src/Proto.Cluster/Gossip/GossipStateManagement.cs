@@ -140,47 +140,64 @@ namespace Proto.Cluster.Gossip
         
         public static (bool Consensus, ulong TopologyHash) CheckConsensus(IContext ctx,  GossipState state, string myId, ImmutableHashSet<string> members)
         {
-            
+            var logger = ctx.Logger()?.BeginMethodScope();
             try
             {
                 var hashes = new List<(string MemberId,ulong TopologyHash)>();
 
                 if (state.Members.Count == 0)
                 {
-                    ctx.Logger()?.LogDebug("No members found for consensus check");
+                    logger?.LogDebug("No members found for consensus check");
                 }
                 
+                logger?.LogDebug("Checking consensus");
                 foreach (var (memberId, memberState) in state.Members)
                 {
                     //skip banned members
                     if (!members.Contains(memberId))
+                    {
+                        logger?.LogDebug("Member is not part of cluster {MemberId}", memberId);
                         continue;
-                    
+                    }
+
                     var topology = memberState.GetTopology();
 
                     //member does not yet have a topology, default to empty
                     if (topology == null)
                     {
+                        if (memberId == myId)
+                        {
+                            logger?.LogDebug("I can't find myself");
+                        }
+                        else
+                        {
+                            logger?.LogDebug("Remote: {OtherMemberId} has no topology using TopologyHash 0", memberId);    
+                        }
+                        
+                        
                         hashes.Add((memberId,0));
                         continue;
                     }
+                    
                     hashes.Add((memberId,topology.TopologyHash));
-                    ctx.Logger()?.LogDebug("Remote: {OtherMemberId} - {OtherTopologyHash} - {OtherMemberCount}", memberId, topology.TopologyHash, topology.Members.Count);
+                    logger?.LogDebug("Remote: {OtherMemberId} - {OtherTopologyHash} - {OtherMemberCount}", memberId, topology.TopologyHash, topology.Members.Count);
                 }
 
                 var first = hashes.FirstOrDefault();
                 
                 if (hashes.All(h => h.TopologyHash == first.TopologyHash) && first.TopologyHash != 0)
                 {
+                    ctx.Logger()?.LogDebug("Reached Consensus {TopologyHash} - {State}", first.TopologyHash, state);
                     //all members have the same hash
                     return (true, first.TopologyHash);
                 }
 
+                logger?.LogDebug("No Consensus {Hashes}, {State}", hashes.Select(h => h.TopologyHash),  state);
                 return (false, 0);
             }
             catch (Exception x)
             {
-                ctx.Logger()?.LogError(x, "Check Consensus failed");
+                logger?.LogError(x, "Check Consensus failed");
                 Logger.LogError(x, "Check Consensus failed");
                 return (false, 0);
             }

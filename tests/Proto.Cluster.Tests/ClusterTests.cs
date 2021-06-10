@@ -32,12 +32,20 @@ namespace Proto.Cluster.Tests
         [Fact]
         public async Task TopologiesShouldHaveConsensus()
         {
-            var timeout = Task.Delay(5000);
+            var timeout = Task.Delay(10000);
         
             var consensus = Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus()));
         
             await Task.WhenAny(timeout, consensus);
+
+            var id = Members.First().System.Id;
+            var entry = LogStore.FindLastEntryByCategory(id, "No Consensus");
+            if (entry != null)
+            {
+                _testOutputHelper.WriteLine(entry.ToFormattedString());
+            }
             
+                
             _testOutputHelper.WriteLine(LogStore.ToFormattedString());
             
             timeout.IsCompleted.Should().BeFalse();

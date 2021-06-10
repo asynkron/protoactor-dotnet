@@ -110,6 +110,12 @@ namespace Proto.Cluster.Tests
             var system = new ActorSystem(GetActorSystemConfig());
             system.Extensions.Register(new InstanceLogger(LogLevel.Debug,LogStore,category:system.Id));
 
+            var logger = system.Logger()?.BeginScope<EventStream>();
+            system.EventStream.Subscribe<object>(e => {
+                    logger?.LogDebug("EventStream {Message}",e);
+                }
+            );
+
             var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
             var _ = new GrpcCoreRemote(system, remoteConfig);
 

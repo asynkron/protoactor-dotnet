@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Mailbox;
 using Proto.Utils;
 
@@ -26,6 +27,7 @@ namespace Proto
             var shouldThrottle = Throttle.Create(system.Config.DeadLetterThrottleCount, system.Config.DeadLetterThrottleInterval,
                 droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs.", droppedLogs)
             );
+
             Subscribe<DeadLetterEvent>(
                 dl => {
 

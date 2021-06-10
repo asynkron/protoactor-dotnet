@@ -15,5 +15,12 @@ namespace Proto.Logging
         public bool IsBefore(LogStoreEntry other) => Index < other.Index;
 
         public bool IsAfter(LogStoreEntry other) => Index > other.Index;
+
+        public string ToFormattedString()
+        {
+            var formatter = new LogValuesFormatter(Template);
+            var str = formatter.Format(args);
+            return $"[{Timestamp:hh:mm:ss.fff}] [{Category}][{LogLevel}] {str}";
+        }
     }
 }
