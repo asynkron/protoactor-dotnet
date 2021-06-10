@@ -20,7 +20,7 @@ namespace Proto.Logging
         private readonly string _category;
 
         public InstanceLogger BeginMethodScope([CallerMemberName]string caller="")  => new(_logLevel, _logStore, _logger, $"{_category}/{caller}");
-        public InstanceLogger BeginScope<T>()  => new(_logLevel, _logStore, _logger, $"{_category}/{typeof(T).Name}");
+        public InstanceLogger BeginScope<T>()  => new(_logLevel, _logStore, _logger, typeof(T).Name);
         public InstanceLogger BeginScope(string category) => new(_logLevel, _logStore, _logger, $"{_category}/{category}");
 
         public InstanceLogger(LogLevel logLevel, LogStore? logStore = null, ILogger? logger = null, string category = "default")
