@@ -20,7 +20,6 @@ namespace Proto.Cluster.Gossip
         private GossipState _state = new();
         private readonly Random _rnd = new();
         private ImmutableDictionary<string, long> _committedOffsets = ImmutableDictionary<string, long>.Empty;
-        private ulong _clusterTopologyHash;
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
@@ -60,11 +59,7 @@ namespace Proto.Cluster.Gossip
             }
 
             context.Cluster().MemberList.TrySetTopologyConsensus();
-            if (hash != _clusterTopologyHash)
-            {
-                //reached consensus
-                _clusterTopologyHash = hash;
-            }
+           
 
         }
 
