@@ -37,14 +37,6 @@ namespace Proto.Cluster.Tests
         
             await Task.WhenAny(timeout, consensus);
 
-            var id = Members.First().System.Id;
-            var entry = LogStore.FindLastEntryByCategory(id, "No Consensus");
-            if (entry != null)
-            {
-                _testOutputHelper.WriteLine(entry.ToFormattedString());
-            }
-            
-                
             _testOutputHelper.WriteLine(LogStore.ToFormattedString());
             
             timeout.IsCompleted.Should().BeFalse();
