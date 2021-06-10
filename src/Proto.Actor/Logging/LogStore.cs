@@ -18,11 +18,11 @@ namespace Proto.Logging
         private readonly object _lock = new();
         private readonly List<LogStoreEntry> _entries = new();
 
-        public void Append(LogLevel logLevel, string category, string template, object[] args)
+        public void Append(LogLevel logLevel, string category, string template, Exception? x, object[] args)
         {
             lock (_lock)
             {
-                _entries.Add(new LogStoreEntry(_entries.Count, DateTimeOffset.Now, logLevel, category, template, args));
+                _entries.Add(new LogStoreEntry(_entries.Count, DateTimeOffset.Now, logLevel, category, template,x, args));
             }
         }
 

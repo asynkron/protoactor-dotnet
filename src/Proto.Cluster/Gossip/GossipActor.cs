@@ -106,8 +106,7 @@ namespace Proto.Cluster.Gossip
 
         private async Task SendGossipForMember(IContext context, Member? member, InstanceLogger? logger)
         {
-            try
-            {
+
                 var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
                 var (pendingOffsets, stateForMember) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, member.Id);
 
@@ -121,37 +120,52 @@ namespace Proto.Cluster.Gossip
 
                 //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
                 //TODO: This will deadlock....
-                await context.RequestAsync<GossipResponse>(pid, new GossipRequest
+                var t = context.RequestAsync<GossipResponse>(pid, new GossipRequest
                     {
                         State = stateForMember,
                     }, CancellationTokens.WithTimeout(500)
                 );
+                
+                context.ReenterAfter(t, async tt => {
+                    try
+                    {
+                        await tt;
+
+                        foreach (var (key, sequenceNumber) in pendingOffsets)
+                        {
+                            if (!_committedOffsets.ContainsKey(key) || _committedOffsets[key] < pendingOffsets[key])
+                            {
+                                _committedOffsets = _committedOffsets.SetItem(key, sequenceNumber);
+                            }
+                        }
+                    }
+                    catch (DeadLetterException)
+                    {
+                        logger?.LogWarning("DeadLetter");
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        logger?.LogWarning("Timeout");
+                    }
+                    catch (TimeoutException)
+                    {
+                        logger?.LogWarning("Timeout");
+                    }
+                    catch (Exception x)
+                    {
+                        logger?.LogError(x, "OnSendGossipState failed");
+                        Logger.LogError(x, "OnSendGossipState failed");
+                    }
+                });
 
                 //only commit offsets if successful
-                _committedOffsets = pendingOffsets;
+                
 
                 //update our state with the data from the remote node
                 //TODO: this needs to be improved with filter state on sender side, and then Ack from here
                 // GossipStateManagement.MergeState(_state, response.State, out var newState);
                 // _state = newState;
-            }
-            catch (DeadLetterException)
-            {
-                logger?.LogWarning("DeadLetter");
-            }
-            catch (OperationCanceledException)
-            {
-                logger?.LogWarning("Timeout");
-            }
-            catch (TimeoutException)
-            {
-                logger?.LogWarning("Timeout");
-            }
-            catch (Exception x)
-            {
-                logger?.LogError(x, "OnSendGossipState failed");
-                Logger.LogError(x, "OnSendGossipState failed");
-            }
+            
         }
 
         private List<Member> PickRandomFanOutMembers(Member[] members, int fanOutBy) => 

@@ -37,7 +37,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogDebug(template, args);
-            _logStore?.Append(_logLevel, _category, template, args);
+            _logStore?.Append(_logLevel, _category, template,null, args);
 
         }
 
@@ -47,7 +47,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogDebug(x, template, args);
-            _logStore?.Append(_logLevel, _category, template, args);
+            _logStore?.Append(_logLevel, _category, template,x, args);
         }
 
         public void LogInformation(string template, params object[] args)
@@ -56,7 +56,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogInformation(template, args);
-            _logStore?.Append(_logLevel, _category, template, args);
+            _logStore?.Append(_logLevel, _category, template,null, args);
         }
 
         public void LogInformation(Exception x, string template, params object[] args)
@@ -64,8 +64,8 @@ namespace Proto.Logging
             if (_logLevel > LogLevel.Information)
                 return;
 
-            _logger?.LogDebug(x, template, args);
-            _logStore?.Append(_logLevel, _category, template, args);
+            _logger?.LogInformation(x, template, args);
+            _logStore?.Append(_logLevel, _category, template,x, args);
         }
 
         public void LogWarning(string template, params object[] args)
@@ -74,7 +74,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogWarning(template, args);
-            _logStore?.Append(_logLevel, _category, template, args);
+            _logStore?.Append(_logLevel, _category, template,null, args);
         }
 
         public void LogWarning(Exception x, string template, params object[] args)
@@ -83,7 +83,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogWarning(x, template, args);
-            _logStore?.Append(_logLevel, _category, template, args);
+            _logStore?.Append(_logLevel, _category, template,x, args);
         }
 
         public void LogError(string template, params object[] args)
@@ -92,7 +92,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogError(template, args);
-            _logStore?.Append(_logLevel, _category, template, args);
+            _logStore?.Append(_logLevel, _category, template,null, args);
         }
 
         public void LogError(Exception x, string template, params object[] args)
@@ -101,7 +101,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogError(x, template, args);
-            _logStore?.Append(_logLevel, _category, template, args);
+            _logStore?.Append(_logLevel, _category, template,x, args);
         }
 
         public void LogCritical(string template, params object[] args)
@@ -110,7 +110,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogCritical(template, args);
-            _logStore?.Append(_logLevel, _category, template, args);
+            _logStore?.Append(_logLevel, _category, template,null, args);
         }
 
         public void LogCritical(Exception x, string template, params object[] args)
@@ -119,7 +119,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogCritical(x, template, args);
-            _logStore?.Append(_logLevel, _category, template, args);
+            _logStore?.Append(_logLevel, _category, template,x, args);
         }
     }
 }

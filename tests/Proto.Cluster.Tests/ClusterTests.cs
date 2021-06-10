@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
-using Proto.Logging.Formatting;
 using Xunit;
 using Xunit.Abstractions;
 

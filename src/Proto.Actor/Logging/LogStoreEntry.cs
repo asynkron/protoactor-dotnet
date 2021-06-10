@@ -10,7 +10,15 @@ using Microsoft.Extensions.Logging;
 namespace Proto.Logging
 {
     [PublicAPI]
-    public record LogStoreEntry(int Index, DateTimeOffset Timestamp , LogLevel LogLevel, string Category, string Template, object[] args)
+    public record LogStoreEntry(
+        int Index,
+        DateTimeOffset Timestamp,
+        LogLevel LogLevel,
+        string Category,
+        string Template,
+        Exception? Exception,
+        object[] Args
+    )
     {
         public bool IsBefore(LogStoreEntry other) => Index < other.Index;
 
@@ -19,8 +27,8 @@ namespace Proto.Logging
         public string ToFormattedString()
         {
             var formatter = new LogValuesFormatter(Template);
-            var str = formatter.Format(args);
-            return $"[{Timestamp:hh:mm:ss.fff}] [{Category}][{LogLevel}] {str}";
+            var str = formatter.Format(Args);
+            return $"[{Timestamp:hh:mm:ss.fff}] [{Category}][{LogLevel}] {str} {Exception}";
         }
     }
 }
