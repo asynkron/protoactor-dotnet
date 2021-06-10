@@ -4,72 +4,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Extensions;
 
 namespace Proto.Logging
 {
-    [PublicAPI]
-    public static class Extensions
-    {
-        public static InstanceLogger? Logger(this IContext context) => context.System.Logger();
-        public static InstanceLogger? Logger(this ActorSystem system) => system.Extensions.Get<InstanceLogger>();
-        
-    }
-    
-    [PublicAPI]
-    public record LogStoreEntry(int Index, DateTimeOffset Timestamp , LogLevel LogLevel, string Category, string Template, object[] args)
-    {
-        public bool IsBefore(LogStoreEntry other) => Index < other.Index;
-
-        public bool IsAfter(LogStoreEntry other) => Index > other.Index;
-    }
-
-    [PublicAPI]
-    public class LogStore
-    {
-        private readonly object _lock = new();
-        private readonly List<LogStoreEntry> _entries = new();
-
-        public void Append(LogLevel logLevel, string category, string template, object[] args)
-        {
-            lock (_lock)
-            {
-                _entries.Add(new LogStoreEntry(_entries.Count, DateTimeOffset.Now, logLevel, category, template, args));
-            }
-        }
-
-        public IReadOnlyList<LogStoreEntry> GetEntries()
-        {
-            lock (_lock)
-            {
-                return _entries.ToList();
-            }
-        }
-
-        public LogStoreEntry? FindEntry(string partialTemplate)
-        {
-            lock (_lock)
-            {
-                var entry = GetEntries().FirstOrDefault(e => e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
-                return entry;
-            }
-        }
-
-        public LogStoreEntry? FindEntryByCategory(string category, string partialTemplate)
-        {
-            lock (_lock)
-            {
-                var entry = GetEntries().FirstOrDefault(e => e.Category == category && e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
-                return entry;
-            }
-        }
-    }
-
-
     [PublicAPI]
     public class InstanceLogger : IActorSystemExtension<InstanceLogger>
     {

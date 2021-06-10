@@ -37,24 +37,10 @@ namespace Proto.Cluster.Tests
             var consensus = Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus()));
         
             await Task.WhenAny(timeout, consensus);
-            DumpLog();
+            
+            _testOutputHelper.WriteLine(LogStore.ToFormattedString());
+            
             timeout.IsCompleted.Should().BeFalse();
-        }
-
-        private void DumpLog()
-        {
-            var entries = LogStore.GetEntries();
-            
-            
-            
-
-            foreach (var entry in entries)
-            {
-                var formatter = new LogValuesFormatter(entry.Template);
-                var str = formatter.Format(entry.args);
-                
-                _testOutputHelper.WriteLine($"[{entry.Timestamp:hh:mm:ss.fff}] [{entry.Category}][{entry.LogLevel}] {str}");
-            }
         }
 
         [Fact]
