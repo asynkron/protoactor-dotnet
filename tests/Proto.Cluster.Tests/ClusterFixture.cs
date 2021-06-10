@@ -108,11 +108,11 @@ namespace Proto.Cluster.Tests
             config = configure?.Invoke(config) ?? config;
 
             var system = new ActorSystem(GetActorSystemConfig());
-            system.Extensions.Register(new InstanceLogger(LogLevel.Debug,LogStore,category:system.Id));
-
-            var logger = system.Logger()?.BeginScope<EventStream>();
-            system.EventStream.Subscribe<object>(e => { logger?.LogDebug("EventStream {MessageType}:{Message}", e.GetType().Name, e); }
-            );
+            // system.Extensions.Register(new InstanceLogger(LogLevel.Debug,LogStore,category:system.Id));
+            //
+            // var logger = system.Logger()?.BeginScope<EventStream>();
+            // system.EventStream.Subscribe<object>(e => { logger?.LogDebug("EventStream {MessageType}:{Message}", e.GetType().Name, e); }
+            // );
 
             var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
             var _ = new GrpcCoreRemote(system, remoteConfig);
