@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
+using Proto.Logging.Formatting;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -34,8 +35,6 @@ namespace Proto.Cluster.Tests
             var timeout = Task.Delay(5000);
         
             var consensus = Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus()));
-
-            
         
             await Task.WhenAny(timeout, consensus);
             DumpLog();
@@ -45,23 +44,16 @@ namespace Proto.Cluster.Tests
         private void DumpLog()
         {
             var entries = LogStore.GetEntries();
+            
+            
+            
 
             foreach (var entry in entries)
             {
+                var formatter = new LogValuesFormatter(entry.Template);
+                var str = formatter.Format(entry.args);
                 
-
-                var args = "";
-                foreach (var arg in entry.args)
-                {
-                    var str = arg?.ToString() ?? "";
-                    if (str.Length > 100)
-                        str = str.Substring(0, 100) + "...";
-
-                    args += ", " + str;
-
-                }
-                
-                _testOutputHelper.WriteLine($"[{entry.Timestamp:hh:mm:ss.fff}] [{entry.Category}][{entry.LogLevel}] {entry.Template} {args}");
+                _testOutputHelper.WriteLine($"[{entry.Timestamp:hh:mm:ss.fff}] [{entry.Category}][{entry.LogLevel}] {str}");
             }
         }
 
