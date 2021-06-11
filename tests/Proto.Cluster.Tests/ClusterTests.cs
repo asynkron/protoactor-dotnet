@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
 using Google.Protobuf.WellKnownTypes;
+using Proto.Cluster.Gossip;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -69,10 +71,16 @@ namespace Proto.Cluster.Tests
 
             //make sure we are not comparing the same not to itself;
             targetMemberId.Should().NotBe(sourceMemberId);
+
+            var channel = Channel.CreateUnbounded<object>();
+            targetMember.System.EventStream.Subscribe(channel);
+            var stream = channel.Reader.ReadAllAsync().OfType<GossipUpdate>();
+            
+            
             
             sourceMember.Gossip.SetState("some-state", new PID("abc", "def"));
             //allow state to replicate            
-            await Task.Delay(5000);
+            await stream.FirstAsync(x => x.MemberId == sourceMemberId);
 
             //get state from target member
             //it should be noted that the response is a dict of member id for all members,
