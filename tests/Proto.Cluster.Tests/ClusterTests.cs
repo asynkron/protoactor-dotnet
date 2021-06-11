@@ -62,6 +62,10 @@ namespace Proto.Cluster.Tests
             var sourceMemberId = sourceMember.System.Id;
             var targetMember = Members.Last();
             var targetMemberId = targetMember.System.Id;
+            
+            //make sure we somehow don't already have the expected value in the state of targetMember
+            var initialResponse = await targetMember.Gossip.GetState("some-state");
+            initialResponse.State.TryGetValue(sourceMemberId, out _).Should().BeFalse();
 
             //make sure we are not comparing the same not to itself;
             targetMemberId.Should().NotBe(sourceMemberId);
