@@ -13,6 +13,7 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
+    public record GossipUpdate(string MemberId, string Key, Any Value, long SequenceNumber);
     public record GetGossipStateRequest(string Key);
 
     public record GetGossipStateResponse(ImmutableDictionary<string,Any> State);
