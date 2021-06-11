@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -25,7 +26,7 @@ namespace Proto
         internal EventStream(ActorSystem system)
         {
             var shouldThrottle = Throttle.Create(system.Config.DeadLetterThrottleCount, system.Config.DeadLetterThrottleInterval,
-                droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs.", droppedLogs)
+                droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs", droppedLogs)
             );
 
             Subscribe<DeadLetterEvent>(
@@ -80,6 +81,25 @@ namespace Proto
                 x => {
                     action(x);
                     return Task.CompletedTask;
+                }
+            );
+            _subscriptions.TryAdd(sub.Id, sub);
+            return sub;
+        }
+        
+        /// <summary>
+        ///    Subscribe to the specified message type and yields the result onto a Channel
+        /// </summary>
+        /// <param name="channel">a Channel which receives the event</param>
+        /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
+        /// <returns>A new subscription that can be used to unsubscribe</returns>
+        public EventStreamSubscription<T> Subscribe(Channel<T> channel, IDispatcher? dispatcher = null)
+        {
+            var sub = new EventStreamSubscription<T>(
+                this,
+                dispatcher ?? Dispatchers.SynchronousDispatcher,
+                async x => {
+                    await channel.Writer.WriteAsync(x);
                 }
             );
             _subscriptions.TryAdd(sub.Id, sub);

@@ -54,15 +54,19 @@ namespace Proto.Cluster.Gossip
             var logger = context.Logger()?.BeginScope<GossipActor>();
             logger?.LogDebug("Gossip Request {Sender}", context.Sender!);
             var remoteState = gossipRequest.State;
-            if (GossipStateManagement.MergeState(_state, remoteState, out var newState))
+            var updates = GossipStateManagement.MergeState(_state, remoteState, out var newState);
+            if (updates.Any())
             {
+                foreach (var update in updates)
+                {
+                    context.System.EventStream.Publish(update);
+                }
                 _state = newState;
                 CheckConsensus(context);
             }
 
             //Ack, we got it
-            var response = new GossipResponse();
-            context.Respond(response);
+            context.Respond(new GossipResponse());
             return Task.CompletedTask;
         }
 

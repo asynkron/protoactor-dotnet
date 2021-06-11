@@ -38,10 +38,10 @@ namespace Proto.Cluster.Gossip
             return memberState;
         }
 
-        public static bool MergeState(GossipState state, GossipState remoteState, out  GossipState newState)
+        public static IReadOnlyCollection<GossipUpdate> MergeState(GossipState state, GossipState remoteState, out  GossipState newState)
         {
             newState = state.Clone();
-            var dirty = false;
+            var updates = new List<GossipUpdate>();
 
             foreach (var (memberId, remoteMemberState) in remoteState.Members)
             {
@@ -49,7 +49,11 @@ namespace Proto.Cluster.Gossip
                 if (!newState.Members.ContainsKey(memberId))
                 {
                     newState.Members.Add(memberId, remoteMemberState);
-                    dirty = true;
+
+                    foreach (var entry in remoteMemberState.Values)
+                    {
+                        updates.Add(new GossipUpdate(memberId,entry.Key,entry.Value.Value,entry.Value.SequenceNumber));
+                    }
                     continue;
                 }
 
@@ -62,7 +66,7 @@ namespace Proto.Cluster.Gossip
                     if (!newMemberState.Values.ContainsKey(key))
                     {
                         newMemberState.Values.Add(key, remoteValue);
-                        dirty = true;
+                        updates.Add(new GossipUpdate(memberId,key,remoteValue.Value,remoteValue.SequenceNumber));
                         continue;
                     }
 
@@ -70,14 +74,14 @@ namespace Proto.Cluster.Gossip
 
                     //remote value is older, ignore
                     if (remoteValue.SequenceNumber <= newValue.SequenceNumber) continue;
-
-                    dirty = true;
+                    
                     //just replace the existing value
                     newMemberState.Values[key] = remoteValue;
+                    updates.Add(new GossipUpdate(memberId,key,remoteValue.Value,remoteValue.SequenceNumber));
                 }
             }
 
-            return dirty;
+            return updates;
         }
 
         public static void SetKey(GossipState state, string key, IMessage value, string memberId, ref long sequenceNo)
