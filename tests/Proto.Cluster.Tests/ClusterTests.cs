@@ -75,9 +75,11 @@ namespace Proto.Cluster.Tests
             await Task.Delay(5000);
 
             //get state from target member
+            //it should be noted that the response is a dict of member id for all members,
+            //to the state for the given key for each of those members
             var response = await targetMember.Gossip.GetState<PID>("some-state");
             
-            //unpack it
+            //get the state for source member
             response.TryGetValue(sourceMemberId, out var value).Should().BeTrue();
             
             value.Address.Should().Be("abc");
