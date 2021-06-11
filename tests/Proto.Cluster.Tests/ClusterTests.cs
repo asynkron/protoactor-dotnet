@@ -56,7 +56,7 @@ namespace Proto.Cluster.Tests
             response.Should().NotBeNull();
             response.Message.Should().Be(msg);
         }
-        
+
         [Fact]
         public async Task StateIsReplicatedAcrossCluster()
         {
@@ -64,7 +64,7 @@ namespace Proto.Cluster.Tests
             var sourceMemberId = sourceMember.System.Id;
             var targetMember = Members.Last();
             var targetMemberId = targetMember.System.Id;
-            
+
             //make sure we somehow don't already have the expected value in the state of targetMember
             var initialResponse = await targetMember.Gossip.GetState<PID>("some-state");
             initialResponse.TryGetValue(sourceMemberId, out _).Should().BeFalse();
@@ -72,26 +72,30 @@ namespace Proto.Cluster.Tests
             //make sure we are not comparing the same not to itself;
             targetMemberId.Should().NotBe(sourceMemberId);
 
-            var channel = Channel.CreateUnbounded<object>();
-            targetMember.System.EventStream.Subscribe(channel);
-            var stream = channel.Reader.ReadAllAsync().OfType<GossipUpdate>();
-            
-            
-            
+            var stream = SubscribeToGossipUpdates(targetMember);
+
             sourceMember.Gossip.SetState("some-state", new PID("abc", "def"));
             //allow state to replicate            
-            await stream.FirstAsync(x => x.MemberId == sourceMemberId);
+            await stream.FirstAsync(x => x.MemberId == sourceMemberId && x.Key == "some-state");
 
             //get state from target member
             //it should be noted that the response is a dict of member id for all members,
             //to the state for the given key for each of those members
             var response = await targetMember.Gossip.GetState<PID>("some-state");
-            
+
             //get the state for source member
             response.TryGetValue(sourceMemberId, out var value).Should().BeTrue();
-            
-            value.Address.Should().Be("abc");
+
+            value!.Address.Should().Be("abc");
             value.Id.Should().Be("def");
+
+            IAsyncEnumerable<GossipUpdate> SubscribeToGossipUpdates(Cluster member)
+            {
+                var channel = Channel.CreateUnbounded<object>();
+                member.System.EventStream.Subscribe(channel);
+                var stream = channel.Reader.ReadAllAsync().OfType<GossipUpdate>();
+                return stream;
+            }
         }
 
         [Fact]
