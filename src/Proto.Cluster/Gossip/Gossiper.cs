@@ -6,11 +6,17 @@
 using System;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
+    public record GetGossipStateRequest(string Key);
+
+    public record GetGossipStateResponse(GetGossipMemberState[] Members);
+    public record GetGossipMemberState(string MemberId, Any Value);
+
     public record SetGossipStateKey(string Key, IMessage Value);
 
     public record SendGossipStateRequest;
@@ -29,6 +35,14 @@ namespace Proto.Cluster.Gossip
         {
             _cluster = cluster;
             _context = _cluster.System.Root;
+        }
+
+        public async Task<GetGossipStateResponse> GetState(string key)
+        {
+            _context.System.Logger()?.LogDebug("Gossiper getting state from {Pid}", _pid);
+
+            var res = await _context.RequestAsync<GetGossipStateResponse>(_pid, new GetGossipStateRequest(key));
+            return res;
         }
 
         public void SetState(string key, IMessage value)

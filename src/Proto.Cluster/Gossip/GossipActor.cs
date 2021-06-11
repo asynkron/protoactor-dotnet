@@ -24,10 +24,29 @@ namespace Proto.Cluster.Gossip
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
             SetGossipStateKey setState  => OnSetGossipStateKey(context, setState),
+            GetGossipStateRequest getState => OnGetGossipStateKey(context, getState),
             GossipRequest gossipRequest => OnGossipRequest(context, gossipRequest),
             SendGossipStateRequest      => OnSendGossipState(context),
             _                           => Task.CompletedTask
         };
+
+        private Task OnGetGossipStateKey(IContext context, GetGossipStateRequest getState)
+        {
+            var entries = new List<GetGossipMemberState>();
+            var key = getState.Key;
+            
+            foreach (var (memberId, memberState) in _state.Members)
+            {
+                if (memberState.Values.TryGetValue(key, out var value))
+                {
+                    entries.Add(new GetGossipMemberState(memberId,value.Value));
+                }
+            }
+
+            var res = new GetGossipStateResponse(entries.ToArray());
+            context.Respond(res);
+            return Task.CompletedTask;
+        }
 
         private Task OnGossipRequest(IContext context, GossipRequest gossipRequest)
         {
