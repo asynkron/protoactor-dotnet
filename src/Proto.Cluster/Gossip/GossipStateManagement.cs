@@ -10,30 +10,30 @@ using System.Linq;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
     public static class GossipStateManagement
     {
-        private static ILogger Logger = Proto.Log.CreateLogger("GossipStateManagement");
-        public static GossipKeyValue EnsureEntryExists(GossipMemberState memberState, string key)
+        private static readonly ILogger Logger = Log.CreateLogger("GossipStateManagement");
+
+        private static GossipKeyValue EnsureEntryExists(GossipMemberState memberState, string key)
         {
-            if (!memberState.Values.TryGetValue(key,out var value))
-            {
-                value = new GossipKeyValue();
-                memberState.Values.Add(key, value);
-            }
+            if (memberState.Values.TryGetValue(key, out var value)) return value;
+
+            value = new GossipKeyValue();
+            memberState.Values.Add(key, value);
 
             return value;
         }
         
         public static GossipMemberState EnsureMemberStateExists(GossipState state, string memberId)
         {
-            if (!state.Members.TryGetValue(memberId, out var memberState))
-            {
-                memberState = new GossipMemberState();
-                state.Members.Add(memberId, memberState);
-            }
+            if (state.Members.TryGetValue(memberId, out var memberState)) return memberState;
+
+            memberState = new GossipMemberState();
+            state.Members.Add(memberId, memberState);
 
             return memberState;
         }
@@ -68,12 +68,12 @@ namespace Proto.Cluster.Gossip
 
                     var newValue = newMemberState.Values[key];
 
-                    if (remoteValue.SequenceNumber > newValue.SequenceNumber)
-                    {
-                        dirty = true;
-                        //just replace the existing value
-                        newMemberState.Values[key] = remoteValue;
-                    }
+                    //remote value is older, ignore
+                    if (remoteValue.SequenceNumber <= newValue.SequenceNumber) continue;
+
+                    dirty = true;
+                    //just replace the existing value
+                    newMemberState.Values[key] = remoteValue;
                 }
             }
 
@@ -83,8 +83,8 @@ namespace Proto.Cluster.Gossip
         public static void SetKey(GossipState state, string key, IMessage value, string memberId, ref long sequenceNo)
         {
             //if entry does not exist, add it
-            var memberState = GossipStateManagement.EnsureMemberStateExists(state, memberId);
-            var entry = GossipStateManagement.EnsureEntryExists(memberState, key);
+            var memberState = EnsureMemberStateExists(state, memberId);
+            var entry = EnsureEntryExists(memberState, key);
 
             sequenceNo++;
 
@@ -108,7 +108,6 @@ namespace Proto.Cluster.Gossip
                 
                 //create an empty state
                 var newMemberState = new GossipMemberState();
-                
 
                 var watermarkKey = $"{targetMemberId}.{memberId}";
                 //get the watermark 
@@ -139,44 +138,67 @@ namespace Proto.Cluster.Gossip
             return (pendingOffsets, newState);
         }
         
-        public static (bool, ulong) CheckConsensus(GossipState state, string myId, ImmutableHashSet<string> members)
+        public static (bool Consensus, ulong TopologyHash) CheckConsensus(IContext ctx,  GossipState state, string myId, ImmutableHashSet<string> members)
         {
+            var logger = ctx.Logger()?.BeginMethodScope();
             try
             {
-                var hashes = new List<(string,ulong)>();
+                var hashes = new List<(string MemberId,ulong TopologyHash)>();
+
+                if (state.Members.Count == 0)
+                {
+                    logger?.LogDebug("No members found for consensus check");
+                }
                 
+                logger?.LogDebug("Checking consensus");
                 foreach (var (memberId, memberState) in state.Members)
                 {
                     //skip banned members
                     if (!members.Contains(memberId))
+                    {
+                        logger?.LogDebug("Member is not part of cluster {MemberId}", memberId);
                         continue;
-                    
+                    }
+
                     var topology = memberState.GetTopology();
 
+                    //member does not yet have a topology, default to empty
                     if (topology == null)
                     {
-                        //Console.WriteLine(myId+ " null topology" + memberId);
+                        if (memberId == myId)
+                        {
+                            logger?.LogDebug("I can't find myself");
+                        }
+                        else
+                        {
+                            logger?.LogDebug("Remote: {OtherMemberId} has no topology using TopologyHash 0", memberId);    
+                        }
+                        
+                        
                         hashes.Add((memberId,0));
                         continue;
                     }
+                    
                     hashes.Add((memberId,topology.TopologyHash));
+                    logger?.LogDebug("Remote: {OtherMemberId} - {OtherTopologyHash} - {OtherMemberCount}", memberId, topology.TopologyHash, topology.Members.Count);
                 }
 
                 var first = hashes.FirstOrDefault();
-
-                if (hashes.All(h => h.Item2 == first.Item2))
+                
+                if (hashes.All(h => h.TopologyHash == first.TopologyHash) && first.TopologyHash != 0)
                 {
+                    ctx.Logger()?.LogDebug("Reached Consensus {TopologyHash} - {State}", first.TopologyHash, state);
                     //all members have the same hash
-                    return (true, first.Item2);
+                    return (true, first.TopologyHash);
                 }
 
+                logger?.LogDebug("No Consensus {Hashes}, {State}", hashes.Select(h => h.TopologyHash),  state);
                 return (false, 0);
             }
             catch (Exception x)
             {
+                logger?.LogError(x, "Check Consensus failed");
                 Logger.LogError(x, "Check Consensus failed");
-                
-                Console.WriteLine(x);
                 return (false, 0);
             }
 

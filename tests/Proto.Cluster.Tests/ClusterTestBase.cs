@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Proto.Logging;
 using Xunit;
 
 namespace Proto.Cluster.Tests
@@ -16,6 +17,8 @@ namespace Proto.Cluster.Tests
             ClusterFixture = clusterFixture;
             _runId = Guid.NewGuid().ToString("N").Substring(0, 6);
         }
+
+        protected LogStore LogStore => ClusterFixture.LogStore;
 
         protected IList<Cluster> Members => ClusterFixture.Members;
 

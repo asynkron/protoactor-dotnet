@@ -74,6 +74,8 @@ spec:
           ports:
             - containerPort: 8080
           env:
+            - name: "REDIS"
+              value: "redis"
             - name: PROTOPORT
               value: "8080"
             - name: PROTOHOST
