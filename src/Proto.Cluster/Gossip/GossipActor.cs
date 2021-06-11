@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
 
@@ -32,18 +33,18 @@ namespace Proto.Cluster.Gossip
 
         private Task OnGetGossipStateKey(IContext context, GetGossipStateRequest getState)
         {
-            var entries = new List<GetGossipMemberState>();
+            var entries = ImmutableDictionary<string, Any>.Empty;
             var key = getState.Key;
             
             foreach (var (memberId, memberState) in _state.Members)
             {
                 if (memberState.Values.TryGetValue(key, out var value))
                 {
-                    entries.Add(new GetGossipMemberState(memberId,value.Value));
+                    entries = entries.SetItem(memberId, value.Value);
                 }
             }
 
-            var res = new GetGossipStateResponse(entries.ToArray());
+            var res = new GetGossipStateResponse(entries);
             context.Respond(res);
             return Task.CompletedTask;
         }

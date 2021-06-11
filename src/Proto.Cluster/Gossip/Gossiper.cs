@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
@@ -14,8 +15,7 @@ namespace Proto.Cluster.Gossip
 {
     public record GetGossipStateRequest(string Key);
 
-    public record GetGossipStateResponse(GetGossipMemberState[] Members);
-    public record GetGossipMemberState(string MemberId, Any Value);
+    public record GetGossipStateResponse(ImmutableDictionary<string,Any> State);
 
     public record SetGossipStateKey(string Key, IMessage Value);
 

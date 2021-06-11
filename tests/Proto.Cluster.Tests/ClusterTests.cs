@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
+using Google.Protobuf.WellKnownTypes;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -52,6 +53,32 @@ namespace Proto.Cluster.Tests
             );
             response.Should().NotBeNull();
             response.Message.Should().Be(msg);
+        }
+        
+        [Fact]
+        public async Task StateIsReplicatedAcrossCluster()
+        {
+            var sourceMember = Members.First();
+            var sourceMemberId = sourceMember.System.Id;
+            var targetMember = Members.Last();
+            var targetMemberId = targetMember.System.Id;
+
+            //make sure we are not comparing the same not to itself;
+            targetMemberId.Should().NotBe(sourceMemberId);
+            
+            sourceMember.Gossip.SetState("some-state", new PID("abc", "def"));
+            //allow state to replicate            
+            await Task.Delay(5000);
+
+            //get state from target member
+            var response = await targetMember.Gossip.GetState("some-state");
+            
+            //unpack it
+            response.State.TryGetValue(sourceMemberId, out var anyValue).Should().BeTrue();
+            var value = anyValue.Unpack<PID>();
+
+            value.Address.Should().Be("abc");
+            value.Id.Should().Be("def");
         }
 
         [Fact]
