@@ -37,12 +37,21 @@ namespace Proto.Cluster.Gossip
             _context = _cluster.System.Root;
         }
 
-        public async Task<GetGossipStateResponse> GetState(string key)
+        public async Task<ImmutableDictionary<string,T>> GetState<T>(string key) where T : IMessage, new()
         {
             _context.System.Logger()?.LogDebug("Gossiper getting state from {Pid}", _pid);
 
             var res = await _context.RequestAsync<GetGossipStateResponse>(_pid, new GetGossipStateRequest(key));
-            return res;
+
+            var dict = res.State;
+            var typed = ImmutableDictionary<string, T>.Empty;
+
+            foreach (var (k, value) in dict)
+            {
+                typed = typed.SetItem(k, value.Unpack<T>());
+            }
+            
+            return typed;
         }
 
         public void SetState(string key, IMessage value)

@@ -64,8 +64,8 @@ namespace Proto.Cluster.Tests
             var targetMemberId = targetMember.System.Id;
             
             //make sure we somehow don't already have the expected value in the state of targetMember
-            var initialResponse = await targetMember.Gossip.GetState("some-state");
-            initialResponse.State.TryGetValue(sourceMemberId, out _).Should().BeFalse();
+            var initialResponse = await targetMember.Gossip.GetState<PID>("some-state");
+            initialResponse.TryGetValue(sourceMemberId, out _).Should().BeFalse();
 
             //make sure we are not comparing the same not to itself;
             targetMemberId.Should().NotBe(sourceMemberId);
@@ -75,12 +75,11 @@ namespace Proto.Cluster.Tests
             await Task.Delay(5000);
 
             //get state from target member
-            var response = await targetMember.Gossip.GetState("some-state");
+            var response = await targetMember.Gossip.GetState<PID>("some-state");
             
             //unpack it
-            response.State.TryGetValue(sourceMemberId, out var anyValue).Should().BeTrue();
-            var value = anyValue.Unpack<PID>();
-
+            response.TryGetValue(sourceMemberId, out var value).Should().BeTrue();
+            
             value.Address.Should().Be("abc");
             value.Id.Should().Be("def");
         }
