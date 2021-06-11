@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
+using Google.Protobuf.WellKnownTypes;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -52,6 +53,37 @@ namespace Proto.Cluster.Tests
             );
             response.Should().NotBeNull();
             response.Message.Should().Be(msg);
+        }
+        
+        [Fact]
+        public async Task StateIsReplicatedAcrossCluster()
+        {
+            var sourceMember = Members.First();
+            var sourceMemberId = sourceMember.System.Id;
+            var targetMember = Members.Last();
+            var targetMemberId = targetMember.System.Id;
+            
+            //make sure we somehow don't already have the expected value in the state of targetMember
+            var initialResponse = await targetMember.Gossip.GetState<PID>("some-state");
+            initialResponse.TryGetValue(sourceMemberId, out _).Should().BeFalse();
+
+            //make sure we are not comparing the same not to itself;
+            targetMemberId.Should().NotBe(sourceMemberId);
+            
+            sourceMember.Gossip.SetState("some-state", new PID("abc", "def"));
+            //allow state to replicate            
+            await Task.Delay(5000);
+
+            //get state from target member
+            //it should be noted that the response is a dict of member id for all members,
+            //to the state for the given key for each of those members
+            var response = await targetMember.Gossip.GetState<PID>("some-state");
+            
+            //get the state for source member
+            response.TryGetValue(sourceMemberId, out var value).Should().BeTrue();
+            
+            value.Address.Should().Be("abc");
+            value.Id.Should().Be("def");
         }
 
         [Fact]

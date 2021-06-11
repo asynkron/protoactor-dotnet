@@ -4,13 +4,19 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
+    public record GetGossipStateRequest(string Key);
+
+    public record GetGossipStateResponse(ImmutableDictionary<string,Any> State);
+
     public record SetGossipStateKey(string Key, IMessage Value);
 
     public record SendGossipStateRequest;
@@ -29,6 +35,23 @@ namespace Proto.Cluster.Gossip
         {
             _cluster = cluster;
             _context = _cluster.System.Root;
+        }
+
+        public async Task<ImmutableDictionary<string,T>> GetState<T>(string key) where T : IMessage, new()
+        {
+            _context.System.Logger()?.LogDebug("Gossiper getting state from {Pid}", _pid);
+
+            var res = await _context.RequestAsync<GetGossipStateResponse>(_pid, new GetGossipStateRequest(key));
+
+            var dict = res.State;
+            var typed = ImmutableDictionary<string, T>.Empty;
+
+            foreach (var (k, value) in dict)
+            {
+                typed = typed.SetItem(k, value.Unpack<T>());
+            }
+            
+            return typed;
         }
 
         public void SetState(string key, IMessage value)
