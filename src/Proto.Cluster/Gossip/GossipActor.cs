@@ -115,42 +115,49 @@ namespace Proto.Cluster.Gossip
 
             foreach (var member in fanOutMembers)
             {
-                await SendGossipForMember(context, member, logger);
+                //fire and forget, we handle results in ReenterAfter
+                SendGossipForMember(context, member, logger);
             }
             
             CheckConsensus(context);
             context.Respond(new SendGossipStateResponse());
         }
 
-        private async Task SendGossipForMember(IContext context, Member member, InstanceLogger? logger)
+        private void SendGossipForMember(IContext context, Member member, InstanceLogger? logger)
         {
 
-                var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
-                var (pendingOffsets, stateForMember) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, member.Id);
+            var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
+            var (pendingOffsets, stateForMember) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, member.Id);
 
-                //if we dont have any state to send, don't send it...
-                if (pendingOffsets == _committedOffsets)
+            //if we dont have any state to send, don't send it...
+            if (pendingOffsets == _committedOffsets)
+            {
+                return;
+            }
+
+            logger?.LogInformation("Sending GossipRequest to {MemberId}", member.Id);
+
+            //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
+            //TODO: This will deadlock....
+            var t = context.RequestAsync<GossipResponse>(pid, new GossipRequest
                 {
-                    return;
-                }
+                    State = stateForMember,
+                }, CancellationTokens.WithTimeout(500)
+            );
 
-                logger?.LogInformation("Sending GossipRequest to {MemberId}", member.Id);
-
-                //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
-                //TODO: This will deadlock....
-                var t = context.RequestAsync<GossipResponse>(pid, new GossipRequest
-                    {
-                        State = stateForMember,
-                    }, CancellationTokens.WithTimeout(500)
-                );
-                
-                context.ReenterAfter(t, async tt => {
+            context.ReenterAfter(t, async tt => {
                     try
                     {
                         await tt;
 
                         foreach (var (key, sequenceNumber) in pendingOffsets)
                         {
+
+                            //TODO: this needs to be improved with filter state on sender side, and then Ack from here
+                            //update our state with the data from the remote node
+                            //GossipStateManagement.MergeState(_state, response.State, out var newState);
+                            //_state = newState;
+
                             if (!_committedOffsets.ContainsKey(key) || _committedOffsets[key] < pendingOffsets[key])
                             {
                                 _committedOffsets = _committedOffsets.SetItem(key, sequenceNumber);
@@ -174,13 +181,8 @@ namespace Proto.Cluster.Gossip
                         logger?.LogError(x, "OnSendGossipState failed");
                         Logger.LogError(x, "OnSendGossipState failed");
                     }
-                });
-
-                //update our state with the data from the remote node
-                //TODO: this needs to be improved with filter state on sender side, and then Ack from here
-                // GossipStateManagement.MergeState(_state, response.State, out var newState);
-                // _state = newState;
-            
+                }
+            );
         }
 
         private List<Member> PickRandomFanOutMembers(Member[] members, int fanOutBy) => 
