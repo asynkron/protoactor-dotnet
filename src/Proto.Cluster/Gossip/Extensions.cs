@@ -17,7 +17,7 @@ namespace Proto.Cluster.Gossip
             return memberState.GetTopology();
         }
         
-        public static ClusterTopology? GetTopology(this GossipMemberState memberState)
+        public static ClusterTopology? GetTopology(this GossipState.Types.GossipMemberState memberState)
         {
             if (!memberState.Values.TryGetValue("topology", out var entry))
                 return null;

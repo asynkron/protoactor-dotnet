@@ -122,7 +122,7 @@ namespace Proto.Cluster.Gossip
             context.Respond(new SendGossipStateResponse());
         }
 
-        private async Task SendGossipForMember(IContext context, Member? member, InstanceLogger? logger)
+        private async Task SendGossipForMember(IContext context, Member member, InstanceLogger? logger)
         {
 
                 var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);

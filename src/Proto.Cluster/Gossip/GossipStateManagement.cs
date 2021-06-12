@@ -18,7 +18,7 @@ namespace Proto.Cluster.Gossip
     {
         private static readonly ILogger Logger = Log.CreateLogger("GossipStateManagement");
 
-        private static GossipKeyValue EnsureEntryExists(GossipMemberState memberState, string key)
+        private static GossipKeyValue EnsureEntryExists(GossipState.Types.GossipMemberState memberState, string key)
         {
             if (memberState.Values.TryGetValue(key, out var value)) return value;
 
@@ -28,27 +28,27 @@ namespace Proto.Cluster.Gossip
             return value;
         }
         
-        public static GossipMemberState EnsureMemberStateExists(GossipState state, string memberId)
+        public static GossipState.Types.GossipMemberState EnsureMemberStateExists(GossipState state, string memberId)
         {
             if (state.Members.TryGetValue(memberId, out var memberState)) return memberState;
 
-            memberState = new GossipMemberState();
+            memberState = new GossipState.Types.GossipMemberState();
             state.Members.Add(memberId, memberState);
 
             return memberState;
         }
 
-        public static IReadOnlyCollection<GossipUpdate> MergeState(GossipState state, GossipState remoteState, out  GossipState newState)
+        public static IReadOnlyCollection<GossipUpdate> MergeState(GossipState localState, GossipState remoteState, out  GossipState mergedState)
         {
-            newState = state.Clone();
+            mergedState = localState.Clone();
             var updates = new List<GossipUpdate>();
 
             foreach (var (memberId, remoteMemberState) in remoteState.Members)
             {
                 //this entry does not exist in newState, just copy all of it
-                if (!newState.Members.ContainsKey(memberId))
+                if (!mergedState.Members.ContainsKey(memberId))
                 {
-                    newState.Members.Add(memberId, remoteMemberState);
+                    mergedState.Members.Add(memberId, remoteMemberState);
 
                     foreach (var entry in remoteMemberState.Values)
                     {
@@ -58,7 +58,7 @@ namespace Proto.Cluster.Gossip
                 }
 
                 //this entry exists in both newState and remoteState, we should merge them
-                var newMemberState = newState.Members[memberId];
+                var newMemberState = mergedState.Members[memberId];
 
                 foreach (var (key, remoteValue) in remoteMemberState.Values)
                 {
@@ -111,7 +111,7 @@ namespace Proto.Cluster.Gossip
                 }
                 
                 //create an empty state
-                var newMemberState = new GossipMemberState();
+                var newMemberState = new GossipState.Types.GossipMemberState();
 
                 var watermarkKey = $"{targetMemberId}.{memberId}";
                 //get the watermark 

@@ -9,7 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Proto.Remote;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.PubSub
 {
     public class ProducerBatchMessage :  IRootSerializable
     {
