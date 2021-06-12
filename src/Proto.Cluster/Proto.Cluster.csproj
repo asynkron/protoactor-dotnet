@@ -14,5 +14,6 @@
   <ItemGroup>
     <Protobuf Include="ClusterContracts.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
     <Protobuf Include="GossipContracts.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
+    <Protobuf Include="PubSubContracts.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
   </ItemGroup>
 </Project>

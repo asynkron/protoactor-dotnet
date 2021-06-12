@@ -4,9 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using Proto.Cluster.PubSub;
 using Proto.Remote;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.PubSub
 {
     public record DeliveryBatchMessage(Subscribers subscribers, ProducerBatchMessage ProducerBatch) : IRootSerializable
     {
