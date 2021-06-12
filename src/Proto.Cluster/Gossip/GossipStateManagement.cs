@@ -11,7 +11,6 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
-using static Proto.Cluster.GossipState.Types;
 
 namespace Proto.Cluster.Gossip
 {
@@ -19,7 +18,7 @@ namespace Proto.Cluster.Gossip
     {
         private static readonly ILogger Logger = Log.CreateLogger("GossipStateManagement");
 
-        private static GossipKeyValue EnsureEntryExists(GossipMemberState memberState, string key)
+        private static GossipKeyValue EnsureEntryExists(GossipState.Types.GossipMemberState memberState, string key)
         {
             if (memberState.Values.TryGetValue(key, out var value)) return value;
 
@@ -29,11 +28,11 @@ namespace Proto.Cluster.Gossip
             return value;
         }
         
-        public static GossipMemberState EnsureMemberStateExists(GossipState state, string memberId)
+        public static GossipState.Types.GossipMemberState EnsureMemberStateExists(GossipState state, string memberId)
         {
             if (state.Members.TryGetValue(memberId, out var memberState)) return memberState;
 
-            memberState = new GossipMemberState();
+            memberState = new GossipState.Types.GossipMemberState();
             state.Members.Add(memberId, memberState);
 
             return memberState;
@@ -112,7 +111,7 @@ namespace Proto.Cluster.Gossip
                 }
                 
                 //create an empty state
-                var newMemberState = new GossipMemberState();
+                var newMemberState = new GossipState.Types.GossipMemberState();
 
                 var watermarkKey = $"{targetMemberId}.{memberId}";
                 //get the watermark 
