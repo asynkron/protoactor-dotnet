@@ -11,6 +11,7 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
+using static Proto.Cluster.GossipState.Types;
 
 namespace Proto.Cluster.Gossip
 {
@@ -38,17 +39,17 @@ namespace Proto.Cluster.Gossip
             return memberState;
         }
 
-        public static IReadOnlyCollection<GossipUpdate> MergeState(GossipState state, GossipState remoteState, out  GossipState newState)
+        public static IReadOnlyCollection<GossipUpdate> MergeState(GossipState localState, GossipState remoteState, out  GossipState mergedState)
         {
-            newState = state.Clone();
+            mergedState = localState.Clone();
             var updates = new List<GossipUpdate>();
 
             foreach (var (memberId, remoteMemberState) in remoteState.Members)
             {
                 //this entry does not exist in newState, just copy all of it
-                if (!newState.Members.ContainsKey(memberId))
+                if (!mergedState.Members.ContainsKey(memberId))
                 {
-                    newState.Members.Add(memberId, remoteMemberState);
+                    mergedState.Members.Add(memberId, remoteMemberState);
 
                     foreach (var entry in remoteMemberState.Values)
                     {
@@ -58,7 +59,7 @@ namespace Proto.Cluster.Gossip
                 }
 
                 //this entry exists in both newState and remoteState, we should merge them
-                var newMemberState = newState.Members[memberId];
+                var newMemberState = mergedState.Members[memberId];
 
                 foreach (var (key, remoteValue) in remoteMemberState.Values)
                 {
