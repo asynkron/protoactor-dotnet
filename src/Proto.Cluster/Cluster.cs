@@ -33,8 +33,11 @@ namespace Proto.Cluster
             system.Metrics.Register(new ClusterMetrics(system.Metrics));
             
             //register cluster messages
-            system.Serialization().RegisterFileDescriptor(ClusterContractsReflection.Descriptor);
-            system.Serialization().RegisterFileDescriptor(GossipContractsReflection.Descriptor);
+            var serialization = system.Serialization();
+            serialization.RegisterFileDescriptor(ClusterContractsReflection.Descriptor);
+            serialization.RegisterFileDescriptor(GossipContractsReflection.Descriptor);
+            serialization.RegisterFileDescriptor(PubSubContractsReflection.Descriptor);
+            serialization.RegisterFileDescriptor(GrainContractsReflection.Descriptor);
 
             Gossip = new Gossiper(this);
             PidCache = new PidCache();
