@@ -106,12 +106,15 @@ namespace Proto.Cluster
                     MemberJoin(memberThatJoined);
                 }
                 
+                var bannedMemberIds = _bannedMembers.Members.Select(m => m.Id).ToArray();
+                
                 var topology = new ClusterTopology
                 {
                     TopologyHash = activeMembers.TopologyHash,
                     Members = {activeMembers.Members},
                     Left = {left.Members},
-                    Joined = {joined.Members}
+                    Joined = {joined.Members},
+                    Banned = { bannedMemberIds }
                 };
                 
                 Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
