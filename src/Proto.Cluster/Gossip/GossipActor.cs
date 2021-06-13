@@ -17,7 +17,7 @@ namespace Proto.Cluster.Gossip
     public class GossipActor : IActor
     {
         private static readonly ILogger Logger = Log.CreateLogger<GossipActor>();
-        private long _localSequenceNo;
+
         private GossipState _state = new();
         private readonly Random _rnd = new();
         private ImmutableDictionary<string, long> _committedOffsets = ImmutableDictionary<string, long>.Empty;
@@ -91,7 +91,7 @@ namespace Proto.Cluster.Gossip
         {
             var logger = context.Logger()?.BeginMethodScope();
             
-            GossipStateManagement.SetKey(_state, setStateKey.Key,setStateKey.Value  , context.System.Id, ref _localSequenceNo);
+            GossipStateManagement.SetKey(_state, setStateKey.Key,setStateKey.Value  , context.System.Id);
             logger?.LogDebug("Setting state key {Key} - {Value} - {State}", setStateKey.Key, setStateKey.Value, _state);
 
             if (!_state.Members.ContainsKey(context.System.Id))
@@ -136,7 +136,7 @@ namespace Proto.Cluster.Gossip
             }
 
             logger?.LogInformation("Sending GossipRequest to {MemberId}", member.Id);
-
+            
             //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
             //TODO: This will deadlock....
             var t = context.RequestAsync<GossipResponse>(pid, new GossipRequest

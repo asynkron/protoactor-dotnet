@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
@@ -16,6 +17,10 @@ namespace Proto.Cluster.Gossip
 {
     public static class GossipStateManagement
     {
+        //this field is normally local to a single actor system
+        //using multiple clusters in a single test, this will be shared, which is OK.
+        //we only need to guarantee that this is unique and incrementing for each node.
+        private static long localSequenceNo;
         private static readonly ILogger Logger = Log.CreateLogger("GossipStateManagement");
 
         private static GossipKeyValue EnsureEntryExists(GossipState.Types.GossipMemberState memberState, string key)
@@ -84,17 +89,19 @@ namespace Proto.Cluster.Gossip
             return updates;
         }
 
-        public static void SetKey(GossipState state, string key, IMessage value, string memberId, ref long sequenceNo)
+        public static void SetKey(GossipState state, string key, IMessage value, string memberId)
         {
             //if entry does not exist, add it
             var memberState = EnsureMemberStateExists(state, memberId);
             var entry = EnsureEntryExists(memberState, key);
 
-            sequenceNo++;
+            
 
-            entry.SequenceNumber = sequenceNo;
+            entry.SequenceNumber = GetNextSequenceNumber();
             entry.Value = Any.Pack(value);
         }
+
+        public static long GetNextSequenceNumber() => Interlocked.Increment(ref localSequenceNo);
 
         public static (ImmutableDictionary<string, long> pendingOffsets, GossipState state) FilterGossipStateForMember(GossipState state, ImmutableDictionary<string, long> offsets, string targetMemberId)
         {
