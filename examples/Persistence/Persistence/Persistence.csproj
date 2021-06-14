@@ -4,6 +4,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Proto.Persistence.MongoDB\Proto.Persistence.MongoDB.csproj" />
     <ProjectReference Include="..\..\..\src\Proto.Persistence.Sqlite\Proto.Persistence.Sqlite.csproj" />
     <ProjectReference Include="..\Messages\Messages.csproj" />
   </ItemGroup>
