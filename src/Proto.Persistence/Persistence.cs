@@ -183,7 +183,6 @@ namespace Proto.Persistence
         public async Task PersistSnapshotAsync(object snapshot)
         {
             var persistedSnapshot = new PersistedSnapshot(snapshot, Index+1);
-
             await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, snapshot);
             Index++;
         }
