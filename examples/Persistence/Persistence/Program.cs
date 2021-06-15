@@ -9,8 +9,10 @@ using System.Text;
 using System.Threading.Tasks;
 using Messages;
 using Microsoft.Data.Sqlite;
+using MongoDB.Driver;
 using Proto;
 using Proto.Persistence;
+using Proto.Persistence.MongoDB;
 using Proto.Persistence.SnapshotStrategies;
 using Proto.Persistence.Sqlite;
 using Event = Proto.Persistence.Event;
@@ -21,9 +23,35 @@ class Program
     private static void Main(string[] args)
     {
         var context = new RootContext(new ActorSystem());
-        var provider = new SqliteProvider(new SqliteConnectionStringBuilder {DataSource = "states.db"});
+        IProvider provider = null;
 
-        var props = Props.FromProducer(() => new MyPersistenceActor(provider));
+        Console.WriteLine("Select provider:");
+        Console.WriteLine("1) Sqlite:");
+        Console.WriteLine("2) MongoDB:");
+
+        var res = Console.ReadLine();
+
+        switch (res)
+        {
+            case "1": provider = new SqliteProvider(new SqliteConnectionStringBuilder {DataSource = "states.db"});
+                break;
+            case "2": {
+                var settings = MongoClientSettings.FromUrl(MongoUrl.Create("mongodb://127.0.0.1:27017/ProtoPersistence"));
+                var client = new MongoClient(settings);
+                var database = client.GetDatabase("ProtoPersistence");
+                provider = new MongoDBProvider(database);
+                break;
+            }
+        }
+        
+        Console.WriteLine("Select Persistence strategy:");
+        Console.WriteLine("1) EventSourcing and Snapshotting:");
+        Console.WriteLine("2) Snapshotting:");
+
+        var res2 = Console.ReadLine();
+        bool snapshotting = res2 == "1";
+        
+        var props = Props.FromProducer(() => new MyPersistenceActor(provider, snapshotting));
 
         var pid = context.Spawn(props);
 
@@ -33,20 +61,30 @@ class Program
     private class MyPersistenceActor : IActor
     {
         private readonly Persistence _persistence;
-        private PID _loopActor;
         private State _state = new State();
-
         private bool _timerStarted;
+        private int _snapshot;
 
-        public MyPersistenceActor(IProvider provider) => _persistence = Persistence.WithEventSourcingAndSnapshotting(
-            provider,
-            provider,
-            "demo-app-id",
-            ApplyEvent,
-            ApplySnapshot,
-            new IntervalStrategy(20), () => _state
-        );
+        public MyPersistenceActor(IProvider provider, bool useEventSourcing)
+        {
+            if (useEventSourcing)
+            {
+                _persistence = Persistence.WithEventSourcingAndSnapshotting(
+                    provider,
+                    provider,
+                    "demo-app-id",
+                    ApplyEvent,
+                    ApplySnapshot,
+                    new IntervalStrategy(20), () => _state
+                );
+            }
+            else
+            {
+                _persistence = Persistence.WithSnapshotting(provider, "demo-app-id", ApplySnapshot);
+            }
+        }
 
+        
         public async Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
@@ -54,25 +92,23 @@ class Program
                 case Started msg:
 
                     Console.WriteLine("MyPersistenceActor - Started");
-
                     Console.WriteLine("MyPersistenceActor - Current State: {0}", _state);
-
                     await _persistence.RecoverStateAsync();
-
                     context.Send(context.Self, new StartLoopActor());
-
                     break;
 
                 case StartLoopActor msg:
-
                     await Handle(context, msg);
-
                     break;
 
                 case RenameCommand msg:
 
-                    await Handle(msg);
+                    if ((_snapshot++ % 10) == 0)
+                    {
+                        await _persistence.PersistSnapshotAsync(_state);
+                    }
 
+                    await Handle(msg);
                     break;
             }
         }
@@ -130,7 +166,7 @@ class Program
 
             var props = Props.FromProducer(() => new LoopActor());
 
-            _loopActor = context.Spawn(props);
+            context.Spawn(props);
 
             return Task.CompletedTask;
         }
