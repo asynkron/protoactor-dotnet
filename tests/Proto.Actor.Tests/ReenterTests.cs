@@ -19,10 +19,34 @@ namespace Proto.Tests
         public async Task ReenterAfterCompletedTask()
         {
             var props = Props.FromFunc(ctx => {
-                    if (ctx.Message is string str && str == "reenter")
+                    if (ctx.Message is "reenter")
                     {
                         var delay = Task.Delay(500);
                         ctx.ReenterAfter(delay, () => { ctx.Respond("response"); });
+                    }
+
+                    return Task.CompletedTask;
+                }
+            );
+
+            var pid = Context.Spawn(props);
+
+            var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5));
+            Assert.Equal("response", res);
+        }
+        
+        [Fact]
+        public async Task ReenterAfterFailedTask()
+        {
+            var props = Props.FromFunc(ctx => {
+                    if (ctx.Message is "reenter")
+                    {
+                        var task = Task.Run(async () => {
+                                await Task.Delay(100);
+                                throw new Exception("Failed!");
+                            }
+                        );
+                        ctx.ReenterAfter(task, () => { ctx.Respond("response"); });
                     }
 
                     return Task.CompletedTask;
