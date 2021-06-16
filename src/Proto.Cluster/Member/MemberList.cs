@@ -57,7 +57,7 @@ namespace Proto.Cluster
             _eventStream = _system.EventStream;
             _eventStream.Subscribe<GossipUpdate>(u => {
                     if (u.Key != "topology") return;
-
+            
                     //get banned members from all other member states, and merge that with our own banned set
                     var topology = u.Value.Unpack<ClusterTopology>();
                     var banned = topology.Banned.ToArray();
