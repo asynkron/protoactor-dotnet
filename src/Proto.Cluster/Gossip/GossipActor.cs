@@ -24,18 +24,18 @@ namespace Proto.Cluster.Gossip
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            SetGossipStateKey setState  => OnSetGossipStateKey(context, setState),
+            SetGossipStateKey setState     => OnSetGossipStateKey(context, setState),
             GetGossipStateRequest getState => OnGetGossipStateKey(context, getState),
-            GossipRequest gossipRequest => OnGossipRequest(context, gossipRequest),
-            SendGossipStateRequest      => OnSendGossipState(context),
-            _                           => Task.CompletedTask
+            GossipRequest gossipRequest    => OnGossipRequest(context, gossipRequest),
+            SendGossipStateRequest         => OnSendGossipState(context),
+            _                              => Task.CompletedTask
         };
 
         private Task OnGetGossipStateKey(IContext context, GetGossipStateRequest getState)
         {
             var entries = ImmutableDictionary<string, Any>.Empty;
             var key = getState.Key;
-            
+
             foreach (var (memberId, memberState) in _state.Members)
             {
                 if (memberState.Values.TryGetValue(key, out var value))
@@ -55,12 +55,14 @@ namespace Proto.Cluster.Gossip
             logger?.LogDebug("Gossip Request {Sender}", context.Sender!);
             var remoteState = gossipRequest.State;
             var updates = GossipStateManagement.MergeState(_state, remoteState, out var newState);
+
             if (updates.Any())
             {
                 foreach (var update in updates)
                 {
                     context.System.EventStream.Publish(update);
                 }
+
                 _state = newState;
                 CheckConsensus(context);
             }
@@ -83,21 +85,20 @@ namespace Proto.Cluster.Gossip
             }
 
             context.Cluster().MemberList.TrySetTopologyConsensus();
-           
-
         }
 
         private Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
         {
             var logger = context.Logger()?.BeginMethodScope();
-            
-            GossipStateManagement.SetKey(_state, setStateKey.Key,setStateKey.Value  , context.System.Id, ref _localSequenceNo);
+
+            GossipStateManagement.SetKey(_state, setStateKey.Key, setStateKey.Value, context.System.Id, ref _localSequenceNo);
             logger?.LogDebug("Setting state key {Key} - {Value} - {State}", setStateKey.Key, setStateKey.Value, _state);
 
             if (!_state.Members.ContainsKey(context.System.Id))
             {
                 logger?.LogCritical("State corrupt");
             }
+
             return Task.CompletedTask;
         }
 
@@ -110,7 +111,7 @@ namespace Proto.Cluster.Gossip
             {
                 GossipStateManagement.EnsureMemberStateExists(_state, member.Id);
             }
-            
+
             var fanOutMembers = PickRandomFanOutMembers(members, context.System.Cluster().Config.GossipFanout);
 
             foreach (var member in fanOutMembers)
@@ -118,14 +119,13 @@ namespace Proto.Cluster.Gossip
                 //fire and forget, we handle results in ReenterAfter
                 SendGossipForMember(context, member, logger);
             }
-            
+
             CheckConsensus(context);
             context.Respond(new SendGossipStateResponse());
         }
 
         private void SendGossipForMember(IContext context, Member member, InstanceLogger? logger)
         {
-
             var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
             var (pendingOffsets, stateForMember) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, member.Id);
 
@@ -152,7 +152,6 @@ namespace Proto.Cluster.Gossip
 
                         foreach (var (key, sequenceNumber) in pendingOffsets)
                         {
-
                             //TODO: this needs to be improved with filter state on sender side, and then Ack from here
                             //update our state with the data from the remote node
                             //GossipStateManagement.MergeState(_state, response.State, out var newState);
@@ -185,12 +184,12 @@ namespace Proto.Cluster.Gossip
             );
         }
 
-        private List<Member> PickRandomFanOutMembers(Member[] members, int fanOutBy) => 
+        private List<Member> PickRandomFanOutMembers(Member[] members, int fanOutBy) =>
             members
-            .Select(m => (member: m, index: _rnd.Next()))
-            .OrderBy(m => m.index)
-            .Take(fanOutBy)
-            .Select(m => m.member)
-            .ToList();
+                .Select(m => (member: m, index: _rnd.Next()))
+                .OrderBy(m => m.index)
+                .Take(fanOutBy)
+                .Select(m => m.member)
+                .ToList();
     }
 }

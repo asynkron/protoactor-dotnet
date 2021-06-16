@@ -8,8 +8,10 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using Google.Protobuf.WellKnownTypes;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Cluster.Gossip;
 using Proto.Logging;
 using Proto.Remote;
 
@@ -38,8 +40,8 @@ namespace Proto.Cluster
         //The partition lookup broadcasts and use broadcasted information
         //meaning the partition infra might be ahead of this list.
         //come up with a good solution to keep all this in sync
-        private ImmutableMemberSet _members = ImmutableMemberSet.Empty;
-        private ImmutableMemberSet _bannedMembers = ImmutableMemberSet.Empty;
+        private ImmutableMemberSet _activeMembers = ImmutableMemberSet.Empty;
+        private ImmutableHashSet<string> _bannedMembers = ImmutableHashSet<string>.Empty;
         
         private ImmutableDictionary<int, Member> _membersByIndex = ImmutableDictionary<int, Member>.Empty;
 
@@ -53,9 +55,18 @@ namespace Proto.Cluster
             _system = _cluster.System;
             _root = _system.Root;
             _eventStream = _system.EventStream;
+            _eventStream.Subscribe<GossipUpdate>(u => {
+                    if (u.Key != "topology") return;
+            
+                    //get banned members from all other member states, and merge that with our own banned set
+                    var topology = u.Value.Unpack<ClusterTopology>();
+                    var banned = topology.Banned.ToArray();
+                    UpdateBannedMembers(banned);
+                }
+            );
         }
 
-        public ImmutableHashSet<string> GetMembers() => _members.Members.Select(m=>m.Id).ToImmutableHashSet();
+        public ImmutableHashSet<string> GetMembers() => _activeMembers.Members.Select(m=>m.Id).ToImmutableHashSet();
 
         public Task TopologyConsensus() => _topologyConsensus.Task;
 
@@ -71,6 +82,24 @@ namespace Proto.Cluster
             }
         }
 
+        public void UpdateBannedMembers(string[] bannedMembers)
+        {
+            lock (this)
+            {
+                //update banned members
+                var before = _bannedMembers;
+                _bannedMembers = _bannedMembers.Union(bannedMembers);
+
+                if (before != _bannedMembers)
+                {
+                    Logger.LogDebug("Updating banned members via gossip");
+                }
+                
+                //then run the usual topology logic
+                UpdateClusterTopology(_activeMembers.Members);
+            }
+        }
+
         public void UpdateClusterTopology(IReadOnlyCollection<Member> members)
         {
             lock (this)
@@ -83,15 +112,15 @@ namespace Proto.Cluster
                 //notifying the cluster accordingly which members left or joined
 
                 var activeMembers = new ImmutableMemberSet(members).Except(_bannedMembers);
-                if (activeMembers.Equals(_members))
+                if (activeMembers.Equals(_activeMembers))
                 {
                     return;
                 }
 
-                var left = _members.Except(activeMembers);
-                var joined = activeMembers.Except(_members);
-                _bannedMembers = _bannedMembers.Union(left);
-                _members = activeMembers;
+                var left = _activeMembers.Except(activeMembers);
+                var joined = activeMembers.Except(_activeMembers);
+                _bannedMembers = _bannedMembers.Union(left.Members.Select(m=>m.Id));
+                _activeMembers = activeMembers;
                 
                 //notify that these members left
                 foreach (var memberThatLeft in left.Members)
@@ -105,16 +134,14 @@ namespace Proto.Cluster
                 {
                     MemberJoin(memberThatJoined);
                 }
-                
-                var bannedMemberIds = _bannedMembers.Members.Select(m => m.Id).ToArray();
-                
+
                 var topology = new ClusterTopology
                 {
                     TopologyHash = activeMembers.TopologyHash,
                     Members = {activeMembers.Members},
                     Left = {left.Members},
                     Joined = {joined.Members},
-                    Banned = { bannedMemberIds }
+                    Banned = { _bannedMembers }
                 };
                 
                 Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
@@ -220,7 +247,7 @@ namespace Proto.Cluster
         /// <param name="includeSelf"></param>
         public void BroadcastEvent(object message, bool includeSelf = true)
         {
-            foreach (var (id, member) in _members.Lookup)
+            foreach (var (id, member) in _activeMembers.Lookup)
             {
                 if (!includeSelf && id == _cluster.System.Id) continue;
 
@@ -237,16 +264,16 @@ namespace Proto.Cluster
             }
         }
 
-        public bool ContainsMemberId(string memberId) => _members.Contains(memberId);
+        public bool ContainsMemberId(string memberId) => _activeMembers.Contains(memberId);
 
-        public bool TryGetMember(string memberId, out Member? value) => _members.Lookup.TryGetValue(memberId, out value);
+        public bool TryGetMember(string memberId, out Member? value) => _activeMembers.Lookup.TryGetValue(memberId, out value);
 
         public bool TryGetMemberIndexByAddress(string address, out int value) => _indexByAddress.TryGetValue(address, out value);
 
         public bool TryGetMemberByIndex(int memberIndex, out Member? value) => _membersByIndex.TryGetValue(memberIndex, out value);
 
-        public Member[] GetAllMembers() => _members.Members.ToArray();
-        public Member[] GetOtherMembers() => _members.Members.Where(m => m.Id != _system.Id).ToArray();
+        public Member[] GetAllMembers() => _activeMembers.Members.ToArray();
+        public Member[] GetOtherMembers() => _activeMembers.Members.Where(m => m.Id != _system.Id).ToArray();
 
         internal void TrySetTopologyConsensus()
         {
