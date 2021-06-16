@@ -379,13 +379,11 @@ namespace Proto.Context
         public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox) =>
             new(system, props, parent, self, mailbox);
 
+        //Note to self, the message must be sent no-matter if the task failed or not.
+        //do not mess this up by first awaiting and then sending on success only
         private void ScheduleContinuation(Task target, Continuation cont) =>
-            _ = SafeTask.Run(async () => {
-                    await target;
-                    Self.SendSystemMessage(System, cont);
-                }
-                , CancellationToken.None
-            );
+            // ReSharper disable once MethodSupportsCancellation
+            _ = target.ContinueWith(_ => Self.SendSystemMessage(System, cont));
 
         private static ValueTask HandleUnknownSystemMessage(object msg)
         {
