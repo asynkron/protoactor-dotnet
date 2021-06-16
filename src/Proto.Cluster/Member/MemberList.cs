@@ -87,7 +87,14 @@ namespace Proto.Cluster
             lock (this)
             {
                 //update banned members
+                var before = _bannedMembers;
                 _bannedMembers = _bannedMembers.Union(bannedMembers);
+
+                if (before != _bannedMembers)
+                {
+                    Logger.LogDebug("Updating banned members via gossip");
+                }
+                
                 //then run the usual topology logic
                 UpdateClusterTopology(_activeMembers.Members);
             }
