@@ -8,8 +8,10 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using Google.Protobuf.WellKnownTypes;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Cluster.Gossip;
 using Proto.Logging;
 using Proto.Remote;
 
@@ -53,6 +55,15 @@ namespace Proto.Cluster
             _system = _cluster.System;
             _root = _system.Root;
             _eventStream = _system.EventStream;
+            _eventStream.Subscribe<GossipUpdate>(u => {
+                    if (u.Key != "topology") return;
+
+                    //get banned members from all other member states, and merge that with our own banned set
+                    var topology = u.Value.Unpack<ClusterTopology>();
+                    var banned = topology.Banned.ToArray();
+                    UpdateBannedMembers(banned);
+                }
+            );
         }
 
         public ImmutableHashSet<string> GetMembers() => _activeMembers.Members.Select(m=>m.Id).ToImmutableHashSet();
