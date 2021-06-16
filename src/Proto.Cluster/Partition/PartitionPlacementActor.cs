@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,7 +14,7 @@ namespace Proto.Cluster.Partition
     class PartitionPlacementActor : IActor
     {
         private readonly Cluster _cluster;
-        private readonly ILogger _logger;
+        private static readonly ILogger Logger = Log.CreateLogger<PartitionPlacementActor>();
 
         //pid -> the actor that we have created here
         //kind -> the actor kind
@@ -22,7 +23,6 @@ namespace Proto.Cluster.Partition
         public PartitionPlacementActor(Cluster cluster)
         {
             _cluster = cluster;
-            _logger = Log.CreateLogger($"{nameof(PartitionPlacementActor)}-{cluster.LoggerId}");
         }
 
         public Task ReceiveAsync(IContext context) =>
@@ -76,7 +76,7 @@ namespace Proto.Cluster.Partition
                 //this identity is not owned by the requester
                 if (ownerAddress != requestAddress) continue;
 
-                _logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {TopologyHash}", clusterIdentity, ownerAddress,
+                Logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {TopologyHash}", clusterIdentity, ownerAddress,
                     msg.TopologyHash
                 );
 
@@ -88,7 +88,7 @@ namespace Proto.Cluster.Partition
             //always respond, this is request response msg
             context.Respond(response);
 
-            _logger.LogDebug("Transferred {Count} actor ownership to other members", count);
+            Logger.LogDebug("Transferred {Count} actor ownership to other members", count);
             return Task.CompletedTask;
         }
 
@@ -127,8 +127,9 @@ namespace Proto.Cluster.Partition
                     context.Respond(response);
                 }
             }
-            catch
+            catch(Exception e)
             {
+                Logger.LogError(e, "Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
                 var response = new ActivationResponse
                 {
                     Pid = null
