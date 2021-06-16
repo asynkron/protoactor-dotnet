@@ -78,13 +78,13 @@ namespace Proto.Cluster.Gossip
 
         private async Task GossipLoop()
         {
+            Logger.LogInformation("Starting gossip loop");
             await Task.Yield();
         
             while (!_cluster.System.Shutdown.IsCancellationRequested)
             {
                 try
                 {
-                    Logger.LogDebug("Gossip loop");
                     await Task.Delay((int)_cluster.Config.GossipInterval.TotalMilliseconds);
                     SetState("heartbeat", new MemberHeartbeat());
                     await SendStateAsync();
