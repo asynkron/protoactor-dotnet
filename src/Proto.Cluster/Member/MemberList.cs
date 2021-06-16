@@ -68,7 +68,17 @@ namespace Proto.Cluster
 
         public ImmutableHashSet<string> GetMembers() => _activeMembers.Members.Select(m=>m.Id).ToImmutableHashSet();
 
-        public Task TopologyConsensus() => _topologyConsensus.Task;
+        public async Task TopologyConsensus()
+        {
+            while (true)
+            {
+                var t = _topologyConsensus.Task;
+                await Task.WhenAny(t, Task.Delay(500));
+                if (t.IsCompleted)
+                    return;
+                
+            }
+        }
 
         public Member? GetActivator(string kind, string requestSourceAddress)
         {

@@ -71,7 +71,7 @@ namespace ClusterExperiment1
             }
         }
 
-        public static IIdentityLookup GetIdentityLookup() =>  new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
+        public static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
 
         private static IIdentityLookup GetRedisIdentityLookup()
         {
@@ -160,7 +160,7 @@ namespace ClusterExperiment1
         public static void SetupLogger()
         {
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console(LogEventLevel.Information)
+                .WriteTo.Console(LogEventLevel.Error)
                 .CreateLogger();
             
             Proto.Log.SetLoggerFactory(LoggerFactory.Create(l =>

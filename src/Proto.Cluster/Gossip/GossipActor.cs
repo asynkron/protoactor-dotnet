@@ -53,6 +53,7 @@ namespace Proto.Cluster.Gossip
         {
             var logger = context.Logger()?.BeginScope<GossipActor>();
             logger?.LogDebug("Gossip Request {Sender}", context.Sender!);
+            Logger.LogDebug("Gossip Request {Sender}", context.Sender!);
             var remoteState = gossipRequest.State;
             var updates = GossipStateManagement.MergeState(_state, remoteState, out var newState);
 
@@ -93,7 +94,7 @@ namespace Proto.Cluster.Gossip
 
             GossipStateManagement.SetKey(_state, setStateKey.Key, setStateKey.Value, context.System.Id, ref _localSequenceNo);
             logger?.LogDebug("Setting state key {Key} - {Value} - {State}", setStateKey.Key, setStateKey.Value, _state);
-
+            Logger.LogDebug("Setting state key {Key} - {Value} - {State}", setStateKey.Key, setStateKey.Value, _state);
             if (!_state.Members.ContainsKey(context.System.Id))
             {
                 logger?.LogCritical("State corrupt");
@@ -136,6 +137,7 @@ namespace Proto.Cluster.Gossip
             }
 
             logger?.LogInformation("Sending GossipRequest to {MemberId}", member.Id);
+            Logger.LogInformation("Sending GossipRequest to {MemberId}", member.Id);
 
             //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
             //TODO: This will deadlock....
