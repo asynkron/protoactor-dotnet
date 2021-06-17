@@ -32,6 +32,7 @@ namespace ClusterExperiment1
 
         public static async Task Main(string[] args)
         {
+            Configuration.SetupLogger();
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             //    ThreadPool.SetMinThreads(500, 500);
             Request = new HelloRequest();
@@ -45,8 +46,6 @@ namespace ClusterExperiment1
                 Thread.Sleep(Timeout.Infinite);
                 return;
             }
-
-            Configuration.SetupLogger();
 
             ts = new TaskCompletionSource<bool>();
 

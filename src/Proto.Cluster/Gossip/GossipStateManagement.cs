@@ -191,11 +191,13 @@ namespace Proto.Cluster.Gossip
                 
                 if (hashes.All(h => h.TopologyHash == first.TopologyHash) && first.TopologyHash != 0)
                 {
-                    ctx.Logger()?.LogDebug("Reached Consensus {TopologyHash} - {State}", first.TopologyHash, state);
+                    Logger.LogDebug("Reached Consensus {TopologyHash} - {State}", first.TopologyHash, state);
+                    logger?.LogDebug("Reached Consensus {TopologyHash} - {State}", first.TopologyHash, state);
                     //all members have the same hash
                     return (true, first.TopologyHash);
                 }
 
+                Logger.LogDebug("No Consensus {Hashes}, {State}", hashes.Select(h => h.TopologyHash),  state);
                 logger?.LogDebug("No Consensus {Hashes}, {State}", hashes.Select(h => h.TopologyHash),  state);
                 return (false, 0);
             }

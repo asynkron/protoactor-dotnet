@@ -57,6 +57,7 @@ namespace Proto.Cluster.Gossip
 
         public void SetState(string key, IMessage value)
         {
+            Logger.LogDebug("Gossiper setting state to {Pid}", _pid);
             _context.System.Logger()?.LogDebug("Gossiper setting state to {Pid}", _pid);
             if (_pid == null)
             {
@@ -77,13 +78,13 @@ namespace Proto.Cluster.Gossip
 
         private async Task GossipLoop()
         {
+            Logger.LogInformation("Starting gossip loop");
             await Task.Yield();
         
             while (!_cluster.System.Shutdown.IsCancellationRequested)
             {
                 try
                 {
-                    
                     await Task.Delay((int)_cluster.Config.GossipInterval.TotalMilliseconds);
                     SetState("heartbeat", new MemberHeartbeat());
                     await SendStateAsync();
