@@ -70,6 +70,15 @@ namespace Proto.Logging
             }
         }
 
+        public void Clear()
+        {
+            lock (_lock)
+            {
+                _entries.Clear();
+            }
+        }
+
+
         public string ToFormattedString()
         {
             var sb = new StringBuilder();
