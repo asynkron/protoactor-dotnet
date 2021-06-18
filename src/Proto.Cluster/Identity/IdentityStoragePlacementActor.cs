@@ -162,14 +162,14 @@ namespace Proto.Cluster.Identity
                 }
                 catch (LockNotFoundException)
                 {
-                    Logger.LogError("We no longer own the lock {@SpawnLock}", spawnLock);
+                    Logger.LogWarning("We no longer own the lock {@SpawnLock}", spawnLock);
                     return false;
                 }
                 catch (Exception e)
                 {
                     if (++attempts < PersistenceRetries)
                     {
-                        Logger.LogWarning(e, "No entry was updated {@SpawnLock}. Retrying.", spawnLock);
+                        Logger.LogWarning(e, "No entry was updated {@SpawnLock}. Retrying", spawnLock);
                         await Task.Delay(50);
                     }
                     else
