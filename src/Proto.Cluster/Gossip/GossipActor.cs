@@ -137,10 +137,9 @@ namespace Proto.Cluster.Gossip
             }
 
             logger?.LogInformation("Sending GossipRequest to {MemberId}", member.Id);
-            Logger.LogInformation("Sending GossipRequest to {MemberId}", member.Id);
+            Logger.LogDebug("Sending GossipRequest to {MemberId}", member.Id);
 
             //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
-            //TODO: This will deadlock....
             var t = context.RequestAsync<GossipResponse>(pid, new GossipRequest
                 {
                     State = stateForMember,
