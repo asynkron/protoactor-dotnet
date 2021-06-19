@@ -113,11 +113,21 @@ namespace Proto.Cluster
             }
         }
 
+        public string MemberId => _system.Id;
+
         public void UpdateClusterTopology(IReadOnlyCollection<Member> members)
         {
             lock (this)
             {
                 Logger.LogDebug("[MemberList] Updating Cluster Topology");
+                
+                if (_bannedMembers.Contains(_system.Id))
+                {
+                    Console.WriteLine($"I have been banned, exiting {MemberId}");
+                    Logger.LogCritical("I have been banned, exiting {Id}", MemberId);
+                    _ = _cluster.ShutdownAsync();
+                    return;
+                }
 
                 //TLDR:
                 //this method basically filters out any member status in the banned list
@@ -125,6 +135,7 @@ namespace Proto.Cluster
                 //notifying the cluster accordingly which members left or joined
 
                 var activeMembers = new ImmutableMemberSet(members).Except(_bannedMembers);
+
                 if (activeMembers.Equals(_activeMembers))
                 {
                     return;
