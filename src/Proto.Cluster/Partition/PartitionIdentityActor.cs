@@ -63,10 +63,26 @@ namespace Proto.Cluster.Partition
 
         private async Task OnClusterTopology(ClusterTopology msg, IContext context)
         {
-            await _cluster.MemberList.TopologyConsensus();
-            if (_topologyHash == msg.TopologyHash) return;
+            for (int i = 0; i < 10; i++)
+            {
+                try
+                {
+                    await OnClusterTopologyInner(msg, context);
+                    return;
+                }
+                catch
+                {
+                    
+                }
 
-            _topologyHash = msg.TopologyHash;
+                await Task.Delay(i * 50);
+            }
+            Logger.LogError("OnClusterTopologyFailed after retries");
+        }
+
+        private async Task OnClusterTopologyInner(ClusterTopology msg, IContext context)
+        {
+            await _cluster.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
             var members = msg.Members.ToArray();
 
             _rdv.UpdateMembers(members);
@@ -115,6 +131,7 @@ namespace Proto.Cluster.Partition
             catch (Exception x)
             {
                 Logger.LogError(x, "Failed to get identities");
+                throw;
             }
 
             var membersLookup = msg.Members.ToDictionary(m => m.Address, m => m);
@@ -178,7 +195,12 @@ namespace Proto.Cluster.Partition
             }
             
             //only activate members when we are all in sync
-            await _cluster.MemberList.TopologyConsensus();
+            var c = await _cluster.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
+
+            if (!c)
+            {
+                Console.WriteLine("No consensus " + _cluster.System.Id);
+            }
 
             //Get activator
             var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;

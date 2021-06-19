@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf.WellKnownTypes;
 using JetBrains.Annotations;
@@ -68,16 +69,18 @@ namespace Proto.Cluster
 
         public ImmutableHashSet<string> GetMembers() => _activeMembers.Members.Select(m=>m.Id).ToImmutableHashSet();
 
-        public async Task TopologyConsensus()
+        public async Task<bool> TopologyConsensus(CancellationToken ct)
         {
-            while (true)
+            while (!ct.IsCancellationRequested)
             {
                 var t = _topologyConsensus.Task;
+                // ReSharper disable once MethodSupportsCancellation
                 await Task.WhenAny(t, Task.Delay(500));
                 if (t.IsCompleted)
-                    return;
-                
+                    return true;                
             }
+
+            return false;
         }
 
         public Member? GetActivator(string kind, string requestSourceAddress)

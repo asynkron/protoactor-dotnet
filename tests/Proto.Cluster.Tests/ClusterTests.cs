@@ -36,7 +36,7 @@ namespace Proto.Cluster.Tests
         {
             var timeout = Task.Delay(20000);
         
-            var consensus = Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus()));
+            var consensus = Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))));
         
             await Task.WhenAny(timeout, consensus);
 
