@@ -422,7 +422,7 @@ namespace Proto.Context
             // receive normally
             var res = Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this);
             //then respond automatically
-            var response = autoRespond.GetAutoResponse();
+            var response = autoRespond.GetAutoResponse(this);
             Respond(response);
             //return task from receive
             return res;

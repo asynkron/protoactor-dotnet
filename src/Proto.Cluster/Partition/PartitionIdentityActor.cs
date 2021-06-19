@@ -63,7 +63,7 @@ namespace Proto.Cluster.Partition
 
         private async Task OnClusterTopology(ClusterTopology msg, IContext context)
         {
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 3; i++)
             {
                 try
                 {
@@ -82,7 +82,7 @@ namespace Proto.Cluster.Partition
 
         private async Task OnClusterTopologyInner(ClusterTopology msg, IContext context)
         {
-            await _cluster.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
+       //     await _cluster.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
             var members = msg.Members.ToArray();
 
             _rdv.UpdateMembers(members);
@@ -172,11 +172,12 @@ namespace Proto.Cluster.Partition
 
         private async Task OnActivationRequest(ActivationRequest msg, IContext context)
         {
+            Console.WriteLine($"Got ActivationRequest {msg.RequestId}");
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
 
             if (ownerAddress != _myAddress)
             {
-                Console.Write(">");
+                Console.WriteLine($"Forwarding ActivationRequest {msg.RequestId} to {ownerAddress}");
                 
                 var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
                 Logger.LogWarning("Tried to spawn on wrong node, forwarding");
@@ -188,23 +189,30 @@ namespace Proto.Cluster.Partition
             //Check if exist in current partition dictionary
             if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
             {
-                Console.Write("!");
+                Console.WriteLine($"Found existing activation for {msg.RequestId}");
                 
                 if (pid == null)
                 {
+                    Console.WriteLine($"Found null activation for {msg.RequestId}");
+                    _partitionLookup.Remove(msg.ClusterIdentity);
                     Logger.LogError("Null PID for ClusterIdentity {ClusterIdentity}",msg.ClusterIdentity);
+                    context.Respond(new ActivationResponse()
+                    {
+                        Failed = true,
+                    });
+                    return;
                 }
                 context.Respond(new ActivationResponse {Pid = pid});
                 return;
             }
             
             //only activate members when we are all in sync
-            var c = await _cluster.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
-
-            if (!c)
-            {
-                Console.WriteLine("No consensus " + _cluster.System.Id);
-            }
+            // var c = await _cluster.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
+            //
+            // if (!c)
+            // {
+            //     Console.WriteLine("No consensus " + _cluster.System.Id);
+            // }
 
             //Get activator
             var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
@@ -215,7 +223,10 @@ namespace Proto.Cluster.Partition
                 Console.Write("?");
                 //No activator currently available, return unavailable
                 Logger.LogWarning("No members currently available for kind {Kind}", msg.Kind);
-                context.Respond(new ActivationResponse {Pid = null});
+                context.Respond(new ActivationResponse
+                {
+                    Failed = true
+                });
                 return;
             }
 

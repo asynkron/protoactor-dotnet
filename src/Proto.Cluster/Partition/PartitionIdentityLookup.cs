@@ -41,6 +41,7 @@ namespace Proto.Cluster.Partition
 
             var req = new ActivationRequest
             {
+                RequestId = Guid.NewGuid().ToString("N"),
                 ClusterIdentity = clusterIdentity
             };
 
@@ -49,7 +50,8 @@ namespace Proto.Cluster.Partition
 
             try
             {
-                var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
+                Console.WriteLine($"Sending Request {req.RequestId}");
+                var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);                
 
                 if (resp?.Pid != null) return resp.Pid;
 
@@ -65,6 +67,20 @@ namespace Proto.Cluster.Partition
             }
             catch (TimeoutException)
             {
+                try
+                {
+                    var resp = await _cluster.System.Root.RequestAsync<Touched>(remotePid, new Touch(), CancellationTokens.FromSeconds(2));
+
+                    if (resp == null)
+                    {
+                        Console.WriteLine("Actor is blocked2....");
+                    }
+                }
+                catch
+                {
+                    Console.WriteLine("Actor is blocked....");
+                }
+
                 Logger.LogInformation("Remote PID request timeout {@Request}, identity Owner {Owner}", req,identityOwner);
                 return null;
             }

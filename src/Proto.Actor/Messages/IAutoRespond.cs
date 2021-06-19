@@ -7,6 +7,6 @@ namespace Proto
 {
     public interface IAutoRespond
     {
-        object GetAutoResponse();
+        object GetAutoResponse(IContext context);
     }
 }
