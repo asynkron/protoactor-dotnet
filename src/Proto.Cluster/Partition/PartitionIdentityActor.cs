@@ -233,7 +233,7 @@ namespace Proto.Cluster.Partition
             //but still within the actors sequential execution
             //but other messages could have been processed in between
 
-          //  Console.Write("S"); //spawned
+            Console.Write("S"); //spawned
             //Await SpawningProcess
             context.ReenterAfter(
                 res,
@@ -241,11 +241,11 @@ namespace Proto.Cluster.Partition
                     try
                     {
                         var response = await rst;
-                      //  Console.Write("R"); //reentered
+                        Console.Write("R"); //reentered
                         
                         if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out pid))
                         {
-                        //    Console.Write("C");  //cached
+                            Console.Write("C");  //cached
                             _spawns.Remove(msg.ClusterIdentity);
                             context.Respond(new ActivationResponse {Pid = pid});
                             return;
@@ -253,7 +253,7 @@ namespace Proto.Cluster.Partition
 
                         if (response?.Pid != null)
                         {
-                        //    Console.Write("A"); //activated
+                            Console.Write("A"); //activated
                             _partitionLookup[msg.ClusterIdentity] = response.Pid;
                             _spawns.Remove(msg.ClusterIdentity);
                             context.Respond(response);
@@ -265,7 +265,7 @@ namespace Proto.Cluster.Partition
                         Logger.LogError(x, "Spawning failed");
                     }
                     
-               //     Console.Write("F"); //failed
+                    Console.Write("F"); //failed
                     _spawns.Remove(msg.ClusterIdentity);
                     context.Respond(new ActivationResponse
                     {
