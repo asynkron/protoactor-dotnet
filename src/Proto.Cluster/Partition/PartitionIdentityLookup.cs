@@ -18,13 +18,15 @@ namespace Proto.Cluster.Partition
         private PartitionManager _partitionManager = null!;
         private readonly TimeSpan _identityHandoverTimeout;
         private readonly TimeSpan _getPidTimeout;
+        private readonly bool _developerLogging;
 
         public PartitionIdentityLookup() : this(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(1))
         {
         }
         
-        public PartitionIdentityLookup(TimeSpan identityHandoverTimeout, TimeSpan getPidTimeout)
+        public PartitionIdentityLookup(TimeSpan identityHandoverTimeout, TimeSpan getPidTimeout, bool developerLogging=false)
         {
+            _developerLogging = developerLogging;
             _identityHandoverTimeout = identityHandoverTimeout;
             _getPidTimeout = getPidTimeout;
         }
@@ -107,7 +109,7 @@ namespace Proto.Cluster.Partition
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
         {
             _cluster = cluster;
-            _partitionManager = new PartitionManager(cluster, isClient, _identityHandoverTimeout);
+            _partitionManager = new PartitionManager(cluster, isClient, _identityHandoverTimeout,_developerLogging);
             _partitionManager.Setup();
             return Task.CompletedTask;
         }

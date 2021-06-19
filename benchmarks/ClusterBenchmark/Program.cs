@@ -333,8 +333,6 @@ namespace ClusterExperiment1
                             {
                                 logger.LogError("Failed call to {Id} - Null PID");
                             }
-
-                            await Task.Delay(500);
                         }
                     }
                 }
