@@ -31,6 +31,7 @@ namespace Proto.Cluster
 
         private readonly IRootContext _root;
         private readonly ActorSystem _system;
+        private bool _stopping = false;
         private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
         private TaskCompletionSource<bool> _topologyConsensus = new (TaskCreationOptions.RunContinuationsAsynchronously);
         private ImmutableDictionary<string,MetaMember> _metaMembers = ImmutableDictionary<string, MetaMember>.Empty;
@@ -123,7 +124,12 @@ namespace Proto.Cluster
                 
                 if (_bannedMembers.Contains(_system.Id))
                 {
-                    Console.WriteLine($"I have been banned, exiting {MemberId}");
+                    if (_stopping)
+                    {
+                        return;
+                    }
+
+                    _stopping = true;
                     Logger.LogCritical("I have been banned, exiting {Id}", MemberId);
                     _ = _cluster.ShutdownAsync();
                     return;
