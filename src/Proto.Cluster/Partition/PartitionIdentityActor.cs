@@ -176,6 +176,8 @@ namespace Proto.Cluster.Partition
 
             if (ownerAddress != _myAddress)
             {
+                Console.Write(">");
+                
                 var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
                 Logger.LogWarning("Tried to spawn on wrong node, forwarding");
                 context.Forward(ownerPid);
@@ -186,6 +188,8 @@ namespace Proto.Cluster.Partition
             //Check if exist in current partition dictionary
             if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
             {
+                Console.Write("!");
+                
                 if (pid == null)
                 {
                     Logger.LogError("Null PID for ClusterIdentity {ClusterIdentity}",msg.ClusterIdentity);
@@ -208,6 +212,7 @@ namespace Proto.Cluster.Partition
             //just make the code analyzer understand the address is not null after this block
             if (activatorAddress is null || string.IsNullOrEmpty(activatorAddress))
             {
+                Console.Write("?");
                 //No activator currently available, return unavailable
                 Logger.LogWarning("No members currently available for kind {Kind}", msg.Kind);
                 context.Respond(new ActivationResponse {Pid = null});
@@ -228,78 +233,67 @@ namespace Proto.Cluster.Partition
             //but still within the actors sequential execution
             //but other messages could have been processed in between
 
+          //  Console.Write("S"); //spawned
             //Await SpawningProcess
             context.ReenterAfter(
                 res,
-                rst => {
-
-
-                    var response = res.Result;
-
-                    //TODO: as this is async, there might come in multiple ActivationRequests asking for this
-                    //Identity, causing multiple activations
-
-                    //Check if exist in current partition dictionary
-                    //This is necessary to avoid race condition during partition map transfer.
-                    if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out pid))
-                    {
-                        _spawns.Remove(msg.ClusterIdentity);
-                        context.Respond(new ActivationResponse {Pid = pid});
-                        return Task.CompletedTask;
-                    }
-
-                    //Check if process is faulted
-                    if (rst.IsFaulted)
-                    {
-                        _spawns.Remove(msg.ClusterIdentity);
-                        context.Respond(response);
-                        return Task.CompletedTask;
-                    }
-                    if (response == null)
-                    {
-                        _spawns.Remove(msg.ClusterIdentity);
-                        // context.Respond(new ActivationResponse()
-                        // {
-                        //     
-                        // });
-                        //TODO what do we do in this case?
-                        return Task.CompletedTask;
-                    }
-
-                    _partitionLookup[msg.ClusterIdentity] = response.Pid;
-                    context.Respond(response);
-
+                async rst => {
                     try
                     {
-                        _spawns.Remove(msg.ClusterIdentity);
-                    }
-                    catch (Exception e)
-                    {
-                        //debugging hack
-                        Logger.LogInformation(e, "Failed while removing spawn {Id}", msg.Identity);
-                    }
+                        var response = await rst;
+                      //  Console.Write("R"); //reentered
+                        
+                        if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out pid))
+                        {
+                        //    Console.Write("C");  //cached
+                            _spawns.Remove(msg.ClusterIdentity);
+                            context.Respond(new ActivationResponse {Pid = pid});
+                            return;
+                        }
 
-                    return Task.CompletedTask;
+                        if (response?.Pid != null)
+                        {
+                        //    Console.Write("A"); //activated
+                            _partitionLookup[msg.ClusterIdentity] = response.Pid;
+                            _spawns.Remove(msg.ClusterIdentity);
+                            context.Respond(response);
+                            return;
+                        }
+                    }
+                    catch(Exception x)
+                    {
+                        Logger.LogError(x, "Spawning failed");
+                    }
+                    
+               //     Console.Write("F"); //failed
+                    _spawns.Remove(msg.ClusterIdentity);
+                    context.Respond(new ActivationResponse
+                    {
+                        Failed = true
+                    });
                 }
             );
         }
 
-        private async Task<ActivationResponse> SpawnRemoteActor(ActivationRequest req, string activator)
+        private async Task<ActivationResponse> SpawnRemoteActor(ActivationRequest req, string activatorAddress)
         {
             try
             {
-                Logger.LogDebug("Spawning Remote Actor {Activator} {Identity} {Kind}", activator, req.Identity,
+                Logger.LogDebug("Spawning Remote Actor {Activator} {Identity} {Kind}", activatorAddress, req.Identity,
                     req.Kind
                 );
                 var timeout = _cluster.Config!.TimeoutTimespan;
-                var activator1 = PartitionManager.RemotePartitionPlacementActor(activator);
+                var activatorPid = PartitionManager.RemotePartitionPlacementActor(activatorAddress);
 
-                var res = await _cluster.System.Root.RequestAsync<ActivationResponse>(activator1, req, timeout);
+                var res = await _cluster.System.Root.RequestAsync<ActivationResponse>(activatorPid, req, timeout);
                 return res;
             }
             catch
             {
-                return null!;
+                return new ActivationResponse()
+                {
+                    Failed = true
+                };
             }
         }
     }

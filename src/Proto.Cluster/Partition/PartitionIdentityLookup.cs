@@ -51,7 +51,11 @@ namespace Proto.Cluster.Partition
             {
                 var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
 
-                return resp.Pid;
+                if (resp?.Pid != null) return resp.Pid;
+
+                Console.WriteLine("Failed");
+                return null;
+
             }
             //TODO: decide if we throw or return null
             catch (DeadLetterException)
