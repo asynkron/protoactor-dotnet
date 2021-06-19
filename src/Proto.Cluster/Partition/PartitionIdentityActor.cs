@@ -32,14 +32,14 @@ namespace Proto.Cluster.Partition
 
         private ulong _topologyHash;
         private readonly TimeSpan _identityHandoverTimeout;
-        private readonly bool _developerLogging;
+        private readonly PartitionConfig _config;
 
-        public PartitionIdentityActor(Cluster cluster, TimeSpan identityHandoverTimeout, bool developerLogging)
+        public PartitionIdentityActor(Cluster cluster, TimeSpan identityHandoverTimeout, PartitionConfig config)
         {
             _cluster = cluster;
             _myAddress = cluster.System.Address;
             _identityHandoverTimeout = identityHandoverTimeout;
-            _developerLogging = developerLogging;
+            _config = config;
         }
         
         public Task ReceiveAsync(IContext context) =>
@@ -174,14 +174,14 @@ namespace Proto.Cluster.Partition
 
         private async Task OnActivationRequest(ActivationRequest msg, IContext context)
         {
-            if (_developerLogging)
+            if (_config.DeveloperLogging)
                 Console.WriteLine($"Got ActivationRequest {msg.RequestId}");
             
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
 
             if (ownerAddress != _myAddress)
             {
-                if (_developerLogging)
+                if (_config.DeveloperLogging)
                     Console.WriteLine($"Forwarding ActivationRequest {msg.RequestId} to {ownerAddress}");
                 
                 var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
@@ -194,12 +194,12 @@ namespace Proto.Cluster.Partition
             //Check if exist in current partition dictionary
             if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
             {
-                if (_developerLogging)
+                if (_config.DeveloperLogging)
                     Console.WriteLine($"Found existing activation for {msg.RequestId}");
                 
                 if (pid == null)
                 {
-                    if (_developerLogging)
+                    if (_config.DeveloperLogging)
                         Console.WriteLine($"Found null activation for {msg.RequestId}");
                     
                     _partitionLookup.Remove(msg.ClusterIdentity);
@@ -228,7 +228,7 @@ namespace Proto.Cluster.Partition
             //just make the code analyzer understand the address is not null after this block
             if (activatorAddress is null || string.IsNullOrEmpty(activatorAddress))
             {
-                if (_developerLogging)
+                if (_config.DeveloperLogging)
                     Console.Write("?");
                 //No activator currently available, return unavailable
                 Logger.LogWarning("No members currently available for kind {Kind}", msg.Kind);
@@ -253,7 +253,7 @@ namespace Proto.Cluster.Partition
             //but still within the actors sequential execution
             //but other messages could have been processed in between
 
-            if (_developerLogging)
+            if (_config.DeveloperLogging)
                 Console.Write("S"); //spawned
             //Await SpawningProcess
             context.ReenterAfter(
@@ -262,12 +262,12 @@ namespace Proto.Cluster.Partition
                     try
                     {
                         var response = await rst;
-                        if (_developerLogging)
+                        if (_config.DeveloperLogging)
                             Console.Write("R"); //reentered
                         
                         if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out pid))
                         {
-                            if (_developerLogging)
+                            if (_config.DeveloperLogging)
                                 Console.Write("C");  //cached
                             _spawns.Remove(msg.ClusterIdentity);
                             context.Respond(new ActivationResponse {Pid = pid});
@@ -276,7 +276,7 @@ namespace Proto.Cluster.Partition
 
                         if (response?.Pid != null)
                         {
-                            if (_developerLogging)
+                            if (_config.DeveloperLogging)
                                 Console.Write("A"); //activated
                             _partitionLookup[msg.ClusterIdentity] = response.Pid;
                             _spawns.Remove(msg.ClusterIdentity);
@@ -289,7 +289,7 @@ namespace Proto.Cluster.Partition
                         Logger.LogError(x, "Spawning failed");
                     }
                     
-                    if (_developerLogging)
+                    if (_config.DeveloperLogging)
                         Console.Write("F"); //failed
                     _spawns.Remove(msg.ClusterIdentity);
                     context.Respond(new ActivationResponse

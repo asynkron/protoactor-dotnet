@@ -18,15 +18,15 @@ namespace Proto.Cluster.Partition
         private PartitionManager _partitionManager = null!;
         private readonly TimeSpan _identityHandoverTimeout;
         private readonly TimeSpan _getPidTimeout;
-        private readonly bool _developerLogging;
+        private readonly PartitionConfig _config;
 
         public PartitionIdentityLookup() : this(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(1))
         {
         }
         
-        public PartitionIdentityLookup(TimeSpan identityHandoverTimeout, TimeSpan getPidTimeout, bool developerLogging=false)
+        public PartitionIdentityLookup(TimeSpan identityHandoverTimeout, TimeSpan getPidTimeout, PartitionConfig? config=null)
         {
-            _developerLogging = developerLogging;
+            _config = config ?? new PartitionConfig(false);
             _identityHandoverTimeout = identityHandoverTimeout;
             _getPidTimeout = getPidTimeout;
         }
@@ -52,12 +52,16 @@ namespace Proto.Cluster.Partition
 
             try
             {
-                Console.WriteLine($"Sending Request {req.RequestId}");
+                if (_config.DeveloperLogging)
+                    Console.WriteLine($"Sending Request {req.RequestId}");
+                
                 var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);                
 
                 if (resp?.Pid != null) return resp.Pid;
 
-                Console.WriteLine("Failed");
+                if (_config.DeveloperLogging)
+                    Console.WriteLine("Failed");
+                
                 return null;
 
             }
@@ -75,12 +79,14 @@ namespace Proto.Cluster.Partition
 
                     if (resp == null)
                     {
-                        Console.WriteLine("Actor is blocked2....");
+                        if(_config.DeveloperLogging)
+                            Console.WriteLine("Actor is blocked....");
                     }
                 }
                 catch
                 {
-                    Console.WriteLine("Actor is blocked....");
+                    if(_config.DeveloperLogging)
+                        Console.WriteLine("Actor is blocked....");
                 }
 
                 Logger.LogInformation("Remote PID request timeout {@Request}, identity Owner {Owner}", req,identityOwner);
@@ -109,7 +115,7 @@ namespace Proto.Cluster.Partition
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
         {
             _cluster = cluster;
-            _partitionManager = new PartitionManager(cluster, isClient, _identityHandoverTimeout,_developerLogging);
+            _partitionManager = new PartitionManager(cluster, isClient, _identityHandoverTimeout,_config);
             _partitionManager.Setup();
             return Task.CompletedTask;
         }
