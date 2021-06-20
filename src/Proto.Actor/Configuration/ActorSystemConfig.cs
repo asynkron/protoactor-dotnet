@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 using Ubiquitous.Metrics;
 using Ubiquitous.Metrics.NoMetrics;
 
@@ -62,20 +63,20 @@ namespace Proto
     //Not part of the contract, but still shipped out of the box
     public static class ActorSystemConfigExtensions
     {
-        public static ActorSystemConfig WithDeveloperReceiveLogging(this ActorSystemConfig self, TimeSpan receiveDeadline)
+        public static ActorSystemConfig WithDeveloperReceiveLogging(this ActorSystemConfig self, TimeSpan receiveDeadline, LogLevel logLevel= LogLevel.Error)
         {
             var inner = self.ConfigureProps;
+            var logger = Log.CreateLogger("DeveloperReceive");
             
             Receiver DeveloperReceiveLogging(Receiver next) => (context, envelope) => {
                 var sw = Stopwatch.StartNew();
                 var res= next(context, envelope);
-                var actorContext = (IContext) context;
-                var currentMessage = actorContext.Message;
                 sw.Stop();
 
                 if (sw.Elapsed > receiveDeadline)
                 {
-                    Console.WriteLine($"Receive is taking too long {context.Self} incoming message {envelope.Message}, current message {currentMessage}");
+                    logger.Log(logLevel,"Receive is taking too long {Elapsed} {Self} incoming message {Message}", sw.Elapsed, context.Self, envelope.Message.GetType().Name);
+                    Console.WriteLine($"Receive is taking too long {sw.Elapsed} {context.Self} incoming message {envelope.Message.GetType().Name}");
                 }
                 
                 return res;

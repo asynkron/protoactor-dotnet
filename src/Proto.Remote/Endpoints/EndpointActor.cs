@@ -254,13 +254,11 @@ namespace Proto.Remote
                 }
                 catch (CodedOutputStream.OutOfSpaceException oom)
                 {
-                    Console.WriteLine($"Message is too large {message.GetType().Name}");
                     Logger.LogError(oom, "Message is too large {Message}",message.GetType().Name);
                     throw;
                 }
                 catch(Exception x)
                 {
-                    Console.WriteLine($"Message failed to serialize {message.GetType().Name}");
                     Logger.LogError(x, "Serialization failed for message {Message}",message.GetType().Name);
                     throw;
                 }

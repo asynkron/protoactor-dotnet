@@ -37,7 +37,8 @@ namespace ClusterExperiment1
             return ClusterConfig
                 .Setup("mycluster", clusterProvider, identityLookup)
                 .WithClusterContextProducer(cluster => new ExperimentalClusterContext(cluster))
-                .WithClusterKind("hello", helloProps);
+                .WithClusterKind("hello", helloProps)
+                .WithGossipFanOut(3);
         }
 
         private static GrpcCoreRemoteConfig GetRemoteConfig()
@@ -159,14 +160,14 @@ namespace ClusterExperiment1
             return system.Cluster();
         }
 
-        public static void SetupLogger()
+        public static void SetupLogger(LogLevel loglevel)
         {
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Console(LogEventLevel.Error)
                 .CreateLogger();
             
             Proto.Log.SetLoggerFactory(LoggerFactory.Create(l =>
-                    l.AddSerilog().SetMinimumLevel(LogLevel.Error)
+                    l.AddSerilog().SetMinimumLevel(loglevel)
                 )
             );
         }

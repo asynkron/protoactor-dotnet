@@ -35,6 +35,7 @@ namespace ClusterExperiment1
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             //    ThreadPool.SetMinThreads(500, 500);
             Request = new HelloRequest();
+            Configuration.SetupLogger(LogLevel.Error);
 
             if (args.Length > 0)
             {
@@ -46,8 +47,6 @@ namespace ClusterExperiment1
                 
                 return;
             }
-            
-            Configuration.SetupLogger();
 
             ts = new TaskCompletionSource<bool>();
 
