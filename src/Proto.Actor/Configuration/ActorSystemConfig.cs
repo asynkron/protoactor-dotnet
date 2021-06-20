@@ -69,11 +69,13 @@ namespace Proto
             Receiver DeveloperReceiveLogging(Receiver next) => (context, envelope) => {
                 var sw = Stopwatch.StartNew();
                 var res= next(context, envelope);
+                var actorContext = (IContext) context;
+                var currentMessage = actorContext.Message;
                 sw.Stop();
 
                 if (sw.Elapsed > receiveDeadline)
                 {
-                    Console.WriteLine($"Receive is taking too long {context.Self} incoming message {context.Self}");
+                    Console.WriteLine($"Receive is taking too long {context.Self} incoming message {envelope.Message}, current message {currentMessage}");
                 }
                 
                 return res;
