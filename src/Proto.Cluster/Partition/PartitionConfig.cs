@@ -1,12 +1,9 @@
 // -----------------------------------------------------------------------
-// <copyright file="IMessageAutoAck.cs" company="Asynkron AB">
+// <copyright file="PartitionConfig.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Proto
+namespace Proto.Cluster.Partition
 {
-    public interface IAutoRespond
-    {
-        object GetAutoResponse(IContext context);
-    }
+    public record PartitionConfig(bool DeveloperLogging);
 }

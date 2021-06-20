@@ -37,7 +37,8 @@ namespace ClusterExperiment1
             return ClusterConfig
                 .Setup("mycluster", clusterProvider, identityLookup)
                 .WithClusterContextProducer(cluster => new ExperimentalClusterContext(cluster))
-                .WithClusterKind("hello", helloProps);
+                .WithClusterKind("hello", helloProps)
+                .WithGossipFanOut(3);
         }
 
         private static GrpcCoreRemoteConfig GetRemoteConfig()
@@ -71,7 +72,7 @@ namespace ClusterExperiment1
             }
         }
 
-        public static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500));
+        public static IIdentityLookup GetIdentityLookup() => GetRedisIdentityLookup();// new PartitionIdentityLookup(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
 
         private static IIdentityLookup GetRedisIdentityLookup()
         {
@@ -113,6 +114,8 @@ namespace ClusterExperiment1
                 .WithDeadLetterThrottleCount(3)
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
                 .WithDeadLetterRequestLogging(false)
+                .WithDeveloperSupervisionLogging(false)
+                .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1))
             );
             system.EventStream.Subscribe<ClusterTopology>(e => {
                 Console.ForegroundColor = ConsoleColor.Yellow;
@@ -157,14 +160,14 @@ namespace ClusterExperiment1
             return system.Cluster();
         }
 
-        public static void SetupLogger()
+        public static void SetupLogger(LogLevel loglevel)
         {
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Console(LogEventLevel.Error)
                 .CreateLogger();
             
             Proto.Log.SetLoggerFactory(LoggerFactory.Create(l =>
-                    l.AddSerilog().SetMinimumLevel(LogLevel.Error)
+                    l.AddSerilog().SetMinimumLevel(loglevel)
                 )
             );
         }

@@ -78,7 +78,14 @@ namespace Proto
                     Metrics.InternalActorMetrics.ThreadPoolLatencyHistogram.Observe(t, new[] {Id, Address});
 
                     //does it take longer than 1 sec for a task to start executing?
-                    if (t > TimeSpan.FromSeconds(1)) logger.LogWarning("ThreadPool is running hot, Threadpool latency {ThreadPoolLatency}", t);
+                    if (t <= Config.ThreadPoolStatsTimeout) return;
+
+                    if (Config.DeveloperThreadPoolStatsLogging)
+                    {
+                        Console.WriteLine($"System {Id} - ThreadPool is running hot, ThreadPool latency {t}");    
+                    }
+                        
+                    logger.LogWarning("System {Id} - ThreadPool is running hot, ThreadPool latency {ThreadPoolLatency}", Id, t);
                 }, _cts.Token
             );
         }
@@ -100,5 +107,7 @@ namespace Proto
             new(this, headers, middleware);
 
         public (string Host, int Port) GetAddress() => (_host, _port);
+
+        public Props ConfigureProps(Props props) => Config.ConfigureProps(props);
     }
 }

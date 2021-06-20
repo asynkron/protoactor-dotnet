@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf.WellKnownTypes;
 using JetBrains.Annotations;
@@ -30,6 +31,7 @@ namespace Proto.Cluster
 
         private readonly IRootContext _root;
         private readonly ActorSystem _system;
+        private bool _stopping = false;
         private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
         private TaskCompletionSource<bool> _topologyConsensus = new (TaskCreationOptions.RunContinuationsAsynchronously);
         private ImmutableDictionary<string,MetaMember> _metaMembers = ImmutableDictionary<string, MetaMember>.Empty;
@@ -68,16 +70,18 @@ namespace Proto.Cluster
 
         public ImmutableHashSet<string> GetMembers() => _activeMembers.Members.Select(m=>m.Id).ToImmutableHashSet();
 
-        public async Task TopologyConsensus()
+        public async Task<bool> TopologyConsensus(CancellationToken ct)
         {
-            while (true)
+            while (!ct.IsCancellationRequested)
             {
                 var t = _topologyConsensus.Task;
+                // ReSharper disable once MethodSupportsCancellation
                 await Task.WhenAny(t, Task.Delay(500));
                 if (t.IsCompleted)
-                    return;
-                
+                    return true;                
             }
+
+            return false;
         }
 
         public Member? GetActivator(string kind, string requestSourceAddress)
@@ -110,11 +114,26 @@ namespace Proto.Cluster
             }
         }
 
+        public string MemberId => _system.Id;
+
         public void UpdateClusterTopology(IReadOnlyCollection<Member> members)
         {
             lock (this)
             {
                 Logger.LogDebug("[MemberList] Updating Cluster Topology");
+                
+                if (_bannedMembers.Contains(_system.Id))
+                {
+                    if (_stopping)
+                    {
+                        return;
+                    }
+
+                    _stopping = true;
+                    Logger.LogCritical("I have been banned, exiting {Id}", MemberId);
+                    _ = _cluster.ShutdownAsync();
+                    return;
+                }
 
                 //TLDR:
                 //this method basically filters out any member status in the banned list
@@ -122,6 +141,7 @@ namespace Proto.Cluster
                 //notifying the cluster accordingly which members left or joined
 
                 var activeMembers = new ImmutableMemberSet(members).Except(_bannedMembers);
+
                 if (activeMembers.Equals(_activeMembers))
                 {
                     return;

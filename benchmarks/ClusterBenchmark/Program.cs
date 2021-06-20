@@ -32,10 +32,10 @@ namespace ClusterExperiment1
 
         public static async Task Main(string[] args)
         {
-            Configuration.SetupLogger();
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             //    ThreadPool.SetMinThreads(500, 500);
             Request = new HelloRequest();
+            Configuration.SetupLogger(LogLevel.Error);
 
             if (args.Length > 0)
             {
@@ -44,6 +44,7 @@ namespace ClusterExperiment1
                 var worker = await Configuration.SpawnMember();
                 AppDomain.CurrentDomain.ProcessExit += (sender, args) => { worker.ShutdownAsync().Wait(); };
                 Thread.Sleep(Timeout.Infinite);
+                
                 return;
             }
 
@@ -96,6 +97,7 @@ namespace ClusterExperiment1
                 Console.WriteLine("1) Run single request client");
                 Console.WriteLine("2) Run batch requests client");
                 Console.WriteLine("3) Run fire and forget client");
+                Console.WriteLine("4) Run single request debug client");
 
                 clientStrategy = Console.ReadLine() ?? "";
 
@@ -126,6 +128,7 @@ namespace ClusterExperiment1
                 "1" => () => RunClient(),
                 "2" => () => RunBatchClient(batchSize),
                 "3" => () => RunFireForgetClient(),
+                "4" => () => RunDebugClient(),
                 _   => throw new ArgumentOutOfRangeException()
             };
 
@@ -208,7 +211,7 @@ namespace ClusterExperiment1
             }
         }
         
-        private static async Task SendRequest(Cluster cluster, string id, CancellationToken cancellationToken, ISenderContext? context = null)
+        private static async Task<bool> SendRequest(Cluster cluster, string id, CancellationToken cancellationToken, ISenderContext? context = null)
         {
             Interlocked.Increment(ref requestCount);
 
@@ -232,7 +235,7 @@ namespace ClusterExperiment1
                         Console.ResetColor();
                     }
 
-                    return;
+                    return true;
                 }
 
                 OnError();
@@ -241,6 +244,8 @@ namespace ClusterExperiment1
             {
                 OnError();
             }
+
+            return false;
 
             void OnError()
             {
@@ -299,6 +304,38 @@ namespace ClusterExperiment1
                     logger.LogError(x, "Error...");
                 }
             }
+        }
+        
+        private static void RunDebugClient()
+        {
+            var logger = Log.CreateLogger(nameof(Program));
+
+            _ = SafeTask.Run(async () => {
+                    var cluster = await Configuration.SpawnClient();
+                    var rnd = new Random();
+
+                    while (true)
+                    {
+                        var id = "myactor" + rnd.Next(0, actorCount);
+                        var ct = CancellationTokens.WithTimeout(20_000);
+                        var res = await SendRequest(cluster, id, ct);
+
+                        if (!res)
+                        {
+                            var pid = await cluster.GetAsync(ClusterIdentity.Create(id,"hello"),CancellationTokens.FromSeconds(10));
+
+                            if (pid != null)
+                            {
+                                logger.LogError("Failed call to {Id} - {Address}", id, pid.Address);
+                            }
+                            else
+                            {
+                                logger.LogError("Failed call to {Id} - Null PID");
+                            }
+                        }
+                    }
+                }
+            );
         }
 
         private static void RunClient()

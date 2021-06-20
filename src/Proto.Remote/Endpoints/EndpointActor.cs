@@ -243,7 +243,25 @@ namespace Proto.Remote
                 //this only apply to root level messages and never to nested child objects inside the message
                 if (message is IRootSerializable deserialized) message = deserialized.Serialize(context.System);
 
-                (ByteString bytes, string typeName, int serializerId) = _remoteConfig.Serialization.Serialize(message);
+
+                ByteString bytes;
+                string typeName; 
+                int serializerId;
+
+                try
+                {
+                    (bytes, typeName, serializerId) = _remoteConfig.Serialization.Serialize(message);
+                }
+                catch (CodedOutputStream.OutOfSpaceException oom)
+                {
+                    Logger.LogError(oom, "Message is too large {Message}",message.GetType().Name);
+                    throw;
+                }
+                catch(Exception x)
+                {
+                    Logger.LogError(x, "Serialization failed for message {Message}",message.GetType().Name);
+                    throw;
+                }
 
                 if (!context.System.Metrics.IsNoop) counter.Inc(new[] {context.System.Id, context.System.Address, typeName});
 

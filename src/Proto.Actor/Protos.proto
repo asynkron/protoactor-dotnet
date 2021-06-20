@@ -38,3 +38,10 @@ enum TerminatedReason {
 
 message Stop {
 }
+
+message Touch {
+}
+
+message Touched {
+  PID who = 1;
+}

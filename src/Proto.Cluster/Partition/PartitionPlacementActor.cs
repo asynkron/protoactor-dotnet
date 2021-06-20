@@ -19,10 +19,12 @@ namespace Proto.Cluster.Partition
         //pid -> the actor that we have created here
         //kind -> the actor kind
         private readonly Dictionary<ClusterIdentity, PID> _myActors = new();
+        private readonly PartitionConfig _config;
 
-        public PartitionPlacementActor(Cluster cluster)
+        public PartitionPlacementActor(Cluster cluster, PartitionConfig config)
         {
             _cluster = cluster;
+            _config = config;
         }
 
         public Task ReceiveAsync(IContext context) =>
@@ -98,6 +100,8 @@ namespace Proto.Cluster.Partition
             {
                 if (_myActors.TryGetValue(msg.ClusterIdentity, out var existing))
                 {
+                    if (_config.DeveloperLogging)
+                        Console.WriteLine($"Activator got request for existing activation {msg.RequestId}");
                     //this identity already exists
                     var response = new ActivationResponse
                     {
@@ -107,6 +111,8 @@ namespace Proto.Cluster.Partition
                 }
                 else
                 {
+                    if (_config.DeveloperLogging)
+                        Console.WriteLine($"Activator got request for new activation {msg.RequestId}");
                     var clusterKind = _cluster.GetClusterKind(msg.ClusterIdentity.Kind);
                     //this actor did not exist, lets spawn a new activation
 
@@ -125,6 +131,8 @@ namespace Proto.Cluster.Partition
                         Pid = pid
                     };
                     context.Respond(response);
+                    if (_config.DeveloperLogging)
+                        Console.WriteLine($"Activated {msg.RequestId}");
                 }
             }
             catch(Exception e)

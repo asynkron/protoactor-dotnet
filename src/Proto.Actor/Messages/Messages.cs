@@ -28,6 +28,14 @@ namespace Proto
         }
     }
 
+    public sealed partial class Touch : IAutoRespond
+    {
+        public object GetAutoResponse(IContext context) => new Touched()
+        {
+            Who = context.Self
+        };
+    }
+
     public sealed partial class PoisonPill : IIgnoreDeadLetterLogging
     {
         public static readonly PoisonPill Instance = new();

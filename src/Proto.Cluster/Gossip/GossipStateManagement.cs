@@ -139,7 +139,8 @@ namespace Proto.Cluster.Gossip
                 pendingOffsets = pendingOffsets.SetItem(watermarkKey, newWatermark);
             }
 
-            return (pendingOffsets, newState);
+            //make sure to clone to make it a separate copy, avoid race conditions on mutate
+            return (pendingOffsets, newState.Clone());
         }
         
         public static (bool Consensus, ulong TopologyHash) CheckConsensus(IContext ctx,  GossipState state, string myId, ImmutableHashSet<string> members)

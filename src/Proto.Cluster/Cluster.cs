@@ -66,8 +66,6 @@ namespace Proto.Cluster
 
         internal IClusterProvider Provider { get; set; } = null!;
 
-        public string LoggerId => System.Id;
-
         public PidCache PidCache { get; }
 
         private void SubscribeToTopologyEvents() =>

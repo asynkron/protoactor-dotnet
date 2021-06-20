@@ -43,6 +43,7 @@ message ProxyActivationRequest {
 
 message ActivationResponse {
     actor.PID pid = 1;
+    bool failed = 2;
 }
 
 message Member {
