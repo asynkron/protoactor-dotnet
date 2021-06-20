@@ -105,7 +105,7 @@ namespace Proto.Cluster.Partition
             {
                 var activatorPid = PartitionManager.RemotePartitionPlacementActor(member.Address);
                 var request =
-                    context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg, CancellationTokens.WithTimeout(_identityHandoverTimeout));
+                    GetIdentitiesForMember(context, activatorPid, requestMsg);
                 requests.Add(request);
             }
 
@@ -142,6 +142,23 @@ namespace Proto.Cluster.Partition
             foreach (var (actorId, pid) in _partitionLookup.ToArray())
             {
                 if (!membersLookup.ContainsKey(pid.Address)) _partitionLookup.Remove(actorId);
+            }
+        }
+
+        private async Task<IdentityHandoverResponse> GetIdentitiesForMember(IContext context, PID activatorPid, IdentityHandoverRequest requestMsg)
+        {
+            try
+            {
+                var res = await context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg,
+                    CancellationTokens.WithTimeout(_identityHandoverTimeout)
+                );
+                return res;
+            }
+            catch
+            {
+                return new IdentityHandoverResponse()
+                {
+                };
             }
         }
 

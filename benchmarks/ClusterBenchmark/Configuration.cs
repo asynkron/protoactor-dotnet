@@ -114,7 +114,7 @@ namespace ClusterExperiment1
                 .WithDeadLetterThrottleCount(3)
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
                 .WithDeadLetterRequestLogging(false)
-                .WithDeveloperSupervisionLogging(true)
+                .WithDeveloperSupervisionLogging(false)
                 .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1))
             );
             system.EventStream.Subscribe<ClusterTopology>(e => {
