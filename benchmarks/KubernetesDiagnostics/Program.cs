@@ -11,6 +11,7 @@ using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
 using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.Kubernetes;
+using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using StackExchange.Redis;
@@ -31,11 +32,11 @@ namespace KubernetesDiagnostics
              * 
              */
 
-            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
+            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Critical));
             Log.SetLoggerFactory(l);
             var log = Log.CreateLogger("main");
 
-            var identity = new IdentityStorageLookup(GetRedisId("MyCluster"));
+            var identity = new PartitionIdentityLookup(TimeSpan.FromSeconds(2),TimeSpan.FromSeconds(2));//  new IdentityStorageLookup(GetRedisId("MyCluster"));
 
             var port = int.Parse(Environment.GetEnvironmentVariable("PROTOPORT")!);
             var host = Environment.GetEnvironmentVariable("PROTOHOST");
@@ -65,7 +66,7 @@ namespace KubernetesDiagnostics
                 var key = string.Join("", x);
                 var hash = MurmurHash2.Hash(key);
 
-                Console.WriteLine("My members " + hash);
+                Console.WriteLine($"My members {hash}");
 
                 // foreach (var member in members.OrderBy(m => m.Id))
                 // {
@@ -77,6 +78,17 @@ namespace KubernetesDiagnostics
             await system
                 .Cluster()
                 .StartMemberAsync();
+
+
+            while (true)
+            {
+                var res = await system.Cluster().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
+
+                Console.WriteLine($"Consensus {res}");
+
+                await Task.Delay(3000);
+            }
+            
 
             Thread.Sleep(Timeout.Infinite);
         }
