@@ -28,6 +28,9 @@ namespace Proto
         public bool SharedFutures { get; init; }
         public int SharedFutureSize { get; init; } = 5000;
 
+        public TimeSpan ThreadPoolStatsTimeout { get; init; } = TimeSpan.FromSeconds(1);
+        public bool DeveloperThreadPoolStatsLogging { get; init; }
+
         public static ActorSystemConfig Setup() => new();
 
         public Func<IActor, string> DiagnosticsSerializer { get; set; } = Diagnostics.DiagnosticsSerializer.Serialize;
@@ -49,6 +52,11 @@ namespace Proto
         public ActorSystemConfig WithDiagnosticsSerializer(Func<IActor, string> serializer) => this with {DiagnosticsSerializer = serializer};
         
         public ActorSystemConfig WithConfigureProps(Func<Props, Props> configureProps) => this with {ConfigureProps = configureProps};
+        
+        public ActorSystemConfig WithThreadPoolStatsTimeout(TimeSpan threadPoolStatsTimeout) => this with {ThreadPoolStatsTimeout = threadPoolStatsTimeout};
+        
+        public ActorSystemConfig WithDeveloperThreadPoolStatsLogging(bool enabled) => this with {DeveloperThreadPoolStatsLogging = enabled};
+        
     }
 
     //Not part of the contract, but still shipped out of the box
