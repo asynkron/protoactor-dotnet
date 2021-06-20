@@ -100,5 +100,10 @@ namespace Proto
             new(this, headers, middleware);
 
         public (string Host, int Port) GetAddress() => (_host, _port);
+
+        public Props ConfigureProps(Props props)
+        {
+            return props;
+        }
     }
 }

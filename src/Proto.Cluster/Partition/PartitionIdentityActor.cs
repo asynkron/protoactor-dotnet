@@ -86,7 +86,7 @@ namespace Proto.Cluster.Partition
         {
        //     await _cluster.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
             var members = msg.Members.ToArray();
-
+            _topologyHash = msg.TopologyHash;
             _rdv.UpdateMembers(members);
 
             //remove all identities we do no longer own.
@@ -135,7 +135,7 @@ namespace Proto.Cluster.Partition
                 Logger.LogError(x, "Failed to get identities");
                 throw;
             }
-
+            
             var membersLookup = msg.Members.ToDictionary(m => m.Address, m => m);
 
             //scan through all id lookups and remove cases where the address is no longer part of cluster members

@@ -45,6 +45,7 @@ namespace Proto
 
         public static PID DefaultSpawner(ActorSystem system, string name, Props props, PID? parent)
         {
+            props = system.ConfigureProps(props);
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
             var process = new ActorProcess(system, mailbox);

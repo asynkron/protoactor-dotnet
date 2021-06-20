@@ -103,7 +103,7 @@ namespace Proto.Cluster.Gossip
             return Task.CompletedTask;
         }
 
-        private async Task OnSendGossipState(IContext context)
+        private Task OnSendGossipState(IContext context)
         {
             var logger = context.Logger()?.BeginMethodScope();
             var members = context.System.Cluster().MemberList.GetOtherMembers();
@@ -123,6 +123,7 @@ namespace Proto.Cluster.Gossip
 
             CheckConsensus(context);
             context.Respond(new SendGossipStateResponse());
+            return Task.CompletedTask;
         }
 
         private void SendGossipForMember(IContext context, Member member, InstanceLogger? logger)

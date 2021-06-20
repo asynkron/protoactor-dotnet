@@ -4,15 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Diagnostics;
 using JetBrains.Annotations;
 using Ubiquitous.Metrics;
 using Ubiquitous.Metrics.NoMetrics;
-
-// -----------------------------------------------------------------------
-//   <copyright file="ActorContext.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
-//   </copyright>
-// -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
 namespace Proto
@@ -27,6 +22,8 @@ namespace Proto
 
         public bool DeadLetterRequestLogging { get; set; } = true;
         public bool DeveloperSupervisionLogging { get; init; }
+
+        public Func<Props, Props> ConfigureProps { get; init; } = props => props; 
 
         public bool SharedFutures { get; init; }
         public int SharedFutureSize { get; init; } = 5000;
@@ -50,5 +47,39 @@ namespace Proto
         public ActorSystemConfig WithMetricsProviders(params IMetricsProvider[] providers) => this with {MetricsProviders = providers};
 
         public ActorSystemConfig WithDiagnosticsSerializer(Func<IActor, string> serializer) => this with {DiagnosticsSerializer = serializer};
+        
+        public ActorSystemConfig WithConfigureProps(Func<Props, Props> configureProps) => this with {ConfigureProps = configureProps};
+    }
+
+    //Not part of the contract, but still shipped out of the box
+    public static class ActorSystemConfigExtensions
+    {
+        public static ActorSystemConfig WithDeveloperReceiveLogging(this ActorSystemConfig self, TimeSpan receiveDeadline)
+        {
+            var inner = self.ConfigureProps;
+            
+            Receiver DeveloperReceiveLogging(Receiver next) => (context, envelope) => {
+                var sw = Stopwatch.StartNew();
+                var res= next(context, envelope);
+                sw.Stop();
+
+                if (sw.Elapsed > receiveDeadline)
+                {
+                    Console.WriteLine($"Receive is taking too long {context.Self} incoming message {context.Self}");
+                }
+                
+                return res;
+            };
+
+            Props Outer(Props props)
+            {
+                props = inner(props);
+                props = props.WithReceiverMiddleware(DeveloperReceiveLogging);
+
+                return props;
+            }
+
+            return self with {ConfigureProps = Outer};
+        }
     }
 }
