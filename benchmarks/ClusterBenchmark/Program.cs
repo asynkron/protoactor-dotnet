@@ -98,6 +98,7 @@ namespace ClusterExperiment1
                 Console.WriteLine("2) Run batch requests client");
                 Console.WriteLine("3) Run fire and forget client");
                 Console.WriteLine("4) Run single request debug client");
+                Console.WriteLine("5) NoOp - Stability");
 
                 clientStrategy = Console.ReadLine() ?? "";
 
@@ -129,6 +130,7 @@ namespace ClusterExperiment1
                 "2" => () => RunBatchClient(batchSize),
                 "3" => () => RunFireForgetClient(),
                 "4" => () => RunDebugClient(),
+                "5" => () => RunNoopClient(),
                 _   => throw new ArgumentOutOfRangeException()
             };
 
@@ -147,6 +149,11 @@ namespace ClusterExperiment1
             Console.WriteLine($"Successful:\t{successCount:N0}");
             Console.WriteLine($"Failures:\t{failureCount:N0}");
             Console.WriteLine($"Throughput:\t{tps:N0} requests/sec -> {(tps * 2):N0} msg/sec");
+        }
+
+        private static void RunNoopClient()
+        {
+            
         }
 
         private static void RunFireForgetClient()
@@ -330,7 +337,7 @@ namespace ClusterExperiment1
                             }
                             else
                             {
-                                logger.LogError("Failed call to {Id} - Null PID");
+                                logger.LogError("Failed call to {Id} - Null PID", id);
                             }
                         }
                     }
@@ -364,10 +371,12 @@ namespace ClusterExperiment1
             {
                 var p = memberFactory();
                 await p.Start();
+                await Task.Delay(500);
+                Console.WriteLine("Worker started...");
                 followers.Add(p);
             }
 
-            await Task.Delay(8000);
+            await Task.Delay(15000);
 
             startClient();
             Console.WriteLine("Client started...");
