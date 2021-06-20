@@ -101,9 +101,6 @@ namespace Proto
 
         public (string Host, int Port) GetAddress() => (_host, _port);
 
-        public Props ConfigureProps(Props props)
-        {
-            return props;
-        }
+        public Props ConfigureProps(Props props) => Config.ConfigureProps(props);
     }
 }
