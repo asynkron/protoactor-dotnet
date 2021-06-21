@@ -15,3 +15,11 @@ message Pong {
 }
 message Die {
 }
+
+message BinaryMessage {
+	string id =1;
+	bytes payload = 2;
+}
+
+message Ack {
+}

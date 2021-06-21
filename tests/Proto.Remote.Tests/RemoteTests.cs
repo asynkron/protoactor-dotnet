@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
+using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using Proto.Remote.Tests.Messages;
 using Xunit;
@@ -200,6 +202,46 @@ namespace Proto.Remote.Tests
                     TimeSpan.FromSeconds(5)
                 )
             );
+        }
+        
+        [Fact, DisplayTestMethodName]
+        public async Task CanMakeRequestToRemoteActor()
+        {
+            var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
+
+            var res = await System.Root.RequestAsync<Touched>(remoteActor, new Touch(), TimeSpan.FromSeconds(5));
+            res.Who.Should().BeEquivalentTo(remoteActor);
+        }
+
+        [Fact]
+        public async Task CanMakeBinaryRequestToRemoteActor()
+        {
+            _fixture.LogStore.Clear();
+
+            if (_fixture is HostedGrpcNetWithCustomSerializerTests.Fixture)
+            {
+                //Skip 
+                return;
+            }
+            
+
+            var remoteActorName = Guid.NewGuid().ToString();
+
+            var remoteActorResp = await Remote.SpawnNamedAsync(
+                _fixture.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5)
+            );
+            var remoteActor = remoteActorResp.Pid;
+            var msg = new BinaryMessage()
+            {
+                Id = "hello"
+            };
+            
+            var res = await System.Root.RequestAsync<Ack>(remoteActor, msg,
+                CancellationTokens.FromSeconds(5)
+            );
+            res.Should().BeOfType<Ack>();
+
+            var log = _fixture.LogStore.ToFormattedString();
         }
 
         private async Task<PID> SpawnRemoteActor(string address)

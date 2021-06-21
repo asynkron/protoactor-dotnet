@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Mailbox;
 
 namespace Proto.Remote
@@ -143,7 +144,7 @@ namespace Proto.Remote
 
                         if (droppedRemoteDeliverCount > 0)
                         {
-                            Logger.LogInformation("[EndpointWriterMailbox] Dropped {count} user Messages for {Address}", droppedRemoteDeliverCount,
+                            Logger.LogInformation("[EndpointWriterMailbox] Dropped {Count} user Messages for {Address}", droppedRemoteDeliverCount,
                                 _address
                             );
                         }
@@ -174,6 +175,8 @@ namespace Proto.Remote
                                 await _invoker!.InvokeUserMessageAsync(msg);
                                 continue;
                         }
+                        
+                        _system.Logger()?.LogDebug("EndpointWriter RemoteDeliver {Message}", msg);
 
                         batch.Add((RemoteDeliver) msg);
 
@@ -184,6 +187,7 @@ namespace Proto.Remote
                     {
                         m = batch;
                         // Logger.LogDebug("[EndpointWriterMailbox] Calling message invoker");
+                        _system.Logger()?.LogDebug("EndpointWriter Sending batch {Batch}", batch);
                         await _invoker!.InvokeUserMessageAsync(batch);
                     }
                 }

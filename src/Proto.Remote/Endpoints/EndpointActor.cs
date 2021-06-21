@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Remote.Metrics;
 
 namespace Proto.Remote
@@ -289,6 +290,8 @@ namespace Proto.Remote
                     MessageHeader = header,
                     RequestId = rd.Target.RequestId
                 };
+                
+                context.System.Logger()?.LogDebug("EndpointActor adding Envelope {Envelope}", envelope);
 
                 envelopes.Add(envelope);
             }
