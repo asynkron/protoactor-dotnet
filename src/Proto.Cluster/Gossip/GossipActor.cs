@@ -108,6 +108,8 @@ namespace Proto.Cluster.Gossip
             var logger = context.Logger()?.BeginMethodScope();
             var members = context.System.Cluster().MemberList.GetOtherMembers();
 
+            PurgeBannedMembers(context);
+
             foreach (var member in members)
             {
                 GossipStateManagement.EnsureMemberStateExists(_state, member.Id);
@@ -124,6 +126,19 @@ namespace Proto.Cluster.Gossip
             CheckConsensus(context);
             context.Respond(new SendGossipStateResponse());
             return Task.CompletedTask;
+        }
+
+        private void PurgeBannedMembers(IContext context)
+        {
+            var banned = context.Cluster().MemberList.BannedMembers;
+
+            foreach (var memberId in _state.Members.Keys.ToArray()) 
+            {
+                if (banned.Contains(memberId))
+                {
+                    _state.Members.Remove(memberId);
+                }
+            }
         }
 
         private void SendGossipForMember(IContext context, Member member, InstanceLogger? logger)
