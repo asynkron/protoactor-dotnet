@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Remote.GrpcCore;
 using Proto.Remote.GrpcNet;
 using Xunit;
@@ -18,11 +20,16 @@ namespace Proto.Remote.Tests
         IRemote Remote { get; }
         ActorSystem ActorSystem { get; }
         IRemote ServerRemote { get; }
+        LogStore LogStore { get; }
     }
 
     public abstract class RemoteFixture : IRemoteFixture
     {
         private static readonly Props EchoActorProps = Props.FromProducer(() => new EchoActor());
+
+        private static LogStore _logStore = new();
+        public LogStore LogStore { get; } = _logStore;
+        
         public string RemoteAddress => ServerRemote.System.Address;
 
         public IRemote Remote { get; protected set; }
@@ -66,7 +73,12 @@ namespace Proto.Remote.Tests
                 .ConfigureServices(services => {
                         services.AddGrpc();
                         services.AddSingleton(Log.GetLoggerFactory());
-                        services.AddSingleton(sp => new ActorSystem());
+                        services.AddSingleton(sp => {
+                                var system= new ActorSystem();
+                                system.Extensions.Register(new InstanceLogger(LogLevel.Debug,_logStore,category:system.Id));
+                                return system;
+                            }
+                        );
                         services.AddRemote(config);
                     }
                 )
