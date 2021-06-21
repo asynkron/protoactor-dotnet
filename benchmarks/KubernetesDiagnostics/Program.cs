@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using Proto;
 using Proto.Cluster;
+using Proto.Cluster.Gossip;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
 using Proto.Cluster.Identity.Redis;
@@ -61,6 +62,10 @@ namespace KubernetesDiagnostics
                     .WithClusterKind("empty", Props.Empty)
                 );
 
+            system.EventStream.Subscribe<GossipUpdate>(e => {
+                    Console.WriteLine($"Gossip update Member {e.MemberId} Key {e.Key}");
+                }
+            );
             system.EventStream.Subscribe<ClusterTopology>(e => {
                 var members = e.Members;
                 var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
