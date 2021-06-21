@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Utils;
 
 namespace Proto.Cluster.Partition
 {
@@ -65,21 +66,11 @@ namespace Proto.Cluster.Partition
 
         private async Task OnClusterTopology(ClusterTopology msg, IContext context)
         {
-            for (int i = 0; i < 3; i++)
-            {
-                try
-                {
-                    await OnClusterTopologyInner(msg, context);
-                    return;
-                }
-                catch
-                {
-                    
-                }
+            await Retry.Try(() => OnClusterTopologyInner(msg, context), onError: OnError, onFailed: OnFailed, ignoreFailure:true);
 
-                await Task.Delay(i * 50);
-            }
-            Logger.LogError("OnClusterTopologyFailed after retries");
+            static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to handle topology change");
+
+            static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to handle topology change");
         }
 
         private async Task OnClusterTopologyInner(ClusterTopology msg, IContext context)

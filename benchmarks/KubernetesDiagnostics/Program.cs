@@ -23,7 +23,8 @@ namespace KubernetesDiagnostics
         public static async Task Main()
         {
             Console.WriteLine("Starting...");
-            Console.WriteLine("Using RedisLookup 222");
+            Console.WriteLine("123");
+
             /*
              *  docker build . -t rogeralsing/kubdiagg   
              *  kubectl apply --filename service.yaml    
@@ -32,7 +33,7 @@ namespace KubernetesDiagnostics
              * 
              */
 
-            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Critical));
+            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Error));
             Log.SetLoggerFactory(l);
             var log = Log.CreateLogger("main");
 
@@ -84,7 +85,10 @@ namespace KubernetesDiagnostics
             {
                 var res = await system.Cluster().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
 
-                Console.WriteLine($"Consensus {res}");
+                var m = system.Cluster().MemberList.GetAllMembers();
+                var hash = Member.TopologyHash(m);
+                
+                Console.WriteLine($"Consensus {res} Hash {hash} Count {m.Length}");
 
                 await Task.Delay(3000);
             }

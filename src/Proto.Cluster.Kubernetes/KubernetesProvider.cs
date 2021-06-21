@@ -11,8 +11,8 @@ using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Rest;
-using Proto.Cluster.Data;
 using Proto.Mailbox;
+using Proto.Utils;
 using static Proto.Cluster.Kubernetes.Messages;
 using static Proto.Cluster.Kubernetes.ProtoLabels;
 
@@ -91,6 +91,15 @@ namespace Proto.Cluster.Kubernetes
 
         public async Task RegisterMemberAsync()
         {
+            await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed);
+
+            static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to register service");
+
+            static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to register service");
+        }
+
+        public async Task RegisterMemberInner()
+        {
             Logger.LogInformation("[Cluster][KubernetesProvider] Registering service {PodName} on {PodIp}", _podName, _address);
 
             var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace());
@@ -139,7 +148,7 @@ namespace Proto.Cluster.Kubernetes
         private void StartClusterMonitor()
         {
             var props = Props
-                .FromProducer(() => new KubernetesClusterMonitor(_cluster, _kubernetes,_config))
+                .FromProducer(() => new KubernetesClusterMonitor(_cluster, _kubernetes, _config))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
                 .WithDispatcher(Dispatchers.SynchronousDispatcher);
             _clusterMonitor = _cluster.System.Root.SpawnNamed(props, "ClusterMonitor");
@@ -159,6 +168,15 @@ namespace Proto.Cluster.Kubernetes
         }
 
         public async Task DeregisterMemberAsync(Cluster cluster)
+        {
+            await Retry.Try(() => DeregisterMemberInner(cluster), onError: OnError, onFailed: OnFailed);
+
+            static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to deregister service");
+
+            static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to deregister service");
+        }
+
+        private async Task DeregisterMemberInner(Cluster cluster)
         {
             Logger.LogInformation("[Cluster][KubernetesProvider] Unregistering service {PodName} on {PodIp}", _podName, _address);
 
