@@ -50,7 +50,6 @@ namespace Proto.Mailbox
 
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
-        private volatile bool _hasSystemMessages;
 
         public DefaultMailbox(
             IMailboxQueue systemMessages,
@@ -125,8 +124,7 @@ namespace Proto.Mailbox
         public void PostSystemMessage(object msg)
         {
             _systemMessages.Push(msg);
-            _hasSystemMessages = true;
-            
+
             if (msg is Stop)
                 _invoker?.CancellationTokenSource?.Cancel();
 
@@ -201,35 +199,30 @@ namespace Proto.Mailbox
             {
                 for (var i = 0; i < _dispatcher.Throughput; i++)
                 {
-                    if (_hasSystemMessages)
+                    msg = _systemMessages.Pop();
+
+                    if (msg is not null)
                     {
-                        msg = _systemMessages.Pop();
-
-                        if (msg is not null)
+                        _suspended = msg switch
                         {
-                            _suspended = msg switch
-                            {
-                                SuspendMailbox => true,
-                                ResumeMailbox  => false,
-                                _              => _suspended
-                            };
+                            SuspendMailbox => true,
+                            ResumeMailbox  => false,
+                            _              => _suspended
+                        };
 
-                            var t = _invoker.InvokeSystemMessageAsync(msg);
-                            if (!t.IsCompletedSuccessfully)
-                            {
-                                return Await(msg, t, this);
-                            }
+                        var t = _invoker.InvokeSystemMessageAsync(msg);
 
-                            foreach (var t1 in _stats)
-                            {
-                                t1.MessageReceived(msg);
-                            }
-
-                            continue;
+                        if (!t.IsCompletedSuccessfully)
+                        {
+                            return Await(msg, t, this);
                         }
 
-                        //race here, but that's ok, we process it next round in the loop
-                        _hasSystemMessages = false;
+                        foreach (var t1 in _stats)
+                        {
+                            t1.MessageReceived(msg);
+                        }
+
+                        continue;
                     }
 
                     if (_suspended) break;
