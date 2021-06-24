@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using Proto;
 using Proto.Cluster;
+using Proto.Cluster.Consul;
 using Proto.Cluster.Gossip;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
@@ -34,25 +35,36 @@ namespace KubernetesDiagnostics
              * 
              */
 
-            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Error));
+            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
             var log = Log.CreateLogger("main");
 
             var identity = new PartitionIdentityLookup(TimeSpan.FromSeconds(2),TimeSpan.FromSeconds(2));//  new IdentityStorageLookup(GetRedisId("MyCluster"));
 
-            var port = int.Parse(Environment.GetEnvironmentVariable("PROTOPORT")!);
-            var host = Environment.GetEnvironmentVariable("PROTOHOST");
+            
+            /*
+            - name: "REDIS"
+              value: "redis"
+            - name: PROTOPORT
+              value: "8080"
+            - name: PROTOHOST
+              value: "0.0.0.0"
+            - name: "PROTOHOSTPUBLIC"
+             */
+
+            var port = int.Parse(Environment.GetEnvironmentVariable("PROTOPORT") ?? "0");
+            var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
             var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
 
             log.LogInformation("Host {host}", host);
             log.LogInformation("Port {port}", port);
             log.LogInformation("Advertised Host {advertisedHost}", advertisedHost);
 
-            var kubernetes = new Kubernetes(KubernetesClientConfiguration.InClusterConfig());
-            //
-            var clusterprovider = new KubernetesProvider(kubernetes, new KubernetesProviderConfig(10,false));
+            var clusterprovider = GetProvider();
 
-            var system = new ActorSystem()
+            var system = new ActorSystem(new ActorSystemConfig()
+                    .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1))
+                    .WithDeveloperSupervisionLogging(true))
                 .WithRemote(GrpcNetRemoteConfig
                     .BindTo(host, port)
                     .WithAdvertisedHost(advertisedHost)
@@ -63,7 +75,7 @@ namespace KubernetesDiagnostics
                 );
 
             system.EventStream.Subscribe<GossipUpdate>(e => {
-                    Console.WriteLine($"Gossip update Member {e.MemberId} Key {e.Key}");
+                    Console.WriteLine($"{DateTime.Now:O} Gossip update Member {e.MemberId} Key {e.Key}");
                 }
             );
             system.EventStream.Subscribe<ClusterTopology>(e => {
@@ -72,7 +84,7 @@ namespace KubernetesDiagnostics
                 var key = string.Join("", x);
                 var hash = MurmurHash2.Hash(key);
 
-                Console.WriteLine($"My members {hash}");
+                Console.WriteLine($"{DateTime.Now:O} My members {hash}");
 
                 // foreach (var member in members.OrderBy(m => m.Id))
                 // {
@@ -93,13 +105,28 @@ namespace KubernetesDiagnostics
                 var m = system.Cluster().MemberList.GetAllMembers();
                 var hash = Member.TopologyHash(m);
                 
-                Console.WriteLine($"Consensus {res} Hash {hash} Count {m.Length}");
+                Console.WriteLine($"{DateTime.Now:O} Consensus {res} Hash {hash} Count {m.Length}");
 
                 await Task.Delay(3000);
             }
             
 
             Thread.Sleep(Timeout.Infinite);
+        }
+
+        private static IClusterProvider GetProvider()
+        {
+            try
+            {
+                var kubernetes = new Kubernetes(KubernetesClientConfiguration.InClusterConfig());
+                Console.WriteLine("Running with Kubernetes Provider");
+                return new KubernetesProvider(kubernetes);
+            }
+            catch
+            {
+                Console.WriteLine("Running with Consul Provider");
+                return new ConsulProvider(new ConsulProviderConfig());
+            }
         }
 
         private static IIdentityStorage GetRedisId(string clusterName)
