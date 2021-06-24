@@ -15,7 +15,7 @@ using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.Kubernetes;
 using Proto.Cluster.Partition;
 using Proto.Remote;
-using Proto.Remote.GrpcNet;
+using Proto.Remote.GrpcCore;
 using StackExchange.Redis;
 
 namespace KubernetesDiagnostics
@@ -24,8 +24,9 @@ namespace KubernetesDiagnostics
     {
         public static async Task Main()
         {
+            ThreadPool.SetMinThreads(100, 100);
             Console.WriteLine("Starting...");
-            Console.WriteLine("345");
+            Console.WriteLine("444");
 
             /*
              *  docker build . -t rogeralsing/kubdiagg   
@@ -65,7 +66,7 @@ namespace KubernetesDiagnostics
             var system = new ActorSystem(new ActorSystemConfig()
                     .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1))
                     .WithDeveloperSupervisionLogging(true))
-                .WithRemote(GrpcNetRemoteConfig
+                .WithRemote(GrpcCoreRemoteConfig
                     .BindTo(host, port)
                     .WithAdvertisedHost(advertisedHost)
                 )

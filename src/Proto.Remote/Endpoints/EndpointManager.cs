@@ -107,22 +107,18 @@ namespace Proto.Remote
         private void OnEndpointTerminated(EndpointTerminatedEvent evt)
         {
             Logger.LogDebug("[EndpointManager] Endpoint {Address} terminated removing from connections", evt.Address);
-
-            lock (_synLock)
+            
+            if (_connections.TryRemove(evt.Address, out var endpoint))
             {
-                if (_connections.TryRemove(evt.Address, out var endpoint))
-                {
-                    _system.Root.StopAsync(endpoint).GetAwaiter().GetResult();
-
-                    if (_remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue && _terminatedConnections.TryAdd(evt.Address, endpoint))
-                    {
-                        _ = SafeTask.Run(async () => {
-                                await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value);
-                                _terminatedConnections.TryRemove(evt.Address, out var _);
-                            }
-                        );
-                    }
-                }
+                // ReSharper disable once InconsistentlySynchronizedField
+                _system.Root.StopAsync(endpoint).ContinueWith(async _ => {
+                        if (_remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue && _terminatedConnections.TryAdd(evt.Address, endpoint))
+                        {
+                            await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value, CancellationToken);
+                            _terminatedConnections.TryRemove(evt.Address, out var _);
+                        }
+                    }, CancellationToken
+                );
             }
         }
 
@@ -138,23 +134,20 @@ namespace Proto.Remote
         internal PID? GetEndpoint(string address)
         {
             if (string.IsNullOrWhiteSpace(address)) throw new ArgumentNullException(nameof(address));
+            
+            if (_terminatedConnections.ContainsKey(address) || _cancellationTokenSource.IsCancellationRequested) return null;
 
-            lock (_synLock)
-            {
-                if (_terminatedConnections.ContainsKey(address) || _cancellationTokenSource.IsCancellationRequested) return null;
-
-                return _connections.GetOrAdd(address, v => {
-                        Logger.LogDebug("[EndpointManager] Requesting new endpoint for {Address}", v);
-                        var props = Props
-                            .FromProducer(() => new EndpointActor(v, _remoteConfig, _channelProvider))
-                            .WithMailbox(() => new EndpointWriterMailbox(_system, _remoteConfig.EndpointWriterOptions.EndpointWriterBatchSize, v))
-                            .WithGuardianSupervisorStrategy(new EndpointSupervisorStrategy(v, _remoteConfig, _system));
-                        var endpointActorPid = _system.Root.SpawnNamed(props, $"endpoint-{v}");
-                        Logger.LogDebug("[EndpointManager] Created new endpoint for {Address}", v);
-                        return endpointActorPid;
-                    }
-                );
-            }
+            return _connections.GetOrAdd(address, v => {
+                    Logger.LogDebug("[EndpointManager] Requesting new endpoint for {Address}", v);
+                    var props = Props
+                        .FromProducer(() => new EndpointActor(v, _remoteConfig, _channelProvider))
+                        .WithMailbox(() => new EndpointWriterMailbox(_system, _remoteConfig.EndpointWriterOptions.EndpointWriterBatchSize, v))
+                        .WithGuardianSupervisorStrategy(new EndpointSupervisorStrategy(v, _remoteConfig, _system));
+                    var endpointActorPid = _system.Root.SpawnNamed(props, $"endpoint-{v}");
+                    Logger.LogDebug("[EndpointManager] Created new endpoint for {Address}", v);
+                    return endpointActorPid;
+                }
+            );
         }
 
         private void SpawnActivator()
