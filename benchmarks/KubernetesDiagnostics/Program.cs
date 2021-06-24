@@ -25,7 +25,7 @@ namespace KubernetesDiagnostics
         public static async Task Main()
         {
             Console.WriteLine("Starting...");
-            Console.WriteLine("123");
+            Console.WriteLine("234");
 
             /*
              *  docker build . -t rogeralsing/kubdiagg   
@@ -74,6 +74,11 @@ namespace KubernetesDiagnostics
                     .WithClusterKind("empty", Props.Empty)
                 );
 
+            system.EventStream.Subscribe(e => {
+                    Console.WriteLine($"{DateTime.Now:O} Event {e}");
+                }
+            );
+            
             system.EventStream.Subscribe<GossipUpdate>(e => {
                     Console.WriteLine($"{DateTime.Now:O} Gossip update Member {e.MemberId} Key {e.Key}");
                 }
@@ -97,6 +102,9 @@ namespace KubernetesDiagnostics
                 .Cluster()
                 .StartMemberAsync();
 
+            var props = Props.FromFunc(ctx => Task.CompletedTask);
+            system.Root.SpawnNamed(props, "dummy");
+
 
             while (true)
             {
@@ -106,6 +114,29 @@ namespace KubernetesDiagnostics
                 var hash = Member.TopologyHash(m);
                 
                 Console.WriteLine($"{DateTime.Now:O} Consensus {res} Hash {hash} Count {m.Length}");
+
+                foreach (var member in m)
+                {
+                    var pid = new PID(member.Address,"dummy");
+
+                    try
+                    {
+                        var t = await system.Root.RequestAsync<Touched>(pid, new Touch(), CancellationTokens.FromSeconds(1));
+
+                        if (t != null)
+                        {
+                            Console.WriteLine($"called dummy actor {pid}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"call to dummy actor timed out {pid}");
+                        }
+                    }
+                    catch
+                    {
+                        Console.WriteLine($"Could not call dummy actor {pid}");
+                    }
+                }
 
                 await Task.Delay(3000);
             }
