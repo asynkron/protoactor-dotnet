@@ -25,7 +25,7 @@ namespace KubernetesDiagnostics
         public static async Task Main()
         {
             Console.WriteLine("Starting...");
-            Console.WriteLine("234");
+            Console.WriteLine("345");
 
             /*
              *  docker build . -t rogeralsing/kubdiagg   
@@ -74,15 +74,11 @@ namespace KubernetesDiagnostics
                     .WithClusterKind("empty", Props.Empty)
                 );
 
-            system.EventStream.Subscribe(e => {
-                    Console.WriteLine($"{DateTime.Now:O} Event {e}");
-                }
-            );
-            
             system.EventStream.Subscribe<GossipUpdate>(e => {
                     Console.WriteLine($"{DateTime.Now:O} Gossip update Member {e.MemberId} Key {e.Key}");
                 }
             );
+            
             system.EventStream.Subscribe<ClusterTopology>(e => {
                 var members = e.Members;
                 var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
@@ -108,12 +104,12 @@ namespace KubernetesDiagnostics
 
             while (true)
             {
-                var res = await system.Cluster().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
+             //   var res = await system.Cluster().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
 
                 var m = system.Cluster().MemberList.GetAllMembers();
                 var hash = Member.TopologyHash(m);
                 
-                Console.WriteLine($"{DateTime.Now:O} Consensus {res} Hash {hash} Count {m.Length}");
+                Console.WriteLine($"{DateTime.Now:O} Consensus ignore.. Hash {hash} Count {m.Length}");
 
                 foreach (var member in m)
                 {
