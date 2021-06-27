@@ -64,11 +64,13 @@ namespace KubernetesDiagnostics
             var clusterprovider = GetProvider();
 
             var system = new ActorSystem(new ActorSystemConfig()
-                    .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1))
-                    .WithDeveloperSupervisionLogging(true))
+               //     .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1))
+               //     .WithDeveloperSupervisionLogging(true)
+                )
                 .WithRemote(GrpcCoreRemoteConfig
                     .BindTo(host, port)
                     .WithAdvertisedHost(advertisedHost)
+                    .WithEndpointWriterMaxRetries(2)
                 )
                 .WithCluster(ClusterConfig
                     .Setup("mycluster", clusterprovider, identity)
@@ -105,12 +107,12 @@ namespace KubernetesDiagnostics
 
             while (true)
             {
-             //   var res = await system.Cluster().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
+                var res = await system.Cluster().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
 
                 var m = system.Cluster().MemberList.GetAllMembers();
                 var hash = Member.TopologyHash(m);
                 
-                Console.WriteLine($"{DateTime.Now:O} Consensus ignore.. Hash {hash} Count {m.Length}");
+                Console.WriteLine($"{DateTime.Now:O} Consensus {res}.. Hash {hash} Count {m.Length}");
 
                 foreach (var member in m)
                 {
