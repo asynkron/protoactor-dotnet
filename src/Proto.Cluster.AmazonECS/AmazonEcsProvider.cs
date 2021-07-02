@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Amazon.ECS;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
@@ -31,13 +32,15 @@ namespace Proto.Cluster.AmazonECS
         private string _podName;
         private int _port;
         private readonly AmazonEcsProviderConfig _config;
+        private readonly AmazonECSClient _client;
 
-        public AmazonEcsProvider() : this(new AmazonEcsProviderConfig())
+        public AmazonEcsProvider(AmazonECSClient client) : this(client, new AmazonEcsProviderConfig())
         {
         }
 
-        public AmazonEcsProvider(AmazonEcsProviderConfig config)
+        public AmazonEcsProvider(AmazonECSClient client, AmazonEcsProviderConfig config)
         {
+            _client = client;
             _config = config;
         }
 
