@@ -17,12 +17,12 @@ namespace Proto.Cluster.AmazonECS
     {
         public static async Task<Member[]> GetMembers(this AmazonECSClient c, string ecsClusterName)
         {
-
             var allTasks = await c.ListTasksAsync(new ListTasksRequest()
                 {
                     Cluster = ecsClusterName
                 }
             );
+            
             var instanceArns = allTasks.TaskArns;
 
             if (!instanceArns.Any())
@@ -30,7 +30,7 @@ namespace Proto.Cluster.AmazonECS
                 return Array.Empty<Member>();
             }
 
-            var describedTasks = await c.DescribeTasksAsync(new DescribeTasksRequest()
+            var describedTasks = await c.DescribeTasksAsync(new DescribeTasksRequest
                 {
                     Include = {"TAGS"},
                     Tasks = instanceArns,
@@ -63,14 +63,14 @@ namespace Proto.Cluster.AmazonECS
 
         public static async System.Threading.Tasks.Task UpdateMetadata(this AmazonECSClient c, string resourceArn, IDictionary<string, string> metadata)
         {
-            var tags = metadata.Select(kvp => new Tag()
+            var tags = metadata.Select(kvp => new Tag
                 {
                     Key = kvp.Key,
                     Value = kvp.Value,
                 }
             ).ToList();
             
-            await c.TagResourceAsync(new TagResourceRequest()
+            await c.TagResourceAsync(new TagResourceRequest
             {
                 ResourceArn = resourceArn,
                 Tags = tags,

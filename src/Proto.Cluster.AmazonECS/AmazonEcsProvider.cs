@@ -33,13 +33,11 @@ namespace Proto.Cluster.AmazonECS
         private int _port;
         private readonly AmazonEcsProviderConfig _config;
         private readonly AmazonECSClient _client;
+        private readonly string _ecsClusterName;
 
-        public AmazonEcsProvider(AmazonECSClient client) : this(client, new AmazonEcsProviderConfig())
+        public AmazonEcsProvider(AmazonECSClient client,string ecsClusterName , AmazonEcsProviderConfig config)
         {
-        }
-
-        public AmazonEcsProvider(AmazonECSClient client, AmazonEcsProviderConfig config)
-        {
+            _ecsClusterName = ecsClusterName;
             _client = client;
             _config = config;
         }
