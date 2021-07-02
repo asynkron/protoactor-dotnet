@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Amazon.ECS;
 using Amazon.ECS.Model;
+using Amazon.Util;
 using Task = Amazon.ECS.Model.Task;
 
 namespace Proto.Cluster.AmazonECS
@@ -75,6 +76,15 @@ namespace Proto.Cluster.AmazonECS
                 ResourceArn = resourceArn,
                 Tags = tags,
             });
-        }   
+        }
+
+        public static async Task<Metadata> GetContainerMetadata()
+        {
+            var client = new AwsEcsContainerMetadataHttpClient();
+            var metadata = client.GetContainerMetadata();
+            return metadata;
+        }
+        
+        // public static IDictionary<string,string> 
     }
 }

@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
 using Proto.Utils;
 using static Proto.Cluster.AmazonECS.Messages;
-using static Proto.Cluster.AmazonECS.ProtoLabels;
 
 namespace Proto.Cluster.AmazonECS
 {
@@ -29,7 +28,7 @@ namespace Proto.Cluster.AmazonECS
         private string _host;
         private string[] _kinds;
         private MemberList _memberList;
-        private string _podName;
+        private string _taskArn;
         private int _port;
         private readonly AmazonEcsProviderConfig _config;
         private readonly AmazonECSClient _client;
@@ -93,48 +92,24 @@ namespace Proto.Cluster.AmazonECS
 
         public async Task RegisterMemberInner()
         {
-            Logger.LogInformation("[Cluster][AmazonEcsProvider] Registering service {PodName} on {PodIp}", _podName, _address);
+            var metadata = await EcsUtils.GetContainerMetadata();
+            _taskArn = metadata.TaskARN;
+            Logger.LogInformation("[Cluster][AmazonEcsProvider] Registering service {PodName} on {PodIp}", _taskArn, _address);
 
-            //var pod = await _AmazonEcs.ReadNamespacedPodAsync(_podName, AmazonEcsExtensions.GetKubeNamespace());
-          //  if (pod is null) throw new ApplicationException($"Unable to get own pod information for {_podName}");
-
-         //   Logger.LogInformation("[Cluster][AmazonEcsProvider] Using AmazonEcs namespace: " + pod.Namespace());
-
-          
-
-         
-            Logger.LogInformation("[Cluster][AmazonEcsProvider] Using AmazonEcs port: " + _port);
-
-          //  var existingLabels = pod.Metadata.Labels;
-
-            var labels = new Dictionary<string, string>
+            var tags = new Dictionary<string, string>
             {
-                [LabelCluster] = _clusterName,
-                [LabelPort] = _port.ToString(),
-                [LabelMemberId] = _cluster.System.Id
+                [ProtoLabels.LabelCluster] = _clusterName,
+                [ProtoLabels.LabelPort] = _port.ToString(),
+                [ProtoLabels.LabelMemberId] = _cluster.System.Id
             };
 
             foreach (var kind in _kinds)
             {
-                var labelKey = $"{LabelKind}-{kind}";
-                labels.TryAdd(labelKey, "true");
+                var labelKey = $"{ProtoLabels.LabelKind}-{kind}";
+                tags.TryAdd(labelKey, "true");
             }
 
-            //add existing labels back
-            // foreach (var existing in existingLabels)
-            // {
-            //     labels.TryAdd(existing.Key, existing.Value);
-            // }
-
-            // try
-            // {
-            //     await _AmazonEcs.ReplacePodLabels(_podName, AmazonEcsExtensions.GetKubeNamespace(), labels);
-            // }
-            // catch (HttpOperationException e)
-            // {
-            //     Logger.LogError(e, "[Cluster][AmazonEcsProvider] Unable to update pod labels, registration failed");
-            //     throw;
-            // }
+            await _client.UpdateMetadata(_taskArn, tags);
         }
 
         private void StartClusterMonitor()
@@ -144,8 +119,7 @@ namespace Proto.Cluster.AmazonECS
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
                 .WithDispatcher(Dispatchers.SynchronousDispatcher);
             _clusterMonitor = _cluster.System.Root.SpawnNamed(props, "ClusterMonitor");
-        //    _podName = AmazonEcsExtensions.GetPodName();
-
+            
             _cluster.System.Root.Send(
                 _clusterMonitor,
                 new RegisterMember
@@ -170,28 +144,7 @@ namespace Proto.Cluster.AmazonECS
 
         private async Task DeregisterMemberInner(Cluster cluster)
         {
-            Logger.LogInformation("[Cluster][AmazonEcsProvider] Unregistering service {PodName} on {PodIp}", _podName, _address);
-
-           // var kubeNamespace = AmazonEcsExtensions.GetKubeNamespace();
-
-           // var pod = await _AmazonEcs.ReadNamespacedPodAsync(_podName, kubeNamespace);
-
-            foreach (var kind in _kinds)
-            {
-                try
-                {
-                    var labelKey = $"{LabelKind}-{kind}";
-           //         pod.SetLabel(labelKey, null);
-                }
-                catch (Exception x)
-                {
-                    Logger.LogError(x, "[Cluster][AmazonEcsProvider] Failed to remove label");
-                }
-            }
-
-            //pod.SetLabel(LabelCluster, null);
-
-        //    await _AmazonEcs.ReplacePodLabels(_podName, kubeNamespace, pod.Labels());
+            Logger.LogInformation("[Cluster][AmazonEcsProvider] Unregistering service {PodName} on {PodIp}", _taskArn, _address);
 
             cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
         }
