@@ -2,15 +2,15 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using k8s;
+using Amazon;
+using Amazon.ECS;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Consul;
+using Proto.Cluster.AmazonECS;
 using Proto.Cluster.Gossip;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.Redis;
-using Proto.Cluster.Kubernetes;
 using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
@@ -22,9 +22,7 @@ namespace EcsDiagnostics
     {
         public static async Task Main()
         {
-            ThreadPool.SetMinThreads(100, 100);
             Console.WriteLine("Starting...");
-            Console.WriteLine("444");
             
 
             var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
@@ -137,17 +135,14 @@ namespace EcsDiagnostics
 
         private static IClusterProvider GetProvider()
         {
-            try
-            {
-                var kubernetes = new Kubernetes(KubernetesClientConfiguration.InClusterConfig());
-                Console.WriteLine("Running with Kubernetes Provider");
-                return new KubernetesProvider(kubernetes);
-            }
-            catch
-            {
-                Console.WriteLine("Running with Consul Provider");
-                return new ConsulProvider(new ConsulProviderConfig());
-            }
+            var client = new AmazonECSClient("", "", new AmazonECSConfig()
+                {
+                    RegionEndpoint = RegionEndpoint.EUNorth1,
+                }
+            );
+
+            Console.WriteLine("Running with ECS Provider");
+            return new AmazonEcsProvider(client, "default", new AmazonEcsProviderConfig());
         }
 
         private static IIdentityStorage GetRedisId(string clusterName)

@@ -7,12 +7,12 @@
     </PropertyGroup>
     
     <ItemGroup>
-      <PackageReference Include="KubernetesClient" Version="5.0.13" />
+      <PackageReference Include="AWSSDK.ECS" Version="3.7.2.10" />
       <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0" />
       <PackageReference Include="MongoDB.Driver" Version="2.12.4" />
+      <PackageReference Include="Proto.Cluster.AmazonECS" Version="0.20.1-alpha.0.13" />
       <PackageReference Include="Proto.Cluster.Identity.MongoDb" Version="0.20.0" />
         <PackageReference Include="Proto.Cluster.Identity.Redis" Version="0.20.0" />
-      <PackageReference Include="Proto.Cluster.Kubernetes" Version="0.20.0" />
         <PackageReference Include="Proto.Cluster.Consul" Version="0.20.0" />
       <PackageReference Include="Proto.Remote.GrpcNet" Version="0.20.0" />
         <PackageReference Include="Proto.Remote.GrpcCore" Version="0.20.0" />
