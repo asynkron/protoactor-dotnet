@@ -133,10 +133,11 @@ namespace EcsDiagnostics
 
         private static async Task<IClusterProvider> GetProvider()
         {
-            var apiKey = await AwsSecrets.GetSecret("api-key");
-            var apiSecret = await AwsSecrets.GetSecret("api-secret");
+            var secrets = await AwsSecretsManager.GetSecret("api");
+            Console.WriteLine(secrets.ApiKey);
+            Console.WriteLine(secrets.ApiSecret);
             
-            var client = new AmazonECSClient(apiKey, apiSecret, new AmazonECSConfig()
+            var client = new AmazonECSClient(secrets.ApiKey, secrets.ApiSecret, new AmazonECSConfig()
                 {
                     RegionEndpoint = RegionEndpoint.EUNorth1,
                 }
