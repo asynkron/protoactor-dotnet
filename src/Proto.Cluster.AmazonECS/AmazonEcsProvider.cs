@@ -117,15 +117,16 @@ namespace Proto.Cluster.AmazonECS
 
                     while (!_cluster.System.Shutdown.IsCancellationRequested)
                     {
-                        Logger.LogInformation("Calling ECS API");
+                        Logger.Log(_config.DebugLogLevel, "Calling ECS API");
 
                         try
                         {
                             var members = await _client.GetMembers(_ecsClusterName);
+                            
 
                             if (members != null)
                             {
-                                Logger.LogInformation("Got members {Members}", members.Length);
+                                Logger.Log(_config.DebugLogLevel, "Got members {Members}", members.Length);
                                 _cluster.MemberList.UpdateClusterTopology(members);
                             }
                             else
@@ -138,7 +139,7 @@ namespace Proto.Cluster.AmazonECS
                             Logger.LogError(x, "Failed to get members from ECS");
                         }
 
-                        await Task.Delay(5000);
+                        await Task.Delay(_config.PollIntervalSeconds);
                     }
                 }
             );
