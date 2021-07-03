@@ -55,7 +55,6 @@ namespace Proto.Cluster.AmazonECS
             _address = host + ":" + port;
             StartClusterMonitor();
             await RegisterMemberAsync();
-            MonitorMemberStatusChanges();
         }
 
         public Task StartClientAsync(Cluster cluster)
@@ -70,7 +69,6 @@ namespace Proto.Cluster.AmazonECS
             _port = port;
             _kinds = Array.Empty<string>();
             StartClusterMonitor();
-            MonitorMemberStatusChanges();
             return Task.CompletedTask;
         }
 
@@ -173,6 +171,5 @@ namespace Proto.Cluster.AmazonECS
             cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
         }
 
-        public void MonitorMemberStatusChanges() => _cluster.System.Root.Send(_clusterMonitor, new StartWatchingCluster(_clusterName));
     }
 }

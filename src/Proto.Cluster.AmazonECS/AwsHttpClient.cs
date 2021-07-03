@@ -15,17 +15,15 @@ namespace Proto.Cluster.AmazonECS
     {
         private readonly ILogger _logger = Log.CreateLogger<AwsEcsContainerMetadataHttpClient>();
 
-        public AwsEcsContainerMetadataHttpClient()
-        {
-        }
-
         public Metadata GetContainerMetadata()
         {
             if (Uri.TryCreate(Environment.GetEnvironmentVariable("ECS_CONTAINER_METADATA_URI_V4"), UriKind.Absolute, out var containerMetadataUri))
             {
                 var json = GetResponseString(containerMetadataUri);
+                _logger.LogInformation("[AwsEcsContainerMetadataHttpClient] got metadata {Metadata}", json);
                 return JsonConvert.DeserializeObject<Metadata>(json);
             }
+            _logger.LogError("[AwsEcsContainerMetadataHttpClient] failed to get Metadata");
 
             return null;
         }
@@ -58,6 +56,7 @@ namespace Proto.Cluster.AmazonECS
             }
             catch (WebException ex) when (ex.Status == WebExceptionStatus.UnknownError)
             {
+                _logger.LogError(ex, "Network is unreachable");
                 // Network is unreachable
             }
             catch (Exception ex)
