@@ -9,7 +9,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Amazon.ECS;
 using Amazon.ECS.Model;
-using Amazon.Util;
 using Task = Amazon.ECS.Model.Task;
 
 namespace Proto.Cluster.AmazonECS

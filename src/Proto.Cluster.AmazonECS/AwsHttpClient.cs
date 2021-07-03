@@ -17,13 +17,23 @@ namespace Proto.Cluster.AmazonECS
 
         public Metadata GetContainerMetadata()
         {
-            if (Uri.TryCreate(Environment.GetEnvironmentVariable("ECS_CONTAINER_METADATA_URI_V4"), UriKind.Absolute, out var containerMetadataUri))
+            try
             {
-                var json = GetResponseString(containerMetadataUri);
-                _logger.LogInformation("[AwsEcsContainerMetadataHttpClient] got metadata {Metadata}", json);
-                return JsonConvert.DeserializeObject<Metadata>(json);
+                if (Uri.TryCreate(Environment.GetEnvironmentVariable("ECS_CONTAINER_METADATA_URI_V4"), UriKind.Absolute, out var containerMetadataUri
+                ))
+                {
+                    var json = GetResponseString(containerMetadataUri);
+                    _logger.LogInformation("[AwsEcsContainerMetadataHttpClient] got metadata {Metadata}", json);
+                    return JsonConvert.DeserializeObject<Metadata>(json);
+                }
+
+                _logger.LogError("[AwsEcsContainerMetadataHttpClient] failed to get Metadata");
+
             }
-            _logger.LogError("[AwsEcsContainerMetadataHttpClient] failed to get Metadata");
+            catch(Exception x)
+            {
+                _logger.LogError(x, "[AwsEcsContainerMetadataHttpClient] failed to get Metadata");
+            }
 
             return null;
         }
