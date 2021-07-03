@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Amazon.ECS;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Proto.Mailbox;
 using Proto.Utils;
 using static Proto.Cluster.AmazonECS.Messages;
 
@@ -114,12 +113,36 @@ namespace Proto.Cluster.AmazonECS
 
         private void StartClusterMonitor()
         {
-            var props = Props
-                .FromProducer(() => new AmazonEcsClusterMonitor(_cluster, _config))
-                .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
-                .WithDispatcher(Dispatchers.SynchronousDispatcher);
-            _clusterMonitor = _cluster.System.Root.SpawnNamed(props, "ClusterMonitor");
-            
+            _ = SafeTask.Run(async () => {
+
+                    while (!_cluster.System.Shutdown.IsCancellationRequested)
+                    {
+                        Logger.LogInformation("Calling ECS API");
+
+                        try
+                        {
+                            var members = await _client.GetMembers(_ecsClusterName);
+
+                            if (members != null)
+                            {
+                                Logger.LogInformation("Got members {Members}", members.Length);
+                                _cluster.MemberList.UpdateClusterTopology(members);
+                            }
+                            else
+                            {
+                                Logger.LogWarning("Failed to get members from ECS");
+                            }
+                        }
+                        catch (Exception x)
+                        {
+                            Logger.LogError(x, "Failed to get members from ECS");
+                        }
+
+                        await Task.Delay(5000);
+                    }
+                }
+            );
+           
             _cluster.System.Root.Send(
                 _clusterMonitor,
                 new RegisterMember
@@ -145,7 +168,7 @@ namespace Proto.Cluster.AmazonECS
         private async Task DeregisterMemberInner(Cluster cluster)
         {
             Logger.LogInformation("[Cluster][AmazonEcsProvider] Unregistering service {PodName} on {PodIp}", _taskArn, _address);
-
+            await _client.UpdateMetadata(_taskArn, new Dictionary<string, string>());
             cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
         }
 
