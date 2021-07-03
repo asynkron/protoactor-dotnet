@@ -24,13 +24,11 @@ namespace EcsDiagnostics
         {
             Console.WriteLine("Starting...");
             
-
             var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
             var log = Log.CreateLogger("main");
 
             var identity = new PartitionIdentityLookup(TimeSpan.FromSeconds(2),TimeSpan.FromSeconds(2));//  new IdentityStorageLookup(GetRedisId("MyCluster"));
-
             
             /*
             - name: "REDIS"
@@ -46,11 +44,11 @@ namespace EcsDiagnostics
             var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
             var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
 
-            log.LogInformation("Host {host}", host);
-            log.LogInformation("Port {port}", port);
-            log.LogInformation("Advertised Host {advertisedHost}", advertisedHost);
+            log.LogInformation("Host {Host}", host);
+            log.LogInformation("Port {Port}", port);
+            log.LogInformation("Advertised Host {AdvertisedHost}", advertisedHost);
 
-            var clusterprovider = GetProvider();
+            var clusterProvider = await GetProvider();
 
             var system = new ActorSystem(new ActorSystemConfig()
                //     .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1))
@@ -62,7 +60,7 @@ namespace EcsDiagnostics
                     .WithEndpointWriterMaxRetries(2)
                 )
                 .WithCluster(ClusterConfig
-                    .Setup("mycluster", clusterprovider, identity)
+                    .Setup("mycluster", clusterProvider, identity)
                     .WithClusterKind("empty", Props.Empty)
                 );
 
@@ -133,9 +131,12 @@ namespace EcsDiagnostics
             Thread.Sleep(Timeout.Infinite);
         }
 
-        private static IClusterProvider GetProvider()
+        private static async Task<IClusterProvider> GetProvider()
         {
-            var client = new AmazonECSClient("", "", new AmazonECSConfig()
+            var apiKey = await AwsSecrets.GetSecret("api-key");
+            var apiSecret = await AwsSecrets.GetSecret("api-secret");
+            
+            var client = new AmazonECSClient(apiKey, apiSecret, new AmazonECSConfig()
                 {
                     RegionEndpoint = RegionEndpoint.EUNorth1,
                 }

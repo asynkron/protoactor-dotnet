@@ -8,6 +8,7 @@
     
     <ItemGroup>
       <PackageReference Include="AWSSDK.ECS" Version="3.7.2.10" />
+      <PackageReference Include="AWSSDK.SecretsManager" Version="3.7.0.36" />
       <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0" />
       <PackageReference Include="MongoDB.Driver" Version="2.12.4" />
       <PackageReference Include="Proto.Cluster.AmazonECS" Version="0.20.1-alpha.0.13" />
