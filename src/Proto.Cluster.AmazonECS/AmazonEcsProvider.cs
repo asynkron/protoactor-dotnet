@@ -21,8 +21,7 @@ namespace Proto.Cluster.AmazonECS
 
         private string _address;
         private Cluster _cluster;
-
-        private PID _clusterMonitor;
+        
         private string _clusterName;
         private string _host;
         private string[] _kinds;
@@ -72,11 +71,7 @@ namespace Proto.Cluster.AmazonECS
             return Task.CompletedTask;
         }
 
-        public async Task ShutdownAsync(bool graceful)
-        {
-            await DeregisterMemberAsync(_cluster);
-            await _cluster.System.Root.StopAsync(_clusterMonitor);
-        }
+        public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync(_cluster);
 
         public async Task RegisterMemberAsync()
         {
@@ -142,18 +137,6 @@ namespace Proto.Cluster.AmazonECS
                     }
                 }
             );
-           
-            _cluster.System.Root.Send(
-                _clusterMonitor,
-                new RegisterMember
-                {
-                    ClusterName = _clusterName,
-                    Address = _address,
-                    Port = _port,
-                    Kinds = _kinds,
-                    MemberId = _cluster.System.Id
-                }
-            );
         }
 
         public async Task DeregisterMemberAsync(Cluster cluster)
@@ -169,8 +152,6 @@ namespace Proto.Cluster.AmazonECS
         {
             Logger.LogInformation("[Cluster][AmazonEcsProvider] Unregistering service {PodName} on {PodIp}", _taskArn, _address);
             await _client.UpdateMetadata(_taskArn, new Dictionary<string, string>());
-            cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
         }
-
     }
 }
