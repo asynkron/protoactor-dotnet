@@ -126,9 +126,6 @@ namespace EcsDiagnostics
 
                 await Task.Delay(3000);
             }
-            
-
-            Thread.Sleep(Timeout.Infinite);
         }
 
         private static async Task<IClusterProvider> GetProvider()
@@ -144,7 +141,7 @@ namespace EcsDiagnostics
             );
 
             Console.WriteLine("Running with ECS Provider");
-            return new AmazonEcsProvider(client, "default", new AmazonEcsProviderConfig());
+            return new AmazonEcsProvider(client, "default", new AmazonEcsProviderConfig(2, false));
         }
 
         private static IIdentityStorage GetRedisId(string clusterName)

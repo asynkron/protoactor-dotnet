@@ -139,9 +139,6 @@ namespace KubernetesDiagnostics
 
                 await Task.Delay(3000);
             }
-            
-
-            Thread.Sleep(Timeout.Infinite);
         }
 
         private static IClusterProvider GetProvider()
