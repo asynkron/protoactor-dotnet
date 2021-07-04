@@ -24,7 +24,7 @@ namespace EcsDiagnostics
             var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
             
-            Console.WriteLine("Starting...");
+            Console.WriteLine("Starting... 0.36");
 
             var metaClient = new AwsMetaClient();
             
