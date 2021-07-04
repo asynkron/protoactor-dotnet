@@ -77,7 +77,7 @@ namespace Proto.Cluster.AmazonECS
             });
         }
 
-        public static async Task<Metadata> GetContainerMetadata()
+        public static async Task<ContainerMetadata> GetContainerMetadata()
         {
             var client = new AwsEcsContainerMetadataHttpClient();
             var metadata = client.GetContainerMetadata();

@@ -58,7 +58,7 @@ namespace Proto.Cluster.AmazonECS
         public string AwslogsStream { get; set; }
     }
 
-    public class Metadata
+    public class ContainerMetadata
     {
         [JsonProperty("DockerId")]
         public string DockerId { get; set; }

@@ -15,16 +15,39 @@ namespace Proto.Cluster.AmazonECS
     {
         private readonly ILogger _logger = Log.CreateLogger<AwsEcsContainerMetadataHttpClient>();
 
-        public Metadata GetContainerMetadata()
+        public ContainerMetadata GetContainerMetadata()
         {
             try
             {
-                if (Uri.TryCreate(Environment.GetEnvironmentVariable("ECS_CONTAINER_METADATA_URI_V4"), UriKind.Absolute, out var containerMetadataUri
-                ))
+                var str = Environment.GetEnvironmentVariable("ECS_CONTAINER_METADATA_URI_V4");
+                if (Uri.TryCreate(str, UriKind.Absolute, out var containerMetadataUri))
                 {
                     var json = GetResponseString(containerMetadataUri);
-                    _logger.LogInformation("[AwsEcsContainerMetadataHttpClient] got metadata {Metadata}", json);
-                    return JsonConvert.DeserializeObject<Metadata>(json);
+                    _logger.LogInformation("[AwsEcsContainerMetadataHttpClient] got metadata for container {Metadata}", json);
+                    return JsonConvert.DeserializeObject<ContainerMetadata>(json);
+                }
+
+                _logger.LogError("[AwsEcsContainerMetadataHttpClient] failed to get Metadata");
+
+            }
+            catch(Exception x)
+            {
+                _logger.LogError(x, "[AwsEcsContainerMetadataHttpClient] failed to get Metadata");
+            }
+
+            return null;
+        }
+        
+        public TaskMetadata GetTaskMetadata()
+        {
+            try
+            {
+                var str = Environment.GetEnvironmentVariable("ECS_CONTAINER_METADATA_URI_V4") + "/taskWithTags";
+                if (Uri.TryCreate(str, UriKind.Absolute, out var containerMetadataUri))
+                {
+                    var json = GetResponseString(containerMetadataUri);
+                    _logger.LogInformation("[AwsEcsContainerMetadataHttpClient] got metadata for task {Metadata}", json);
+                    return JsonConvert.DeserializeObject<TaskMetadata>(json);
                 }
 
                 _logger.LogError("[AwsEcsContainerMetadataHttpClient] failed to get Metadata");

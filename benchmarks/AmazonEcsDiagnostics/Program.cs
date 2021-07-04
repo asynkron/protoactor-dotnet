@@ -28,7 +28,7 @@ namespace EcsDiagnostics
             var metadata = await EcsUtils.GetContainerMetadata();
             var advertisedHost = metadata.Networks.First().IPv4Addresses.First();
             Console.WriteLine("Using advertised host " + advertisedHost);
-            var taskArn = metadata.TaskARN;
+            var taskArn = metadata.ContainerARN;
             Console.WriteLine("Using task arn " + taskArn);
             
             
@@ -147,7 +147,7 @@ namespace EcsDiagnostics
             );
 
             Console.WriteLine("Running with ECS Provider");
-            return new AmazonEcsProvider(client, "default", new AmazonEcsProviderConfig(2, true));
+            return new AmazonEcsProvider(client, "default","", new AmazonEcsProviderConfig(2, true));
         }
 
         private static IIdentityStorage GetRedisId(string clusterName)
