@@ -67,7 +67,7 @@ namespace EcsDiagnostics
             log.LogInformation("Port {Port}", port);
             log.LogInformation("Advertised Host {AdvertisedHost}", advertisedHost);
 
-            var clusterProvider = await GetProvider();
+            var clusterProvider = await GetProvider(taskArn);
 
             var system = new ActorSystem(new ActorSystemConfig()
                //     .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1))
@@ -146,7 +146,7 @@ namespace EcsDiagnostics
             }
         }
 
-        private static async Task<IClusterProvider> GetProvider()
+        private static async Task<IClusterProvider> GetProvider(string taskArn)
         {
             var secrets = await AwsSecretsManager.GetSecret("api");
             Console.WriteLine(secrets.ApiKey);
@@ -159,7 +159,7 @@ namespace EcsDiagnostics
             );
 
             Console.WriteLine("Running with ECS Provider");
-            return new AmazonEcsProvider(client, "default","", new AmazonEcsProviderConfig(2, true));
+            return new AmazonEcsProvider(client, "default", taskArn, new AmazonEcsProviderConfig(2, true));
         }
 
         private static IIdentityStorage GetRedisId(string clusterName)
