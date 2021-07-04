@@ -146,7 +146,7 @@ namespace EcsDiagnostics
             );
 
             Console.WriteLine("Running with ECS Provider");
-            return new AmazonEcsProvider(client, "default", new AmazonEcsProviderConfig(2, false));
+            return new AmazonEcsProvider(client, "default", new AmazonEcsProviderConfig(2, true));
         }
 
         private static IIdentityStorage GetRedisId(string clusterName)
