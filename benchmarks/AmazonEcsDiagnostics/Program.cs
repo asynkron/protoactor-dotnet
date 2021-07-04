@@ -33,8 +33,14 @@ namespace EcsDiagnostics
             Console.WriteLine("Using advertised host " + advertisedHost);
             var containerArn = containerMetadata.ContainerARN;
             Console.WriteLine("Using container arn " + containerArn);
-            var taskArn = taskMetadata.TaskARN;
+            var taskArn = taskMetadata?.TaskARN;
             Console.WriteLine("Using task arn " + taskArn);
+
+            if (taskArn == null)
+            {
+                Console.WriteLine("Exit....");
+                return;
+            }
             
             var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
