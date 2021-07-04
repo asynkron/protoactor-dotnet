@@ -32,11 +32,12 @@ namespace Proto.Cluster.AmazonECS
         private readonly AmazonECSClient _client;
         private readonly string _ecsClusterName;
 
-        public AmazonEcsProvider(AmazonECSClient client,string ecsClusterName , AmazonEcsProviderConfig config)
+        public AmazonEcsProvider(AmazonECSClient client,string ecsClusterName, string taskArn , AmazonEcsProviderConfig config)
         {
             _ecsClusterName = ecsClusterName;
             _client = client;
             _config = config;
+            _taskArn = taskArn;
         }
 
         public async Task StartMemberAsync(Cluster cluster)
@@ -86,7 +87,6 @@ namespace Proto.Cluster.AmazonECS
         {
             var metadata = await EcsUtils.GetContainerMetadata();
             Logger.LogInformation("[Cluster][AmazonEcsProvider] Got metadata");
-            _taskArn = metadata.TaskARN;
             Logger.LogInformation("[Cluster][AmazonEcsProvider] Registering service {PodName} on {PodIp}", _taskArn, _address);
 
             var tags = new Dictionary<string, string>

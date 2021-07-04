@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Amazon;
 using Amazon.ECS;
@@ -28,6 +27,9 @@ namespace EcsDiagnostics
 
             var metadata = await EcsUtils.GetContainerMetadata();
             var advertisedHost = metadata.Networks.First().IPv4Addresses.First();
+            Console.WriteLine("Using advertised host " + advertisedHost);
+            var taskArn = metadata.TaskARN;
+            Console.WriteLine("Using task arn " + taskArn);
             
             
             var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
@@ -46,8 +48,8 @@ namespace EcsDiagnostics
             - name: "PROTOHOSTPUBLIC"
              */
 
-            var port = int.Parse(Environment.GetEnvironmentVariable("PROTOPORT") ?? "0");
-            var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
+            var port = 0;
+            var host = "127.0.0.1";
 
             log.LogInformation("Host {Host}", host);
             log.LogInformation("Port {Port}", port);
@@ -95,8 +97,7 @@ namespace EcsDiagnostics
 
             var props = Props.FromFunc(ctx => Task.CompletedTask);
             system.Root.SpawnNamed(props, "dummy");
-
-
+            
             while (true)
             {
                 var res = await system.Cluster().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));

@@ -8,19 +8,12 @@ using Newtonsoft.Json;
 
 namespace Proto.Cluster.AmazonECS
 {
-    public class PortMapping
+  
+
+    public class Limits
     {
-        [JsonProperty("ContainerPort")]
-        public int ContainerPort { get; set; }
-
-        [JsonProperty("HostPort")]
-        public int HostPort { get; set; }
-
-        [JsonProperty("BindIp")]
-        public string BindIp { get; set; }
-
-        [JsonProperty("Protocol")]
-        public string Protocol { get; set; }
+        [JsonProperty("CPU")]
+        public int CPU { get; set; }
     }
 
     public class Network
@@ -30,41 +23,88 @@ namespace Proto.Cluster.AmazonECS
 
         [JsonProperty("IPv4Addresses")]
         public List<string> IPv4Addresses { get; set; }
+
+        [JsonProperty("AttachmentIndex")]
+        public int AttachmentIndex { get; set; }
+
+        [JsonProperty("MACAddress")]
+        public string MACAddress { get; set; }
+
+        [JsonProperty("IPv4SubnetCIDRBlock")]
+        public string IPv4SubnetCIDRBlock { get; set; }
+
+        [JsonProperty("DomainNameServers")]
+        public List<string> DomainNameServers { get; set; }
+
+        [JsonProperty("DomainNameSearchList")]
+        public List<string> DomainNameSearchList { get; set; }
+
+        [JsonProperty("PrivateDNSName")]
+        public string PrivateDNSName { get; set; }
+
+        [JsonProperty("SubnetGatewayIpv4Address")]
+        public string SubnetGatewayIpv4Address { get; set; }
+    }
+
+    public class LogOptions
+    {
+        [JsonProperty("awslogs-group")]
+        public string AwslogsGroup { get; set; }
+
+        [JsonProperty("awslogs-region")]
+        public string AwslogsRegion { get; set; }
+
+        [JsonProperty("awslogs-stream")]
+        public string AwslogsStream { get; set; }
     }
 
     public class Metadata
     {
-        [JsonProperty("Cluster")]
-        public string Cluster { get; set; }
+        [JsonProperty("DockerId")]
+        public string DockerId { get; set; }
 
-        [JsonProperty("ContainerInstanceARN")]
-        public string ContainerInstanceARN { get; set; }
+        [JsonProperty("Name")]
+        public string Name { get; set; }
 
-        [JsonProperty("TaskARN")]
-        public string TaskARN { get; set; }
+        [JsonProperty("DockerName")]
+        public string DockerName { get; set; }
 
-        [JsonProperty("ContainerID")]
-        public string ContainerID { get; set; }
-
-        [JsonProperty("ContainerName")]
-        public string ContainerName { get; set; }
-
-        [JsonProperty("DockerContainerName")]
-        public string DockerContainerName { get; set; }
+        [JsonProperty("Image")]
+        public string Image { get; set; }
 
         [JsonProperty("ImageID")]
         public string ImageID { get; set; }
 
-        [JsonProperty("ImageName")]
-        public string ImageName { get; set; }
+        [JsonProperty("DesiredStatus")]
+        public string DesiredStatus { get; set; }
 
-        [JsonProperty("PortMappings")]
-        public List<PortMapping> PortMappings { get; set; }
+        [JsonProperty("KnownStatus")]
+        public string KnownStatus { get; set; }
+
+        [JsonProperty("Limits")]
+        public Limits Limits { get; set; }
+
+        [JsonProperty("CreatedAt")]
+        public string CreatedAt { get; set; }
+
+        [JsonProperty("StartedAt")]
+        public string StartedAt { get; set; }
+
+        [JsonProperty("Type")]
+        public string Type { get; set; }
 
         [JsonProperty("Networks")]
         public List<Network> Networks { get; set; }
 
-        [JsonProperty("MetadataFileStatus")]
-        public string MetadataFileStatus { get; set; }
+        [JsonProperty("ContainerARN")]
+        public string ContainerARN { get; set; }
+
+        [JsonProperty("LogOptions")]
+        public LogOptions LogOptions { get; set; }
+
+        [JsonProperty("LogDriver")]
+        public string LogDriver { get; set; }
     }
+
+
 }
