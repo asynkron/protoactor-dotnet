@@ -29,20 +29,4 @@ services:
         # This special IP address is recognized by the AWS SDKs and AWS CLI
         ipv4_address: "169.254.170.2"
 
-  # Here we configure the application container that we are testing
-  # You can test multiple containers at a time, simply duplicate this section
-  # and customize it for each container, and give it a unique IP in 'credentials_network'.
-  app:
-    image: rogeralsing/ecsproto:latest
-    depends_on:
-      - ecs-local-endpoints
-    networks:
-      credentials_network:
-        ipv4_address: "169.254.170.3"
-    environment:
-      AWS_DEFAULT_REGION: "eu-north-1"
-      # This ENV VAR enables credentials
-      # Set it to "/creds" or "/role/<role name>"
-      AWS_CONTAINER_CREDENTIALS_RELATIVE_URI: "/creds"
-      # Enables V3 Metadata
-      ECS_CONTAINER_METADATA_URI: "http://169.254.170.2/v3"
+  

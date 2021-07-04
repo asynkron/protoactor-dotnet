@@ -17,6 +17,31 @@ namespace EcsDiagnostics
     public class AwsMetaClient
     {
         private readonly ILogger _logger = Log.CreateLogger<AwsEcsContainerMetadataHttpClient>();
+        
+        
+        //
+        // public string GetFoo()
+        // {
+        //     var str = Environment.GetEnvironmentVariable("ECS_CONTAINER_METADATA_URI_V4") + "/meta-data/local-ipv";
+        //     try
+        //     {
+        //         if (Uri.TryCreate(str, UriKind.Absolute, out var containerMetadataUri))
+        //         {
+        //             var json = GetResponseString(containerMetadataUri);
+        //             _logger.LogInformation("[AwsEcsContainerMetadataHttpClient] got metadata for container {Metadata}", json);
+        //             return json;
+        //         }
+        //
+        //         _logger.LogError("[AwsEcsContainerMetadataHttpClient] failed to get Metadata {Url}",str);
+        //
+        //     }
+        //     catch(Exception x)
+        //     {
+        //         _logger.LogError(x, "[AwsEcsContainerMetadataHttpClient] failed to get Metadata {Url}",str);
+        //     }
+        //
+        //     return null;
+        // }
 
         public ContainerMetadata GetContainerMetadata()
         {

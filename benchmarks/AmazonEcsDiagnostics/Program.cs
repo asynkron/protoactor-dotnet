@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Amazon;
 using Amazon.ECS;
+using Amazon.ECS.Model;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
@@ -14,6 +15,7 @@ using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using StackExchange.Redis;
+using Task = System.Threading.Tasks.Task;
 
 namespace EcsDiagnostics
 {
@@ -21,18 +23,37 @@ namespace EcsDiagnostics
     {
         public static async Task Main()
         {
+            foreach (System.Collections.DictionaryEntry env in Environment.GetEnvironmentVariables()) {
+                Console.WriteLine("{0}={1}", (string)env.Key, (string)env.Value);
+            }
+            
             var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
             
             Console.WriteLine("Starting... 0.36");
+            
+            var secrets = await AwsSecretsManager.GetSecret("api");
+            Console.WriteLine("Api Key " +  secrets.ApiKey);
+            Console.WriteLine("Api Secret " +  secrets.ApiSecret);
+            
+            var client = new AmazonECSClient(secrets.ApiKey, secrets.ApiSecret, new AmazonECSConfig()
+                {
+                    RegionEndpoint = RegionEndpoint.EUNorth1,
+                }
+            );
+            
+
+            
 
             var metaClient = new AwsMetaClient();
+            
             
             //Getting container metadata
 
             var containerMetadata = metaClient.GetContainerMetadata();
             var taskMetadata = metaClient.GetTaskMetadata();
-            var advertisedHost = containerMetadata.Networks.First().IPv4Addresses.First();
+            
+            var advertisedHost = Environment.GetEnvironmentVariable("HOSTNAME"); // containerMetadata.Networks.First().IPv4Addresses.First();
             Console.WriteLine("Using advertised host " + advertisedHost);
             var containerArn = containerMetadata.ContainerARN;
             Console.WriteLine("Using container arn " + containerArn);
@@ -44,7 +65,7 @@ namespace EcsDiagnostics
                 Console.WriteLine("Exit....");
                 return;
             }
-            
+
 
             var log = Log.CreateLogger("main");
 
@@ -61,13 +82,13 @@ namespace EcsDiagnostics
              */
 
             var port = 8080;
-            var host = "127.0.0.1";
+            var host = "0.0.0.0";
 
             log.LogInformation("Host {Host}", host);
             log.LogInformation("Port {Port}", port);
             log.LogInformation("Advertised Host {AdvertisedHost}", advertisedHost);
 
-            var clusterProvider = await GetProvider(taskArn);
+            var clusterProvider = await GetProvider(client, taskArn);
 
             var system = new ActorSystem(new ActorSystemConfig()
                //     .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1))
@@ -146,23 +167,13 @@ namespace EcsDiagnostics
             }
         }
 
-        private static async Task<IClusterProvider> GetProvider(string taskArn)
+        private static async Task<IClusterProvider> GetProvider(AmazonECSClient client, string taskArn)
         {
-            var secrets = await AwsSecretsManager.GetSecret("api");
-            Console.WriteLine(secrets.ApiKey);
-            Console.WriteLine(secrets.ApiSecret);
-            
-            var client = new AmazonECSClient(secrets.ApiKey, secrets.ApiSecret, new AmazonECSConfig()
-                {
-                    RegionEndpoint = RegionEndpoint.EUNorth1,
-                }
-            );
-
             Console.WriteLine("Running with ECS Provider");
             return new AmazonEcsProvider(client, "default", taskArn, new AmazonEcsProviderConfig(2, true));
         }
 
-        private static IIdentityStorage GetRedisId(string clusterName)
+        private static IIdentityStorage GetRedisId( string clusterName)
         {
             var connectionString =
                 Environment.GetEnvironmentVariable("REDIS");
