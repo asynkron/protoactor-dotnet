@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Amazon;
 using Amazon.ECS;
-using Amazon.ECS.Model;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
@@ -23,10 +22,6 @@ namespace EcsDiagnostics
     {
         public static async Task Main()
         {
-            foreach (System.Collections.DictionaryEntry env in Environment.GetEnvironmentVariables()) {
-                Console.WriteLine("{0}={1}", (string)env.Key, (string)env.Value);
-            }
-            
             var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
             
@@ -42,19 +37,11 @@ namespace EcsDiagnostics
                 }
             );
             
-
-            
-
             var metaClient = new AwsMetaClient();
-            
-            
-            //Getting container metadata
-
             var containerMetadata = metaClient.GetContainerMetadata();
             var taskMetadata = metaClient.GetTaskMetadata();
             
-            var advertisedHost = Environment.GetEnvironmentVariable("HOSTNAME"); // containerMetadata.Networks.First().IPv4Addresses.First();
-            Console.WriteLine("Using advertised host " + advertisedHost);
+            
             var containerArn = containerMetadata.ContainerARN;
             Console.WriteLine("Using container arn " + containerArn);
             var taskArn = taskMetadata?.TaskARN;
@@ -81,8 +68,9 @@ namespace EcsDiagnostics
             - name: "PROTOHOSTPUBLIC"
              */
 
-            var port = 8080;
+            var port = 0;
             var host = "0.0.0.0";
+            var advertisedHost = Environment.GetEnvironmentVariable("HOSTNAME");
 
             log.LogInformation("Host {Host}", host);
             log.LogInformation("Port {Port}", port);
