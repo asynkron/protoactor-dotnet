@@ -22,15 +22,19 @@ namespace EcsDiagnostics
         public static async Task Main()
         {
             Console.WriteLine("Starting...");
+
+            var metaClient = new AwsEcsContainerMetadataHttpClient();
             
             //Getting container metadata
 
-            var metadata = await EcsUtils.GetContainerMetadata();
-            var advertisedHost = metadata.Networks.First().IPv4Addresses.First();
+            var containerMetadata = metaClient.GetContainerMetadata();
+            var taskMetadata = metaClient.GetTaskMetadata();
+            var advertisedHost = containerMetadata.Networks.First().IPv4Addresses.First();
             Console.WriteLine("Using advertised host " + advertisedHost);
-            var taskArn = metadata.ContainerARN;
+            var containerArn = containerMetadata.ContainerARN;
+            Console.WriteLine("Using container arn " + containerArn);
+            var taskArn = taskMetadata.TaskARN;
             Console.WriteLine("Using task arn " + taskArn);
-            
             
             var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
