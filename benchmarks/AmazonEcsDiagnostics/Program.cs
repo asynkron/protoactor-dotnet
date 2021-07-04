@@ -24,6 +24,12 @@ namespace EcsDiagnostics
         {
             Console.WriteLine("Starting...");
             
+            //Getting container metadata
+
+            var metadata = await EcsUtils.GetContainerMetadata();
+            var advertisedHost = metadata.Networks.First().IPv4Addresses.First();
+            
+            
             var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
             var log = Log.CreateLogger("main");
@@ -42,7 +48,6 @@ namespace EcsDiagnostics
 
             var port = int.Parse(Environment.GetEnvironmentVariable("PROTOPORT") ?? "0");
             var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
-            var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
 
             log.LogInformation("Host {Host}", host);
             log.LogInformation("Port {Port}", port);
