@@ -9,12 +9,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Amazon.ECS;
 using Amazon.ECS.Model;
+using Microsoft.Extensions.Logging;
 using Task = Amazon.ECS.Model.Task;
 
 namespace Proto.Cluster.AmazonECS
 {
     public static class EcsUtils
     {
+        private static readonly ILogger Logger = Log.CreateLogger(nameof(EcsUtils));
         public static async Task<Member[]> GetMembers(this AmazonECSClient c, string ecsClusterName)
         {
             var allTasks = await c.ListTasksAsync(new ListTasksRequest()
@@ -41,6 +43,13 @@ namespace Proto.Cluster.AmazonECS
             foreach (var task in describedTasks.Tasks)
             {
                 var metadata = task.GetMetadata();
+                
+                if (!metadata.ContainsKey(ProtoLabels.LabelMemberId))
+                {
+                    Logger.LogWarning("Skipping Task {Arn}, no Proto Tags found", task.TaskArn);
+                    continue;
+                }
+                
                 var kinds = metadata
                     .Where(kvp => kvp.Key.StartsWith(ProtoLabels.LabelKind))
                     .Select(kvp => kvp.Key[ProtoLabels.LabelKind.Length..]).ToArray();

@@ -100,7 +100,14 @@ namespace Proto.Cluster.AmazonECS
                 tags.TryAdd(labelKey, "true");
             }
 
-            await _client.UpdateMetadata(_taskArn, tags);
+            try
+            {
+                await _client.UpdateMetadata(_taskArn, tags);
+            }
+            catch(Exception x)
+            {
+                Logger.LogError(x, "Failed to update metadata");
+            }
         }
 
         private void StartClusterMonitor()
