@@ -52,7 +52,7 @@ namespace Proto.Cluster.AmazonECS
                 
                 var kinds = metadata
                     .Where(kvp => kvp.Key.StartsWith(ProtoLabels.LabelKind))
-                    .Select(kvp => kvp.Key[ProtoLabels.LabelKind.Length..]).ToArray();
+                    .Select(kvp => kvp.Key[(ProtoLabels.LabelKind.Length+1)..]).ToArray();
                 
                 var member = new Member
                 {

@@ -60,7 +60,7 @@ namespace EcsDiagnostics
             - name: "PROTOHOSTPUBLIC"
              */
 
-            var port = 0;
+            var port = 8080;
             var host = "127.0.0.1";
 
             log.LogInformation("Host {Host}", host);
