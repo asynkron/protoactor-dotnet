@@ -21,9 +21,12 @@ namespace EcsDiagnostics
     {
         public static async Task Main()
         {
+            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
+            Log.SetLoggerFactory(l);
+            
             Console.WriteLine("Starting...");
 
-            var metaClient = new AwsEcsContainerMetadataHttpClient();
+            var metaClient = new AwsMetaClient();
             
             //Getting container metadata
 
@@ -42,8 +45,7 @@ namespace EcsDiagnostics
                 return;
             }
             
-            var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
-            Log.SetLoggerFactory(l);
+
             var log = Log.CreateLogger("main");
 
             var identity = new PartitionIdentityLookup(TimeSpan.FromSeconds(2),TimeSpan.FromSeconds(2));//  new IdentityStorageLookup(GetRedisId("MyCluster"));

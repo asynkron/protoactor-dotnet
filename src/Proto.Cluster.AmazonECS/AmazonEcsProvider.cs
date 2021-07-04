@@ -85,8 +85,6 @@ namespace Proto.Cluster.AmazonECS
 
         public async Task RegisterMemberInner()
         {
-            var metadata = await EcsUtils.GetContainerMetadata();
-            Logger.LogInformation("[Cluster][AmazonEcsProvider] Got metadata");
             Logger.LogInformation("[Cluster][AmazonEcsProvider] Registering service {PodName} on {PodIp}", _taskArn, _address);
 
             var tags = new Dictionary<string, string>

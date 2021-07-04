@@ -76,14 +76,5 @@ namespace Proto.Cluster.AmazonECS
                 Tags = tags,
             });
         }
-
-        public static async Task<ContainerMetadata> GetContainerMetadata()
-        {
-            var client = new AwsEcsContainerMetadataHttpClient();
-            var metadata = client.GetContainerMetadata();
-            return metadata;
-        }
-        
-        // public static IDictionary<string,string> 
     }
 }
