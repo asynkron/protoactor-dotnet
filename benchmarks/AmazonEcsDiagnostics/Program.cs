@@ -58,16 +58,6 @@ namespace EcsDiagnostics
 
             var identity = new PartitionIdentityLookup(TimeSpan.FromSeconds(2),TimeSpan.FromSeconds(2));//  new IdentityStorageLookup(GetRedisId("MyCluster"));
             
-            /*
-            - name: "REDIS"
-              value: "redis"
-            - name: PROTOPORT
-              value: "8080"
-            - name: PROTOHOST
-              value: "0.0.0.0"
-            - name: "PROTOHOSTPUBLIC"
-             */
-
             var port = 0;
             var host = "0.0.0.0";
             var advertisedHost = Environment.GetEnvironmentVariable("HOSTNAME");
@@ -92,23 +82,16 @@ namespace EcsDiagnostics
                     .WithClusterKind("empty", Props.Empty)
                 );
 
-            system.EventStream.Subscribe<GossipUpdate>(e => {
-                    Console.WriteLine($"{DateTime.Now:O} Gossip update Member {e.MemberId} Key {e.Key}");
-                }
-            );
+            // system.EventStream.Subscribe<GossipUpdate>(e => {
+            //         Console.WriteLine($"{DateTime.Now:O} Gossip update Member {e.MemberId} Key {e.Key}");
+            //     }
+            // );
             
             system.EventStream.Subscribe<ClusterTopology>(e => {
-                var members = e.Members;
-                var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
-                var key = string.Join("", x);
-                var hash = MurmurHash2.Hash(key);
+                    var members = e.Members;
+                var hash = Member.TopologyHash(members);
 
                 Console.WriteLine($"{DateTime.Now:O} My members {hash}");
-
-                // foreach (var member in members.OrderBy(m => m.Id))
-                // {
-                //     Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds);
-                // }
             }
             );
 
@@ -158,7 +141,7 @@ namespace EcsDiagnostics
         private static async Task<IClusterProvider> GetProvider(AmazonECSClient client, string taskArn)
         {
             Console.WriteLine("Running with ECS Provider");
-            return new AmazonEcsProvider(client, "default", taskArn, new AmazonEcsProviderConfig(2, true));
+            return new AmazonEcsProvider(client, "default", taskArn, new AmazonEcsProviderConfig(10, false));
         }
 
         private static IIdentityStorage GetRedisId( string clusterName)
