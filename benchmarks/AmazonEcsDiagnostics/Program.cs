@@ -24,9 +24,8 @@ namespace EcsDiagnostics
         {
             var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
-            
-            Console.WriteLine("Starting... 0.36");
-            
+            var log = Log.CreateLogger("main");
+
             var secrets = await AwsSecretsManager.GetSecret("api");
             Console.WriteLine("Api Key " +  secrets.ApiKey);
             Console.WriteLine("Api Secret " +  secrets.ApiSecret);
@@ -38,23 +37,8 @@ namespace EcsDiagnostics
             );
             
             var metaClient = new AwsMetaClient();
-            var containerMetadata = metaClient.GetContainerMetadata();
             var taskMetadata = metaClient.GetTaskMetadata();
-            
-            
-            var containerArn = containerMetadata.ContainerARN;
-            Console.WriteLine("Using container arn " + containerArn);
             var taskArn = taskMetadata?.TaskARN;
-            Console.WriteLine("Using task arn " + taskArn);
-
-            if (taskArn == null)
-            {
-                Console.WriteLine("Exit....");
-                return;
-            }
-
-
-            var log = Log.CreateLogger("main");
 
             var identity = new PartitionIdentityLookup(TimeSpan.FromSeconds(2),TimeSpan.FromSeconds(2));//  new IdentityStorageLookup(GetRedisId("MyCluster"));
             
