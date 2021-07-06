@@ -16,11 +16,14 @@ namespace Proto.Cluster.Gossip
 {
     public class GossipActor : IActor
     {
+        private readonly TimeSpan _gossipRequestTimeout;
         private static readonly ILogger Logger = Log.CreateLogger<GossipActor>();
         private long _localSequenceNo;
         private GossipState _state = new();
         private readonly Random _rnd = new();
         private ImmutableDictionary<string, long> _committedOffsets = ImmutableDictionary<string, long>.Empty;
+
+        public GossipActor(TimeSpan gossipRequestTimeout) => _gossipRequestTimeout = gossipRequestTimeout;
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
@@ -159,7 +162,7 @@ namespace Proto.Cluster.Gossip
             var t = context.RequestAsync<GossipResponse>(pid, new GossipRequest
                 {
                     State = stateForMember,
-                }, CancellationTokens.WithTimeout(500)
+                }, CancellationTokens.WithTimeout(_gossipRequestTimeout)
             );
 
             context.ReenterAfter(t, async tt => {

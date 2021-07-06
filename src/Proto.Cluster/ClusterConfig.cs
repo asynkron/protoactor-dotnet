@@ -23,6 +23,7 @@ namespace Proto.Cluster
             MaxNumberOfEventsInRequestLogThrottlePeriod = 3;
             RequestLogThrottlePeriod = TimeSpan.FromSeconds(2);
             GossipInterval = TimeSpan.FromMilliseconds(300);
+            GossipRequestTimeout = TimeSpan.FromMilliseconds(500);
             GossipFanout = 3;
             ClusterRequestDeDuplication = true;
             ClusterRequestDeDuplicationWindow = TimeSpan.FromSeconds(30);
@@ -49,6 +50,7 @@ namespace Proto.Cluster
 
         public IIdentityLookup IdentityLookup { get; }
         public TimeSpan GossipInterval { get; init; }
+        public TimeSpan GossipRequestTimeout { get; init; }
 
         public bool ClusterRequestDeDuplication { get; init; }
 
@@ -100,7 +102,10 @@ namespace Proto.Cluster
         
         public ClusterConfig WithGossipFanOut(int fanout) =>
             this with {GossipFanout = fanout};
-        
+
+        public ClusterConfig WithGossipRequestTimeout(TimeSpan timeout) =>
+            this with { GossipRequestTimeout = timeout };
+
 
         public static ClusterConfig Setup(
             string clusterName,
