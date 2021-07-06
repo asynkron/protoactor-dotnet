@@ -115,7 +115,7 @@ namespace Proto.Context
             if (duration == ReceiveTimeout) return;
 
             ReceiveTimeout = duration;
-            
+
             EnsureExtras();
             _extras!.StopReceiveTimeoutTimer();
 
@@ -159,7 +159,7 @@ namespace Proto.Context
                     break;
             }
         }
-        
+
         public void Request(PID target, object message, PID? sender)
         {
             var messageEnvelope = new MessageEnvelope(message, sender);
@@ -284,7 +284,7 @@ namespace Proto.Context
                 var res = System.Config.DiagnosticsSerializer(Actor!);
                 diagnosticsString += res;
             }
-            
+
             processDiagnosticsRequest.Result.SetResult(diagnosticsString);
 
             return default;
@@ -379,13 +379,11 @@ namespace Proto.Context
         public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox) =>
             new(system, props, parent, self, mailbox);
 
+        //Note to self, the message must be sent no-matter if the task failed or not.
+        //do not mess this up by first awaiting and then sending on success only
         private void ScheduleContinuation(Task target, Continuation cont) =>
-            _ = SafeTask.Run(async () => {
-                    await target;
-                    Self.SendSystemMessage(System, cont);
-                }
-                , CancellationToken.None
-            );
+            // ReSharper disable once MethodSupportsCancellation
+            _ = target.ContinueWith(_ => Self.SendSystemMessage(System, cont));
 
         private static ValueTask HandleUnknownSystemMessage(object msg)
         {
@@ -422,9 +420,9 @@ namespace Proto.Context
         private Task HandleAutoRespond(IAutoRespond autoRespond)
         {
             // receive normally
-            var res =  Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this);
+            var res = Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this);
             //then respond automatically
-            var response = autoRespond.GetAutoResponse();
+            var response = autoRespond.GetAutoResponse(this);
             Respond(response);
             //return task from receive
             return res;

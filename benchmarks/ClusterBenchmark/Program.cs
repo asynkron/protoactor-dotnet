@@ -35,6 +35,7 @@ namespace ClusterExperiment1
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             //    ThreadPool.SetMinThreads(500, 500);
             Request = new HelloRequest();
+            Configuration.SetupLogger(LogLevel.Error);
 
             if (args.Length > 0)
             {
@@ -43,10 +44,9 @@ namespace ClusterExperiment1
                 var worker = await Configuration.SpawnMember();
                 AppDomain.CurrentDomain.ProcessExit += (sender, args) => { worker.ShutdownAsync().Wait(); };
                 Thread.Sleep(Timeout.Infinite);
+                
                 return;
             }
-
-            Configuration.SetupLogger();
 
             ts = new TaskCompletionSource<bool>();
 
@@ -97,6 +97,8 @@ namespace ClusterExperiment1
                 Console.WriteLine("1) Run single request client");
                 Console.WriteLine("2) Run batch requests client");
                 Console.WriteLine("3) Run fire and forget client");
+                Console.WriteLine("4) Run single request debug client");
+                Console.WriteLine("5) NoOp - Stability");
 
                 clientStrategy = Console.ReadLine() ?? "";
 
@@ -127,6 +129,8 @@ namespace ClusterExperiment1
                 "1" => () => RunClient(),
                 "2" => () => RunBatchClient(batchSize),
                 "3" => () => RunFireForgetClient(),
+                "4" => () => RunDebugClient(),
+                "5" => () => RunNoopClient(),
                 _   => throw new ArgumentOutOfRangeException()
             };
 
@@ -145,6 +149,11 @@ namespace ClusterExperiment1
             Console.WriteLine($"Successful:\t{successCount:N0}");
             Console.WriteLine($"Failures:\t{failureCount:N0}");
             Console.WriteLine($"Throughput:\t{tps:N0} requests/sec -> {(tps * 2):N0} msg/sec");
+        }
+
+        private static void RunNoopClient()
+        {
+            
         }
 
         private static void RunFireForgetClient()
@@ -206,14 +215,10 @@ namespace ClusterExperiment1
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.Write("X");
                 Console.ResetColor();
-
-                var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
-
-                il?.DumpState(id);
             }
         }
         
-        private static async Task SendRequest(Cluster cluster, string id, CancellationToken cancellationToken, ISenderContext? context = null)
+        private static async Task<bool> SendRequest(Cluster cluster, string id, CancellationToken cancellationToken, ISenderContext? context = null)
         {
             Interlocked.Increment(ref requestCount);
 
@@ -237,7 +242,7 @@ namespace ClusterExperiment1
                         Console.ResetColor();
                     }
 
-                    return;
+                    return true;
                 }
 
                 OnError();
@@ -247,6 +252,8 @@ namespace ClusterExperiment1
                 OnError();
             }
 
+            return false;
+
             void OnError()
             {
                 Interlocked.Increment(ref failureCount);
@@ -254,10 +261,6 @@ namespace ClusterExperiment1
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.Write("X");
                 Console.ResetColor();
-
-                var il = cluster.Config.IdentityLookup as PartitionIdentityLookup;
-
-                il?.DumpState(ClusterIdentity.Create(id, "hello"));
             }
         }
 
@@ -296,7 +299,7 @@ namespace ClusterExperiment1
                     for (var i = 0; i < batchSize; i++)
                     {
                         var id = identities![rnd!.Next(0, actorCount)];
-                        var request = SendRequest(cluster, id, CancellationToken.None, ctx);
+                        var request = SendRequest(cluster, id, ct, ctx);
 
                         requests.Add(request);
                     }
@@ -308,6 +311,38 @@ namespace ClusterExperiment1
                     logger.LogError(x, "Error...");
                 }
             }
+        }
+        
+        private static void RunDebugClient()
+        {
+            var logger = Log.CreateLogger(nameof(Program));
+
+            _ = SafeTask.Run(async () => {
+                    var cluster = await Configuration.SpawnClient();
+                    var rnd = new Random();
+
+                    while (true)
+                    {
+                        var id = "myactor" + rnd.Next(0, actorCount);
+                        var ct = CancellationTokens.WithTimeout(20_000);
+                        var res = await SendRequest(cluster, id, ct);
+
+                        if (!res)
+                        {
+                            var pid = await cluster.GetAsync(ClusterIdentity.Create(id,"hello"),CancellationTokens.FromSeconds(10));
+
+                            if (pid != null)
+                            {
+                                logger.LogError("Failed call to {Id} - {Address}", id, pid.Address);
+                            }
+                            else
+                            {
+                                logger.LogError("Failed call to {Id} - Null PID", id);
+                            }
+                        }
+                    }
+                }
+            );
         }
 
         private static void RunClient()
@@ -336,10 +371,12 @@ namespace ClusterExperiment1
             {
                 var p = memberFactory();
                 await p.Start();
+                await Task.Delay(500);
+                Console.WriteLine("Worker started...");
                 followers.Add(p);
             }
 
-            await Task.Delay(8000);
+            await Task.Delay(15000);
 
             startClient();
             Console.WriteLine("Client started...");

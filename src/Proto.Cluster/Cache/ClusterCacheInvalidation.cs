@@ -3,7 +3,6 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Collections;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,6 +10,8 @@ using Proto.Extensions;
 
 namespace Proto.Cluster.Cache
 {
+    delegate void PidCacheInvalidator(MessageEnvelope envelope);
+    
     public class ClusterCacheInvalidation : IActorSystemExtension<ClusterCacheInvalidation>
     {
         private const string ActorName = "$invalidator";
@@ -63,7 +64,7 @@ namespace Proto.Cluster.Cache
             }
         }
 
-        internal Action<MessageEnvelope> ForActor(ClusterIdentity identity, PID activation)
+        internal PidCacheInvalidator GetInvalidator(ClusterIdentity identity, PID activation)
         {
             var activeRemotes = new BitArray(16);
             return envelope => {

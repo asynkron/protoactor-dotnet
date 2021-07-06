@@ -33,6 +33,8 @@ namespace Proto
         public object Message { get; }
         public PID? Sender { get; }
         public MessageHeader Header { get; }
+
+        public override string ToString() => $"DeadLetterEvent: [ Pid: {Pid}, Message: {Message.GetType()}:{Message}, Sender: {Sender}, Headers: {Header} ]";
     }
 
     public class DeadLetterProcess : Process

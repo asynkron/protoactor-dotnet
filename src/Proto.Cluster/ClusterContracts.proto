@@ -43,21 +43,7 @@ message ProxyActivationRequest {
 
 message ActivationResponse {
     actor.PID pid = 1;
-}
-
-message GrainRequest {
-    int32 method_index = 1;
-    bytes message_data = 2;
-    string message_type_name = 3;
-}
-
-message GrainResponse {
-  bytes message_data = 1;
-  string message_type_name = 2;
-}
-
-message GrainErrorResponse {
-    string err = 1;
+    bool failed = 2;
 }
 
 message Member {
@@ -72,6 +58,7 @@ message ClusterTopology {
     repeated Member members = 2;
     repeated Member joined = 3;
     repeated Member left = 4;
+    repeated string banned = 5;
 }
 
 message HeartbeatRequest {
@@ -93,71 +80,9 @@ message GracefulShutdown {
   string member_id = 3;
 }
 
-
-
-message SubscriberIdentity {
-  oneof Identity {
-    actor.PID pid = 1;
-    ClusterIdentity cluster_identity = 2;
-  }
+message MemberHeartbeat {
 }
-
-message Subscribers {
-  repeated SubscriberIdentity subscribers = 1;
-}
-
-message SubscribeRequest {
-  SubscriberIdentity subscriber = 1;
-}
-
-message SubscribeResponse {
-
-}
-
-message UnsubscribeRequest {
-  SubscriberIdentity subscriber = 1;
-}
-
-message UnsubscribeResponse {
-
-}
-
-message PublishRequest {
-  bytes data = 1;
-}
-
-message PublishResponse {}
-
-//this goes out to the delivery actors
-message DeliveryBatch {
-  Subscribers subscribers = 1;
-  ProducerBatch batch = 2;
-}
-
-//messages going into the topic actors
-message ProducerBatch {
-  repeated string type_names = 1;
-  repeated ProducerEnvelope envelopes = 2;
-}
-
-message ProducerEnvelope {
-  int32 type_id = 1;
-  bytes message_data = 2;
-  int32 serializer_id = 3;
-}
-
-//messages going out of the topic actors
-message TopicBatchRequest {
-  repeated string type_names = 1;
-  repeated TopicEnvelope envelopes = 2;
-}
-
-message TopicBatchResponse {
-  
-}
-
-message TopicEnvelope {
-  int32 type_id = 1;
-  bytes message_data = 2;
-  int32 serializer_id = 3;
-}
+//keys to implement initially
+//topology - value is repeated members, this can replace ClusterTopologyNotification, as it would be the same, but better
+//heartbeat - value is unit, or sender timestamp?
+//leader - value is leader member id

@@ -5,17 +5,18 @@
         <TargetFramework>net5.0</TargetFramework>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
-
+    
     <ItemGroup>
-
-    </ItemGroup>
-
-    <ItemGroup>
+      <PackageReference Include="KubernetesClient" Version="5.0.13" />
       <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0" />
-      <PackageReference Include="MongoDB.Driver" Version="2.12.3" />
-      <PackageReference Include="Proto.Cluster.Identity.MongoDb" Version="0.17.0" />
-      <PackageReference Include="Proto.Cluster.Kubernetes" Version="0.14.1-alpha.0.1" />
-      <PackageReference Include="Proto.Remote.GrpcNet" Version="0.17.0" />
+      <PackageReference Include="MongoDB.Driver" Version="2.13.0-beta1" />
+      <PackageReference Include="Proto.Cluster.Identity.MongoDb" Version="0.20.0" />
+        <PackageReference Include="Proto.Cluster.Identity.Redis" Version="0.20.0" />
+      <PackageReference Include="Proto.Cluster.Kubernetes" Version="0.20.0" />
+        <PackageReference Include="Proto.Cluster.Consul" Version="0.20.0" />
+      <PackageReference Include="Proto.Remote.GrpcNet" Version="0.20.0" />
+        <PackageReference Include="Proto.Remote.GrpcCore" Version="0.20.0" />
+      <PackageReference Include="StackExchange.Redis" Version="2.2.50" />
     </ItemGroup>
 
 </Project>

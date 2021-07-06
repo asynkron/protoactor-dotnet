@@ -1,0 +1,19 @@
+FROM mcr.microsoft.com/dotnet/aspnet:5.0-focal-amd64 AS base
+WORKDIR /app
+
+FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
+WORKDIR /src
+COPY ["EcsDiagnostics.csproj", "/src"]
+RUN dotnet restore "/src/EcsDiagnostics.csproj"
+COPY . .
+WORKDIR /src
+RUN dotnet build "/src/EcsDiagnostics.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "EcsDiagnostics.csproj" -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "EcsDiagnostics.dll"]

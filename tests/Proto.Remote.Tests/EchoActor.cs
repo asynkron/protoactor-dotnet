@@ -12,14 +12,18 @@ namespace Proto.Remote.Tests
         {
             switch (context.Message)
             {
-                case Started _:
+                case Started:
                     Logger.LogDebug($"{context.Self}");
                     break;
                 case Ping ping:
                     Logger.LogDebug("Received Ping, replying Pong");
                     context.Respond(new Pong {Message = $"{context.System.Address} {ping.Message}"});
                     break;
-                case Die _:
+                case BinaryMessage msg:
+                    Logger.LogDebug("Received BinaryMessage, replying Ack");
+                    context.Respond(new Ack ());
+                    break;
+                case Die:
                     Logger.LogDebug("Received termination request, stopping");
                     context.Stop(context.Self);
                     break;

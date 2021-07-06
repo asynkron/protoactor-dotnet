@@ -18,13 +18,15 @@ namespace Proto.Cluster.Partition
         private PartitionManager _partitionManager = null!;
         private readonly TimeSpan _identityHandoverTimeout;
         private readonly TimeSpan _getPidTimeout;
+        private readonly PartitionConfig _config;
 
         public PartitionIdentityLookup() : this(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(1))
         {
         }
         
-        public PartitionIdentityLookup(TimeSpan identityHandoverTimeout, TimeSpan getPidTimeout)
+        public PartitionIdentityLookup(TimeSpan identityHandoverTimeout, TimeSpan getPidTimeout, PartitionConfig? config=null)
         {
+            _config = config ?? new PartitionConfig(false);
             _identityHandoverTimeout = identityHandoverTimeout;
             _getPidTimeout = getPidTimeout;
         }
@@ -41,6 +43,7 @@ namespace Proto.Cluster.Partition
 
             var req = new ActivationRequest
             {
+                RequestId = Guid.NewGuid().ToString("N"),
                 ClusterIdentity = clusterIdentity
             };
 
@@ -49,9 +52,18 @@ namespace Proto.Cluster.Partition
 
             try
             {
-                var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
+                if (_config.DeveloperLogging)
+                    Console.WriteLine($"Sending Request {req.RequestId}");
+                
+                var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);                
 
-                return resp.Pid;
+                if (resp?.Pid != null) return resp.Pid;
+
+                if (_config.DeveloperLogging)
+                    Console.WriteLine("Failed");
+                
+                return null;
+
             }
             //TODO: decide if we throw or return null
             catch (DeadLetterException)
@@ -61,6 +73,22 @@ namespace Proto.Cluster.Partition
             }
             catch (TimeoutException)
             {
+                try
+                {
+                    var resp = await _cluster.System.Root.RequestAsync<Touched>(remotePid, new Touch(), CancellationTokens.FromSeconds(2));
+
+                    if (resp == null)
+                    {
+                        if(_config.DeveloperLogging)
+                            Console.WriteLine("Actor is blocked....");
+                    }
+                }
+                catch
+                {
+                    if(_config.DeveloperLogging)
+                        Console.WriteLine("Actor is blocked....");
+                }
+
                 Logger.LogInformation("Remote PID request timeout {@Request}, identity Owner {Owner}", req,identityOwner);
                 return null;
             }
@@ -68,46 +96,6 @@ namespace Proto.Cluster.Partition
             {
                 Logger.LogError(e, "Error occured requesting remote PID {@Request}, identity Owner {Owner}", req,identityOwner);
                 return null;
-            }
-        }
-
-
-        public void DumpState(ClusterIdentity clusterIdentity)
-        {
-            Console.WriteLine("Memberlist members:");
-            _cluster.MemberList.DumpState();
-
-            Console.WriteLine("Partition manager selector:");
-            _partitionManager.Selector.DumpState();
-
-            //Get address to node owning this ID
-            var identityOwner = _partitionManager.Selector.GetIdentityOwner(clusterIdentity.Identity);
-
-            Console.WriteLine("Identity owner for ID:");
-            Console.WriteLine(identityOwner);
-
-            var remotePid = PartitionManager.RemotePartitionIdentityActor(identityOwner);
-
-            var req = new ActivationRequest
-            {
-                ClusterIdentity = clusterIdentity
-            };
-
-            var resp = _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, CancellationTokens.WithTimeout(5000)).Result;
-
-            Console.WriteLine("Target Pid:");
-
-            if (resp == null)
-            {
-                Console.WriteLine("Null response");
-            }
-            else if (resp.Pid == null)
-            {
-                Console.WriteLine("Null PID");
-            }
-            else
-            {
-                Console.WriteLine(resp.Pid);
             }
         }
 
@@ -127,7 +115,7 @@ namespace Proto.Cluster.Partition
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
         {
             _cluster = cluster;
-            _partitionManager = new PartitionManager(cluster, isClient, _identityHandoverTimeout);
+            _partitionManager = new PartitionManager(cluster, isClient, _identityHandoverTimeout,_config);
             _partitionManager.Setup();
             return Task.CompletedTask;
         }

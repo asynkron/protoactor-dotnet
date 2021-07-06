@@ -167,5 +167,8 @@ namespace Proto.TestKit
         /// <returns></returns>
         public PID SpawnPrefix<T>(string prefix) where T : IActor, new() =>
             Context.SpawnPrefix(Props.FromProducer(() => new T()), prefix);
+
+        /// <inheritdoc />
+        public ActorSystem System => Context.System;
     }
 }

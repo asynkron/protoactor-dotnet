@@ -163,7 +163,7 @@ namespace Proto.Persistence.Tests
         }
 
         [Fact]
-        public async void Index_IsNotAffectedByTakingASnapshot()
+        public async void Index_IsIncrementedByTakingASnapshot()
         {
             var (pid, _, _, _) = CreateTestActor();
 
@@ -171,7 +171,7 @@ namespace Proto.Persistence.Tests
             Context.Send(pid, new RequestSnapshot());
             Context.Send(pid, new Multiply {Amount = 4});
             var index = await Context.RequestAsync<long>(pid, new GetIndex(), TimeSpan.FromSeconds(1));
-            Assert.Equal(1, index);
+            Assert.Equal(2, index);
         }
 
         [Fact]

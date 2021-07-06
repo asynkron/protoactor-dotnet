@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,16 +14,17 @@ namespace Proto.Cluster.Partition
     class PartitionPlacementActor : IActor
     {
         private readonly Cluster _cluster;
-        private readonly ILogger _logger;
+        private static readonly ILogger Logger = Log.CreateLogger<PartitionPlacementActor>();
 
         //pid -> the actor that we have created here
         //kind -> the actor kind
         private readonly Dictionary<ClusterIdentity, PID> _myActors = new();
+        private readonly PartitionConfig _config;
 
-        public PartitionPlacementActor(Cluster cluster)
+        public PartitionPlacementActor(Cluster cluster, PartitionConfig config)
         {
             _cluster = cluster;
-            _logger = Log.CreateLogger($"{nameof(PartitionPlacementActor)}-{cluster.LoggerId}");
+            _config = config;
         }
 
         public Task ReceiveAsync(IContext context) =>
@@ -76,7 +78,7 @@ namespace Proto.Cluster.Partition
                 //this identity is not owned by the requester
                 if (ownerAddress != requestAddress) continue;
 
-                _logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {TopologyHash}", clusterIdentity, ownerAddress,
+                Logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {TopologyHash}", clusterIdentity, ownerAddress,
                     msg.TopologyHash
                 );
 
@@ -88,7 +90,7 @@ namespace Proto.Cluster.Partition
             //always respond, this is request response msg
             context.Respond(response);
 
-            _logger.LogDebug("Transferred {Count} actor ownership to other members", count);
+            Logger.LogDebug("Transferred {Count} actor ownership to other members", count);
             return Task.CompletedTask;
         }
 
@@ -98,6 +100,8 @@ namespace Proto.Cluster.Partition
             {
                 if (_myActors.TryGetValue(msg.ClusterIdentity, out var existing))
                 {
+                    if (_config.DeveloperLogging)
+                        Console.WriteLine($"Activator got request for existing activation {msg.RequestId}");
                     //this identity already exists
                     var response = new ActivationResponse
                     {
@@ -107,6 +111,8 @@ namespace Proto.Cluster.Partition
                 }
                 else
                 {
+                    if (_config.DeveloperLogging)
+                        Console.WriteLine($"Activator got request for new activation {msg.RequestId}");
                     var clusterKind = _cluster.GetClusterKind(msg.ClusterIdentity.Kind);
                     //this actor did not exist, lets spawn a new activation
 
@@ -125,10 +131,13 @@ namespace Proto.Cluster.Partition
                         Pid = pid
                     };
                     context.Respond(response);
+                    if (_config.DeveloperLogging)
+                        Console.WriteLine($"Activated {msg.RequestId}");
                 }
             }
-            catch
+            catch(Exception e)
             {
+                Logger.LogError(e, "Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
                 var response = new ActivationResponse
                 {
                     Pid = null

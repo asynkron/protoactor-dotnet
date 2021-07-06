@@ -46,6 +46,13 @@ namespace Proto.Cluster
             return new ImmutableMemberSet(both);
         }
         
+        public ImmutableMemberSet Except(IEnumerable<string> other)
+        {
+            var otherSet = other.ToImmutableHashSet();
+            var both = Members.Where(m => !otherSet.Contains(m.Id));
+            return new ImmutableMemberSet(both);
+        }
+        
         public ImmutableMemberSet Union(ImmutableMemberSet other)
         {
             var both = Members.Union(other.Members);

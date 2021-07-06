@@ -36,7 +36,7 @@ namespace Proto.Persistence
             _applyEvent = applyEvent;
             _applySnapshot = applySnapshot;
             _getState = getState;
-            _snapshotStrategy = snapshotStrategy ?? new NoSnapshots();
+            _snapshotStrategy = snapshotStrategy ?? new ManualSnapshots();
         }
 
         public long Index { get; private set; } = -1;
@@ -180,11 +180,11 @@ namespace Proto.Persistence
             }
         }
 
-        public Task PersistSnapshotAsync(object snapshot)
+        public async Task PersistSnapshotAsync(object snapshot)
         {
-            var persistedSnapshot = new PersistedSnapshot(snapshot, Index);
-
-            return _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, snapshot);
+            var persistedSnapshot = new PersistedSnapshot(snapshot, Index+1);
+            await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, snapshot);
+            Index++;
         }
 
         public Task DeleteSnapshotsAsync(long inclusiveToIndex) =>
@@ -193,7 +193,13 @@ namespace Proto.Persistence
         public Task DeleteEventsAsync(long inclusiveToIndex) =>
             _eventStore.DeleteEventsAsync(_actorId, inclusiveToIndex);
 
+        [Obsolete("Use ManualSnapshots instead", false)]
         private class NoSnapshots : ISnapshotStrategy
+        {
+            public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => false;
+        }
+        
+        private class ManualSnapshots : ISnapshotStrategy
         {
             public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => false;
         }
@@ -206,7 +212,7 @@ namespace Proto.Persistence
 
             public Task<long> PersistEventAsync(string actorName, long index, object @event) => Task.FromResult(0L);
 
-            public Task DeleteEventsAsync(string actorName, long inclusiveToIndex) => Task.FromResult(0);
+            public Task DeleteEventsAsync(string actorName, long inclusiveToIndex) => Task.CompletedTask;
         }
 
         private class NoSnapshotStore : ISnapshotStore
@@ -217,65 +223,6 @@ namespace Proto.Persistence
             public Task PersistSnapshotAsync(string actorName, long index, object snapshot) => Task.FromResult(0);
 
             public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex) => Task.FromResult(0);
-        }
-    }
-
-    public class Snapshot
-    {
-        public Snapshot(object state, long index)
-        {
-            State = state;
-            Index = index;
-        }
-
-        public object State { get; }
-        public long Index { get; }
-    }
-
-    public class RecoverSnapshot : Snapshot
-    {
-        public RecoverSnapshot(object state, long index) : base(state, index)
-        {
-        }
-    }
-
-    public class PersistedSnapshot : Snapshot
-    {
-        public PersistedSnapshot(object state, long index) : base(state, index)
-        {
-        }
-    }
-
-    public class Event
-    {
-        public Event(object data, long index)
-        {
-            Data = data;
-            Index = index;
-        }
-
-        public object Data { get; }
-        public long Index { get; }
-    }
-
-    public class RecoverEvent : Event
-    {
-        public RecoverEvent(object data, long index) : base(data, index)
-        {
-        }
-    }
-
-    public class ReplayEvent : Event
-    {
-        public ReplayEvent(object data, long index) : base(data, index)
-        {
-        }
-    }
-
-    public class PersistedEvent : Event
-    {
-        public PersistedEvent(object data, long index) : base(data, index)
-        {
         }
     }
 }

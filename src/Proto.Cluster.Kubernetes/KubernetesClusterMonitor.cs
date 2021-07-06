@@ -33,11 +33,13 @@ namespace Proto.Cluster.Kubernetes
         private Watcher<V1Pod> _watcher;
         private Task<HttpOperationResponse<V1PodList>> _watcherTask;
         private bool _watching;
+        private readonly KubernetesProviderConfig _config;
 
-        public KubernetesClusterMonitor(Cluster cluster, IKubernetes kubernetes)
+        public KubernetesClusterMonitor(Cluster cluster, IKubernetes kubernetes,KubernetesProviderConfig config)
         {
             _cluster = cluster;
             _kubernetes = kubernetes;
+            _config = config;
         }
 
         public Task ReceiveAsync(IContext context) => context.Message switch
@@ -63,7 +65,7 @@ namespace Proto.Cluster.Kubernetes
             if (_watching)
             {
                 Logger.LogInformation(
-                    "[Cluster] Stopping monitoring for {PodName} with ip {PodIp}",
+                    "[Cluster][KubernetesProvider] Stopping monitoring for {PodName} with ip {PodIp}",
                     _podName, _address
                 );
 
@@ -74,17 +76,22 @@ namespace Proto.Cluster.Kubernetes
 
             return Task.CompletedTask;
         }
+        
+        
 
         private Task StartWatchingCluster(string clusterName, ISenderContext context)
         {
             var selector = $"{LabelCluster}={clusterName}";
-            Logger.LogDebug("[Cluster] Starting to watch pods with {Selector}", selector);
+            
+            Logger.Log(_config.DebugLogLevel, "[Cluster][KubernetesProvider] Starting to watch pods with {Selector}", selector);
 
             _watcherTask = _kubernetes.ListNamespacedPodWithHttpMessagesAsync(
                 KubernetesExtensions.GetKubeNamespace(),
                 labelSelector: selector,
-                watch: true
+                watch: true,
+                timeoutSeconds:_config.WatchTimeoutSeconds
             );
+            
             _watcher = _watcherTask.Watch<V1Pod, V1PodList>(Watch, Error, Closed);
             _watching = true;
 
@@ -94,7 +101,7 @@ namespace Proto.Cluster.Kubernetes
                 if (_stopping) return;
 
                 // We log it and attempt to watch again, overcome transient issues
-                Logger.LogInformation("[Cluster] Unable to watch the cluster status: {Error}", ex.Message);
+                Logger.LogWarning("[Cluster][KubernetesProvider] Unable to watch the cluster status: {Error}", ex.Message);
                 Restart();
             }
 
@@ -103,8 +110,9 @@ namespace Proto.Cluster.Kubernetes
             {
                 // If we are already in stopping state, just ignore it
                 if (_stopping) return;
+                
+                Logger.Log(_config.DebugLogLevel, "[Cluster][KubernetesProvider] Watcher has closed, restarting");
 
-                Logger.LogDebug("[Cluster] Watcher has closed, restarting");
                 Restart();
             }
 
@@ -126,7 +134,7 @@ namespace Proto.Cluster.Kubernetes
             if (!podLabels.TryGetValue(LabelCluster, out var podClusterName))
             {
                 Logger.LogInformation(
-                    "[Cluster] The pod {PodName} is not a Proto.Cluster node",
+                    "[Cluster][KubernetesProvider] The pod {PodName} is not a Proto.Cluster node",
                     eventPod.Metadata.Name
                 );
                 return;
@@ -135,7 +143,7 @@ namespace Proto.Cluster.Kubernetes
             if (_clusterName != podClusterName)
             {
                 Logger.LogInformation(
-                    "[Cluster] The pod {PodName} is from another cluster {Cluster}",
+                    "[Cluster][KubernetesProvider] The pod {PodName} is from another cluster {Cluster}",
                     eventPod.Metadata.Name, _clusterName
                 );
                 return;
@@ -152,8 +160,18 @@ namespace Proto.Cluster.Kubernetes
                 .Where(x => x.IsCandidate)
                 .Select(x => x.Status)
                 .ToList();
+            
+            Logger.Log(_config.DebugLogLevel, "[Cluster][KubernetesProvider] Topology received from Kubernetes {Members}", memberStatuses);
 
-            _cluster.MemberList.UpdateClusterTopology(memberStatuses);
+            try
+            {
+                _cluster.MemberList.UpdateClusterTopology(memberStatuses);
+            }
+            catch (Exception x)
+            {
+                Logger.LogError(x,"[Cluster][KubernetesProvider] Error updating MemberList with members data {Members}", memberStatuses);
+                throw;
+            }
         }
     }
 }

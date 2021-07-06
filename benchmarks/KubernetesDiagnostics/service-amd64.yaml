@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: proto-cluster
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: proto-cluster
+  labels:
+    app: kubdiag
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - endpoints
+      - pods
+      - services
+      - services/status
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: proto-cluster
+  labels:
+    app: kubdiag
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: proto-cluster
+subjects:
+  - kind: ServiceAccount
+    name: proto-cluster
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: testing
+  labels:
+    app: kubdiag
+spec:
+  ports:
+    - port: 8080
+      name: protoactor
+  selector:
+    app: kubdiag
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: diagapp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: kubdiag
+  template:
+    metadata:
+      labels:
+        app: kubdiag
+        version: v1
+    spec:
+      serviceAccountName: proto-cluster
+      containers:
+        - name: kubdiag
+          # there is nothing sensitive in here, its just a diagnostics app
+          image: rogeralsing/kubdiagg:amd64
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "REDIS"
+              value: "redis"
+            - name: PROTOPORT
+              value: "8080"
+            - name: PROTOHOST
+              value: "0.0.0.0"
+            - name: "PROTOHOSTPUBLIC"
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP

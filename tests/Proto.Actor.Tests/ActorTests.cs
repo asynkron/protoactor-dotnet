@@ -9,7 +9,7 @@ namespace Proto.Tests
 {
     class MyAutoRespondMessage : IAutoRespond
     {
-        public object GetAutoResponse() => "hey";
+        public object GetAutoResponse(IContext context) => "hey";
     }
     public class ActorTests
     {
@@ -30,6 +30,17 @@ namespace Proto.Tests
             var reply = await Context.RequestAsync<object>(pid, "hello");
 
             Assert.Equal("hey", reply);
+        }
+        
+        [Fact]
+        public async Task RequestActorAsyncCanTouchActor()
+        {
+            //no code...
+            var pid = SpawnActorFromFunc(ctx => Task.CompletedTask);
+
+            var reply = await Context.RequestAsync<Touched>(pid, new Proto.Touch(), CancellationTokens.FromSeconds(5));
+
+            Assert.Equal(pid, reply.Who);
         }
         
         [Fact]

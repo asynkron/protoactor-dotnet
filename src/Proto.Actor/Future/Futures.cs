@@ -92,7 +92,7 @@ namespace Proto.Future
         {
             try
             {
-                _tcs.TrySetResult(MessageEnvelope.UnwrapMessage(message)!);
+                _tcs.TrySetResult(message!);
             }
             finally
             {

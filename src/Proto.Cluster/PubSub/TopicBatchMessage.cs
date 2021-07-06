@@ -5,13 +5,14 @@
 // -----------------------------------------------------------------------
 using System.Collections.Generic;
 using System.Linq;
+using Proto.Cluster.PubSub;
 using Proto.Remote;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.PubSub
 {
     public record TopicBatchMessage(IReadOnlyCollection<object> Envelopes) :  IRootSerializable , IMessageBatch, IAutoRespond
     {
-        public object GetAutoResponse() => new PublishResponse();
+        public object GetAutoResponse(IContext context) => new PublishResponse();
         
         public IReadOnlyCollection<object> GetMessages() => Envelopes;
         

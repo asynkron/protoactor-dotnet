@@ -21,7 +21,7 @@ namespace Proto.Cluster.Identity
         private readonly Cluster _cluster;
 
         private readonly IdentityStorageLookup _identityLookup;
-        private readonly ILogger _logger;
+        private static readonly ILogger Logger = Log.CreateLogger<IdentityStoragePlacementActor>();
 
         //pid -> the actor that we have created here
         //kind -> the actor kind
@@ -33,7 +33,6 @@ namespace Proto.Cluster.Identity
         {
             _cluster = cluster;
             _identityLookup = identityLookup;
-            _logger = Log.CreateLogger($"{nameof(IdentityStoragePlacementActor)}-{cluster.LoggerId}");
         }
 
         public Task ReceiveAsync(IContext context) => context.Message switch
@@ -47,13 +46,13 @@ namespace Proto.Cluster.Identity
 
         private Task Stopping(IContext context)
         {
-            _logger.LogInformation("Stopping placement actor");
+            Logger.LogInformation("Stopping placement actor");
             return Task.CompletedTask;
         }
 
         private Task Stopped(IContext context)
         {
-            _logger.LogInformation("Stopped placement actor");
+            Logger.LogInformation("Stopped placement actor");
             return Task.CompletedTask;
         }
 
@@ -74,7 +73,7 @@ namespace Proto.Cluster.Identity
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "Failed to remove {Activation} from storage", pid);
+                    Logger.LogError(e, "Failed to remove {Activation} from storage", pid);
                 }
             }
         }
@@ -131,7 +130,7 @@ namespace Proto.Cluster.Identity
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
+                Logger.LogError(e, "Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
                 Respond(null);
             }
 
@@ -163,19 +162,19 @@ namespace Proto.Cluster.Identity
                 }
                 catch (LockNotFoundException)
                 {
-                    _logger.LogError("We no longer own the lock {@SpawnLock}", spawnLock);
+                    Logger.LogWarning("We no longer own the lock {@SpawnLock}", spawnLock);
                     return false;
                 }
                 catch (Exception e)
                 {
                     if (++attempts < PersistenceRetries)
                     {
-                        _logger.LogWarning(e, "No entry was updated {@SpawnLock}. Retrying.", spawnLock);
+                        Logger.LogWarning(e, "No entry was updated {@SpawnLock}. Retrying", spawnLock);
                         await Task.Delay(50);
                     }
                     else
                     {
-                        _logger.LogError(e, "Failed to persist activation: {@SpawnLock}", spawnLock);
+                        Logger.LogError(e, "Failed to persist activation: {@SpawnLock}", spawnLock);
                         return false;
                     }
                 }

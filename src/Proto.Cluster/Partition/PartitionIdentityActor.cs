@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Utils;
 
 namespace Proto.Cluster.Partition
 {
@@ -32,12 +33,14 @@ namespace Proto.Cluster.Partition
 
         private ulong _topologyHash;
         private readonly TimeSpan _identityHandoverTimeout;
+        private readonly PartitionConfig _config;
 
-        public PartitionIdentityActor(Cluster cluster, TimeSpan identityHandoverTimeout)
+        public PartitionIdentityActor(Cluster cluster, TimeSpan identityHandoverTimeout, PartitionConfig config)
         {
             _cluster = cluster;
             _myAddress = cluster.System.Address;
             _identityHandoverTimeout = identityHandoverTimeout;
+            _config = config;
         }
         
         public Task ReceiveAsync(IContext context) =>
@@ -63,12 +66,18 @@ namespace Proto.Cluster.Partition
 
         private async Task OnClusterTopology(ClusterTopology msg, IContext context)
         {
-            await _cluster.MemberList.TopologyConsensus();
-            if (_topologyHash == msg.TopologyHash) return;
+            await Retry.Try(() => OnClusterTopologyInner(msg, context), onError: OnError, onFailed: OnFailed, ignoreFailure:true);
 
-            _topologyHash = msg.TopologyHash;
+            static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to handle topology change");
+
+            static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to handle topology change");
+        }
+
+        private async Task OnClusterTopologyInner(ClusterTopology msg, IContext context)
+        {
+       //     await _cluster.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
             var members = msg.Members.ToArray();
-
+            _topologyHash = msg.TopologyHash;
             _rdv.UpdateMembers(members);
 
             //remove all identities we do no longer own.
@@ -87,7 +96,7 @@ namespace Proto.Cluster.Partition
             {
                 var activatorPid = PartitionManager.RemotePartitionPlacementActor(member.Address);
                 var request =
-                    context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg, CancellationTokens.WithTimeout(_identityHandoverTimeout));
+                    GetIdentitiesForMember(context, activatorPid, requestMsg);
                 requests.Add(request);
             }
 
@@ -115,14 +124,32 @@ namespace Proto.Cluster.Partition
             catch (Exception x)
             {
                 Logger.LogError(x, "Failed to get identities");
+                throw;
             }
-
+            
             var membersLookup = msg.Members.ToDictionary(m => m.Address, m => m);
 
             //scan through all id lookups and remove cases where the address is no longer part of cluster members
             foreach (var (actorId, pid) in _partitionLookup.ToArray())
             {
                 if (!membersLookup.ContainsKey(pid.Address)) _partitionLookup.Remove(actorId);
+            }
+        }
+
+        private async Task<IdentityHandoverResponse> GetIdentitiesForMember(IContext context, PID activatorPid, IdentityHandoverRequest requestMsg)
+        {
+            try
+            {
+                var res = await context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg,
+                    CancellationTokens.WithTimeout(_identityHandoverTimeout)
+                );
+                return res;
+            }
+            catch
+            {
+                return new IdentityHandoverResponse()
+                {
+                };
             }
         }
 
@@ -155,10 +182,16 @@ namespace Proto.Cluster.Partition
 
         private async Task OnActivationRequest(ActivationRequest msg, IContext context)
         {
+            if (_config.DeveloperLogging)
+                Console.WriteLine($"Got ActivationRequest {msg.RequestId}");
+            
             var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
 
             if (ownerAddress != _myAddress)
             {
+                if (_config.DeveloperLogging)
+                    Console.WriteLine($"Forwarding ActivationRequest {msg.RequestId} to {ownerAddress}");
+                
                 var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
                 Logger.LogWarning("Tried to spawn on wrong node, forwarding");
                 context.Forward(ownerPid);
@@ -169,16 +202,33 @@ namespace Proto.Cluster.Partition
             //Check if exist in current partition dictionary
             if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
             {
+                if (_config.DeveloperLogging)
+                    Console.WriteLine($"Found existing activation for {msg.RequestId}");
+                
                 if (pid == null)
                 {
+                    if (_config.DeveloperLogging)
+                        Console.WriteLine($"Found null activation for {msg.RequestId}");
+                    
+                    _partitionLookup.Remove(msg.ClusterIdentity);
                     Logger.LogError("Null PID for ClusterIdentity {ClusterIdentity}",msg.ClusterIdentity);
+                    context.Respond(new ActivationResponse()
+                    {
+                        Failed = true,
+                    });
+                    return;
                 }
                 context.Respond(new ActivationResponse {Pid = pid});
                 return;
             }
             
             //only activate members when we are all in sync
-            await _cluster.MemberList.TopologyConsensus();
+            // var c = await _cluster.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
+            //
+            // if (!c)
+            // {
+            //     Console.WriteLine("No consensus " + _cluster.System.Id);
+            // }
 
             //Get activator
             var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
@@ -186,9 +236,14 @@ namespace Proto.Cluster.Partition
             //just make the code analyzer understand the address is not null after this block
             if (activatorAddress is null || string.IsNullOrEmpty(activatorAddress))
             {
+                if (_config.DeveloperLogging)
+                    Console.Write("?");
                 //No activator currently available, return unavailable
                 Logger.LogWarning("No members currently available for kind {Kind}", msg.Kind);
-                context.Respond(new ActivationResponse {Pid = null});
+                context.Respond(new ActivationResponse
+                {
+                    Failed = true
+                });
                 return;
             }
 
@@ -206,78 +261,72 @@ namespace Proto.Cluster.Partition
             //but still within the actors sequential execution
             //but other messages could have been processed in between
 
+            if (_config.DeveloperLogging)
+                Console.Write("S"); //spawned
             //Await SpawningProcess
             context.ReenterAfter(
                 res,
-                rst => {
-
-
-                    var response = res.Result;
-
-                    //TODO: as this is async, there might come in multiple ActivationRequests asking for this
-                    //Identity, causing multiple activations
-
-                    //Check if exist in current partition dictionary
-                    //This is necessary to avoid race condition during partition map transfer.
-                    if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out pid))
-                    {
-                        _spawns.Remove(msg.ClusterIdentity);
-                        context.Respond(new ActivationResponse {Pid = pid});
-                        return Task.CompletedTask;
-                    }
-
-                    //Check if process is faulted
-                    if (rst.IsFaulted)
-                    {
-                        _spawns.Remove(msg.ClusterIdentity);
-                        context.Respond(response);
-                        return Task.CompletedTask;
-                    }
-                    if (response == null)
-                    {
-                        _spawns.Remove(msg.ClusterIdentity);
-                        // context.Respond(new ActivationResponse()
-                        // {
-                        //     
-                        // });
-                        //TODO what do we do in this case?
-                        return Task.CompletedTask;
-                    }
-
-                    _partitionLookup[msg.ClusterIdentity] = response.Pid;
-                    context.Respond(response);
-
+                async rst => {
                     try
                     {
-                        _spawns.Remove(msg.ClusterIdentity);
-                    }
-                    catch (Exception e)
-                    {
-                        //debugging hack
-                        Logger.LogInformation(e, "Failed while removing spawn {Id}", msg.Identity);
-                    }
+                        var response = await rst;
+                        if (_config.DeveloperLogging)
+                            Console.Write("R"); //reentered
+                        
+                        if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out pid))
+                        {
+                            if (_config.DeveloperLogging)
+                                Console.Write("C");  //cached
+                            _spawns.Remove(msg.ClusterIdentity);
+                            context.Respond(new ActivationResponse {Pid = pid});
+                            return;
+                        }
 
-                    return Task.CompletedTask;
+                        if (response?.Pid != null)
+                        {
+                            if (_config.DeveloperLogging)
+                                Console.Write("A"); //activated
+                            _partitionLookup[msg.ClusterIdentity] = response.Pid;
+                            _spawns.Remove(msg.ClusterIdentity);
+                            context.Respond(response);
+                            return;
+                        }
+                    }
+                    catch(Exception x)
+                    {
+                        Logger.LogError(x, "Spawning failed");
+                    }
+                    
+                    if (_config.DeveloperLogging)
+                        Console.Write("F"); //failed
+                    _spawns.Remove(msg.ClusterIdentity);
+                    context.Respond(new ActivationResponse
+                    {
+                        Failed = true
+                    });
                 }
             );
         }
 
-        private async Task<ActivationResponse> SpawnRemoteActor(ActivationRequest req, string activator)
+        private async Task<ActivationResponse> SpawnRemoteActor(ActivationRequest req, string activatorAddress)
         {
             try
             {
-                Logger.LogDebug("Spawning Remote Actor {Activator} {Identity} {Kind}", activator, req.Identity,
+                Logger.LogDebug("Spawning Remote Actor {Activator} {Identity} {Kind}", activatorAddress, req.Identity,
                     req.Kind
                 );
                 var timeout = _cluster.Config!.TimeoutTimespan;
-                var activator1 = PartitionManager.RemotePartitionPlacementActor(activator);
+                var activatorPid = PartitionManager.RemotePartitionPlacementActor(activatorAddress);
 
-                var res = await _cluster.System.Root.RequestAsync<ActivationResponse>(activator1, req, timeout);
+                var res = await _cluster.System.Root.RequestAsync<ActivationResponse>(activatorPid, req, timeout);
                 return res;
             }
             catch
             {
-                return null!;
+                return new ActivationResponse()
+                {
+                    Failed = true
+                };
             }
         }
     }

@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Google.Protobuf;
 using Proto.Remote.Tests.Messages;
 using Xunit;
@@ -79,6 +80,20 @@ namespace Proto.Remote.Tests
             Assert.NotNull(deserialized);
             Assert.Equal(json.Test, deserialized.Test);
             Assert.Equal(json.Test2, deserialized.Test2);
+        }
+
+        [Fact]
+        public void CanSerializeBinaryMessage()
+        {
+            var serialization = new Serialization();
+            serialization.RegisterFileDescriptor(Messages.ProtosReflection.Descriptor);
+            var msg = new BinaryMessage()
+            {
+                Payload = ByteString.CopyFromUtf8("hello world")
+            };
+            var (bytes, typeName, serializerId) = serialization.Serialize(msg);
+            var deserialized = serialization.Deserialize(typeName, bytes, serializerId) as BinaryMessage;
+            deserialized!.Payload.Should().BeEquivalentTo(ByteString.CopyFromUtf8("hello world"));
         }
     }
 }

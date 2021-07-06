@@ -45,17 +45,25 @@ namespace Proto
 
         public static PID DefaultSpawner(ActorSystem system, string name, Props props, PID? parent)
         {
+            //Ordering is important here
+            //first we create a mailbox and attach it to a process
+            props = system.ConfigureProps(props);
             var mailbox = props.MailboxProducer();
             var dispatcher = props.Dispatcher;
             var process = new ActorProcess(system, mailbox);
+            
+            //then we register it to the process registry
             var (self, absent) = system.ProcessRegistry.TryAdd(name, process);
-
+            //if this fails we exit and the process and mailbox is Garbage Collected
             if (!absent) throw new ProcessNameExistException(name, self);
-
+            
+            //if successful, we create the actor and attach it to the mailbox
             var ctx = ActorContext.Setup(system, props, parent, self, mailbox);
             Initialize(props, ctx);
             mailbox.RegisterHandlers(ctx, dispatcher);
             mailbox.PostSystemMessage(Started.Instance);
+            
+            //finally, start the mailbox and make the actor consume messages
             mailbox.Start();
 
             return self;
