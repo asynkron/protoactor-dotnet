@@ -87,6 +87,8 @@ namespace {{CsNamespace}}
                 GrainResponseMessage grainResponse => ({{OutputName}})grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                //timeout
+                null => null,
                 // unsupported response
                 _ => throw new NotSupportedException()
             };
@@ -104,6 +106,8 @@ namespace {{CsNamespace}}
                 GrainResponseMessage grainResponse => ({{OutputName}})grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                //timeout
+                null => null,
                 // unsupported response
                 _ => throw new NotSupportedException()
             };
