@@ -4,9 +4,9 @@
 
         <IsPackable>false</IsPackable>
 
-        <TargetFramework>net5.0</TargetFramework>
-
         <OutputType>Library</OutputType>
+
+        <TargetFrameworks>net5.0;netcoreapp3.1</TargetFrameworks>
 
     </PropertyGroup>
 
@@ -46,7 +46,7 @@
       <Compile Remove="ExpectedOutput.cs" />
     </ItemGroup>
     <ItemGroup>
-        <None Include="ExpectedOutput.cs" CopyToOutputDirectory="PreserveNewest"/>
+        <None Include="ExpectedOutput.cs" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
 </Project>
