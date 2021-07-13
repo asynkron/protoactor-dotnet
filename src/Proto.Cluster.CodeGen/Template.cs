@@ -44,12 +44,17 @@ namespace {{CsNamespace}}
         public virtual Task OnReceive() => Task.CompletedTask;
 
         {{#each Methods}}
-        public virtual async Task {{Name}}({{InputName}} request, Action<{{OutputName}}> respond, Action<string> onError)
+        public virtual async Task {{Name}}({{LeadingParameterDefinition}}Action{{#if UseReturn}}<{{OutputName}}>{{/if}} respond, Action<string> onError)
         {
             try
             {
-                var res = await {{Name}}(request);
+                {{#if UseReturn}}
+                var res = await {{Name}}({{Parameter}});
                 respond(res);
+                {{else}}
+                await {{Name}}({{Parameter}});
+                respond();
+                {{/if}}
             }
             catch (Exception x)
             {
@@ -59,7 +64,7 @@ namespace {{CsNamespace}}
         {{/each}}
     
 		{{#each Methods}}
-        public abstract Task<{{OutputName}}> {{Name}}({{InputName}} request);
+        public abstract Task{{#if UseReturn}}<{{OutputName}}>{{/if}} {{Name}}({{SingleParameterDefinition}});
 		{{/each}}
     }
 
@@ -75,9 +80,9 @@ namespace {{CsNamespace}}
         }
 
 		{{#each Methods}}
-        public async Task<{{OutputName}}> {{Name}}({{InputName}} request, CancellationToken ct)
+        public async Task<{{OutputName}}> {{Name}}({{LeadingParameterDefinition}}CancellationToken ct)
         {
-            var gr = new GrainRequestMessage({{Index}}, request);
+            var gr = new GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}Nothing.Instance{{/if}});
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, ""{{../Name}}"", gr, ct);
 
@@ -94,7 +99,7 @@ namespace {{CsNamespace}}
             };
         }
         
-        public async Task<{{OutputName}}> {{Name}}({{InputName}} request, ISenderContext context, CancellationToken ct)
+        public async Task<{{OutputName}}> {{Name}}({{LeadingParameterDefinition}}ISenderContext context, CancellationToken ct)
         {
             var gr = new GrainRequestMessage({{Index}}, request);
             //request the RPC method to be invoked
@@ -159,7 +164,7 @@ namespace {{CsNamespace}}
                         case {{Index}}:
                         {   
                             if(r is {{InputName}} input){
-                                await _inner.{{Name}}(input, Respond, OnError);
+                                await _inner.{{Name}}({{#if UseParameter}}input{{else}}Nothing.Instance{{/if}}, Respond, OnError);
                             } else {
                                 OnError(""Invalid client contract"");
                             }
@@ -183,7 +188,7 @@ namespace {{CsNamespace}}
         }
 
         private void Respond<T>(T response) where T: IMessage => _context.Respond( new GrainResponseMessage(response));
-
+        private void Respond() => _context.Respond(Nothing.Instance);
         private void OnError(string error) => _context.Respond( new GrainErrorResponse {Err = error } );
     }
 	{{/each}}	

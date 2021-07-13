@@ -4,7 +4,7 @@
 
         <IsPackable>false</IsPackable>
 
-        <TargetFrameworks>net5.0;netstandard2.1</TargetFrameworks>
+        <TargetFramework>net5.0</TargetFramework>
 
         <OutputType>Library</OutputType>
 
@@ -38,6 +38,15 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\Proto.Cluster.CodeGen\Proto.Cluster.CodeGen.csproj" />
+    </ItemGroup>
+
+
+
+    <ItemGroup>
+      <Compile Remove="ExpectedOutput.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Include="ExpectedOutput.cs" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
 
 </Project>

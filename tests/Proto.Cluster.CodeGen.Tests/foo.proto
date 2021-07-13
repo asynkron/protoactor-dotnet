@@ -3,6 +3,11 @@ package Foo;
 option csharp_namespace = "Acme.OtherSystem.Foo";
 import "bar.proto";
 
-service AssetActor {
-  rpc GetCurrentState (Bar.GetCurrentStateRequest) returns(Bar.GetCurrentStateResponse) {}
+import "google/protobuf/empty.proto";
+
+service TestGrain {
+  rpc GetState (google.protobuf.Empty) returns(Bar.GetCurrentStateResponse) {}
+  rpc SendCommand (Bar.SomeCommand) returns(google.protobuf.Empty) {}
+  rpc RequestResponse (Bar.Query) returns(Bar.Response) {}
+  rpc NoParameterOrReturn (google.protobuf.Empty) returns(google.protobuf.Empty) {}
 }
