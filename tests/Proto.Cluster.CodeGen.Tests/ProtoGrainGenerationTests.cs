@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using FluentAssertions;
 using Google.Protobuf.Reflection;
 using ProtoBuf.Reflection;
 using Xunit;
@@ -33,7 +32,7 @@ namespace Proto.Cluster.CodeGen.Tests
             }
 
             var expectedOutput = File.ReadAllText(expectedOutputFile).Trim();
-            res.Single().Text.Trim().Should().Be(expectedOutput);
+            Assert.Equal(expectedOutput, res.Single().Text.Trim());
         }
     }
 }

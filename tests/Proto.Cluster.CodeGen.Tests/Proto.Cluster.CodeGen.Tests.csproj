@@ -1,52 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-
         <IsPackable>false</IsPackable>
-
         <OutputType>Library</OutputType>
-
         <TargetFrameworks>net5.0;netcoreapp3.1</TargetFrameworks>
-
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Handlebars.Net" Version="2.0.7" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
-        <PackageReference Include="protobuf-net.Reflection" Version="3.0.101" />
-        <PackageReference Include="xunit" Version="2.4.1" />
-        <PackageReference Include="coverlet.collector" Version="3.0.3">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
+        <PackageReference Include="Handlebars.Net" Version="2.0.7"/>
+        <PackageReference Include="protobuf-net.Reflection" Version="3.0.101"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="foo.proto"/>
+        <None Remove="bar.proto"/>
+        <Compile Remove="ExpectedOutput.cs"/>
+        <Content Include="foo.proto" CopyToOutputDirectory="Always"/>
+        <Content Include="bar.proto" CopyToOutputDirectory="Always"/>
+        <Content Include="ExpectedOutput.cs" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
 
 
-
     <ItemGroup>
-      <None Remove="foo.proto" />
-      <Content Include="foo.proto">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
-      <None Remove="bar.proto" />
-      <Content Include="bar.proto">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
-    </ItemGroup>
-
-
-
-    <ItemGroup>
-      <ProjectReference Include="..\..\src\Proto.Cluster.CodeGen\Proto.Cluster.CodeGen.csproj" />
-    </ItemGroup>
-
-
-
-    <ItemGroup>
-      <Compile Remove="ExpectedOutput.cs" />
-    </ItemGroup>
-    <ItemGroup>
-        <None Include="ExpectedOutput.cs" CopyToOutputDirectory="PreserveNewest" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.CodeGen\Proto.Cluster.CodeGen.csproj"/>
     </ItemGroup>
 
 </Project>
