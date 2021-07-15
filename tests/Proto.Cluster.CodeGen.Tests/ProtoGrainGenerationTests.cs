@@ -1,14 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Google.Protobuf.Reflection;
-using Proto.Cluster.CodeGen;
-using ProtoBuf;
 using ProtoBuf.Reflection;
 using Xunit;
 using Xunit.Abstractions;
-using CodeGenerator = Proto.Cluster.CodeGen.CodeGenerator;
 
 namespace Proto.Cluster.CodeGen.Tests
 {
@@ -18,14 +14,14 @@ namespace Proto.Cluster.CodeGen.Tests
 
         public ProtoGrainGenerationTests(ITestOutputHelper testOutputHelper) => _testOutputHelper = testOutputHelper;
 
-        
-        [Fact]
-        public void CanFindImportedNamespaces()
+        [Theory]
+        [InlineData("foo.proto", "ExpectedOutput.cs")]
+        public void CanGenerateGrains(string protoDefinitionFile, string expectedOutputFile)
         {
-            var r = new FileInfo("foo.proto").OpenText();
+            var r = new FileInfo(protoDefinitionFile).OpenText();
             var set = new FileDescriptorSet();
             set.AddImportPath(".");
-            set.Add("foo.proto", true, r);
+            set.Add(protoDefinitionFile, true, r);
             set.Process();
             var c = new CodeGenerator(Template.DefaultTemplate);
             var res = c.Generate(set, NameNormalizer.Default, new Dictionary<string, string>()).ToArray();
@@ -35,6 +31,8 @@ namespace Proto.Cluster.CodeGen.Tests
                 _testOutputHelper.WriteLine(codeFile.Text);
             }
 
+            var expectedOutput = File.ReadAllText(expectedOutputFile).Trim();
+            Assert.Equal(expectedOutput, res.Single().Text.Trim());
         }
     }
 }

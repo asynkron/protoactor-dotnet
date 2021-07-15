@@ -132,4 +132,9 @@ namespace Proto
     }
 
     public record ProcessDiagnosticsRequest(TaskCompletionSource<string> Result) : SystemMessage;
+    
+    public static class Nothing
+    {
+        public static readonly Google.Protobuf.WellKnownTypes.Empty Instance = new();
+    }
 }
