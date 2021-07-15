@@ -10,4 +10,7 @@
     <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="GitHubActionsTestLogger" Version="1.2.0" />
+  </ItemGroup>
 </Project>
