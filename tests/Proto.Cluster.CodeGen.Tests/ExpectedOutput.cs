@@ -111,7 +111,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException()
+                _ => new NotSupportedException("Unknown response type " + res.GetType().Name);
             };
         }
         
@@ -130,7 +130,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException()
+                _ => new NotSupportedException("Unknown response type " + res.GetType().Name);
             };
         }
         public async Task<Google.Protobuf.WellKnownTypes.Empty> SendCommand(Acme.Mysystem.Bar.SomeCommand request, CancellationToken ct)
@@ -148,7 +148,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException()
+                _ => new NotSupportedException("Unknown response type " + res.GetType().Name);
             };
         }
         
@@ -167,7 +167,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException()
+                _ => new NotSupportedException("Unknown response type " + res.GetType().Name);
             };
         }
         public async Task<Acme.Mysystem.Bar.Response> RequestResponse(Acme.Mysystem.Bar.Query request, CancellationToken ct)
@@ -185,7 +185,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException()
+                _ => new NotSupportedException("Unknown response type " + res.GetType().Name);
             };
         }
         
@@ -204,7 +204,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException()
+                _ => new NotSupportedException("Unknown response type " + res.GetType().Name);
             };
         }
         public async Task<Google.Protobuf.WellKnownTypes.Empty> NoParameterOrReturn(CancellationToken ct)
@@ -222,7 +222,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException()
+                _ => new NotSupportedException("Unknown response type " + res.GetType().Name);
             };
         }
         
@@ -241,7 +241,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException()
+                _ => new NotSupportedException("Unknown response type " + res.GetType().Name);
             };
         }
     }

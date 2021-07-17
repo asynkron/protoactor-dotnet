@@ -95,7 +95,7 @@ namespace {{CsNamespace}}
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException()
+                _ => new NotSupportedException(""Unknown response type "" + res.GetType().Name);
             };
         }
         
@@ -114,7 +114,7 @@ namespace {{CsNamespace}}
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException()
+                _ => new NotSupportedException(""Unknown response type "" + res.GetType().Name);
             };
         }
 		{{/each}}
