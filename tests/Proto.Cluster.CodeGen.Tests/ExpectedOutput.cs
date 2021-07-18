@@ -342,7 +342,7 @@ namespace Acme.OtherSystem.Foo
         }
 
         private void Respond<T>(T response) where T: IMessage => _context.Respond( new GrainResponseMessage(response));
-        private void Respond() => _context.Respond(Nothing.Instance);
+        private void Respond() => _context.Respond( new GrainResponseMessage(Nothing.Instance));
         private void OnError(string error) => _context.Respond( new GrainErrorResponse {Err = error } );
     }
 }
