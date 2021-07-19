@@ -10,7 +10,7 @@
       <PackageReference Include="AWSSDK.ECS" Version="3.7.2.10" />
       <PackageReference Include="AWSSDK.SecretsManager" Version="3.7.0.40" />
       <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0-preview.5.21301.5" />
-      <PackageReference Include="MongoDB.Driver" Version="2.13.0-beta1" />
+      <PackageReference Include="MongoDB.Driver" Version="2.13.0" />
       <PackageReference Include="Proto.Cluster.AmazonECS" Version="0.20.1-alpha.0.36" />
         <PackageReference Include="Proto.Cluster.Identity.Redis" Version="0.21.0" />
         <PackageReference Include="Proto.Remote.GrpcCore" Version="0.21.0" />
