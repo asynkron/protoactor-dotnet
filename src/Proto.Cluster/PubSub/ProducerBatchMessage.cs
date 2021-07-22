@@ -14,7 +14,7 @@ namespace Proto.Cluster.PubSub
     public class ProducerBatchMessage :  IRootSerializable
     {
         public List<object> Envelopes { get; } = new ();
-
+        
         public List<TaskCompletionSource<bool>> DeliveryReports { get; } = new();
 
         public IRootSerialized Serialize(ActorSystem system)
