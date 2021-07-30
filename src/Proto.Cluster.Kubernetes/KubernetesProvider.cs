@@ -107,10 +107,6 @@ namespace Proto.Cluster.Kubernetes
 
             Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes namespace: " + pod.Namespace());
 
-            var matchingPort = pod.FindPort(_port);
-
-            if (matchingPort is null) Logger.LogWarning("[Cluster][KubernetesProvider] Registration port doesn't match any of the container ports");
-
             Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes port: " + _port);
 
             var existingLabels = pod.Metadata.Labels;
