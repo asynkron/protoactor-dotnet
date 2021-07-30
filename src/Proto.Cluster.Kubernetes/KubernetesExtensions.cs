@@ -22,15 +22,6 @@ namespace Proto.Cluster.Kubernetes
         private static string cachedNamespace;
 
         /// <summary>
-        ///     Find the container port for a given pod than matches the given port.
-        /// </summary>
-        /// <param name="pod">Kubernetes Pod object</param>
-        /// <param name="port">Port to find in container ports</param>
-        /// <returns></returns>
-        internal static V1ContainerPort FindPort(this V1Pod pod, int port)
-            => pod.Spec.Containers[0].Ports.FirstOrDefault(x => x.ContainerPort == port);
-
-        /// <summary>
         ///     Replace pod labels
         /// </summary>
         /// <param name="kubernetes">Kubernetes client</param>
