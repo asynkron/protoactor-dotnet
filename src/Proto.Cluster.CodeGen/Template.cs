@@ -101,7 +101,7 @@ namespace {{CsNamespace}}
         
         public async Task<{{OutputName}}> {{Name}}({{LeadingParameterDefinition}}ISenderContext context, CancellationToken ct)
         {
-            var gr = new GrainRequestMessage({{Index}}, request);
+            var gr = new GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}Nothing.Instance{{/if}});
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, ""{{../Name}}"", gr,context, ct);
 
@@ -164,7 +164,7 @@ namespace {{CsNamespace}}
                         case {{Index}}:
                         {   
                             if(r is {{InputName}} input){
-                                await _inner.{{Name}}({{#if UseParameter}}input{{else}}Nothing.Instance{{/if}}, Respond, OnError);
+                                await _inner.{{Name}}({{#if UseParameter}}input, {{/if}}Respond, OnError);
                             } else {
                                 OnError(""Invalid client contract"");
                             }

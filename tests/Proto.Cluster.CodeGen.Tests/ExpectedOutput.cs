@@ -117,7 +117,7 @@ namespace Acme.OtherSystem.Foo
         
         public async Task<Acme.Mysystem.Bar.GetCurrentStateResponse> GetState(ISenderContext context, CancellationToken ct)
         {
-            var gr = new GrainRequestMessage(0, request);
+            var gr = new GrainRequestMessage(0, Nothing.Instance);
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, "TestGrain", gr,context, ct);
 
@@ -228,7 +228,7 @@ namespace Acme.OtherSystem.Foo
         
         public async Task<Google.Protobuf.WellKnownTypes.Empty> NoParameterOrReturn(ISenderContext context, CancellationToken ct)
         {
-            var gr = new GrainRequestMessage(3, request);
+            var gr = new GrainRequestMessage(3, Nothing.Instance);
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, "TestGrain", gr,context, ct);
 
@@ -289,7 +289,7 @@ namespace Acme.OtherSystem.Foo
                         case 0:
                         {   
                             if(r is Google.Protobuf.WellKnownTypes.Empty input){
-                                await _inner.GetState(Nothing.Instance, Respond, OnError);
+                                await _inner.GetState(Respond, OnError);
                             } else {
                                 OnError("Invalid client contract");
                             }
@@ -319,7 +319,7 @@ namespace Acme.OtherSystem.Foo
                         case 3:
                         {   
                             if(r is Google.Protobuf.WellKnownTypes.Empty input){
-                                await _inner.NoParameterOrReturn(Nothing.Instance, Respond, OnError);
+                                await _inner.NoParameterOrReturn(Respond, OnError);
                             } else {
                                 OnError("Invalid client contract");
                             }
