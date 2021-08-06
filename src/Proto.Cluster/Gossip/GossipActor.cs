@@ -66,6 +66,8 @@ namespace Proto.Cluster.Gossip
                 {
                     context.System.EventStream.Publish(update);
                 }
+                
+                context.System.EventStream.Publish(new Gossip(newState));
 
                 _state = newState;
                 CheckConsensus(context);

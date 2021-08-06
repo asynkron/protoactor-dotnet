@@ -13,16 +13,6 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
-    public record GossipUpdate(string MemberId, string Key, Any Value, long SequenceNumber);
-    public record GetGossipStateRequest(string Key);
-
-    public record GetGossipStateResponse(ImmutableDictionary<string,Any> State);
-
-    public record SetGossipStateKey(string Key, IMessage Value);
-
-    public record SendGossipStateRequest;
-    public record SendGossipStateResponse;
-
     public class Gossiper
     {
         public const string GossipActorName = "gossip";
