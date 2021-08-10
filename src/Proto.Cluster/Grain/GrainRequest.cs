@@ -13,9 +13,11 @@ namespace Proto.Cluster
         //deserialize into the in-process message type that the grain actors understands
         public IRootSerializable Deserialize(ActorSystem system)
         {
+            if (MessageData.IsEmpty) return new GrainRequestMessage(MethodIndex, null);
+
             var ser = system.Serialization();
             var message = ser.Deserialize(MessageTypeName, MessageData, Serialization.SERIALIZER_ID_PROTOBUF);
-            return new GrainRequestMessage(MethodIndex, (IMessage)message);
+            return new GrainRequestMessage(MethodIndex, (IMessage) message);
         }
     }
 }

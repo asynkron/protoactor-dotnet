@@ -98,7 +98,7 @@ namespace Acme.OtherSystem.Foo
 
         public async Task<Acme.Mysystem.Bar.GetCurrentStateResponse> GetState(CancellationToken ct)
         {
-            var gr = new GrainRequestMessage(0, Nothing.Instance);
+            var gr = new GrainRequestMessage(0, null);
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, "TestGrain", gr, ct);
 
@@ -117,7 +117,7 @@ namespace Acme.OtherSystem.Foo
         
         public async Task<Acme.Mysystem.Bar.GetCurrentStateResponse> GetState(ISenderContext context, CancellationToken ct)
         {
-            var gr = new GrainRequestMessage(0, Nothing.Instance);
+            var gr = new GrainRequestMessage(0, null);
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, "TestGrain", gr,context, ct);
 
@@ -142,7 +142,7 @@ namespace Acme.OtherSystem.Foo
             return res switch
             {
                 // normal response
-                GrainResponseMessage grainResponse => (Google.Protobuf.WellKnownTypes.Empty)grainResponse.ResponseMessage,
+                GrainResponseMessage grainResponse => Nothing.Instance,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 //timeout
@@ -161,7 +161,7 @@ namespace Acme.OtherSystem.Foo
             return res switch
             {
                 // normal response
-                GrainResponseMessage grainResponse => (Google.Protobuf.WellKnownTypes.Empty)grainResponse.ResponseMessage,
+                GrainResponseMessage grainResponse => Nothing.Instance,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 //timeout
@@ -209,14 +209,14 @@ namespace Acme.OtherSystem.Foo
         }
         public async Task<Google.Protobuf.WellKnownTypes.Empty> NoParameterOrReturn(CancellationToken ct)
         {
-            var gr = new GrainRequestMessage(3, Nothing.Instance);
+            var gr = new GrainRequestMessage(3, null);
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, "TestGrain", gr, ct);
 
             return res switch
             {
                 // normal response
-                GrainResponseMessage grainResponse => (Google.Protobuf.WellKnownTypes.Empty)grainResponse.ResponseMessage,
+                GrainResponseMessage grainResponse => Nothing.Instance,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 //timeout
@@ -228,14 +228,14 @@ namespace Acme.OtherSystem.Foo
         
         public async Task<Google.Protobuf.WellKnownTypes.Empty> NoParameterOrReturn(ISenderContext context, CancellationToken ct)
         {
-            var gr = new GrainRequestMessage(3, Nothing.Instance);
+            var gr = new GrainRequestMessage(3, null);
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, "TestGrain", gr,context, ct);
 
             return res switch
             {
                 // normal response
-                GrainResponseMessage grainResponse => (Google.Protobuf.WellKnownTypes.Empty)grainResponse.ResponseMessage,
+                GrainResponseMessage grainResponse => Nothing.Instance,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 //timeout
@@ -288,11 +288,7 @@ namespace Acme.OtherSystem.Foo
                     {
                         case 0:
                         {   
-                            if(r is Google.Protobuf.WellKnownTypes.Empty input){
-                                await _inner.GetState(Respond, OnError);
-                            } else {
-                                OnError("Invalid client contract");
-                            }
+                            await _inner.GetState(Respond, OnError);
 
                             break;
                         }
@@ -318,11 +314,7 @@ namespace Acme.OtherSystem.Foo
                         }
                         case 3:
                         {   
-                            if(r is Google.Protobuf.WellKnownTypes.Empty input){
-                                await _inner.NoParameterOrReturn(Respond, OnError);
-                            } else {
-                                OnError("Invalid client contract");
-                            }
+                            await _inner.NoParameterOrReturn(Respond, OnError);
 
                             break;
                         }
@@ -342,7 +334,7 @@ namespace Acme.OtherSystem.Foo
         }
 
         private void Respond<T>(T response) where T: IMessage => _context.Respond( new GrainResponseMessage(response));
-        private void Respond() => _context.Respond( new GrainResponseMessage(Nothing.Instance));
+        private void Respond() => _context.Respond( new GrainResponseMessage(null));
         private void OnError(string error) => _context.Respond( new GrainErrorResponse {Err = error } );
     }
 }

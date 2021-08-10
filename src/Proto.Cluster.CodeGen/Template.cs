@@ -82,14 +82,14 @@ namespace {{CsNamespace}}
 		{{#each Methods}}
         public async Task<{{OutputName}}> {{Name}}({{LeadingParameterDefinition}}CancellationToken ct)
         {
-            var gr = new GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}Nothing.Instance{{/if}});
+            var gr = new GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}null{{/if}});
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, ""{{../Name}}"", gr, ct);
 
             return res switch
             {
                 // normal response
-                GrainResponseMessage grainResponse => ({{OutputName}})grainResponse.ResponseMessage,
+                GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}})grainResponse.ResponseMessage{{else}}Nothing.Instance{{/if}},
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 //timeout
@@ -101,14 +101,14 @@ namespace {{CsNamespace}}
         
         public async Task<{{OutputName}}> {{Name}}({{LeadingParameterDefinition}}ISenderContext context, CancellationToken ct)
         {
-            var gr = new GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}Nothing.Instance{{/if}});
+            var gr = new GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}null{{/if}});
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, ""{{../Name}}"", gr,context, ct);
 
             return res switch
             {
                 // normal response
-                GrainResponseMessage grainResponse => ({{OutputName}})grainResponse.ResponseMessage,
+                GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}})grainResponse.ResponseMessage{{else}}Nothing.Instance{{/if}},
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 //timeout
@@ -163,11 +163,15 @@ namespace {{CsNamespace}}
 			            {{#each Methods}}
                         case {{Index}}:
                         {   
+                            {{#if UseParameter}}
                             if(r is {{InputName}} input){
-                                await _inner.{{Name}}({{#if UseParameter}}input, {{/if}}Respond, OnError);
+                                await _inner.{{Name}}(input, Respond, OnError);
                             } else {
                                 OnError(""Invalid client contract"");
                             }
+                            {{else}}
+                            await _inner.{{Name}}(Respond, OnError);
+                            {{/if}}
 
                             break;
                         }
@@ -188,7 +192,7 @@ namespace {{CsNamespace}}
         }
 
         private void Respond<T>(T response) where T: IMessage => _context.Respond( new GrainResponseMessage(response));
-        private void Respond() => _context.Respond( new GrainResponseMessage(Nothing.Instance));
+        private void Respond() => _context.Respond( new GrainResponseMessage(null));
         private void OnError(string error) => _context.Respond( new GrainErrorResponse {Err = error } );
     }
 	{{/each}}	
