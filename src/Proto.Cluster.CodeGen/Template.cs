@@ -17,7 +17,19 @@ using Proto.Cluster;
 
 namespace {{CsNamespace}}
 {
-    public static class GrainExtensions
+    public static partial class GrainKindConfig
+    {
+        {{#each Services}}
+        public const string {{Name}} = ""{{Name}}"";
+        {{/each}}
+
+        {{#each Services}}
+        public static ClusterKind Get{{Name}}(Func<IContext, ClusterIdentity, {{Name}}Base> innerFactory)
+            => new({{Name}}, Props.FromProducer(() => new {{Name}}Actor(innerFactory)));
+        {{/each}}
+    }
+
+    public static partial class GrainExtensions
     {
         {{#each Services}}
         public static {{Name}}Client Get{{Name}}(this Cluster cluster, string identity) => new(cluster, identity);
@@ -84,7 +96,7 @@ namespace {{CsNamespace}}
         {
             var gr = new GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}null{{/if}});
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, ""{{../Name}}"", gr, ct);
+            var res = await _cluster.RequestAsync<object>(_id, GrainKindConfig.{{../Name}}, gr, ct);
 
             return res switch
             {
@@ -103,7 +115,7 @@ namespace {{CsNamespace}}
         {
             var gr = new GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}null{{/if}});
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, ""{{../Name}}"", gr,context, ct);
+            var res = await _cluster.RequestAsync<object>(_id, GrainKindConfig.{{../Name}}, gr,context, ct);
 
             return res switch
             {
@@ -120,13 +132,13 @@ namespace {{CsNamespace}}
 		{{/each}}
     }
 
-    class {{Name}}Actor : IActor
+    public class {{Name}}Actor : IActor
     {
         private {{Name}}Base _inner;
         private IContext _context;
-        private Func<IContext, string, string, {{Name}}Base> _innerFactory;        
+        private Func<IContext, ClusterIdentity, {{Name}}Base> _innerFactory;        
     
-        public {{Name}}Actor(Func<IContext, string, string, {{Name}}Base> innerFactory)
+        public {{Name}}Actor(Func<IContext, ClusterIdentity, {{Name}}Base> innerFactory)
         {
             _innerFactory = innerFactory;
         }
@@ -139,7 +151,7 @@ namespace {{CsNamespace}}
                 {
                     _context = context;
                     var id = context.Get<ClusterIdentity>();
-                    _inner = _innerFactory(context, id.Identity, id.Kind);
+                    _inner = _innerFactory(context, id);
                     await _inner.OnStarted();
                     break;
                 }

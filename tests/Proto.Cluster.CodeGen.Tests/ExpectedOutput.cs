@@ -7,7 +7,15 @@ using Proto.Cluster;
 
 namespace Acme.OtherSystem.Foo
 {
-    public static class GrainExtensions
+    public static partial class GrainKindConfig
+    {
+        public const string TestGrain = "TestGrain";
+
+        public static ClusterKind GetTestGrain(Func<IContext, ClusterIdentity, TestGrainBase> innerFactory)
+            => new(TestGrain, Props.FromProducer(() => new TestGrainActor(innerFactory)));
+    }
+
+    public static partial class GrainExtensions
     {
         public static TestGrainClient GetTestGrain(this Cluster cluster, string identity) => new(cluster, identity);
 
@@ -100,7 +108,7 @@ namespace Acme.OtherSystem.Foo
         {
             var gr = new GrainRequestMessage(0, null);
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, "TestGrain", gr, ct);
+            var res = await _cluster.RequestAsync<object>(_id, GrainKindConfig.TestGrain, gr, ct);
 
             return res switch
             {
@@ -119,7 +127,7 @@ namespace Acme.OtherSystem.Foo
         {
             var gr = new GrainRequestMessage(0, null);
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, "TestGrain", gr,context, ct);
+            var res = await _cluster.RequestAsync<object>(_id, GrainKindConfig.TestGrain, gr,context, ct);
 
             return res switch
             {
@@ -137,7 +145,7 @@ namespace Acme.OtherSystem.Foo
         {
             var gr = new GrainRequestMessage(1, request);
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, "TestGrain", gr, ct);
+            var res = await _cluster.RequestAsync<object>(_id, GrainKindConfig.TestGrain, gr, ct);
 
             return res switch
             {
@@ -156,7 +164,7 @@ namespace Acme.OtherSystem.Foo
         {
             var gr = new GrainRequestMessage(1, request);
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, "TestGrain", gr,context, ct);
+            var res = await _cluster.RequestAsync<object>(_id, GrainKindConfig.TestGrain, gr,context, ct);
 
             return res switch
             {
@@ -174,7 +182,7 @@ namespace Acme.OtherSystem.Foo
         {
             var gr = new GrainRequestMessage(2, request);
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, "TestGrain", gr, ct);
+            var res = await _cluster.RequestAsync<object>(_id, GrainKindConfig.TestGrain, gr, ct);
 
             return res switch
             {
@@ -193,7 +201,7 @@ namespace Acme.OtherSystem.Foo
         {
             var gr = new GrainRequestMessage(2, request);
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, "TestGrain", gr,context, ct);
+            var res = await _cluster.RequestAsync<object>(_id, GrainKindConfig.TestGrain, gr,context, ct);
 
             return res switch
             {
@@ -211,7 +219,7 @@ namespace Acme.OtherSystem.Foo
         {
             var gr = new GrainRequestMessage(3, null);
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, "TestGrain", gr, ct);
+            var res = await _cluster.RequestAsync<object>(_id, GrainKindConfig.TestGrain, gr, ct);
 
             return res switch
             {
@@ -230,7 +238,7 @@ namespace Acme.OtherSystem.Foo
         {
             var gr = new GrainRequestMessage(3, null);
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, "TestGrain", gr,context, ct);
+            var res = await _cluster.RequestAsync<object>(_id, GrainKindConfig.TestGrain, gr,context, ct);
 
             return res switch
             {
@@ -246,13 +254,13 @@ namespace Acme.OtherSystem.Foo
         }
     }
 
-    class TestGrainActor : IActor
+    public class TestGrainActor : IActor
     {
         private TestGrainBase _inner;
         private IContext _context;
-        private Func<IContext, string, string, TestGrainBase> _innerFactory;        
+        private Func<IContext, ClusterIdentity, TestGrainBase> _innerFactory;        
     
-        public TestGrainActor(Func<IContext, string, string, TestGrainBase> innerFactory)
+        public TestGrainActor(Func<IContext, ClusterIdentity, TestGrainBase> innerFactory)
         {
             _innerFactory = innerFactory;
         }
@@ -265,7 +273,7 @@ namespace Acme.OtherSystem.Foo
                 {
                     _context = context;
                     var id = context.Get<ClusterIdentity>();
-                    _inner = _innerFactory(context, id.Identity, id.Kind);
+                    _inner = _innerFactory(context, id);
                     await _inner.OnStarted();
                     break;
                 }
