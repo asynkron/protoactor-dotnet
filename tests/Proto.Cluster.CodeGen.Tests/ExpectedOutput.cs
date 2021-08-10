@@ -12,7 +12,7 @@ namespace Acme.OtherSystem.Foo
         public const string TestGrain = "TestGrain";
 
         public static ClusterKind GetTestGrain(Func<IContext, ClusterIdentity, TestGrainBase> innerFactory)
-            => new(TestGrainKind, Props.FromProducer(() => new TestGrainActor(innerFactory)));
+            => new(TestGrain, Props.FromProducer(() => new TestGrainActor(innerFactory)));
     }
 
     public static partial class GrainExtensions

@@ -25,7 +25,7 @@ namespace {{CsNamespace}}
 
         {{#each Services}}
         public static ClusterKind Get{{Name}}(Func<IContext, ClusterIdentity, {{Name}}Base> innerFactory)
-            => new({{Name}}Kind, Props.FromProducer(() => new {{Name}}Actor(innerFactory)));
+            => new({{Name}}, Props.FromProducer(() => new {{Name}}Actor(innerFactory)));
         {{/each}}
     }
 
