@@ -11,8 +11,8 @@ namespace Acme.OtherSystem.Foo
     {
         public const string TestGrain = "TestGrain";
 
-        public static ClusterKind GetTestGrain(Func<IContext, string, string, TestGrainBase> createGrain)
-            => new(TestGrainKind, Props.FromProducer(() => new TestGrainActor(createGrain)));
+        public static ClusterKind GetTestGrain(Func<IContext, ClusterIdentity, TestGrainBase> innerFactory)
+            => new(TestGrainKind, Props.FromProducer(() => new TestGrainActor(innerFactory)));
     }
 
     public static partial class GrainExtensions
@@ -258,9 +258,9 @@ namespace Acme.OtherSystem.Foo
     {
         private TestGrainBase _inner;
         private IContext _context;
-        private Func<IContext, string, string, TestGrainBase> _innerFactory;        
+        private Func<IContext, ClusterIdentity, TestGrainBase> _innerFactory;        
     
-        public TestGrainActor(Func<IContext, string, string, TestGrainBase> innerFactory)
+        public TestGrainActor(Func<IContext, ClusterIdentity, TestGrainBase> innerFactory)
         {
             _innerFactory = innerFactory;
         }
@@ -273,7 +273,7 @@ namespace Acme.OtherSystem.Foo
                 {
                     _context = context;
                     var id = context.Get<ClusterIdentity>();
-                    _inner = _innerFactory(context, id.Identity, id.Kind);
+                    _inner = _innerFactory(context, id);
                     await _inner.OnStarted();
                     break;
                 }

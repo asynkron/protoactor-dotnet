@@ -24,8 +24,8 @@ namespace {{CsNamespace}}
         {{/each}}
 
         {{#each Services}}
-        public static ClusterKind Get{{Name}}(Func<IContext, string, string, {{Name}}Base> createGrain)
-            => new({{Name}}Kind, Props.FromProducer(() => new {{Name}}Actor(createGrain)));
+        public static ClusterKind Get{{Name}}(Func<IContext, ClusterIdentity, {{Name}}Base> innerFactory)
+            => new({{Name}}Kind, Props.FromProducer(() => new {{Name}}Actor(innerFactory)));
         {{/each}}
     }
 
@@ -136,9 +136,9 @@ namespace {{CsNamespace}}
     {
         private {{Name}}Base _inner;
         private IContext _context;
-        private Func<IContext, string, string, {{Name}}Base> _innerFactory;        
+        private Func<IContext, ClusterIdentity, {{Name}}Base> _innerFactory;        
     
-        public {{Name}}Actor(Func<IContext, string, string, {{Name}}Base> innerFactory)
+        public {{Name}}Actor(Func<IContext, ClusterIdentity, {{Name}}Base> innerFactory)
         {
             _innerFactory = innerFactory;
         }
@@ -151,7 +151,7 @@ namespace {{CsNamespace}}
                 {
                     _context = context;
                     var id = context.Get<ClusterIdentity>();
-                    _inner = _innerFactory(context, id.Identity, id.Kind);
+                    _inner = _innerFactory(context, id);
                     await _inner.OnStarted();
                     break;
                 }
