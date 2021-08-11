@@ -12,14 +12,14 @@ namespace Acme.OtherSystem.Foo
         public const string TestGrain = "TestGrain";
 
         public static ClusterKind GetTestGrain(Func<IContext, ClusterIdentity, TestGrainBase> innerFactory)
-            => new(TestGrain, Props.FromProducer(() => new TestGrainActor(innerFactory)));
+            => new ClusterKind(TestGrain, Props.FromProducer(() => new TestGrainActor(innerFactory)));
     }
 
     public static partial class GrainExtensions
     {
-        public static TestGrainClient GetTestGrain(this Cluster cluster, string identity) => new(cluster, identity);
+        public static TestGrainClient GetTestGrain(this Cluster cluster, string identity) => new TestGrainClient(cluster, identity);
 
-        public static TestGrainClient GetTestGrain(this IContext context, string identity) => new(context.System.Cluster(), identity);
+        public static TestGrainClient GetTestGrain(this IContext context, string identity) => new TestGrainClient(context.System.Cluster(), identity);
     }
 
     public abstract class TestGrainBase
@@ -277,15 +277,15 @@ namespace Acme.OtherSystem.Foo
                     await _inner.OnStarted();
                     break;
                 }
-                case ClusterInit:
+                case ClusterInit _:
                     //Ignored
                     break;
-                case Stopping:
+                case Stopping _:
                 {
                     await _inner.OnStopping();
                     break;
                 }
-                case Stopped:
+                case Stopped _:
                 {
                     await _inner.OnStopped();
                     break;
