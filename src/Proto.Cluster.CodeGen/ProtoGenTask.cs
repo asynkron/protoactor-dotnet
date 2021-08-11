@@ -55,7 +55,7 @@ namespace Proto.Cluster.CodeGen
         private static void EnsureDirExistsAndIsEmpty(string? potatoDirectory)
         {
             Directory.CreateDirectory(potatoDirectory);
-            DirectoryInfo di = new(potatoDirectory);
+            DirectoryInfo di = new DirectoryInfo(potatoDirectory);
 
             foreach (FileInfo file in di.GetFiles())
             {
