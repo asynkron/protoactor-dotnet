@@ -25,16 +25,16 @@ namespace {{CsNamespace}}
 
         {{#each Services}}
         public static ClusterKind Get{{Name}}(Func<IContext, ClusterIdentity, {{Name}}Base> innerFactory)
-            => new({{Name}}, Props.FromProducer(() => new {{Name}}Actor(innerFactory)));
+            => new ClusterKind({{Name}}, Props.FromProducer(() => new {{Name}}Actor(innerFactory)));
         {{/each}}
     }
 
     public static partial class GrainExtensions
     {
         {{#each Services}}
-        public static {{Name}}Client Get{{Name}}(this Cluster cluster, string identity) => new(cluster, identity);
+        public static {{Name}}Client Get{{Name}}(this Cluster cluster, string identity) => new {{Name}}Client(cluster, identity);
 
-        public static {{Name}}Client Get{{Name}}(this IContext context, string identity) => new(context.System.Cluster(), identity);
+        public static {{Name}}Client Get{{Name}}(this IContext context, string identity) => new {{Name}}Client(context.System.Cluster(), identity);
         {{/each}}
     }
 
@@ -155,15 +155,15 @@ namespace {{CsNamespace}}
                     await _inner.OnStarted();
                     break;
                 }
-                case ClusterInit:
+                case ClusterInit _:
                     //Ignored
                     break;
-                case Stopping:
+                case Stopping _:
                 {
                     await _inner.OnStopping();
                     break;
                 }
-                case Stopped:
+                case Stopped _:
                 {
                     await _inner.OnStopped();
                     break;
