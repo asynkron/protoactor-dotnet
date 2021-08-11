@@ -155,15 +155,15 @@ namespace {{CsNamespace}}
                     await _inner.OnStarted();
                     break;
                 }
-                case ClusterInit:
+                case ClusterInit _:
                     //Ignored
                     break;
-                case Stopping:
+                case Stopping _:
                 {
                     await _inner.OnStopping();
                     break;
                 }
-                case Stopped:
+                case Stopped _:
                 {
                     await _inner.OnStopped();
                     break;
