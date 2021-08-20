@@ -71,8 +71,10 @@ namespace Proto.Cluster.CodeGen
                                         Name = m.Name,
                                         InputNameRaw = RemovePackageName(m.InputType),
                                         OutputNameRaw = RemovePackageName(m.OutputType),
-                                        InputObject = ctx.TryFind<DescriptorProto>(m.InputType),
-                                        OutputObject = ctx.TryFind<DescriptorProto>(m.OutputType),
+                                        InputObject = ctx.TryFind<DescriptorProto>(m.InputType)
+                                                   ?? throw new Exception($"Unable to resolve input parameter type for {s.Name}.{m}"),
+                                        OutputObject = ctx.TryFind<DescriptorProto>(m.OutputType)
+                                                    ?? throw new Exception($"Unable to resolve return type for {s.Name}.{m}"),
                                         EmptyReturn = m.OutputType.Equals(".google.protobuf.Empty"),
                                         EmptyParameter = m.InputType.Equals(".google.protobuf.Empty")
                                     }

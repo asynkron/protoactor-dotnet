@@ -1,0 +1,9 @@
+syntax = "proto3";
+package Foo;
+option csharp_namespace = "Acme.OtherSystem.Foo";
+
+import "google/protobuf/empty.proto";
+
+service InvalidTestGrain2 {
+  rpc SomeCommand (NonexistantType) returns(google.protobuf.Empty) {}
+}

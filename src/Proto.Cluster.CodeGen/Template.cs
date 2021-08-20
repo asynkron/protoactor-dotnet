@@ -17,18 +17,6 @@ using Proto.Cluster;
 
 namespace {{CsNamespace}}
 {
-    public static partial class GrainKindConfig
-    {
-        {{#each Services}}
-        public const string {{Name}} = ""{{Name}}"";
-        {{/each}}
-
-        {{#each Services}}
-        public static ClusterKind Get{{Name}}(Func<IContext, ClusterIdentity, {{Name}}Base> innerFactory)
-            => new ClusterKind({{Name}}, Props.FromProducer(() => new {{Name}}Actor(innerFactory)));
-        {{/each}}
-    }
-
     public static partial class GrainExtensions
     {
         {{#each Services}}
@@ -96,7 +84,7 @@ namespace {{CsNamespace}}
         {
             var gr = new GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}null{{/if}});
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, GrainKindConfig.{{../Name}}, gr, ct);
+            var res = await _cluster.RequestAsync<object>(_id, {{../Name}}Actor.Kind, gr, ct);
 
             return res switch
             {
@@ -115,7 +103,7 @@ namespace {{CsNamespace}}
         {
             var gr = new GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}null{{/if}});
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, GrainKindConfig.{{../Name}}, gr,context, ct);
+            var res = await _cluster.RequestAsync<object>(_id, {{../Name}}Actor.Kind, gr,context, ct);
 
             return res switch
             {
@@ -134,6 +122,8 @@ namespace {{CsNamespace}}
 
     public class {{Name}}Actor : IActor
     {
+        public const string Kind = ""{{Name}}"";
+
         private {{Name}}Base _inner;
         private IContext _context;
         private Func<IContext, ClusterIdentity, {{Name}}Base> _innerFactory;        
@@ -206,6 +196,9 @@ namespace {{CsNamespace}}
         private void Respond<T>(T response) where T: IMessage => _context.Respond( new GrainResponseMessage(response));
         private void Respond() => _context.Respond( new GrainResponseMessage(null));
         private void OnError(string error) => _context.Respond( new GrainErrorResponse {Err = error } );
+
+        public static ClusterKind GetClusterKind(Func<IContext, ClusterIdentity, {{Name}}Base> innerFactory)
+            => new ClusterKind(Kind, Props.FromProducer(() => new {{Name}}Actor(innerFactory)));
     }
 	{{/each}}	
 }
