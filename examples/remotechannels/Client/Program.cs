@@ -20,10 +20,7 @@ await foreach (var msg in channel.Reader.ReadAllAsync())
 
 static async Task StartClient(Channel<MyMessage> channel)
 {
-    var system =
-        new ActorSystem()
-            .WithRemote(BindToLocalhost());
-
+    var system = new ActorSystem().WithRemote(BindToLocalhost());
     await system.Remote().StartAsync();
 
     var server = PID.FromAddress("127.0.0.1:8000", "server");
