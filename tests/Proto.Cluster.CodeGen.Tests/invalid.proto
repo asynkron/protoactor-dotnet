@@ -1,0 +1,10 @@
+syntax = "proto3";
+package Foo;
+option csharp_namespace = "Acme.OtherSystem.Foo";
+import "bah.proto";
+
+import "google/protobuf/empty.proto";
+
+service InvalidTestGrain {
+  rpc GetState (google.protobuf.Empty) returns(Bar.GetCurrentStateResponse) {}
+}

@@ -13,11 +13,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="foo.proto" />
-        <None Remove="bar.proto" />
         <Compile Remove="ExpectedOutput.cs" />
         <Content Include="foo.proto" CopyToOutputDirectory="Always" />
         <Content Include="bar.proto" CopyToOutputDirectory="Always" />
+        <Content Include="invalid.proto" CopyToOutputDirectory="Always" />
+        <Content Include="invalid2.proto" CopyToOutputDirectory="Always" />
         <Content Include="ExpectedOutput.cs" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 

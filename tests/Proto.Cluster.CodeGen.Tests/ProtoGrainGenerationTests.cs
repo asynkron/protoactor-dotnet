@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using FluentAssertions;
 using Google.Protobuf.Reflection;
 using ProtoBuf.Reflection;
 using Xunit;
@@ -33,6 +35,23 @@ namespace Proto.Cluster.CodeGen.Tests
 
             var expectedOutput = File.ReadAllText(expectedOutputFile).Trim();
             Assert.Equal(expectedOutput, res.Single().Text.Trim());
+        }
+        
+        [Theory]
+        [InlineData("invalid.proto","Unable to resolve return type for InvalidTestGrain.GetState")]
+        [InlineData("invalid2.proto","Unable to resolve input parameter type for InvalidTestGrain2.SomeCommand")]
+        public void FailsGracefully(string protoDefinitionFile, string expectedErrorMessage)
+        {
+            var r = new FileInfo(protoDefinitionFile).OpenText();
+            var set = new FileDescriptorSet();
+            set.AddImportPath(".");
+            set.Add(protoDefinitionFile, true, r);
+            set.Process();
+            var c = new CodeGenerator(Template.DefaultTemplate);
+
+            c.Invoking(it => it.Generate(set, NameNormalizer.Default, new Dictionary<string, string>()).ToArray())
+                .Should().Throw<Exception>()
+                .WithMessage(expectedErrorMessage);
         }
     }
 }
