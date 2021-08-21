@@ -9,7 +9,7 @@
 
   <ItemGroup>
 
-    <PackageReference Include="Grpc" Version="2.38.1" />
+    <PackageReference Include="Grpc" Version="2.39.1" />
     <PackageReference Include="Grpc.HealthCheck" Version="2.38.1" />
 
   </ItemGroup>
