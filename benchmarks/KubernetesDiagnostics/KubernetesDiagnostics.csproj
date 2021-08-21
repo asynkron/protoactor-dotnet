@@ -16,7 +16,7 @@
         <PackageReference Include="Proto.Cluster.Consul" Version="0.20.0" />
       <PackageReference Include="Proto.Remote.GrpcNet" Version="0.21.0" />
         <PackageReference Include="Proto.Remote.GrpcCore" Version="0.21.0" />
-      <PackageReference Include="StackExchange.Redis" Version="2.2.50" />
+      <PackageReference Include="StackExchange.Redis" Version="2.2.62" />
     </ItemGroup>
 
 </Project>
