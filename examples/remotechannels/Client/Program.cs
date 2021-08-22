@@ -3,6 +3,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using Messages;
 using Proto;
+using Proto.Channels;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using static System.Threading.Channels.Channel;
@@ -24,21 +25,7 @@ static async Task StartClient(Channel<MyMessage> channel)
     await system.Remote().StartAsync();
 
     var server = PID.FromAddress("127.0.0.1:8000", "server");
-    var props = Props.FromFunc(async ctx => {
-            switch (ctx.Message)
-            {
-                case Started:
-                    ctx.Request(server, new Subscribe());
-                    break;
-                case Subscribed:
-                    Console.WriteLine("Subscribed");
-                    break;
-                case MyMessage msg:
-                    await channel.Writer.WriteAsync(msg);
-                    break;
-            }
-        }
-    );
-
-    system.Root.Spawn(props);
+    var props = ChannelWriterActor<MyMessage>.Props(channel);
+    var pid = system.Root.Spawn(props);
+    system.Root.Request(server, new Subscribe(), pid);
 }
