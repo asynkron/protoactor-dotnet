@@ -4,6 +4,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using Messages;
 using Proto;
+using Proto.Channels;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using static Proto.Remote.GrpcNet.GrpcNetRemoteConfig;
@@ -27,39 +28,6 @@ static async Task StartServer(Channel<MyMessage> channel)
 {
     var system = new ActorSystem().WithRemote(BindToLocalhost(8000));
     await system.Remote().StartAsync();
-    var subscribers = new HashSet<PID>();
-
-    //define server actor
-    var props = Props.FromFunc(ctx => {
-            switch (ctx.Message)
-            {
-                case Subscribe:
-                    subscribers.Add(ctx.Sender);
-                    ctx.Respond(new Subscribed());
-                    break;
-                case MyMessage msg: {
-                    foreach (var sub in subscribers)
-                    {
-                        ctx.Send(sub, msg);
-                    }
-
-                    break;
-                }
-            }
-
-            return Task.CompletedTask;
-        }
-    );
-
-    //spawn server actor
-    var pid = system.Root.SpawnNamed(props, "server");
-
-    //move messages from source channel to server actor
-    _ = Task.Run(async () => {
-            await foreach (var msg in channel.Reader.ReadAllAsync())
-            {
-                system.Root.Send(pid, msg);
-            }
-        }
-    );
+    
+    ChannelReaderActor<MyMessage>.StartNew(system.Root, channel);
 }

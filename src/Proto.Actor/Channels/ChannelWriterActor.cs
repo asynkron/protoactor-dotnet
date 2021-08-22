@@ -6,19 +6,34 @@
 using System;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace Proto.Channels
 {
+    [PublicAPI]
     public class ChannelWriterActor<T> : IActor
     {
-        public static Props Props(Channel<T> channel) => Proto.Props.FromProducer(() => new ChannelWriterActor<T>(channel));
-        
+        public static void StartNew(IRootContext context, PID publisher, Channel<T> channel)
+        {
+            var props = Props.FromProducer(() => new ChannelWriterActor<T>(publisher, channel));
+            var pid = context.Spawn(props);
+        }
+
+        private readonly PID _publisher;
         private readonly Channel<T> _channel;
 
-        public ChannelWriterActor(Channel<T> channel) => _channel = channel;
+        public ChannelWriterActor(PID publisher, Channel<T> channel)
+        {
+            _publisher = publisher;
+            _channel = channel;
+        }
 
         public async Task ReceiveAsync(IContext context)
         {
+            if (context.Message is Started)
+            {
+                context.Request(_publisher, context.Self);
+            }
             if (context.Message is T typed)
             {
                 await _channel.Writer.WriteAsync(typed);

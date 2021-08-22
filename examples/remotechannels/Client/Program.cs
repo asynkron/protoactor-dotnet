@@ -25,7 +25,5 @@ static async Task StartClient(Channel<MyMessage> channel)
     await system.Remote().StartAsync();
 
     var server = PID.FromAddress("127.0.0.1:8000", "server");
-    var props = ChannelWriterActor<MyMessage>.Props(channel);
-    var pid = system.Root.Spawn(props);
-    system.Root.Request(server, new Subscribe(), pid);
+    ChannelWriterActor<MyMessage>.StartNew(system.Root, server, channel);
 }
