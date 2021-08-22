@@ -12,7 +12,7 @@ await system.Remote().StartAsync();
 
 var publisher = PID.FromAddress("127.0.0.1:8000", "publisher");
 var channel = CreateUnbounded<MyMessage>();
-ChannelSubscriberActor<MyMessage>.StartNew(system.Root, publisher, channel);
+_ = ChannelSubscriberActor<MyMessage>.StartNew(system.Root, publisher, channel);
 
 Console.WriteLine("Waiting for messages");
 await foreach (var msg in channel.Reader.ReadAllAsync())

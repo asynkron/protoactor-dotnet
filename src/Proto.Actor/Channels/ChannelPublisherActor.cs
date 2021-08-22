@@ -13,7 +13,7 @@ namespace Proto.Channels
     [PublicAPI]
     public class ChannelPublisherActor<T> : IActor
     {
-        public static void StartNew(IRootContext context, Channel<T> channel, string name)
+        public static PID StartNew(IRootContext context, Channel<T> channel, string name)
         {
             var props = Props.FromProducer(() => new ChannelPublisherActor<T>());
             var pid = context.SpawnNamed(props, name);
@@ -26,6 +26,7 @@ namespace Proto.Channels
                     await context.PoisonAsync(pid);
                 }
             );
+            return pid;
         }
 
         private readonly HashSet<PID> _subscribers = new();

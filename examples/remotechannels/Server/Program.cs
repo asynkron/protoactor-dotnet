@@ -12,14 +12,12 @@ var system = new ActorSystem().WithRemote(BindToLocalhost(8000));
 await system.Remote().StartAsync();
 
 var channel = CreateUnbounded<MyMessage>();
-ChannelPublisherActor<MyMessage>.StartNew(system.Root, channel, "publisher");
+_ = ChannelPublisherActor<MyMessage>.StartNew(system.Root, channel, "publisher");
 
 //produce messages
-var i = 0;
-while (true)
+for (var i = 0; i < 30; i++)
 {
     Console.WriteLine("Sending message " + i);
     await channel.Writer.WriteAsync(new MyMessage(i));
-    i++;
     await Task.Delay(1000);
 }
