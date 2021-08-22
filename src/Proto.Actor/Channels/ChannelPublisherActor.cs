@@ -11,9 +11,9 @@ using JetBrains.Annotations;
 namespace Proto.Channels
 {
     [PublicAPI]
-    public class ChannelPublisherActor<T> : IActor
+    public static class ChannelPublisher
     {
-        public static PID StartNew(IRootContext context, Channel<T> channel, string name)
+        public static PID StartNew<T>(IRootContext context, Channel<T> channel, string name)
         {
             var props = Props.FromProducer(() => new ChannelPublisherActor<T>());
             var pid = context.SpawnNamed(props, name);
@@ -28,7 +28,10 @@ namespace Proto.Channels
             );
             return pid;
         }
-
+    }
+    [PublicAPI]
+    public class ChannelPublisherActor<T> : IActor
+    {
         private readonly HashSet<PID> _subscribers = new();
 
         public Task ReceiveAsync(IContext context)

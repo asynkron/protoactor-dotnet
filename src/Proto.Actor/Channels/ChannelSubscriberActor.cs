@@ -10,15 +10,19 @@ using JetBrains.Annotations;
 namespace Proto.Channels
 {
     [PublicAPI]
-    public class ChannelSubscriberActor<T> : IActor
+    public static class ChannelSubscriber
     {
-        public static PID StartNew(IRootContext context, PID publisher, Channel<T> channel)
+        public static PID StartNew<T>(IRootContext context, PID publisher, Channel<T> channel)
         {
             var props = Props.FromProducer(() => new ChannelSubscriberActor<T>(publisher, channel));
             var pid = context.Spawn(props);
             return pid;
         }
-
+    }
+    
+    [PublicAPI]
+    public class ChannelSubscriberActor<T> : IActor
+    {
         private readonly PID _publisher;
         private readonly Channel<T> _channel;
 

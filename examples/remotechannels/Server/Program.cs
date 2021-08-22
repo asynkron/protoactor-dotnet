@@ -12,7 +12,7 @@ var system = new ActorSystem().WithRemote(BindToLocalhost(8000));
 await system.Remote().StartAsync();
 
 var channel = CreateUnbounded<MyMessage>();
-_ = ChannelPublisherActor<MyMessage>.StartNew(system.Root, channel, "publisher");
+_ = ChannelPublisher.StartNew(system.Root, channel, "publisher");
 
 //produce messages
 for (var i = 0; i < 30; i++)
