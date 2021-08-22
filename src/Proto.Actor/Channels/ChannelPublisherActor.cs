@@ -11,12 +11,12 @@ using JetBrains.Annotations;
 namespace Proto.Channels
 {
     [PublicAPI]
-    public class ChannelReaderActor<T> : IActor
+    public class ChannelPublisherActor<T> : IActor
     {
-        public static void StartNew(IRootContext context, Channel<T> channel)
+        public static void StartNew(IRootContext context, Channel<T> channel, string name)
         {
-            var props = Props.FromProducer(() => new ChannelReaderActor<T>());
-            var pid = context.Spawn(props);
+            var props = Props.FromProducer(() => new ChannelPublisherActor<T>());
+            var pid = context.SpawnNamed(props, name);
             _ = Task.Run(async () => {
                     await foreach (var msg in channel.Reader.ReadAllAsync())
                     {
@@ -27,7 +27,7 @@ namespace Proto.Channels
                 }
             );
         }
-        
+
         private readonly HashSet<PID> _subscribers = new();
 
         public Task ReceiveAsync(IContext context)

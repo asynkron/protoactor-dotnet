@@ -11,18 +11,18 @@ using JetBrains.Annotations;
 namespace Proto.Channels
 {
     [PublicAPI]
-    public class ChannelWriterActor<T> : IActor
+    public class ChannelSubscriberActor<T> : IActor
     {
         public static void StartNew(IRootContext context, PID publisher, Channel<T> channel)
         {
-            var props = Props.FromProducer(() => new ChannelWriterActor<T>(publisher, channel));
+            var props = Props.FromProducer(() => new ChannelSubscriberActor<T>(publisher, channel));
             var pid = context.Spawn(props);
         }
 
         private readonly PID _publisher;
         private readonly Channel<T> _channel;
 
-        public ChannelWriterActor(PID publisher, Channel<T> channel)
+        public ChannelSubscriberActor(PID publisher, Channel<T> channel)
         {
             _publisher = publisher;
             _channel = channel;
