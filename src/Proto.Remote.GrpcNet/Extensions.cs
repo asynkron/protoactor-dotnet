@@ -24,7 +24,7 @@ namespace Proto.Remote.GrpcNet
 
         public static IServiceCollection AddRemote(this IServiceCollection services, Func<IServiceProvider, GrpcNetRemoteConfig> configure)
         {
-            services.AddSingleton(sp => configure(sp));
+            services.AddSingleton(configure);
             AddAllServices(services);
             return services;
         }
