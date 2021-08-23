@@ -26,6 +26,17 @@ namespace Proto
         public ActorSystem() : this(new ActorSystemConfig())
         {
         }
+        
+        public static async Task<ActorSystem> StartNew(params Func<ActorSystem,Task>[] options)
+        {
+            var system = new ActorSystem();
+            foreach (var option in options)
+            {
+                await option(system);
+            }
+
+            return system;
+        }
 
         public ActorSystem(ActorSystemConfig config)
         {
