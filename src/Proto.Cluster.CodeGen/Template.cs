@@ -95,7 +95,7 @@ namespace {{CsNamespace}}
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException(""Unknown response type "" + res.GetType().Name)
+                _ => throw new NotSupportedException($""Unknown response type {res.GetType().FullName}"")
             };
         }
         
@@ -114,7 +114,7 @@ namespace {{CsNamespace}}
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException(""Unknown response type "" + res.GetType().Name)
+                _ => throw new NotSupportedException($""Unknown response type {res.GetType().FullName}"")
             };
         }
 		{{/each}}
@@ -169,7 +169,7 @@ namespace {{CsNamespace}}
                             if(r is {{InputName}} input){
                                 await _inner.{{Name}}(input, Respond, OnError);
                             } else {
-                                OnError(""Invalid client contract"");
+                                OnError($""Invalid client contract. Expected {{InputName}}, received {r?.GetType().FullName}"");
                             }
                             {{else}}
                             await _inner.{{Name}}(Respond, OnError);
@@ -179,7 +179,7 @@ namespace {{CsNamespace}}
                         }
 			            {{/each}}
                         default:
-                            OnError(""Invalid client contract"");
+                            OnError($""Invalid client contract. Unexpected Index {methodIndex}"");
                             break;
                     }
 
