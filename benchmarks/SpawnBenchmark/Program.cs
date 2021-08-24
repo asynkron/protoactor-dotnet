@@ -58,7 +58,12 @@ namespace SpawnBenchmark
                 case long res: {
                     _sum += res;
                     _replies--;
-                    if (_replies == 0) context.Send(_replyTo, _sum);
+
+                    if (_replies == 0)
+                    {
+                        context.Send(_replyTo, _sum);
+                        context.Stop(context.Self);
+                    }
                     return Task.CompletedTask;
                 }
                 default:
@@ -95,7 +100,6 @@ namespace SpawnBenchmark
                 var res = t.Result;
                 Console.WriteLine(sw.Elapsed);
                 Console.WriteLine(res);
-                context.StopAsync(pid).Wait();
                 Task.Delay(500).Wait();
             }
 
