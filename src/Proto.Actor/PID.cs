@@ -55,7 +55,7 @@ namespace Proto
         {
             if (sys is null)
             {
-                throw new ArgumentNullException(nameof(message));
+                throw new ArgumentNullException(nameof(sys));
             }
             
             var reff = Ref(system) ?? system.ProcessRegistry.Get(this);
