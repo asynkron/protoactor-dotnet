@@ -299,7 +299,7 @@ namespace Acme.OtherSystem.Foo
                             if(r is Acme.Mysystem.Bar.SomeCommand input){
                                 await _inner.SendCommand(input, Respond, OnError);
                             } else {
-                                OnError("Invalid client contract");
+                                OnError($"Invalid client contract. Expected Acme.Mysystem.Bar.SomeCommand, Received {r?.GetType().FullName}");
                             }
 
                             break;
@@ -309,7 +309,7 @@ namespace Acme.OtherSystem.Foo
                             if(r is Acme.Mysystem.Bar.Query input){
                                 await _inner.RequestResponse(input, Respond, OnError);
                             } else {
-                                OnError("Invalid client contract");
+                                OnError($"Invalid client contract. Expected Acme.Mysystem.Bar.Query, Received {r?.GetType().FullName}");
                             }
 
                             break;
@@ -321,7 +321,7 @@ namespace Acme.OtherSystem.Foo
                             break;
                         }
                         default:
-                            OnError("Invalid client contract");
+                            OnError("Invalid client contract, unknown method index");
                             break;
                     }
 

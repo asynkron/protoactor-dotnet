@@ -180,7 +180,9 @@ namespace Proto.Cluster.Partition
             _partitionLookup[msg.ClusterIdentity] = msg.Pid;
         }
 
+#pragma warning disable 1998
         private async Task OnActivationRequest(ActivationRequest msg, IContext context)
+#pragma warning restore 1998
         {
             if (_config.DeveloperLogging)
                 Console.WriteLine($"Got ActivationRequest {msg.RequestId}");

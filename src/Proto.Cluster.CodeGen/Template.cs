@@ -169,7 +169,7 @@ namespace {{CsNamespace}}
                             if(r is {{InputName}} input){
                                 await _inner.{{Name}}(input, Respond, OnError);
                             } else {
-                                OnError(""Invalid client contract"");
+                                OnError($""Invalid client contract. Expected {{InputName}}, Received {r?.GetType().FullName}"");
                             }
                             {{else}}
                             await _inner.{{Name}}(Respond, OnError);
@@ -179,7 +179,7 @@ namespace {{CsNamespace}}
                         }
 			            {{/each}}
                         default:
-                            OnError(""Invalid client contract"");
+                            OnError(""Invalid client contract, unknown method index"");
                             break;
                     }
 
