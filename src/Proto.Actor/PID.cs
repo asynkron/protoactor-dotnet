@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using Google.Protobuf;
 
 namespace Proto
@@ -41,12 +42,22 @@ namespace Proto
 
         internal void SendUserMessage(ActorSystem system, object message)
         {
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+            
             var reff = Ref(system) ?? system.ProcessRegistry.Get(this);
             reff.SendUserMessage(this, message);
         }
 
         public void SendSystemMessage(ActorSystem system, object sys)
         {
+            if (sys is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+            
             var reff = Ref(system) ?? system.ProcessRegistry.Get(this);
             reff.SendSystemMessage(this, sys);
         }
