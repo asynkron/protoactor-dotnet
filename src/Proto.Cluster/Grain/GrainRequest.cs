@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using Proto.Remote;
@@ -15,9 +16,9 @@ namespace Proto.Cluster
         //deserialize into the in-process message type that the grain actors understands
         public IRootSerializable Deserialize(ActorSystem system)
         {
-            if (MessageData.IsEmpty)
+            //special case for null messages
+            if (MessageData.IsEmpty && string.IsNullOrEmpty(MessageTypeName))
             {
-                Logger.LogError("GrainRequest contains no data {Message}", this);
                 return new GrainRequestMessage(MethodIndex, null);
             }
 
