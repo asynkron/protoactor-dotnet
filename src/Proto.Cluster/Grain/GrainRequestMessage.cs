@@ -5,18 +5,16 @@
 // -----------------------------------------------------------------------
 using System;
 using Google.Protobuf;
-using Microsoft.Extensions.Logging;
 using Proto.Remote;
 
 namespace Proto.Cluster
 {
     public record GrainRequestMessage(int MethodIndex, IMessage? RequestMessage) : IRootSerializable
     {
-        private static readonly ILogger Logger = Log.CreateLogger<GrainRequestMessage>();
         //serialize into the on-the-wire format
         public IRootSerialized Serialize(ActorSystem system)
         {
-            if (RequestMessage is null ) return new GrainRequest {MethodIndex = MethodIndex};
+            if (RequestMessage is null) return new GrainRequest {MethodIndex = MethodIndex};
 
             var ser = system.Serialization();
             var (data, typeName, serializerId) = ser.Serialize(RequestMessage);
