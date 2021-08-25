@@ -5,12 +5,14 @@
 // -----------------------------------------------------------------------
 using System;
 using Google.Protobuf;
+using Microsoft.Extensions.Logging;
 using Proto.Remote;
 
 namespace Proto.Cluster
 {
     public record GrainRequestMessage(int MethodIndex, IMessage? RequestMessage) : IRootSerializable
     {
+        private static readonly ILogger Logger = Log.CreateLogger<GrainRequestMessage>();
         //serialize into the on-the-wire format
         public IRootSerialized Serialize(ActorSystem system)
         {
@@ -22,6 +24,11 @@ namespace Proto.Cluster
             if (serializerId != Serialization.SERIALIZER_ID_PROTOBUF)
                 throw new Exception($"Grains must use ProtoBuf types: {RequestMessage.GetType().FullName}");
 #endif
+            if (data is null || data.IsEmpty)
+            {
+                Logger.LogError("GrainRequestMessage contains no data {Message}", RequestMessage);
+            }
+            
             return new GrainRequest
             {
                 MethodIndex = MethodIndex,
