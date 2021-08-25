@@ -16,7 +16,7 @@ namespace Proto.Cluster
         //serialize into the on-the-wire format
         public IRootSerialized Serialize(ActorSystem system)
         {
-            if (RequestMessage is null) return new GrainRequest {MethodIndex = MethodIndex};
+            if (RequestMessage is null ) return new GrainRequest {MethodIndex = MethodIndex};
 
             var ser = system.Serialization();
             var (data, typeName, serializerId) = ser.Serialize(RequestMessage);
@@ -24,10 +24,6 @@ namespace Proto.Cluster
             if (serializerId != Serialization.SERIALIZER_ID_PROTOBUF)
                 throw new Exception($"Grains must use ProtoBuf types: {RequestMessage.GetType().FullName}");
 #endif
-            if (data is null || data.IsEmpty)
-            {
-                Logger.LogError("GrainRequestMessage contains no data {Message}", RequestMessage);
-            }
             
             return new GrainRequest
             {
