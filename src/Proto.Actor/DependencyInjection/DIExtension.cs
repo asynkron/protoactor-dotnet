@@ -4,11 +4,30 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Proto.Extensions;
 
 namespace Proto.DependencyInjection
 {
+    public class DI : IActorSystemOption
+    {
+        private readonly IServiceProvider _provider;
+
+        public static DI WithServiceProvider(IServiceProvider provider)
+        {
+            var di = new DI(provider);
+            return di;
+        }
+
+        private DI(IServiceProvider provider) => _provider = provider;
+
+        Task IActorSystemOption.Apply(ActorSystem system)
+        {
+            system.WithServiceProvider(_provider);
+            return Task.CompletedTask;
+        }
+    }
     [PublicAPI]
     public class DIExtension : IActorSystemExtension<DIExtension>
     {

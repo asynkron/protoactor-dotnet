@@ -124,7 +124,7 @@ namespace Proto.Cluster
         ) =>
             new(clusterName, clusterProvider, identityLookup);
 
-        public async Task Apply(ActorSystem system)
+        async Task IActorSystemOption.Apply(ActorSystem system)
         {
             var cluster = system.WithCluster(this).Cluster();
 

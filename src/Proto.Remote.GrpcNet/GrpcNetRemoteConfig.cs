@@ -30,6 +30,6 @@ namespace Proto.Remote.GrpcNet
 
         public static GrpcNetRemoteConfig BindTo(string host, int port = 0) => new(host, port);
 
-        public async Task Apply(ActorSystem system) => await system.WithRemote(this).Remote().StartAsync();
+        async Task IActorSystemOption.Apply(ActorSystem system) => await system.WithRemote(this).Remote().StartAsync();
     }
 }
