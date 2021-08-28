@@ -8,27 +8,8 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
-namespace Proto.Channels
+namespace Proto.Channels.Experimental
 {
-    [PublicAPI]
-    public static class ChannelPublisher
-    {
-        public static PID StartNew<T>(IRootContext context, Channel<T> channel, string name)
-        {
-            var props = Props.FromProducer(() => new ChannelPublisherActor<T>());
-            var pid = context.SpawnNamed(props, name);
-            _ = Task.Run(async () => {
-                    await foreach (var msg in channel.Reader.ReadAllAsync())
-                    {
-                        context.Send(pid, msg!);
-                    }
-
-                    await context.PoisonAsync(pid);
-                }
-            );
-            return pid;
-        }
-    }
     [PublicAPI]
     public class ChannelPublisherActor<T> : IActor
     {
