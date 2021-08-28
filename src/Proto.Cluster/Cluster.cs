@@ -91,6 +91,8 @@ namespace Proto.Cluster
             await Gossip.StartAsync();
             await Provider.StartMemberAsync(this);
             Logger.LogInformation("Started as cluster member");
+            await MemberList.Started;
+            Logger.LogInformation("I see myself");
         }
 
         public async Task StartClientAsync()

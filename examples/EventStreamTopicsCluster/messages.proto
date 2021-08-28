@@ -1,0 +1,9 @@
+syntax = "proto3";
+package messages;
+option csharp_namespace = "EventStreamTopicsCluster";
+
+message MyMessage
+{
+  string name = 1;
+  string topic = 2;
+}
