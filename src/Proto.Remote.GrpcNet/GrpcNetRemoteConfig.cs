@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Grpc.Net.Client;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -12,7 +13,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 namespace Proto.Remote.GrpcNet
 {
     [PublicAPI]
-    public record GrpcNetRemoteConfig : RemoteConfigBase
+    public record GrpcNetRemoteConfig : RemoteConfigBase, IActorSystemOption
     {
         protected GrpcNetRemoteConfig(string host, int port) : base(host, port)
         {
@@ -28,5 +29,7 @@ namespace Proto.Remote.GrpcNet
         public static GrpcNetRemoteConfig BindToLocalhost(int port = 0) => new(Localhost, port);
 
         public static GrpcNetRemoteConfig BindTo(string host, int port = 0) => new(host, port);
+
+        public async Task Apply(ActorSystem system) => await system.WithRemote(this).Remote().StartAsync();
     }
 }

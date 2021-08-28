@@ -27,12 +27,12 @@ namespace Proto
         {
         }
         
-        public static async Task<ActorSystem> StartNew(params Func<ActorSystem,Task>[] options)
+        public static async Task<ActorSystem> StartNew(params IActorSystemOption[] options)
         {
             var system = new ActorSystem();
             foreach (var option in options)
             {
-                await option(system);
+                await option.Apply(system);
             }
 
             return system;

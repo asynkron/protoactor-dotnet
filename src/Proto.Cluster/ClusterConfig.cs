@@ -6,13 +6,14 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Proto.Cluster.Identity;
 
 namespace Proto.Cluster
 {
     [PublicAPI]
-    public record ClusterConfig
+    public record ClusterConfig : IActorSystemOption
     {
         private ClusterConfig(string clusterName, IClusterProvider clusterProvider, IIdentityLookup identityLookup)
         {
@@ -30,9 +31,12 @@ namespace Proto.Cluster
             IdentityLookup = identityLookup;
             MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
             PubSubBatchSize = 2000;
+            StartAsMember = true;
         }
 
         public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; init; }
+        
+        public bool StartAsMember { get; init; }
         
         public string ClusterName { get; }
 
@@ -56,6 +60,12 @@ namespace Proto.Cluster
 
         public TimeSpan ClusterRequestDeDuplicationWindow { get; init; }
 
+        public ClusterConfig WithStartAsClient() =>
+            this with {StartAsMember = false};
+        
+        public ClusterConfig WithStartAsMember() =>
+            this with {StartAsMember = true};
+        
         public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } =
             c => new DefaultClusterContext(c.IdentityLookup, c.PidCache, c.Config.ToClusterContextConfig(),c.System.Shutdown);
 
@@ -113,5 +123,19 @@ namespace Proto.Cluster
             IIdentityLookup identityLookup
         ) =>
             new(clusterName, clusterProvider, identityLookup);
+
+        public async Task Apply(ActorSystem system)
+        {
+            var cluster = system.WithCluster(this).Cluster();
+
+            if (StartAsMember)
+            {
+                await cluster.StartMemberAsync();
+            }
+            else
+            {
+                await cluster.StartClientAsync();
+            }
+        }
     }
 }

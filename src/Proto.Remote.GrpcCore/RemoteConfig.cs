@@ -1,11 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Grpc.Core;
 using JetBrains.Annotations;
 
 namespace Proto.Remote.GrpcCore
 {
     [PublicAPI]
-    public record GrpcCoreRemoteConfig : RemoteConfigBase
+    public record GrpcCoreRemoteConfig : RemoteConfigBase , IActorSystemOption
     {
         protected GrpcCoreRemoteConfig(string host, int port) : base(host, port)
         {
@@ -32,5 +34,7 @@ namespace Proto.Remote.GrpcCore
         public static GrpcCoreRemoteConfig BindToLocalhost(int port = 0) => new(Localhost, port);
 
         public static GrpcCoreRemoteConfig BindTo(string host, int port = 0) => new(host, port);
+
+        public Task Apply(ActorSystem system) => system.WithRemote(this).Remote().StartAsync();
     }
 }
