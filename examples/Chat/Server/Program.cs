@@ -18,28 +18,21 @@ namespace Server
     {
         private static RootContext context;
 
-        private static void Main()
+        private static async Task Main()
         {
-            InitializeActorSystem();
+            await InitializeActorSystem();
             SpawnServer();
 
             Console.ReadLine();
         }
 
-        private static void InitializeActorSystem()
+        private static async Task InitializeActorSystem()
         {
-            var config =
-                BindToLocalhost(8000)
-                    .WithProtoMessages(ChatReflection.Descriptor)
-                    .WithRemoteDiagnostics(true);
-
             var system
-                = new ActorSystem()
-                    .WithRemote(config);
-
-            system
-                .Remote()
-                .StartAsync();
+                = await ActorSystem.StartNew(
+                    BindToLocalhost(8000)
+                    .WithProtoMessages(ChatReflection.Descriptor)
+                    .WithRemoteDiagnostics(true));
 
             context = system.Root;
         }

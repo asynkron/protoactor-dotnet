@@ -21,28 +21,20 @@ namespace Client
 
         private static PID server;
 
-        private static void Main()
+        private static async Task Main()
         {
-            InitializeActorSystem();
+            await InitializeActorSystem();
             SpawnClient();
             ObtainServerPid();
             ConnectToServer();
             EvaluateCommands();
         }
 
-        private static void InitializeActorSystem()
+        private static async Task InitializeActorSystem()
         {
-            var config =
+            var system = await ActorSystem.StartNew(
                 BindToLocalhost()
-                    .WithProtoMessages(ChatReflection.Descriptor);
-
-            var system =
-                new ActorSystem()
-                    .WithRemote(config);
-
-            system
-                .Remote()
-                .StartAsync();
+                    .WithProtoMessages(ChatReflection.Descriptor));
 
             context = system.Root;
         }
