@@ -16,11 +16,11 @@ namespace Proto.Serverless
         private string _kind;
         private string _identity;
         private Any _state = null;
-        private readonly Receiver.ReceiverClient _client;
+        private readonly ProtoServer.ProtoServerClient _client;
         private readonly IKeyValueStore<Any> _store;
         private string _key;
 
-        public ShapelessActor(Receiver.ReceiverClient client, IKeyValueStore<Any> store)
+        public ShapelessActor(ProtoServer.ProtoServerClient client, IKeyValueStore<Any> store)
         {
             _client = client;
             _store = store;
@@ -35,7 +35,7 @@ namespace Proto.Serverless
 
         private async Task OnMessage(IContext context, IMessage request)
         {
-            var response = await _client.ReceiveAsync(new ReceiveRequest
+            var response = await _client.ReceiveAsync(new ServerRequest()
                 {
                     Identity = _identity,
                     Kind = _kind,

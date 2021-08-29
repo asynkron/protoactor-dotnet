@@ -1,0 +1,23 @@
+syntax = "proto3";
+package serverless;
+option csharp_namespace = "Proto.Serverless";
+import "google/protobuf/any.proto";
+
+//these are implemented by the remote server.
+//e.g. python
+
+message ServerRequest {
+  string identity = 1;
+  string kind = 2;
+  google.protobuf.Any state = 3;
+  google.protobuf.Any request = 4;
+}
+
+message ServerResponse {
+  google.protobuf.Any state = 1;
+  google.protobuf.Any response = 2;
+}
+
+service ProtoServer {
+  rpc Receive(ServerRequest) returns (ServerResponse) {}
+}

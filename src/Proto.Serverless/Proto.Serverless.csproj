@@ -16,7 +16,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Protobuf Include="protos.proto" />
+        <Protobuf Include="client.proto" />
+        <Protobuf Include="server.proto" />
     </ItemGroup>
 
 </Project>
