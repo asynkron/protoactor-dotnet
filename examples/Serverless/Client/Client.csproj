@@ -5,4 +5,12 @@
         <TargetFramework>net5.0</TargetFramework>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\src\Proto.Serverless\Proto.Serverless.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Google.Protobuf" Version="3.18.0-rc1" />
+    </ItemGroup>
+
 </Project>

@@ -1,12 +1,36 @@
 ﻿using System;
+using System.Threading.Tasks;
+using Google.Protobuf.WellKnownTypes;
+using Grpc.Core;
+using Proto.Serverless;
 
-namespace Client
+var port = 808;
+var server = new Server
 {
-    class Program
+    Services = { ProtoServer.BindService(new MyServer(null)) },
+    Ports = { new ServerPort("localhost", port, ServerCredentials.Insecure) }
+};
+server.Start();
+Console.ReadKey();
+server.ShutdownAsync().Wait();
+            
+Console.WriteLine("Hello World!");
+
+public class MyServer : ProtoServer.ProtoServerBase
+{
+    private readonly ProtoClient.ProtoClientClient _client;
+
+    public MyServer(ProtoClient.ProtoClientClient client) => _client = client;
+
+    public override async Task<ServerResponse> Receive(ServerRequest request, ServerCallContext context)
     {
-        static void Main(string[] args)
+        var msg = request.Request;
+
+
+        return new ServerResponse
         {
-            Console.WriteLine("Hello World!");
-        }
+            Response = new Any(),
+            State = request.State,
+        };
     }
 }
