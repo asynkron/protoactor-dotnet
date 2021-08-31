@@ -166,12 +166,26 @@ namespace Proto.Cluster
             return id;
         }
 
-        [Obsolete("Use ClusterConfig.WithStartMode(ClusterStartMode.Member)", true)]
-        public Task StartMemberAsync() => throw new NotImplementedException();
+        [Obsolete("Use ClusterConfig.WithStartMode(ClusterStartMode.Member)", false)]
+        public async Task StartMemberAsync()
+        {
+            Logger.LogWarning("Starting using obsoleted StartMemberAsync, ignoring ClusterConfig");
+            await BeginStartAsync(false);
+            //gossiper must be started whenever any topology events starts flowing
+            await Gossip.StartAsync();
+            await Provider.StartMemberAsync(this);
+            Logger.LogInformation("Started as cluster member");
+        }
 
-        [Obsolete("Use ClusterConfig.WithStartMode(ClusterStartMode.Client)", true)]
-        public Task StartClientAsync() => throw new NotImplementedException();
-        
+        [Obsolete("Use ClusterConfig.WithStartMode(ClusterStartMode.Client)", false)]
+        public async Task StartClientAsync()
+        {
+            Logger.LogWarning("Starting using obsoleted StartClientAsync, ignoring ClusterConfig");
+            await BeginStartAsync(true);
+            await Provider.StartClientAsync(this);
+            Logger.LogInformation("Started as cluster client");
+        }
+
         public async Task StartAsync()
         {
             switch (Config.StartMode)
