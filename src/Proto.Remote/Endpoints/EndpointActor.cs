@@ -244,6 +244,12 @@ namespace Proto.Remote
                 //this only apply to root level messages and never to nested child objects inside the message
                 if (message is IRootSerializable deserialized) message = deserialized.Serialize(context.System);
 
+                if (message is null)
+                {
+                    Logger.LogError("Null message passed to EndpointActor, ignoring message");
+                    continue;
+                }
+
 
                 ByteString bytes;
                 string typeName; 

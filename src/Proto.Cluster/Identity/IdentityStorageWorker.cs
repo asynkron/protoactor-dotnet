@@ -113,7 +113,7 @@ namespace Proto.Cluster.Identity
                 {
                     try
                     {
-                        var activation = await _storage.TryGetExistingActivation(clusterIdentity, CancellationTokens.FromSeconds(5));
+                        var activation = await _storage.TryGetExistingActivation(clusterIdentity, CancellationTokens.WithTimeout(_cluster.Config!.ActorActivationTimeout));
 
                         //we got an existing activation, use this
                         if (activation != null)
@@ -132,11 +132,11 @@ namespace Proto.Cluster.Identity
                         spawnLock ??= await TryAcquireLock(clusterIdentity);
 
                         //we didn't get the lock, wait for activation to complete
-                        if (spawnLock == null) result = await WaitForActivation(clusterIdentity, CancellationTokens.FromSeconds(5));
+                        if (spawnLock == null) result = await WaitForActivation(clusterIdentity, CancellationTokens.WithTimeout(_cluster.Config!.ActorActivationTimeout));
                         else
                         {
                             //we have the lock, spawn and return
-                            (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.FromSeconds(5));
+                            (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.WithTimeout(_cluster.Config!.ActorSpawnTimeout));
                         }
                     }
                     catch (OperationCanceledException e)

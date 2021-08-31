@@ -111,7 +111,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException("Unknown response type " + res.GetType().Name)
+                _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
             };
         }
         
@@ -130,7 +130,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException("Unknown response type " + res.GetType().Name)
+                _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
             };
         }
         public async Task<Google.Protobuf.WellKnownTypes.Empty> SendCommand(Acme.Mysystem.Bar.SomeCommand request, CancellationToken ct)
@@ -148,7 +148,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException("Unknown response type " + res.GetType().Name)
+                _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
             };
         }
         
@@ -167,7 +167,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException("Unknown response type " + res.GetType().Name)
+                _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
             };
         }
         public async Task<Acme.Mysystem.Bar.Response> RequestResponse(Acme.Mysystem.Bar.Query request, CancellationToken ct)
@@ -185,7 +185,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException("Unknown response type " + res.GetType().Name)
+                _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
             };
         }
         
@@ -204,7 +204,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException("Unknown response type " + res.GetType().Name)
+                _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
             };
         }
         public async Task<Google.Protobuf.WellKnownTypes.Empty> NoParameterOrReturn(CancellationToken ct)
@@ -222,7 +222,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException("Unknown response type " + res.GetType().Name)
+                _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
             };
         }
         
@@ -241,7 +241,7 @@ namespace Acme.OtherSystem.Foo
                 //timeout
                 null => null,
                 // unsupported response
-                _ => throw new NotSupportedException("Unknown response type " + res.GetType().Name)
+                _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
             };
         }
     }
@@ -299,7 +299,7 @@ namespace Acme.OtherSystem.Foo
                             if(r is Acme.Mysystem.Bar.SomeCommand input){
                                 await _inner.SendCommand(input, Respond, OnError);
                             } else {
-                                OnError("Invalid client contract");
+                                OnError($"Invalid client contract. Expected Acme.Mysystem.Bar.SomeCommand, received {r?.GetType().FullName}");
                             }
 
                             break;
@@ -309,7 +309,7 @@ namespace Acme.OtherSystem.Foo
                             if(r is Acme.Mysystem.Bar.Query input){
                                 await _inner.RequestResponse(input, Respond, OnError);
                             } else {
-                                OnError("Invalid client contract");
+                                OnError($"Invalid client contract. Expected Acme.Mysystem.Bar.Query, received {r?.GetType().FullName}");
                             }
 
                             break;
@@ -321,7 +321,7 @@ namespace Acme.OtherSystem.Foo
                             break;
                         }
                         default:
-                            OnError("Invalid client contract");
+                            OnError($"Invalid client contract. Unexpected Index {methodIndex}");
                             break;
                     }
 

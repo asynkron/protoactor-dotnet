@@ -37,6 +37,7 @@ namespace Proto.Cluster.PubSub
                 {
                     MessageData = messageData,
                     TypeId = typeIndex,
+                    SerializerId = serializerId
                 };
                 
                 batch.Envelopes.Add(producerMessage);

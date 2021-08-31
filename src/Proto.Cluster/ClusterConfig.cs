@@ -27,6 +27,8 @@ namespace Proto.Cluster
             ClusterProvider = clusterProvider ?? throw new ArgumentNullException(nameof(clusterProvider));
             TimeoutTimespan = TimeSpan.FromSeconds(5);
             ActorRequestTimeout = TimeSpan.FromSeconds(5);
+            ActorSpawnTimeout = TimeSpan.FromSeconds(5);
+            ActorActivationTimeout = TimeSpan.FromSeconds(5);
             MaxNumberOfEventsInRequestLogThrottlePeriod = 3;
             RequestLogThrottlePeriod = TimeSpan.FromSeconds(2);
             GossipInterval = TimeSpan.FromMilliseconds(300);
@@ -53,6 +55,8 @@ namespace Proto.Cluster
         public int PubSubBatchSize { get; init; }
         public TimeSpan TimeoutTimespan { get; init; }
         public TimeSpan ActorRequestTimeout { get; init; }
+        public TimeSpan ActorSpawnTimeout { get; init; }
+        public TimeSpan ActorActivationTimeout { get; init; }
         public TimeSpan RequestLogThrottlePeriod { get; init; }
         public int MaxNumberOfEventsInRequestLogThrottlePeriod { get; init; }
 
@@ -77,6 +81,12 @@ namespace Proto.Cluster
 
         public ClusterConfig WithActorRequestTimeout(TimeSpan timeSpan) =>
             this with {ActorRequestTimeout = timeSpan};
+        
+        public ClusterConfig WithActorSpawnTimeout(TimeSpan timeSpan) =>
+            this with {ActorSpawnTimeout = timeSpan};
+        
+        public ClusterConfig WithActorActivationTimeout(TimeSpan timeSpan) =>
+            this with {ActorActivationTimeout = timeSpan};
 
         public ClusterConfig WithRequestLogThrottlePeriod(TimeSpan timeSpan) =>
             this with {RequestLogThrottlePeriod = timeSpan};

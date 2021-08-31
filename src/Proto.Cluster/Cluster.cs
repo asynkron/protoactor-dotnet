@@ -84,6 +84,7 @@ namespace Proto.Cluster
 
         public string[] GetClusterKinds() => _clusterKinds.Keys.ToArray();
 
+
         private async Task BeginStartAsync(bool client)
         {
             InitClusterKinds();

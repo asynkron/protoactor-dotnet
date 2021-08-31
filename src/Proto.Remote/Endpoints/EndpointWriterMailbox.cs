@@ -46,6 +46,10 @@ namespace Proto.Remote
 
         public void PostUserMessage(object msg)
         {
+            if (msg is null)
+            {
+                throw new ArgumentNullException(nameof(msg));
+            }
             _userMessages.Push(msg);
 
             // Logger.LogDebug("[EndpointWriterMailbox] received User Message {@Message}", msg);
@@ -54,6 +58,11 @@ namespace Proto.Remote
 
         public void PostSystemMessage(object msg)
         {
+            if (msg is null)
+            {
+                throw new ArgumentNullException(nameof(msg));
+            }
+            
             _systemMessages.Push(msg);
             
 

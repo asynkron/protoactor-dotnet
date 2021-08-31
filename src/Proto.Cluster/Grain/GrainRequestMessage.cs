@@ -22,6 +22,7 @@ namespace Proto.Cluster
             if (serializerId != Serialization.SERIALIZER_ID_PROTOBUF)
                 throw new Exception($"Grains must use ProtoBuf types: {RequestMessage.GetType().FullName}");
 #endif
+            
             return new GrainRequest
             {
                 MethodIndex = MethodIndex,

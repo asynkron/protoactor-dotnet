@@ -9,7 +9,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Google.Protobuf.WellKnownTypes;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Gossip;
@@ -49,6 +48,9 @@ namespace Proto.Cluster
         private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
 
         private int _nextMemberIndex;
+
+        private TaskCompletionSource<bool> _startedTcs = new();
+        public Task Started => _startedTcs.Task;
 
         public MemberList(Cluster cluster)
         {
@@ -182,6 +184,14 @@ namespace Proto.Cluster
                 if (topology.Left.Any()) Logger.LogInformation("[MemberList] Cluster members left {MembersJoined}", topology.Left);
                 
                 BroadcastTopologyChanges(topology);
+                
+                if (!_startedTcs.Task.IsCompleted)
+                {
+                    if (activeMembers.Contains(_system.Id))
+                    {
+                        _startedTcs.TrySetResult(true);
+                    }
+                }
             }
 
 
