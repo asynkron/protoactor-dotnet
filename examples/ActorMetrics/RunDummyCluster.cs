@@ -41,7 +41,7 @@ namespace ActorMetrics
 
             system
                 .Cluster()
-                .StartMemberAsync();
+                .StartAsync();
 
             var props = Props.FromProducer(() => new MyActor());
 
@@ -64,7 +64,7 @@ namespace ActorMetrics
 
             system2
                 .Cluster()
-                .StartMemberAsync();
+                .StartAsync();
 
             _ = SafeTask.Run(async () => {
                     var r = new Random();

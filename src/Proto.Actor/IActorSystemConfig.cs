@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Proto
 {
-    public interface IActorSystemOption
+    public interface IActorSystemConfig
     {
         Task Apply(ActorSystem system);
     }

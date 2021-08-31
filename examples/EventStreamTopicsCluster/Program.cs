@@ -40,7 +40,7 @@ namespace EventStreamTopicsCluster
 
             await system
                 .Cluster()
-                .StartMemberAsync();
+                .StartAsync();
 
             //subscribe to the eventstream via type, just like you do locally
             system.EventStream.SubscribeToTopic<SomeMessage>("MyTopic.*", x => Console.WriteLine($"Got message for {x.Name}"));

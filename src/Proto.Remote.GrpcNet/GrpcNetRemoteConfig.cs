@@ -13,9 +13,9 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 namespace Proto.Remote.GrpcNet
 {
     [PublicAPI]
-    public record GrpcNetRemoteConfig : RemoteConfigBase, IActorSystemOption
+    public sealed record GrpcNetRemoteConfig : RemoteConfigBase, IActorSystemConfig
     {
-        protected GrpcNetRemoteConfig(string host, int port) : base(host, port)
+        private GrpcNetRemoteConfig(string host, int port) : base(host, port)
         {
         }
 
@@ -30,6 +30,6 @@ namespace Proto.Remote.GrpcNet
 
         public static GrpcNetRemoteConfig BindTo(string host, int port = 0) => new(host, port);
 
-        async Task IActorSystemOption.Apply(ActorSystem system) => await system.WithRemote(this).Remote().StartAsync();
+        async Task IActorSystemConfig.Apply(ActorSystem system) => await system.WithRemote(this).Remote().StartAsync();
     }
 }

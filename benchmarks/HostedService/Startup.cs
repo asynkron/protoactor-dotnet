@@ -57,7 +57,7 @@ namespace HostedService
                     )
                 );
 
-            sys.Cluster().StartMemberAsync().Wait();
+            sys.Cluster().StartAsync().Wait();
 
             services.AddSingleton(sys.Cluster());
             services.AddHostedService<ProtoHost>();

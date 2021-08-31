@@ -84,23 +84,6 @@ namespace Proto.Cluster
 
         public string[] GetClusterKinds() => _clusterKinds.Keys.ToArray();
 
-        public async Task StartMemberAsync()
-        {
-            await BeginStartAsync(false);
-            //gossiper must be started whenever any topology events starts flowing
-            await Gossip.StartAsync();
-            await Provider.StartMemberAsync(this);
-            Logger.LogInformation("Started as cluster member");
-        }
-
-        public async Task StartClientAsync()
-        {
-            await BeginStartAsync(true);
-            await Provider.StartClientAsync(this);
-
-            Logger.LogInformation("Started as cluster client");
-        }
-
         private async Task BeginStartAsync(bool client)
         {
             InitClusterKinds();
@@ -180,6 +163,33 @@ namespace Proto.Cluster
             }
 
             return id;
+        }
+
+        [Obsolete("Use ClusterConfig.WithStartMode(ClusterStartMode.Member)", true)]
+        public Task StartMemberAsync() => throw new NotImplementedException();
+
+        [Obsolete("Use ClusterConfig.WithStartMode(ClusterStartMode.Client)", true)]
+        public Task StartClientAsync() => throw new NotImplementedException();
+        
+        public async Task StartAsync()
+        {
+            switch (Config.StartMode)
+            {
+                case ClusterStartMode.Member:
+                    await BeginStartAsync(false);
+                    //gossiper must be started whenever any topology events starts flowing
+                    await Gossip.StartAsync();
+                    await Provider.StartMemberAsync(this);
+                    Logger.LogInformation("Started as cluster member");
+                    break;
+                case ClusterStartMode.Client:
+                    await BeginStartAsync(true);
+                    await Provider.StartClientAsync(this);
+                    Logger.LogInformation("Started as cluster client");
+                    break;
+                default: 
+                    throw new ArgumentOutOfRangeException();
+            }
         }
     }
 }

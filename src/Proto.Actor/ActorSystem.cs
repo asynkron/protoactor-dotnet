@@ -27,7 +27,7 @@ namespace Proto
         {
         }
         
-        public static async Task<ActorSystem> StartNew(params IActorSystemOption[] options)
+        public static async Task<ActorSystem> StartNew(params IActorSystemConfig[] options)
         {
             var system = new ActorSystem();
             foreach (var option in options)

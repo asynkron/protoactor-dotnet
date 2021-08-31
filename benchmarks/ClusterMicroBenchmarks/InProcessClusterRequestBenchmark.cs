@@ -65,7 +65,7 @@ namespace ClusterMicroBenchmarks
             pid = sys.Root.SpawnNamed(echoProps, "thing");
 
             _cluster = sys.Cluster();
-            await _cluster.StartMemberAsync();
+            await _cluster.StartAsync();
 
             _id = ClusterIdentity.Create("1", Kind);
             await _cluster.RequestAsync<int>(_id.Identity, _id.Kind, 1, CancellationToken.None);

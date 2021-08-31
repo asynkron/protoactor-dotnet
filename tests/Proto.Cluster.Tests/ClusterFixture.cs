@@ -119,7 +119,7 @@ namespace Proto.Cluster.Tests
 
             var cluster = new Cluster(system, config);
 
-            await cluster.StartMemberAsync();
+            await cluster.StartAsync();
             return cluster;
         }
 

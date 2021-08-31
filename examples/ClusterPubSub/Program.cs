@@ -45,13 +45,13 @@ namespace ClusterPubSub
                 
                 await system
                     .Cluster()
-                    .StartClientAsync();
+                    .StartAsync();
             }
             else
             {
                 await system
                     .Cluster()
-                    .StartMemberAsync();
+                    .StartAsync();
             }
 
             var props = Props.FromFunc(ctx => {
@@ -154,7 +154,7 @@ namespace ClusterPubSub
             var system = GetSystem();
             await system
                 .Cluster()
-                .StartMemberAsync();
+                .StartAsync();
             
             Console.WriteLine("Started worker node...");
         }

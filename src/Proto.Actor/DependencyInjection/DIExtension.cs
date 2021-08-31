@@ -10,7 +10,8 @@ using Proto.Extensions;
 
 namespace Proto.DependencyInjection
 {
-    public class DI : IActorSystemOption
+    [PublicAPI]
+    public sealed class DI : IActorSystemConfig
     {
         private readonly IServiceProvider _provider;
 
@@ -22,7 +23,7 @@ namespace Proto.DependencyInjection
 
         private DI(IServiceProvider provider) => _provider = provider;
 
-        Task IActorSystemOption.Apply(ActorSystem system)
+        Task IActorSystemConfig.Apply(ActorSystem system)
         {
             system.WithServiceProvider(_provider);
             return Task.CompletedTask;

@@ -12,8 +12,14 @@ using Proto.Cluster.Identity;
 
 namespace Proto.Cluster
 {
+    public enum ClusterStartMode
+    {
+        Member,
+        Client,
+    }
+    
     [PublicAPI]
-    public record ClusterConfig : IActorSystemOption
+    public record ClusterConfig : IActorSystemConfig
     {
         private ClusterConfig(string clusterName, IClusterProvider clusterProvider, IIdentityLookup identityLookup)
         {
@@ -31,12 +37,12 @@ namespace Proto.Cluster
             IdentityLookup = identityLookup;
             MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
             PubSubBatchSize = 2000;
-            StartAsMember = true;
+            StartMode = ClusterStartMode.Member;
         }
 
         public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; init; }
         
-        public bool StartAsMember { get; init; }
+        public ClusterStartMode StartMode { get; init; }
         
         public string ClusterName { get; }
 
@@ -60,12 +66,9 @@ namespace Proto.Cluster
 
         public TimeSpan ClusterRequestDeDuplicationWindow { get; init; }
 
-        public ClusterConfig WithStartAsClient() =>
-            this with {StartAsMember = false};
-        
-        public ClusterConfig WithStartAsMember() =>
-            this with {StartAsMember = true};
-        
+        public ClusterConfig WithStartMode(ClusterStartMode startMode) =>
+            this with {StartMode = startMode};
+
         public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } =
             c => new DefaultClusterContext(c.IdentityLookup, c.PidCache, c.Config.ToClusterContextConfig(),c.System.Shutdown);
 
@@ -124,18 +127,12 @@ namespace Proto.Cluster
         ) =>
             new(clusterName, clusterProvider, identityLookup);
 
-        async Task IActorSystemOption.Apply(ActorSystem system)
+        async Task IActorSystemConfig.Apply(ActorSystem system)
         {
             var cluster = system.WithCluster(this).Cluster();
 
-            if (StartAsMember)
-            {
-                await cluster.StartMemberAsync();
-            }
-            else
-            {
-                await cluster.StartClientAsync();
-            }
+            await cluster.StartAsync();
+            
         }
     }
 }

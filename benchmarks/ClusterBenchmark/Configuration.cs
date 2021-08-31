@@ -131,7 +131,7 @@ namespace ClusterExperiment1
             var identity = GetIdentityLookup();
             
             system.WithRemote(GetRemoteConfig()).WithCluster(GetClusterConfig(clusterProvider,identity));
-            await system.Cluster().StartMemberAsync();
+            await system.Cluster().StartAsync();
             return system.Cluster();
         }
 
@@ -156,7 +156,7 @@ namespace ClusterExperiment1
             var identity = GetIdentityLookup();
             system.WithRemote(GetRemoteConfig()).WithCluster(GetClusterConfig(clusterProvider,identity));
 
-            await system.Cluster().StartClientAsync();
+            await system.Cluster().StartAsync();
             return system.Cluster();
         }
 

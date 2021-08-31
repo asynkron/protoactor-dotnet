@@ -49,7 +49,7 @@ namespace ClusterMicroBenchmarks
                 .WithCluster(ClusterConfig().WithClusterKind(echoKind));
 
             _cluster = sys.Cluster();
-            await _cluster.StartMemberAsync();
+            await _cluster.StartAsync();
             _ids = new ClusterIdentity[Identities];
 
             for (int i = 0; i < _ids.Length; i++)

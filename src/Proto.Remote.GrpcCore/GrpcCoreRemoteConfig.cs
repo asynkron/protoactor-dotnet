@@ -7,9 +7,9 @@ using JetBrains.Annotations;
 namespace Proto.Remote.GrpcCore
 {
     [PublicAPI]
-    public record GrpcCoreRemoteConfig : RemoteConfigBase , IActorSystemOption
+    public sealed record GrpcCoreRemoteConfig : RemoteConfigBase , IActorSystemConfig
     {
-        protected GrpcCoreRemoteConfig(string host, int port) : base(host, port)
+        private GrpcCoreRemoteConfig(string host, int port) : base(host, port)
         {
         }
 
@@ -35,6 +35,6 @@ namespace Proto.Remote.GrpcCore
 
         public static GrpcCoreRemoteConfig BindTo(string host, int port = 0) => new(host, port);
 
-        Task IActorSystemOption.Apply(ActorSystem system) => system.WithRemote(this).Remote().StartAsync();
+        Task IActorSystemConfig.Apply(ActorSystem system) => system.WithRemote(this).Remote().StartAsync();
     }
 }

@@ -29,7 +29,7 @@ namespace KafkaVirtualActorIngress
                 .WithCluster(clusterConfig);
 
             var cluster = system.Cluster();
-            await cluster.StartMemberAsync();
+            await cluster.StartAsync();
 
             await RunKafkaConsumeLoop(cluster);
         }
