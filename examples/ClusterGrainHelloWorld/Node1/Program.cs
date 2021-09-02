@@ -11,7 +11,7 @@ using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
+using Proto.Remote.GrpcNet;
 using static Proto.CancellationTokens;
 using ProtosReflection =ClusterHelloWorld.Messages.ProtosReflection;
 
@@ -19,10 +19,10 @@ class Program
 {
     private static async Task Main()
     {
+        // Required to allow unencrypted GrpcNet connections
+        AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
         var system = new ActorSystem()
-            .WithRemote(GrpcCoreRemoteConfig
-                .BindToLocalhost()
-                .WithProtoMessages(ProtosReflection.Descriptor))
+            .WithRemote(GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor))
             .WithCluster(ClusterConfig
                 .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig()), new PartitionIdentityLookup()));
 

@@ -11,9 +11,9 @@ using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
+using Proto.Remote.GrpcNet;
 using static System.Threading.Tasks.Task;
-using ProtosReflection =ClusterHelloWorld.Messages.ProtosReflection;
+using ProtosReflection = ClusterHelloWorld.Messages.ProtosReflection;
 
 namespace Node2
 {
@@ -23,8 +23,8 @@ namespace Node2
 
         public HelloGrain(IContext ctx, string identity) : base(ctx) => _identity = identity;
 
-        public override Task<HelloResponse> SayHello(HelloRequest request) {
-            
+        public override Task<HelloResponse> SayHello(HelloRequest request)
+        {
             Console.WriteLine("Got request!!");
             var res = new HelloResponse
             {
@@ -39,23 +39,20 @@ namespace Node2
     {
         private static async Task Main()
         {
-            //bind this interface to our concrete implementation
-            Grains.Factory<HelloGrainBase>.Create = (ctx, identity, _) => new HelloGrain(ctx, identity);
-
+            // Required to allow unencrypted GrpcNet connections
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             var system = new ActorSystem(new ActorSystemConfig().WithDeveloperSupervisionLogging(true))
-                .WithRemote(GrpcCoreRemoteConfig
-                    .BindToLocalhost()
-                    .WithProtoMessages(ProtosReflection.Descriptor)
+                .WithRemote(GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor)
                 )
                 .WithCluster(ClusterConfig
                     .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig()), new PartitionIdentityLookup())
-                    .WithHelloHelloWorldKinds()
+                    .WithClusterKind(HelloGrainActor.GetClusterKind((ctx, identity) => new HelloGrain(ctx, identity.Identity)))
                 );
 
             await system
                 .Cluster()
                 .StartMemberAsync();
-            
+
             Console.WriteLine("Started...");
 
             Console.CancelKeyPress += async (e, y) => {
@@ -64,7 +61,7 @@ namespace Node2
                     .Cluster()
                     .ShutdownAsync();
             };
-            
+
             await Delay(-1);
         }
     }
