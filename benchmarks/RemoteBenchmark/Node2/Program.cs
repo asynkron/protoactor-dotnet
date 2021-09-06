@@ -21,6 +21,7 @@ namespace Node2
     public class EchoActor : IActor
     {
         private PID _sender;
+        private static readonly Pong Pong = new Pong();
 
         public Task ReceiveAsync(IContext context)
         {
@@ -32,7 +33,7 @@ namespace Node2
                     context.Respond(new Start());
                     return Task.CompletedTask;
                 case Ping _:
-                    context.Send(_sender, new Pong());
+                    context.Send(_sender, Pong);
                     return Task.CompletedTask;
                 default:
                     return Task.CompletedTask;

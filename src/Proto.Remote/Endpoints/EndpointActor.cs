@@ -257,7 +257,21 @@ namespace Proto.Remote
 
                 try
                 {
-                    (bytes, typeName, serializerId) = _remoteConfig.Serialization.Serialize(message);
+                    var cached = message as ICachedSerialization;
+                    if (cached is {SerializerData: {boolHasData: true}} )
+                    {
+                        (bytes, typeName, serializerId, _) = cached.SerializerData;
+                    }
+                    else
+                    {
+                        (bytes, typeName, serializerId) = _remoteConfig.Serialization.Serialize(message);
+
+                        if (cached is not null)
+                        {
+                            cached.SerializerData = (bytes, typeName, serializerId, true);
+                        }
+                    }
+
                 }
                 catch (CodedOutputStream.OutOfSpaceException oom)
                 {
