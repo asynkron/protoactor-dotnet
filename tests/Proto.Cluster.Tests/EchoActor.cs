@@ -23,8 +23,13 @@ namespace Proto.Cluster.Tests
                 case Started _:
                     Logger.LogDebug("{Context}", context.Self);
                     var id = context.ClusterIdentity();
-                    _identity = id!.Identity;
-                    _initKind = id.Kind;
+
+                    // This test actor is used both as a virtual actor and a plain actor.
+                    if (id is not null)
+                    {
+                        _identity = id!.Identity;
+                        _initKind = id.Kind;
+                    }
                     break;
                 case Ping ping:
                     var pong = new Pong {Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? ""};
