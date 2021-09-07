@@ -28,7 +28,7 @@ namespace Proto.Cluster.PubSub
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            ClusterInit ci             => OnClusterInit(context),
+            Started _                  => OnClusterInit(context),
             SubscribeRequest sub       => OnSubscribe(context, sub),
             UnsubscribeRequest unsub   => OnUnsubscribe(context, unsub),
             ProducerBatchMessage batch => OnProducerBatch(context, batch),
