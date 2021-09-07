@@ -3,8 +3,11 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
+
 namespace Proto.Cluster
 {
+    [Obsolete("Replace with 'Started' lifecycle message. '.ClusterIdentity()' and '.Cluster()' is available on IContext")]
     public class ClusterInit
     {
         public ClusterInit(ClusterIdentity clusterIdentity, Cluster cluster)

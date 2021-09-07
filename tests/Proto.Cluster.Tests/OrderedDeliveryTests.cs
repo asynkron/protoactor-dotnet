@@ -54,7 +54,6 @@ namespace Proto.Cluster.Tests
         {
             public const string Kind = "sender";
 
-            private Cluster _cluster;
             private string _instanceId;
             private int _seq;
 
@@ -62,9 +61,9 @@ namespace Proto.Cluster.Tests
             {
                 switch (context.Message)
                 {
-                    case ClusterInit init:
-                        _instanceId = $"{init.Kind}:{init.Identity}.{Guid.NewGuid():N}";
-                        _cluster = init.Cluster;
+                    case Started _:
+                        var init = context.ClusterIdentity();
+                        _instanceId = $"{init!.Kind}:{init.Identity}.{Guid.NewGuid():N}";
                         break;
                     case SendToRequest sendTo:
 
@@ -72,7 +71,7 @@ namespace Proto.Cluster.Tests
 
                         for (var i = 0; i < sendTo.Count; i++)
                         {
-                            await _cluster.RequestAsync<Ack>(sendTo.Id, VerifyOrderActor.Kind,
+                            await context.Cluster().RequestAsync<Ack>(sendTo.Id, VerifyOrderActor.Kind,
                                 new SequentialIdRequest
                                 {
                                     SequenceKey = key,

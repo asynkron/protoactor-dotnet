@@ -61,7 +61,9 @@ namespace Proto.Cluster
                 await baseReceive(ctx, startEnvelope);
                 var identity = ctx.Get<ClusterIdentity>();
                 var cluster = ctx.System.Cluster();
+#pragma warning disable 618
                 var grainInit = new ClusterInit(identity!, cluster);
+#pragma warning restore 618
                 var grainInitEnvelope = new MessageEnvelope(grainInit, null);
                 var count = clusterKind.Inc();
                 cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
