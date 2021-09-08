@@ -23,7 +23,7 @@ namespace Proto.Remote
         private readonly IChannelProvider _channelProvider;
         private readonly RemoteConfigBase _remoteConfig;
         private readonly Dictionary<string, HashSet<PID>> _watchedActors = new();
-        private readonly ILogger Logger = Log.CreateLogger<EndpointActor>();
+        private static readonly ILogger Logger = Log.CreateLogger<EndpointActor>();
         private ChannelBase? _channel;
         private Remoting.RemotingClient? _client;
         private int _serializerId;
@@ -213,7 +213,7 @@ namespace Proto.Remote
             return Task.CompletedTask;
         }
 
-        public void RemoteDeliver(IContext context, PID pid, object msg)
+        private void RemoteDeliver(IContext context, PID pid, object msg)
         {
             var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
             var env = new RemoteDeliver(header!, message, pid, sender!);
@@ -222,104 +222,17 @@ namespace Proto.Remote
 
         private Task RemoteDeliver(IEnumerable<RemoteDeliver> m, IContext context)
         {
-            var envelopes = new List<MessageEnvelope>();
-            var typeNames = new Dictionary<string, int>();
-            var targetNames = new Dictionary<string, int>();
-            var typeNameList = new List<string>();
-            var targetNameList = new List<string>();
             var counter = context.System.Metrics.Get<RemoteMetrics>().RemoteSerializedMessageCount;
 
-            foreach (var rd in m)
+            var batch = Serialization.BuildMessageBatch(m, context.System, Logger);
+
+            foreach (var envelope in batch.Envelopes)
             {
-                var targetName = rd.Target.Id;
-
-                if (!targetNames.TryGetValue(targetName, out var targetId))
-                {
-                    targetId = targetNames[targetName] = targetNames.Count;
-                    targetNameList.Add(targetName);
-                }
-
-                var message = rd.Message;
-                //if the message can be translated to a serialization representation, we do this here
-                //this only apply to root level messages and never to nested child objects inside the message
-                if (message is IRootSerializable deserialized) message = deserialized.Serialize(context.System);
-
-                if (message is null)
-                {
-                    Logger.LogError("Null message passed to EndpointActor, ignoring message");
-                    continue;
-                }
-
-
-                ByteString bytes;
-                string typeName; 
-                int serializerId;
-
-                try
-                {
-                    var cached = message as ICachedSerialization;
-                    if (cached is {SerializerData: {boolHasData: true}} )
-                    {
-                        (bytes, typeName, serializerId, _) = cached.SerializerData;
-                    }
-                    else
-                    {
-                        (bytes, typeName, serializerId) = _remoteConfig.Serialization.Serialize(message);
-
-                        if (cached is not null)
-                        {
-                            cached.SerializerData = (bytes, typeName, serializerId, true);
-                        }
-                    }
-
-                }
-                catch (CodedOutputStream.OutOfSpaceException oom)
-                {
-                    Logger.LogError(oom, "Message is too large {Message}",message.GetType().Name);
-                    throw;
-                }
-                catch(Exception x)
-                {
-                    Logger.LogError(x, "Serialization failed for message {Message}",message.GetType().Name);
-                    throw;
-                }
-
+                var typeName = batch.TypeNames[envelope.TypeId];
                 if (!context.System.Metrics.IsNoop) counter.Inc(new[] {context.System.Id, context.System.Address, typeName});
 
-                if (!typeNames.TryGetValue(typeName, out var typeId))
-                {
-                    typeId = typeNames[typeName] = typeNames.Count;
-                    typeNameList.Add(typeName);
-                }
-
-                MessageHeader? header = null;
-
-                if (rd.Header != null && rd.Header.Count > 0)
-                {
-                    header = new MessageHeader();
-                    header.HeaderData.Add(rd.Header.ToDictionary());
-                }
-
-                var envelope = new MessageEnvelope
-                {
-                    MessageData = bytes,
-                    Sender = rd.Sender,
-                    Target = targetId,
-                    TypeId = typeId,
-                    SerializerId = serializerId,
-                    MessageHeader = header,
-                    RequestId = rd.Target.RequestId
-                };
-                
                 context.System.Logger()?.LogDebug("EndpointActor adding Envelope {Envelope}", envelope);
-
-                envelopes.Add(envelope);
             }
-
-            var batch = new MessageBatch();
-            batch.TargetNames.AddRange(targetNameList);
-            batch.TypeNames.AddRange(typeNameList);
-            batch.Envelopes.AddRange(envelopes);
 
             // Logger.LogDebug("[EndpointActor] Sending {Count} envelopes for {Address}", envelopes.Count, _address);
 
@@ -328,7 +241,7 @@ namespace Proto.Remote
 
         private async Task SendEnvelopesAsync(MessageBatch batch, IContext context)
         {
-            if (_stream == null || _stream.RequestStream == null)
+            if (_stream?.RequestStream == null)
             {
                 Logger.LogError(
                     "[EndpointActor] gRPC Failed to send to address {Address}, reason No Connection available"

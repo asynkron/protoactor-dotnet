@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text.Json;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
+using Microsoft.Extensions.Logging;
 using Proto.Extensions;
 
 namespace Proto.Remote
@@ -97,7 +98,7 @@ namespace Proto.Remote
             return (bytes, typename, serializerId);
         }
 
-        TypeSerializerItem FindSerializerToUse(object message)
+        private TypeSerializerItem FindSerializerToUse(object message)
         {
             var type = message.GetType();
             if (_serializerLookup.TryGetValue(type, out var serializer))
@@ -130,6 +131,104 @@ namespace Proto.Remote
             }
 
             throw new Exception($"Couldn't find serializerId: {serializerId} for typeName: {typeName}");
+        }
+
+        public static MessageBatch BuildMessageBatch(IEnumerable<RemoteDeliver> remoteDeliverMessages, ActorSystem system, ILogger logger)
+        {
+            var envelopes = new List<MessageEnvelope>();
+            var typeNames = new Dictionary<string, int>();
+            var targetNames = new Dictionary<string, int>();
+            var typeNameList = new List<string>();
+            var targetNameList = new List<string>();
+
+            foreach (var rd in remoteDeliverMessages)
+            {
+                var targetName = rd.Target.Id;
+
+                if (!targetNames.TryGetValue(targetName, out var targetId))
+                {
+                    targetId = targetNames[targetName] = targetNames.Count;
+                    targetNameList.Add(targetName);
+                }
+
+                var message = rd.Message;
+                //if the message can be translated to a serialization representation, we do this here
+                //this only apply to root level messages and never to nested child objects inside the message
+                if (message is IRootSerializable deserialized) message = deserialized.Serialize(system);
+
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+                if (message is null)
+                {
+                    logger.LogError("Null message passed to EndpointActor, ignoring message");
+                    continue;
+                }
+
+                ByteString bytes;
+                string typeName;
+                int serializerId;
+
+                try
+                {
+                    var cached = message as ICachedSerialization;
+
+                    if (cached is {SerializerData: {boolHasData: true}})
+                    {
+                        (bytes, typeName, serializerId, _) = cached.SerializerData;
+                    }
+                    else
+                    {
+                        (bytes, typeName, serializerId) = system.Serialization().Serialize(message);
+
+                        if (cached is not null)
+                        {
+                            cached.SerializerData = (bytes, typeName, serializerId, true);
+                        }
+                    }
+                }
+                catch (CodedOutputStream.OutOfSpaceException oom)
+                {
+                    logger.LogError(oom, "Message is too large {Message}", message.GetType().Name);
+                    throw;
+                }
+                catch (Exception x)
+                {
+                    logger.LogError(x, "Serialization failed for message {Message}", message.GetType().Name);
+                    throw;
+                }
+                
+                if (!typeNames.TryGetValue(typeName, out var typeId))
+                {
+                    typeId = typeNames[typeName] = typeNames.Count;
+                    typeNameList.Add(typeName);
+                }
+
+                MessageHeader? header = null;
+
+                if (rd.Header is {Count: > 0})
+                {
+                    header = new MessageHeader();
+                    header.HeaderData.Add(rd.Header.ToDictionary());
+                }
+
+                var envelope = new MessageEnvelope
+                {
+                    MessageData = bytes,
+                    Sender = rd.Sender,
+                    Target = targetId,
+                    TypeId = typeId,
+                    SerializerId = serializerId,
+                    MessageHeader = header,
+                    RequestId = rd.Target.RequestId
+                };
+
+                envelopes.Add(envelope);
+            }
+
+            var batch = new MessageBatch();
+            batch.TargetNames.AddRange(targetNameList);
+            batch.TypeNames.AddRange(typeNameList);
+            batch.Envelopes.AddRange(envelopes);
+            return batch;
         }
     }
 }
