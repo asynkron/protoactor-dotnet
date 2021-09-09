@@ -193,12 +193,6 @@ namespace Proto.Persistence
         public Task DeleteEventsAsync(long inclusiveToIndex) =>
             _eventStore.DeleteEventsAsync(_actorId, inclusiveToIndex);
 
-        [Obsolete("Use ManualSnapshots instead", false)]
-        private class NoSnapshots : ISnapshotStrategy
-        {
-            public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => false;
-        }
-        
         private class ManualSnapshots : ISnapshotStrategy
         {
             public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => false;

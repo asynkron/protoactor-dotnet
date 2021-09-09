@@ -50,6 +50,8 @@ namespace Proto.Cluster
         private int _nextMemberIndex;
 
         private TaskCompletionSource<bool> _startedTcs = new();
+        private readonly object _lock = new ();
+        
         public Task Started => _startedTcs.Task;
 
         public MemberList(Cluster cluster)
@@ -89,7 +91,7 @@ namespace Proto.Cluster
 
         public Member? GetActivator(string kind, string requestSourceAddress)
         {
-            lock (this)
+            lock (_lock)
             {
                 if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
                     return memberStrategy.GetActivator(requestSourceAddress);
@@ -101,7 +103,7 @@ namespace Proto.Cluster
 
         public void UpdateBannedMembers(string[] bannedMembers)
         {
-            lock (this)
+            lock (_lock)
             {
                 //update banned members
                 var before = BannedMembers;
@@ -121,7 +123,7 @@ namespace Proto.Cluster
 
         public void UpdateClusterTopology(IReadOnlyCollection<Member> members)
         {
-            lock (this)
+            lock (_lock)
             {
                 Logger.LogDebug("[MemberList] Updating Cluster Topology");
                 

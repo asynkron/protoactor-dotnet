@@ -4,6 +4,10 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="OpenTracing" Version="0.12.1" />
+        <PackageReference Include="Roslynator.Analyzers" Version="3.2.2">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
