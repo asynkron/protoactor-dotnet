@@ -7,7 +7,6 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
-using Google.Protobuf.WellKnownTypes;
 using Proto.Cluster.Gossip;
 using Xunit;
 using Xunit.Abstractions;

@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using Proto.Utils;
 
 namespace Proto
 {

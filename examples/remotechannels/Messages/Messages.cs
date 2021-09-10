@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Messages
+﻿namespace Messages
 {
     public record MyMessage(int Value){}
 

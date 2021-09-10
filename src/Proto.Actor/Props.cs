@@ -143,7 +143,7 @@ namespace Proto
 
         internal PID Spawn(ActorSystem system, string name, PID? parent) => Spawner(system, name, this, parent);
 
-        public static Props FromProducer(Producer producer) => Empty.WithProducer(s => producer());
+        public static Props FromProducer(Producer producer) => Empty.WithProducer(_ => producer());
 
         public static Props FromProducer(ProducerWithSystem producer) => Empty.WithProducer(producer);
 

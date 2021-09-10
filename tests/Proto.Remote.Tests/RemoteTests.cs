@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using Proto.Remote.Tests.Messages;
 using Xunit;

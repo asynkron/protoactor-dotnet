@@ -4,12 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Google.Protobuf;
 using Proto.Utils;
 using Xunit;
 using Xunit.Abstractions;

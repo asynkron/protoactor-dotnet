@@ -11,8 +11,6 @@ using Consul;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Proto.Cluster.Data;
-using Proto.Cluster.Events;
 
 namespace Proto.Cluster.Consul
 {

@@ -548,6 +548,7 @@ dotnet_diagnostic.mvc1003.severity = warning
 dotnet_diagnostic.mvc1004.severity = warning
 dotnet_diagnostic.mvc1005.severity = warning
 dotnet_diagnostic.mvc1006.severity = error
+dotnet_diagnostic.rcs1194.severity = none
 dotnet_diagnostic.wme006.severity = warning
 dotnet_diagnostic.xunit1000.severity = error
 dotnet_diagnostic.xunit1001.severity = error
