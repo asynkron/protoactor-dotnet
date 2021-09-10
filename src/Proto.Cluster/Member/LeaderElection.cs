@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace Proto.Cluster
 {
-    public class LeaderElection
+    public static class LeaderElection
     {
         public static string Elect(ImmutableDictionary<string, ClusterTopologyNotification> memberState) => memberState
             .Values

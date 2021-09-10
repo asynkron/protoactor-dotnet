@@ -4,9 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Threading;
-using System.Threading.Tasks;
-using Proto.Context;
-using Proto.Future;
 using Proto.Mailbox;
 
 // ReSharper disable once CheckNamespace

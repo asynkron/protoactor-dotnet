@@ -3,8 +3,6 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Runtime.InteropServices.ComTypes;
-
 namespace Proto.Cluster.Gossip
 {
     public static class Extensions

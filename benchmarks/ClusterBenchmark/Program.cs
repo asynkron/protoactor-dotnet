@@ -12,7 +12,6 @@ using ClusterExperiment1.Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Partition;
 using Proto.Utils;
 
 namespace ClusterExperiment1

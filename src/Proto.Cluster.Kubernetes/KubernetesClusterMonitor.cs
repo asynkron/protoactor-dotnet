@@ -11,7 +11,6 @@ using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Rest;
-using Proto.Cluster.Events;
 using static Proto.Cluster.Kubernetes.Messages;
 using static Proto.Cluster.Kubernetes.ProtoLabels;
 

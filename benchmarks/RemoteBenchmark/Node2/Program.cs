@@ -86,7 +86,7 @@ namespace Node2
                     .BindTo(advertisedHost, 12000)
                     .WithChannelOptions(new GrpcChannelOptions
                         {
-                            CompressionProviders = new[]
+                            CompressionProviders = new ICompressionProvider[]
                             {
                                 new GzipCompressionProvider(CompressionLevel.Fastest)
                             }

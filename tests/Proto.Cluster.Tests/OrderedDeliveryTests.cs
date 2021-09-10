@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests
 {

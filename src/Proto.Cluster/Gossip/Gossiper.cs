@@ -111,11 +111,11 @@ namespace Proto.Cluster.Gossip
             }
             catch (DeadLetterException)
             {
-                
+
             }
             catch (OperationCanceledException)
             {
-                
+
             }
             catch (Exception)
             {

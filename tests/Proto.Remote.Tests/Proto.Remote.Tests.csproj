@@ -6,6 +6,10 @@
   <ItemGroup>
     <PackageReference Include="Divergic.Logging.Xunit" Version="3.6.0" />
     <PackageReference Include="GitHubActionsTestLogger" Version="1.2.0" />
+    <PackageReference Include="Roslynator.Analyzers" Version="3.2.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />

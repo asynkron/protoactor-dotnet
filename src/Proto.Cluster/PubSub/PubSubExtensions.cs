@@ -3,11 +3,9 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
-using Proto.Remote;
 
 namespace Proto.Cluster.PubSub
 {

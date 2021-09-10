@@ -11,6 +11,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="Roslynator.Analyzers" Version="3.2.2">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
       <PackageReference Include="StackExchange.Redis" Version="2.2.50" />
     </ItemGroup>
 

@@ -7,12 +7,10 @@
 // ReSharper disable once CheckNamespace
 using System;
 using System.Collections.Concurrent;
-using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Proto.Logging;
 using Proto.Mailbox;
 using Proto.Utils;
 

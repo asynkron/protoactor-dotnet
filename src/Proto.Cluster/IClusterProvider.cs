@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 using System.Threading.Tasks;
 using JetBrains.Annotations;
-using Proto.Cluster.Data;
 
 namespace Proto.Cluster
 {
