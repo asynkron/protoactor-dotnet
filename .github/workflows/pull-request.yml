@@ -34,11 +34,11 @@ jobs:
           ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet test ProtoActor.sln -c Release --framework netcoreapp3.1 --logger GitHubActions
+          dotnet test ProtoActor.sln -c Release --framework netcoreapp3.1
 
       - name: Run tests net5.0
         env:
           ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet test ProtoActor.sln -c Release --framework net5.0 --logger GitHubActions
+          dotnet test ProtoActor.sln -c Release --framework net5.0
