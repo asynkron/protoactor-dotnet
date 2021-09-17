@@ -75,7 +75,7 @@ namespace Proto.Cluster.AmazonECS
 
         public async Task RegisterMemberAsync()
         {
-            await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed);
+            await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever);
 
             static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to register service");
 
@@ -145,7 +145,7 @@ namespace Proto.Cluster.AmazonECS
 
         public async Task DeregisterMemberAsync(Cluster cluster)
         {
-            await Retry.Try(() => DeregisterMemberInner(cluster), onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever);
+            await Retry.Try(() => DeregisterMemberInner(cluster), onError: OnError, onFailed: OnFailed);
 
             static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to deregister service");
 
