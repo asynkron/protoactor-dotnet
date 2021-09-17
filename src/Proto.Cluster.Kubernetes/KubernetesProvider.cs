@@ -91,7 +91,7 @@ namespace Proto.Cluster.Kubernetes
 
         public async Task RegisterMemberAsync()
         {
-            await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed);
+            await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever);
 
             static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to register service");
 

@@ -27,9 +27,10 @@ namespace Proto.Utils
 
     public static class Retry
     {
-        public static async Task<T> Try<T>(Func<Task<T>> body, int retryCount = 10, int backoffMilliSeconds = 100, Action<int,Exception>? onError=null, Action<Exception>? onFailed=null)
+        public const int Forever = 0;
+        public static async Task<T> Try<T>(Func<Task<T>> body, int retryCount = 10, int backoffMilliSeconds = 100, int maxBackoffMilliseconds = 5000, Action<int,Exception>? onError=null, Action<Exception>? onFailed=null)
         {
-            for (var i = 0; i < retryCount; i++)
+            for (var i = 0; retryCount == 0 || i < retryCount; i++)
             {
                 try
                 {
@@ -46,16 +47,17 @@ namespace Proto.Utils
                         throw;
                     }
 
-                    await Task.Delay(i * backoffMilliSeconds);
+                    var backoff = Math.Min(i * backoffMilliSeconds, maxBackoffMilliseconds);
+                    await Task.Delay(backoff);
                 }
             }
 
             throw new Exception("This should never happen...");
         }
         
-        public static async Task Try(Func<Task> body, int retryCount = 10, int backoffMilliSeconds = 100, Action<int,Exception>? onError=null, Action<Exception>? onFailed=null, bool ignoreFailure=false)
+        public static async Task Try(Func<Task> body, int retryCount = 10, int backoffMilliSeconds = 100, int maxBackoffMilliseconds = 5000, Action<int,Exception>? onError=null, Action<Exception>? onFailed=null, bool ignoreFailure=false)
         {
-            for (var i = 0; i < retryCount; i++)
+            for (var i = 0; retryCount == 0 || i < retryCount; i++)
             {
                 try
                 {
@@ -76,7 +78,8 @@ namespace Proto.Utils
                         throw;
                     }
 
-                    await Task.Delay(i * backoffMilliSeconds);
+                    var backoff = Math.Min(i * backoffMilliSeconds, maxBackoffMilliseconds);
+                    await Task.Delay(backoff);
                 }
             }
 

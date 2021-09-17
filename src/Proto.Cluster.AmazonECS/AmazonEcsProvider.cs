@@ -10,7 +10,6 @@ using Amazon.ECS;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Utils;
-using static Proto.Cluster.AmazonECS.Messages;
 
 namespace Proto.Cluster.AmazonECS
 {
@@ -21,7 +20,7 @@ namespace Proto.Cluster.AmazonECS
 
         private string _address;
         private Cluster _cluster;
-        
+
         private string _clusterName;
         private string _host;
         private string[] _kinds;
@@ -32,7 +31,7 @@ namespace Proto.Cluster.AmazonECS
         private readonly AmazonECSClient _client;
         private readonly string _ecsClusterName;
 
-        public AmazonEcsProvider(AmazonECSClient client,string ecsClusterName, string taskArn , AmazonEcsProviderConfig config)
+        public AmazonEcsProvider(AmazonECSClient client, string ecsClusterName, string taskArn, AmazonEcsProviderConfig config)
         {
             _ecsClusterName = ecsClusterName;
             _client = client;
@@ -104,7 +103,7 @@ namespace Proto.Cluster.AmazonECS
             {
                 await _client.UpdateMetadata(_taskArn, tags);
             }
-            catch(Exception x)
+            catch (Exception x)
             {
                 Logger.LogError(x, "Failed to update metadata");
             }
@@ -121,7 +120,7 @@ namespace Proto.Cluster.AmazonECS
                         try
                         {
                             var members = await _client.GetMembers(_ecsClusterName);
-                            
+
 
                             if (members != null)
                             {
@@ -146,7 +145,7 @@ namespace Proto.Cluster.AmazonECS
 
         public async Task DeregisterMemberAsync(Cluster cluster)
         {
-            await Retry.Try(() => DeregisterMemberInner(cluster), onError: OnError, onFailed: OnFailed);
+            await Retry.Try(() => DeregisterMemberInner(cluster), onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever);
 
             static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to deregister service");
 
