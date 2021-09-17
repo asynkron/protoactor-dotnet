@@ -39,6 +39,18 @@ namespace Proto.Remote
 
                 throw new RpcException(Status.DefaultCancelled, "Suspended");
             }
+            
+            //TODO: 
+            // if (blockedMembers.Contains(request.MemberId))
+            // {
+            //     Logger.LogWarning("[EndpointReader] Attempt to connect from a blocked endpoint was rejected");
+            //
+            //     throw new whateverexception
+            // }
+            
+            //TODO:
+            //add memberid to known endpoint ids
+            //can endpoint objects benefit from knowing the member id?
 
             _system.Metrics.Get<RemoteMetrics>().RemoteEndpointConnectedCount.Inc(new[] {_system.Id, _system.Address, context.Peer});
 
