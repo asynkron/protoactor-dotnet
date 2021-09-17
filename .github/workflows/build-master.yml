@@ -10,7 +10,7 @@ on:
 jobs:
 
   test:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     services:
       redis:
@@ -50,7 +50,7 @@ jobs:
           dotnet test ProtoActor.sln -c Release --framework net5.0 --logger GitHubActions
 
   nuget:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: [test]
 
     steps:
