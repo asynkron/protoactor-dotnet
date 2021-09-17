@@ -99,9 +99,11 @@ namespace Proto.Cluster.Gossip
 
         private async Task SendStateAsync()
         {
-            //just make sure a cluster client cant send
+            
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             if (_pid == null)
             {
+                //just make sure a cluster client cant send
                 return;
             }
 
@@ -111,11 +113,9 @@ namespace Proto.Cluster.Gossip
             }
             catch (DeadLetterException)
             {
-
             }
             catch (OperationCanceledException)
             {
-
             }
             catch (Exception)
             {
