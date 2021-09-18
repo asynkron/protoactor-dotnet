@@ -9,7 +9,7 @@ namespace Proto.Remote.GrpcNet
 {
     public class HostedGrpcNetRemote : IRemote
     {
-        private readonly object _lock = new(); 
+        private readonly object _lock = new();
         private readonly GrpcNetRemoteConfig _config;
         private readonly EndpointManager _endpointManager;
         private readonly ILogger _logger;
@@ -34,6 +34,8 @@ namespace Proto.Remote.GrpcNet
         public RemoteConfigBase Config => _config;
         public ActorSystem System { get; }
         public bool Started { get; private set; }
+        
+        public BlockList BlockList { get; } = new();
 
         public Task StartAsync()
         {

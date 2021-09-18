@@ -42,8 +42,9 @@ message ConnectRequest {
 }
 
 message ConnectResponse {
-  int32 default_serializer_id = 1;
+  //int32 default_serializer_id = 1; Obsoleted
   string member_id = 2;
+  bool blocked = 3;
 }
 
 service Remoting {

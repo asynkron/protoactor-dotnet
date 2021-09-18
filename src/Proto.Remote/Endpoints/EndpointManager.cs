@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -42,17 +43,17 @@ namespace Proto.Remote
         }
 
         public CancellationToken CancellationToken => _cancellationTokenSource.Token;
-        public PID? ActivatorPid { get; private set; }
+        private PID? ActivatorPid { get; set; }
 
         private void OnDeadLetterEvent(DeadLetterEvent deadLetterEvent)
         {
             switch (deadLetterEvent.Message)
             {
-                case RemoteWatch msg:
-                    msg.Watcher.SendSystemMessage(_system, new Terminated
+                case RemoteWatch(var watcher, var watchee):
+                    watcher.SendSystemMessage(_system, new Terminated
                         {
                             Why = TerminatedReason.AddressTerminated,
-                            Who = msg.Watchee
+                            Who = watchee
                         }
                     );
                     break;
@@ -79,12 +80,10 @@ namespace Proto.Remote
                 _system.EventStream.Unsubscribe(_endpointErrorEvnSub);
                 _system.EventStream.Unsubscribe(_deadLetterEvnSub);
 
-                var stopEndpointTasks = new List<Task>();
-
-                foreach (var endpoint in _connections.Values)
-                {
-                    stopEndpointTasks.Add(_system.Root.StopAsync(endpoint));
-                }
+                var stopEndpointTasks = 
+                    _connections.Values
+                    .Select(endpoint => _system.Root.StopAsync(endpoint))
+                    .ToList();
 
                 Task.WhenAll(stopEndpointTasks).GetAwaiter().GetResult();
 
@@ -100,14 +99,17 @@ namespace Proto.Remote
 
         private void OnEndpointError(EndpointErrorEvent evt)
         {
+            // ReSharper disable once InconsistentlySynchronizedField
             if (_connections.TryGetValue(evt.Address, out var endpoint))
+                // ReSharper disable once InconsistentlySynchronizedField
                 endpoint.SendSystemMessage(_system, evt);
         }
 
         private void OnEndpointTerminated(EndpointTerminatedEvent evt)
         {
             Logger.LogDebug("[EndpointManager] Endpoint {Address} terminated removing from connections", evt.Address);
-            
+
+            // ReSharper disable once InconsistentlySynchronizedField
             if (_connections.TryRemove(evt.Address, out var endpoint))
             {
                 // ReSharper disable once InconsistentlySynchronizedField
@@ -125,10 +127,9 @@ namespace Proto.Remote
         private void OnEndpointConnected(EndpointConnectedEvent evt)
         {
             var endpoint = GetEndpoint(evt.Address);
-            if (endpoint is null)
-                return;
 
-            endpoint.SendSystemMessage(_system, evt);
+            // ReSharper disable once InconsistentlySynchronizedField
+            endpoint?.SendSystemMessage(_system, evt);
         }
 
         internal PID? GetEndpoint(string address)

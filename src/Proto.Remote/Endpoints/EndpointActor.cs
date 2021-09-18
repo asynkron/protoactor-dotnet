@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
@@ -26,7 +27,6 @@ namespace Proto.Remote
         private readonly ILogger Logger = Log.CreateLogger<EndpointActor>();
         private ChannelBase? _channel;
         private Remoting.RemotingClient? _client;
-        private int _serializerId;
         private AsyncDuplexStreamingCall<MessageBatch, Unit>? _stream;
 
         public EndpointActor(string address, RemoteConfigBase remoteConfig, IChannelProvider channelProvider)
@@ -44,10 +44,10 @@ namespace Proto.Remote
         private Task ConnectingAsync(IContext context) =>
             context.Message switch
             {
-                Started _    => ConnectAsync(context),
-                Stopped _    => ShutDownChannel(),
-                Restarting _ => ShutDownChannel(),
-                _            => Ignore
+                Started    => ConnectAsync(context),
+                Stopped    => ShutDownChannel(),
+                Restarting => ShutDownChannel(),
+                _          => Ignore
             };
 
         private Task ConnectedAsync(IContext context) =>
@@ -57,8 +57,8 @@ namespace Proto.Remote
                 EndpointErrorEvent msg       => EndpointError(msg),
                 RemoteUnwatch msg            => RemoteUnwatch(context, msg),
                 RemoteWatch msg              => RemoteWatch(context, msg),
-                Restarting _                 => EndpointTerminated(context),
-                Stopped _                    => EndpointTerminated(context),
+                Restarting                   => EndpointTerminated(context),
+                Stopped                      => EndpointTerminated(context),
                 IEnumerable<RemoteDeliver> m => RemoteDeliver(m, context),
                 _                            => Ignore
             };
@@ -81,8 +81,21 @@ namespace Proto.Remote
 
             Logger.LogDebug("[EndpointActor] Created channel and client for address {Address}", _address);
 
-            var res = await _client.ConnectAsync(new ConnectRequest());
-            _serializerId = res.DefaultSerializerId;
+            var res = await _client.ConnectAsync(new ConnectRequest
+            {
+                MemberId = context.System.Id,
+            });
+
+            if (res.Blocked)
+            {
+                Logger.LogError("Connection Refused to remote member {MemberId} address {Address}, we are blocked", res.MemberId, _address);
+                var terminated = new EndpointTerminatedEvent(_address);
+                context.System.EventStream.Publish(terminated);
+                // ReSharper disable once MethodHasAsyncOverload
+                context.Stop(context.Self);
+                return;
+            }
+
             _stream = _client.Receive(_remoteConfig.CallOptions);
 
             Logger.LogDebug("[EndpointActor] Connected client for address {Address}", _address);
@@ -94,10 +107,7 @@ namespace Proto.Remote
                     {
                         await _stream.ResponseStream.MoveNext();
                         Logger.LogDebug("[EndpointActor] {Address} Disconnected", _address);
-                        var terminated = new EndpointTerminatedEvent
-                        {
-                            Address = _address
-                        };
+                        var terminated = new EndpointTerminatedEvent(_address);
                         context.System.EventStream.Publish(terminated);
                     }
                     catch (RpcException x) when (x.StatusCode == StatusCode.Unavailable)
@@ -125,10 +135,7 @@ namespace Proto.Remote
 
             Logger.LogDebug("[EndpointActor] Created reader for address {Address}", _address);
 
-            var connected = new EndpointConnectedEvent
-            {
-                Address = _address
-            };
+            var connected = new EndpointConnectedEvent(_address);
             context.System.EventStream.Publish(connected);
 
             Logger.LogDebug("[EndpointActor] Connected to address {Address}", _address);
@@ -244,34 +251,20 @@ namespace Proto.Remote
                 //this only apply to root level messages and never to nested child objects inside the message
                 if (message is IRootSerializable deserialized) message = deserialized.Serialize(context.System);
 
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                 if (message is null)
                 {
                     Logger.LogError("Null message passed to EndpointActor, ignoring message");
                     continue;
                 }
 
-
                 ByteString bytes;
-                string typeName; 
+                string typeName;
                 int serializerId;
 
                 try
                 {
-                    var cached = message as ICachedSerialization;
-                    if (cached is {SerializerData: {boolHasData: true}} )
-                    {
-                        (bytes, typeName, serializerId, _) = cached.SerializerData;
-                    }
-                    else
-                    {
-                        (bytes, typeName, serializerId) = _remoteConfig.Serialization.Serialize(message);
-
-                        if (cached is not null)
-                        {
-                            cached.SerializerData = (bytes, typeName, serializerId, true);
-                        }
-                    }
-
+                    bytes = SerializeMessage(_remoteConfig.Serialization, message, out typeName, out serializerId);
                 }
                 catch (CodedOutputStream.OutOfSpaceException oom)
                 {
@@ -293,8 +286,8 @@ namespace Proto.Remote
                 }
 
                 MessageHeader? header = null;
-
-                if (rd.Header != null && rd.Header.Count > 0)
+                
+                if (rd.Header is {Count: > 0})
                 {
                     header = new MessageHeader();
                     header.HeaderData.Add(rd.Header.ToDictionary());
@@ -310,7 +303,7 @@ namespace Proto.Remote
                     MessageHeader = header,
                     RequestId = rd.Target.RequestId
                 };
-                
+
                 context.System.Logger()?.LogDebug("EndpointActor adding Envelope {Envelope}", envelope);
 
                 envelopes.Add(envelope);
@@ -324,6 +317,29 @@ namespace Proto.Remote
             // Logger.LogDebug("[EndpointActor] Sending {Count} envelopes for {Address}", envelopes.Count, _address);
 
             return SendEnvelopesAsync(batch, context);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ByteString SerializeMessage(Serialization serialization, object message, out string typeName, out int serializerId)
+        {
+            ByteString bytes;
+            var cached = message as ICachedSerialization;
+
+            if (cached is {SerializerData: {boolHasData: true}})
+            {
+                (bytes, typeName, serializerId, _) = cached.SerializerData;
+            }
+            else
+            {
+                (bytes, typeName, serializerId) = serialization.Serialize(message);
+
+                if (cached is not null)
+                {
+                    cached.SerializerData = (bytes, typeName, serializerId, true);
+                }
+            }
+
+            return bytes;
         }
 
         private async Task SendEnvelopesAsync(MessageBatch batch, IContext context)

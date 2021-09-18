@@ -34,6 +34,9 @@ namespace Proto.Remote.GrpcNet
         }
 
         public bool Started { get; private set; }
+        
+        public BlockList BlockList { get; } = new();
+        
         public RemoteConfigBase Config => _config;
         public ActorSystem System { get; }
 

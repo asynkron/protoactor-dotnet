@@ -37,6 +37,8 @@ namespace Proto.Remote.GrpcCore
         }
 
         public bool Started { get; private set; }
+
+        public BlockList BlockList { get; } = new();
         public ActorSystem System { get; }
         public RemoteConfigBase Config => _config;
 
