@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Proto.Diagnostics;
 using Proto.Mailbox;
 using Proto.Remote.Metrics;
+using Proto.Utils;
 
 namespace Proto.Remote
 {
@@ -22,6 +23,7 @@ namespace Proto.Remote
         private readonly EndpointManager _endpointManager;
         private readonly Serialization _serialization;
         private readonly ActorSystem _system;
+        private ConcurrentSet<string> _blockedMembers;
 
         public EndpointReader(ActorSystem system, EndpointManager endpointManager, Serialization serialization)
         {
@@ -29,6 +31,7 @@ namespace Proto.Remote
             _endpointManager = endpointManager;
             _serialization = serialization;
             _deserializationErrorLogLevel = _system.Remote().Config.DeserializationErrorLogLevel;
+            _blockedMembers = new ConcurrentSet<string>();
         }
 
         public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
@@ -40,13 +43,18 @@ namespace Proto.Remote
                 throw new RpcException(Status.DefaultCancelled, "Suspended");
             }
             
-            //TODO: 
-            // if (blockedMembers.Contains(request.MemberId))
-            // {
-            //     Logger.LogWarning("[EndpointReader] Attempt to connect from a blocked endpoint was rejected");
-            //
-            //     throw new whateverexception
-            // }
+            if (_blockedMembers.Contains(request.MemberId))
+            {
+                Logger.LogWarning("[EndpointReader] Attempt to connect from a blocked endpoint was rejected");
+            
+                return Task.FromResult(
+                    new ConnectResponse
+                    {
+                        Blocked = true,
+                        MemberId = _system.Id
+                    }
+                );
+            }
             
             //TODO:
             //add memberid to known endpoint ids
@@ -61,9 +69,7 @@ namespace Proto.Remote
             return Task.FromResult(
                 new ConnectResponse
                 {
-                    // NOTE: This is here for backward compatibility. Current version of Serialization
-                    // implementation doesn't utilize the default serializer idea.
-                    DefaultSerializerId = Serialization.SERIALIZER_ID_PROTOBUF,
+                    MemberId = _system.Id
                 }
             );
         }

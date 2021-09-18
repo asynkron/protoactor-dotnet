@@ -26,7 +26,6 @@ namespace Proto.Remote
         private readonly ILogger Logger = Log.CreateLogger<EndpointActor>();
         private ChannelBase? _channel;
         private Remoting.RemotingClient? _client;
-        private int _serializerId;
         private AsyncDuplexStreamingCall<MessageBatch, Unit>? _stream;
 
         public EndpointActor(string address, RemoteConfigBase remoteConfig, IChannelProvider channelProvider)
@@ -44,10 +43,10 @@ namespace Proto.Remote
         private Task ConnectingAsync(IContext context) =>
             context.Message switch
             {
-                Started _    => ConnectAsync(context),
-                Stopped _    => ShutDownChannel(),
-                Restarting _ => ShutDownChannel(),
-                _            => Ignore
+                Started    => ConnectAsync(context),
+                Stopped    => ShutDownChannel(),
+                Restarting => ShutDownChannel(),
+                _          => Ignore
             };
 
         private Task ConnectedAsync(IContext context) =>
@@ -57,8 +56,8 @@ namespace Proto.Remote
                 EndpointErrorEvent msg       => EndpointError(msg),
                 RemoteUnwatch msg            => RemoteUnwatch(context, msg),
                 RemoteWatch msg              => RemoteWatch(context, msg),
-                Restarting _                 => EndpointTerminated(context),
-                Stopped _                    => EndpointTerminated(context),
+                Restarting                   => EndpointTerminated(context),
+                Stopped                      => EndpointTerminated(context),
                 IEnumerable<RemoteDeliver> m => RemoteDeliver(m, context),
                 _                            => Ignore
             };
@@ -81,8 +80,24 @@ namespace Proto.Remote
 
             Logger.LogDebug("[EndpointActor] Created channel and client for address {Address}", _address);
 
-            var res = await _client.ConnectAsync(new ConnectRequest());
-            _serializerId = res.DefaultSerializerId;
+            var res = await _client.ConnectAsync(new ConnectRequest
+            {
+                MemberId = context.System.Id,
+            });
+
+            if (res.Blocked)
+            {
+                Logger.LogError("Connection Refused to remote member {MemberId} address {Address}, we are blocked", res.MemberId, _address);
+                var terminated = new EndpointTerminatedEvent
+                {
+                    Address = _address
+                };
+                context.System.EventStream.Publish(terminated);
+                // ReSharper disable once MethodHasAsyncOverload
+                context.Stop(context.Self);
+                return;
+            }
+
             _stream = _client.Receive(_remoteConfig.CallOptions);
 
             Logger.LogDebug("[EndpointActor] Connected client for address {Address}", _address);
