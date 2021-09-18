@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
+using Proto.Remote;
 
 namespace Proto.Cluster.Gossip
 {
@@ -133,9 +134,9 @@ namespace Proto.Cluster.Gossip
 
         private void PurgeBannedMembers(IContext context)
         {
-            var banned = context.Cluster().MemberList.BannedMembers;
+            var banned = context.Remote().BlockList.BlockedMembers;
 
-            foreach (var memberId in _state.Members.Keys.ToArray()) 
+            foreach (var memberId in _state.Members.Keys.ToArray())
             {
                 if (banned.Contains(memberId))
                 {
@@ -165,43 +166,46 @@ namespace Proto.Cluster.Gossip
                 }, CancellationTokens.WithTimeout(_gossipRequestTimeout)
             );
 
-            context.ReenterAfter(t, async tt => {
-                    try
-                    {
-                        await tt;
+            context.ReenterAfter(t, async task => await GossipReenter(context, task, pendingOffsets));
+        }
 
-                        foreach (var (key, sequenceNumber) in pendingOffsets)
-                        {
-                            //TODO: this needs to be improved with filter state on sender side, and then Ack from here
-                            //update our state with the data from the remote node
-                            //GossipStateManagement.MergeState(_state, response.State, out var newState);
-                            //_state = newState;
+        private async Task GossipReenter(IContext context, Task<GossipResponse> task, ImmutableDictionary<string, long> pendingOffsets)
+        {
+            var logger = context.Logger();
+            try
+            {
+                await task;
 
-                            if (!_committedOffsets.ContainsKey(key) || _committedOffsets[key] < pendingOffsets[key])
-                            {
-                                _committedOffsets = _committedOffsets.SetItem(key, sequenceNumber);
-                            }
-                        }
-                    }
-                    catch (DeadLetterException)
+                foreach (var (key, sequenceNumber) in pendingOffsets)
+                {
+                    //TODO: this needs to be improved with filter state on sender side, and then Ack from here
+                    //update our state with the data from the remote node
+                    //GossipStateManagement.MergeState(_state, response.State, out var newState);
+                    //_state = newState;
+
+                    if (!_committedOffsets.ContainsKey(key) || _committedOffsets[key] < pendingOffsets[key])
                     {
-                        logger?.LogWarning("DeadLetter");
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        logger?.LogWarning("Timeout");
-                    }
-                    catch (TimeoutException)
-                    {
-                        logger?.LogWarning("Timeout");
-                    }
-                    catch (Exception x)
-                    {
-                        logger?.LogError(x, "OnSendGossipState failed");
-                        Logger.LogError(x, "OnSendGossipState failed");
+                        _committedOffsets = _committedOffsets.SetItem(key, sequenceNumber);
                     }
                 }
-            );
+            }
+            catch (DeadLetterException)
+            {
+                logger?.LogWarning("DeadLetter");
+            }
+            catch (OperationCanceledException)
+            {
+                logger?.LogWarning("Timeout");
+            }
+            catch (TimeoutException)
+            {
+                logger?.LogWarning("Timeout");
+            }
+            catch (Exception x)
+            {
+                logger?.LogError(x, "OnSendGossipState failed");
+                Logger.LogError(x, "OnSendGossipState failed");
+            }
         }
 
         private List<Member> PickRandomFanOutMembers(Member[] members, int fanOutBy) =>

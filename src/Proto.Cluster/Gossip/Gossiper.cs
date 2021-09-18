@@ -117,7 +117,9 @@ namespace Proto.Cluster.Gossip
             catch (OperationCanceledException)
             {
             }
+#pragma warning disable RCS1075
             catch (Exception)
+#pragma warning restore RCS1075
             {
                 //TODO: log
             }

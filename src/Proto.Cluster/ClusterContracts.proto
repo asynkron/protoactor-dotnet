@@ -58,7 +58,7 @@ message ClusterTopology {
     repeated Member members = 2;
     repeated Member joined = 3;
     repeated Member left = 4;
-    repeated string banned = 5;
+    repeated string blocked = 5;
 }
 
 message HeartbeatRequest {
