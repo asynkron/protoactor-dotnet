@@ -262,7 +262,7 @@ namespace Proto.Cluster
 
         private void TerminateMember(Member memberThatLeft)
         {
-            var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
+            var endpointTerminated = new EndpointTerminatedEvent(memberThatLeft.Address);
             Logger.LogDebug("[MemberList] Published event {@EndpointTerminated}", endpointTerminated);
             _cluster.System.EventStream.Publish(endpointTerminated);
         }

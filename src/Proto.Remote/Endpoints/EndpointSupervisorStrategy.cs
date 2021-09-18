@@ -48,7 +48,7 @@ namespace Proto.Remote
                     _address, reason.GetType().Name
                 );
                 _cancelFutureRetries.Cancel();
-                var terminated = new EndpointTerminatedEvent {Address = _address!};
+                var terminated = new EndpointTerminatedEvent(_address);
                 _system.EventStream.Publish(terminated);
             }
             else

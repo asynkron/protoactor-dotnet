@@ -8,22 +8,17 @@ using System;
 
 namespace Proto.Remote
 {
-    public sealed record EndpointTerminatedEvent
+    public sealed record EndpointTerminatedEvent(string Address)
     {
-        public string Address { get; set; } = null!;
-
         public override string ToString() => $"EndpointTerminatedEvent: {Address}";
     }
 
-    public sealed record EndpointConnectedEvent
-    {
-        public string Address { get; set; } = null!;
-    }
+    public sealed record EndpointConnectedEvent(string Address);
 
     public sealed record EndpointErrorEvent
     {
-        public string Address { get; set; } = null!;
-        public Exception Exception { get; set; } = null!;
+        public string Address { get; init; } = null!;
+        public Exception Exception { get; init; } = null!;
     }
 
     public sealed record RemoteTerminate(PID Watcher, PID Watchee);
@@ -32,6 +27,5 @@ namespace Proto.Remote
 
     public sealed record RemoteUnwatch(PID Watcher, PID Watchee);
 
-    public sealed record RemoteDeliver (Proto.MessageHeader Header, object Message, PID Target, PID Sender);
-
+    public sealed record RemoteDeliver(Proto.MessageHeader Header, object Message, PID Target, PID? Sender);
 }

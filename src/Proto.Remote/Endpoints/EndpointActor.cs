@@ -89,10 +89,7 @@ namespace Proto.Remote
             if (res.Blocked)
             {
                 Logger.LogError("Connection Refused to remote member {MemberId} address {Address}, we are blocked", res.MemberId, _address);
-                var terminated = new EndpointTerminatedEvent
-                {
-                    Address = _address
-                };
+                var terminated = new EndpointTerminatedEvent(_address);
                 context.System.EventStream.Publish(terminated);
                 // ReSharper disable once MethodHasAsyncOverload
                 context.Stop(context.Self);
@@ -110,10 +107,7 @@ namespace Proto.Remote
                     {
                         await _stream.ResponseStream.MoveNext();
                         Logger.LogDebug("[EndpointActor] {Address} Disconnected", _address);
-                        var terminated = new EndpointTerminatedEvent
-                        {
-                            Address = _address
-                        };
+                        var terminated = new EndpointTerminatedEvent(_address);
                         context.System.EventStream.Publish(terminated);
                     }
                     catch (RpcException x) when (x.StatusCode == StatusCode.Unavailable)
@@ -141,10 +135,7 @@ namespace Proto.Remote
 
             Logger.LogDebug("[EndpointActor] Created reader for address {Address}", _address);
 
-            var connected = new EndpointConnectedEvent
-            {
-                Address = _address
-            };
+            var connected = new EndpointConnectedEvent(_address);
             context.System.EventStream.Publish(connected);
 
             Logger.LogDebug("[EndpointActor] Connected to address {Address}", _address);

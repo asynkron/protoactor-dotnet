@@ -23,7 +23,6 @@ namespace Proto.Remote
         private readonly EndpointManager _endpointManager;
         private readonly Serialization _serialization;
         private readonly ActorSystem _system;
-        private ConcurrentSet<string> _blockedMembers;
 
         public EndpointReader(ActorSystem system, EndpointManager endpointManager, Serialization serialization)
         {
@@ -31,7 +30,6 @@ namespace Proto.Remote
             _endpointManager = endpointManager;
             _serialization = serialization;
             _deserializationErrorLogLevel = _system.Remote().Config.DeserializationErrorLogLevel;
-            _blockedMembers = new ConcurrentSet<string>();
         }
 
         public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
@@ -42,11 +40,11 @@ namespace Proto.Remote
 
                 throw new RpcException(Status.DefaultCancelled, "Suspended");
             }
-            
-            if (_blockedMembers.Contains(request.MemberId))
+
+            if (_system.Remote().BlockList.IsBlocked(request.MemberId))
             {
                 Logger.LogWarning("[EndpointReader] Attempt to connect from a blocked endpoint was rejected");
-            
+
                 return Task.FromResult(
                     new ConnectResponse
                     {
@@ -55,7 +53,7 @@ namespace Proto.Remote
                     }
                 );
             }
-            
+
             //TODO:
             //add memberid to known endpoint ids
             //can endpoint objects benefit from knowing the member id?
