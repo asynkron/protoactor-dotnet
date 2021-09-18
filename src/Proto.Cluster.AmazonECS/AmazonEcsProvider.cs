@@ -71,7 +71,7 @@ namespace Proto.Cluster.AmazonECS
             return Task.CompletedTask;
         }
 
-        public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync(_cluster);
+        public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync();
 
         public async Task RegisterMemberAsync()
         {
@@ -143,16 +143,16 @@ namespace Proto.Cluster.AmazonECS
             );
         }
 
-        public async Task DeregisterMemberAsync(Cluster cluster)
+        public async Task DeregisterMemberAsync()
         {
-            await Retry.Try(() => DeregisterMemberInner(cluster), onError: OnError, onFailed: OnFailed);
+            await Retry.Try(DeregisterMemberInner, onError: OnError, onFailed: OnFailed);
 
             static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to deregister service");
 
             static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to deregister service");
         }
 
-        private async Task DeregisterMemberInner(Cluster cluster)
+        private async Task DeregisterMemberInner()
         {
             Logger.LogInformation("[Cluster][AmazonEcsProvider] Unregistering service {PodName} on {PodIp}", _taskArn, _address);
             await _client.UpdateMetadata(_taskArn, new Dictionary<string, string>());

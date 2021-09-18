@@ -3,16 +3,33 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using Proto.Utils;
 
 namespace Proto.Remote
 {
     public class BlockList
     {
-        private readonly ConcurrentSet<string> _blockedMembers = new();
+        private readonly object _lock = new();
 
-        public void Block(string memberId) => _blockedMembers.Add(memberId);
+        public ImmutableHashSet<string> BlockedMembers { get; private set; } = ImmutableHashSet<string>.Empty;
+        public void Block(string memberId)
+        {
+            lock (_lock)
+            {
+                BlockedMembers = BlockedMembers.Add(memberId);
+            }
+        }
 
-        public bool IsBlocked(string memberId) => _blockedMembers.Contains(memberId);
+        public void Block(IEnumerable<string> memberIds)
+        {
+            lock (_lock)
+            {
+                BlockedMembers = BlockedMembers.Union(memberIds);
+            }
+        }
+
+        public bool IsBlocked(string memberId) => BlockedMembers.Contains(memberId);
     }
 }

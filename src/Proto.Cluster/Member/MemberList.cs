@@ -65,14 +65,12 @@ namespace Proto.Cluster
             
                     //get banned members from all other member states, and merge that with our own banned set
                     var topology = u.Value.Unpack<ClusterTopology>();
-                    var banned = topology.Banned.ToArray();
-                    UpdateBannedMembers(banned);
+                    var blocked = topology.Blocked.ToArray();
+                    UpdateBlockedMembers(blocked);
                 }
             );
         }
-
-        public ImmutableHashSet<string> BannedMembers { get; private set; } = ImmutableHashSet<string>.Empty;
-
+        
         public ImmutableHashSet<string> GetMembers() => _activeMembers.Members.Select(m=>m.Id).ToImmutableHashSet();
 
         public async Task<bool> TopologyConsensus(CancellationToken ct)
@@ -101,15 +99,16 @@ namespace Proto.Cluster
             }
         }
 
-        public void UpdateBannedMembers(string[] bannedMembers)
+        public void UpdateBlockedMembers(string[] bannedMembers)
         {
+            var blockList = _system.Remote().BlockList;
             lock (_lock)
             {
                 //update banned members
-                var before = BannedMembers;
-                BannedMembers = BannedMembers.Union(bannedMembers);
+                var before = blockList.BlockedMembers;
+                blockList.Block(bannedMembers);
 
-                if (before != BannedMembers)
+                if (before != blockList.BlockedMembers)
                 {
                     Logger.LogDebug("Updating banned members via gossip");
                 }
@@ -123,11 +122,12 @@ namespace Proto.Cluster
 
         public void UpdateClusterTopology(IReadOnlyCollection<Member> members)
         {
+            var blockList = _system.Remote().BlockList;
             lock (_lock)
             {
                 Logger.LogDebug("[MemberList] Updating Cluster Topology");
                 
-                if (BannedMembers.Contains(_system.Id))
+                if (blockList.IsBlocked(_system.Id))
                 {
                     if (_stopping)
                     {
@@ -145,7 +145,7 @@ namespace Proto.Cluster
                 //then makes a delta between new and old members
                 //notifying the cluster accordingly which members left or joined
 
-                var activeMembers = new ImmutableMemberSet(members).Except(BannedMembers);
+                var activeMembers = new ImmutableMemberSet(members).Except(blockList.BlockedMembers);
 
                 if (activeMembers.Equals(_activeMembers))
                 {
@@ -154,7 +154,7 @@ namespace Proto.Cluster
 
                 var left = _activeMembers.Except(activeMembers);
                 var joined = activeMembers.Except(_activeMembers);
-                BannedMembers = BannedMembers.Union(left.Members.Select(m=>m.Id));
+                blockList.Block(left.Members.Select(m=>m.Id));
                 _activeMembers = activeMembers;
                 
                 //notify that these members left
@@ -176,7 +176,7 @@ namespace Proto.Cluster
                     Members = {activeMembers.Members},
                     Left = {left.Members},
                     Joined = {joined.Members},
-                    Banned = { BannedMembers }
+                    Blocked = {  blockList.BlockedMembers }
                 };
                 
                 Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
