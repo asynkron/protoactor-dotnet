@@ -19,11 +19,6 @@
   <ItemGroup>
     <Compile Remove="ConnectionFailTests.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <None Update="xunit.runner.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
   <PropertyGroup Condition="'$(TargetFramework)' != 'net5.0'">
     <DefineConstants>NETCORE</DefineConstants>
   </PropertyGroup>
