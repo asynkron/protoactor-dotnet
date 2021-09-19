@@ -22,5 +22,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Update="*.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+    <None Update="xunit.runner.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>
