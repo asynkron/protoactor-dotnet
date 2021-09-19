@@ -23,6 +23,10 @@ jobs:
         ports:
           - 27017/tcp
 
+    strategy:
+      matrix:
+        framework: [netcoreapp3.1, net5.0]      
+
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-dotnet@v1
@@ -35,19 +39,13 @@ jobs:
       - name: Build
         run: dotnet build ProtoActor.sln -c Release
 
-      - name: Run tests netcoreapp3.1
+      - name: Run tests ${{ matrix.framework }}
+        timeout-minutes: 5
         env:
           ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet test ProtoActor.sln -c Release --framework netcoreapp3.1
-
-      - name: Run tests net5.0
-        env:
-          ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
-          ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
-        run: |
-          dotnet test ProtoActor.sln -c Release --framework net5.0
+          dotnet test ProtoActor.sln -c Release --framework ${{ matrix.framework }}
 
   nuget:
     runs-on: ubuntu-latest
