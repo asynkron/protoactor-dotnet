@@ -21,15 +21,16 @@ jobs:
       matrix:
         dotnet:
           - test: netcoreapp3.1
-            build: 3.1.x
           - test: net5.0
-            build: 5.0.100
 
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: ${{ matrix.dotnet.build }}
+          dotnet-version: "5.0.100"
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "3.1.x"
 
       - name: Build
         run: dotnet build ProtoActor.sln -c Release
@@ -40,4 +41,4 @@ jobs:
           ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet test ProtoActor.sln -c Release --framework ${{ matrix.dotnet.test }}
+          dotnet test ProtoActor.sln -c Release -f ${{ matrix.dotnet.test }}
