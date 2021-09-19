@@ -3,7 +3,7 @@ name: Build and test PRs
 on: [pull_request]
 
 jobs:
-  test:
+  setup:
     runs-on: ubuntu-latest
 
     services:
@@ -16,23 +16,31 @@ jobs:
         image: mongo
         ports:
           - 27017/tcp
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "5.0.100"
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "3.1.x"
+
+  build:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build
+        run: dotnet build ProtoActor.sln -c Release
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
         framework: [netcoreapp3.1, net5.0]
 
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '5.0.100'
-      - uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '3.1.x'
-
-      - name: Build
-        run: dotnet build ProtoActor.sln -c Release
-
       - name: Run tests ${{ matrix.framework }}
         timeout-minutes: 5
         env:
