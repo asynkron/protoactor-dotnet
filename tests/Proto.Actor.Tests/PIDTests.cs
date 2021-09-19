@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Proto.TestFixtures;
 using Xunit;
 using static Proto.TestFixtures.Receivers;
@@ -21,7 +22,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public async void Given_ActorDied_Ref_ShouldNotReturnIt()
+        public async Task Given_ActorDied_Ref_ShouldNotReturnIt()
         {
             var pid = Context.Spawn(Props.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
             await Context.StopAsync(pid);
