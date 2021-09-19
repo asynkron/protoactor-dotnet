@@ -17,12 +17,6 @@ jobs:
         ports:
           - 27017/tcp
 
-    strategy:
-      matrix:
-        dotnet:
-          - test: netcoreapp3.1
-          - test: net5.0
-
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-dotnet@v1
